@@ -1,0 +1,37 @@
+{
+  "id": "local_dominance",
+  "title": "Local Dominance",
+  "description": "Lokale Marktdominanz-Strategie für regionale Unternehmen und lokale Dienstleister. Fokus auf geografisches Targeting, lokale Keywords und Community-basiertes Marketing für maximale lokale Sichtbarkeit.",
+  "ideal_conditions": {
+    "budget_type": "low_to_medium",
+    "growth_focus": "local_market_share",
+    "risk_tolerance": "low",
+    "goal": "local_awareness",
+    "timeline": "medium_term"
+  },
+  "recommended_actions": [
+    "Präzises geografisches Targeting mit Radius-Einstellungen",
+    "Lokale Keywords und ortsbezogene Suchbegriffe verwenden",
+    "Google My Business Integration und Local SEO",
+    "Community-Events und lokale Partnerships bewerben",
+    "Standort-spezifische Angebote und Promotions",
+    "Lokale Testimonials und Referenzen einsetzen",
+    "Mobile-First Approach für lokale Suchanfragen"
+  ],
+  "target_metrics": {
+    "primary": "Local Reach",
+    "secondary": ["Store Visits", "Local Engagement", "Calls Generated"],
+    "target_local_reach": "80% des Zielgebiets",
+    "store_visit_rate": "15%"
+  },
+  "budget_recommendations": {
+    "daily_budget": "50-200 EUR",
+    "scaling_strategy": "geographic_expansion",
+    "test_budget_allocation": "20%"
+  },
+  "audience_strategy": {
+    "primary": "local_demographics",
+    "secondary": "nearby_competitors_audiences",
+    "retargeting": "local_website_visitors"
+  }
+}

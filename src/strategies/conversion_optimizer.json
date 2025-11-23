@@ -1,0 +1,37 @@
+{
+  "id": "conversion_optimizer",
+  "title": "Conversion Optimizer",
+  "description": "Datengetriebene Conversion-Optimierung mit Fokus auf Kosten-Effizienz und ROI-Maximierung. Wissenschaftlicher Ansatz mit A/B-Tests und kontinuierlicher Optimierung aller Kampagnen-Elemente.",
+  "ideal_conditions": {
+    "budget_type": "medium",
+    "growth_focus": "efficiency",
+    "risk_tolerance": "low_to_medium",
+    "goal": "leads",
+    "timeline": "medium_to_long"
+  },
+  "recommended_actions": [
+    "Systematische A/B-Tests aller Kampagnen-Variablen",
+    "Conversion-Tracking und Attribution-Modell Optimierung",
+    "Landing Page Optimization mit Heatmap-Analyse",
+    "Lead Scoring und Qualitätsbewertung implementieren",
+    "Automated Bidding Strategien für Effizienz",
+    "Negative Keywords und Audience Exclusions verfeinern",
+    "Customer Journey Mapping und Touchpoint-Analyse"
+  ],
+  "target_metrics": {
+    "primary": "Cost per Quality Lead",
+    "secondary": ["Conversion Rate", "Lead Score", "Customer LTV"],
+    "target_cpl": "25 EUR",
+    "minimum_lead_score": 70
+  },
+  "budget_recommendations": {
+    "daily_budget": "100-400 EUR",
+    "scaling_strategy": "data_driven_optimization",
+    "test_budget_allocation": "35%"
+  },
+  "audience_strategy": {
+    "primary": "conversion_optimized",
+    "secondary": "high_intent_keywords",
+    "retargeting": "conversion_focused_segments"
+  }
+}

@@ -1,0 +1,37 @@
+{
+  "id": "brand_expansion",
+  "title": "Brand Expansion",
+  "description": "Strategische Markenausdehnung für maximale Reichweite und Brand Awareness. Ideal für etablierte Unternehmen, die neue Märkte erschließen oder ihre Markenbekanntheit signifikant steigern möchten.",
+  "ideal_conditions": {
+    "budget_type": "high",
+    "growth_focus": "brand_awareness",
+    "risk_tolerance": "medium_to_high",
+    "goal": "awareness",
+    "timeline": "long_term"
+  },
+  "recommended_actions": [
+    "Broad Targeting für maximale Reichweite einsetzen",
+    "Video-Content für emotionale Markenverbindung",
+    "Influencer-Partnerships und User Generated Content",
+    "Cross-Platform Kampagnen (Facebook, Instagram, Stories)",
+    "Brand Storytelling mit authentischen Botschaften",
+    "Geografische Expansion in neue Zielregionen",
+    "Community Building und Engagement-Fokus"
+  ],
+  "target_metrics": {
+    "primary": "Reach",
+    "secondary": ["Brand Recall", "Engagement Rate", "Video Views"],
+    "target_reach": "1M+ monthly",
+    "engagement_rate": "3.5%"
+  },
+  "budget_recommendations": {
+    "daily_budget": "300-1000+ EUR",
+    "scaling_strategy": "reach_optimization",
+    "test_budget_allocation": "30%"
+  },
+  "audience_strategy": {
+    "primary": "broad_demographic",
+    "secondary": "interest_expansion",
+    "retargeting": "brand_engagers"
+  }
+}
