@@ -31,34 +31,36 @@ import AdRubyCreativeInsights from './pages/ad-ruby-creative-insights';
 // Import new AdRuby Onboarding pages
 import AdRubyRegistration from './pages/ad-ruby-registration';
 import AdRubyPaymentVerification from './pages/ad-ruby-payment-verification';
+import PaymentSuccess from './pages/payment-success';
 
 const ProtectedRoute = ({ children }) => {
   const { user, loading, isAuthReady, isSubscribed } = useAuth();
   const location = useLocation();
 
-  console.log('[ProtectedRoute] check', {
+  console.log('[AuthTrace] ProtectedRoute check', {
     isAuthReady,
     hasSession: !!user,
     hasActiveSubscription: isSubscribed?.(),
-    pathname: location.pathname
+    pathname: location.pathname,
+    ts: new Date().toISOString()
   });
 
   if (!isAuthReady || loading) {
-    console.log('[ProtectedRoute] auth not ready, waiting…');
+    console.log('[AuthTrace] ProtectedRoute auth not ready, waiting…', { pathname: location.pathname, ts: new Date().toISOString() });
     return null;
   }
 
   if (!user) {
-    console.log('[ProtectedRoute] no session → redirect /ad-ruby-registration');
+    console.log('[AuthTrace] ProtectedRoute no session → redirect /ad-ruby-registration', { pathname: location.pathname, ts: new Date().toISOString() });
     return <Navigate to="/ad-ruby-registration" replace />;
   }
 
   if (!isSubscribed?.()) {
-    console.log('[ProtectedRoute] no subscription → redirect /payment-verification');
+    console.log('[AuthTrace] ProtectedRoute no subscription → redirect /payment-verification', { pathname: location.pathname, ts: new Date().toISOString() });
     return <Navigate to="/payment-verification" replace />;
   }
 
-  console.log('[ProtectedRoute] access granted to protected route');
+  console.log('[AuthTrace] ProtectedRoute access granted to protected route', { pathname: location.pathname, ts: new Date().toISOString() });
   return children;
 };
 
@@ -78,6 +80,7 @@ const Routes = () => {
             {/* AdRuby Onboarding Flow */}
             <Route path="/signup" element={<AdRubyRegistration />} />
             <Route path="/payment-verification" element={<AdRubyPaymentVerification />} />
+            <Route path="/payment-success" element={<PaymentSuccess />} />
             <Route path="/ad-ruby-registration" element={<AdRubyRegistration />} />
 
             {/* New AdRuby Feature Pages */}

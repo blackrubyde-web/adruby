@@ -11,7 +11,7 @@ import CampaignsTable from './components/CampaignsTable';
 const OverviewDashboard = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const navigate = useNavigate();
-  const { user, onboardingStatus, isOnboardingComplete, loading, isAuthReady } = useAuth();
+  const { user, loading, isAuthReady, isSubscribed, subscriptionStatus } = useAuth();
 
   useEffect(() => {
     if (loading || !isAuthReady) {
@@ -25,11 +25,12 @@ const OverviewDashboard = () => {
       return;
     }
 
-    if (!isOnboardingComplete(onboardingStatus)) {
-      console.log('[Dashboard] onboarding incomplete -> payment verification', { path: window.location.pathname });
+    const hasActiveSub = typeof isSubscribed === 'function' ? isSubscribed() : false;
+    if (!hasActiveSub) {
+      console.log('[Dashboard] no active subscription -> payment verification', { path: window.location.pathname, subscriptionStatus });
       navigate('/payment-verification');
     }
-  }, [user, onboardingStatus, isOnboardingComplete, loading, isAuthReady, navigate]);
+  }, [user, loading, isAuthReady, isSubscribed, subscriptionStatus, navigate]);
 
   const statisticsData = [
     {

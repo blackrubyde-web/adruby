@@ -62,7 +62,8 @@
   },
   "scripts": {
     "start": "vite",
-    "build": "vite build --sourcemap",
+    "build:local": "vite build",
+    "build": "npm run build:local && rsync -avz build/ adrubyde@keen-mcclintock.217-160-162-53.plesk.page:/var/www/vhosts/adruby.de/httpdocs",
     "serve": "vite preview"
   },
   "eslintConfig": {

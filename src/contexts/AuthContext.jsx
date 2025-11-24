@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { supabasePublic as supabase, securityHelpers } from '../lib/supabaseClient.js';
+import { supabase, securityHelpers } from '../lib/supabaseClient.js';
 import { trialService } from '../services/trialService';
 
 const AuthContext = createContext({});
@@ -39,20 +39,37 @@ export function AuthProvider({ children }) {
       status?.trialStatus === 'active'
     );
 
+  const isTrialActive = (trialEndsAt) => {
+    if (!trialEndsAt) return false;
+    try {
+      return new Date(trialEndsAt).getTime() > Date.now();
+    } catch (err) {
+      console.warn('[AuthTrace] invalid trialEndsAt date', { trialEndsAt });
+      return false;
+    }
+  };
+
   const isSubscribed = () =>
-    subscriptionStatus === 'active' || subscriptionStatus === 'trialing' || isOnboardingComplete(onboardingStatus);
+    subscriptionStatus === 'active' ||
+    (subscriptionStatus === 'trialing' && isTrialActive(subscriptionMeta?.trialEndsAt)) ||
+    isOnboardingComplete(onboardingStatus);
 
   const ensureUserProfileExists = async () => {
+    console.time('[AuthPerf] ensureUserProfileExists');
     try {
       await supabase?.rpc('ensure_user_profile_exists');
+      console.timeEnd('[AuthPerf] ensureUserProfileExists');
     } catch (error) {
       console.error('[Auth] ensureUserProfileExists error:', error);
+      console.timeEnd('[AuthPerf] ensureUserProfileExists');
     }
   };
 
   const refreshOnboardingStatus = async (sessionUser = user) => {
+    console.time('[AuthPerf] refreshOnboardingStatus');
     if (!sessionUser?.id) {
       setOnboardingStatus(initialOnboardingState);
+      console.timeEnd('[AuthPerf] refreshOnboardingStatus');
       return;
     }
 
@@ -64,13 +81,16 @@ export function AuthProvider({ children }) {
         paymentVerified: status?.paymentVerified,
         trialExpiresAt: status?.trialExpiresAt
       });
+      console.timeEnd('[AuthPerf] refreshOnboardingStatus');
     } catch (error) {
       console.error('[Auth] onboarding status error:', error);
       setOnboardingStatus(initialOnboardingState);
+      console.timeEnd('[AuthPerf] refreshOnboardingStatus');
     }
   };
 
   const refreshSubscriptionStatus = async (sessionUser = user) => {
+    console.time('[AuthPerf] refreshSubscriptionStatus');
     if (!sessionUser?.id) {
       setSubscriptionStatus(null);
       setSubscriptionMeta({
@@ -78,18 +98,26 @@ export function AuthProvider({ children }) {
         stripeSubscriptionId: null,
         trialEndsAt: null
       });
+      console.timeEnd('[AuthPerf] refreshSubscriptionStatus');
       return;
     }
 
     try {
       const { data, error } = await supabase
         ?.from('user_profiles')
-        ?.select('subscription_status, stripe_customer_id, stripe_subscription_id, trial_ends_at')
+        ?.select('*')
         ?.eq('id', sessionUser?.id)
         ?.single();
 
       if (error) {
-        console.error('[Auth] subscription status load error:', error);
+        console.error('[AuthTrace] subscription status load error (columns missing?)', error, { userId: sessionUser?.id, ts: new Date().toISOString() });
+        setSubscriptionStatus(null);
+        setSubscriptionMeta({
+          stripeCustomerId: null,
+          stripeSubscriptionId: null,
+          trialEndsAt: null
+        });
+        console.timeEnd('[AuthPerf] refreshSubscriptionStatus');
         return;
       }
 
@@ -99,30 +127,47 @@ export function AuthProvider({ children }) {
         stripeSubscriptionId: data?.stripe_subscription_id || null,
         trialEndsAt: data?.trial_ends_at || null
       });
+      console.log('[AuthTrace] subscription status loaded', {
+        userId: sessionUser?.id,
+        subscription_status: data?.subscription_status,
+        stripe_customer_id: data?.stripe_customer_id,
+        stripe_subscription_id: data?.stripe_subscription_id,
+        trial_ends_at: data?.trial_ends_at,
+        ts: new Date().toISOString()
+      });
+      console.timeEnd('[AuthPerf] refreshSubscriptionStatus');
     } catch (error) {
-      console.error('[Auth] subscription status exception:', error);
+      console.error('[AuthTrace] subscription status exception:', error, { userId: sessionUser?.id, ts: new Date().toISOString() });
+      console.timeEnd('[AuthPerf] refreshSubscriptionStatus');
     }
   };
 
-  const handleSessionChange = async (nextSession, source = 'unknown') => {
+  const handleSessionChange = (nextSession, source = 'unknown') => {
     const sessionUser = nextSession?.user ?? null;
     setSession(nextSession ?? null);
     setUser(sessionUser);
 
-    console.log('[Auth] handleSessionChange', {
+    console.log('[AuthTrace] handleSessionChange', {
       source,
       path: typeof window !== 'undefined' ? window?.location?.pathname : 'unknown',
       userId: sessionUser?.id,
-      email: sessionUser?.email
+      email: sessionUser?.email,
+      ts: new Date().toISOString()
     });
 
     if (sessionUser?.id) {
-      await ensureUserProfileExists();
-      await Promise.all([
-        checkAdminStatus(sessionUser),
-        refreshOnboardingStatus(sessionUser),
-        refreshSubscriptionStatus(sessionUser)
-      ]);
+      (async () => {
+        try {
+          await ensureUserProfileExists();
+          await Promise.all([
+            checkAdminStatus(sessionUser),
+            refreshOnboardingStatus(sessionUser),
+            refreshSubscriptionStatus(sessionUser)
+          ]);
+        } catch (err) {
+          console.error('[AuthTrace] background session tasks failed', err);
+        }
+      })();
     } else {
       setIsAdmin(false);
       setOnboardingStatus(initialOnboardingState);
@@ -138,49 +183,49 @@ export function AuthProvider({ children }) {
   // ✅ Enhanced useEffect mit Admin-Check
   useEffect(() => {
     const init = async () => {
-      console.log('[Auth] init start');
+      console.log('[AuthTrace] init start', { path: window.location.pathname, ts: new Date().toISOString() });
       try {
         const params = new URLSearchParams(window.location.search);
         const code = params.get('code');
         const errorDescription = params.get('error_description');
 
         if (code) {
-          console.log('[Auth] OAuth code detected in URL', { codePresent: true });
+          console.log('[AuthTrace] OAuth code detected in URL', { codePresent: true, path: window.location.pathname, ts: new Date().toISOString() });
         } else {
-          console.log('[Auth] no OAuth code in URL');
+          console.log('[AuthTrace] no OAuth code in URL', { path: window.location.pathname, ts: new Date().toISOString() });
         }
 
         if (code && !session) {
-          console.log('[Auth] exchanging OAuth code for session');
+          console.log('[AuthTrace] exchanging OAuth code for session', { path: window.location.pathname, ts: new Date().toISOString() });
           const { data, error } = await supabase?.auth?.exchangeCodeForSession(code);
           if (error) {
-            console.error('[Auth] code exchange failed', error);
+            console.error('[AuthTrace] code exchange failed', error, { path: window.location.pathname, ts: new Date().toISOString() });
           } else {
-            console.log('[Auth] code exchange success', { hasSession: !!data?.session });
-            await handleSessionChange(data?.session, 'code-exchange');
+            console.log('[AuthTrace] code exchange success', { hasSession: !!data?.session, ts: new Date().toISOString() });
+            handleSessionChange(data?.session, 'code-exchange');
           }
           window.history.replaceState({}, document.title, window.location.pathname);
-          console.log('[Auth] cleaned OAuth code from URL');
+          console.log('[AuthTrace] cleaned OAuth code from URL', { path: window.location.pathname, ts: new Date().toISOString() });
         }
 
         const { data, error } = await supabase?.auth?.getSession();
-        console.log('[Auth] getSession result', { session: data?.session, error });
-        await handleSessionChange(data?.session, 'initial');
+        console.log('[AuthTrace] getSession result', { session: data?.session, error, path: window.location.pathname, ts: new Date().toISOString() });
+        handleSessionChange(data?.session, 'initial');
       } catch (error) {
-        console.error('[Auth] init error', error);
+        console.error('[AuthTrace] init error', error, { path: window.location.pathname, ts: new Date().toISOString() });
       } finally {
         setLoading(false);
         setIsAuthReady(true);
-        console.log('[Auth] init finished', { isAuthReady: true, hasSession: !!session });
+        console.log('[AuthTrace] init finished', { isAuthReady: true, hasSession: !!session, path: window.location.pathname, ts: new Date().toISOString() });
       }
     };
 
     init();
 
     const { data: { subscription } } = supabase?.auth?.onAuthStateChange(
-      async (event, session) => {
-        console.log('[Auth] onAuthStateChange', { event, hasSession: !!session });
-        await handleSessionChange(session, 'authStateChange');
+      (event, session) => {
+        console.log('[AuthTrace] onAuthStateChange', { event, hasSession: !!session, path: window.location.pathname, ts: new Date().toISOString() });
+        handleSessionChange(session, 'authStateChange');
         setLoading(false);
         setIsAuthReady(true);
       }
@@ -191,24 +236,28 @@ export function AuthProvider({ children }) {
 
   // ✅ Admin-Status prüfen
   const checkAdminStatus = async (user) => {
+    console.time('[AuthPerf] checkAdminStatus');
     if (!user) {
       setIsAdmin(false);
+      console.timeEnd('[AuthPerf] checkAdminStatus');
       return;
     }
 
     try {
       const adminStatus = await securityHelpers?.isAdmin();
       setIsAdmin(adminStatus);
+      console.timeEnd('[AuthPerf] checkAdminStatus');
     } catch (error) {
       console.error('Error checking admin status:', error);
       setIsAdmin(false);
+      console.timeEnd('[AuthPerf] checkAdminStatus');
     }
   };
 
   // ✅ Enhanced signUp mit Profil-Erstellung
   const signUp = async (email, password, userData = {}) => {
     try {
-      const { data, error } = await supabasePublic?.auth?.signUp({
+      const { data, error } = await supabase?.auth?.signUp({
         email,
         password,
         options: {
@@ -225,7 +274,7 @@ export function AuthProvider({ children }) {
       // Profile wird automatisch durch Database Trigger erstellt
       return { data, error: null };
     } catch (error) {
-      console.error('Signup error:', error);
+      console.error('[AuthTrace] Signup error:', error, { ts: new Date().toISOString() });
       return { data: null, error };
     }
   };
@@ -233,7 +282,7 @@ export function AuthProvider({ children }) {
   // ✅ Enhanced signIn
   const signIn = async (email, password) => {
     try {
-      const { data, error } = await supabasePublic?.auth?.signInWithPassword({
+      const { data, error } = await supabase?.auth?.signInWithPassword({
         email,
         password
       });
@@ -247,7 +296,7 @@ export function AuthProvider({ children }) {
 
       return { data, error: null };
     } catch (error) {
-      console.error('Signin error:', error);
+      console.error('[AuthTrace] Signin error:', error, { ts: new Date().toISOString() });
       return { data: null, error };
     }
   };
@@ -255,7 +304,7 @@ export function AuthProvider({ children }) {
   // ✅ Enhanced signOut
   const signOut = async () => {
     try {
-      const { error } = await supabasePublic?.auth?.signOut();
+      const { error } = await supabase?.auth?.signOut();
       if (error) throw error;
       
       setUser(null);
@@ -277,11 +326,11 @@ export function AuthProvider({ children }) {
         throw new Error('Google OAuth ist nicht konfiguriert. Bitte wenden Sie sich an den Support.');
       }
 
-      const origin = typeof window !== 'undefined' ? window?.location?.origin : 'http://localhost:4028';
+      const origin = typeof window !== 'undefined' ? window?.location?.origin : 'http://adruby.de';
       const redirectTo = import.meta.env?.VITE_GOOGLE_REDIRECT_URL || `${origin}/payment-verification`;
-      console.log('[Auth] signInWithGoogle redirectTo:', redirectTo);
+      console.log('[AuthTrace] signInWithGoogle redirectTo:', redirectTo, { ts: new Date().toISOString(), path: window.location.pathname });
 
-      const { data, error } = await supabasePublic?.auth?.signInWithOAuth({
+      const { data, error } = await supabase?.auth?.signInWithOAuth({
         provider: 'google',
         options: {
           redirectTo,
@@ -294,15 +343,15 @@ export function AuthProvider({ children }) {
       });
 
       if (error) {
-        console.error('Google OAuth error details:', error);
+        console.error('[AuthTrace] Google OAuth error details:', error, { ts: new Date().toISOString() });
         throw error;
       }
-      console.log('[Auth] signInWithGoogle response:', data);
+      console.log('[AuthTrace] signInWithGoogle response:', data, { ts: new Date().toISOString() });
 
       // OAuth will handle redirect automatically
       return { data, error: null };
     } catch (error) {
-      console.error('Google OAuth error:', error);
+      console.error('[AuthTrace] Google OAuth error:', error, { ts: new Date().toISOString() });
       
       // Provide specific error messages for common issues
       let errorMessage = 'Google-Anmeldung fehlgeschlagen.';
@@ -341,7 +390,7 @@ export function AuthProvider({ children }) {
     if (!user) throw new Error('User not authenticated');
 
     try {
-      const { data, error } = await supabasePublic?.from('user_profiles')?.update(updates)?.eq('id', user?.id)?.select()?.single();
+      const { data, error } = await supabase?.from('user_profiles')?.update(updates)?.eq('id', user?.id)?.select()?.single();
 
       if (error) throw error;
       return data;
@@ -391,7 +440,7 @@ export function AuthProvider({ children }) {
 
     try {
       // Erst alle Daten löschen
-      const { data, error: functionError } = await supabasePublic?.rpc(
+      const { data, error: functionError } = await supabase?.rpc(
         'delete_user_gdpr_data',
         { target_user_id: user?.id }
       );
@@ -399,7 +448,7 @@ export function AuthProvider({ children }) {
       if (functionError) throw functionError;
 
       // Dann Auth-User löschen
-      const { error: deleteError } = await supabasePublic?.auth?.admin?.deleteUser(user?.id);
+      const { error: deleteError } = await supabase?.auth?.admin?.deleteUser(user?.id);
       if (deleteError) throw deleteError;
 
       // Lokalen State clearen

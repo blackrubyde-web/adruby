@@ -8,30 +8,25 @@ import ProgressIndicator from './components/ProgressIndicator';
 
 const AdRubyRegistration = () => {
   const navigate = useNavigate();
-  const { user, loading, onboardingStatus, isOnboardingComplete, isAuthReady } = useAuth();
+  const { session, isAuthReady } = useAuth();
   const [registrationStep, setRegistrationStep] = useState(1);
+  const [formVisible, setFormVisible] = useState(false);
 
   useEffect(() => {
-    if (loading || !isAuthReady) {
-      console.log('[Registration] waiting for auth/session', { loading, isAuthReady, path: window.location.pathname });
-      return;
-    }
-    if (!user) {
-      console.log('[Registration] no user -> show registration UI', { path: window.location.pathname });
-      return;
-    }
+    if (!isAuthReady) return;
 
-    if (isOnboardingComplete(onboardingStatus)) {
-      console.log('[Registration] user onboarded -> dashboard', { path: window.location.pathname });
-      navigate('/overview-dashboard');
+    if (session) {
+      console.log('[AuthTrace] registration: session detected -> redirect to payment verification', {
+        path: window.location.pathname,
+        ts: new Date().toISOString()
+      });
+      navigate('/payment-verification', { replace: true });
     } else {
-      console.log('[Registration] user not onboarded -> payment verification', { path: window.location.pathname });
-      navigate('/payment-verification');
+      setFormVisible(true);
     }
-  }, [user, loading, onboardingStatus, isOnboardingComplete, navigate, isAuthReady]);
+  }, [session, isAuthReady, navigate]);
 
-  // Show loading state while checking authentication
-  if (loading) {
+  if (!isAuthReady || (session && !formVisible)) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#C80000]"></div>

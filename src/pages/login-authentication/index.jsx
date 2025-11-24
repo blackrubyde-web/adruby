@@ -7,27 +7,30 @@ import SecurityFeatures from './components/SecurityFeatures';
 
 const LoginAuthentication = () => {
   const navigate = useNavigate();
-  const { user, loading, onboardingStatus, isOnboardingComplete, isAuthReady } = useAuth();
+  const { user, loading, isSubscribed, subscriptionStatus, isAuthReady } = useAuth();
 
   useEffect(() => {
     if (loading || !isAuthReady) {
-      console.log('[LoginAuth] waiting', { loading, isAuthReady });
+      console.log('[AuthTrace] LoginAuth waiting', { loading, isAuthReady, path: window.location.pathname, ts: new Date().toISOString() });
       return;
     }
 
     if (!user) {
-      console.log('[LoginAuth] no user -> stay on login/registration page');
+      console.log('[AuthTrace] LoginAuth no user -> stay on login/registration page', { path: window.location.pathname, ts: new Date().toISOString() });
       return;
     }
 
-    if (isOnboardingComplete(onboardingStatus)) {
-      console.log('[LoginAuth] redirect to dashboard', { path: window.location.pathname });
+    const hasActiveSub = typeof isSubscribed === 'function' ? isSubscribed() : false;
+    const subStatus = subscriptionStatus || null;
+
+    if (hasActiveSub) {
+      console.log('[AuthTrace] LoginAuth redirect to dashboard', { path: window.location.pathname, subStatus, ts: new Date().toISOString() });
       navigate('/overview-dashboard');
     } else {
-      console.log('[LoginAuth] redirect to payment verification', { path: window.location.pathname });
+      console.log('[AuthTrace] LoginAuth redirect to payment verification', { path: window.location.pathname, subStatus, ts: new Date().toISOString() });
       navigate('/payment-verification');
     }
-  }, [user, loading, onboardingStatus, isOnboardingComplete, navigate, isAuthReady]);
+  }, [user, loading, isSubscribed, subscriptionStatus, navigate, isAuthReady]);
 
   return (
     <div className="min-h-screen bg-background">

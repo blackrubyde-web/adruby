@@ -20,18 +20,19 @@ const LoginForm = () => {
   const [googleLoading, setGoogleLoading] = useState(false);
   const [error, setError] = useState('');
 
-  const { signIn, signUp, signInWithGoogle, user, loading: authLoading, onboardingStatus, isOnboardingComplete } = useAuth();
+  const { signIn, signUp, signInWithGoogle, user, loading: authLoading, isSubscribed, subscriptionStatus } = useAuth();
   const navigate = useNavigate();
 
   useEffect(() => {
     if (authLoading || !user) return;
 
-    if (isOnboardingComplete(onboardingStatus)) {
+    const hasActiveSub = typeof isSubscribed === 'function' ? isSubscribed() : false;
+    if (hasActiveSub) {
       navigate('/overview-dashboard');
     } else {
       navigate('/payment-verification');
     }
-  }, [user, authLoading, onboardingStatus, isOnboardingComplete, navigate]);
+  }, [user, authLoading, isSubscribed, subscriptionStatus, navigate]);
 
   const handleSubmit = async (e) => {
     e?.preventDefault();
@@ -63,12 +64,12 @@ const LoginForm = () => {
     setError('');
 
     try {
-      console.log('[Login] Google login clicked');
+      console.log('[AuthTrace] Google login clicked', { path: window.location.pathname, ts: new Date().toISOString() });
       const { error: googleError } = await signInWithGoogle();
       if (googleError) throw googleError;
       // OAuth will handle redirect automatically, no need to manually navigate
     } catch (err) {
-      console.error('[Login] Google signIn error', err);
+      console.error('[AuthTrace] Google signIn error', err, { ts: new Date().toISOString() });
       setError(err?.message);
     } finally {
       setGoogleLoading(false);
