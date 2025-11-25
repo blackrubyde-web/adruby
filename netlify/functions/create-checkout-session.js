@@ -69,7 +69,7 @@ export async function handler(event) {
       };
     };
 
-    const { profile, error: profileError, source } = await fetchProfile();
+    let { profile, error: profileError, source } = await fetchProfile();
 
     console.log('[StripeCheckout] profile lookup', {
       userId,
@@ -81,23 +81,46 @@ export async function handler(event) {
     let effectiveProfile = profile;
 
     if (!effectiveProfile) {
-      console.warn('[StripeCheckout] profile missing, attempting upsert', { userId, userEmail });
-      const { data: newProfile, error: upsertError } = await supabaseAdmin
-        .from(SUBSCRIPTION_TABLE)
-        .upsert({ id: userId, email: userEmail }, { onConflict: 'id' })
-        .select('id, email, stripe_customer_id')
-        .single();
+      console.warn('[StripeCheckout] profile missing, attempting to ensure + upsert', { userId, userEmail });
 
-      if (upsertError || !newProfile) {
-        console.error('[StripeCheckout] profile upsert failed', upsertError || 'no data returned', { userId, userEmail });
-        return {
-          statusCode: 404,
-          headers: corsHeaders(),
-          body: JSON.stringify({ error: 'Profil nicht gefunden. Bitte erneut anmelden.' })
-        };
+      // Try server-side RPC (if available) to create the profile consistently
+      try {
+        const { error: ensureError } = await supabaseAdmin.rpc('ensure_user_profile_exists', { target_user_id: userId });
+        if (ensureError) {
+          console.warn('[StripeCheckout] ensure_user_profile_exists RPC failed', ensureError.message);
+        }
+      } catch (rpcErr) {
+        console.warn('[StripeCheckout] ensure_user_profile_exists RPC threw', rpcErr?.message);
       }
 
-      effectiveProfile = newProfile;
+      // Re-fetch after RPC
+      ({ profile, error: profileError, source } = await fetchProfile());
+
+      // If still missing, do a last-resort upsert
+      if (!profile) {
+        const { data: newProfile, error: upsertError } = await supabaseAdmin
+          .from(SUBSCRIPTION_TABLE)
+          .upsert({ id: userId, email: userEmail }, { onConflict: 'id' })
+          .select('id, email, stripe_customer_id')
+          .single();
+
+        if (upsertError || !newProfile) {
+          console.error('[StripeCheckout] profile upsert failed', upsertError || 'no data returned', {
+            userId,
+            userEmail,
+            profileError: profileError?.message || null
+          });
+          return {
+            statusCode: 404,
+            headers: corsHeaders(),
+            body: JSON.stringify({ error: 'Profil nicht gefunden. Bitte erneut anmelden.' })
+          };
+        }
+
+        effectiveProfile = newProfile;
+      } else {
+        effectiveProfile = profile;
+      }
     }
 
     // 2) Ensure Stripe customer exists
