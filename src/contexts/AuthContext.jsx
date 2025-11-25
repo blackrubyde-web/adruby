@@ -189,28 +189,29 @@ export function AuthProvider({ children }) {
         const code = params.get('code');
         const errorDescription = params.get('error_description');
 
+        const { data, error } = await supabase?.auth?.getSession();
+        console.log('[AuthTrace] getSession result', { session: data?.session, error, path: window.location.pathname, ts: new Date().toISOString() });
+        handleSessionChange(data?.session, 'initial');
+
         if (code) {
           console.log('[AuthTrace] OAuth code detected in URL', { codePresent: true, path: window.location.pathname, ts: new Date().toISOString() });
         } else {
           console.log('[AuthTrace] no OAuth code in URL', { path: window.location.pathname, ts: new Date().toISOString() });
         }
 
-        if (code && !session) {
+        // Prevents "code verifier missing" noise: only exchange if no session yet.
+        if (code && !data?.session) {
           console.log('[AuthTrace] exchanging OAuth code for session', { path: window.location.pathname, ts: new Date().toISOString() });
-          const { data, error } = await supabase?.auth?.exchangeCodeForSession(code);
-          if (error) {
-            console.error('[AuthTrace] code exchange failed', error, { path: window.location.pathname, ts: new Date().toISOString() });
+          const { data: exchangeData, error: exchangeError } = await supabase?.auth?.exchangeCodeForSession(code);
+          if (exchangeError) {
+            console.error('[AuthTrace] code exchange failed', exchangeError, { path: window.location.pathname, ts: new Date().toISOString() });
           } else {
-            console.log('[AuthTrace] code exchange success', { hasSession: !!data?.session, ts: new Date().toISOString() });
-            handleSessionChange(data?.session, 'code-exchange');
+            console.log('[AuthTrace] code exchange success', { hasSession: !!exchangeData?.session, ts: new Date().toISOString() });
+            handleSessionChange(exchangeData?.session, 'code-exchange');
           }
           window.history.replaceState({}, document.title, window.location.pathname);
           console.log('[AuthTrace] cleaned OAuth code from URL', { path: window.location.pathname, ts: new Date().toISOString() });
         }
-
-        const { data, error } = await supabase?.auth?.getSession();
-        console.log('[AuthTrace] getSession result', { session: data?.session, error, path: window.location.pathname, ts: new Date().toISOString() });
-        handleSessionChange(data?.session, 'initial');
       } catch (error) {
         console.error('[AuthTrace] init error', error, { path: window.location.pathname, ts: new Date().toISOString() });
       } finally {

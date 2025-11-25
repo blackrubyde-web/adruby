@@ -112,15 +112,16 @@ const AdRubyPaymentVerification = () => {
 
           {/* Right Column - Payment Verification Form */}
           <div className="flex-1 lg:w-3/5 xl:w-1/2">
-            <div className="flex items-center justify-center min-h-full p-6 lg:p-12">
-              <div className="w-full max-w-md">
-                <PaymentVerificationForm 
-                  user={user}
-                  onSuccess={handleVerificationSuccess}
-                  onError={handleVerificationError}
-                />
-              </div>
+          <div className="flex items-center justify-center min-h-full p-6 lg:p-12">
+            <div className="w-full max-w-md">
+              <PaymentVerificationForm 
+                user={user}
+                isAuthReady={isAuthReady}
+                onSuccess={handleVerificationSuccess}
+                onError={handleVerificationError}
+              />
             </div>
+          </div>
           </div>
         </div>
 

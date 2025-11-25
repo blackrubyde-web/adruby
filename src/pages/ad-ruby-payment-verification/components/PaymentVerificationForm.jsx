@@ -3,7 +3,7 @@ import { motion } from 'framer-motion';
 import Button from '../../../components/ui/Button';
 import { startStripeCheckout } from '../../../utils/startStripeCheckout';
 
-const PaymentVerificationForm = ({ user, onSuccess, onError }) => {
+const PaymentVerificationForm = ({ user, onSuccess, onError, isAuthReady }) => {
   const [error, setError] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
 
@@ -17,6 +17,12 @@ const PaymentVerificationForm = ({ user, onSuccess, onError }) => {
   }, [user]);
 
   const handleStartTrial = async () => {
+    if (!isAuthReady) {
+      console.warn('[Payment] auth not ready, blocking checkout');
+      setError('Bitte kurz warten, Anmeldung wird geprüft.');
+      return;
+    }
+
     if (!user?.id || !user?.email) {
       const message = 'Bitte zuerst anmelden, um die Testphase zu starten.';
       console.warn('[Payment] missing user when starting checkout');
@@ -79,7 +85,7 @@ const PaymentVerificationForm = ({ user, onSuccess, onError }) => {
       <Button
         type="button"
         className="w-full bg-[#C80000] hover:bg-[#A00000] text-white py-3 text-base sm:text-lg"
-        disabled={isProcessing || !user}
+        disabled={isProcessing || !user || !isAuthReady}
         onClick={handleStartTrial}
       >
         {isProcessing ? 'Weiterleitung…' : '7 Tage kostenlos testen'}

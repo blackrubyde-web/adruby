@@ -7,8 +7,10 @@ export async function startStripeCheckout(userId, userEmail) {
     throw new Error(message);
   }
 
+  const endpoint = '/api/create-checkout-session'; // Netlify redirect handles /.netlify/functions/*
+
   try {
-    const response = await fetch('/api/create-checkout-session', {
+    const response = await fetch(endpoint, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ userId, userEmail })

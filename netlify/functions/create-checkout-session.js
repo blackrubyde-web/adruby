@@ -47,38 +47,49 @@ export async function handler(event) {
     console.log('[StripeCheckout] start', { userId, userEmail, ts: new Date().toISOString() });
 
     // 1) Load profile to ensure we can link the subscription to the Supabase user
-    const { data: profile, error: profileError } = await supabaseAdmin
-      .from(SUBSCRIPTION_TABLE)
-      .select('id, email, stripe_customer_id')
-      .eq('id', userId)
-      .single();
+    const fetchProfile = async () => {
+      const byId = await supabaseAdmin
+        .from(SUBSCRIPTION_TABLE)
+        .select('id, email, stripe_customer_id')
+        .eq('id', userId)
+        .single();
+
+      if (byId.data) return { profile: byId.data, error: null, source: 'id' };
+      // Fallback by email in case id mismatch (should not happen, but helps debugging)
+      const byEmail = await supabaseAdmin
+        .from(SUBSCRIPTION_TABLE)
+        .select('id, email, stripe_customer_id')
+        .eq('email', userEmail)
+        .maybeSingle();
+
+      return {
+        profile: byEmail.data || null,
+        error: byId.error || byEmail.error || null,
+        source: byEmail.data ? 'email' : null
+      };
+    };
+
+    const { profile, error: profileError, source } = await fetchProfile();
 
     console.log('[StripeCheckout] profile lookup', {
       userId,
       profileFound: !!profile,
+      lookupSource: source || 'none',
       supabaseError: profileError?.message || null
     });
 
     let effectiveProfile = profile;
 
-    if (profileError || !profile) {
-      console.warn('[StripeCheckout] profile missing, attempting to create placeholder', { userId, userEmail });
-      const { data: newProfile, error: insertError } = await supabaseAdmin
+    if (!effectiveProfile) {
+      console.warn('[StripeCheckout] profile missing, attempting upsert', { userId, userEmail });
+      const { data: newProfile, error: upsertError } = await supabaseAdmin
         .from(SUBSCRIPTION_TABLE)
-        .insert({
-          id: userId,
-          email: userEmail,
-          onboarding_completed: false,
-          payment_verified: false,
-          credits: 0,
-          subscription_status: null,
-          trial_ends_at: null
-        })
-        .select()
+        .upsert({ id: userId, email: userEmail }, { onConflict: 'id' })
+        .select('id, email, stripe_customer_id')
         .single();
 
-      if (insertError || !newProfile) {
-        console.error('[StripeCheckout] profile creation failed', insertError || 'no data returned', { userId });
+      if (upsertError || !newProfile) {
+        console.error('[StripeCheckout] profile upsert failed', upsertError || 'no data returned', { userId, userEmail });
         return {
           statusCode: 404,
           headers: corsHeaders(),
