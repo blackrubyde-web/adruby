@@ -53,17 +53,44 @@ export async function handler(event) {
       .eq('id', userId)
       .single();
 
+    console.log('[StripeCheckout] profile lookup', {
+      userId,
+      profileFound: !!profile,
+      supabaseError: profileError?.message || null
+    });
+
+    let effectiveProfile = profile;
+
     if (profileError || !profile) {
-      console.error('[StripeCheckout] profile lookup failed', profileError || 'not found', { userId });
-      return {
-        statusCode: 404,
-        headers: corsHeaders(),
-        body: JSON.stringify({ error: 'Profil nicht gefunden. Bitte erneut anmelden.' })
-      };
+      console.warn('[StripeCheckout] profile missing, attempting to create placeholder', { userId, userEmail });
+      const { data: newProfile, error: insertError } = await supabaseAdmin
+        .from(SUBSCRIPTION_TABLE)
+        .insert({
+          id: userId,
+          email: userEmail,
+          onboarding_completed: false,
+          payment_verified: false,
+          credits: 0,
+          subscription_status: null,
+          trial_ends_at: null
+        })
+        .select()
+        .single();
+
+      if (insertError || !newProfile) {
+        console.error('[StripeCheckout] profile creation failed', insertError || 'no data returned', { userId });
+        return {
+          statusCode: 404,
+          headers: corsHeaders(),
+          body: JSON.stringify({ error: 'Profil nicht gefunden. Bitte erneut anmelden.' })
+        };
+      }
+
+      effectiveProfile = newProfile;
     }
 
     // 2) Ensure Stripe customer exists
-    let customerId = profile?.stripe_customer_id;
+    let customerId = effectiveProfile?.stripe_customer_id;
     if (!customerId) {
       const customer = await stripe.customers.create({
         email: userEmail,
