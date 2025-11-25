@@ -52,7 +52,7 @@ export async function handler(event) {
         .from(SUBSCRIPTION_TABLE)
         .select('id, email, stripe_customer_id')
         .eq('id', userId)
-        .single();
+        .maybeSingle();
 
       if (byId.data) return { profile: byId.data, error: null, source: 'id' };
       // Fallback by email in case id mismatch (should not happen, but helps debugging)
@@ -100,9 +100,15 @@ export async function handler(event) {
       if (!profile) {
         const { data: newProfile, error: upsertError } = await supabaseAdmin
           .from(SUBSCRIPTION_TABLE)
-          .upsert({ id: userId, email: userEmail }, { onConflict: 'id' })
+          .upsert({
+            id: userId,
+            email: userEmail,
+            credits: 0,
+            onboarding_completed: false,
+            payment_verified: false
+          }, { onConflict: 'id' })
           .select('id, email, stripe_customer_id')
-          .single();
+          .maybeSingle();
 
         if (upsertError || !newProfile) {
           console.error('[StripeCheckout] profile upsert failed', upsertError || 'no data returned', {
@@ -111,9 +117,9 @@ export async function handler(event) {
             profileError: profileError?.message || null
           });
           return {
-            statusCode: 404,
+            statusCode: 500,
             headers: corsHeaders(),
-            body: JSON.stringify({ error: 'Profil nicht gefunden. Bitte erneut anmelden.' })
+            body: JSON.stringify({ error: 'Profil konnte nicht angelegt werden.' })
           };
         }
 
@@ -122,6 +128,7 @@ export async function handler(event) {
         effectiveProfile = profile;
       }
     }
+    console.log('[Stripe] profile ready', { userId, customerId: effectiveProfile?.stripe_customer_id || null });
 
     // 2) Ensure Stripe customer exists
     let customerId = effectiveProfile?.stripe_customer_id;
@@ -141,6 +148,7 @@ export async function handler(event) {
         console.error('[StripeCheckout] failed to persist stripe_customer_id', updateError, { userId, customerId });
         throw updateError;
       }
+      console.log('[Stripe] created Stripe customer', { userId, customerId });
     }
 
     // 3) Build URLs from environment or request origin

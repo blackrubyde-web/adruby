@@ -28,38 +28,12 @@ export async function handler(event) {
       };
     }
 
-    // Load profile to get/create Stripe customer
-    const { data: profile, error: profileError } = await supabaseAdmin
-      .from(SUBSCRIPTION_TABLE)
-      .select('stripe_customer_id, email')
-      .eq('id', userId)
-      .single();
-
-    if (profileError) {
-      console.error('[Stripe] profile lookup error', profileError);
-      throw profileError;
-    }
-
-    let customerId = profile?.stripe_customer_id;
-
-    if (!customerId) {
-      const customer = await stripe.customers.create({
-        email: email || profile?.email,
-        name,
-        metadata: { supabase_user_id: userId }
-      });
-      customerId = customer.id;
-
-      const { error: updateError } = await supabaseAdmin
-        .from(SUBSCRIPTION_TABLE)
-        .update({ stripe_customer_id: customerId })
-        .eq('id', userId);
-
-      if (updateError) {
-        console.error('[Stripe] failed to save stripe_customer_id', updateError);
-        throw updateError;
-      }
-    }
+    // Load or create profile, then ensure Stripe customer
+    const { profile, customerId } = await ensureProfileAndCustomer({
+      userId,
+      email,
+      name
+    });
 
     const setupIntent = await stripe.setupIntents.create({
       customer: customerId,
@@ -80,6 +54,67 @@ export async function handler(event) {
       body: JSON.stringify({ error: error.message || 'Internal error' })
     };
   }
+}
+
+async function ensureProfileAndCustomer({ userId, email, name }) {
+  // Load profile by id
+  const { data: profile, error: profileError } = await supabaseAdmin
+    .from(SUBSCRIPTION_TABLE)
+    .select('id, email, stripe_customer_id')
+    .eq('id', userId)
+    .maybeSingle();
+
+  let effectiveProfile = profile;
+
+  if (profileError) {
+    console.warn('[Stripe] profile lookup warning', profileError.message);
+  }
+
+  if (!effectiveProfile) {
+    const { data: newProfile, error: upsertError } = await supabaseAdmin
+      .from(SUBSCRIPTION_TABLE)
+      .upsert({
+        id: userId,
+        email: email || null,
+        credits: 0,
+        onboarding_completed: false,
+        payment_verified: false
+      }, { onConflict: 'id' })
+      .select('id, email, stripe_customer_id')
+      .maybeSingle();
+
+    if (upsertError || !newProfile) {
+      console.error('[Stripe] profile upsert failed', upsertError || 'no data returned', { userId, email });
+      throw upsertError || new Error('Profil konnte nicht angelegt werden');
+    }
+    effectiveProfile = newProfile;
+  }
+
+  let customerId = effectiveProfile?.stripe_customer_id;
+
+  if (!customerId) {
+    const customer = await stripe.customers.create({
+      email: email || effectiveProfile?.email,
+      name,
+      metadata: { supabase_user_id: userId }
+    });
+    customerId = customer.id;
+
+    const { error: updateError } = await supabaseAdmin
+      .from(SUBSCRIPTION_TABLE)
+      .update({ stripe_customer_id: customerId })
+      .eq('id', userId);
+
+    if (updateError) {
+      console.error('[Stripe] failed to save stripe_customer_id', updateError);
+      throw updateError;
+    }
+
+    console.log('[Stripe] created Stripe customer', { userId, customerId });
+  }
+
+  console.log('[Stripe] profile ready', { userId, customerId });
+  return { profile: effectiveProfile, customerId };
 }
 
 const corsHeaders = () => ({
