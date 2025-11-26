@@ -1,4 +1,4 @@
-import { stripe, supabaseAdmin, SUBSCRIPTION_TABLE } from './_shared/clients.js';
+import { stripe, supabaseAdmin } from './_shared/clients.js';
 
 const corsHeaders = () => ({
   'Content-Type': 'application/json',
@@ -20,7 +20,7 @@ export async function handler(event) {
     };
   }
 
-  const requiredEnv = ['STRIPE_SECRET_KEY', 'STRIPE_PRICE_ID', 'SUPABASE_SERVICE_ROLE_KEY', 'SUPABASE_URL'];
+  const requiredEnv = ['STRIPE_PRICE_ID', 'STRIPE_SECRET_KEY', 'SUPABASE_URL', 'SUPABASE_SERVICE_ROLE_KEY'];
   const missingEnv = requiredEnv.filter((key) => !process.env[key]);
 
   if (missingEnv.length) {
@@ -34,162 +34,76 @@ export async function handler(event) {
 
   try {
     const body = JSON.parse(event.body || '{}');
-    const { userId, userEmail } = body;
+    const { userId, email } = body;
 
-    if (!userId || !userEmail) {
+    if (!userId || !email) {
       return {
         statusCode: 400,
         headers: corsHeaders(),
-        body: JSON.stringify({ error: 'userId and userEmail are required' })
+        body: JSON.stringify({ error: 'userId and email are required' })
       };
     }
 
-    console.log('[StripeCheckout] start', { userId, userEmail, ts: new Date().toISOString() });
+    console.log('[StripeCheckout] start', { userId, email });
 
-    // 1) Load profile to ensure we can link the subscription to the Supabase user
-    const fetchProfile = async () => {
-      const byId = await supabaseAdmin
-        .from(SUBSCRIPTION_TABLE)
-        .select('id, email, stripe_customer_id')
-        .eq('id', userId)
-        .maybeSingle();
+    // Load profile (required)
+    const { data: profile, error: profileError } = await supabaseAdmin
+      .from('user_profiles')
+      .select('id, email, stripe_customer_id, trial_status, trial_started_at, trial_expires_at, onboarding_completed, payment_verified, verification_method')
+      .eq('id', userId)
+      .maybeSingle();
 
-      if (byId.data) return { profile: byId.data, error: null, source: 'id' };
-      // Fallback by email in case id mismatch (should not happen, but helps debugging)
-      const byEmail = await supabaseAdmin
-        .from(SUBSCRIPTION_TABLE)
-        .select('id, email, stripe_customer_id')
-        .eq('email', userEmail)
-        .maybeSingle();
+    if (profileError) {
+      console.error('[StripeCheckout] profile lookup error', profileError);
+    }
 
+    if (!profile) {
+      console.error('[StripeCheckout] profile not found', { userId });
       return {
-        profile: byEmail.data || null,
-        error: byId.error || byEmail.error || null,
-        source: byEmail.data ? 'email' : null
+        statusCode: 404,
+        headers: corsHeaders(),
+        body: JSON.stringify({ error: 'Profile not found for userId' })
       };
-    };
-
-    let { profile, error: profileError, source } = await fetchProfile();
-
-    console.log('[StripeCheckout] profile lookup', {
-      userId,
-      profileFound: !!profile,
-      lookupSource: source || 'none',
-      supabaseError: profileError?.message || null
-    });
-
-    let effectiveProfile = profile;
-
-    if (!effectiveProfile) {
-      console.warn('[StripeCheckout] profile missing, attempting to ensure + upsert', { userId, userEmail });
-
-      // Try server-side RPC (if available) to create the profile consistently
-      try {
-        const { error: ensureError } = await supabaseAdmin.rpc('ensure_user_profile_exists', { target_user_id: userId });
-        if (ensureError) {
-          console.warn('[StripeCheckout] ensure_user_profile_exists RPC failed', ensureError.message);
-        }
-      } catch (rpcErr) {
-        console.warn('[StripeCheckout] ensure_user_profile_exists RPC threw', rpcErr?.message);
-      }
-
-      // Re-fetch after RPC
-      ({ profile, error: profileError, source } = await fetchProfile());
-
-      // If still missing, do a last-resort upsert
-      if (!profile) {
-        const { data: newProfile, error: upsertError } = await supabaseAdmin
-          .from(SUBSCRIPTION_TABLE)
-          .upsert({
-            id: userId,
-            email: userEmail,
-            credits: 0,
-            onboarding_completed: false,
-            payment_verified: false
-          }, { onConflict: 'id' })
-          .select('id, email, stripe_customer_id')
-          .maybeSingle();
-
-        if (upsertError || !newProfile) {
-          console.error('[StripeCheckout] profile upsert failed', upsertError || 'no data returned', {
-            userId,
-            userEmail,
-            profileError: profileError?.message || null
-          });
-          return {
-            statusCode: 500,
-            headers: corsHeaders(),
-            body: JSON.stringify({ error: 'Profil konnte nicht angelegt werden.' })
-          };
-        }
-
-        effectiveProfile = newProfile;
-      } else {
-        effectiveProfile = profile;
-      }
     }
-    console.log('[Stripe] profile ready', { userId, customerId: effectiveProfile?.stripe_customer_id || null });
 
-    // 2) Ensure Stripe customer exists
-    let customerId = effectiveProfile?.stripe_customer_id;
+    // Ensure Stripe customer
+    let customerId = profile?.stripe_customer_id;
     if (!customerId) {
       const customer = await stripe.customers.create({
-        email: userEmail,
-        metadata: { supabaseUserId: userId }
+        email: profile?.email || email,
+        metadata: { supabase_user_id: userId }
       });
       customerId = customer.id;
 
       const { error: updateError } = await supabaseAdmin
-        .from(SUBSCRIPTION_TABLE)
+        .from('user_profiles')
         .update({ stripe_customer_id: customerId })
         .eq('id', userId);
 
       if (updateError) {
         console.error('[StripeCheckout] failed to persist stripe_customer_id', updateError, { userId, customerId });
-        throw updateError;
+        // soft fail: proceed with session creation
       }
       console.log('[Stripe] created Stripe customer', { userId, customerId });
     }
 
-    // 3) Build URLs from environment or request origin
-    const appBaseUrl = (
-      process.env.FRONTEND_URL ||
-      process.env.VITE_APP_URL ||
-      process.env.SITE_URL ||
-      process.env.URL ||
-      event.headers?.origin ||
-      'http://localhost:5173'
-    ).replace(/\/$/, '');
+    console.log('[Stripe] profile ready', { userId, customerId });
 
-    const successUrl = `${appBaseUrl}/payment-success?session_id={CHECKOUT_SESSION_ID}`;
-    const cancelUrl = `${appBaseUrl}/payment-verification?status=cancel`;
-
-    // 4) Create Checkout Session with 7-day trial
+    // Create checkout session
     const checkoutSession = await stripe.checkout.sessions.create({
       mode: 'subscription',
       customer: customerId,
-      line_items: [
-        {
-          price: process.env.STRIPE_PRICE_ID,
-          quantity: 1
-        }
-      ],
-      allow_promotion_codes: false,
+      client_reference_id: userId,
+      line_items: [{ price: process.env.STRIPE_PRICE_ID, quantity: 1 }],
       subscription_data: {
-        trial_period_days: 7,
-        metadata: { supabaseUserId: userId }
+        metadata: { user_id: userId }
       },
-      metadata: { supabaseUserId: userId, userEmail },
-      success_url: successUrl,
-      cancel_url: cancelUrl
+      metadata: { user_id: userId },
+      success_url: 'https://www.adruby.de/payment-success?session_id={CHECKOUT_SESSION_ID}',
+      cancel_url: 'https://www.adruby.de/payment-cancelled'
     });
 
-    console.log('[StripeCheckout] session created', {
-      userId,
-      sessionId: checkoutSession?.id,
-      customerId,
-      ts: new Date().toISOString()
-    });
+    console.log('[StripeCheckout] session created', { userId, sessionId: checkoutSession?.id, customerId });
 
     return {
       statusCode: 200,
@@ -197,7 +111,7 @@ export async function handler(event) {
       body: JSON.stringify({ url: checkoutSession?.url })
     };
   } catch (error) {
-    console.error('[StripeCheckout] error creating session', { message: error?.message, stack: error?.stack });
+    console.error('[StripeCheckout] error creating session', error);
     return {
       statusCode: 500,
       headers: corsHeaders(),
