@@ -1,4 +1,5 @@
-import { stripe, supabaseAdmin } from './_shared/clients.js';
+// netlify/functions/create-checkout-session.js
+import { stripe, supabaseAdmin, SUBSCRIPTION_TABLE } from './_shared/clients.js';
 
 const corsHeaders = () => ({
   'Content-Type': 'application/json',
@@ -8,6 +9,7 @@ const corsHeaders = () => ({
 });
 
 export async function handler(event) {
+  // CORS-Preflight
   if (event.httpMethod === 'OPTIONS') {
     return { statusCode: 200, headers: corsHeaders() };
   }
@@ -20,90 +22,178 @@ export async function handler(event) {
     };
   }
 
-  const requiredEnv = ['STRIPE_PRICE_ID', 'STRIPE_SECRET_KEY', 'SUPABASE_URL', 'SUPABASE_SERVICE_ROLE_KEY'];
-  const missingEnv = requiredEnv.filter((key) => !process.env[key]);
+  // --- Env check ---
+  const requiredEnv = [
+    'STRIPE_SECRET_KEY',
+    'STRIPE_PRICE_ID',
+    'SUPABASE_URL',
+    'SUPABASE_SERVICE_ROLE_KEY'
+  ];
+  const missingEnv = requiredEnv.filter((k) => !process.env[k]);
 
   if (missingEnv.length) {
     console.error('[StripeCheckout] missing env vars', missingEnv);
     return {
       statusCode: 500,
       headers: corsHeaders(),
-      body: JSON.stringify({ error: `Missing environment variables: ${missingEnv.join(', ')}` })
+      body: JSON.stringify({
+        error: `Missing environment variables: ${missingEnv.join(', ')}`
+      })
+    };
+  }
+
+  // --- Body parsen & loggen ---
+  let body = {};
+  try {
+    body = event.body ? JSON.parse(event.body) : {};
+  } catch (err) {
+    console.error('[StripeCheckout] failed to parse JSON body', {
+      rawBody: event.body,
+      error: err
+    });
+    return {
+      statusCode: 400,
+      headers: corsHeaders(),
+      body: JSON.stringify({ error: 'Invalid JSON body' })
+    };
+  }
+
+  // flexible Feldnamen – falls Frontend mal anders heißt
+  const userId =
+    body.userId || body.user_id || body.id || body.user_id_pk || null;
+  const email =
+    body.email || body.userEmail || body.user_email || body.mail || null;
+
+  console.log('[StripeCheckout] incoming request', {
+    rawBody: event.body,
+    parsedBody: body,
+    resolvedUserId: userId,
+    resolvedEmail: email
+  });
+
+  if (!userId || !email) {
+    console.error('[StripeCheckout] Missing userId or email', {
+      body,
+      userId,
+      email
+    });
+    return {
+      statusCode: 400,
+      headers: corsHeaders(),
+      body: JSON.stringify({
+        error:
+          'Checkout konnte nicht gestartet werden: Benutzerinformationen fehlen (userId / email).'
+      })
     };
   }
 
   try {
-    const body = JSON.parse(event.body || '{}');
-    const { userId, email } = body;
-
-    if (!userId || !email) {
-      return {
-        statusCode: 400,
-        headers: corsHeaders(),
-        body: JSON.stringify({ error: 'userId and email are required' })
-      };
-    }
-
     console.log('[StripeCheckout] start', { userId, email });
 
-    // Load profile (required)
+    // --- Profil laden / anlegen ---
     const { data: profile, error: profileError } = await supabaseAdmin
-      .from('user_profiles')
-      .select('id, email, stripe_customer_id, trial_status, trial_started_at, trial_expires_at, onboarding_completed, payment_verified, verification_method')
+      .from(SUBSCRIPTION_TABLE)
+      .select('id, email, stripe_customer_id')
       .eq('id', userId)
       .maybeSingle();
 
+    let effectiveProfile = profile;
+
     if (profileError) {
-      console.error('[StripeCheckout] profile lookup error', profileError);
+      console.warn('[StripeCheckout] profile lookup warning', profileError);
     }
 
-    if (!profile) {
-      console.error('[StripeCheckout] profile not found', { userId });
-      return {
-        statusCode: 404,
-        headers: corsHeaders(),
-        body: JSON.stringify({ error: 'Profile not found for userId' })
-      };
+    if (!effectiveProfile) {
+      console.log('[StripeCheckout] creating new profile', { userId, email });
+
+      const { data: newProfile, error: upsertError } = await supabaseAdmin
+        .from(SUBSCRIPTION_TABLE)
+        .upsert(
+          {
+            id: userId,
+            email,
+            credits: 0,
+            onboarding_completed: false,
+            payment_verified: false
+          },
+          { onConflict: 'id' }
+        )
+        .select('id, email, stripe_customer_id')
+        .maybeSingle();
+
+      if (upsertError || !newProfile) {
+        console.error(
+          '[StripeCheckout] profile upsert failed',
+          upsertError || 'no data returned',
+          { userId, email }
+        );
+        return {
+          statusCode: 500,
+          headers: corsHeaders(),
+          body: JSON.stringify({
+            error: 'Profil konnte nicht angelegt werden.'
+          })
+        };
+      }
+
+      effectiveProfile = newProfile;
     }
 
-    // Ensure Stripe customer
-    let customerId = profile?.stripe_customer_id;
+    // --- Stripe-Kunde sicherstellen ---
+    let customerId = effectiveProfile?.stripe_customer_id;
+
     if (!customerId) {
+      console.log('[Stripe] creating new customer', { userId, email });
       const customer = await stripe.customers.create({
-        email: profile?.email || email,
+        email,
         metadata: { supabase_user_id: userId }
       });
       customerId = customer.id;
 
       const { error: updateError } = await supabaseAdmin
-        .from('user_profiles')
+        .from(SUBSCRIPTION_TABLE)
         .update({ stripe_customer_id: customerId })
         .eq('id', userId);
 
       if (updateError) {
-        console.error('[StripeCheckout] failed to persist stripe_customer_id', updateError, { userId, customerId });
-        // soft fail: proceed with session creation
+        console.error(
+          '[StripeCheckout] failed to persist stripe_customer_id',
+          updateError,
+          { userId, customerId }
+        );
+        throw updateError;
       }
-      console.log('[Stripe] created Stripe customer', { userId, customerId });
+
+      console.log('[Stripe] customer created & saved', { userId, customerId });
     }
 
     console.log('[Stripe] profile ready', { userId, customerId });
 
-    // Create checkout session
+    // --- Checkout-Session erstellen ---
     const checkoutSession = await stripe.checkout.sessions.create({
       mode: 'subscription',
       customer: customerId,
       client_reference_id: userId,
-      line_items: [{ price: process.env.STRIPE_PRICE_ID, quantity: 1 }],
+      line_items: [
+        {
+          price: process.env.STRIPE_PRICE_ID,
+          quantity: 1
+        }
+      ],
       subscription_data: {
         metadata: { user_id: userId }
       },
       metadata: { user_id: userId },
-      success_url: 'https://www.adruby.de/payment-success?session_id={CHECKOUT_SESSION_ID}',
+      success_url:
+        'https://www.adruby.de/payment-success?session_id={CHECKOUT_SESSION_ID}',
       cancel_url: 'https://www.adruby.de/payment-cancelled'
     });
 
-    console.log('[StripeCheckout] session created', { userId, sessionId: checkoutSession?.id, customerId });
+    console.log('[StripeCheckout] session created', {
+      userId,
+      sessionId: checkoutSession?.id,
+      customerId
+    });
 
     return {
       statusCode: 200,
@@ -115,7 +205,10 @@ export async function handler(event) {
     return {
       statusCode: 500,
       headers: corsHeaders(),
-      body: JSON.stringify({ error: error?.message || 'Checkout konnte nicht gestartet werden' })
+      body: JSON.stringify({
+        error:
+          error?.message || 'Checkout konnte nicht gestartet werden. (Server)'
+      })
     };
   }
 }
