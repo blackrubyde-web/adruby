@@ -9,19 +9,34 @@ const corsHeaders = () => ({
   'Access-Control-Allow-Methods': 'POST, OPTIONS'
 });
 
-// Hilfsfunktion: Subscription-Daten nach Supabase schreiben
+// Hilfsfunktion: Subscription-Daten nach Supabase schreiben (immer upsert)
 async function updateUserFromSubscription(subscription) {
   if (!subscription) {
     console.warn('[StripeWebhook] updateUserFromSubscription called without subscription');
     return;
   }
 
-  const userId = subscription.metadata?.user_id;
+  console.log('[StripeWebhook] raw subscription object', {
+    id: subscription.id,
+    status: subscription.status,
+    customer: subscription.customer,
+    metadata: subscription.metadata,
+    trial_start: subscription.trial_start,
+    trial_end: subscription.trial_end
+  });
+
+  // userId aus metadata ziehen (user_id oder userId)
+  const userId =
+    subscription.metadata?.user_id ||
+    subscription.metadata?.userId ||
+    null;
+
   const customerId = subscription.customer;
 
   if (!userId) {
     console.warn('[StripeWebhook] subscription without user_id metadata', {
-      subscriptionId: subscription.id
+      subscriptionId: subscription.id,
+      metadata: subscription.metadata
     });
     return;
   }
@@ -37,52 +52,70 @@ async function updateUserFromSubscription(subscription) {
       : null;
 
   const trialStatus = status === 'trialing' ? 'active' : 'inactive';
-
   const paymentVerified = status === 'trialing' || status === 'active';
-  const onboardingCompleted = paymentVerified; // Wenn bezahlt / Trial aktiv, ist Onboarding im Prinzip durch
+  const onboardingCompleted = paymentVerified; // wenn Trial/Subscription aktiv ist, betrachten wir das Onboarding als abgeschlossen
 
-  console.log('[StripeWebhook] updating user profile from subscription', {
+  console.log('[StripeWebhook] upserting user subscription', {
     userId,
     subscriptionId: subscription.id,
+    customerId,
     status,
     trialStatus,
     trialStart,
     trialEnd
   });
 
-  const { error } = await supabaseAdmin
-    .from(SUBSCRIPTION_TABLE)
-    .update({
-      stripe_customer_id: customerId,
-      stripe_subscription_id: subscription.id,
-      subscription_status: status,
-      trial_status: trialStatus,
-      trial_started_at: trialStart,
-      trial_expires_at: trialEnd,
-      payment_verified: paymentVerified,
-      onboarding_completed: onboardingCompleted
-    })
-    .eq('id', userId);
+  try {
+    const { data, error } = await supabaseAdmin
+      .from(SUBSCRIPTION_TABLE)
+      .upsert(
+        {
+          id: userId, // id = Supabase auth.users.id
+          stripe_customer_id: customerId,
+          stripe_subscription_id: subscription.id,
+          subscription_status: status,
+          trial_status: trialStatus,
+          trial_started_at: trialStart,
+          trial_expires_at: trialEnd,
+          payment_verified: paymentVerified,
+          onboarding_completed: onboardingCompleted
+        },
+        {
+          onConflict: 'id'
+        }
+      )
+      .select()
+      .single();
 
-  if (error) {
-    console.error('[StripeWebhook] failed to update user profile', error, {
-      userId,
-      subscriptionId: subscription.id
-    });
-  } else {
-    console.log('[StripeWebhook] user profile updated successfully', {
-      userId,
-      subscriptionId: subscription.id,
-      status
-    });
+    if (error) {
+      console.error('[StripeWebhook] failed to upsert user subscription', error, {
+        userId,
+        subscriptionId: subscription.id
+      });
+    } else {
+      console.log('[StripeWebhook] user subscription upserted successfully', {
+        userId,
+        subscriptionId: subscription.id,
+        status,
+        row: data
+      });
+    }
+  } catch (err) {
+    console.error(
+      '[StripeWebhook] unexpected error during upsert',
+      err?.message,
+      { userId, subscriptionId: subscription.id }
+    );
   }
 }
 
 export async function handler(event) {
+  // CORS Preflight
   if (event.httpMethod === 'OPTIONS') {
     return { statusCode: 200, headers: corsHeaders() };
   }
 
+  // Nur POST erlauben
   if (event.httpMethod !== 'POST') {
     return {
       statusCode: 405,
@@ -92,7 +125,10 @@ export async function handler(event) {
   }
 
   const sig =
-    event.headers['stripe-signature'] || event.headers['Stripe-Signature'];
+    event.headers['stripe-signature'] ||
+    event.headers['Stripe-Signature'] ||
+    event.headers['STRIPE-SIGNATURE'];
+
   const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
 
   if (!webhookSecret) {
@@ -105,6 +141,7 @@ export async function handler(event) {
   }
 
   let stripeEvent;
+
   try {
     // rawBody für Stripe-Signaturprüfung
     const rawBody =
@@ -125,7 +162,7 @@ export async function handler(event) {
     return {
       statusCode: 400,
       headers: corsHeaders(),
-      body: `Webhook Error: ${err.message}`
+      body: JSON.stringify({ error: `Webhook Error: ${err.message}` })
     };
   }
 
@@ -144,11 +181,20 @@ export async function handler(event) {
       case 'checkout.session.completed': {
         // Checkout fertig → Subscription ziehen und in Supabase schreiben
         const subscriptionId = payload.subscription;
+
         if (subscriptionId) {
-          const subscription = await stripe.subscriptions.retrieve(
-            subscriptionId
-          );
-          await updateUserFromSubscription(subscription);
+          try {
+            const subscription = await stripe.subscriptions.retrieve(
+              subscriptionId
+            );
+            await updateUserFromSubscription(subscription);
+          } catch (err) {
+            console.error(
+              '[StripeWebhook] failed to retrieve subscription from checkout.session.completed',
+              err?.message,
+              { subscriptionId }
+            );
+          }
         } else {
           console.warn(
             '[StripeWebhook] checkout.session.completed without subscription id',
@@ -166,13 +212,54 @@ export async function handler(event) {
         break;
       }
 
+      case 'invoice.payment_succeeded': {
+        // Zahlung erfolgreich → Subscription aus invoice ziehen und aktualisieren
+        const subscriptionId = payload.subscription;
+        if (subscriptionId) {
+          try {
+            const subscription = await stripe.subscriptions.retrieve(
+              subscriptionId
+            );
+            await updateUserFromSubscription(subscription);
+          } catch (err) {
+            console.error(
+              '[StripeWebhook] failed to retrieve subscription from invoice.payment_succeeded',
+              err?.message,
+              { subscriptionId }
+            );
+          }
+        } else {
+          console.log(
+            '[StripeWebhook] invoice.payment_succeeded without subscription id',
+            { invoiceId: payload.id }
+          );
+        }
+        break;
+      }
+
       case 'invoice.payment_failed': {
-        // Optional: Status auf „inactive“ setzen oder nur loggen
+        // Zahlung fehlgeschlagen → Optional: Subscription auf "inactive" setzen
         console.log('[StripeWebhook] invoice.payment_failed', {
           invoiceId: payload.id,
           customer: payload.customer,
           subscription: payload.subscription
         });
+
+        const subscriptionId = payload.subscription;
+        if (subscriptionId) {
+          try {
+            const subscription = await stripe.subscriptions.retrieve(
+              subscriptionId
+            );
+            await updateUserFromSubscription(subscription);
+          } catch (err) {
+            console.error(
+              '[StripeWebhook] failed to retrieve subscription from invoice.payment_failed',
+              err?.message,
+              { subscriptionId }
+            );
+          }
+        }
         break;
       }
 
@@ -186,7 +273,7 @@ export async function handler(event) {
       body: JSON.stringify({ received: true })
     };
   } catch (err) {
-    console.error('[StripeWebhook] handler error', err?.message);
+    console.error('[StripeWebhook] handler error', err?.message, err?.stack);
     return {
       statusCode: 500,
       headers: corsHeaders(),
