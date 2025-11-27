@@ -22,14 +22,14 @@ export async function handler(event) {
     };
   }
 
-  // --- Env check ---
+  // --- Env-Check ---
   const requiredEnv = [
     'STRIPE_SECRET_KEY',
     'STRIPE_PRICE_ID',
     'SUPABASE_URL',
     'SUPABASE_SERVICE_ROLE_KEY'
   ];
-  const missingEnv = requiredEnv.filter((k) => !process.env[k]);
+  const missingEnv = requiredEnv.filter((key) => !process.env[key]);
 
   if (missingEnv.length) {
     console.error('[StripeCheckout] missing env vars', missingEnv);
@@ -42,7 +42,7 @@ export async function handler(event) {
     };
   }
 
-  // --- Body parsen & loggen ---
+  // --- Body parsen ---
   let body = {};
   try {
     body = event.body ? JSON.parse(event.body) : {};
@@ -58,7 +58,7 @@ export async function handler(event) {
     };
   }
 
-  // flexible Feldnamen – falls Frontend mal anders heißt
+  // flexible Feldnamen, falls Frontend anders sendet
   const userId =
     body.userId || body.user_id || body.id || body.user_id_pk || null;
   const email =
@@ -72,7 +72,7 @@ export async function handler(event) {
   });
 
   if (!userId || !email) {
-    console.error('[StripeCheckout] Missing userId or email', {
+    console.error('[StripeCheckout] missing userId or email', {
       body,
       userId,
       email
@@ -90,7 +90,7 @@ export async function handler(event) {
   try {
     console.log('[StripeCheckout] start', { userId, email });
 
-    // --- Profil laden / anlegen ---
+    // --- Profil laden / erstellen ---
     const { data: profile, error: profileError } = await supabaseAdmin
       .from(SUBSCRIPTION_TABLE)
       .select('id, email, stripe_customer_id')
@@ -104,7 +104,10 @@ export async function handler(event) {
     }
 
     if (!effectiveProfile) {
-      console.log('[StripeCheckout] creating new profile', { userId, email });
+      console.log('[StripeCheckout] no profile found, creating new one', {
+        userId,
+        email
+      });
 
       const { data: newProfile, error: upsertError } = await supabaseAdmin
         .from(SUBSCRIPTION_TABLE)
@@ -144,10 +147,12 @@ export async function handler(event) {
 
     if (!customerId) {
       console.log('[Stripe] creating new customer', { userId, email });
+
       const customer = await stripe.customers.create({
         email,
         metadata: { supabase_user_id: userId }
       });
+
       customerId = customer.id;
 
       const { error: updateError } = await supabaseAdmin
@@ -169,7 +174,7 @@ export async function handler(event) {
 
     console.log('[Stripe] profile ready', { userId, customerId });
 
-    // --- Checkout-Session erstellen ---
+    // --- Checkout-Session mit 7 Tagen Trial ---
     const checkoutSession = await stripe.checkout.sessions.create({
       mode: 'subscription',
       customer: customerId,
@@ -181,9 +186,15 @@ export async function handler(event) {
         }
       ],
       subscription_data: {
-        metadata: { user_id: userId }
+        // 👉 Hier wird die 7-Tage-Testphase gesetzt
+        trial_period_days: 7,
+        metadata: {
+          user_id: userId
+        }
       },
-      metadata: { user_id: userId },
+      metadata: {
+        user_id: userId
+      },
       success_url:
         'https://www.adruby.de/payment-success?session_id={CHECKOUT_SESSION_ID}',
       cancel_url: 'https://www.adruby.de/payment-cancelled'
