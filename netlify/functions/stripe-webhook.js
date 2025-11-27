@@ -9,275 +9,259 @@ const corsHeaders = () => ({
   'Access-Control-Allow-Methods': 'POST, OPTIONS'
 });
 
-// Hilfsfunktion: Subscription-Daten nach Supabase schreiben (immer upsert)
-async function updateUserFromSubscription(subscription) {
+// Hilfsfunktion: user_id aus Subscription + Customer-Metadata auflösen
+async function resolveUserIdAndCustomer(subscription, source = 'unknown') {
   if (!subscription) {
-    console.warn('[StripeWebhook] updateUserFromSubscription called without subscription');
-    return;
+    console.warn('[Webhook] resolveUserIdAndCustomer called without subscription', { source });
+    return { userId: null, customerId: null };
   }
 
-  console.log('[StripeWebhook] raw subscription object', {
-    id: subscription.id,
-    status: subscription.status,
-    customer: subscription.customer,
-    metadata: subscription.metadata,
-    trial_start: subscription.trial_start,
-    trial_end: subscription.trial_end
-  });
+  const customerId = subscription.customer || null;
+  const md = subscription.metadata || {};
 
-  // userId aus metadata ziehen (user_id oder userId)
-  const userId =
-    subscription.metadata?.user_id ||
-    subscription.metadata?.userId ||
+  let userId =
+    md.user_id ||
+    md.userId ||
+    md.supabase_user_id ||
+    md.supabaseUserId ||
     null;
 
-  const customerId = subscription.customer;
-
-  if (!userId) {
-    console.warn('[StripeWebhook] subscription without user_id metadata', {
-      subscriptionId: subscription.id,
-      metadata: subscription.metadata
+  if (userId) {
+    console.log('[Webhook] user_id from subscription metadata', {
+      source,
+      userId,
+      customerId
     });
-    return;
+    return { userId, customerId };
   }
 
-  const status = subscription.status; // 'trialing', 'active', 'canceled', ...
-  const trialStart =
-    subscription.trial_start != null
+  // Fallback: Customer-Metadata abfragen
+  if (customerId) {
+    try {
+      const customer = await stripe.customers.retrieve(customerId);
+      const cmd = customer.metadata || {};
+
+      userId =
+        cmd.user_id ||
+        cmd.userId ||
+        cmd.supabase_user_id ||
+        cmd.supabaseUserId ||
+        null;
+
+      if (userId) {
+        console.log('[Webhook] user_id resolved from customer metadata', {
+          source,
+          userId,
+          customerId
+        });
+        return { userId, customerId };
+      } else {
+        console.warn('[Webhook] No user_id found on customer metadata', {
+          source,
+          customerId,
+          customerMetadata: cmd
+        });
+      }
+    } catch (err) {
+      console.error('[Webhook] Failed to retrieve customer for metadata', {
+        source,
+        customerId,
+        error: err.message || err
+      });
+    }
+  }
+
+  console.warn('[Webhook] Could not resolve user_id from subscription or customer', {
+    source,
+    subId: subscription.id,
+    metadata: subscription.metadata
+  });
+
+  return { userId: null, customerId };
+}
+
+async function updateUserFromSubscription(subscription, source = 'unknown') {
+  try {
+    if (!subscription) {
+      console.warn('[Webhook] updateUserFromSubscription called with null', { source });
+      return;
+    }
+
+    const { userId, customerId } = await resolveUserIdAndCustomer(subscription, source);
+
+    if (!userId) {
+      // Ohne user_id können wir nichts in user_profiles mappen
+      return;
+    }
+
+    const status = subscription.status;
+
+    const trialStart = subscription.trial_start
       ? new Date(subscription.trial_start * 1000).toISOString()
       : null;
-  const trialEnd =
-    subscription.trial_end != null
+
+    const trialEnd = subscription.trial_end
       ? new Date(subscription.trial_end * 1000).toISOString()
       : null;
 
-  const trialStatus = status === 'trialing' ? 'active' : 'inactive';
-  const paymentVerified = status === 'trialing' || status === 'active';
-  const onboardingCompleted = paymentVerified; // wenn Trial/Subscription aktiv ist, betrachten wir das Onboarding als abgeschlossen
+    const trialStatus = status === 'trialing' ? 'active' : 'inactive';
+    const paymentVerified = status === 'trialing' || status === 'active';
+    const onboardingCompleted = paymentVerified;
 
-  console.log('[StripeWebhook] upserting user subscription', {
-    userId,
-    subscriptionId: subscription.id,
-    customerId,
-    status,
-    trialStatus,
-    trialStart,
-    trialEnd
-  });
+    const payload = {
+      id: userId,
+      stripe_customer_id: customerId,
+      trial_status: trialStatus,
+      trial_started_at: trialStart,
+      trial_expires_at: trialEnd,
+      payment_verified: paymentVerified,
+      onboarding_completed: onboardingCompleted,
+      verification_method: 'stripe_card'
+    };
 
-  try {
+    console.log('[Webhook] Preparing upsert into user_profiles', {
+      source,
+      userId,
+      subId: subscription.id,
+      status,
+      payload
+    });
+
     const { data, error } = await supabaseAdmin
       .from(SUBSCRIPTION_TABLE)
-      .upsert(
-        {
-          id: userId, // id = Supabase auth.users.id
-          stripe_customer_id: customerId,
-          stripe_subscription_id: subscription.id,
-          subscription_status: status,
-          trial_status: trialStatus,
-          trial_started_at: trialStart,
-          trial_expires_at: trialEnd,
-          payment_verified: paymentVerified,
-          onboarding_completed: onboardingCompleted
-        },
-        {
-          onConflict: 'id'
-        }
-      )
+      .upsert(payload, { onConflict: 'id' })
       .select()
       .single();
 
     if (error) {
-      console.error('[StripeWebhook] failed to upsert user subscription', error, {
-        userId,
-        subscriptionId: subscription.id
-      });
+      console.error('[Webhook] Upsert failed', { source, error, payload });
     } else {
-      console.log('[StripeWebhook] user subscription upserted successfully', {
-        userId,
-        subscriptionId: subscription.id,
-        status,
-        row: data
-      });
+      console.log('[Webhook] Upsert OK', { source, userId, data });
     }
   } catch (err) {
-    console.error(
-      '[StripeWebhook] unexpected error during upsert',
-      err?.message,
-      { userId, subscriptionId: subscription.id }
-    );
+    console.error('[Webhook] updateUserFromSubscription crashed', {
+      source,
+      error: err.message || err
+    });
   }
 }
 
 export async function handler(event) {
-  // CORS Preflight
   if (event.httpMethod === 'OPTIONS') {
     return { statusCode: 200, headers: corsHeaders() };
   }
 
-  // Nur POST erlauben
   if (event.httpMethod !== 'POST') {
-    return {
-      statusCode: 405,
-      headers: corsHeaders(),
-      body: JSON.stringify({ error: 'Method not allowed' })
-    };
+    return { statusCode: 405, headers: corsHeaders() };
   }
 
   const sig =
     event.headers['stripe-signature'] ||
-    event.headers['Stripe-Signature'] ||
-    event.headers['STRIPE-SIGNATURE'];
+    event.headers['Stripe-Signature'];
 
-  const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
+  const secret = process.env.STRIPE_WEBHOOK_SECRET;
 
-  if (!webhookSecret) {
-    console.error('[StripeWebhook] STRIPE_WEBHOOK_SECRET not configured');
+  if (!secret) {
+    console.error('[Webhook] Missing STRIPE_WEBHOOK_SECRET');
     return {
       statusCode: 500,
       headers: corsHeaders(),
-      body: JSON.stringify({ error: 'Webhook secret missing' })
+      body: JSON.stringify({ error: 'Missing STRIPE_WEBHOOK_SECRET' })
     };
   }
 
   let stripeEvent;
 
   try {
-    // rawBody für Stripe-Signaturprüfung
-    const rawBody =
-      event.body && event.isBase64Encoded
-        ? Buffer.from(event.body, 'base64')
-        : event.body;
+    const rawBody = event.isBase64Encoded
+      ? Buffer.from(event.body, 'base64')
+      : event.body;
 
     stripeEvent = stripe.webhooks.constructEvent(
       rawBody,
       sig,
-      webhookSecret
+      secret
     );
   } catch (err) {
-    console.error(
-      '[StripeWebhook] signature verification failed',
-      err?.message
-    );
-    return {
-      statusCode: 400,
-      headers: corsHeaders(),
-      body: JSON.stringify({ error: `Webhook Error: ${err.message}` })
-    };
+    console.error('[Webhook] Signature verification failed', err.message);
+    return { statusCode: 400, headers: corsHeaders() };
   }
+
+  const type = stripeEvent.type;
+  const obj = stripeEvent.data.object;
+
+  console.log('[Webhook] Event received', {
+    type,
+    eventId: stripeEvent.id
+  });
 
   try {
-    const type = stripeEvent.type;
-    const payload = stripeEvent.data?.object;
+    if (type === 'checkout.session.completed') {
+      console.log('[Webhook] checkout.session.completed payload', {
+        sessionId: obj.id,
+        mode: obj.mode,
+        subscription: obj.subscription,
+        metadata: obj.metadata
+      });
 
-    console.log('[StripeWebhook] received event', {
-      type,
-      id: payload?.id,
-      subscription: payload?.subscription,
-      customer: payload?.customer
-    });
-
-    switch (type) {
-      case 'checkout.session.completed': {
-        // Checkout fertig → Subscription ziehen und in Supabase schreiben
-        const subscriptionId = payload.subscription;
-
-        if (subscriptionId) {
-          try {
-            const subscription = await stripe.subscriptions.retrieve(
-              subscriptionId
-            );
-            await updateUserFromSubscription(subscription);
-          } catch (err) {
-            console.error(
-              '[StripeWebhook] failed to retrieve subscription from checkout.session.completed',
-              err?.message,
-              { subscriptionId }
-            );
-          }
-        } else {
-          console.warn(
-            '[StripeWebhook] checkout.session.completed without subscription id',
-            { sessionId: payload.id }
-          );
-        }
-        break;
-      }
-
-      case 'customer.subscription.created':
-      case 'customer.subscription.updated':
-      case 'customer.subscription.deleted': {
-        // Hier ist das Subscription-Objekt direkt im Payload
-        await updateUserFromSubscription(payload);
-        break;
-      }
-
-      case 'invoice.payment_succeeded': {
-        // Zahlung erfolgreich → Subscription aus invoice ziehen und aktualisieren
-        const subscriptionId = payload.subscription;
-        if (subscriptionId) {
-          try {
-            const subscription = await stripe.subscriptions.retrieve(
-              subscriptionId
-            );
-            await updateUserFromSubscription(subscription);
-          } catch (err) {
-            console.error(
-              '[StripeWebhook] failed to retrieve subscription from invoice.payment_succeeded',
-              err?.message,
-              { subscriptionId }
-            );
-          }
-        } else {
-          console.log(
-            '[StripeWebhook] invoice.payment_succeeded without subscription id',
-            { invoiceId: payload.id }
-          );
-        }
-        break;
-      }
-
-      case 'invoice.payment_failed': {
-        // Zahlung fehlgeschlagen → Optional: Subscription auf "inactive" setzen
-        console.log('[StripeWebhook] invoice.payment_failed', {
-          invoiceId: payload.id,
-          customer: payload.customer,
-          subscription: payload.subscription
+      if (obj.subscription) {
+        const subscription = await stripe.subscriptions.retrieve(obj.subscription);
+        await updateUserFromSubscription(subscription, 'checkout.session.completed');
+      } else {
+        console.warn('[Webhook] checkout.session.completed without subscription', {
+          sessionId: obj.id
         });
-
-        const subscriptionId = payload.subscription;
-        if (subscriptionId) {
-          try {
-            const subscription = await stripe.subscriptions.retrieve(
-              subscriptionId
-            );
-            await updateUserFromSubscription(subscription);
-          } catch (err) {
-            console.error(
-              '[StripeWebhook] failed to retrieve subscription from invoice.payment_failed',
-              err?.message,
-              { subscriptionId }
-            );
-          }
-        }
-        break;
       }
-
-      default:
-        console.log('[StripeWebhook] unhandled event type', type);
     }
 
-    return {
-      statusCode: 200,
-      headers: corsHeaders(),
-      body: JSON.stringify({ received: true })
-    };
+    if (
+      type === 'customer.subscription.created' ||
+      type === 'customer.subscription.updated' ||
+      type === 'customer.subscription.deleted'
+    ) {
+      console.log('[Webhook] customer.subscription.* event', {
+        type,
+        subId: obj.id,
+        status: obj.status,
+        metadata: obj.metadata
+      });
+
+      await updateUserFromSubscription(obj, type);
+    }
+
+    if (type === 'invoice.payment_succeeded') {
+      console.log('[Webhook] invoice.payment_succeeded', {
+        invoiceId: obj.id,
+        subscription: obj.subscription
+      });
+
+      if (obj.subscription) {
+        const subscription = await stripe.subscriptions.retrieve(obj.subscription);
+        await updateUserFromSubscription(subscription, 'invoice.payment_succeeded');
+      }
+    }
+
+    if (type === 'invoice.payment_failed') {
+      console.log('[Webhook] invoice.payment_failed', {
+        invoiceId: obj.id,
+        subscription: obj.subscription
+      });
+
+      if (obj.subscription) {
+        const subscription = await stripe.subscriptions.retrieve(obj.subscription);
+        await updateUserFromSubscription(subscription, 'invoice.payment_failed');
+      }
+    }
   } catch (err) {
-    console.error('[StripeWebhook] handler error', err?.message, err?.stack);
-    return {
-      statusCode: 500,
-      headers: corsHeaders(),
-      body: JSON.stringify({ error: 'Webhook handling failed' })
-    };
+    console.error('[Webhook] Handler crashed processing event', {
+      type,
+      error: err.message || err
+    });
   }
+
+  return {
+    statusCode: 200,
+    headers: corsHeaders(),
+    body: JSON.stringify({ received: true })
+  };
 }
