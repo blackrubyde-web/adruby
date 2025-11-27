@@ -49,10 +49,21 @@ export function AuthProvider({ children }) {
     }
   };
 
-  const isSubscribed = () =>
-    subscriptionStatus === 'active' ||
-    (subscriptionStatus === 'trialing' && isTrialActive(subscriptionMeta?.trialEndsAt)) ||
-    isOnboardingComplete(onboardingStatus);
+  // 🔁 NEU: leicht geschärft, aber gleiche Idee
+  const isSubscribed = () => {
+    // Harte Flags aus Onboarding (kommen aus trialService / user_profiles)
+    if (isOnboardingComplete(onboardingStatus)) {
+      return true;
+    }
+
+    // Fallback: abgeleiteter subscriptionStatus + trialEnd
+    if (subscriptionStatus === 'active') return true;
+    if (subscriptionStatus === 'trialing' && isTrialActive(subscriptionMeta?.trialEndsAt)) {
+      return true;
+    }
+
+    return false;
+  };
 
   const ensureUserProfileExists = async () => {
     console.time('[AuthPerf] ensureUserProfileExists');
@@ -89,8 +100,10 @@ export function AuthProvider({ children }) {
     }
   };
 
+  // 🔁 NEU: an user_profiles-Schema angepasst, Status abgeleitet
   const refreshSubscriptionStatus = async (sessionUser = user) => {
     console.time('[AuthPerf] refreshSubscriptionStatus');
+
     if (!sessionUser?.id) {
       setSubscriptionStatus(null);
       setSubscriptionMeta({
@@ -103,14 +116,28 @@ export function AuthProvider({ children }) {
     }
 
     try {
+      // Nur die Spalten holen, die es in user_profiles wirklich gibt
       const { data, error } = await supabase
         ?.from('user_profiles')
-        ?.select('*')
+        ?.select(
+          `
+          stripe_customer_id,
+          trial_status,
+          trial_expires_at,
+          payment_verified,
+          onboarding_completed
+        `
+        )
         ?.eq('id', sessionUser?.id)
         ?.single();
 
       if (error) {
-        console.error('[AuthTrace] subscription status load error (columns missing?)', error, { userId: sessionUser?.id, ts: new Date().toISOString() });
+        console.error(
+          '[AuthTrace] subscription status load error (schema mismatch?)',
+          error,
+          { userId: sessionUser?.id, ts: new Date().toISOString() }
+        );
+
         setSubscriptionStatus(null);
         setSubscriptionMeta({
           stripeCustomerId: null,
@@ -121,23 +148,51 @@ export function AuthProvider({ children }) {
         return;
       }
 
-      setSubscriptionStatus(data?.subscription_status || null);
+      const trialEndsAt = data?.trial_expires_at || null;
+      const trialActive =
+        data?.trial_status === 'active' && trialEndsAt
+          ? new Date(trialEndsAt).getTime() > Date.now()
+          : false;
+
+      let derivedStatus = null;
+      if (data?.payment_verified || data?.onboarding_completed) {
+        derivedStatus = 'active';
+      } else if (trialActive) {
+        derivedStatus = 'trialing';
+      }
+
+      setSubscriptionStatus(derivedStatus);
       setSubscriptionMeta({
         stripeCustomerId: data?.stripe_customer_id || null,
-        stripeSubscriptionId: data?.stripe_subscription_id || null,
-        trialEndsAt: data?.trial_ends_at || null
+        stripeSubscriptionId: null, // existiert im Schema nicht – bewusst null
+        trialEndsAt
       });
-      console.log('[AuthTrace] subscription status loaded', {
+
+      console.log('[AuthTrace] subscription status loaded (derived)', {
         userId: sessionUser?.id,
-        subscription_status: data?.subscription_status,
-        stripe_customer_id: data?.stripe_customer_id,
-        stripe_subscription_id: data?.stripe_subscription_id,
-        trial_ends_at: data?.trial_ends_at,
+        raw: {
+          trial_status: data?.trial_status,
+          trial_expires_at: data?.trial_expires_at,
+          payment_verified: data?.payment_verified,
+          onboarding_completed: data?.onboarding_completed
+        },
+        derivedStatus,
+        trialActive,
         ts: new Date().toISOString()
       });
+
       console.timeEnd('[AuthPerf] refreshSubscriptionStatus');
     } catch (error) {
-      console.error('[AuthTrace] subscription status exception:', error, { userId: sessionUser?.id, ts: new Date().toISOString() });
+      console.error('[AuthTrace] subscription status exception:', error, {
+        userId: sessionUser?.id,
+        ts: new Date().toISOString()
+      });
+      setSubscriptionStatus(null);
+      setSubscriptionMeta({
+        stripeCustomerId: null,
+        stripeSubscriptionId: null,
+        trialEndsAt: null
+      });
       console.timeEnd('[AuthPerf] refreshSubscriptionStatus');
     }
   };
