@@ -9,6 +9,20 @@ const corsHeaders = () => ({
   'Access-Control-Allow-Methods': 'POST, OPTIONS'
 });
 
+const AFFILIATE_PAYOUT_PER_INVOICE = 5.0;
+
+function extractInvoicePeriod(invoice) {
+  const line = invoice?.lines?.data?.[0];
+  const period = line?.period || {};
+  const start = period.start || invoice?.period_start;
+  const end = period.end || invoice?.period_end;
+
+  return {
+    periodStart: start ? new Date(start * 1000).toISOString() : null,
+    periodEnd: end ? new Date(end * 1000).toISOString() : null
+  };
+}
+
 // Hilfsfunktion: user_id aus Subscription + Customer-Metadata auflösen
 async function resolveUserIdAndCustomer(subscription, source = 'unknown') {
   if (!subscription) {
@@ -151,6 +165,265 @@ async function updateUserFromSubscription(subscription, source = 'unknown') {
   }
 }
 
+async function findUserByCustomerId(customerId) {
+  if (!customerId) return { user: null, error: 'Missing customerId' };
+
+  try {
+    const { data, error } = await supabaseAdmin
+      .from(SUBSCRIPTION_TABLE)
+      .select('id, stripe_customer_id, referred_by_affiliate_id')
+      .eq('stripe_customer_id', customerId)
+      .single();
+
+    if (error) {
+      return { user: null, error };
+    }
+
+    return { user: data, error: null };
+  } catch (err) {
+    return { user: null, error: err };
+  }
+}
+
+async function upsertAffiliateReferral({
+  affiliateId,
+  referredUserId,
+  refCode = null,
+  stripeCustomerId,
+  stripeSubscriptionId,
+  status,
+  lastInvoiceAt = null
+}) {
+  try {
+    const payload = {
+      affiliate_id: affiliateId,
+      referred_user_id: referredUserId,
+      ref_code: refCode,
+      stripe_customer_id: stripeCustomerId,
+      stripe_subscription_id: stripeSubscriptionId,
+      current_status: status,
+      last_invoice_paid_at: lastInvoiceAt
+    };
+
+    const { error } = await supabaseAdmin
+      .from('affiliate_referrals')
+      .upsert(payload, {
+        onConflict: 'affiliate_id,referred_user_id'
+      });
+
+    if (error) {
+      console.error('[Affiliate] Failed to upsert referral', { payload, error });
+    } else {
+      console.log('[Affiliate] Referral upserted', {
+        affiliateId,
+        referredUserId,
+        stripeSubscriptionId,
+        status
+      });
+    }
+  } catch (err) {
+    console.error('[Affiliate] upsertAffiliateReferral crashed', {
+      error: err.message || err
+    });
+  }
+}
+
+async function recordAffiliateEarning({
+  affiliateId,
+  referredUserId,
+  invoice,
+  subscriptionId
+}) {
+  if (!affiliateId || !referredUserId || !invoice) {
+    console.warn('[Affiliate] recordAffiliateEarning missing data', {
+      affiliateId,
+      referredUserId,
+      invoiceId: invoice?.id
+    });
+    return;
+  }
+
+  try {
+    const { data: existing, error: existingError } = await supabaseAdmin
+      .from('affiliate_earnings')
+      .select('id')
+      .eq('stripe_invoice_id', invoice.id)
+      .maybeSingle();
+
+    if (existingError) {
+      console.error('[Affiliate] Failed checking existing earning', {
+        invoiceId: invoice.id,
+        error: existingError
+      });
+    }
+
+    if (existing) {
+      console.log('[Affiliate] Earning already exists for invoice, skipping', {
+        invoiceId: invoice.id
+      });
+      return;
+    }
+  } catch (err) {
+    console.error('[Affiliate] Existing earning check crashed', {
+      invoiceId: invoice.id,
+      error: err.message || err
+    });
+  }
+
+  const { periodStart, periodEnd } = extractInvoicePeriod(invoice);
+
+  try {
+    const earningPayload = {
+      affiliate_id: affiliateId,
+      referred_user_id: referredUserId,
+      stripe_invoice_id: invoice.id,
+      stripe_subscription_id: subscriptionId,
+      amount: AFFILIATE_PAYOUT_PER_INVOICE,
+      currency: (invoice.currency || 'eur').toUpperCase(),
+      period_start: periodStart,
+      period_end: periodEnd
+    };
+
+    const { error: earningError } = await supabaseAdmin
+      .from('affiliate_earnings')
+      .insert(earningPayload);
+
+    if (earningError) {
+      console.error('[Affiliate] Failed to insert earning', {
+        earningPayload,
+        earningError
+      });
+    } else {
+      console.log('[Affiliate] Earning recorded', earningPayload);
+    }
+
+    const { error: balanceError } = await supabaseAdmin.rpc(
+      'add_affiliate_earning',
+      {
+        p_affiliate_id: affiliateId,
+        p_amount: AFFILIATE_PAYOUT_PER_INVOICE
+      }
+    );
+
+    if (balanceError) {
+      console.error('[Affiliate] Failed to update affiliate balance via RPC', {
+        affiliateId,
+        balanceError
+      });
+    } else {
+      console.log('[Affiliate] Affiliate balance updated via RPC', { affiliateId });
+    }
+  } catch (err) {
+    console.error('[Affiliate] recordAffiliateEarning crashed', {
+      error: err.message || err,
+      affiliateId,
+      referredUserId,
+      invoiceId: invoice.id
+    });
+  }
+}
+
+async function handleInvoicePaymentSucceeded(invoice) {
+  if (!invoice?.customer) {
+    console.warn('[Affiliate] invoice.payment_succeeded without customer', {
+      invoiceId: invoice?.id
+    });
+    return;
+  }
+
+  if (!invoice?.subscription) {
+    console.log('[Affiliate] Skipping non-subscription invoice for affiliate payout', {
+      invoiceId: invoice?.id
+    });
+    return;
+  }
+
+  const lines = invoice.lines?.data || [];
+  const mainLine = lines[0];
+  const priceId = mainLine?.price?.id;
+  const affiliateEligiblePriceId = process.env.STRIPE_AFFILIATE_ELIGIBLE_PRICE_ID;
+
+  if (affiliateEligiblePriceId && priceId && priceId !== affiliateEligiblePriceId) {
+    console.log('[Affiliate] Invoice not eligible for affiliate payout (price mismatch)', {
+      invoiceId: invoice.id,
+      priceId,
+      affiliateEligiblePriceId
+    });
+    return;
+  }
+
+  const { user, error } = await findUserByCustomerId(invoice.customer);
+  if (error || !user) {
+    console.warn('[Affiliate] No user found for invoice customer', {
+      invoiceId: invoice.id,
+      customerId: invoice.customer,
+      error
+    });
+    return;
+  }
+
+  if (!user.referred_by_affiliate_id) {
+    console.log('[Affiliate] User has no affiliate referral, skipping earning', {
+      userId: user.id,
+      customerId: invoice.customer
+    });
+    return;
+  }
+
+  const { periodEnd } = extractInvoicePeriod(invoice);
+
+  await upsertAffiliateReferral({
+    affiliateId: user.referred_by_affiliate_id,
+    referredUserId: user.id,
+    refCode: null,
+    stripeCustomerId: invoice.customer,
+    stripeSubscriptionId: invoice.subscription,
+    status: 'active',
+    lastInvoiceAt: periodEnd || new Date().toISOString()
+  });
+
+  await recordAffiliateEarning({
+    affiliateId: user.referred_by_affiliate_id,
+    referredUserId: user.id,
+    invoice,
+    subscriptionId: invoice.subscription
+  });
+}
+
+async function handleSubscriptionCancellation(subscription) {
+  const customerId = subscription?.customer;
+  if (!customerId) return;
+
+  const { user, error } = await findUserByCustomerId(customerId);
+  if (error || !user?.referred_by_affiliate_id) return;
+
+  try {
+    const { error: updateError } = await supabaseAdmin
+      .from('affiliate_referrals')
+      .update({ current_status: 'cancelled' })
+      .eq('affiliate_id', user.referred_by_affiliate_id)
+      .eq('referred_user_id', user.id);
+
+    if (updateError) {
+      console.error('[Affiliate] Failed to mark referral cancelled', {
+        subId: subscription.id,
+        customerId,
+        updateError
+      });
+    } else {
+      console.log('[Affiliate] Referral marked cancelled', {
+        subId: subscription.id,
+        customerId
+      });
+    }
+  } catch (err) {
+    console.error('[Affiliate] handleSubscriptionCancellation crashed', {
+      subId: subscription.id,
+      error: err.message || err
+    });
+  }
+}
+
 
 export async function handler(event) {
   if (event.httpMethod === 'OPTIONS') {
@@ -233,6 +506,10 @@ export async function handler(event) {
       });
 
       await updateUserFromSubscription(obj, type);
+
+      if (type === 'customer.subscription.deleted' || obj.status === 'canceled') {
+        await handleSubscriptionCancellation(obj);
+      }
     }
 
     if (type === 'invoice.payment_succeeded') {
@@ -245,6 +522,8 @@ export async function handler(event) {
         const subscription = await stripe.subscriptions.retrieve(obj.subscription);
         await updateUserFromSubscription(subscription, 'invoice.payment_succeeded');
       }
+
+       await handleInvoicePaymentSucceeded(obj);
     }
 
     if (type === 'invoice.payment_failed') {

@@ -3,6 +3,7 @@ import { supabase, securityHelpers } from '../lib/supabaseClient.js';
 import { trialService } from '../services/trialService';
 
 const AuthContext = createContext({});
+const AFFILIATE_REF_STORAGE_KEY = 'adruby_affiliate_ref_code';
 
 export const useAuth = () => {
   const context = useContext(AuthContext);
@@ -15,6 +16,7 @@ export const useAuth = () => {
 export function AuthProvider({ children }) {
   const [session, setSession] = useState(null);
   const [user, setUser] = useState(null);
+  const [userProfile, setUserProfile] = useState(null);
   const [loading, setLoading] = useState(true);
   const [isAuthReady, setIsAuthReady] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
@@ -197,6 +199,163 @@ export function AuthProvider({ children }) {
     }
   };
 
+  const refreshUserProfile = async (sessionUser = user) => {
+    console.time('[AuthPerf] refreshUserProfile');
+    if (!sessionUser?.id) {
+      setUserProfile(null);
+      console.timeEnd('[AuthPerf] refreshUserProfile');
+      return null;
+    }
+
+    try {
+      const { data, error } = await supabase
+        ?.from('user_profiles')
+        ?.select(`
+          id,
+          email,
+          role,
+          first_name,
+          last_name,
+          company_name,
+          stripe_customer_id,
+          trial_status,
+          trial_expires_at,
+          payment_verified,
+          onboarding_completed,
+          affiliate_enabled,
+          affiliate_code,
+          referred_by_affiliate_id,
+          affiliate_balance,
+          affiliate_lifetime_earnings,
+          bank_account_holder,
+          bank_iban,
+          bank_bic
+        `)
+        ?.eq('id', sessionUser?.id)
+        ?.single();
+
+      if (error) {
+        console.error('[AuthTrace] refreshUserProfile error', error, {
+          userId: sessionUser?.id
+        });
+        setUserProfile(null);
+        console.timeEnd('[AuthPerf] refreshUserProfile');
+        return null;
+      }
+
+      setUserProfile(data);
+      console.timeEnd('[AuthPerf] refreshUserProfile');
+      return data;
+    } catch (err) {
+      console.error('[AuthTrace] refreshUserProfile exception', err, {
+        userId: sessionUser?.id
+      });
+      setUserProfile(null);
+      console.timeEnd('[AuthPerf] refreshUserProfile');
+      return null;
+    }
+  };
+
+  const persistAffiliateRefFromUrl = () => {
+    if (typeof window === 'undefined') return;
+    try {
+      const params = new URLSearchParams(window.location.search);
+      const refCode = params.get('ref');
+      if (refCode) {
+        localStorage.setItem(AFFILIATE_REF_STORAGE_KEY, refCode);
+        console.log('[Affiliate] Stored ref code from URL', { refCode });
+      }
+    } catch (err) {
+      console.warn('[Affiliate] Failed to persist ref from URL', err);
+    }
+  };
+
+  const attachAffiliateReferralIfNeeded = async (sessionUser = user) => {
+    if (typeof window === 'undefined') return;
+    if (!sessionUser?.id) return;
+
+    const storedRef = localStorage.getItem(AFFILIATE_REF_STORAGE_KEY);
+    if (!storedRef) return;
+
+    try {
+      const { data: profile, error: profileError } = await supabase
+        ?.from('user_profiles')
+        ?.select('id, referred_by_affiliate_id')
+        ?.eq('id', sessionUser?.id)
+        ?.single();
+
+      if (profileError) {
+        console.error('[Affiliate] Failed to fetch profile before attach', profileError);
+        return;
+      }
+
+      if (profile?.referred_by_affiliate_id) {
+        console.log('[Affiliate] User already has referral, skipping attach', {
+          userId: sessionUser?.id
+        });
+        localStorage.removeItem(AFFILIATE_REF_STORAGE_KEY);
+        return;
+      }
+
+      const { data: affiliate, error: affiliateError } = await supabase
+        ?.from('user_profiles')
+        ?.select('id, affiliate_code')
+        ?.eq('affiliate_code', storedRef)
+        ?.eq('affiliate_enabled', true)
+        ?.single();
+
+      if (affiliateError || !affiliate?.id) {
+        console.warn('[Affiliate] Ref code not valid', {
+          storedRef,
+          error: affiliateError?.message || affiliateError
+        });
+        return;
+      }
+
+      if (affiliate.id === sessionUser?.id) {
+        console.warn('[Affiliate] Self-referral detected, skipping', { userId: sessionUser?.id });
+        localStorage.removeItem(AFFILIATE_REF_STORAGE_KEY);
+        return;
+      }
+
+      const { error: referralError } = await supabase
+        ?.from('affiliate_referrals')
+        ?.upsert(
+          {
+            affiliate_id: affiliate.id,
+            referred_user_id: sessionUser?.id,
+            ref_code: storedRef,
+            current_status: 'registered'
+          },
+          { onConflict: 'affiliate_id,referred_user_id' }
+        );
+
+      if (referralError) {
+        console.error('[Affiliate] Failed to upsert referral', referralError);
+        return;
+      }
+
+      const { error: profileUpdateError } = await supabase
+        ?.from('user_profiles')
+        ?.update({ referred_by_affiliate_id: affiliate.id })
+        ?.eq('id', sessionUser?.id);
+
+      if (profileUpdateError) {
+        console.error('[Affiliate] Failed to set referred_by_affiliate_id', profileUpdateError);
+        return;
+      }
+
+      console.log('[Affiliate] Referral attached to user', {
+        userId: sessionUser?.id,
+        affiliateId: affiliate.id
+      });
+      localStorage.removeItem(AFFILIATE_REF_STORAGE_KEY);
+      await refreshUserProfile(sessionUser);
+    } catch (err) {
+      console.error('[Affiliate] attachAffiliateReferralIfNeeded crashed', err);
+    }
+  };
+
   const handleSessionChange = (nextSession, source = 'unknown') => {
     const sessionUser = nextSession?.user ?? null;
     setSession(nextSession ?? null);
@@ -214,10 +373,12 @@ export function AuthProvider({ children }) {
       (async () => {
         try {
           await ensureUserProfileExists();
+          await attachAffiliateReferralIfNeeded(sessionUser);
           await Promise.all([
             checkAdminStatus(sessionUser),
             refreshOnboardingStatus(sessionUser),
-            refreshSubscriptionStatus(sessionUser)
+            refreshSubscriptionStatus(sessionUser),
+            refreshUserProfile(sessionUser)
           ]);
         } catch (err) {
           console.error('[AuthTrace] background session tasks failed', err);
@@ -232,6 +393,7 @@ export function AuthProvider({ children }) {
         stripeSubscriptionId: null,
         trialEndsAt: null
       });
+      setUserProfile(null);
     }
   };
 
@@ -240,6 +402,7 @@ export function AuthProvider({ children }) {
     const init = async () => {
       console.log('[AuthTrace] init start', { path: window.location.pathname, ts: new Date().toISOString() });
       try {
+        persistAffiliateRefFromUrl();
         const params = new URLSearchParams(window.location.search);
         const code = params.get('code');
         const errorDescription = params.get('error_description');
@@ -366,6 +529,7 @@ export function AuthProvider({ children }) {
       setUser(null);
       setIsAdmin(false);
       setOnboardingStatus(initialOnboardingState);
+      setUserProfile(null);
       
       return { error: null };
     } catch (error) {
@@ -510,6 +674,7 @@ export function AuthProvider({ children }) {
       // Lokalen State clearen
       setUser(null);
       setIsAdmin(false);
+      setUserProfile(null);
 
       return true;
     } catch (error) {
@@ -521,6 +686,7 @@ export function AuthProvider({ children }) {
   const value = {
     session,
     user,
+    userProfile,
     loading,
     isAuthReady,
     subscriptionStatus,
@@ -535,6 +701,7 @@ export function AuthProvider({ children }) {
     signOut,
     refreshOnboardingStatus,
     refreshSubscriptionStatus,
+    refreshUserProfile,
     getUserProfile,
     updateProfile,
     requestDataExport,

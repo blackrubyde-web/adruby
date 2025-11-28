@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { supabasePublic } from '../../lib/supabaseClient';
@@ -14,46 +14,59 @@ const Sidebar = ({ isOpen = false, onClose, className = '' }) => {
   const [loading, setLoading] = useState(true);
   const [creditStatus, setCreditStatus] = useState(null);
   const [creditsLoading, setCreditsLoading] = useState(true);
-  const { user } = useAuth();
+  const { user, userProfile } = useAuth();
 
-  const navigationItems = [
-    {
-      label: 'Overview',
-      path: '/overview-dashboard',
-      icon: 'BarChart3',
-      description: 'Performance metrics and activity monitoring'
-    },
-    {
-      label: 'Ads Strategien',
-      path: '/strategy',
-      icon: 'Target',
-      description: 'AI-powered advertising strategy recommendations'
-    },
-    {
-      label: 'Campaigns',
-      path: '/campaigns-management',
-      icon: 'Target',
-      description: 'Campaign management and bulk operations'
-    },
-    {
-      label: 'App Builder',
-      path: '/app-builder-interface',
-      icon: 'Layers',
-      description: 'Creative asset generation tools'
-    },
-    {
-      label: 'AI Analysis',
-      path: '/ai-analysis-panel',
-      icon: 'Brain',
-      description: 'Advanced optimization insights'
-    },
-    {
-      label: 'Settings',
-      path: '/settings-configuration',
-      icon: 'Settings',
-      description: 'Account preferences and configuration'
+  const navigationItems = useMemo(() => {
+    const baseItems = [
+      {
+        label: 'Overview',
+        path: '/overview-dashboard',
+        icon: 'BarChart3',
+        description: 'Performance metrics and activity monitoring'
+      },
+      {
+        label: 'Ads Strategien',
+        path: '/strategy',
+        icon: 'Target',
+        description: 'AI-powered advertising strategy recommendations'
+      },
+      {
+        label: 'Campaigns',
+        path: '/campaigns-management',
+        icon: 'Target',
+        description: 'Campaign management and bulk operations'
+      },
+      {
+        label: 'App Builder',
+        path: '/app-builder-interface',
+        icon: 'Layers',
+        description: 'Creative asset generation tools'
+      },
+      {
+        label: 'AI Analysis',
+        path: '/ai-analysis-panel',
+        icon: 'Brain',
+        description: 'Advanced optimization insights'
+      },
+      {
+        label: 'Settings',
+        path: '/settings-configuration',
+        icon: 'Settings',
+        description: 'Account preferences and configuration'
+      }
+    ];
+
+    if (userProfile?.affiliate_enabled) {
+      baseItems.splice(baseItems.length - 1, 0, {
+        label: 'Affiliate',
+        path: '/affiliate',
+        icon: 'Share2',
+        description: 'Affiliate-Link, Statistiken und Auszahlungen'
+      });
     }
-  ];
+
+    return baseItems;
+  }, [userProfile?.affiliate_enabled]);
 
   // Load user display name using database function
   useEffect(() => {
@@ -117,7 +130,7 @@ const Sidebar = ({ isOpen = false, onClose, className = '' }) => {
     if (activeNav) {
       setActiveItem(activeNav?.path);
     }
-  }, [location?.pathname]);
+  }, [location?.pathname, navigationItems]);
 
   const handleNavigation = (path) => {
     navigate(path);

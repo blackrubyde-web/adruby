@@ -27,6 +27,7 @@ import AdRubyAdBuilder from './pages/ad-ruby-ad-builder';
 import AdRubyAdStrategies from './pages/ad-ruby-ad-strategies';
 import AdRubyAiAnalysis from './pages/ad-ruby-ai-analysis';
 import AdRubyCreativeInsights from './pages/ad-ruby-creative-insights';
+import AffiliatePage from './pages/affiliate';
 
 // Import new AdRuby Onboarding pages
 import AdRubyRegistration from './pages/ad-ruby-registration';
@@ -95,6 +96,7 @@ const Routes = () => {
             <Route path="/ai-analysis-panel" element={<ProtectedRoute><AiAnalysisPanel /></ProtectedRoute>} />
             <Route path="/strategy" element={<ProtectedRoute><AdStrategy /></ProtectedRoute>} />
             <Route path="/campaigns-management" element={<ProtectedRoute><CampaignsManagement /></ProtectedRoute>} />
+            <Route path="/affiliate" element={<ProtectedRoute><AffiliatePage /></ProtectedRoute>} />
 
             {/* User Management Routes */}
             <Route path="/profile-management" element={<ProtectedRoute><ProfileManagement /></ProtectedRoute>} />
