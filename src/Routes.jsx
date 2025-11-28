@@ -1,9 +1,9 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { BrowserRouter, Routes as RouterRoutes, Route, Navigate, useLocation } from 'react-router-dom';
-import { AuthProvider } from './contexts/AuthContext';
+import { supabase } from './lib/supabaseClient';
+import { AuthProvider, useAuth } from './contexts/AuthContext';
 import ScrollToTop from './components/ScrollToTop';
 import ErrorBoundary from './components/ErrorBoundary';
-import { useAuth } from './contexts/AuthContext';
 
 // Import all existing pages
 import PublicLandingHome from './pages/public-landing-home';
@@ -33,9 +33,19 @@ import AffiliatePage from './pages/affiliate';
 import AdRubyRegistration from './pages/ad-ruby-registration';
 import AdRubyPaymentVerification from './pages/ad-ruby-payment-verification';
 import PaymentSuccess from './pages/payment-success';
+import AdminDashboard from './pages/admin-dashboard';
+
+const ADMIN_ALLOWED_USER_ROUTES = [
+  '/admin-dashboard',
+  '/profile-management',
+  '/settings-configuration',
+  '/help-support-center',
+  '/affiliate',
+  '/credits'
+];
 
 const ProtectedRoute = ({ children }) => {
-  const { user, loading, isAuthReady, isSubscribed } = useAuth();
+  const { user, loading, isAuthReady, isSubscribed, isAdmin } = useAuth();
   const location = useLocation();
 
   console.log('[AuthTrace] ProtectedRoute check', {
@@ -47,21 +57,99 @@ const ProtectedRoute = ({ children }) => {
   });
 
   if (!isAuthReady || loading) {
-    console.log('[AuthTrace] ProtectedRoute auth not ready, waiting…', { pathname: location.pathname, ts: new Date().toISOString() });
+    console.log('[AuthTrace] ProtectedRoute auth not ready, waiting…', {
+      pathname: location.pathname,
+      ts: new Date().toISOString()
+    });
     return null;
   }
 
   if (!user) {
-    console.log('[AuthTrace] ProtectedRoute no session → redirect /ad-ruby-registration', { pathname: location.pathname, ts: new Date().toISOString() });
+    console.log('[AuthTrace] ProtectedRoute no session → redirect /ad-ruby-registration', {
+      pathname: location.pathname,
+      ts: new Date().toISOString()
+    });
     return <Navigate to="/ad-ruby-registration" replace />;
   }
 
+  if (isAdmin && location?.pathname && !ADMIN_ALLOWED_USER_ROUTES.includes(location.pathname)) {
+    return <Navigate to="/admin-dashboard" replace />;
+  }
+
   if (!isSubscribed?.()) {
-    console.log('[AuthTrace] ProtectedRoute no subscription → redirect /payment-verification', { pathname: location.pathname, ts: new Date().toISOString() });
+    console.log('[AuthTrace] ProtectedRoute no subscription → redirect /payment-verification', {
+      pathname: location.pathname,
+      ts: new Date().toISOString()
+    });
     return <Navigate to="/payment-verification" replace />;
   }
 
-  console.log('[AuthTrace] ProtectedRoute access granted to protected route', { pathname: location.pathname, ts: new Date().toISOString() });
+  console.log('[AuthTrace] ProtectedRoute access granted to protected route', {
+    pathname: location.pathname,
+    ts: new Date().toISOString()
+  });
+  return children;
+};
+
+const ProtectedAdminRoute = ({ children }) => {
+  const { user, userProfile, loading, isAuthReady } = useAuth();
+  const location = useLocation();
+  const [checking, setChecking] = useState(true);
+  const [isVerifiedAdmin, setIsVerifiedAdmin] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const verify = async () => {
+      if (!isAuthReady || loading) return;
+      if (!user) {
+        setIsVerifiedAdmin(false);
+        setChecking(false);
+        return;
+      }
+
+      if (userProfile?.role === 'admin') {
+        setIsVerifiedAdmin(true);
+        setChecking(false);
+        return;
+      }
+
+      try {
+        const { data, error } = await supabase.rpc('is_admin', {
+          token_user_id: user.id
+        });
+        if (error) throw error;
+        if (!cancelled) {
+          setIsVerifiedAdmin(!!data);
+        }
+      } catch (err) {
+        if (!cancelled) {
+          console.error('[AdminRoute] is_admin rpc failed', err);
+          setIsVerifiedAdmin(false);
+        }
+      } finally {
+        if (!cancelled) setChecking(false);
+      }
+    };
+
+    verify();
+    return () => {
+      cancelled = true;
+    };
+  }, [isAuthReady, loading, user, userProfile?.role]);
+
+  if (!isAuthReady || loading || checking) {
+    return null;
+  }
+
+  if (!user) {
+    return <Navigate to="/ad-ruby-registration" replace />;
+  }
+
+  if (!isVerifiedAdmin) {
+    return <Navigate to="/overview-dashboard" replace />;
+  }
+
   return children;
 };
 
@@ -97,6 +185,7 @@ const Routes = () => {
             <Route path="/strategy" element={<ProtectedRoute><AdStrategy /></ProtectedRoute>} />
             <Route path="/campaigns-management" element={<ProtectedRoute><CampaignsManagement /></ProtectedRoute>} />
             <Route path="/affiliate" element={<ProtectedRoute><AffiliatePage /></ProtectedRoute>} />
+            <Route path="/admin-dashboard" element={<ProtectedAdminRoute><AdminDashboard /></ProtectedAdminRoute>} />
 
             {/* User Management Routes */}
             <Route path="/profile-management" element={<ProtectedRoute><ProfileManagement /></ProtectedRoute>} />
