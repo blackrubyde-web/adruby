@@ -127,11 +127,21 @@ async function updateUserFromSubscription(subscription, source = 'unknown') {
       payload
     });
 
-    const { data, error } = await supabaseAdmin
-      .from(SUBSCRIPTION_TABLE)
-      .upsert(payload, { onConflict: 'id' })
-      .select()
-      .single();
+const { data, error } = await supabaseAdmin
+  .from(SUBSCRIPTION_TABLE)
+  .update({
+    stripe_customer_id: customerId,
+    trial_status: trialStatus,
+    trial_started_at: trialStart,
+    trial_expires_at: trialEnd,
+    payment_verified,
+    onboarding_completed,
+    verification_method: 'stripe_card'
+  })
+  .eq('id', userId)
+  .select()
+  .single();
+
 
     if (error) {
       console.error('[Webhook] Upsert failed', { source, error, payload });
