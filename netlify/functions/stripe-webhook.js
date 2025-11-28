@@ -91,6 +91,11 @@ async function updateUserFromSubscription(subscription, source = 'unknown') {
 
     if (!userId) {
       // Ohne user_id können wir nichts in user_profiles mappen
+      console.warn('[Webhook] No userId resolved, skipping update', {
+        source,
+        subId: subscription.id,
+        metadata: subscription.metadata
+      });
       return;
     }
 
@@ -109,7 +114,6 @@ async function updateUserFromSubscription(subscription, source = 'unknown') {
     const onboardingCompleted = paymentVerified;
 
     const payload = {
-      id: userId,
       stripe_customer_id: customerId,
       trial_status: trialStatus,
       trial_started_at: trialStart,
@@ -119,7 +123,7 @@ async function updateUserFromSubscription(subscription, source = 'unknown') {
       verification_method: 'stripe_card'
     };
 
-    console.log('[Webhook] Preparing upsert into user_profiles', {
+    console.log('[Webhook] Preparing update into user_profiles', {
       source,
       userId,
       subId: subscription.id,
@@ -127,26 +131,17 @@ async function updateUserFromSubscription(subscription, source = 'unknown') {
       payload
     });
 
-const { data, error } = await supabaseAdmin
-  .from(SUBSCRIPTION_TABLE)
-  .update({
-    stripe_customer_id: customerId,
-    trial_status: trialStatus,
-    trial_started_at: trialStart,
-    trial_expires_at: trialEnd,
-    payment_verified,
-    onboarding_completed,
-    verification_method: 'stripe_card'
-  })
-  .eq('id', userId)
-  .select()
-  .single();
-
+    const { data, error } = await supabaseAdmin
+      .from(SUBSCRIPTION_TABLE)
+      .update(payload)
+      .eq('id', userId)
+      .select()
+      .single();
 
     if (error) {
-      console.error('[Webhook] Upsert failed', { source, error, payload });
+      console.error('[Webhook] Update failed', { source, error, payload });
     } else {
-      console.log('[Webhook] Upsert OK', { source, userId, data });
+      console.log('[Webhook] Update OK', { source, userId, data });
     }
   } catch (err) {
     console.error('[Webhook] updateUserFromSubscription crashed', {
@@ -155,6 +150,7 @@ const { data, error } = await supabaseAdmin
     });
   }
 }
+
 
 export async function handler(event) {
   if (event.httpMethod === 'OPTIONS') {
