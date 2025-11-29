@@ -8,10 +8,15 @@ import AnalysisPanel from './components/AnalysisPanel';
 import PreviewPanel from './components/PreviewPanel';
 import AdBuilderService from '../../services/adBuilderService';
 import Icon from '../../components/AppIcon';
+import usePreferredTheme from '../../hooks/usePreferredTheme';
 
 const HighConversionAdBuilder = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [isPanelOpen, setIsPanelOpen] = useState(true);
+  const [isPanelOverlayOpen, setIsPanelOverlayOpen] = useState(false);
   const { user, userProfile } = useAuth();
+  const theme = usePreferredTheme();
+  const isDark = theme === 'dark';
   
   // NEW: Add input collapsed state
   const [isInputCollapsed, setIsInputCollapsed] = useState(false);
@@ -51,6 +56,8 @@ const HighConversionAdBuilder = () => {
   const [adPressure, setAdPressure] = useState('mittel'); // soft | mittel | aggressiv
   const [personaChips, setPersonaChips] = useState([]);
   const [placement, setPlacement] = useState('feed'); // feed | story | reel
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+  const [isPanelOverlayOpen, setIsPanelOverlayOpen] = useState(false);
 
   // Error and success states
   const [error, setError] = useState(null);
@@ -62,6 +69,13 @@ const HighConversionAdBuilder = () => {
     successRate: 94.2,
     avgGenerationTime: '2.3s'
   });
+
+  useEffect(() => {
+    if (typeof window !== 'undefined' && window.innerWidth < 1024) {
+      setIsPanelOpen(false);
+      setIsSidebarCollapsed(true);
+    }
+  }, []);
 
   // Load user's existing ads count
   useEffect(() => {
@@ -350,8 +364,17 @@ const HighConversionAdBuilder = () => {
     urgency: selectedAd?.focus_urgency ? 82 : 55
   };
 
+  const mainBg = isDark ? 'bg-[#050509] text-slate-50' : 'bg-slate-50 text-slate-900';
+  const cardBg = isDark ? 'bg-[#141418] border-white/5' : 'bg-white border-slate-200';
+  const subtleText = isDark ? 'text-slate-400' : 'text-slate-500';
+  const primaryButton =
+    'inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold rounded-lg transition shadow-[0_10px_30px_rgba(200,0,0,0.25)] bg-[#C80000] text-white hover:bg-[#a50000]';
+  const secondaryButton = isDark
+    ? 'inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold rounded-lg transition border border-white/10 bg-white/5 text-slate-200 hover:bg-white/10'
+    : 'inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold rounded-lg transition border border-slate-200 bg-white text-slate-800 hover:bg-slate-100';
+
   return (
-    <div className="min-h-screen bg-[#050509] text-slate-50">
+    <div className={`min-h-screen ${mainBg}`}>
       <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
       <Header onMenuToggle={() => setSidebarOpen(!sidebarOpen)} className="lg:left-60" />
 
@@ -368,8 +391,8 @@ const HighConversionAdBuilder = () => {
           <motion.div className="mb-6 sm:mb-8 flex flex-col gap-3" variants={itemVariants}>
             <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
               <div className="space-y-1">
-                <h1 className="text-3xl font-semibold text-white">Ad Builder: AdCreative Lab</h1>
-                <p className="text-sm text-slate-400">
+                <h1 className="text-3xl font-semibold">Ad Builder: AdCreative Lab</h1>
+                <p className={`text-sm ${subtleText}`}>
                   KI-gestützter Anzeigengenerator für maximale Conversion-Raten
                 </p>
               </div>
@@ -377,7 +400,7 @@ const HighConversionAdBuilder = () => {
               {currentStep === 'results' && (
                 <motion.button
                   onClick={handleNewAnalysis}
-                  className="flex items-center space-x-2 px-4 py-2 bg-[#C80000] text-white rounded-lg hover:bg-[#a50000] transition shadow-[0_10px_40px_rgba(200,0,0,0.35)]"
+                  className={`${primaryButton}`}
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
                 >
@@ -388,7 +411,7 @@ const HighConversionAdBuilder = () => {
             </div>
 
             {/* Progress Indicator */}
-            <div className="mt-2 flex flex-wrap gap-4 text-xs sm:text-sm text-slate-300">
+            <div className={`mt-2 flex flex-wrap gap-4 text-xs sm:text-sm ${subtleText}`}>
               {[
                 { step: 'input', label: 'Produkteingabe', index: 1 },
                 { step: 'analyzing', label: 'Marktanalyse', index: 2 },
@@ -415,7 +438,7 @@ const HighConversionAdBuilder = () => {
           {/* Error and Success Messages */}
           {error && (
             <motion.div
-              className="mb-4 sm:mb-6 p-4 bg-rose-500/10 border border-rose-500/40 rounded-lg text-rose-100"
+              className="mb-4 sm:mb-6 p-4 bg-rose-500/10 border border-rose-500/40 rounded-lg text-rose-900 dark:text-rose-100"
               initial={{ opacity: 0, y: -20 }}
               animate={{ opacity: 1, y: 0 }}
             >
@@ -428,7 +451,7 @@ const HighConversionAdBuilder = () => {
 
           {success && (
             <motion.div
-              className="mb-4 sm:mb-6 p-4 bg-emerald-500/10 border border-emerald-500/30 rounded-lg text-emerald-100"
+              className="mb-4 sm:mb-6 p-4 bg-emerald-500/10 border border-emerald-500/30 rounded-lg text-emerald-900 dark:text-emerald-100"
               initial={{ opacity: 0, y: -20 }}
               animate={{ opacity: 1, y: 0 }}
             >
@@ -442,32 +465,62 @@ const HighConversionAdBuilder = () => {
           {/* Main 3-Zone Layout */}
           <div className="grid grid-cols-1 xl:grid-cols-12 gap-6">
             {/* LEFT: Control Panel */}
-            <div className="xl:col-span-3 space-y-4">
-              {!isInputCollapsed ? (
-                <div className="bg-[#141418] border border-white/5 rounded-2xl p-4 sm:p-5 backdrop-blur">
-                  <div className="flex flex-wrap items-center gap-2 mb-4">
+            <div className={`${isSidebarCollapsed ? 'xl:col-span-1' : 'xl:col-span-3'} space-y-4 order-1 xl:order-none`}>
+              <div className="flex items-center justify-between xl:hidden">
+                <button
+                  onClick={() => setIsPanelOverlayOpen(true)}
+                  className={`${secondaryButton} px-3 py-2 text-xs`}
+                >
+                  <Icon name="Menu" size={16} />
+                  Navigation
+                </button>
+              </div>
+              {!isInputCollapsed && (isPanelOpen || isPanelOverlayOpen) ? (
+                <div
+                  className={`${cardBg} rounded-2xl p-4 sm:p-5 backdrop-blur relative ${
+                    isPanelOverlayOpen ? 'fixed inset-4 z-30 max-h-[80vh] overflow-y-auto' : ''
+                  }`}
+                >
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <button
+                        onClick={() => setMode('quick')}
+                        className={`px-3 py-2 text-xs font-semibold rounded-lg transition ${
+                          mode === 'quick'
+                            ? 'bg-[#C80000] text-white'
+                            : `${secondaryButton}`
+                        }`}
+                      >
+                        Schnellstart
+                      </button>
+                      <button
+                        onClick={() => setMode('pro')}
+                        className={`px-3 py-2 text-xs font-semibold rounded-lg transition ${
+                          mode === 'pro'
+                            ? 'bg-[#C80000] text-white'
+                            : `${secondaryButton}`
+                        }`}
+                      >
+                        Pro-Lab
+                      </button>
+                    </div>
                     <button
-                      onClick={() => setMode('quick')}
-                      className={`px-3 py-2 text-xs font-semibold rounded-lg transition ${
-                        mode === 'quick'
-                          ? 'bg-[#C80000] text-white'
-                          : 'bg-white/5 text-slate-200 border border-white/10 hover:bg-white/10'
-                      }`}
+                      onClick={() => {
+                        setIsSidebarCollapsed(true);
+                        setIsPanelOpen(false);
+                        setIsPanelOverlayOpen(false);
+                      }}
+                      className={`${secondaryButton} px-3 py-2 text-xs`}
                     >
-                      Schnellstart
-                    </button>
-                    <button
-                      onClick={() => setMode('pro')}
-                      className={`px-3 py-2 text-xs font-semibold rounded-lg transition ${
-                        mode === 'pro'
-                          ? 'bg-[#C80000] text-white'
-                          : 'bg-white/5 text-slate-200 border border-white/10 hover:bg-white/10'
-                      }`}
-                    >
-                      Pro-Lab
+                      <Icon name="ChevronLeft" size={14} />
+                      Einklappen
                     </button>
                   </div>
-                  <Stepper currentStep={currentStep} />
+                  <Stepper currentStep={currentStep} isDark={isDark} onStepSelect={() => {
+                    setIsSidebarCollapsed(true);
+                    setIsPanelOpen(false);
+                    setIsPanelOverlayOpen(false);
+                  }} />
                   <AccordionForm
                     mode={mode}
                     formData={formData}
@@ -476,30 +529,51 @@ const HighConversionAdBuilder = () => {
                     isGenerating={isAnalyzing || isGenerating}
                     isAnalyzing={isAnalyzing}
                     currentStep={currentStep}
+                    isDark={isDark}
+                    onSectionSelect={() => {
+                      setIsSidebarCollapsed(true);
+                      setIsPanelOpen(false);
+                      setIsPanelOverlayOpen(false);
+                    }}
                   />
                   <div className="mt-4 space-y-4">
-                    <AdPressureSlider value={adPressure} onChange={setAdPressure} />
-                    <PersonaChips value={personaChips} onChange={setPersonaChips} />
+                    <AdPressureSlider value={adPressure} onChange={setAdPressure} isDark={isDark} />
+                    <PersonaChips value={personaChips} onChange={setPersonaChips} isDark={isDark} />
                   </div>
+                  {isPanelOverlayOpen && (
+                    <button
+                      onClick={() => setIsPanelOverlayOpen(false)}
+                      className={`${secondaryButton} mt-4 w-full justify-center`}
+                    >
+                      Schließen
+                    </button>
+                  )}
                 </div>
               ) : (
-                <div className="bg-[#141418] border border-white/5 rounded-2xl p-4 flex items-center justify-between">
-                  <div>
-                    <p className="text-sm text-slate-400">Produkt-Eingabe</p>
-                    <p className="text-xs text-slate-500">{getFormSummary()}</p>
+                <div className={`${cardBg} rounded-2xl p-4 flex items-center justify-between`}>
+                  <div className="flex flex-wrap items-center gap-2 mb-4">
+                    <button
+                      onClick={() => {
+                        setIsInputCollapsed(false);
+                        setIsSidebarCollapsed(false);
+                        setIsPanelOpen(true);
+                      }}
+                      className={`${secondaryButton}`}
+                    >
+                      <Icon name="Menu" size={16} />
+                      Öffnen
+                    </button>
                   </div>
-                  <button
-                    onClick={toggleInputForm}
-                    className="px-3 py-2 text-xs font-semibold rounded-lg border border-white/10 bg-white/5 hover:bg-white/10 transition"
-                  >
-                    Bearbeiten
-                  </button>
+                  <div>
+                    <p className="text-sm">{getFormSummary()}</p>
+                    <p className={`text-xs ${subtleText}`}>Eingeklappt</p>
+                  </div>
                 </div>
               )}
             </div>
 
             {/* CENTER: Creative Canvas */}
-            <div className="xl:col-span-5 space-y-4">
+            <div className="xl:col-span-5 space-y-4 order-3 xl:order-none">
               <div className="bg-[#141418] border border-white/5 rounded-2xl p-4 sm:p-5 backdrop-blur shadow-[0_20px_80px_rgba(0,0,0,0.35)]">
                 <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
                   <div className="flex flex-wrap items-center gap-2">
@@ -520,17 +594,17 @@ const HighConversionAdBuilder = () => {
                     ))}
                   </div>
                   <div className="flex items-center gap-2">
-                    <div className="hidden sm:flex items-center gap-1 bg-white/5 border border-white/10 rounded-lg p-1">
-                      {['feed', 'story', 'reel'].map((p) => (
-                        <button
-                          key={p}
-                          onClick={() => setPlacement(p)}
-                          className={`px-2 py-1 text-[10px] rounded-md transition ${
-                            placement === p
-                              ? 'bg-[#C80000] text-white'
-                              : 'text-slate-200 hover:bg-white/10'
-                          }`}
-                        >
+                  <div className="hidden sm:flex items-center gap-1 rounded-lg p-1 border border-slate-200 dark:border-white/10 bg-white dark:bg-white/5">
+                    {['feed', 'story', 'reel'].map((p) => (
+                      <button
+                        key={p}
+                        onClick={() => setPlacement(p)}
+                        className={`px-2 py-1 text-[10px] rounded-md transition ${
+                          placement === p
+                            ? 'bg-[#C80000] text-white'
+                            : 'text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-white/10'
+                        }`}
+                      >
                           {p === 'feed' && 'Feed'}
                           {p === 'story' && 'Story'}
                           {p === 'reel' && 'Reel'}
@@ -539,14 +613,14 @@ const HighConversionAdBuilder = () => {
                     </div>
                     <button
                       onClick={handleRerollHook}
-                      className="flex items-center gap-2 px-3 py-2 text-xs font-semibold rounded-lg bg-white/5 border border-white/10 text-slate-200 hover:bg-white/10 transition"
+                      className={`${secondaryButton}`}
                     >
                       <Icon name="Dice5" size={16} />
                       Hook neu würfeln
                     </button>
                     <button
                       onClick={handleDuplicateVariant}
-                      className="flex items-center gap-2 px-3 py-2 text-xs font-semibold rounded-lg bg-[#C80000] text-white hover:bg-[#a50000] transition shadow-[0_10px_30px_rgba(200,0,0,0.35)]"
+                      className={`${primaryButton}`}
                     >
                       <Icon name="Copy" size={16} />
                       Variante duplizieren
@@ -558,16 +632,16 @@ const HighConversionAdBuilder = () => {
                 <div className="space-y-4">
                   {canvasTab === 'copy' && (
                     <div className="space-y-3">
-                      <div className="flex items-center justify-between text-xs text-slate-400">
+                      <div className={`flex items-center justify-between text-xs ${subtleText}`}>
                         <span>Platzierung: {placement}</span>
                         <span>{selectedAd?.id ? `Variante ID: ${selectedAd.id}` : 'Keine Auswahl'}</span>
                       </div>
-                      <div className="p-4 rounded-xl bg-white/5 border border-white/10">
-                        <h3 className="text-xl font-semibold text-white">{headline}</h3>
-                        <p className="text-sm text-slate-300 leading-relaxed whitespace-pre-line mt-2">
+                      <div className="p-4 rounded-xl bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10">
+                        <h3 className="text-xl font-semibold">{headline}</h3>
+                        <p className={`text-sm leading-relaxed whitespace-pre-line mt-2 ${subtleText}`}>
                           {bodyText}
                         </p>
-                        <div className="mt-3 inline-flex px-3 py-2 rounded-lg bg-[#C80000]/15 border border-[#C80000]/40 text-[11px] font-semibold text-white">
+                        <div className="mt-3 inline-flex px-3 py-2 rounded-lg bg-[#C80000]/15 border border-[#C80000]/40 text-[11px] font-semibold text-[#C80000] dark:text-white">
                           CTA: {ctaText}
                         </div>
                       </div>
@@ -575,9 +649,9 @@ const HighConversionAdBuilder = () => {
                   )}
 
                   {canvasTab === 'image' && (
-                    <div className="space-y-2 text-sm text-slate-300">
+                    <div className={`space-y-2 text-sm ${subtleText}`}>
                       <p>Image Prompts werden hier angezeigt, sobald sie verfügbar sind.</p>
-                      <div className="p-3 rounded-lg bg-white/5 border border-white/10 text-xs text-slate-400">
+                      <div className="p-3 rounded-lg bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 text-xs text-slate-500 dark:text-slate-400">
                         Beispiel: “Ultra-detailliertes Produktfoto mit weichem Licht, Fokus auf USP, hochauflösend, Clean Background”
                       </div>
                     </div>
@@ -585,17 +659,17 @@ const HighConversionAdBuilder = () => {
 
                   {canvasTab === 'structure' && (
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                      <div className="p-3 rounded-lg bg-white/5 border border-white/10">
-                        <p className="text-xs uppercase tracking-wide text-slate-400">Hook</p>
-                        <p className="text-sm text-white mt-1">{headline}</p>
+                      <div className="p-3 rounded-lg bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10">
+                        <p className={`text-xs uppercase tracking-wide ${subtleText}`}>Hook</p>
+                        <p className="text-sm mt-1">{headline}</p>
                       </div>
-                      <div className="p-3 rounded-lg bg-white/5 border border-white/10">
-                        <p className="text-xs uppercase tracking-wide text-slate-400">Body</p>
-                        <p className="text-sm text-slate-200 mt-1 whitespace-pre-line">{bodyText}</p>
+                      <div className="p-3 rounded-lg bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10">
+                        <p className={`text-xs uppercase tracking-wide ${subtleText}`}>Body</p>
+                        <p className={`text-sm mt-1 whitespace-pre-line ${subtleText}`}>{bodyText}</p>
                       </div>
-                      <div className="p-3 rounded-lg bg-white/5 border border-white/10">
-                        <p className="text-xs uppercase tracking-wide text-slate-400">CTA</p>
-                        <p className="text-sm text-white mt-1">{ctaText}</p>
+                      <div className="p-3 rounded-lg bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10">
+                        <p className={`text-xs uppercase tracking-wide ${subtleText}`}>CTA</p>
+                        <p className="text-sm mt-1">{ctaText}</p>
                       </div>
                     </div>
                   )}
@@ -624,12 +698,12 @@ const HighConversionAdBuilder = () => {
             </div>
 
             {/* RIGHT: Score + Variants */}
-              <div className="xl:col-span-4 space-y-4 xl:sticky xl:top-20 h-fit">
-              <div className="bg-[#141418] border border-white/5 rounded-2xl p-4 sm:p-5 backdrop-blur shadow-[0_20px_60px_rgba(0,0,0,0.35)]">
+              <div className="xl:col-span-4 space-y-4 xl:sticky xl:top-20 h-fit order-2 xl:order-none">
+              <div className={`${cardBg} rounded-2xl p-4 sm:p-5 backdrop-blur shadow-[0_20px_60px_rgba(0,0,0,0.35)]`}>
                 <div className="flex items-center justify-between mb-4">
                   <div>
-                    <p className="text-xs uppercase tracking-[0.2em] text-rose-400">Score</p>
-                    <h3 className="text-lg font-semibold text-white">Conversion-Score</h3>
+                    <p className="text-xs uppercase tracking-[0.2em] text-rose-500">Score</p>
+                    <h3 className="text-lg font-semibold">Conversion-Score</h3>
                   </div>
                   <div className="relative h-16 w-16">
                     <div
@@ -638,8 +712,8 @@ const HighConversionAdBuilder = () => {
                         background: `conic-gradient(#C80000 ${scoreValue * 3.6}deg, #1f2937 0deg)`
                       }}
                     />
-                    <div className="absolute inset-2 rounded-full bg-[#0b0b10] flex items-center justify-center shadow-[inset_0_0_10px_rgba(0,0,0,0.45)]">
-                      <span className="text-sm font-semibold text-white">{Math.round(scoreValue)}</span>
+                    <div className="absolute inset-2 rounded-full bg-white dark:bg-[#0b0b10] flex items-center justify-center shadow-[inset_0_0_10px_rgba(0,0,0,0.45)]">
+                      <span className="text-sm font-semibold">{Math.round(scoreValue)}</span>
                     </div>
                   </div>
                 </div>
@@ -650,11 +724,11 @@ const HighConversionAdBuilder = () => {
                     { label: 'Dringlichkeit', value: focusMetrics.urgency, color: 'from-amber-500 to-orange-500' }
                   ].map((metric) => (
                     <div key={metric.label} className="space-y-1">
-                      <div className="flex items-center justify-between text-xs text-slate-400">
+                      <div className={`flex items-center justify-between text-xs ${subtleText}`}>
                         <span>{metric.label}</span>
-                        <span className="text-white">{metric.value}%</span>
+                        <span className="text-slate-900 dark:text-white">{metric.value}%</span>
                       </div>
-                      <div className="w-full h-2 rounded-full bg-white/5 overflow-hidden">
+                      <div className="w-full h-2 rounded-full bg-slate-200 dark:bg-white/5 overflow-hidden">
                         <div
                           className={`h-2 rounded-full bg-gradient-to-r ${metric.color}`}
                           style={{ width: `${metric.value}%` }}
@@ -665,13 +739,13 @@ const HighConversionAdBuilder = () => {
                 </div>
               </div>
 
-              <div className="bg-[#141418] border border-white/5 rounded-2xl p-4 sm:p-5 backdrop-blur shadow-[0_20px_60px_rgba(0,0,0,0.35)]">
+              <div className={`${cardBg} rounded-2xl p-4 sm:p-5 backdrop-blur shadow-[0_20px_60px_rgba(0,0,0,0.35)]`}>
                 <div className="flex items-center justify-between mb-3">
                   <div>
-                    <p className="text-xs uppercase tracking-[0.2em] text-rose-400">Varianten</p>
-                    <h3 className="text-lg font-semibold text-white">Ad-Varianten</h3>
+                    <p className="text-xs uppercase tracking-[0.2em] text-rose-500">Varianten</p>
+                    <h3 className="text-lg font-semibold">Ad-Varianten</h3>
                   </div>
-                  <div className="text-xs text-slate-400">
+                  <div className={`text-xs ${subtleText}`}>
                     {generatedAds?.length || 0} Stück
                   </div>
                 </div>
@@ -683,16 +757,16 @@ const HighConversionAdBuilder = () => {
                         className={`p-3 rounded-xl border transition cursor-pointer ${
                           selectedAd?.id === ad?.id
                             ? 'border-[#C80000] bg-[#C80000]/10 shadow-[0_10px_40px_rgba(200,0,0,0.25)]'
-                            : 'border-white/5 bg-white/5 hover:border-white/15 hover:bg-white/10'
+                            : 'border-slate-200 dark:border-white/5 bg-white dark:bg-white/5 hover:border-slate-300 dark:hover:border-white/15 hover:bg-slate-50 dark:hover:bg-white/10'
                         }`}
                         onClick={() => setSelectedAd(ad)}
                       >
                         <div className="flex items-start justify-between gap-2">
                           <div className="flex-1 min-w-0">
-                            <p className="text-sm font-semibold text-white truncate">
+                            <p className="text-sm font-semibold truncate">
                               {ad?.headline || ad?.primary_text || `Variante ${index + 1}`}
                             </p>
-                            <p className="text-xs text-slate-400 line-clamp-2">
+                            <p className={`text-xs ${subtleText} line-clamp-2`}>
                               {ad?.primary_text || ad?.description || '—'}
                             </p>
                             <div className="flex flex-wrap gap-2 mt-2">
@@ -748,7 +822,7 @@ export default HighConversionAdBuilder;
 
 // --- UI Subcomponents for Stepper, AccordionForm, PersonaChips, Slider ---
 
-const Stepper = ({ currentStep }) => {
+const Stepper = ({ currentStep, onStepSelect, isDark }) => {
   const steps = [
     { key: 'input', label: 'Produkt' },
     { key: 'analyzing', label: 'Zielgruppe' },
@@ -756,19 +830,28 @@ const Stepper = ({ currentStep }) => {
     { key: 'results', label: 'Tonalität & Fokus' }
   ];
   return (
-    <div className="flex flex-wrap gap-3 text-xs sm:text-sm text-slate-300 mb-4">
+    <div className="flex flex-wrap gap-3 text-xs sm:text-sm mb-4">
       {steps.map((step, idx) => {
         const active =
           currentStep === step.key ||
           (step.key === 'analyzing' && (currentStep === 'generating' || currentStep === 'results')) ||
           (step.key === 'generating' && currentStep === 'results');
-        const color = active ? 'bg-[#C80000] text-white' : 'bg-slate-800 text-slate-400';
+        const color = active
+          ? 'bg-[#C80000] text-white'
+          : isDark
+            ? 'bg-slate-800 text-slate-400'
+            : 'bg-slate-200 text-slate-700';
         return (
-          <div key={step.key} className="flex items-center space-x-2">
+          <button
+            type="button"
+            key={step.key}
+            onClick={onStepSelect}
+            className="flex items-center space-x-2"
+          >
             <div className={`w-8 h-8 rounded-full flex items-center justify-center ${color}`}>{idx + 1}</div>
-            <span className={`font-medium ${active ? 'text-white' : 'text-slate-400'}`}>{step.label}</span>
-            {idx < steps.length - 1 && <div className="w-8 h-px bg-slate-700 mx-1" />}
-          </div>
+            <span className={`font-medium ${active ? 'text-slate-900 dark:text-white' : isDark ? 'text-slate-400' : 'text-slate-600'}`}>{step.label}</span>
+            {idx < steps.length - 1 && <div className={`w-8 h-px ${isDark ? 'bg-slate-700' : 'bg-slate-300'} mx-1`} />}
+          </button>
         );
       })}
     </div>
@@ -782,11 +865,15 @@ const AccordionForm = ({
   onGenerate,
   isGenerating,
   isAnalyzing,
-  currentStep
+  currentStep,
+  isDark,
+  onSectionSelect
 }) => {
   const [open, setOpen] = useState(['produkt']);
-  const toggle = (key) =>
+  const toggle = (key) => {
     setOpen((prev) => (prev.includes(key) ? prev.filter((k) => k !== key) : [...prev, key]));
+    onSectionSelect?.();
+  };
 
   const quickFields = ['product_name', 'target_audience', 'main_benefits', 'price_offer', 'usp'];
   const showField = (field) => mode === 'pro' || quickFields.includes(field);
@@ -805,24 +892,32 @@ const AccordionForm = ({
     if (type === 'textarea') {
       return (
         <div className="space-y-2">
-          <label className="text-sm font-medium text-slate-200">{label}</label>
+          <label className="text-sm font-medium">{label}</label>
           <textarea
             {...baseProps}
             placeholder={placeholder}
             rows={3}
-            className="w-full px-3 py-2 rounded-lg bg-[#0b0b10] border border-white/10 text-slate-50 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-[#C80000]"
+            className={`w-full px-3 py-2 rounded-lg border placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#C80000] ${
+              isDark
+                ? 'bg-[#0b0b10] border-white/10 text-slate-50'
+                : 'bg-white border-slate-200 text-slate-900'
+            }`}
           />
         </div>
       );
     }
     return (
       <div className="space-y-2">
-        <label className="text-sm font-medium text-slate-200">{label}</label>
+        <label className="text-sm font-medium">{label}</label>
         <input
           {...baseProps}
           type="text"
           placeholder={placeholder}
-          className="w-full px-3 py-2 rounded-lg bg-[#0b0b10] border border-white/10 text-slate-50 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-[#C80000]"
+          className={`w-full px-3 py-2 rounded-lg border placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#C80000] ${
+            isDark
+              ? 'bg-[#0b0b10] border-white/10 text-slate-50'
+              : 'bg-white border-slate-200 text-slate-900'
+          }`}
         />
       </div>
     );
@@ -832,7 +927,7 @@ const AccordionForm = ({
     if (!showField(field)) return null;
     return (
       <div className="space-y-2">
-        <label className="text-sm font-medium text-slate-200">{label}</label>
+        <label className="text-sm font-medium">{label}</label>
         <select
           value={formData?.[field] || options?.[0]?.value}
           onChange={(e) =>
@@ -842,7 +937,9 @@ const AccordionForm = ({
             }))
           }
           disabled={isGenerating || isAnalyzing}
-          className="w-full px-3 py-2 rounded-lg bg-[#0b0b10] border border-white/10 text-slate-50 focus:outline-none focus:ring-2 focus:ring-[#C80000]"
+          className={`w-full px-3 py-2 rounded-lg border focus:outline-none focus:ring-2 focus:ring-[#C80000] ${
+            isDark ? 'bg-[#0b0b10] border-white/10 text-slate-50' : 'bg-white border-slate-200 text-slate-900'
+          }`}
         >
           {options?.map((opt) => (
             <option key={opt.value} value={opt.value}>
@@ -921,7 +1018,7 @@ const AccordionForm = ({
                   { field: 'focus_benefits', label: 'Nutzen' },
                   { field: 'focus_urgency', label: 'Dringlichkeit' }
                 ].map((f) => (
-                  <label key={f.field} className="flex items-center gap-2 text-xs text-slate-200">
+                  <label key={f.field} className="flex items-center gap-2 text-xs">
                     <input
                       type="checkbox"
                       checked={!!formData?.[f.field]}
@@ -932,7 +1029,9 @@ const AccordionForm = ({
                         }))
                       }
                       disabled={isGenerating || isAnalyzing}
-                      className="h-4 w-4 rounded border-white/20 bg-[#0b0b10] text-[#C80000] focus:ring-[#C80000]"
+                      className={`h-4 w-4 rounded text-[#C80000] focus:ring-[#C80000] ${
+                        isDark ? 'border-white/20 bg-[#0b0b10]' : 'border-slate-300 bg-white'
+                      }`}
                     />
                     {f.label}
                   </label>
@@ -942,11 +1041,16 @@ const AccordionForm = ({
           )
         }
       ].map((section) => (
-        <div key={section.key} className="rounded-xl bg-white/5 border border-white/10 overflow-hidden">
+        <div
+          key={section.key}
+          className={`rounded-xl overflow-hidden border ${
+            isDark ? 'bg-white/5 border-white/10' : 'bg-white border-slate-200'
+          }`}
+        >
           <button
             type="button"
             onClick={() => toggle(section.key)}
-            className="w-full px-3 py-2 flex items-center justify-between text-sm font-semibold text-white"
+            className="w-full px-3 py-2 flex items-center justify-between text-sm font-semibold"
           >
             <span>{section.title}</span>
             <Icon name={open.includes(section.key) ? 'ChevronUp' : 'ChevronDown'} size={16} />
@@ -964,7 +1068,7 @@ const AccordionForm = ({
       <button
         onClick={onGenerate}
         disabled={isGenerating || isAnalyzing}
-        className="w-full mt-3 px-4 py-3 rounded-lg bg-[#C80000] text-white font-semibold hover:bg-[#a50000] transition shadow-[0_10px_30px_rgba(200,0,0,0.35)] disabled:opacity-60"
+        className={`${primaryButton} w-full mt-3 justify-center disabled:opacity-60`}
       >
         Ads generieren
       </button>
@@ -972,17 +1076,17 @@ const AccordionForm = ({
   );
 };
 
-const AdPressureSlider = ({ value, onChange }) => {
+const AdPressureSlider = ({ value, onChange, isDark }) => {
   const options = [
     { key: 'soft', label: 'Soft' },
     { key: 'mittel', label: 'Mittel' },
     { key: 'aggressiv', label: 'Aggressiv' }
   ];
   return (
-    <div className="bg-white/5 border border-white/10 rounded-xl p-3">
-      <div className="flex items-center justify-between text-xs text-slate-300 mb-2">
+    <div className={`rounded-xl p-3 border ${isDark ? 'bg-white/5 border-white/10' : 'bg-white border-slate-200'}`}>
+      <div className={`flex items-center justify-between text-xs mb-2 ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>
         <span>Werbedruck</span>
-        <span className="text-white font-semibold capitalize">{value}</span>
+        <span className="font-semibold capitalize text-slate-900 dark:text-white">{value}</span>
       </div>
       <div className="grid grid-cols-3 gap-2">
         {options.map((opt) => (
@@ -992,7 +1096,9 @@ const AdPressureSlider = ({ value, onChange }) => {
             className={`py-2 rounded-lg text-xs font-semibold transition ${
               value === opt.key
                 ? 'bg-[#C80000] text-white'
-                : 'bg-[#0b0b10] text-slate-300 border border-white/5 hover:bg-white/5'
+                : isDark
+                  ? 'bg-[#0b0b10] text-slate-300 border border-white/5 hover:bg-white/5'
+                  : 'bg-white text-slate-700 border border-slate-200 hover:bg-slate-100'
             }`}
           >
             {opt.label}
@@ -1003,15 +1109,15 @@ const AdPressureSlider = ({ value, onChange }) => {
   );
 };
 
-const PersonaChips = ({ value = [], onChange }) => {
+const PersonaChips = ({ value = [], onChange, isDark }) => {
   const personas = ['Schnäppchenjäger', 'Premium-Käufer', 'Busy Mom', 'Tech-Nerd'];
   const toggle = (p) =>
     onChange(
       value.includes(p) ? value.filter((v) => v !== p) : [...value, p]
     );
   return (
-    <div className="bg-white/5 border border-white/10 rounded-xl p-3">
-      <p className="text-xs text-slate-300 mb-2">Personas</p>
+    <div className={`rounded-xl p-3 border ${isDark ? 'bg-white/5 border-white/10' : 'bg-white border-slate-200'}`}>
+      <p className={`text-xs mb-2 ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>Personas</p>
       <div className="flex flex-wrap gap-2">
         {personas.map((p) => {
           const active = value.includes(p);
@@ -1022,7 +1128,9 @@ const PersonaChips = ({ value = [], onChange }) => {
               className={`px-3 py-2 rounded-full text-xs font-semibold transition ${
                 active
                   ? 'bg-[#C80000] text-white shadow-[0_10px_30px_rgba(200,0,0,0.35)]'
-                  : 'bg-[#0b0b10] text-slate-300 border border-white/5 hover:bg-white/5'
+                  : isDark
+                    ? 'bg-[#0b0b10] text-slate-300 border border-white/5 hover:bg-white/5'
+                    : 'bg-white text-slate-700 border border-slate-200 hover:bg-slate-100'
               }`}
             >
               {p}
