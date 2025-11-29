@@ -28,17 +28,23 @@ function logSupabaseError(context, error) {
 }
 
 const AdminDashboard = () => {
-  const { user } = useAuth();
+  const { user, signOut } = useAuth();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [stats, setStats] = useState({
     userCount: 0,
     monthlyRevenue: 0,
-    totalRevenue: 0
+    totalRevenue: 0,
+    totalUsers: 0,
+    trialActive: 0,
+    trialExpiredOrCancelled: 0,
+    payingUsers: 0
   });
   const [monthlySeries, setMonthlySeries] = useState([]);
   const [leaderboard, setLeaderboard] = useState([]);
   const [payouts, setPayouts] = useState([]);
+  const [latestUsers, setLatestUsers] = useState([]);
+  const [activeTab, setActiveTab] = useState('overview');
 
   const loadData = useCallback(async () => {
     setLoading(true);
@@ -48,23 +54,19 @@ const AdminDashboard = () => {
       const { count: userCount, error: userCountError } = await supabase
         .from('user_profiles')
         .select('id', { count: 'exact', head: true });
-
       if (userCountError) {
         logSupabaseError('load userCount', userCountError);
       }
 
       const { data: revenueData, error: revenueError } =
         await supabase.rpc('get_revenue_stats');
-
       if (revenueError) {
         logSupabaseError('load revenueData', revenueError);
       }
-
       const statsRow = Array.isArray(revenueData) ? revenueData[0] : revenueData;
 
       const { data: leaderboardData, error: leaderboardError } =
         await supabase.rpc('get_affiliate_leaderboard');
-
       if (leaderboardError) {
         logSupabaseError('load leaderboardData', leaderboardError);
       }
@@ -77,7 +79,7 @@ const AdminDashboard = () => {
           amount,
           currency,
           status,
-          requested_at,
+          created_at,
           approved_at,
           paid_at,
           processed_at,
@@ -87,23 +89,65 @@ const AdminDashboard = () => {
           note,
           admin_note
         `)
-        .order('requested_at', { ascending: false })
+        .order('created_at', { ascending: false })
         .limit(50);
-
       if (payoutError) {
         logSupabaseError('load payoutData', payoutError);
+      }
+
+      const { count: totalUsers, error: totalUsersError } = await supabase
+        .from('user_profiles')
+        .select('id', { count: 'exact', head: true });
+      if (totalUsersError) {
+        logSupabaseError('load totalUsers', totalUsersError);
+      }
+
+      const { count: trialActiveCount, error: trialActiveError } = await supabase
+        .from('user_profiles')
+        .select('id', { count: 'exact', head: true })
+        .eq('trial_status', 'active');
+      if (trialActiveError) {
+        logSupabaseError('load trialActiveCount', trialActiveError);
+      }
+
+      const { count: trialExpiredCount, error: trialExpiredError } = await supabase
+        .from('user_profiles')
+        .select('id', { count: 'exact', head: true })
+        .in('trial_status', ['expired', 'cancelled']);
+      if (trialExpiredError) {
+        logSupabaseError('load trialExpiredCount', trialExpiredError);
+      }
+
+      const { count: payingUsersCount, error: payingUsersError } = await supabase
+        .from('user_profiles')
+        .select('id', { count: 'exact', head: true })
+        .eq('payment_verified', true);
+      if (payingUsersError) {
+        logSupabaseError('load payingUsersCount', payingUsersError);
+      }
+
+      const { data: latestUsersData, error: latestUsersError } = await supabase
+        .from('user_profiles')
+        .select('id, email, created_at, trial_status, payment_verified')
+        .order('created_at', { ascending: false })
+        .limit(10);
+      if (latestUsersError) {
+        logSupabaseError('load latestUsers', latestUsersError);
       }
 
       setStats({
         userCount: userCount || 0,
         monthlyRevenue: statsRow?.monthly_amount || 0,
-        totalRevenue: statsRow?.total_amount || 0
+        totalRevenue: statsRow?.total_amount || 0,
+        totalUsers: totalUsers || 0,
+        trialActive: trialActiveCount || 0,
+        trialExpiredOrCancelled: trialExpiredCount || 0,
+        payingUsers: payingUsersCount || 0
       });
-
       setMonthlySeries(statsRow?.monthly_breakdown || []);
       setLeaderboard(leaderboardData || []);
       setPayouts(payoutData || []);
-
+      setLatestUsers(latestUsersData || []);
     } catch (err) {
       console.error('[AdminDashboard] load failed', err);
       setError(err?.message || 'Fehler beim Laden der Admin-Daten');
@@ -115,11 +159,6 @@ const AdminDashboard = () => {
   useEffect(() => {
     loadData();
   }, [user?.id, loadData]);
-
-  const openPayouts = useMemo(
-    () => (payouts ?? []).filter((p) => p?.status === 'requested'),
-    [payouts]
-  );
 
   const handlePayoutAction = async (payoutId, newStatus, note = null) => {
     if (!payoutId || !newStatus) return;
@@ -151,292 +190,282 @@ const AdminDashboard = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-background text-foreground p-6">
-        <div className="h-10 w-48 bg-muted animate-pulse rounded-md mb-6" />
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-          {[...Array(3)].map((_, idx) => (
-            <div key={idx} className="h-24 bg-muted animate-pulse rounded-lg" />
-          ))}
-        </div>
-        <div className="h-72 bg-muted animate-pulse rounded-lg" />
+      <div className="min-h-screen flex items-center justify-center bg-slate-950 text-slate-200">
+        <span className="text-sm text-slate-400">Lade Admin-Daten…</span>
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="min-h-screen bg-background text-foreground p-6">
-        <div className="max-w-3xl mx-auto bg-destructive/10 border border-destructive/40 text-destructive p-4 rounded-lg">
-          {error}
-        </div>
+      <div className="min-h-screen flex items-center justify-center bg-slate-950 text-red-400">
+        <span className="text-sm">Fehler beim Laden der Admin-Daten: {error}</span>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-background text-foreground p-6 space-y-8">
+    <div className="min-h-screen bg-slate-950 text-slate-50">
+      <button
+        type="button"
+        onClick={signOut}
+        className="fixed top-4 left-4 bg-red-600 text-white px-4 py-2 rounded-lg shadow hover:bg-red-700 transition text-sm font-medium z-50"
+      >
+        Logout
+      </button>
 
-      {/* HEADER */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold">Admin Dashboard</h1>
-          <p className="text-muted-foreground">Kennzahlen, Umsätze und Affiliate-Übersicht</p>
-        </div>
-        <button
-          onClick={loadData}
-          className="px-4 py-2 bg-primary text-primary-foreground rounded-md text-sm"
-        >
-          Aktualisieren
-        </button>
-      </div>
-
-      {/* STATS */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div className="bg-card border border-border rounded-lg p-4 shadow-sm">
-          <p className="text-sm text-muted-foreground">Gesamtanzahl User</p>
-          <p className="text-3xl font-bold mt-2">{stats.userCount}</p>
-        </div>
-
-        <div className="bg-card border border-border rounded-lg p-4 shadow-sm">
-          <p className="text-sm text-muted-foreground">Monatsumsatz (aktuell)</p>
-          <p className="text-3xl font-bold mt-2">
-            {currencyFormat(stats.monthlyRevenue)}
-          </p>
-        </div>
-
-        <div className="bg-card border border-border rounded-lg p-4 shadow-sm">
-          <p className="text-sm text-muted-foreground">Gesamtumsatz</p>
-          <p className="text-3xl font-bold mt-2">
-            {currencyFormat(stats.totalRevenue)}
-          </p>
-        </div>
-      </div>
-
-      {/* MONTHLY CHART */}
-      <div className="bg-card border border-border rounded-lg p-4 shadow-sm">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-semibold">
-            Umsatz pro Monat (letzte 12 Monate)
-          </h2>
-          <span className="text-sm text-muted-foreground">
-            {monthlyChartData.length} Monate
-          </span>
-        </div>
-
-        <div className="h-80">
-          <ResponsiveContainer width="100%" height="100%">
-            <LineChart data={monthlyChartData}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
-              <XAxis dataKey="month" />
-              <YAxis />
-              <Tooltip />
-              <Line
-                type="monotone"
-                dataKey="revenue"
-                stroke="#C80000"
-                strokeWidth={2}
-              />
-            </LineChart>
-          </ResponsiveContainer>
-        </div>
-      </div>
-
-      {/* AFFILIATE LEADERBOARD */}
-      <div className="bg-card border border-border rounded-lg p-4 shadow-sm">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-semibold">Top Affiliates</h2>
-          <span className="text-sm text-muted-foreground">
-            {(leaderboard ?? []).length} Einträge
-          </span>
-        </div>
-
-        <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-border">
-            <thead className="bg-muted/50">
-              <tr>
-                <th className="px-4 py-3 text-left text-xs">Affiliate</th>
-                <th className="px-4 py-3 text-left text-xs">Referrals</th>
-                <th className="px-4 py-3 text-left text-xs">Ausgezahlt</th>
-                <th className="px-4 py-3 text-left text-xs">Guthaben</th>
-                <th className="px-4 py-3 text-left text-xs">Lifetime</th>
-              </tr>
-            </thead>
-
-            <tbody className="divide-y divide-border">
-              {(leaderboard ?? []).map((row) => {
-                const email = row?.email ?? '—';
-                const fullName =
-                  row?.first_name || row?.last_name
-                    ? `${row?.first_name ?? ''} ${row?.last_name ?? ''}`.trim()
-                    : email;
-
-                return (
-                  <tr key={row?.affiliate_id}>
-                    <td className="px-4 py-3 text-sm">
-                      <div className="font-semibold">{fullName}</div>
-                      <div className="text-xs text-muted-foreground">{email}</div>
-                    </td>
-
-                    <td className="px-4 py-3 text-sm">
-                      {row?.referral_count ?? 0}
-                    </td>
-
-                    <td className="px-4 py-3 text-sm">
-                      {currencyFormat(Number(row?.paid_sum) || 0)}
-                    </td>
-
-                    <td className="px-4 py-3 text-sm">
-                      {currencyFormat(Number(row?.affiliate_balance) || 0)}
-                    </td>
-
-                    <td className="px-4 py-3 text-sm">
-                      {currencyFormat(Number(row?.affiliate_lifetime_earnings) || 0)}
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-
-          </table>
-        </div>
-      </div>
-
-      {/* PAYOUTS */}
-      <div className="bg-card border border-border rounded-lg p-4 shadow-sm">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-semibold">Auszahlungen</h2>
-          <span className="text-sm text-muted-foreground">
-            {(payouts ?? []).length} Einträge
-          </span>
-        </div>
-
-        {openPayouts.length > 0 && (
-          <div className="mb-6">
-            <h3 className="text-md font-semibold mb-2">Offene Anfragen</h3>
-            <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-border">
-                <thead className="bg-muted/50">
-                  <tr>
-                    <th className="px-4 py-3 text-left text-xs">Affiliate ID</th>
-                    <th className="px-4 py-3 text-left text-xs">Betrag</th>
-                    <th className="px-4 py-3 text-left text-xs">Status</th>
-                    <th className="px-4 py-3 text-left text-xs">Bank</th>
-                    <th className="px-4 py-3 text-left text-xs">Aktionen</th>
-                  </tr>
-                </thead>
-
-                <tbody className="divide-y divide-border">
-                  {(openPayouts ?? []).map((payout) => (
-                    <tr key={payout?.id}>
-                      <td className="px-4 py-3 text-sm font-mono">
-                        {payout?.affiliate_id ?? '—'}
-                      </td>
-
-                      <td className="px-4 py-3 text-sm">
-                        {currencyFormat(Number(payout?.amount) || 0)}{' '}
-                        {payout?.currency ?? 'EUR'}
-                      </td>
-
-                      <td className="px-4 py-3 text-sm capitalize">
-                        {payout?.status ?? '—'}
-                      </td>
-
-                      <td className="px-4 py-3 text-sm">
-                        <div>{payout?.bank_account_holder ?? '—'}</div>
-                        <div className="text-xs text-muted-foreground">
-                          {payout?.bank_iban ?? '—'}
-                        </div>
-                        <div className="text-xs text-muted-foreground">
-                          {payout?.bank_bic ?? '—'}
-                        </div>
-                      </td>
-
-                      <td className="px-4 py-3 text-sm space-x-2">
-                        <button
-                          className="px-3 py-1 rounded-md bg-amber-100 text-amber-700 border border-amber-200"
-                          onClick={() => handlePayoutAction(payout?.id, 'approved')}
-                        >
-                          Approve
-                        </button>
-
-                        <button
-                          className="px-3 py-1 rounded-md bg-green-100 text-green-700 border border-green-200"
-                          onClick={() => handlePayoutAction(payout?.id, 'paid')}
-                        >
-                          Mark Paid
-                        </button>
-
-                        <button
-                          className="px-3 py-1 rounded-md bg-red-100 text-red-700 border border-red-200"
-                          onClick={() =>
-                            handlePayoutAction(payout?.id, 'rejected')
-                          }
-                        >
-                          Reject
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-
-              </table>
+      <div className="max-w-6xl mx-auto px-4 py-8">
+        <div className="space-y-6">
+          {/* HEADER */}
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-2xl font-bold tracking-tight text-slate-50">Admin Dashboard</h1>
+              <p className="text-sm text-slate-400">
+                Eingeloggt als{' '}
+                <span className="font-medium text-slate-200">
+                  {user?.email || 'Admin'}
+                </span>
+              </p>
             </div>
+            <button
+              type="button"
+              onClick={loadData}
+              className="px-4 py-2 rounded-lg text-sm font-medium bg-slate-800 text-slate-50 hover:bg-slate-700 border border-slate-700 transition"
+            >
+              Aktualisieren
+            </button>
           </div>
-        )}
 
-        <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-border">
-            <thead className="bg-muted/50">
-              <tr>
-                <th className="px-4 py-3 text-left text-xs">Affiliate ID</th>
-                <th className="px-4 py-3 text-left text-xs">Betrag</th>
-                <th className="px-4 py-3 text-left text-xs">Status</th>
-                <th className="px-4 py-3 text-left text-xs">Requested</th>
-                <th className="px-4 py-3 text-left text-xs">Bank</th>
-                <th className="px-4 py-3 text-left text-xs">Notiz</th>
-              </tr>
-            </thead>
+          <div className="flex items-center space-x-3 border-b border-slate-800 pb-3">
+            <button
+              type="button"
+              onClick={() => setActiveTab('overview')}
+              className={`px-3 py-1.5 rounded-md text-sm ${
+                activeTab === 'overview'
+                  ? 'bg-slate-800 text-slate-50'
+                  : 'text-slate-400 hover:text-slate-200'
+              }`}
+            >
+              Übersicht
+            </button>
+            <button
+              type="button"
+              onClick={() => setActiveTab('affiliate')}
+              className={`px-3 py-1.5 rounded-md text-sm ${
+                activeTab === 'affiliate'
+                  ? 'bg-slate-800 text-slate-50'
+                  : 'text-slate-400 hover:text-slate-200'
+              }`}
+            >
+              Affiliate
+            </button>
+          </div>
 
-            <tbody className="divide-y divide-border">
-              {(payouts ?? []).map((payout) => (
-                <tr key={payout?.id}>
-                  <td className="px-4 py-3 text-sm font-mono">
-                    {payout?.affiliate_id ?? '—'}
-                  </td>
+          <div className="mt-6">
+            {activeTab === 'overview' && (
+              <>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                  <div className="bg-slate-900 border border-slate-800 rounded-2xl p-4 flex flex-col gap-1">
+                    <span className="text-xs uppercase tracking-wide text-slate-400">Gesamt-User</span>
+                    <span className="text-2xl font-semibold">{stats.totalUsers ?? 0}</span>
+                  </div>
+                  <div className="bg-slate-900 border border-slate-800 rounded-2xl p-4 flex flex-col gap-1">
+                    <span className="text-xs uppercase tracking-wide text-slate-400">Aktive Trials</span>
+                    <span className="text-2xl font-semibold">{stats.trialActive ?? 0}</span>
+                  </div>
+                  <div className="bg-slate-900 border border-slate-800 rounded-2xl p-4 flex flex-col gap-1">
+                    <span className="text-xs uppercase tracking-wide text-slate-400">Zahlende User</span>
+                    <span className="text-2xl font-semibold">{stats.payingUsers ?? 0}</span>
+                  </div>
+                  <div className="bg-slate-900 border border-slate-800 rounded-2xl p-4 flex flex-col gap-1">
+                    <span className="text-xs uppercase tracking-wide text-slate-400">
+                      Abgelaufene / nicht verlängerte Trials
+                    </span>
+                    <span className="text-2xl font-semibold">{stats.trialExpiredOrCancelled ?? 0}</span>
+                  </div>
+                  <div className="bg-slate-900 border border-slate-800 rounded-2xl p-4 flex flex-col gap-1">
+                    <span className="text-xs uppercase tracking-wide text-slate-400">Monatlicher Umsatz</span>
+                    <span className="text-2xl font-semibold">
+                      {currencyFormat(stats.monthlyRevenue ?? 0)}
+                    </span>
+                  </div>
+                  <div className="bg-slate-900 border border-slate-800 rounded-2xl p-4 flex flex-col gap-1">
+                    <span className="text-xs uppercase tracking-wide text-slate-400">Gesamtumsatz</span>
+                    <span className="text-2xl font-semibold">
+                      {currencyFormat(stats.totalRevenue ?? 0)}
+                    </span>
+                  </div>
+                </div>
 
-                  <td className="px-4 py-3 text-sm">
-                    {currencyFormat(Number(payout?.amount) || 0)}{' '}
-                    {payout?.currency ?? 'EUR'}
-                  </td>
+                <div className="mt-8 bg-slate-900 border border-slate-800 rounded-2xl p-4">
+                  <h3 className="text-sm font-medium mb-4 text-slate-200">Monatlicher Umsatz</h3>
+                  <div className="h-64">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <LineChart data={monthlyChartData || []}>
+                        <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" />
+                        <XAxis dataKey="month" stroke="#64748b" />
+                        <YAxis stroke="#64748b" />
+                        <Tooltip
+                          contentStyle={{
+                            backgroundColor: '#020617',
+                            borderColor: '#1e293b',
+                            borderRadius: '0.75rem'
+                          }}
+                        />
+                        <Line
+                          type="monotone"
+                          dataKey="revenue"
+                          stroke="#f97316"
+                          strokeWidth={2}
+                          dot={false}
+                        />
+                      </LineChart>
+                    </ResponsiveContainer>
+                  </div>
+                </div>
 
-                  <td className="px-4 py-3 text-sm capitalize">
-                    {payout?.status ?? '—'}
-                  </td>
+                <div className="mt-8 bg-slate-900 border border-slate-800 rounded-2xl p-4">
+                  <h3 className="text-sm font-medium mb-4 text-slate-200">Neueste User</h3>
+                  <div className="overflow-x-auto">
+                    <table className="min-w-full text-sm">
+                      <thead>
+                        <tr className="text-left text-slate-400 border-b border-slate-800">
+                          <th className="py-2 pr-4">E-Mail</th>
+                          <th className="py-2 pr-4">Registriert am</th>
+                          <th className="py-2 pr-4">Trial-Status</th>
+                          <th className="py-2 pr-4">Zahlend</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {(latestUsers ?? []).map((u) => (
+                          <tr key={u.id} className="border-b border-slate-900/60">
+                            <td className="py-2 pr-4 text-slate-200">{u.email}</td>
+                            <td className="py-2 pr-4 text-slate-300">
+                              {u.created_at ? new Date(u.created_at).toLocaleString('de-DE') : '-'}
+                            </td>
+                            <td className="py-2 pr-4 text-slate-300">
+                              {u.trial_status || '—'}
+                            </td>
+                            <td className="py-2 pr-4 text-slate-300">
+                              {u.payment_verified ? 'Ja' : 'Nein'}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </>
+            )}
 
-                  <td className="px-4 py-3 text-sm">
-                    {safeDate(payout?.requested_at)}
-                  </td>
+            {activeTab === 'affiliate' && (
+              <div className="space-y-6">
+                <div className="bg-slate-900 border border-slate-800 rounded-2xl p-4">
+                  <h3 className="text-sm font-medium mb-4 text-slate-200">Affiliate Leaderboard</h3>
+                  <div className="overflow-x-auto">
+                    <table className="min-w-full text-sm">
+                      <thead>
+                        <tr className="text-left text-slate-400 border-b border-slate-800">
+                          <th className="py-2 pr-4">Rang</th>
+                          <th className="py-2 pr-4">Affiliate</th>
+                          <th className="py-2 pr-4">Referrals</th>
+                          <th className="py-2 pr-4">Umsatz</th>
+                          <th className="py-2 pr-4">Provision</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {leaderboard && leaderboard.length > 0 ? (
+                          leaderboard.map((row, index) => (
+                            <tr key={row.affiliate_id || index} className="border-b border-slate-900/60">
+                              <td className="py-2 pr-4 text-slate-300">{index + 1}</td>
+                              <td className="py-2 pr-4 text-slate-200">
+                                {row.affiliate_name || row.email || 'Unbekannt'}
+                              </td>
+                              <td className="py-2 pr-4 text-slate-300">
+                                {row.total_referrals ?? row.referral_count ?? 0}
+                              </td>
+                              <td className="py-2 pr-4 text-slate-300">
+                                {currencyFormat(row.total_revenue ?? 0)}
+                              </td>
+                              <td className="py-2 pr-4 text-slate-300">
+                                {currencyFormat(row.total_commission ?? 0)}
+                              </td>
+                            </tr>
+                          ))
+                        ) : (
+                          <tr>
+                            <td
+                              className="py-4 pr-4 text-slate-500"
+                              colSpan={5}
+                            >
+                              Noch keine Affiliate-Daten vorhanden.
+                            </td>
+                          </tr>
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
 
-                  <td className="px-4 py-3 text-sm">
-                    <div>{payout?.bank_account_holder ?? '—'}</div>
-                    <div className="text-xs text-muted-foreground">
-                      {payout?.bank_iban ?? '—'}
-                    </div>
-                    <div className="text-xs text-muted-foreground">
-                      {payout?.bank_bic ?? '—'}
-                    </div>
-                  </td>
-
-                  <td className="px-4 py-3 text-sm text-muted-foreground">
-                    {payout?.note ?? payout?.admin_note ?? '—'}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-
-          </table>
+                <div className="bg-slate-900 border border-slate-800 rounded-2xl p-4">
+                  <h3 className="text-sm font-medium mb-4 text-slate-200">Auszahlungen</h3>
+                  <div className="overflow-x-auto">
+                    <table className="min-w-full text-sm">
+                      <thead>
+                        <tr className="text-left text-slate-400 border-b border-slate-800">
+                          <th className="py-2 pr-4">Affiliate</th>
+                          <th className="py-2 pr-4">Betrag</th>
+                          <th className="py-2 pr-4">Status</th>
+                          <th className="py-2 pr-4">Angefragt am</th>
+                          <th className="py-2 pr-4">Ausgezahlt am</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {payouts && payouts.length > 0 ? (
+                          payouts.map((payout) => (
+                            <tr key={payout.id} className="border-b border-slate-900/60">
+                              <td className="py-2 pr-4 text-slate-200">
+                                {payout.affiliate_email || payout.affiliate_name || 'Unbekannt'}
+                              </td>
+                              <td className="py-2 pr-4 text-slate-300">
+                                {currencyFormat(payout.amount ?? 0)}{' '}
+                                <span className="text-slate-500 text-xs">
+                                  {payout.currency || 'EUR'}
+                                </span>
+                              </td>
+                              <td className="py-2 pr-4 text-slate-300">
+                                {payout.status || '—'}
+                              </td>
+                              <td className="py-2 pr-4 text-slate-300">
+                                {payout.created_at
+                                  ? new Date(payout.created_at).toLocaleString('de-DE')
+                                  : '—'}
+                              </td>
+                              <td className="py-2 pr-4 text-slate-300">
+                                {payout.paid_at
+                                  ? new Date(payout.paid_at).toLocaleString('de-DE')
+                                  : '—'}
+                              </td>
+                            </tr>
+                          ))
+                        ) : (
+                          <tr>
+                            <td
+                              className="py-4 pr-4 text-slate-500"
+                              colSpan={5}
+                            >
+                              Noch keine Auszahlungsanforderungen vorhanden.
+                            </td>
+                          </tr>
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
         </div>
-
       </div>
     </div>
   );
