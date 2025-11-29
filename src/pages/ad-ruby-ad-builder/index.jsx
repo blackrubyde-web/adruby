@@ -86,7 +86,7 @@ const AdRubyAdBuilder = () => {
         
         {/* Breadcrumb Navigation */}
         <motion.div
-          className="pt-20 pb-4 px-4 bg-white border-b border-[#e0e0e0]"
+          className="pt-16 sm:pt-20 pb-4 px-4 sm:px-6 lg:px-10 bg-white border-b border-[#e0e0e0]"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ duration: 0.6 }}
@@ -104,19 +104,19 @@ const AdRubyAdBuilder = () => {
 
         {/* Hero Section */}
         <motion.section
-          className="pt-16 pb-20 px-4 bg-gradient-to-br from-[#FAFAFA] via-white to-[#FAFAFA]"
+          className="pt-14 sm:pt-16 pb-14 sm:pb-20 px-4 sm:px-6 lg:px-10 bg-gradient-to-br from-[#FAFAFA] via-white to-[#FAFAFA]"
           variants={containerVariants}
           initial="hidden"
           animate="visible"
         >
           <div className="max-w-6xl mx-auto">
-            <div className="grid lg:grid-cols-2 gap-16 items-center">
+            <div className="grid gap-10 lg:grid-cols-2 lg:gap-16 items-center">
               
               {/* Left Content */}
-              <div className="text-left">
+              <div className="text-left space-y-6">
                 <motion.h1 
                   variants={itemVariants}
-                  className="text-4xl md:text-5xl lg:text-6xl font-bold leading-[1.1] mb-6 text-[#000000]"
+                  className="text-[clamp(2.2rem,6vw,3.6rem)] font-bold leading-[1.1] text-[#000000]"
                 >
                   Erstelle in Sekunden{' '}
                   <span className="text-[#C80000]">performante Werbeanzeigen</span>{' '}
@@ -125,7 +125,7 @@ const AdRubyAdBuilder = () => {
 
                 <motion.p
                   variants={itemVariants}
-                  className="text-lg md:text-xl text-[#333333] leading-relaxed mb-8 max-w-lg"
+                  className="text-[clamp(1.05rem,3vw,1.3rem)] text-[#333333] leading-relaxed max-w-2xl"
                 >
                   Lass unsere KI automatisch Werbetexte, Hooks, CTAs und Visuals generieren, 
                   die deine Zielgruppe überzeugen und deine Konkurrenz übertreffen.
@@ -133,11 +133,11 @@ const AdRubyAdBuilder = () => {
 
                 <motion.div
                   variants={itemVariants}
-                  className="flex flex-col sm:flex-row gap-4 mb-12"
+                  className="flex flex-col sm:flex-row gap-4"
                 >
                   <motion.button
                     onClick={handleStartFreeTrial}
-                    className="bg-[#C80000] text-white px-8 py-4 rounded-lg font-medium hover:bg-[#a50000] transition-all duration-200 flex items-center justify-center gap-2"
+                    className="w-full sm:w-auto bg-[#C80000] text-white px-6 py-3 rounded-lg font-medium hover:bg-[#a50000] transition-all duration-200 flex items-center justify-center gap-2"
                     whileHover={{ y: -1 }}
                     whileTap={{ scale: 0.98 }}
                   >
@@ -146,7 +146,7 @@ const AdRubyAdBuilder = () => {
                   </motion.button>
                   
                   <motion.button
-                    className="border border-[#C80000] text-[#C80000] px-8 py-4 rounded-lg font-medium hover:bg-[#C80000] hover:text-white transition-all duration-200 flex items-center justify-center gap-2"
+                    className="w-full sm:w-auto border border-[#C80000] text-[#C80000] px-6 py-3 rounded-lg font-medium hover:bg-[#C80000] hover:text-white transition-all duration-200 flex items-center justify-center gap-2"
                     whileHover={{ y: -1 }}
                     whileTap={{ scale: 0.98 }}
                   >
@@ -411,7 +411,7 @@ const AdRubyAdBuilder = () => {
                 </p>
               </div>
               
-              <div className="grid md:grid-cols-3 gap-8">
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
                 <div className="text-center p-6 bg-[#fafafa] rounded-xl">
                   <div className="text-3xl font-bold text-[#C80000] mb-2">+340%</div>
                   <div className="text-sm text-[#666]">Durchschnittliche CTR-Steigerung</div>

@@ -46,6 +46,11 @@ const HighConversionAdBuilder = () => {
   const [marketInsights, setMarketInsights] = useState(null);
   const [generatedAds, setGeneratedAds] = useState([]);
   const [selectedAd, setSelectedAd] = useState(null);
+  const [canvasTab, setCanvasTab] = useState('copy'); // copy | image | structure
+  const [mode, setMode] = useState('quick'); // quick | pro
+  const [adPressure, setAdPressure] = useState('mittel'); // soft | mittel | aggressiv
+  const [personaChips, setPersonaChips] = useState([]);
+  const [placement, setPlacement] = useState('feed'); // feed | story | reel
 
   // Error and success states
   const [error, setError] = useState(null);
@@ -93,7 +98,11 @@ const HighConversionAdBuilder = () => {
       console.log("isAnalyzing set to true");
 
       // Enhanced API call with better error handling
-      const result = await AdBuilderService?.analyzeMarket(formData);
+      const result = await AdBuilderService?.analyzeMarket({
+        ...formData,
+        ad_pressure: adPressure,
+        personas: personaChips
+      });
       
       // Check if fallback was used and inform user
       if (result?.fallbackUsed) {
@@ -129,6 +138,19 @@ const HighConversionAdBuilder = () => {
     console.log('Ad selected for campaign:', ad);
   };
 
+  const handleDuplicateVariant = () => {
+    if (!selectedAd) return;
+    const clone = { ...selectedAd, id: `${selectedAd.id || Date.now()}-clone-${Date.now()}` };
+    const updated = [...generatedAds, clone];
+    setGeneratedAds(updated);
+    setSelectedAd(clone);
+  };
+
+  const handleRerollHook = () => {
+    // Reuse existing generation flow to keep logic intact
+    handleAnalyzeAndGenerate();
+  };
+
   const handleAnalyzeAndGenerate = async () => {
     if (!validateForm()) return;
 
@@ -145,7 +167,9 @@ const HighConversionAdBuilder = () => {
       console.log("Analyse-Phase gestartet");
 
       // Step 1: Create product in database
-      const { data: product, error: productError } = await AdBuilderService?.createProduct(formData);
+      const extendedForm = { ...formData, ad_pressure: adPressure, personas: personaChips };
+
+      const { data: product, error: productError } = await AdBuilderService?.createProduct(extendedForm);
       if (productError) throw productError;
 
       // Step 2: Analyze market with enhanced error handling
@@ -311,17 +335,27 @@ const HighConversionAdBuilder = () => {
     animate: { opacity: 1, x: 0 }
   };
 
+  const headline = selectedAd?.headline || selectedAd?.primary_text || 'Noch keine Anzeige gewählt';
+  const bodyText = selectedAd?.primary_text || selectedAd?.description || 'Sobald eine Variante ausgewählt ist, erscheint sie hier.';
+  const ctaText = selectedAd?.cta_text || formData?.cta_text || 'Jetzt kaufen';
+
+  const scoreValue = Math.min(
+    100,
+    Math.max(35, Number(selectedAd?.conversion_score || stats?.successRate || 72))
+  );
+
+  const focusMetrics = {
+    emotion: selectedAd?.focus_emotion ? 90 : 65,
+    benefits: selectedAd?.focus_benefits ? 88 : 60,
+    urgency: selectedAd?.focus_urgency ? 82 : 55
+  };
+
   return (
-    <div className="min-h-screen bg-background">
-      <Sidebar 
-        isOpen={sidebarOpen} 
-        onClose={() => setSidebarOpen(false)} 
-      />
-      <Header 
-        onMenuToggle={() => setSidebarOpen(!sidebarOpen)}
-        className="lg:left-60"
-      />
-      <motion.main 
+    <div className="min-h-screen bg-[#050509] text-slate-50">
+      <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
+      <Header onMenuToggle={() => setSidebarOpen(!sidebarOpen)} className="lg:left-60" />
+
+      <motion.main
         className="lg:ml-60 pt-16"
         variants={pageVariants}
         initial="initial"
@@ -329,26 +363,21 @@ const HighConversionAdBuilder = () => {
         exit="exit"
         transition={{ duration: 0.3 }}
       >
-        <div className="p-6">
+        <div className="p-4 sm:p-6">
           {/* Page Header */}
-          <motion.div 
-            className="mb-8"
-            variants={itemVariants}
-          >
-            <div className="flex items-center justify-between">
-              <div>
-                <h1 className="text-3xl font-semibold text-foreground mb-2">
-                  High-Conversion Ad Builder
-                </h1>
-                <p className="text-muted-foreground">
+          <motion.div className="mb-6 sm:mb-8 flex flex-col gap-3" variants={itemVariants}>
+            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+              <div className="space-y-1">
+                <h1 className="text-3xl font-semibold text-white">Ad Builder: AdCreative Lab</h1>
+                <p className="text-sm text-slate-400">
                   KI-gestützter Anzeigengenerator für maximale Conversion-Raten
                 </p>
               </div>
-              
+
               {currentStep === 'results' && (
                 <motion.button
                   onClick={handleNewAnalysis}
-                  className="flex items-center space-x-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors"
+                  className="flex items-center space-x-2 px-4 py-2 bg-[#C80000] text-white rounded-lg hover:bg-[#a50000] transition shadow-[0_10px_40px_rgba(200,0,0,0.35)]"
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
                 >
@@ -357,36 +386,36 @@ const HighConversionAdBuilder = () => {
                 </motion.button>
               )}
             </div>
-            
+
             {/* Progress Indicator */}
-            <div className="mt-6 flex items-center space-x-4">
-              <div className={`flex items-center space-x-2 ${currentStep === 'input' ? 'text-primary' : currentStep === 'analyzing' || currentStep === 'generating' || currentStep === 'results' ? 'text-success' : 'text-muted-foreground'}`}>
-                <div className={`w-8 h-8 rounded-full flex items-center justify-center ${currentStep === 'input' ? 'bg-primary text-primary-foreground' : currentStep === 'analyzing' || currentStep === 'generating' || currentStep === 'results' ? 'bg-success text-success-foreground' : 'bg-muted text-muted-foreground'}`}>
-                  1
-                </div>
-                <span className="font-medium">Produkteingabe</span>
-              </div>
-              <div className="w-8 h-0.5 bg-border"></div>
-              <div className={`flex items-center space-x-2 ${currentStep === 'analyzing' ? 'text-primary' : currentStep === 'generating' || currentStep === 'results' ? 'text-success' : 'text-muted-foreground'}`}>
-                <div className={`w-8 h-8 rounded-full flex items-center justify-center ${currentStep === 'analyzing' ? 'bg-primary text-primary-foreground' : currentStep === 'generating' || currentStep === 'results' ? 'bg-success text-success-foreground' : 'bg-muted text-muted-foreground'}`}>
-                  2
-                </div>
-                <span className="font-medium">Marktanalyse</span>
-              </div>
-              <div className="w-8 h-0.5 bg-border"></div>
-              <div className={`flex items-center space-x-2 ${currentStep === 'generating' ? 'text-primary' : currentStep === 'results' ? 'text-success' : 'text-muted-foreground'}`}>
-                <div className={`w-8 h-8 rounded-full flex items-center justify-center ${currentStep === 'generating' ? 'bg-primary text-primary-foreground' : currentStep === 'results' ? 'bg-success text-success-foreground' : 'bg-muted text-muted-foreground'}`}>
-                  3
-                </div>
-                <span className="font-medium">Ad-Generierung</span>
-              </div>
+            <div className="mt-2 flex flex-wrap gap-4 text-xs sm:text-sm text-slate-300">
+              {[
+                { step: 'input', label: 'Produkteingabe', index: 1 },
+                { step: 'analyzing', label: 'Marktanalyse', index: 2 },
+                { step: 'generating', label: 'Ad-Generierung', index: 3 }
+              ].map(({ step, label, index }, idx) => {
+                const active =
+                  currentStep === step ||
+                  (step === 'analyzing' && (currentStep === 'generating' || currentStep === 'results')) ||
+                  (step === 'generating' && currentStep === 'results');
+                const color = active ? 'bg-[#C80000] text-white' : 'bg-slate-800 text-slate-400';
+                return (
+                  <div key={step} className="flex items-center space-x-2">
+                    <div className={`w-8 h-8 rounded-full flex items-center justify-center ${color}`}>
+                      {index}
+                    </div>
+                    <span className={`font-medium ${active ? 'text-white' : 'text-slate-400'}`}>{label}</span>
+                    {idx < 2 && <div className="w-8 h-px bg-slate-700 mx-1" />}
+                  </div>
+                );
+              })}
             </div>
           </motion.div>
 
           {/* Error and Success Messages */}
           {error && (
-            <motion.div 
-              className="mb-6 p-4 bg-destructive/10 border border-destructive/20 rounded-lg text-destructive"
+            <motion.div
+              className="mb-4 sm:mb-6 p-4 bg-rose-500/10 border border-rose-500/40 rounded-lg text-rose-100"
               initial={{ opacity: 0, y: -20 }}
               animate={{ opacity: 1, y: 0 }}
             >
@@ -398,8 +427,8 @@ const HighConversionAdBuilder = () => {
           )}
 
           {success && (
-            <motion.div 
-              className="mb-6 p-4 bg-success/10 border border-success/20 rounded-lg text-success"
+            <motion.div
+              className="mb-4 sm:mb-6 p-4 bg-emerald-500/10 border border-emerald-500/30 rounded-lg text-emerald-100"
               initial={{ opacity: 0, y: -20 }}
               animate={{ opacity: 1, y: 0 }}
             >
@@ -410,29 +439,37 @@ const HighConversionAdBuilder = () => {
             </motion.div>
           )}
 
-          {/* Main Content - Dynamic Layout based on input form state */}
-          <motion.div 
-            className={`grid grid-cols-1 gap-6 ${
-              isInputCollapsed 
-                ? 'xl:grid-cols-2' // 2 columns when collapsed (Analysis + Preview)
-                : 'xl:grid-cols-12' // 3 columns when expanded
-            }`}
-            variants={containerVariants}
-            layout
-          >
-            {/* Left Column - Input Form (Collapsible) */}
-            <AnimatePresence mode="wait">
+          {/* Main 3-Zone Layout */}
+          <div className="grid grid-cols-1 xl:grid-cols-12 gap-6">
+            {/* LEFT: Control Panel */}
+            <div className="xl:col-span-3 space-y-4">
               {!isInputCollapsed ? (
-                <motion.div 
-                  className="xl:col-span-4 space-y-6"
-                  variants={itemVariants}
-                  initial={{ opacity: 0, x: -20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  exit={{ opacity: 0, x: -20 }}
-                  transition={{ duration: 0.4, ease: "easeOut" }}
-                  layout
-                >
-                  <InputForm
+                <div className="bg-[#141418] border border-white/5 rounded-2xl p-4 sm:p-5 backdrop-blur">
+                  <div className="flex flex-wrap items-center gap-2 mb-4">
+                    <button
+                      onClick={() => setMode('quick')}
+                      className={`px-3 py-2 text-xs font-semibold rounded-lg transition ${
+                        mode === 'quick'
+                          ? 'bg-[#C80000] text-white'
+                          : 'bg-white/5 text-slate-200 border border-white/10 hover:bg-white/10'
+                      }`}
+                    >
+                      Schnellstart
+                    </button>
+                    <button
+                      onClick={() => setMode('pro')}
+                      className={`px-3 py-2 text-xs font-semibold rounded-lg transition ${
+                        mode === 'pro'
+                          ? 'bg-[#C80000] text-white'
+                          : 'bg-white/5 text-slate-200 border border-white/10 hover:bg-white/10'
+                      }`}
+                    >
+                      Pro-Lab
+                    </button>
+                  </div>
+                  <Stepper currentStep={currentStep} />
+                  <AccordionForm
+                    mode={mode}
                     formData={formData}
                     setFormData={setFormData}
                     onGenerate={handleAnalyzeAndGenerate}
@@ -440,137 +477,267 @@ const HighConversionAdBuilder = () => {
                     isAnalyzing={isAnalyzing}
                     currentStep={currentStep}
                   />
-                </motion.div>
+                  <div className="mt-4 space-y-4">
+                    <AdPressureSlider value={adPressure} onChange={setAdPressure} />
+                    <PersonaChips value={personaChips} onChange={setPersonaChips} />
+                  </div>
+                </div>
               ) : (
-                <motion.div 
-                  className="xl:col-span-12 mb-6"
-                  initial={{ opacity: 0, height: 0 }}
-                  animate={{ opacity: 1, height: 'auto' }}
-                  exit={{ opacity: 0, height: 0 }}
-                  transition={{ duration: 0.3, ease: "easeIn" }}
-                  layout
-                >
-                  {/* Minimized Input Form */}
-                  <motion.div 
-                    className="bg-card border border-border rounded-lg p-4"
-                    whileHover={{ scale: 1.01 }}
-                    transition={{ duration: 0.2 }}
+                <div className="bg-[#141418] border border-white/5 rounded-2xl p-4 flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-slate-400">Produkt-Eingabe</p>
+                    <p className="text-xs text-slate-500">{getFormSummary()}</p>
+                  </div>
+                  <button
+                    onClick={toggleInputForm}
+                    className="px-3 py-2 text-xs font-semibold rounded-lg border border-white/10 bg-white/5 hover:bg-white/10 transition"
                   >
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center space-x-3">
-                        <div className="w-8 h-8 bg-primary/10 rounded-lg flex items-center justify-center">
-                          <Icon name="Edit3" size={16} className="text-primary" />
-                        </div>
-                        <div>
-                          <h3 className="font-medium text-foreground">Produkt-Eingabe</h3>
-                          <p className="text-sm text-muted-foreground">{getFormSummary()}</p>
+                    Bearbeiten
+                  </button>
+                </div>
+              )}
+            </div>
+
+            {/* CENTER: Creative Canvas */}
+            <div className="xl:col-span-5 space-y-4">
+              <div className="bg-[#141418] border border-white/5 rounded-2xl p-4 sm:p-5 backdrop-blur shadow-[0_20px_80px_rgba(0,0,0,0.35)]">
+                <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
+                  <div className="flex flex-wrap items-center gap-2">
+                    {['copy', 'image', 'structure'].map((tab) => (
+                      <button
+                        key={tab}
+                        onClick={() => setCanvasTab(tab)}
+                        className={`px-3 py-2 text-xs font-semibold rounded-lg transition ${
+                          canvasTab === tab
+                            ? 'bg-[#C80000] text-white'
+                            : 'bg-white/5 text-slate-200 border border-white/10 hover:bg-white/10'
+                        }`}
+                      >
+                        {tab === 'copy' && 'Copy'}
+                        {tab === 'image' && 'Image Prompts'}
+                        {tab === 'structure' && 'Struktur'}
+                      </button>
+                    ))}
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="hidden sm:flex items-center gap-1 bg-white/5 border border-white/10 rounded-lg p-1">
+                      {['feed', 'story', 'reel'].map((p) => (
+                        <button
+                          key={p}
+                          onClick={() => setPlacement(p)}
+                          className={`px-2 py-1 text-[10px] rounded-md transition ${
+                            placement === p
+                              ? 'bg-[#C80000] text-white'
+                              : 'text-slate-200 hover:bg-white/10'
+                          }`}
+                        >
+                          {p === 'feed' && 'Feed'}
+                          {p === 'story' && 'Story'}
+                          {p === 'reel' && 'Reel'}
+                        </button>
+                      ))}
+                    </div>
+                    <button
+                      onClick={handleRerollHook}
+                      className="flex items-center gap-2 px-3 py-2 text-xs font-semibold rounded-lg bg-white/5 border border-white/10 text-slate-200 hover:bg-white/10 transition"
+                    >
+                      <Icon name="Dice5" size={16} />
+                      Hook neu würfeln
+                    </button>
+                    <button
+                      onClick={handleDuplicateVariant}
+                      className="flex items-center gap-2 px-3 py-2 text-xs font-semibold rounded-lg bg-[#C80000] text-white hover:bg-[#a50000] transition shadow-[0_10px_30px_rgba(200,0,0,0.35)]"
+                    >
+                      <Icon name="Copy" size={16} />
+                      Variante duplizieren
+                    </button>
+                  </div>
+                </div>
+
+                {/* Canvas Content */}
+                <div className="space-y-4">
+                  {canvasTab === 'copy' && (
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between text-xs text-slate-400">
+                        <span>Platzierung: {placement}</span>
+                        <span>{selectedAd?.id ? `Variante ID: ${selectedAd.id}` : 'Keine Auswahl'}</span>
+                      </div>
+                      <div className="p-4 rounded-xl bg-white/5 border border-white/10">
+                        <h3 className="text-xl font-semibold text-white">{headline}</h3>
+                        <p className="text-sm text-slate-300 leading-relaxed whitespace-pre-line mt-2">
+                          {bodyText}
+                        </p>
+                        <div className="mt-3 inline-flex px-3 py-2 rounded-lg bg-[#C80000]/15 border border-[#C80000]/40 text-[11px] font-semibold text-white">
+                          CTA: {ctaText}
                         </div>
                       </div>
-                      <motion.button
-                        onClick={toggleInputForm}
-                        className="flex items-center space-x-2 px-3 py-2 border border-input rounded-md hover:bg-accent hover:text-accent-foreground transition-colors"
-                        whileHover={{ scale: 1.05 }}
-                        whileTap={{ scale: 0.95 }}
-                      >
-                        <Icon name="Edit" size={16} />
-                        <span className="text-sm">Bearbeiten</span>
-                      </motion.button>
                     </div>
-                  </motion.div>
-                </motion.div>
-              )}
-            </AnimatePresence>
+                  )}
 
-            {/* Middle Column - Analysis & Suggestions */}
-            <motion.div 
-              className={`space-y-6 ${
-                isInputCollapsed 
-                  ? 'xl:col-span-1' // Takes more space when input is collapsed
-                  : 'xl:col-span-4'
-              }`}
-              variants={itemVariants}
-              layout
-              transition={{ duration: 0.4, ease: "easeOut" }}
-            >
-              <AnalysisPanel
-                marketInsights={marketInsights}
-                generatedAds={generatedAds}
-                isAnalyzing={isAnalyzing}
-                isGenerating={isGenerating}
-                onSelectAd={setSelectedAd}
-                selectedAd={selectedAd}
-              />
-            </motion.div>
+                  {canvasTab === 'image' && (
+                    <div className="space-y-2 text-sm text-slate-300">
+                      <p>Image Prompts werden hier angezeigt, sobald sie verfügbar sind.</p>
+                      <div className="p-3 rounded-lg bg-white/5 border border-white/10 text-xs text-slate-400">
+                        Beispiel: “Ultra-detailliertes Produktfoto mit weichem Licht, Fokus auf USP, hochauflösend, Clean Background”
+                      </div>
+                    </div>
+                  )}
 
-            {/* Right Column - Live Preview */}
-            <motion.div 
-              className={isInputCollapsed ? 'xl:col-span-1' : 'xl:col-span-4'}
-              variants={itemVariants}
-              layout
-              transition={{ duration: 0.4, ease: "easeOut" }}
-            >
-              <PreviewPanel
-                selectedAd={selectedAd}
-                isGenerating={isGenerating}
-                productData={formData}
-                generatedAds={generatedAds}
-                onSelectAd={handleSelectAd}
-              />
-            </motion.div>
-          </motion.div>
-
-          {/* Statistics Section */}
-          <motion.div 
-            className="mt-12 grid grid-cols-1 md:grid-cols-3 gap-6"
-            variants={containerVariants}
-          >
-            <motion.div 
-              className="bg-card border border-border rounded-lg p-6"
-              variants={itemVariants}
-            >
-              <div className="flex items-center space-x-3">
-                <div className="w-12 h-12 bg-success/10 rounded-lg flex items-center justify-center">
-                  <Icon name="Zap" size={24} className="text-success" />
-                </div>
-                <div>
-                  <p className="text-2xl font-semibold text-foreground">
-                    {stats?.generatedAds}
-                  </p>
-                  <p className="text-sm text-muted-foreground">Generierte Anzeigen</p>
+                  {canvasTab === 'structure' && (
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                      <div className="p-3 rounded-lg bg-white/5 border border-white/10">
+                        <p className="text-xs uppercase tracking-wide text-slate-400">Hook</p>
+                        <p className="text-sm text-white mt-1">{headline}</p>
+                      </div>
+                      <div className="p-3 rounded-lg bg-white/5 border border-white/10">
+                        <p className="text-xs uppercase tracking-wide text-slate-400">Body</p>
+                        <p className="text-sm text-slate-200 mt-1 whitespace-pre-line">{bodyText}</p>
+                      </div>
+                      <div className="p-3 rounded-lg bg-white/5 border border-white/10">
+                        <p className="text-xs uppercase tracking-wide text-slate-400">CTA</p>
+                        <p className="text-sm text-white mt-1">{ctaText}</p>
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
-            </motion.div>
 
-            <motion.div 
-              className="bg-card border border-border rounded-lg p-6"
-              variants={itemVariants}
-            >
-              <div className="flex items-center space-x-3">
-                <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center">
-                  <Icon name="Target" size={24} className="text-primary" />
+              {/* Preview & Analysis stacked in center column */}
+              <div className="space-y-4">
+                <PreviewPanel
+                  selectedAd={selectedAd}
+                  isGenerating={isGenerating}
+                  productData={formData}
+                  generatedAds={generatedAds}
+                  onSelectAd={handleSelectAd}
+                />
+
+                <AnalysisPanel
+                  marketInsights={marketInsights}
+                  generatedAds={generatedAds}
+                  isAnalyzing={isAnalyzing}
+                  isGenerating={isGenerating}
+                  onSelectAd={setSelectedAd}
+                  selectedAd={selectedAd}
+                />
+              </div>
+            </div>
+
+            {/* RIGHT: Score + Variants */}
+              <div className="xl:col-span-4 space-y-4 xl:sticky xl:top-20 h-fit">
+              <div className="bg-[#141418] border border-white/5 rounded-2xl p-4 sm:p-5 backdrop-blur shadow-[0_20px_60px_rgba(0,0,0,0.35)]">
+                <div className="flex items-center justify-between mb-4">
+                  <div>
+                    <p className="text-xs uppercase tracking-[0.2em] text-rose-400">Score</p>
+                    <h3 className="text-lg font-semibold text-white">Conversion-Score</h3>
+                  </div>
+                  <div className="relative h-16 w-16">
+                    <div
+                      className="absolute inset-0 rounded-full"
+                      style={{
+                        background: `conic-gradient(#C80000 ${scoreValue * 3.6}deg, #1f2937 0deg)`
+                      }}
+                    />
+                    <div className="absolute inset-2 rounded-full bg-[#0b0b10] flex items-center justify-center shadow-[inset_0_0_10px_rgba(0,0,0,0.45)]">
+                      <span className="text-sm font-semibold text-white">{Math.round(scoreValue)}</span>
+                    </div>
+                  </div>
                 </div>
-                <div>
-                  <p className="text-2xl font-semibold text-foreground">{stats?.successRate}%</p>
-                  <p className="text-sm text-muted-foreground">Conversion-Rate</p>
+                <div className="space-y-3">
+                  {[
+                    { label: 'Emotion', value: focusMetrics.emotion, color: 'from-rose-500 to-pink-500' },
+                    { label: 'Nutzen', value: focusMetrics.benefits, color: 'from-emerald-500 to-teal-500' },
+                    { label: 'Dringlichkeit', value: focusMetrics.urgency, color: 'from-amber-500 to-orange-500' }
+                  ].map((metric) => (
+                    <div key={metric.label} className="space-y-1">
+                      <div className="flex items-center justify-between text-xs text-slate-400">
+                        <span>{metric.label}</span>
+                        <span className="text-white">{metric.value}%</span>
+                      </div>
+                      <div className="w-full h-2 rounded-full bg-white/5 overflow-hidden">
+                        <div
+                          className={`h-2 rounded-full bg-gradient-to-r ${metric.color}`}
+                          style={{ width: `${metric.value}%` }}
+                        />
+                      </div>
+                    </div>
+                  ))}
                 </div>
               </div>
-            </motion.div>
 
-            <motion.div 
-              className="bg-card border border-border rounded-lg p-6"
-              variants={itemVariants}
-            >
-              <div className="flex items-center space-x-3">
-                <div className="w-12 h-12 bg-warning/10 rounded-lg flex items-center justify-center">
-                  <Icon name="Clock" size={24} className="text-warning" />
+              <div className="bg-[#141418] border border-white/5 rounded-2xl p-4 sm:p-5 backdrop-blur shadow-[0_20px_60px_rgba(0,0,0,0.35)]">
+                <div className="flex items-center justify-between mb-3">
+                  <div>
+                    <p className="text-xs uppercase tracking-[0.2em] text-rose-400">Varianten</p>
+                    <h3 className="text-lg font-semibold text-white">Ad-Varianten</h3>
+                  </div>
+                  <div className="text-xs text-slate-400">
+                    {generatedAds?.length || 0} Stück
+                  </div>
                 </div>
-                <div>
-                  <p className="text-2xl font-semibold text-foreground">{stats?.avgGenerationTime}</p>
-                  <p className="text-sm text-muted-foreground">Ø Generierungszeit</p>
+                <div className="space-y-3 max-h-[480px] overflow-y-auto pr-1">
+                  {generatedAds?.length ? (
+                    generatedAds.map((ad, index) => (
+                      <div
+                        key={ad?.id || index}
+                        className={`p-3 rounded-xl border transition cursor-pointer ${
+                          selectedAd?.id === ad?.id
+                            ? 'border-[#C80000] bg-[#C80000]/10 shadow-[0_10px_40px_rgba(200,0,0,0.25)]'
+                            : 'border-white/5 bg-white/5 hover:border-white/15 hover:bg-white/10'
+                        }`}
+                        onClick={() => setSelectedAd(ad)}
+                      >
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-semibold text-white truncate">
+                              {ad?.headline || ad?.primary_text || `Variante ${index + 1}`}
+                            </p>
+                            <p className="text-xs text-slate-400 line-clamp-2">
+                              {ad?.primary_text || ad?.description || '—'}
+                            </p>
+                            <div className="flex flex-wrap gap-2 mt-2">
+                              {ad?.focus_emotion && (
+                                <span className="px-2 py-1 text-[10px] rounded-full bg-rose-500/15 text-rose-200">
+                                  Emotion
+                                </span>
+                              )}
+                              {ad?.focus_benefits && (
+                                <span className="px-2 py-1 text-[10px] rounded-full bg-emerald-500/15 text-emerald-200">
+                                  Nutzen
+                                </span>
+                              )}
+                              {ad?.focus_urgency && (
+                                <span className="px-2 py-1 text-[10px] rounded-full bg-amber-500/15 text-amber-200">
+                                  Dringlichkeit
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                          <div className="flex flex-col items-end gap-2">
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                navigator?.clipboard?.writeText(
+                                  `${ad?.headline || ''}\n\n${ad?.primary_text || ''}\nCTA: ${
+                                    ad?.cta_text || 'Jetzt kaufen'
+                                  }`
+                                );
+                              }}
+                              className="p-2 rounded-lg bg-white/5 border border-white/10 text-xs text-slate-200 hover:bg-white/10 transition"
+                            >
+                              <Icon name="Copy" size={14} />
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    ))
+                  ) : (
+                    <p className="text-xs text-slate-400">Noch keine Varianten generiert.</p>
+                  )}
                 </div>
               </div>
-            </motion.div>
-          </motion.div>
+            </div>
+          </div>
         </div>
       </motion.main>
     </div>
@@ -578,3 +745,291 @@ const HighConversionAdBuilder = () => {
 };
 
 export default HighConversionAdBuilder;
+
+// --- UI Subcomponents for Stepper, AccordionForm, PersonaChips, Slider ---
+
+const Stepper = ({ currentStep }) => {
+  const steps = [
+    { key: 'input', label: 'Produkt' },
+    { key: 'analyzing', label: 'Zielgruppe' },
+    { key: 'generating', label: 'Angebot' },
+    { key: 'results', label: 'Tonalität & Fokus' }
+  ];
+  return (
+    <div className="flex flex-wrap gap-3 text-xs sm:text-sm text-slate-300 mb-4">
+      {steps.map((step, idx) => {
+        const active =
+          currentStep === step.key ||
+          (step.key === 'analyzing' && (currentStep === 'generating' || currentStep === 'results')) ||
+          (step.key === 'generating' && currentStep === 'results');
+        const color = active ? 'bg-[#C80000] text-white' : 'bg-slate-800 text-slate-400';
+        return (
+          <div key={step.key} className="flex items-center space-x-2">
+            <div className={`w-8 h-8 rounded-full flex items-center justify-center ${color}`}>{idx + 1}</div>
+            <span className={`font-medium ${active ? 'text-white' : 'text-slate-400'}`}>{step.label}</span>
+            {idx < steps.length - 1 && <div className="w-8 h-px bg-slate-700 mx-1" />}
+          </div>
+        );
+      })}
+    </div>
+  );
+};
+
+const AccordionForm = ({
+  mode,
+  formData,
+  setFormData,
+  onGenerate,
+  isGenerating,
+  isAnalyzing,
+  currentStep
+}) => {
+  const [open, setOpen] = useState(['produkt']);
+  const toggle = (key) =>
+    setOpen((prev) => (prev.includes(key) ? prev.filter((k) => k !== key) : [...prev, key]));
+
+  const quickFields = ['product_name', 'target_audience', 'main_benefits', 'price_offer', 'usp'];
+  const showField = (field) => mode === 'pro' || quickFields.includes(field);
+
+  const renderField = (label, field, placeholder, type = 'text') => {
+    if (!showField(field)) return null;
+    const baseProps = {
+      value: formData?.[field] || '',
+      onChange: (e) =>
+        setFormData((prev) => ({
+          ...prev,
+          [field]: e?.target?.value
+        })),
+      disabled: isGenerating || isAnalyzing
+    };
+    if (type === 'textarea') {
+      return (
+        <div className="space-y-2">
+          <label className="text-sm font-medium text-slate-200">{label}</label>
+          <textarea
+            {...baseProps}
+            placeholder={placeholder}
+            rows={3}
+            className="w-full px-3 py-2 rounded-lg bg-[#0b0b10] border border-white/10 text-slate-50 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-[#C80000]"
+          />
+        </div>
+      );
+    }
+    return (
+      <div className="space-y-2">
+        <label className="text-sm font-medium text-slate-200">{label}</label>
+        <input
+          {...baseProps}
+          type="text"
+          placeholder={placeholder}
+          className="w-full px-3 py-2 rounded-lg bg-[#0b0b10] border border-white/10 text-slate-50 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-[#C80000]"
+        />
+      </div>
+    );
+  };
+
+  const renderSelect = (label, field, options) => {
+    if (!showField(field)) return null;
+    return (
+      <div className="space-y-2">
+        <label className="text-sm font-medium text-slate-200">{label}</label>
+        <select
+          value={formData?.[field] || options?.[0]?.value}
+          onChange={(e) =>
+            setFormData((prev) => ({
+              ...prev,
+              [field]: e.target.value
+            }))
+          }
+          disabled={isGenerating || isAnalyzing}
+          className="w-full px-3 py-2 rounded-lg bg-[#0b0b10] border border-white/10 text-slate-50 focus:outline-none focus:ring-2 focus:ring-[#C80000]"
+        >
+          {options?.map((opt) => (
+            <option key={opt.value} value={opt.value}>
+              {opt.label}
+            </option>
+          ))}
+        </select>
+      </div>
+    );
+  };
+
+  return (
+    <div className="space-y-3">
+      {[
+        {
+          key: 'produkt',
+          title: 'Produkt-Basics',
+          content: (
+            <div className="space-y-3">
+              {renderField('Produktname *', 'product_name', 'z.B. FitMax Pro Supplement')}
+              {renderField('Produktbeschreibung *', 'product_description', 'Detaillierte Beschreibung…', 'textarea')}
+              {renderSelect('Branche', 'industry', [
+                { value: 'e_commerce', label: 'E-Commerce' },
+                { value: 'fitness', label: 'Gesundheit & Fitness' },
+                { value: 'beauty', label: 'Beauty & Lifestyle' },
+                { value: 'food', label: 'Gastronomie & Lebensmittel' },
+                { value: 'tech', label: 'Technologie' },
+                { value: 'other', label: 'Andere' }
+              ])}
+            </div>
+          )
+        },
+        {
+          key: 'ziel',
+          title: 'Zielgruppe & Schmerzpunkte',
+          content: (
+            <div className="space-y-3">
+              {renderField('Zielgruppe *', 'target_audience', 'z.B. Fitness-Enthusiasten, 25-45 Jahre')}
+              {renderField('Schmerzpunkte *', 'pain_points', 'Welche Probleme löst Ihr Produkt…', 'textarea')}
+              {renderField('Hauptnutzen *', 'main_benefits', 'Die wichtigsten Vorteile…', 'textarea')}
+            </div>
+          )
+        },
+        {
+          key: 'angebot',
+          title: 'Angebot & USP',
+          content: (
+            <div className="space-y-3">
+              {renderField('USP *', 'usp', 'Was macht Ihr Produkt einzigartig…')}
+              {renderField('Preis/Angebot', 'price_offer', 'z.B. 49,99 EUR (statt 79,99 EUR)')}
+            </div>
+          )
+        },
+        {
+          key: 'ton',
+          title: 'Tonalität & Fokus',
+          content: (
+            <div className="space-y-3">
+              {renderSelect('Tonalität', 'tonality', [
+                { value: 'professional', label: 'Professionell' },
+                { value: 'emotional', label: 'Emotional' },
+                { value: 'humorous', label: 'Humorvoll' },
+                { value: 'serious', label: 'Seriös' },
+                { value: 'luxury', label: 'Luxuriös' },
+                { value: 'scientific', label: 'Wissenschaftlich' },
+                { value: 'friendly', label: 'Freundlich' },
+                { value: 'urgent', label: 'Dringlich' },
+                { value: 'casual', label: 'Locker' },
+                { value: 'playful', label: 'Verspielt' },
+                { value: 'exclusive', label: 'Exklusiv' }
+              ])}
+              {renderField('CTA-Text', 'cta_text', 'Jetzt kaufen')}
+              <div className="flex items-center gap-3 flex-wrap">
+                {[
+                  { field: 'focus_emotion', label: 'Emotion' },
+                  { field: 'focus_benefits', label: 'Nutzen' },
+                  { field: 'focus_urgency', label: 'Dringlichkeit' }
+                ].map((f) => (
+                  <label key={f.field} className="flex items-center gap-2 text-xs text-slate-200">
+                    <input
+                      type="checkbox"
+                      checked={!!formData?.[f.field]}
+                      onChange={(e) =>
+                        setFormData((prev) => ({
+                          ...prev,
+                          [f.field]: e.target.checked
+                        }))
+                      }
+                      disabled={isGenerating || isAnalyzing}
+                      className="h-4 w-4 rounded border-white/20 bg-[#0b0b10] text-[#C80000] focus:ring-[#C80000]"
+                    />
+                    {f.label}
+                  </label>
+                ))}
+              </div>
+            </div>
+          )
+        }
+      ].map((section) => (
+        <div key={section.key} className="rounded-xl bg-white/5 border border-white/10 overflow-hidden">
+          <button
+            type="button"
+            onClick={() => toggle(section.key)}
+            className="w-full px-3 py-2 flex items-center justify-between text-sm font-semibold text-white"
+          >
+            <span>{section.title}</span>
+            <Icon name={open.includes(section.key) ? 'ChevronUp' : 'ChevronDown'} size={16} />
+          </button>
+          <div
+            className={`transition-all duration-200 ease-out ${
+              open.includes(section.key) ? 'max-h-[1200px] opacity-100' : 'max-h-0 opacity-0'
+            } overflow-hidden px-3 pb-3 space-y-3`}
+          >
+            {section.content}
+          </div>
+        </div>
+      ))}
+
+      <button
+        onClick={onGenerate}
+        disabled={isGenerating || isAnalyzing}
+        className="w-full mt-3 px-4 py-3 rounded-lg bg-[#C80000] text-white font-semibold hover:bg-[#a50000] transition shadow-[0_10px_30px_rgba(200,0,0,0.35)] disabled:opacity-60"
+      >
+        Ads generieren
+      </button>
+    </div>
+  );
+};
+
+const AdPressureSlider = ({ value, onChange }) => {
+  const options = [
+    { key: 'soft', label: 'Soft' },
+    { key: 'mittel', label: 'Mittel' },
+    { key: 'aggressiv', label: 'Aggressiv' }
+  ];
+  return (
+    <div className="bg-white/5 border border-white/10 rounded-xl p-3">
+      <div className="flex items-center justify-between text-xs text-slate-300 mb-2">
+        <span>Werbedruck</span>
+        <span className="text-white font-semibold capitalize">{value}</span>
+      </div>
+      <div className="grid grid-cols-3 gap-2">
+        {options.map((opt) => (
+          <button
+            key={opt.key}
+            onClick={() => onChange(opt.key)}
+            className={`py-2 rounded-lg text-xs font-semibold transition ${
+              value === opt.key
+                ? 'bg-[#C80000] text-white'
+                : 'bg-[#0b0b10] text-slate-300 border border-white/5 hover:bg-white/5'
+            }`}
+          >
+            {opt.label}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+};
+
+const PersonaChips = ({ value = [], onChange }) => {
+  const personas = ['Schnäppchenjäger', 'Premium-Käufer', 'Busy Mom', 'Tech-Nerd'];
+  const toggle = (p) =>
+    onChange(
+      value.includes(p) ? value.filter((v) => v !== p) : [...value, p]
+    );
+  return (
+    <div className="bg-white/5 border border-white/10 rounded-xl p-3">
+      <p className="text-xs text-slate-300 mb-2">Personas</p>
+      <div className="flex flex-wrap gap-2">
+        {personas.map((p) => {
+          const active = value.includes(p);
+          return (
+            <button
+              key={p}
+              onClick={() => toggle(p)}
+              className={`px-3 py-2 rounded-full text-xs font-semibold transition ${
+                active
+                  ? 'bg-[#C80000] text-white shadow-[0_10px_30px_rgba(200,0,0,0.35)]'
+                  : 'bg-[#0b0b10] text-slate-300 border border-white/5 hover:bg-white/5'
+              }`}
+            >
+              {p}
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+};
