@@ -188,285 +188,348 @@ const AdminDashboard = () => {
     [monthlySeries]
   );
 
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-950 text-slate-200">
-        <span className="text-sm text-slate-400">Lade Admin-Daten…</span>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-950 text-red-400">
-        <span className="text-sm">Fehler beim Laden der Admin-Daten: {error}</span>
-      </div>
-    );
-  }
-
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-50">
-      <button
-        type="button"
-        onClick={signOut}
-        className="fixed top-4 left-4 bg-red-600 text-white px-4 py-2 rounded-lg shadow hover:bg-red-700 transition text-sm font-medium z-50"
-      >
-        Logout
-      </button>
+    <div className="min-h-screen bg-[#050509] text-slate-100 relative overflow-hidden">
+      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_20%_20%,rgba(200,0,0,0.12),transparent_45%)]" />
+      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_80%_0%,rgba(79,70,229,0.16),transparent_40%)]" />
 
-      <div className="max-w-6xl mx-auto px-4 py-8">
-        <div className="space-y-6">
-          {/* HEADER */}
-          <div className="flex items-center justify-between">
+      {loading && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur flex items-center justify-center z-50">
+          <div className="space-y-4 text-center">
+            <div className="h-12 w-12 border-2 border-rose-500 border-t-transparent rounded-full animate-spin mx-auto" />
+            <p className="text-sm text-slate-300">Lade Admin-Daten…</p>
+          </div>
+        </div>
+      )}
+
+      {error && (
+        <div className="fixed top-6 left-1/2 -translate-x-1/2 w-full max-w-xl px-4 z-50">
+          <div className="bg-[#1a0f13] border border-rose-500/60 rounded-xl p-4 shadow-[0_10px_40px_rgba(200,0,0,0.35)] flex items-start gap-3">
+            <div className="mt-1 h-2 w-2 rounded-full bg-rose-500 shadow-[0_0_12px_rgba(200,0,0,0.8)]" />
             <div>
-              <h1 className="text-2xl font-bold tracking-tight text-slate-50">Admin Dashboard</h1>
-              <p className="text-sm text-slate-400">
-                Eingeloggt als{' '}
-                <span className="font-medium text-slate-200">
-                  {user?.email || 'Admin'}
-                </span>
-              </p>
+              <p className="font-semibold text-rose-100">Fehler beim Laden</p>
+              <p className="text-sm text-rose-200/80">{error}</p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      <header className="sticky top-0 z-40 backdrop-blur bg-black/30 border-b border-white/5">
+        <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
+          <div>
+            <p className="text-xs uppercase tracking-[0.2em] text-rose-400/80">AdRuby</p>
+            <h1 className="text-2xl font-semibold text-white">Admin Dashboard</h1>
+            <p className="text-sm text-slate-400">
+              Übersicht über Nutzer, Umsatz und Affiliate-Performance.
+            </p>
+          </div>
+          <div className="flex items-center gap-3">
+            <span className="px-3 py-1 rounded-full text-xs bg-emerald-500/15 text-emerald-200 border border-emerald-400/20">
+              Live
+            </span>
+            <div className="px-3 py-1 rounded-full text-xs bg-white/5 text-slate-200 border border-white/10">
+              Production
+            </div>
+            <div className="flex items-center gap-2 bg-white/5 border border-white/10 rounded-full px-3 py-1">
+              <div className="h-8 w-8 rounded-full bg-gradient-to-br from-rose-500 to-purple-600 flex items-center justify-center text-xs font-semibold text-white">
+                {user?.email ? user.email.slice(0, 2).toUpperCase() : 'AD'}
+              </div>
+              <div className="text-xs text-slate-200">
+                <p className="font-semibold">{user?.email || 'Admin'}</p>
+                <p className="text-slate-400">Super Admin</p>
+              </div>
             </div>
             <button
               type="button"
               onClick={loadData}
-              className="px-4 py-2 rounded-lg text-sm font-medium bg-slate-800 text-slate-50 hover:bg-slate-700 border border-slate-700 transition"
+              className="px-3 py-2 text-xs font-semibold rounded-lg bg-white/10 hover:bg-white/15 border border-white/10 text-white transition"
             >
               Aktualisieren
             </button>
-          </div>
-
-          <div className="flex items-center space-x-3 border-b border-slate-800 pb-3">
             <button
               type="button"
-              onClick={() => setActiveTab('overview')}
-              className={`px-3 py-1.5 rounded-md text-sm ${
-                activeTab === 'overview'
-                  ? 'bg-slate-800 text-slate-50'
-                  : 'text-slate-400 hover:text-slate-200'
-              }`}
+              onClick={signOut}
+              className="px-3 py-2 text-xs font-semibold rounded-lg bg-rose-600 hover:bg-rose-700 text-white shadow-[0_10px_40px_rgba(200,0,0,0.35)] transition"
             >
-              Übersicht
+              Logout
             </button>
-            <button
-              type="button"
-              onClick={() => setActiveTab('affiliate')}
-              className={`px-3 py-1.5 rounded-md text-sm ${
-                activeTab === 'affiliate'
-                  ? 'bg-slate-800 text-slate-50'
-                  : 'text-slate-400 hover:text-slate-200'
-              }`}
-            >
-              Affiliate
-            </button>
-          </div>
-
-          <div className="mt-6">
-            {activeTab === 'overview' && (
-              <>
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                  <div className="bg-slate-900 border border-slate-800 rounded-2xl p-4 flex flex-col gap-1">
-                    <span className="text-xs uppercase tracking-wide text-slate-400">Gesamt-User</span>
-                    <span className="text-2xl font-semibold">{stats.totalUsers ?? 0}</span>
-                  </div>
-                  <div className="bg-slate-900 border border-slate-800 rounded-2xl p-4 flex flex-col gap-1">
-                    <span className="text-xs uppercase tracking-wide text-slate-400">Aktive Trials</span>
-                    <span className="text-2xl font-semibold">{stats.trialActive ?? 0}</span>
-                  </div>
-                  <div className="bg-slate-900 border border-slate-800 rounded-2xl p-4 flex flex-col gap-1">
-                    <span className="text-xs uppercase tracking-wide text-slate-400">Zahlende User</span>
-                    <span className="text-2xl font-semibold">{stats.payingUsers ?? 0}</span>
-                  </div>
-                  <div className="bg-slate-900 border border-slate-800 rounded-2xl p-4 flex flex-col gap-1">
-                    <span className="text-xs uppercase tracking-wide text-slate-400">
-                      Abgelaufene / nicht verlängerte Trials
-                    </span>
-                    <span className="text-2xl font-semibold">{stats.trialExpiredOrCancelled ?? 0}</span>
-                  </div>
-                  <div className="bg-slate-900 border border-slate-800 rounded-2xl p-4 flex flex-col gap-1">
-                    <span className="text-xs uppercase tracking-wide text-slate-400">Monatlicher Umsatz</span>
-                    <span className="text-2xl font-semibold">
-                      {currencyFormat(stats.monthlyRevenue ?? 0)}
-                    </span>
-                  </div>
-                  <div className="bg-slate-900 border border-slate-800 rounded-2xl p-4 flex flex-col gap-1">
-                    <span className="text-xs uppercase tracking-wide text-slate-400">Gesamtumsatz</span>
-                    <span className="text-2xl font-semibold">
-                      {currencyFormat(stats.totalRevenue ?? 0)}
-                    </span>
-                  </div>
-                </div>
-
-                <div className="mt-8 bg-slate-900 border border-slate-800 rounded-2xl p-4">
-                  <h3 className="text-sm font-medium mb-4 text-slate-200">Monatlicher Umsatz</h3>
-                  <div className="h-64">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <LineChart data={monthlyChartData || []}>
-                        <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" />
-                        <XAxis dataKey="month" stroke="#64748b" />
-                        <YAxis stroke="#64748b" />
-                        <Tooltip
-                          contentStyle={{
-                            backgroundColor: '#020617',
-                            borderColor: '#1e293b',
-                            borderRadius: '0.75rem'
-                          }}
-                        />
-                        <Line
-                          type="monotone"
-                          dataKey="revenue"
-                          stroke="#f97316"
-                          strokeWidth={2}
-                          dot={false}
-                        />
-                      </LineChart>
-                    </ResponsiveContainer>
-                  </div>
-                </div>
-
-                <div className="mt-8 bg-slate-900 border border-slate-800 rounded-2xl p-4">
-                  <h3 className="text-sm font-medium mb-4 text-slate-200">Neueste User</h3>
-                  <div className="overflow-x-auto">
-                    <table className="min-w-full text-sm">
-                      <thead>
-                        <tr className="text-left text-slate-400 border-b border-slate-800">
-                          <th className="py-2 pr-4">E-Mail</th>
-                          <th className="py-2 pr-4">Registriert am</th>
-                          <th className="py-2 pr-4">Trial-Status</th>
-                          <th className="py-2 pr-4">Zahlend</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {(latestUsers ?? []).map((u) => (
-                          <tr key={u.id} className="border-b border-slate-900/60">
-                            <td className="py-2 pr-4 text-slate-200">{u.email}</td>
-                            <td className="py-2 pr-4 text-slate-300">
-                              {u.created_at ? new Date(u.created_at).toLocaleString('de-DE') : '-'}
-                            </td>
-                            <td className="py-2 pr-4 text-slate-300">
-                              {u.trial_status || '—'}
-                            </td>
-                            <td className="py-2 pr-4 text-slate-300">
-                              {u.payment_verified ? 'Ja' : 'Nein'}
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
-              </>
-            )}
-
-            {activeTab === 'affiliate' && (
-              <div className="space-y-6">
-                <div className="bg-slate-900 border border-slate-800 rounded-2xl p-4">
-                  <h3 className="text-sm font-medium mb-4 text-slate-200">Affiliate Leaderboard</h3>
-                  <div className="overflow-x-auto">
-                    <table className="min-w-full text-sm">
-                      <thead>
-                        <tr className="text-left text-slate-400 border-b border-slate-800">
-                          <th className="py-2 pr-4">Rang</th>
-                          <th className="py-2 pr-4">Affiliate</th>
-                          <th className="py-2 pr-4">Referrals</th>
-                          <th className="py-2 pr-4">Umsatz</th>
-                          <th className="py-2 pr-4">Provision</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {leaderboard && leaderboard.length > 0 ? (
-                          leaderboard.map((row, index) => (
-                            <tr key={row.affiliate_id || index} className="border-b border-slate-900/60">
-                              <td className="py-2 pr-4 text-slate-300">{index + 1}</td>
-                              <td className="py-2 pr-4 text-slate-200">
-                                {row.affiliate_name || row.email || 'Unbekannt'}
-                              </td>
-                              <td className="py-2 pr-4 text-slate-300">
-                                {row.total_referrals ?? row.referral_count ?? 0}
-                              </td>
-                              <td className="py-2 pr-4 text-slate-300">
-                                {currencyFormat(row.total_revenue ?? 0)}
-                              </td>
-                              <td className="py-2 pr-4 text-slate-300">
-                                {currencyFormat(row.total_commission ?? 0)}
-                              </td>
-                            </tr>
-                          ))
-                        ) : (
-                          <tr>
-                            <td
-                              className="py-4 pr-4 text-slate-500"
-                              colSpan={5}
-                            >
-                              Noch keine Affiliate-Daten vorhanden.
-                            </td>
-                          </tr>
-                        )}
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
-
-                <div className="bg-slate-900 border border-slate-800 rounded-2xl p-4">
-                  <h3 className="text-sm font-medium mb-4 text-slate-200">Auszahlungen</h3>
-                  <div className="overflow-x-auto">
-                    <table className="min-w-full text-sm">
-                      <thead>
-                        <tr className="text-left text-slate-400 border-b border-slate-800">
-                          <th className="py-2 pr-4">Affiliate</th>
-                          <th className="py-2 pr-4">Betrag</th>
-                          <th className="py-2 pr-4">Status</th>
-                          <th className="py-2 pr-4">Angefragt am</th>
-                          <th className="py-2 pr-4">Ausgezahlt am</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {payouts && payouts.length > 0 ? (
-                          payouts.map((payout) => (
-                            <tr key={payout.id} className="border-b border-slate-900/60">
-                              <td className="py-2 pr-4 text-slate-200">
-                                {payout.affiliate_email || payout.affiliate_name || 'Unbekannt'}
-                              </td>
-                              <td className="py-2 pr-4 text-slate-300">
-                                {currencyFormat(payout.amount ?? 0)}{' '}
-                                <span className="text-slate-500 text-xs">
-                                  {payout.currency || 'EUR'}
-                                </span>
-                              </td>
-                              <td className="py-2 pr-4 text-slate-300">
-                                {payout.status || '—'}
-                              </td>
-                              <td className="py-2 pr-4 text-slate-300">
-                                {payout.created_at
-                                  ? new Date(payout.created_at).toLocaleString('de-DE')
-                                  : '—'}
-                              </td>
-                              <td className="py-2 pr-4 text-slate-300">
-                                {payout.paid_at
-                                  ? new Date(payout.paid_at).toLocaleString('de-DE')
-                                  : '—'}
-                              </td>
-                            </tr>
-                          ))
-                        ) : (
-                          <tr>
-                            <td
-                              className="py-4 pr-4 text-slate-500"
-                              colSpan={5}
-                            >
-                              Noch keine Auszahlungsanforderungen vorhanden.
-                            </td>
-                          </tr>
-                        )}
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
-              </div>
-            )}
           </div>
         </div>
-      </div>
+      </header>
+
+      <main className="max-w-7xl mx-auto px-6 py-8 space-y-8 relative z-10">
+        <div className="flex items-center gap-3">
+          <button
+            type="button"
+            onClick={() => setActiveTab('overview')}
+            className={`px-4 py-2 text-sm font-medium rounded-xl transition ${
+              activeTab === 'overview'
+                ? 'bg-rose-600 text-white shadow-[0_10px_40px_rgba(200,0,0,0.35)]'
+                : 'bg-white/5 text-slate-200 border border-white/5 hover:bg-white/10'
+            }`}
+          >
+            Übersicht
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveTab('affiliate')}
+            className={`px-4 py-2 text-sm font-medium rounded-xl transition ${
+              activeTab === 'affiliate'
+                ? 'bg-rose-600 text-white shadow-[0_10px_40px_rgba(200,0,0,0.35)]'
+                : 'bg-white/5 text-slate-200 border border-white/5 hover:bg-white/10'
+            }`}
+          >
+            Affiliate
+          </button>
+        </div>
+
+        {activeTab === 'overview' && (
+          <div className="space-y-8">
+            <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+              {[
+                { label: 'Nutzer gesamt', value: stats.totalUsers ?? 0, accent: 'from-rose-500 to-rose-700' },
+                { label: 'Aktive Trials', value: stats.trialActive ?? 0, accent: 'from-purple-500 to-indigo-600' },
+                { label: 'Zahlende User', value: stats.payingUsers ?? 0, accent: 'from-emerald-500 to-teal-500' },
+                { label: 'Abgelaufene Trials', value: stats.trialExpiredOrCancelled ?? 0, accent: 'from-amber-500 to-orange-500' },
+                { label: 'Monatlicher Umsatz', value: currencyFormat(stats.monthlyRevenue ?? 0), accent: 'from-cyan-500 to-blue-600' },
+                { label: 'Gesamtumsatz', value: currencyFormat(stats.totalRevenue ?? 0), accent: 'from-pink-500 to-rose-600' }
+              ].map((card, idx) => (
+                <div
+                  key={idx}
+                  className="relative overflow-hidden rounded-2xl p-5 bg-white/5 border border-white/10 backdrop-blur transition transform hover:-translate-y-1 hover:shadow-[0_20px_60px_rgba(200,0,0,0.25)]"
+                >
+                  <div className={`absolute inset-0 opacity-20 bg-gradient-to-br ${card.accent}`} />
+                  <div className="relative flex flex-col gap-2">
+                    <span className="text-xs uppercase tracking-[0.2em] text-slate-400">{card.label}</span>
+                    <span className="text-3xl font-bold text-white drop-shadow-sm">{card.value}</span>
+                    <div className="h-1 w-16 rounded-full bg-white/20" />
+                  </div>
+                </div>
+              ))}
+            </section>
+
+            <section className="grid grid-cols-1 xl:grid-cols-3 gap-6">
+              <div className="xl:col-span-2 p-6 rounded-2xl bg-white/5 border border-white/10 backdrop-blur shadow-[0_30px_80px_rgba(0,0,0,0.35)]">
+                <div className="flex items-center justify-between mb-4">
+                  <div>
+                    <p className="text-xs uppercase tracking-[0.2em] text-rose-400">Revenue</p>
+                    <h3 className="text-lg font-semibold text-white">Umsatzentwicklung</h3>
+                    <p className="text-xs text-slate-400">Monatliche Stripe-Subscriptions</p>
+                  </div>
+                </div>
+                <div className="h-72">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <LineChart data={monthlyChartData || []}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="#1f2937" />
+                      <XAxis dataKey="month" stroke="#94a3b8" />
+                      <YAxis stroke="#94a3b8" />
+                      <Tooltip
+                        contentStyle={{
+                          backgroundColor: '#0b0f1a',
+                          borderColor: '#1f2937',
+                          borderRadius: '0.75rem',
+                          color: '#fff'
+                        }}
+                      />
+                      <Line
+                        type="monotone"
+                        dataKey="revenue"
+                        stroke="#f43f5e"
+                        strokeWidth={3}
+                        dot={false}
+                        activeDot={{ r: 6, fill: '#f43f5e', stroke: '#fff' }}
+                      />
+                    </LineChart>
+                  </ResponsiveContainer>
+                </div>
+              </div>
+
+              <div className="p-6 rounded-2xl bg-white/5 border border-white/10 backdrop-blur shadow-[0_30px_80px_rgba(0,0,0,0.35)]">
+                <div className="flex items-center justify-between mb-4">
+                  <div>
+                    <p className="text-xs uppercase tracking-[0.2em] text-rose-400">Aktivität</p>
+                    <h3 className="text-lg font-semibold text-white">Neueste User</h3>
+                    <p className="text-xs text-slate-400">Letzte 10 Registrierungen</p>
+                  </div>
+                </div>
+                <div className="space-y-3 max-h-96 overflow-auto pr-1">
+                  {(latestUsers ?? []).map((u) => (
+                    <div
+                      key={u.id}
+                      className="flex items-center justify-between px-3 py-2 rounded-xl bg-white/5 border border-white/5"
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className="h-10 w-10 rounded-full bg-gradient-to-br from-rose-500 to-purple-600 flex items-center justify-center text-sm font-semibold text-white">
+                          {u.email ? u.email.slice(0, 2).toUpperCase() : 'US'}
+                        </div>
+                        <div className="text-sm">
+                          <p className="text-white">{u.email}</p>
+                          <p className="text-xs text-slate-400">
+                            {u.created_at ? new Date(u.created_at).toLocaleString('de-DE') : '—'}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="text-right text-xs">
+                        <p className={`px-2 py-1 rounded-full inline-block ${
+                          u.payment_verified ? 'bg-emerald-500/20 text-emerald-200' : 'bg-amber-500/20 text-amber-200'
+                        }`}>
+                          {u.payment_verified ? 'Zahlend' : 'Nicht zahlend'}
+                        </p>
+                        <p className="text-slate-400 mt-1">{u.trial_status || '—'}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </section>
+          </div>
+        )}
+
+        {activeTab === 'affiliate' && (
+          <div className="space-y-8">
+            <section className="p-6 rounded-2xl bg-white/5 border border-white/10 backdrop-blur shadow-[0_30px_80px_rgba(0,0,0,0.35)]">
+              <div className="flex items-center justify-between mb-4">
+                <div>
+                  <p className="text-xs uppercase tracking-[0.2em] text-rose-400">Affiliate</p>
+                  <h3 className="text-lg font-semibold text-white">Affiliate Leaderboard</h3>
+                  <p className="text-xs text-slate-400">Top-Performing Partner</p>
+                </div>
+              </div>
+              <div className="overflow-x-auto">
+                <table className="min-w-full text-sm">
+                  <thead>
+                    <tr className="text-left text-slate-400 border-b border-white/10">
+                      <th className="py-2 pr-4">#</th>
+                      <th className="py-2 pr-4">Affiliate</th>
+                      <th className="py-2 pr-4">Referrals</th>
+                      <th className="py-2 pr-4">Umsatz</th>
+                      <th className="py-2 pr-4">Provision</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {leaderboard && leaderboard.length > 0 ? (
+                      leaderboard.map((row, index) => (
+                        <tr
+                          key={row.affiliate_id || index}
+                          className="border-b border-white/5 hover:bg-white/5 transition"
+                        >
+                          <td className="py-3 pr-4 text-slate-200">
+                            <span className={`px-2 py-1 rounded-full text-xs font-semibold ${
+                              index === 0
+                                ? 'bg-amber-500/20 text-amber-200'
+                                : index === 1
+                                  ? 'bg-slate-400/20 text-slate-200'
+                                  : index === 2
+                                    ? 'bg-orange-500/20 text-orange-200'
+                                    : 'bg-white/10 text-slate-200'
+                            }`}>
+                              {index + 1}
+                            </span>
+                          </td>
+                          <td className="py-3 pr-4 text-slate-50 flex items-center gap-2">
+                            <div className="h-9 w-9 rounded-full bg-gradient-to-br from-rose-500 to-purple-600 flex items-center justify-center text-xs font-semibold text-white">
+                              {(row.affiliate_name || row.email || 'AF').slice(0, 2).toUpperCase()}
+                            </div>
+                            <div className="leading-tight">
+                              <p className="text-sm font-semibold text-white">{row.affiliate_name || row.email || 'Unbekannt'}</p>
+                              <p className="text-xs text-slate-400">{row.email || '—'}</p>
+                            </div>
+                          </td>
+                          <td className="py-3 pr-4 text-slate-200">
+                            {row.total_referrals ?? row.referral_count ?? 0}
+                          </td>
+                          <td className="py-3 pr-4 text-slate-200">
+                            {currencyFormat(row.total_revenue ?? 0)}
+                          </td>
+                          <td className="py-3 pr-4 text-slate-200">
+                            {currencyFormat(row.total_commission ?? 0)}
+                          </td>
+                        </tr>
+                      ))
+                    ) : (
+                      <tr>
+                        <td className="py-4 pr-4 text-slate-500" colSpan={5}>
+                          Noch keine Affiliate-Daten vorhanden.
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </section>
+
+            <section className="p-6 rounded-2xl bg-white/5 border border-white/10 backdrop-blur shadow-[0_30px_80px_rgba(0,0,0,0.35)]">
+              <div className="flex items-center justify-between mb-4">
+                <div>
+                  <p className="text-xs uppercase tracking-[0.2em] text-rose-400">Payouts</p>
+                  <h3 className="text-lg font-semibold text-white">Auszahlungsanforderungen</h3>
+                  <p className="text-xs text-slate-400">Status & Historie</p>
+                </div>
+              </div>
+              <div className="overflow-x-auto">
+                <table className="min-w-full text-sm">
+                  <thead>
+                    <tr className="text-left text-slate-400 border-b border-white/10">
+                      <th className="py-2 pr-4">Affiliate</th>
+                      <th className="py-2 pr-4">Betrag</th>
+                      <th className="py-2 pr-4">Status</th>
+                      <th className="py-2 pr-4">Angefragt am</th>
+                      <th className="py-2 pr-4">Ausgezahlt am</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {payouts && payouts.length > 0 ? (
+                      payouts.map((payout) => {
+                        const statusClass =
+                          payout.status === 'paid'
+                            ? 'bg-emerald-500/20 text-emerald-200'
+                            : payout.status === 'approved'
+                              ? 'bg-amber-500/20 text-amber-200'
+                              : payout.status === 'rejected'
+                                ? 'bg-rose-500/20 text-rose-200'
+                                : 'bg-slate-500/20 text-slate-200';
+                        return (
+                          <tr
+                            key={payout.id}
+                            className="border-b border-white/5 hover:bg-white/5 transition"
+                          >
+                            <td className="py-3 pr-4 text-slate-50">
+                              {payout.affiliate_email || payout.affiliate_name || 'Unbekannt'}
+                            </td>
+                            <td className="py-3 pr-4 text-slate-200">
+                              {currencyFormat(payout.amount ?? 0)}{' '}
+                              <span className="text-slate-500 text-xs">
+                                {payout.currency || 'EUR'}
+                              </span>
+                            </td>
+                            <td className="py-3 pr-4">
+                              <span className={`px-3 py-1 rounded-full text-xs font-semibold ${statusClass}`}>
+                                {payout.status || '—'}
+                              </span>
+                            </td>
+                            <td className="py-3 pr-4 text-slate-200">
+                              {safeDate(payout.created_at)}
+                            </td>
+                            <td className="py-3 pr-4 text-slate-200">
+                              {safeDate(payout.paid_at)}
+                            </td>
+                          </tr>
+                        );
+                      })
+                    ) : (
+                      <tr>
+                        <td className="py-4 pr-4 text-slate-500" colSpan={5}>
+                          Noch keine Auszahlungsanforderungen vorhanden.
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </section>
+          </div>
+        )}
+      </main>
     </div>
   );
 };
