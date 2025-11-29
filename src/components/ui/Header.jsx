@@ -89,14 +89,6 @@ const Header = ({ onMenuToggle, className = '', isNavCollapsed = false, onNavCol
 
         {/* Desktop Spacer */}
         <div className="hidden lg:flex flex-1 items-center gap-3">
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={onNavCollapseToggle}
-            className="h-10 w-10"
-          >
-            <Icon name={isNavCollapsed ? 'ChevronsRight' : 'ChevronsLeft'} size={18} />
-          </Button>
           <img 
             src="/assets/images/Screenshot_2025-10-21_000636-removebg-preview-1762544374259.png" 
             alt="AdRuby Logo"

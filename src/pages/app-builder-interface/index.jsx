@@ -8,14 +8,11 @@ import AnalysisPanel from './components/AnalysisPanel';
 import PreviewPanel from './components/PreviewPanel';
 import AdBuilderService from '../../services/adBuilderService';
 import Icon from '../../components/AppIcon';
-import usePreferredTheme from '../../hooks/usePreferredTheme';
 
 const HighConversionAdBuilder = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [isNavCollapsed, setIsNavCollapsed] = useState(false);
   const { user, userProfile } = useAuth();
-  const theme = usePreferredTheme();
-  const isDark = theme === 'dark';
   
   // NEW: Add input collapsed state
   const [isInputCollapsed, setIsInputCollapsed] = useState(false);
@@ -357,16 +354,15 @@ const HighConversionAdBuilder = () => {
 
   const mainBg = isDark ? 'bg-[#050509] text-slate-50' : 'bg-slate-50 text-slate-900';
   const cardBg = isDark ? 'bg-[#141418] border-white/5' : 'bg-white border-slate-200';
-  const subtleText = isDark ? 'text-slate-400' : 'text-slate-500';
+  const subtleText = 'text-slate-500 dark:text-slate-400';
   const primaryButton =
     'inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold rounded-lg transition shadow-[0_10px_30px_rgba(200,0,0,0.25)] bg-[#C80000] text-white hover:bg-[#a50000]';
-  const secondaryButton = isDark
-    ? 'inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold rounded-lg transition border border-white/10 bg-white/5 text-slate-200 hover:bg-white/10'
-    : 'inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold rounded-lg transition border border-slate-200 bg-white text-slate-800 hover:bg-slate-100';
+  const secondaryButton =
+    'inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold rounded-lg transition border border-slate-200 bg-white text-slate-800 hover:bg-slate-100 dark:border-white/10 dark:bg-white/5 dark:text-slate-200 dark:hover:bg-white/10';
   const navOffset = isNavCollapsed ? 'lg:ml-[72px]' : 'lg:ml-60';
 
   return (
-    <div className={`min-h-screen ${mainBg}`}>
+    <div className={`min-h-screen bg-slate-50 text-slate-900 dark:bg-[#050509] dark:text-slate-50`}>
       <Sidebar
         isOpen={sidebarOpen}
         onClose={() => setSidebarOpen(false)}
@@ -500,7 +496,7 @@ const HighConversionAdBuilder = () => {
                       Einklappen
                     </button>
                   </div>
-                  <Stepper currentStep={currentStep} isDark={isDark} />
+                  <Stepper currentStep={currentStep} />
                   <AccordionForm
                     mode={mode}
                     formData={formData}
@@ -509,7 +505,6 @@ const HighConversionAdBuilder = () => {
                     isGenerating={isAnalyzing || isGenerating}
                     isAnalyzing={isAnalyzing}
                     currentStep={currentStep}
-                    isDark={isDark}
                     primaryButton={primaryButton}
                   />
                   <div className="mt-4 space-y-4">
@@ -788,7 +783,7 @@ export default HighConversionAdBuilder;
 
 // --- UI Subcomponents for Stepper, AccordionForm, PersonaChips, Slider ---
 
-const Stepper = ({ currentStep, onStepSelect, isDark }) => {
+const Stepper = ({ currentStep, onStepSelect }) => {
   const steps = [
     { key: 'input', label: 'Produkt' },
     { key: 'analyzing', label: 'Zielgruppe' },
@@ -804,9 +799,7 @@ const Stepper = ({ currentStep, onStepSelect, isDark }) => {
           (step.key === 'generating' && currentStep === 'results');
         const color = active
           ? 'bg-[#C80000] text-white'
-          : isDark
-            ? 'bg-slate-800 text-slate-400'
-            : 'bg-slate-200 text-slate-700';
+          : 'bg-slate-200 text-slate-700 dark:bg-slate-800 dark:text-slate-400';
         return (
           <button
             type="button"
@@ -815,8 +808,8 @@ const Stepper = ({ currentStep, onStepSelect, isDark }) => {
             className="flex items-center space-x-2"
           >
             <div className={`w-8 h-8 rounded-full flex items-center justify-center ${color}`}>{idx + 1}</div>
-            <span className={`font-medium ${active ? 'text-slate-900 dark:text-white' : isDark ? 'text-slate-400' : 'text-slate-600'}`}>{step.label}</span>
-            {idx < steps.length - 1 && <div className={`w-8 h-px ${isDark ? 'bg-slate-700' : 'bg-slate-300'} mx-1`} />}
+            <span className={`font-medium ${active ? 'text-slate-900 dark:text-white' : 'text-slate-600 dark:text-slate-400'}`}>{step.label}</span>
+            {idx < steps.length - 1 && <div className="w-8 h-px bg-slate-300 dark:bg-slate-700 mx-1" />}
           </button>
         );
       })}
@@ -832,7 +825,6 @@ const AccordionForm = ({
   isGenerating,
   isAnalyzing,
   currentStep,
-  isDark,
   primaryButton,
   onSectionSelect
 }) => {
@@ -880,11 +872,7 @@ const AccordionForm = ({
           {...baseProps}
           type="text"
           placeholder={placeholder}
-          className={`w-full px-3 py-2 rounded-lg border placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#C80000] ${
-            isDark
-              ? 'bg-[#0b0b10] border-white/10 text-slate-50'
-              : 'bg-white border-slate-200 text-slate-900'
-          }`}
+          className="w-full px-3 py-2 rounded-lg border placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#C80000] bg-white border-slate-200 text-slate-900 dark:bg-[#0b0b10] dark:border-white/10 dark:text-slate-50"
         />
       </div>
     );
@@ -904,9 +892,7 @@ const AccordionForm = ({
             }))
           }
           disabled={isGenerating || isAnalyzing}
-          className={`w-full px-3 py-2 rounded-lg border focus:outline-none focus:ring-2 focus:ring-[#C80000] ${
-            isDark ? 'bg-[#0b0b10] border-white/10 text-slate-50' : 'bg-white border-slate-200 text-slate-900'
-          }`}
+          className="w-full px-3 py-2 rounded-lg border focus:outline-none focus:ring-2 focus:ring-[#C80000] bg-white border-slate-200 text-slate-900 dark:bg-[#0b0b10] dark:border-white/10 dark:text-slate-50"
         >
           {options?.map((opt) => (
             <option key={opt.value} value={opt.value}>
@@ -996,9 +982,7 @@ const AccordionForm = ({
                         }))
                       }
                       disabled={isGenerating || isAnalyzing}
-                      className={`h-4 w-4 rounded text-[#C80000] focus:ring-[#C80000] ${
-                        isDark ? 'border-white/20 bg-[#0b0b10]' : 'border-slate-300 bg-white'
-                      }`}
+                      className="h-4 w-4 rounded text-[#C80000] focus:ring-[#C80000] border-slate-300 bg-white dark:border-white/20 dark:bg-[#0b0b10]"
                     />
                     {f.label}
                   </label>
@@ -1043,15 +1027,15 @@ const AccordionForm = ({
   );
 };
 
-const AdPressureSlider = ({ value, onChange, isDark }) => {
+const AdPressureSlider = ({ value, onChange }) => {
   const options = [
     { key: 'soft', label: 'Soft' },
     { key: 'mittel', label: 'Mittel' },
     { key: 'aggressiv', label: 'Aggressiv' }
   ];
   return (
-    <div className={`rounded-xl p-3 border ${isDark ? 'bg-white/5 border-white/10' : 'bg-white border-slate-200'}`}>
-      <div className={`flex items-center justify-between text-xs mb-2 ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>
+    <div className="rounded-xl p-3 border bg-white border-slate-200 dark:bg-white/5 dark:border-white/10">
+      <div className="flex items-center justify-between text-xs mb-2 text-slate-600 dark:text-slate-300">
         <span>Werbedruck</span>
         <span className="font-semibold capitalize text-slate-900 dark:text-white">{value}</span>
       </div>
@@ -1063,9 +1047,7 @@ const AdPressureSlider = ({ value, onChange, isDark }) => {
             className={`py-2 rounded-lg text-xs font-semibold transition ${
               value === opt.key
                 ? 'bg-[#C80000] text-white'
-                : isDark
-                  ? 'bg-[#0b0b10] text-slate-300 border border-white/5 hover:bg-white/5'
-                  : 'bg-white text-slate-700 border border-slate-200 hover:bg-slate-100'
+                : 'bg-white text-slate-700 border border-slate-200 hover:bg-slate-100 dark:bg-[#0b0b10] dark:text-slate-300 dark:border-white/5 dark:hover:bg-white/5'
             }`}
           >
             {opt.label}
@@ -1076,15 +1058,15 @@ const AdPressureSlider = ({ value, onChange, isDark }) => {
   );
 };
 
-const PersonaChips = ({ value = [], onChange, isDark }) => {
+const PersonaChips = ({ value = [], onChange }) => {
   const personas = ['Schnäppchenjäger', 'Premium-Käufer', 'Busy Mom', 'Tech-Nerd'];
   const toggle = (p) =>
     onChange(
       value.includes(p) ? value.filter((v) => v !== p) : [...value, p]
     );
   return (
-    <div className={`rounded-xl p-3 border ${isDark ? 'bg-white/5 border-white/10' : 'bg-white border-slate-200'}`}>
-      <p className={`text-xs mb-2 ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>Personas</p>
+    <div className="rounded-xl p-3 border bg-white border-slate-200 dark:bg-white/5 dark:border-white/10">
+      <p className="text-xs mb-2 text-slate-600 dark:text-slate-300">Personas</p>
       <div className="flex flex-wrap gap-2">
         {personas.map((p) => {
           const active = value.includes(p);
@@ -1095,9 +1077,7 @@ const PersonaChips = ({ value = [], onChange, isDark }) => {
               className={`px-3 py-2 rounded-full text-xs font-semibold transition ${
                 active
                   ? 'bg-[#C80000] text-white shadow-[0_10px_30px_rgba(200,0,0,0.35)]'
-                  : isDark
-                    ? 'bg-[#0b0b10] text-slate-300 border border-white/5 hover:bg-white/5'
-                    : 'bg-white text-slate-700 border border-slate-200 hover:bg-slate-100'
+                  : 'bg-white text-slate-700 border border-slate-200 hover:bg-slate-100 dark:bg-[#0b0b10] dark:text-slate-300 dark:border-white/5 dark:hover:bg-white/5'
               }`}
             >
               {p}

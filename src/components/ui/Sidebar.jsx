@@ -6,7 +6,14 @@ import { creditService } from '../../services/creditService';
 import Icon from '../AppIcon';
 import Button from './Button';
 
-const Sidebar = ({ isOpen = false, onClose, className = '', isCollapsed = false, onCollapseToggle }) => {
+const Sidebar = ({
+  isOpen = false,
+  onClose,
+  className = '',
+  isCollapsed = false,
+  onCollapseToggle = () => {},
+  isNavCollapsed
+}) => {
   const location = useLocation();
   const navigate = useNavigate();
   const [activeItem, setActiveItem] = useState('');
@@ -15,6 +22,7 @@ const Sidebar = ({ isOpen = false, onClose, className = '', isCollapsed = false,
   const [creditStatus, setCreditStatus] = useState(null);
   const [creditsLoading, setCreditsLoading] = useState(true);
   const { user, userProfile } = useAuth();
+  const collapsed = typeof isNavCollapsed === 'boolean' ? isNavCollapsed : isCollapsed;
 
   const navigationItems = useMemo(() => {
     const baseItems = [
@@ -169,7 +177,7 @@ const Sidebar = ({ isOpen = false, onClose, className = '', isCollapsed = false,
       {/* Sidebar */}
       <aside
         className={`
-          fixed top-0 left-0 h-full w-60 ${isCollapsed ? 'lg:w-[72px]' : 'lg:w-60'} bg-card border-r border-border z-50
+          fixed top-0 left-0 h-full w-60 ${collapsed ? 'lg:w-[72px]' : 'lg:w-60'} bg-card border-r border-border z-50
           transform transition-transform duration-300 ease-in-out
           lg:translate-x-0 lg:z-40
           ${isOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
@@ -186,23 +194,13 @@ const Sidebar = ({ isOpen = false, onClose, className = '', isCollapsed = false,
                 className="w-8 h-8 object-contain"
               />
             </div>
-            {!isCollapsed && (
+            {!collapsed && (
               <div>
                 <h1 className="font-semibold text-lg text-foreground">AdRuby</h1>
                 <p className="text-xs text-muted-foreground">Dashboard</p>
               </div>
             )}
           </div>
-          
-          {/* Desktop Collapse Toggle */}
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={onCollapseToggle}
-            className="hidden lg:flex h-8 w-8"
-          >
-            <Icon name={isCollapsed ? 'ChevronsRight' : 'ChevronsLeft'} size={16} />
-          </Button>
 
           {/* Mobile Close Button */}
           <Button
@@ -212,6 +210,19 @@ const Sidebar = ({ isOpen = false, onClose, className = '', isCollapsed = false,
             className="lg:hidden h-8 w-8"
           >
             <Icon name="X" size={16} />
+          </Button>
+        </div>
+
+        {/* Collapse Toggle (desktop) */}
+        <div className="hidden lg:block px-4 py-3">
+          <Button
+            variant="ghost"
+            size="sm"
+            className="w-full flex items-center justify-start gap-2 px-3"
+            onClick={onCollapseToggle}
+          >
+            <Icon name={collapsed ? 'ChevronsRight' : 'ChevronsLeft'} size={16} />
+            {!collapsed && <span className="text-sm font-medium">Sidebar einklappen</span>}
           </Button>
         </div>
 
@@ -254,7 +265,7 @@ const Sidebar = ({ isOpen = false, onClose, className = '', isCollapsed = false,
                     />
                   </div>
                   {/* Label */}
-                  {!isCollapsed && (
+                  {!collapsed && (
                     <div className="flex-1 min-w-0">
                       <p className={`font-medium text-sm ${
                         isActive ? 'text-primary-foreground' : 'text-foreground'
@@ -274,7 +285,7 @@ const Sidebar = ({ isOpen = false, onClose, className = '', isCollapsed = false,
         </nav>
 
         {/* Updated Footer with German requirements and Credits */}
-        {!isCollapsed && (
+        {!collapsed && (
           <div className="p-4 border-t border-border">
             <div className="flex items-center space-x-3 px-3 py-2">
               <div className="w-8 h-8 bg-muted rounded-full flex items-center justify-center">
