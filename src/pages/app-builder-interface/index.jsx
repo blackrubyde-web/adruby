@@ -352,8 +352,8 @@ const HighConversionAdBuilder = () => {
     urgency: selectedAd?.focus_urgency ? 82 : 55
   };
 
-  const mainBg = isDark ? 'bg-[#050509] text-slate-50' : 'bg-slate-50 text-slate-900';
-  const cardBg = isDark ? 'bg-[#141418] border-white/5' : 'bg-white border-slate-200';
+  const mainBg = 'bg-slate-50 text-slate-900 dark:bg-[#050509] dark:text-slate-50';
+  const cardBg = 'bg-white border-slate-200 dark:bg-[#141418] dark:border-white/5';
   const subtleText = 'text-slate-500 dark:text-slate-400';
   const primaryButton =
     'inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold rounded-lg transition shadow-[0_10px_30px_rgba(200,0,0,0.25)] bg-[#C80000] text-white hover:bg-[#a50000]';
@@ -508,8 +508,8 @@ const HighConversionAdBuilder = () => {
                     primaryButton={primaryButton}
                   />
                   <div className="mt-4 space-y-4">
-                    <AdPressureSlider value={adPressure} onChange={setAdPressure} isDark={isDark} />
-                    <PersonaChips value={personaChips} onChange={setPersonaChips} isDark={isDark} />
+                    <AdPressureSlider value={adPressure} onChange={setAdPressure} />
+                    <PersonaChips value={personaChips} onChange={setPersonaChips} />
                   </div>
                 </div>
               ) : (
@@ -856,11 +856,7 @@ const AccordionForm = ({
             {...baseProps}
             placeholder={placeholder}
             rows={3}
-            className={`w-full px-3 py-2 rounded-lg border placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#C80000] ${
-              isDark
-                ? 'bg-[#0b0b10] border-white/10 text-slate-50'
-                : 'bg-white border-slate-200 text-slate-900'
-            }`}
+            className="w-full px-3 py-2 rounded-lg border placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#C80000] bg-white border-slate-200 text-slate-900 dark:bg-[#0b0b10] dark:border-white/10 dark:text-slate-50"
           />
         </div>
       );
@@ -994,9 +990,7 @@ const AccordionForm = ({
       ].map((section) => (
         <div
           key={section.key}
-          className={`rounded-xl overflow-hidden border ${
-            isDark ? 'bg-white/5 border-white/10' : 'bg-white border-slate-200'
-          }`}
+          className="rounded-xl overflow-hidden border bg-white border-slate-200 dark:bg-white/5 dark:border-white/10"
         >
           <button
             type="button"
