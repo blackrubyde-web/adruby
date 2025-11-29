@@ -529,6 +529,7 @@ const HighConversionAdBuilder = () => {
                     isAnalyzing={isAnalyzing}
                     currentStep={currentStep}
                     isDark={isDark}
+                    primaryButton={primaryButton}
                     onSectionSelect={() => {
                       setIsSidebarCollapsed(true);
                       setIsPanelOpen(false);
@@ -866,6 +867,7 @@ const AccordionForm = ({
   isAnalyzing,
   currentStep,
   isDark,
+  primaryButton,
   onSectionSelect
 }) => {
   const [open, setOpen] = useState(['produkt']);
