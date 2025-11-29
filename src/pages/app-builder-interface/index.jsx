@@ -492,7 +492,6 @@ const HighConversionAdBuilder = () => {
                       Einklappen
                     </button>
                   </div>
-                  <Stepper currentStep={currentStep} />
                   <AccordionForm
                     mode={mode}
                     formData={formData}
@@ -777,7 +776,7 @@ const HighConversionAdBuilder = () => {
 
 export default HighConversionAdBuilder;
 
-// --- UI Subcomponents for Stepper, AccordionForm, PersonaChips, Slider ---
+// --- UI Subcomponents for AccordionForm, PersonaChips, Slider ---
 
 const AccordionForm = ({
   mode,
