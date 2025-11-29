@@ -1,28 +1,35 @@
-// FILE: src/pages/payment-verification/index.jsx
 import React, { useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import RedirectScreen from '../../components/RedirectScreen';
+import { useAuth } from '../../contexts/AuthContext';
+import PaymentBenefits from './components/PaymentBenefits';
+import PaymentVerificationForm from './components/PaymentVerificationForm';
 
 const PaymentVerificationPage = () => {
   const navigate = useNavigate();
   const location = useLocation();
+  const { user, isAuthReady } = useAuth();
 
-  // 'verifying_session' | 'needs_payment' | 'error'
-  const [mode, setMode] = useState('verifying_session');
+  const [mode, setMode] = useState('verifying_session'); // 'verifying_session' | 'needs_payment' | 'error'
   const [error, setError] = useState(null);
 
   useEffect(() => {
     const params = new URLSearchParams(location.search);
     const sessionId = params.get('session_id');
 
-    // ⬅️ Fall B: Kein session_id -> allgemeiner "Zahlung erforderlich"-Fall
+    if (!isAuthReady) return;
+
+    if (!user) {
+      navigate('/login', { replace: true });
+      return;
+    }
+
     if (!sessionId) {
-      console.log('[PaymentVerification] no session_id – entering needs_payment mode');
+      console.log('[PaymentVerification] no session_id – show checkout form');
       setMode('needs_payment');
       return;
     }
 
-    // ⬅️ Fall A: Normale Stripe-Checkout-Session verifizieren
     const verify = async () => {
       try {
         setMode('verifying_session');
@@ -51,9 +58,20 @@ const PaymentVerificationPage = () => {
     };
 
     verify();
-  }, [location.search, navigate]);
+  }, [location.search, navigate, user, isAuthReady]);
 
-  // ❌ Fehlerfall (z.B. Stripe-Call schlägt fehl)
+  if (!isAuthReady) {
+    return (
+      <RedirectScreen
+        title="Anmeldung wird geprüft…"
+        subtitle="Bitte einen Moment Geduld."
+        details="Wir stellen sicher, dass dein Konto korrekt geladen ist."
+        showHomeButton={false}
+        showLogoutButton={false}
+      />
+    );
+  }
+
   if (mode === 'error' && error) {
     return (
       <RedirectScreen
@@ -66,20 +84,30 @@ const PaymentVerificationPage = () => {
     );
   }
 
-  // 💳 Fall B: Keine session_id -> User hat kein aktives Abo / Zahlungsdaten ungültig
   if (mode === 'needs_payment') {
     return (
-      <RedirectScreen
-        title="Zahlung erforderlich"
-        subtitle="Dein Abonnement ist nicht aktiv oder deine Zahlungsdaten sind nicht mehr gültig."
-        details="Bitte aktualisiere deine Zahlungsmethode oder starte ein neues Abonnement, um AdRuby weiter nutzen zu können."
-        showHomeButton
-        showLogoutButton
-      />
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-white flex items-center justify-center px-4">
+        <div className="max-w-4xl w-full grid grid-cols-1 md:grid-cols-2 gap-8">
+          <div className="hidden md:block">
+            <PaymentBenefits />
+          </div>
+          <div className="bg-white rounded-2xl shadow-lg p-6 md:p-8">
+            <PaymentVerificationForm
+              user={user}
+              isAuthReady={isAuthReady}
+              onSuccess={() => {
+                console.log('[Payment] checkout started');
+              }}
+              onError={(err) => {
+                console.error('[Payment] checkout error in page', err);
+              }}
+            />
+          </div>
+        </div>
+      </div>
     );
   }
 
-  // ⏳ Fall A: Normale Checkout-Verifizierung
   return (
     <RedirectScreen
       title="Zahlung wird bestätigt…"
