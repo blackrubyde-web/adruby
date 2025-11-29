@@ -37,6 +37,7 @@ const AdminDashboard = () => {
       );
       if (leaderboardError) throw leaderboardError;
 
+// Affiliate Payouts
       const { data: payoutData, error: payoutError } = await supabase
         .from('affiliate_payouts')
         .select(
@@ -46,7 +47,7 @@ const AdminDashboard = () => {
             amount,
             currency,
             status,
-            created_at,
+            requested_at,
             approved_at,
             paid_at,
             processed_at,
@@ -57,7 +58,7 @@ const AdminDashboard = () => {
             admin_note
           `
         )
-        .order('created_at', { ascending: false })
+        .order('requested_at', { ascending: false })
         .limit(50);
       if (payoutError) throw payoutError;
 
