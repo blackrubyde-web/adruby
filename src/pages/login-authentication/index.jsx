@@ -11,37 +11,66 @@ const LoginAuthentication = () => {
   const isDark = theme === 'dark';
 
   useEffect(() => {
-    console.log('[LoginCallback] start', { search: location.search });
+  console.log('[LoginCallback] start', { search: location.search });
 
-    const run = async () => {
-      try {
-        const { data, error } = await supabase.auth.getSession();
+  const run = async () => {
+    try {
+      const { data, error } = await supabase.auth.getSession();
 
-        if (error || !data?.session) {
-          console.error('[LoginCallback] getSession error', error);
-          navigate('/login', {
-            replace: true,
-            state: { error: 'Login fehlgeschlagen' }
-          });
-          return;
-        }
-
-        const params = new URLSearchParams(location.search);
-        const redirect = params.get('redirect') || '/overview-dashboard';
-
-        console.log('[LoginCallback] session found, redirecting', { redirect });
-        navigate(redirect, { replace: true });
-      } catch (err) {
-        console.error('[LoginCallback] error', err);
+      if (error || !data?.session) {
+        console.error('[LoginCallback] getSession error', error);
         navigate('/login', {
           replace: true,
           state: { error: 'Login fehlgeschlagen' }
         });
+        return;
       }
-    };
 
-    run();
-  }, [location.search, navigate]);
+      const sessionUser = data.session.user;
+
+      // Rolle aus user_profiles holen
+      const { data: profile, error: profileError } = await supabase
+        .from('user_profiles')
+        .select('role')
+        .eq('id', sessionUser.id)
+        .single();
+
+      if (profileError) {
+        console.error('[LoginCallback] failed to load profile for redirect', profileError);
+      }
+
+      const isAdmin = profile?.role === 'admin';
+
+      const params = new URLSearchParams(location.search);
+      const redirectParam = params.get('redirect');
+
+      // Redirect-Logik:
+      // 1) Wenn expliziter redirect vorhanden → der hat Vorrang
+      // 2) Sonst: Admin → /admin-dashboard
+      // 3) Sonst: /overview-dashboard
+      const finalRedirect =
+        redirectParam || (isAdmin ? '/admin-dashboard' : '/overview-dashboard');
+
+      console.log('[LoginCallback] session found, redirecting', {
+        userId: sessionUser.id,
+        email: sessionUser.email,
+        role: profile?.role,
+        finalRedirect
+      });
+
+      navigate(finalRedirect, { replace: true });
+    } catch (err) {
+      console.error('[LoginCallback] error', err);
+      navigate('/login', {
+        replace: true,
+        state: { error: 'Login fehlgeschlagen' }
+      });
+    }
+  };
+
+  run();
+}, [location.search, navigate]);
+
 
   const bgClass = isDark ? 'bg-slate-950 text-slate-50' : 'bg-white text-slate-900';
   const gradient = isDark
