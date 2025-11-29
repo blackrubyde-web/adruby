@@ -8,6 +8,7 @@ import AnalysisPanel from './components/AnalysisPanel';
 import PreviewPanel from './components/PreviewPanel';
 import AdBuilderService from '../../services/adBuilderService';
 import Icon from '../../components/AppIcon';
+import AdBuilderStepper from '../../components/AdBuilderStepper';
 
 const HighConversionAdBuilder = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -352,6 +353,18 @@ const HighConversionAdBuilder = () => {
     urgency: selectedAd?.focus_urgency ? 82 : 55
   };
 
+  const stepOrder = ['input', 'analyzing', 'generating'];
+  const currentStepIndex = stepOrder.indexOf(currentStep) === -1 ? 0 : stepOrder.indexOf(currentStep);
+  const maxUnlockedStep =
+    currentStep === 'results'
+      ? stepOrder.length - 1
+      : Math.max(0, currentStepIndex);
+
+  const handleStepperChange = (index) => {
+    const key = stepOrder[index] || 'input';
+    setCurrentStep(key);
+  };
+
   const mainBg = 'bg-slate-50 text-slate-900 dark:bg-[#050509] dark:text-slate-50';
   const cardBg = 'bg-white border-slate-200 dark:bg-[#141418] dark:border-white/5';
   const subtleText = 'text-slate-500 dark:text-slate-400';
@@ -408,28 +421,11 @@ const HighConversionAdBuilder = () => {
             </div>
 
             {/* Progress Indicator */}
-            <div className={`mt-2 flex flex-wrap gap-4 text-xs sm:text-sm ${subtleText}`}>
-              {[
-                { step: 'input', label: 'Produkteingabe', index: 1 },
-                { step: 'analyzing', label: 'Marktanalyse', index: 2 },
-                { step: 'generating', label: 'Ad-Generierung', index: 3 }
-              ].map(({ step, label, index }, idx) => {
-                const active =
-                  currentStep === step ||
-                  (step === 'analyzing' && (currentStep === 'generating' || currentStep === 'results')) ||
-                  (step === 'generating' && currentStep === 'results');
-                const color = active ? 'bg-[#C80000] text-white' : 'bg-slate-800 text-slate-400';
-                return (
-                  <div key={step} className="flex items-center space-x-2">
-                    <div className={`w-8 h-8 rounded-full flex items-center justify-center ${color}`}>
-                      {index}
-                    </div>
-                    <span className={`font-medium ${active ? 'text-white' : 'text-slate-400'}`}>{label}</span>
-                    {idx < 2 && <div className="w-8 h-px bg-slate-700 mx-1" />}
-                  </div>
-                );
-              })}
-            </div>
+            <AdBuilderStepper
+              currentStepIndex={currentStepIndex}
+              maxUnlockedStep={maxUnlockedStep}
+              onStepChange={handleStepperChange}
+            />
           </motion.div>
 
           {/* Error and Success Messages */}
@@ -782,40 +778,6 @@ const HighConversionAdBuilder = () => {
 export default HighConversionAdBuilder;
 
 // --- UI Subcomponents for Stepper, AccordionForm, PersonaChips, Slider ---
-
-const Stepper = ({ currentStep, onStepSelect }) => {
-  const steps = [
-    { key: 'input', label: 'Produkt' },
-    { key: 'analyzing', label: 'Zielgruppe' },
-    { key: 'generating', label: 'Angebot' },
-    { key: 'results', label: 'Tonalität & Fokus' }
-  ];
-  return (
-    <div className="flex flex-wrap gap-3 text-xs sm:text-sm mb-4">
-      {steps.map((step, idx) => {
-        const active =
-          currentStep === step.key ||
-          (step.key === 'analyzing' && (currentStep === 'generating' || currentStep === 'results')) ||
-          (step.key === 'generating' && currentStep === 'results');
-        const color = active
-          ? 'bg-[#C80000] text-white'
-          : 'bg-slate-200 text-slate-700 dark:bg-slate-800 dark:text-slate-400';
-        return (
-          <button
-            type="button"
-            key={step.key}
-            onClick={onStepSelect}
-            className="flex items-center space-x-2"
-          >
-            <div className={`w-8 h-8 rounded-full flex items-center justify-center ${color}`}>{idx + 1}</div>
-            <span className={`font-medium ${active ? 'text-slate-900 dark:text-white' : 'text-slate-600 dark:text-slate-400'}`}>{step.label}</span>
-            {idx < steps.length - 1 && <div className="w-8 h-px bg-slate-300 dark:bg-slate-700 mx-1" />}
-          </button>
-        );
-      })}
-    </div>
-  );
-};
 
 const AccordionForm = ({
   mode,
