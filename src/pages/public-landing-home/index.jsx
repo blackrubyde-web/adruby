@@ -77,38 +77,35 @@ const PublicLandingHome = () => {
     <>
       <Header />
       <div className="min-h-screen bg-[#FAFAFA] text-[#000000] overflow-hidden">
-        
-        {/* Early Access Banner */}
         <motion.div
           className="bg-[#C80000] text-white py-3 px-4 text-center text-sm font-medium relative"
           initial={{ y: -100 }}
           animate={{ y: 0 }}
           transition={{ duration: 0.6, delay: 0.2 }}
         >
-          <div className="max-w-6xl mx-auto flex items-center justify-center gap-2">
-            <Award className="w-4 h-4" />
+          <div className="max-w-6xl mx-auto flex flex-wrap items-center justify-center gap-2 text-center px-4">
+            <Award className="w-4 h-4 shrink-0" />
             <span>Early Access Deal — 50% OFF + Free Mobile App & Pro Features!</span>
           </div>
         </motion.div>
 
         <main className="relative">
-          {/* Hero Section */}
           <motion.section
-            className="pt-16 pb-20 px-4 bg-[#FAFAFA]"
+            className="pt-14 pb-16 px-4 sm:px-6 lg:px-10 bg-[#FAFAFA]"
             variants={containerVariants}
             initial="hidden"
             animate="visible"
           >
             <div className="max-w-7xl mx-auto">
-              <div className="grid lg:grid-cols-2 gap-12 items-center">
+              <div className="grid gap-12 lg:grid-cols-2 items-center">
                 
                 {/* Left Content */}
-                <div className="text-left">
+                <div className="text-left space-y-6">
                   
                   {/* Main Headline */}
                   <motion.h1 
                     variants={itemVariants}
-                    className="text-4xl md:text-5xl lg:text-6xl font-bold leading-[1.1] tracking-tight mb-8 text-[#000000]"
+                    className="text-[clamp(2.4rem,6vw,3.8rem)] font-bold leading-[1.1] tracking-tight text-[#000000]"
                   >
                     #1 meistgenutzte KI für{' '}
                     <span className="text-[#C80000]">Werbeanzeigen</span>
@@ -117,7 +114,7 @@ const PublicLandingHome = () => {
                   {/* Subheadline */}
                   <motion.p
                     variants={itemVariants}
-                    className="text-lg md:text-xl text-[#333333] leading-relaxed mb-8 font-normal max-w-lg"
+                    className="text-[clamp(1.05rem,3vw,1.35rem)] text-[#333333] leading-relaxed font-normal max-w-2xl"
                   >
                     Generiere Ad-Banner, Texte, Fotoshootings und Videos, die deine Konkurrenz übertreffen.
                   </motion.p>
@@ -125,11 +122,11 @@ const PublicLandingHome = () => {
                   {/* CTA Buttons */}
                   <motion.div
                     variants={itemVariants}
-                    className="flex flex-col sm:flex-row gap-4 mb-10"
+                    className="flex flex-col sm:flex-row gap-4"
                   >
                     <motion.button
                       onClick={handleGoogleLogin}
-                      className="bg-white border border-[#e0e0e0] text-[#000000] px-8 py-4 rounded-lg font-medium hover:bg-[#f9f9f9] transition-all duration-200 flex items-center justify-center gap-3 shadow-sm"
+                      className="w-full sm:w-auto bg-white border border-[#e0e0e0] text-[#000000] px-6 py-3 rounded-lg font-medium hover:bg-[#f9f9f9] transition-all duration-200 flex items-center justify-center gap-3 shadow-sm"
                       whileHover={{ y: -1 }}
                       whileTap={{ scale: 0.98 }}
                     >
@@ -144,7 +141,7 @@ const PublicLandingHome = () => {
                     
                     <motion.button
                       onClick={handleStartFreeTrial}
-                      className="bg-[#C80000] text-white px-8 py-4 rounded-lg font-medium hover:bg-[#a50000] transition-all duration-200"
+                      className="w-full sm:w-auto bg-[#C80000] text-white px-6 py-3 rounded-lg font-medium hover:bg-[#a50000] transition-all duration-200"
                       whileHover={{ y: -1 }}
                       whileTap={{ scale: 0.98 }}
                     >
@@ -155,7 +152,7 @@ const PublicLandingHome = () => {
                   {/* Social Proof */}
                   <motion.div
                     variants={itemVariants}
-                    className="flex items-center gap-4 mb-12"
+                    className="flex flex-col sm:flex-row items-start sm:items-center gap-4"
                   >
                     <div className="flex -space-x-2">
                       {userAvatars?.slice(0, 6)?.map((user) => (
@@ -174,7 +171,7 @@ const PublicLandingHome = () => {
                         +
                       </div>
                     </div>
-                    <div className="text-sm text-[#666]">
+                    <div className="text-sm text-[#666] leading-relaxed">
                       <span className="font-semibold text-[#000000]">Über +3.000.000 Nutzer</span> weltweit vertrauen uns
                     </div>
                   </motion.div>
@@ -187,7 +184,7 @@ const PublicLandingHome = () => {
                     <p className="text-sm text-[#666] mb-4 font-medium">
                       Über 1 Milliarde Ad Creatives erstellt für Top-Marken:
                     </p>
-                    <div className="flex flex-wrap items-center gap-6">
+                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-4">
                       {partnerBrands?.map((brand, index) => (
                         <div 
                           key={index}
@@ -206,15 +203,12 @@ const PublicLandingHome = () => {
                     variants={itemVariants}
                     className="relative"
                   >
-                    
-                    {/* Ad Creative Examples - Left Side */}
                     <motion.div
-                      className="absolute -left-8 top-8 w-48 space-y-4 z-10"
+                      className="hidden md:block absolute -left-8 top-8 w-48 space-y-4 z-10"
                       initial={{ x: -100, opacity: 0 }}
                       animate={{ x: 0, opacity: 1 }}
                       transition={{ duration: 0.8, delay: 0.6 }}
                     >
-                      {/* Facebook Ad Example */}
                       <div className="bg-[#1877F2] rounded-lg p-4 text-white text-sm shadow-lg">
                         <div className="flex items-center gap-2 mb-3">
                           <div className="w-6 h-6 bg-white rounded-full flex items-center justify-center">
@@ -231,7 +225,6 @@ const PublicLandingHome = () => {
                         </button>
                       </div>
 
-                      {/* Instagram Ad Example */}
                       <div className="bg-gradient-to-br from-[#833AB4] via-[#FD1D1D] to-[#FCB045] rounded-lg p-4 text-white text-sm shadow-lg">
                         <div className="bg-white/20 rounded h-16 mb-2 flex items-center justify-center">
                           <span className="text-xs opacity-80">Instagram Story</span>
@@ -240,8 +233,7 @@ const PublicLandingHome = () => {
                       </div>
                     </motion.div>
 
-                    {/* Main Dashboard Preview */}
-                    <div className="bg-white rounded-2xl border border-[#e0e0e0] shadow-xl p-8 relative ml-8">
+                    <div className="bg-white rounded-2xl border border-[#e0e0e0] shadow-xl p-6 sm:p-8 relative md:ml-8">
                       
                       {/* Dashboard Header */}
                       <div className="flex items-center justify-between mb-8">
@@ -263,7 +255,7 @@ const PublicLandingHome = () => {
                       {/* Performance Metrics */}
                       <div className="space-y-6">
                         {/* KPIs Grid */}
-                        <div className="grid grid-cols-3 gap-4">
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                           <div className="text-center p-4 bg-[#fafafa] rounded-lg">
                             <div className="text-2xl font-bold text-[#C80000] mb-1">+340%</div>
                             <div className="text-xs text-[#666]">CTR Steigerung</div>
@@ -285,7 +277,7 @@ const PublicLandingHome = () => {
                             <span className="text-xs text-[#666]">Letzte 30 Tage</span>
                           </div>
                           
-                          <div className="grid grid-cols-7 gap-1 h-16 items-end">
+                          <div className="grid grid-cols-7 gap-1 h-20 items-end">
                             {[35, 60, 45, 85, 70, 95, 80]?.map((height, index) => (
                               <motion.div
                                 key={index}

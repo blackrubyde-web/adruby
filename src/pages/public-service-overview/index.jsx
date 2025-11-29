@@ -13,8 +13,8 @@ import {
   ChevronUp,
   Sparkles,
   Clock,
-  Award } from
-'lucide-react';
+  Award
+} from 'lucide-react';
 import Header from '../public-landing-home/components/Header';
 
 const PublicServiceOverview = () => {
@@ -163,35 +163,50 @@ const PublicServiceOverview = () => {
   return (
     <>
       <Header />
-      <main className="min-h-screen bg-white pt-16">
+      <main className="min-h-screen bg-white pt-12 sm:pt-16 px-4 sm:px-6 lg:px-10">
         {/* Intro Section */}
         <motion.section
-          className="py-20 px-4"
+          className="py-12 sm:py-16 bg-gradient-to-b from-gray-50 to-white"
           variants={containerVariants}
           initial="hidden"
-          animate="visible">
-
-          <div className="max-w-4xl mx-auto text-center">
-            <motion.h1 variants={itemVariants} className="text-5xl lg:text-6xl font-bold text-black mb-6">
+          animate="visible"
+        >
+          <div className="max-w-6xl mx-auto text-center space-y-4">
+            <motion.p variants={itemVariants} className="text-sm uppercase tracking-[0.25em] text-[#C80000] font-semibold">
+              KI Advertising Plattform
+            </motion.p>
+            <motion.h1 variants={itemVariants} className="text-[clamp(2.2rem,5vw,3.4rem)] font-bold text-black">
               Was BlackRuby <span className="text-[#E50914]">einzigartig</span> macht.
             </motion.h1>
-            
-            <motion.p variants={itemVariants} className="text-xl text-gray-700 leading-relaxed">
+            <motion.p variants={itemVariants} className="text-[clamp(1.05rem,3vw,1.3rem)] text-gray-700 leading-relaxed max-w-4xl mx-auto">
               Verstehe, warum hunderte Marketer BlackRuby nutzen, um Zeit zu sparen und bessere Ads zu erstellen.
               Unsere KI-Plattform kombiniert Marktanalyse, Content-Generation und Performance-Tracking in einem Tool.
             </motion.p>
+            <motion.div variants={itemVariants} className="flex flex-col sm:flex-row gap-4 justify-center">
+              <button
+                onClick={handleStartTrial}
+                className="w-full sm:w-auto px-6 py-3 rounded-lg bg-[#C80000] text-white font-semibold hover:bg-[#A50000] transition-all duration-200"
+              >
+                Kostenlos testen
+              </button>
+              <button
+                className="w-full sm:w-auto px-6 py-3 rounded-lg border border-gray-300 text-gray-900 font-semibold hover:bg-gray-50 transition-all duration-200"
+              >
+                Demo ansehen
+              </button>
+            </motion.div>
           </div>
         </motion.section>
 
         {/* Detailed Features Section */}
         <motion.section
-          className="py-16 bg-gray-50"
+          className="py-14 sm:py-16 bg-gray-50"
           variants={containerVariants}
           initial="hidden"
           whileInView="visible"
-          viewport={{ once: true, amount: 0.3 }}>
-
-          <div className="max-w-7xl mx-auto px-4">
+          viewport={{ once: true, amount: 0.3 }}
+        >
+          <div className="max-w-7xl mx-auto px-0 sm:px-4">
             <div className="space-y-12">
               {detailedFeatures?.map((feature, index) =>
               <motion.div
@@ -276,7 +291,7 @@ const PublicServiceOverview = () => {
 
         {/* Benefits Grid */}
         <motion.section
-          className="py-20 bg-white"
+          className="py-16 sm:py-20 bg-white"
           variants={containerVariants}
           initial="hidden"
           whileInView="visible"
@@ -287,7 +302,7 @@ const PublicServiceOverview = () => {
               Warum BlackRuby die richtige Wahl ist
             </motion.h2>
             
-            <div className="grid lg:grid-cols-3 gap-8">
+            <div className="grid gap-6 sm:gap-8 lg:grid-cols-3">
               {benefits?.map((benefit, index) =>
               <motion.div
                 key={index}

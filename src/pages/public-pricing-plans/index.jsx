@@ -157,18 +157,18 @@ const PublicPricingPlans = () => {
       <main className="min-h-screen bg-white">
         {/* Hero Section */}
         <motion.section
-          className="pt-24 pb-16 px-4 bg-gradient-to-br from-gray-50 to-white"
+          className="pt-20 sm:pt-24 pb-12 sm:pb-16 px-4 sm:px-6 lg:px-10 bg-gradient-to-br from-gray-50 to-white"
           variants={containerVariants}
           initial="hidden"
           animate="visible">
 
-          <div className="max-w-4xl mx-auto text-center">
-            <motion.h1 variants={itemVariants} className="text-5xl lg:text-6xl font-bold text-black mb-6">
+          <div className="max-w-5xl mx-auto text-center space-y-4">
+            <motion.h1 variants={itemVariants} className="text-[clamp(2.4rem,6vw,3.6rem)] font-bold text-black">
               Wähle deinen 
               <span className="text-[#E50914]"> BlackRuby</span> Plan
             </motion.h1>
             
-            <motion.p variants={itemVariants} className="text-xl text-gray-700 mb-8 max-w-3xl mx-auto">
+            <motion.p variants={itemVariants} className="text-[clamp(1.05rem,3vw,1.3rem)] text-gray-700 max-w-3xl mx-auto leading-relaxed">
               Starte mit professionellen KI-generierten Ads und skaliere dein Marketing auf das nächste Level. 
               14 Tage Geld-zurück-Garantie.
             </motion.p>
@@ -202,14 +202,14 @@ const PublicPricingPlans = () => {
 
         {/* Pricing Cards */}
         <motion.section
-          className="py-16 px-4"
+          className="py-14 sm:py-16 px-4 sm:px-6 lg:px-10"
           variants={containerVariants}
           initial="hidden"
           whileInView="visible"
           viewport={{ once: true, amount: 0.3 }}>
 
           <div className="max-w-6xl mx-auto">
-            <div className="grid lg:grid-cols-2 gap-8 max-w-4xl mx-auto">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8 max-w-5xl mx-auto">
               {pricingPlans.map((plan, index) =>
               <motion.div
                 key={plan.name}
@@ -274,14 +274,14 @@ const PublicPricingPlans = () => {
 
         {/* Feature Comparison */}
         <motion.section
-          className="py-20 bg-gray-50"
+          className="py-16 sm:py-20 bg-gray-50 px-4 sm:px-6 lg:px-10"
           variants={containerVariants}
           initial="hidden"
           whileInView="visible"
           viewport={{ once: true, amount: 0.3 }}>
 
-          <div className="max-w-4xl mx-auto px-4">
-            <motion.h2 variants={itemVariants} className="text-3xl font-bold text-center text-black mb-12">
+          <div className="max-w-5xl mx-auto">
+            <motion.h2 variants={itemVariants} className="text-[clamp(2rem,4vw,2.6rem)] font-bold text-center text-black mb-8 sm:mb-12">
               Detaillierter Vergleich
             </motion.h2>
             
