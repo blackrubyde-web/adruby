@@ -5,7 +5,7 @@ import Icon from '../AppIcon';
 import Button from './Button';
 import CreditDisplay from './CreditDisplay';
 
-const Header = ({ onMenuToggle, className = '' }) => {
+const Header = ({ onMenuToggle, className = '', isNavCollapsed = false, onNavCollapseToggle }) => {
   const navigate = useNavigate();
   const { user, signOut } = useAuth();
   const [showNotifications, setShowNotifications] = useState(false);
@@ -70,8 +70,10 @@ const Header = ({ onMenuToggle, className = '' }) => {
     }
   ];
 
+  const navOffset = isNavCollapsed ? 'lg:left-[72px]' : 'lg:left-60';
+
   return (
-    <header className={`fixed top-0 right-0 left-0 lg:left-60 z-30 bg-background border-b border-border h-16 ${className}`}>
+    <header className={`fixed top-0 right-0 left-0 ${navOffset} z-30 bg-background border-b border-border h-16 ${className}`}>
       <div className="flex items-center justify-between h-full px-6">
         {/* Mobile Menu Toggle */}
         <div className="lg:hidden">
@@ -86,15 +88,21 @@ const Header = ({ onMenuToggle, className = '' }) => {
         </div>
 
         {/* Desktop Spacer */}
-        <div className="hidden lg:block flex-1">
-          <div className="flex items-center">
-            <img 
-              src="/assets/images/Screenshot_2025-10-21_000636-removebg-preview-1762544374259.png" 
-              alt="AdRuby Logo"
-              className="w-8 h-8 object-contain mr-3"
-            />
-            <span className="text-lg font-semibold text-foreground">AdRuby</span>
-          </div>
+        <div className="hidden lg:flex flex-1 items-center gap-3">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={onNavCollapseToggle}
+            className="h-10 w-10"
+          >
+            <Icon name={isNavCollapsed ? 'ChevronsRight' : 'ChevronsLeft'} size={18} />
+          </Button>
+          <img 
+            src="/assets/images/Screenshot_2025-10-21_000636-removebg-preview-1762544374259.png" 
+            alt="AdRuby Logo"
+            className="w-8 h-8 object-contain"
+          />
+          <span className="text-lg font-semibold text-foreground">AdRuby</span>
         </div>
 
         {/* Right Side Actions */}

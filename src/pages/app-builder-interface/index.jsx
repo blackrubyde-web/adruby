@@ -12,8 +12,7 @@ import usePreferredTheme from '../../hooks/usePreferredTheme';
 
 const HighConversionAdBuilder = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [isPanelOpen, setIsPanelOpen] = useState(true);
-  const [isPanelOverlayOpen, setIsPanelOverlayOpen] = useState(false);
+  const [isNavCollapsed, setIsNavCollapsed] = useState(false);
   const { user, userProfile } = useAuth();
   const theme = usePreferredTheme();
   const isDark = theme === 'dark';
@@ -56,7 +55,6 @@ const HighConversionAdBuilder = () => {
   const [adPressure, setAdPressure] = useState('mittel'); // soft | mittel | aggressiv
   const [personaChips, setPersonaChips] = useState([]);
   const [placement, setPlacement] = useState('feed'); // feed | story | reel
-  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
 
   // Error and success states
   const [error, setError] = useState(null);
@@ -68,13 +66,6 @@ const HighConversionAdBuilder = () => {
     successRate: 94.2,
     avgGenerationTime: '2.3s'
   });
-
-  useEffect(() => {
-    if (typeof window !== 'undefined' && window.innerWidth < 1024) {
-      setIsPanelOpen(false);
-      setIsSidebarCollapsed(true);
-    }
-  }, []);
 
   // Load user's existing ads count
   useEffect(() => {
@@ -169,6 +160,7 @@ const HighConversionAdBuilder = () => {
 
     // NEW: Collapse input form when starting analysis
     setIsInputCollapsed(true);
+    setIsNavCollapsed(true);
 
     console.log("Vollständige Analyse & Generierung gestartet");
     setError(null);
@@ -371,14 +363,24 @@ const HighConversionAdBuilder = () => {
   const secondaryButton = isDark
     ? 'inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold rounded-lg transition border border-white/10 bg-white/5 text-slate-200 hover:bg-white/10'
     : 'inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold rounded-lg transition border border-slate-200 bg-white text-slate-800 hover:bg-slate-100';
+  const navOffset = isNavCollapsed ? 'lg:ml-[72px]' : 'lg:ml-60';
 
   return (
     <div className={`min-h-screen ${mainBg}`}>
-      <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
-      <Header onMenuToggle={() => setSidebarOpen(!sidebarOpen)} className="lg:left-60" />
+      <Sidebar
+        isOpen={sidebarOpen}
+        onClose={() => setSidebarOpen(false)}
+        isCollapsed={isNavCollapsed}
+        onCollapseToggle={() => setIsNavCollapsed((prev) => !prev)}
+      />
+      <Header
+        onMenuToggle={() => setSidebarOpen(!sidebarOpen)}
+        isNavCollapsed={isNavCollapsed}
+        onNavCollapseToggle={() => setIsNavCollapsed((prev) => !prev)}
+      />
 
       <motion.main
-        className="lg:ml-60 pt-16"
+        className={`${navOffset} pt-16`}
         variants={pageVariants}
         initial="initial"
         animate="animate"
@@ -464,22 +466,9 @@ const HighConversionAdBuilder = () => {
           {/* Main 3-Zone Layout */}
           <div className="grid grid-cols-1 xl:grid-cols-12 gap-6">
             {/* LEFT: Control Panel */}
-            <div className={`${isSidebarCollapsed ? 'xl:col-span-1' : 'xl:col-span-3'} space-y-4 order-1 xl:order-none`}>
-              <div className="flex items-center justify-between xl:hidden">
-                <button
-                  onClick={() => setIsPanelOverlayOpen(true)}
-                  className={`${secondaryButton} px-3 py-2 text-xs`}
-                >
-                  <Icon name="Menu" size={16} />
-                  Navigation
-                </button>
-              </div>
-              {!isInputCollapsed && (isPanelOpen || isPanelOverlayOpen) ? (
-                <div
-                  className={`${cardBg} rounded-2xl p-4 sm:p-5 backdrop-blur relative ${
-                    isPanelOverlayOpen ? 'fixed inset-4 z-30 max-h-[80vh] overflow-y-auto' : ''
-                  }`}
-                >
+            <div className="xl:col-span-3 space-y-4 order-1 xl:order-none">
+              {!isInputCollapsed ? (
+                <div className={`${cardBg} rounded-2xl p-4 sm:p-5 backdrop-blur relative`}>
                   <div className="flex items-center justify-between mb-3">
                     <div className="flex flex-wrap items-center gap-2">
                       <button
@@ -504,22 +493,14 @@ const HighConversionAdBuilder = () => {
                       </button>
                     </div>
                     <button
-                      onClick={() => {
-                        setIsSidebarCollapsed(true);
-                        setIsPanelOpen(false);
-                        setIsPanelOverlayOpen(false);
-                      }}
+                      onClick={() => setIsInputCollapsed(true)}
                       className={`${secondaryButton} px-3 py-2 text-xs`}
                     >
                       <Icon name="ChevronLeft" size={14} />
                       Einklappen
                     </button>
                   </div>
-                  <Stepper currentStep={currentStep} isDark={isDark} onStepSelect={() => {
-                    setIsSidebarCollapsed(true);
-                    setIsPanelOpen(false);
-                    setIsPanelOverlayOpen(false);
-                  }} />
+                  <Stepper currentStep={currentStep} isDark={isDark} />
                   <AccordionForm
                     mode={mode}
                     formData={formData}
@@ -530,24 +511,11 @@ const HighConversionAdBuilder = () => {
                     currentStep={currentStep}
                     isDark={isDark}
                     primaryButton={primaryButton}
-                    onSectionSelect={() => {
-                      setIsSidebarCollapsed(true);
-                      setIsPanelOpen(false);
-                      setIsPanelOverlayOpen(false);
-                    }}
                   />
                   <div className="mt-4 space-y-4">
                     <AdPressureSlider value={adPressure} onChange={setAdPressure} isDark={isDark} />
                     <PersonaChips value={personaChips} onChange={setPersonaChips} isDark={isDark} />
                   </div>
-                  {isPanelOverlayOpen && (
-                    <button
-                      onClick={() => setIsPanelOverlayOpen(false)}
-                      className={`${secondaryButton} mt-4 w-full justify-center`}
-                    >
-                      Schließen
-                    </button>
-                  )}
                 </div>
               ) : (
                 <div className={`${cardBg} rounded-2xl p-4 flex items-center justify-between`}>
@@ -555,8 +523,6 @@ const HighConversionAdBuilder = () => {
                     <button
                       onClick={() => {
                         setIsInputCollapsed(false);
-                        setIsSidebarCollapsed(false);
-                        setIsPanelOpen(true);
                       }}
                       className={`${secondaryButton}`}
                     >

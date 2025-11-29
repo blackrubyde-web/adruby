@@ -6,7 +6,7 @@ import { creditService } from '../../services/creditService';
 import Icon from '../AppIcon';
 import Button from './Button';
 
-const Sidebar = ({ isOpen = false, onClose, className = '' }) => {
+const Sidebar = ({ isOpen = false, onClose, className = '', isCollapsed = false, onCollapseToggle }) => {
   const location = useLocation();
   const navigate = useNavigate();
   const [activeItem, setActiveItem] = useState('');
@@ -169,7 +169,7 @@ const Sidebar = ({ isOpen = false, onClose, className = '' }) => {
       {/* Sidebar */}
       <aside
         className={`
-          fixed top-0 left-0 h-full w-60 bg-card border-r border-border z-50
+          fixed top-0 left-0 h-full w-60 ${isCollapsed ? 'lg:w-[72px]' : 'lg:w-60'} bg-card border-r border-border z-50
           transform transition-transform duration-300 ease-in-out
           lg:translate-x-0 lg:z-40
           ${isOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
@@ -186,12 +186,24 @@ const Sidebar = ({ isOpen = false, onClose, className = '' }) => {
                 className="w-8 h-8 object-contain"
               />
             </div>
-            <div>
-              <h1 className="font-semibold text-lg text-foreground">AdRuby</h1>
-              <p className="text-xs text-muted-foreground">Dashboard</p>
-            </div>
+            {!isCollapsed && (
+              <div>
+                <h1 className="font-semibold text-lg text-foreground">AdRuby</h1>
+                <p className="text-xs text-muted-foreground">Dashboard</p>
+              </div>
+            )}
           </div>
           
+          {/* Desktop Collapse Toggle */}
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={onCollapseToggle}
+            className="hidden lg:flex h-8 w-8"
+          >
+            <Icon name={isCollapsed ? 'ChevronsRight' : 'ChevronsLeft'} size={16} />
+          </Button>
+
           {/* Mobile Close Button */}
           <Button
             variant="ghost"
@@ -242,13 +254,15 @@ const Sidebar = ({ isOpen = false, onClose, className = '' }) => {
                     />
                   </div>
                   {/* Label */}
-                  <div className="flex-1 min-w-0">
-                    <p className={`font-medium text-sm ${
-                      isActive ? 'text-primary-foreground' : 'text-foreground'
-                    }`}>
-                      {item?.label}
-                    </p>
-                  </div>
+                  {!isCollapsed && (
+                    <div className="flex-1 min-w-0">
+                      <p className={`font-medium text-sm ${
+                        isActive ? 'text-primary-foreground' : 'text-foreground'
+                      }`}>
+                        {item?.label}
+                      </p>
+                    </div>
+                  )}
                   {/* Hover Effect */}
                   {!isActive && (
                     <div className="absolute inset-0 bg-primary opacity-0 group-hover:opacity-5 rounded-lg transition-opacity duration-200" />
@@ -260,50 +274,52 @@ const Sidebar = ({ isOpen = false, onClose, className = '' }) => {
         </nav>
 
         {/* Updated Footer with German requirements and Credits */}
-        <div className="p-4 border-t border-border">
-          <div className="flex items-center space-x-3 px-3 py-2">
-            <div className="w-8 h-8 bg-muted rounded-full flex items-center justify-center">
-              <Icon name="User" size={16} className="text-muted-foreground" />
-            </div>
-            <div className="flex-1 min-w-0 space-y-2">
-              {loading ? (
-                <div className="animate-pulse">
-                  <div className="h-4 bg-muted rounded w-20 mb-2"></div>
-                  <div className="h-3 bg-muted rounded w-16 mb-2"></div>
-                  <div className="h-3 bg-muted rounded w-12"></div>
-                </div>
-              ) : (
-                <div className="sidebar-user">
-                  <p className="text-sm font-medium text-black truncate" title={displayName || "Guest"}>
-                    {displayName || "Guest"}
-                  </p>
-                  <p className="text-xs" style={{ color: '#AAAAAA' }}>Active Session</p>
-                  
-                  {/* Credits Display */}
-                  <div className="flex items-center space-x-1 mt-1">
-                    <Icon name="Coins" size={12} className="text-muted-foreground" />
-                    {creditsLoading ? (
-                      <div className="animate-pulse">
-                        <div className="h-3 bg-muted rounded w-16"></div>
-                      </div>
-                    ) : (
-                      <p 
-                        className={`text-xs font-medium ${getCreditDisplayClasses()}`}
-                        title="Verfügbare Credits"
-                      >
-                        Credits: {creditStatus?.credits ? 
-                          creditService?.formatCredits(creditStatus?.credits) : 
-                          (user ? '0' : '--')
-                        }
-                      </p>
-                    )}
+        {!isCollapsed && (
+          <div className="p-4 border-t border-border">
+            <div className="flex items-center space-x-3 px-3 py-2">
+              <div className="w-8 h-8 bg-muted rounded-full flex items-center justify-center">
+                <Icon name="User" size={16} className="text-muted-foreground" />
+              </div>
+              <div className="flex-1 min-w-0 space-y-2">
+                {loading ? (
+                  <div className="animate-pulse">
+                    <div className="h-4 bg-muted rounded w-20 mb-2"></div>
+                    <div className="h-3 bg-muted rounded w-16 mb-2"></div>
+                    <div className="h-3 bg-muted rounded w-12"></div>
                   </div>
-                </div>
-              )}
+                ) : (
+                  <div className="sidebar-user">
+                    <p className="text-sm font-medium text-black truncate" title={displayName || "Guest"}>
+                      {displayName || "Guest"}
+                    </p>
+                    <p className="text-xs" style={{ color: '#AAAAAA' }}>Active Session</p>
+                    
+                    {/* Credits Display */}
+                    <div className="flex items-center space-x-1 mt-1">
+                      <Icon name="Coins" size={12} className="text-muted-foreground" />
+                      {creditsLoading ? (
+                        <div className="animate-pulse">
+                          <div className="h-3 bg-muted rounded w-16"></div>
+                        </div>
+                      ) : (
+                        <p 
+                          className={`text-xs font-medium ${getCreditDisplayClasses()}`}
+                          title="Verfügbare Credits"
+                        >
+                          Credits: {creditStatus?.credits ? 
+                            creditService?.formatCredits(creditStatus?.credits) : 
+                            (user ? '0' : '--')
+                          }
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
+              <div className="w-2 h-2 bg-success rounded-full" />
             </div>
-            <div className="w-2 h-2 bg-success rounded-full" />
           </div>
-        </div>
+        )}
       </aside>
     </>
   );
