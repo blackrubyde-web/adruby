@@ -13,16 +13,14 @@ const PaymentVerificationPage = () => {
       const sessionId = params.get('session_id');
 
       if (!sessionId) {
-        setError('Keine Session-ID übergeben.');
+        navigate('/', { replace: true });
         return;
       }
 
       try {
         const res = await fetch('/.netlify/functions/verify-checkout-session', {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json'
-          },
+          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ sessionId })
         });
 
@@ -48,6 +46,8 @@ const PaymentVerificationPage = () => {
         title="Zahlung konnte nicht bestätigt werden"
         subtitle="Bitte versuche es erneut oder kontaktiere den Support."
         details={error}
+        showHomeButton
+        showLogoutButton
       />
     );
   }
