@@ -75,33 +75,72 @@ export function AuthProvider({ children }) {
   };
 
   const refreshOnboardingStatus = async (sessionUser = user) => {
-    console.time('[AuthPerf] refreshOnboardingStatus');
-    if (!sessionUser?.id) {
-      setOnboardingStatus(initialOnboardingState);
-      console.timeEnd('[AuthPerf] refreshOnboardingStatus');
-      return;
-    }
+  console.time('[AuthPerf] refreshOnboardingStatus');
 
-    try {
-      const status = await trialService.checkTrialStatus(sessionUser.id);
-      setOnboardingStatus({
-        trialStatus: status?.trialStatus,
-        onboardingCompleted: status?.onboardingCompleted,
-        paymentVerified: status?.paymentVerified,
-        trialExpiresAt: status?.trialExpiresAt
-      });
-    } catch (error) {
-      console.error('[Auth] onboarding status error:', error);
-      setOnboardingStatus(initialOnboardingState);
-    } finally {
-      console.timeEnd('[AuthPerf] refreshOnboardingStatus');
-    }
-  };
+  if (!sessionUser?.id) {
+    setOnboardingStatus(initialOnboardingState);
+    console.timeEnd('[AuthPerf] refreshOnboardingStatus');
+    return;
+  }
+
+  try {
+    const status = await trialService.checkTrialStatus(sessionUser.id);
+
+    const nextStatus = {
+      trialStatus: status?.trialStatus,
+      onboardingCompleted: status?.onboardingCompleted,
+      paymentVerified: status?.paymentVerified,
+      trialExpiresAt: status?.trialExpiresAt
+    };
+
+    setOnboardingStatus(nextStatus);
+
+    console.log('[AuthTrace] onboardingStatus updated', {
+      userId: sessionUser.id,
+      onboardingStatus: nextStatus,
+      ts: new Date().toISOString()
+    });
+  } catch (error) {
+    console.error('[Auth] onboarding status error:', error);
+    setOnboardingStatus(initialOnboardingState);
+  } finally {
+    console.timeEnd('[AuthPerf] refreshOnboardingStatus');
+  }
+};
+
 
   const refreshSubscriptionStatus = async (sessionUser = user) => {
-    console.time('[AuthPerf] refreshSubscriptionStatus');
+  console.time('[AuthPerf] refreshSubscriptionStatus');
 
-    if (!sessionUser?.id) {
+  if (!sessionUser?.id) {
+    setSubscriptionStatus(null);
+    setSubscriptionMeta({
+      stripeCustomerId: null,
+      stripeSubscriptionId: null,
+      trialEndsAt: null
+    });
+    console.timeEnd('[AuthPerf] refreshSubscriptionStatus');
+    return;
+  }
+
+  try {
+    const { data, error } = await supabase
+      .from('user_profiles')
+      .select(`
+        stripe_customer_id,
+        trial_status,
+        trial_expires_at,
+        payment_verified,
+        onboarding_completed
+      `)
+      .eq('id', sessionUser.id)
+      .single();
+
+    if (error) {
+      console.error('[AuthTrace] subscription status load error', error, {
+        userId: sessionUser.id
+      });
+
       setSubscriptionStatus(null);
       setSubscriptionMeta({
         stripeCustomerId: null,
@@ -112,83 +151,56 @@ export function AuthProvider({ children }) {
       return;
     }
 
-    try {
-      const { data, error } = await supabase
-        .from('user_profiles')
-        .select(
-          `
-          stripe_customer_id,
-          trial_status,
-          trial_expires_at,
-          payment_verified,
-          onboarding_completed
-        `
-        )
-        .eq('id', sessionUser.id)
-        .single();
+    const trialEndsAt = data?.trial_expires_at || null;
+    const trialActive =
+      data?.trial_status === 'active' && trialEndsAt
+        ? new Date(trialEndsAt).getTime() > Date.now()
+        : false;
 
-      if (error) {
-        console.error('[AuthTrace] subscription status load error', error, {
-          userId: sessionUser.id
-        });
-
-        setSubscriptionStatus(null);
-        setSubscriptionMeta({
-          stripeCustomerId: null,
-          stripeSubscriptionId: null,
-          trialEndsAt: null
-        });
-        console.timeEnd('[AuthPerf] refreshSubscriptionStatus');
-        return;
-      }
-
-      const trialEndsAt = data?.trial_expires_at || null;
-      const trialActive =
-        data?.trial_status === 'active' && trialEndsAt
-          ? new Date(trialEndsAt).getTime() > Date.now()
-          : false;
-
-      let derivedStatus = null;
-      if (data?.payment_verified || data?.onboarding_completed) {
-        derivedStatus = 'active';
-      } else if (trialActive) {
-        derivedStatus = 'trialing';
-      }
-
-      setSubscriptionStatus(derivedStatus);
-      setSubscriptionMeta({
-        stripeCustomerId: data?.stripe_customer_id || null,
-        stripeSubscriptionId: null,
-        trialEndsAt
-      });
-
-      console.log('[AuthTrace] subscription status loaded (derived)', {
-        userId: sessionUser.id,
-        raw: {
-          trial_status: data?.trial_status,
-          trial_expires_at: data?.trial_expires_at,
-          payment_verified: data?.payment_verified,
-          onboarding_completed: data?.onboarding_completed
-        },
-        derivedStatus,
-        trialActive,
-        ts: new Date().toISOString()
-      });
-    } catch (error) {
-      console.error('[AuthTrace] subscription status exception:', error, {
-        userId: sessionUser?.id,
-        ts: new Date().toISOString()
-      });
-      setSubscriptionStatus(null);
-      setSubscriptionMeta({
-        stripeCustomerId: null,
-        stripeSubscriptionId: null,
-        trialEndsAt: null
-      });
-    } finally {
-      console.timeEnd('[AuthPerf] refreshSubscriptionStatus');
+    let derivedStatus = null;
+    if (data?.payment_verified || data?.onboarding_completed) {
+      derivedStatus = 'active';
+    } else if (trialActive) {
+      derivedStatus = 'trialing';
     }
-  };
+
+    const nextMeta = {
+      stripeCustomerId: data?.stripe_customer_id || null,
+      stripeSubscriptionId: null,
+      trialEndsAt
+    };
+
+    setSubscriptionStatus(derivedStatus);
+    setSubscriptionMeta(nextMeta);
+
+    console.log('[AuthTrace] subscriptionStatus updated', {
+      userId: sessionUser.id,
+      subscriptionStatus: derivedStatus,
+      subscriptionMeta: nextMeta,
+      raw: {
+        trial_status: data?.trial_status,
+        trial_expires_at: data?.trial_expires_at,
+        payment_verified: data?.payment_verified,
+        onboarding_completed: data?.onboarding_completed
+      },
+      ts: new Date().toISOString()
+    });
+  } catch (error) {
+    console.error('[AuthTrace] subscription status exception:', error, {
+      userId: sessionUser?.id,
+      ts: new Date().toISOString()
+    });
+    setSubscriptionStatus(null);
+    setSubscriptionMeta({
+      stripeCustomerId: null,
+      stripeSubscriptionId: null,
+      trialEndsAt: null
+    });
+  } finally {
+    console.timeEnd('[AuthPerf] refreshSubscriptionStatus');
+  }
+};
+
 
   const refreshUserProfile = async (sessionUser = user) => {
     console.time('[AuthPerf] refreshUserProfile');
@@ -347,40 +359,46 @@ export function AuthProvider({ children }) {
     }
   };
 
-  const loadUserState = useCallback(
-    async (sessionUser = user) => {
-      if (!sessionUser?.id) {
-        setIsAdmin(false);
-        setUserProfile(null);
-        setOnboardingStatus(initialOnboardingState);
-        setSubscriptionStatus(null);
-        setSubscriptionMeta({
-          stripeCustomerId: null,
-          stripeSubscriptionId: null,
-          trialEndsAt: null
-        });
-        setIsAuthReady(true);
-        setLoading(false);
-        return;
-      }
+  const loadUserState = useCallback(async (sessionUser) => {
+    console.time('[AuthPerf] loadUserState');
+    console.log('[AuthTrace] loadUserState called', {
+      userId: sessionUser?.id,
+      hasUser: !!sessionUser,
+      ts: new Date().toISOString()
+    });
 
-      setLoading(true);
-      try {
-        await ensureUserProfileExists();
-        const profile = await refreshUserProfile(sessionUser);
-        setIsAdmin(profile?.role === 'admin');
-        await refreshOnboardingStatus(sessionUser);
-        await refreshSubscriptionStatus(sessionUser);
-        await attachAffiliateReferralIfNeeded(sessionUser);
-      } catch (err) {
-        console.error('[AuthTrace] loadUserState failed', err);
-      } finally {
-        setLoading(false);
-        setIsAuthReady(true);
-      }
-    },
-    [user]
-  );
+    if (!sessionUser?.id) {
+      setIsAdmin(false);
+      setUserProfile(null);
+      setOnboardingStatus(initialOnboardingState);
+      setSubscriptionStatus(null);
+      setSubscriptionMeta({
+        stripeCustomerId: null,
+        stripeSubscriptionId: null,
+        trialEndsAt: null
+      });
+      setIsAuthReady(true);
+      setLoading(false);
+      console.timeEnd('[AuthPerf] loadUserState');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      await ensureUserProfileExists();
+      const profile = await refreshUserProfile(sessionUser);
+      setIsAdmin(profile?.role === 'admin');
+      await refreshOnboardingStatus(sessionUser);
+      await refreshSubscriptionStatus(sessionUser);
+      await attachAffiliateReferralIfNeeded(sessionUser);
+    } catch (err) {
+      console.error('[AuthTrace] loadUserState failed', err);
+    } finally {
+      setLoading(false);
+      setIsAuthReady(true);
+      console.timeEnd('[AuthPerf] loadUserState');
+    }
+  }, []);
 
   const handleSessionChange = useCallback(
     async (nextSession, source = 'unknown') => {
@@ -398,6 +416,12 @@ export function AuthProvider({ children }) {
 
       if (sessionUser?.id) {
         await loadUserState(sessionUser);
+        console.log('[AuthTrace] state after handleSessionChange', {
+          hasUser: !!sessionUser,
+          isAdmin: sessionUser?.role === 'admin',
+          loading,
+          isAuthReady
+        });
       } else {
         setIsAdmin(false);
         setOnboardingStatus(initialOnboardingState);
@@ -410,12 +434,23 @@ export function AuthProvider({ children }) {
         setUserProfile(null);
         setIsAuthReady(true);
         setLoading(false);
+        console.log('[AuthTrace] state after handleSessionChange', {
+          hasUser: false,
+          isAdmin: false,
+          loading,
+          isAuthReady
+        });
       }
     },
     [loadUserState]
   );
 
   useEffect(() => {
+    console.log('[AuthTrace] init useEffect run', {
+      path: typeof window !== 'undefined' ? window.location.pathname : 'unknown',
+      ts: new Date().toISOString()
+    });
+
     const init = async () => {
       try {
         if (typeof window !== 'undefined') {
@@ -437,20 +472,18 @@ export function AuthProvider({ children }) {
               path: window.location.pathname,
               ts: new Date().toISOString()
             });
-            const { data: exchangeData, error: exchangeError } = await supabase.auth.exchangeCodeForSession(code);
+            const { data: exchangeData, error: exchangeError } =
+              await supabase.auth.exchangeCodeForSession(code);
             if (exchangeError) {
-              console.error('[AuthTrace] code exchange failed', exchangeError, {
-                path: window.location.pathname,
-                ts: new Date().toISOString()
-              });
+              console.error('[AuthTrace] code exchange failed', exchangeError);
             } else {
               await handleSessionChange(exchangeData?.session, 'code-exchange');
             }
             window.history.replaceState({}, document.title, window.location.pathname);
           }
         }
-      } catch (error) {
-        console.error('[AuthTrace] init error', error, {
+      } catch (err) {
+        console.error('[AuthTrace] init error', err, {
           path: typeof window !== 'undefined' ? window.location.pathname : 'unknown',
           ts: new Date().toISOString()
         });
@@ -461,17 +494,24 @@ export function AuthProvider({ children }) {
 
     init();
 
-    const { data: authListener } = supabase.auth.onAuthStateChange(
-      (event, nextSession) => {
-        (async () => {
-          await handleSessionChange(nextSession, 'authStateChange');
-          setIsAuthReady(true);
-        })();
-      }
-    );
+    const { data: authListener } = supabase.auth.onAuthStateChange((event, nextSession) => {
+      console.log('[AuthTrace] onAuthStateChange fired', {
+        event,
+        hasSession: !!nextSession,
+        userId: nextSession?.user?.id,
+        ts: new Date().toISOString()
+      });
+      (async () => {
+        await handleSessionChange(nextSession, 'authStateChange');
+        setIsAuthReady(true);
+      })();
+    });
 
-    return () => authListener?.subscription?.unsubscribe();
-  }, [handleSessionChange]);
+    return () => {
+      console.log('[AuthTrace] cleanup authListener');
+      authListener?.subscription?.unsubscribe();
+    };
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const signUp = async (email, password, userData = {}) => {
     try {
