@@ -1,6 +1,73 @@
 import React from "react";
 import { motion } from "framer-motion";
 
+const ProductIcon = () => (
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    viewBox="0 0 24 24"
+    fill="none"
+    className="h-5 w-5"
+  >
+    <path
+      d="M5 8.5 12 4l7 4.5M5 8.5v7L12 20l7-4.5v-7M5 8.5 12 13l7-4.5"
+      stroke="currentColor"
+      strokeWidth="1.5"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+  </svg>
+);
+
+const AnalysisIcon = () => (
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    viewBox="0 0 24 24"
+    fill="none"
+    className="h-5 w-5"
+  >
+    <path
+      d="M5 15.5 9 11l3 2 4-6 3 3.5"
+      stroke="currentColor"
+      strokeWidth="1.6"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+    <circle cx="5" cy="15.5" r="1.2" fill="currentColor" />
+    <circle cx="9" cy="11" r="1.2" fill="currentColor" />
+    <circle cx="12" cy="13" r="1.2" fill="currentColor" />
+    <circle cx="16" cy="7" r="1.2" fill="currentColor" />
+    <circle cx="19" cy="10.5" r="1.2" fill="currentColor" />
+  </svg>
+);
+
+const MegaphoneIcon = () => (
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    viewBox="0 0 24 24"
+    fill="none"
+    className="h-5 w-5"
+  >
+    <path
+      d="M5 11v3.5a2.5 2.5 0 0 0 3.3 2.36l.7-.23"
+      stroke="currentColor"
+      strokeWidth="1.5"
+      strokeLinecap="round"
+    />
+    <path
+      d="M12 6.5 6 9v5l6 2.5 6.5 2V4.5z"
+      stroke="currentColor"
+      strokeWidth="1.5"
+      strokeLinejoin="round"
+    />
+    <path
+      d="M18.5 8.5c1 .5 1.5 1.4 1.5 2.5s-.5 2-1.5 2.5"
+      stroke="currentColor"
+      strokeWidth="1.5"
+      strokeLinecap="round"
+    />
+  </svg>
+);
+
 const steps = [
   { label: "Produkteingabe", description: "Produktdetails definieren", icon: ProductIcon },
   { label: "Marktanalyse", description: "Zielgruppe & Insights", icon: AnalysisIcon },
@@ -78,72 +145,5 @@ const AdBuilderStepper = ({ currentStep = 0, onStepChange = () => {} }) => {
     </div>
   );
 };
-
-const ProductIcon = () => (
-  <svg
-    xmlns="http://www.w3.org/2000/svg"
-    viewBox="0 0 24 24"
-    fill="none"
-    className="h-5 w-5"
-  >
-    <path
-      d="M5 8.5 12 4l7 4.5M5 8.5v7L12 20l7-4.5v-7M5 8.5 12 13l7-4.5"
-      stroke="currentColor"
-      strokeWidth="1.5"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    />
-  </svg>
-);
-
-const AnalysisIcon = () => (
-  <svg
-    xmlns="http://www.w3.org/2000/svg"
-    viewBox="0 0 24 24"
-    fill="none"
-    className="h-5 w-5"
-  >
-    <path
-      d="M5 15.5 9 11l3 2 4-6 3 3.5"
-      stroke="currentColor"
-      strokeWidth="1.6"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    />
-    <circle cx="5" cy="15.5" r="1.2" fill="currentColor" />
-    <circle cx="9" cy="11" r="1.2" fill="currentColor" />
-    <circle cx="12" cy="13" r="1.2" fill="currentColor" />
-    <circle cx="16" cy="7" r="1.2" fill="currentColor" />
-    <circle cx="19" cy="10.5" r="1.2" fill="currentColor" />
-  </svg>
-);
-
-const MegaphoneIcon = () => (
-  <svg
-    xmlns="http://www.w3.org/2000/svg"
-    viewBox="0 0 24 24"
-    fill="none"
-    className="h-5 w-5"
-  >
-    <path
-      d="M5 11v3.5a2.5 2.5 0 0 0 3.3 2.36l.7-.23"
-      stroke="currentColor"
-      strokeWidth="1.5"
-      strokeLinecap="round"
-    />
-    <path
-      d="M12 6.5 6 9v5l6 2.5 6.5 2V4.5z"
-      stroke="currentColor"
-      strokeWidth="1.5"
-      strokeLinejoin="round"
-    />
-    <path
-      d="M18.5 8.5c1 .5 1.5 1.4 1.5 2.5s-.5 2-1.5 2.5"
-      stroke="currentColor"
-      strokeWidth="1.5"
-      strokeLinecap="round"
-    />
-  </svg>
-);
 
 export default AdBuilderStepper;
