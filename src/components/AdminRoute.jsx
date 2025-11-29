@@ -7,6 +7,7 @@ const AdminRoute = ({ children }) => {
   const location = useLocation();
   const { user, userProfile, isAuthReady, loading } = useAuth();
   const isAdmin = userProfile?.role === 'admin';
+  const redirect = `${location.pathname}${location.search}`;
 
   if (!isAuthReady || loading) {
     return (
@@ -19,7 +20,7 @@ const AdminRoute = ({ children }) => {
   }
 
   if (!user) {
-    return <Navigate to="/login-authentication" state={{ from: location }} replace />;
+    return <Navigate to={`/login?redirect=${encodeURIComponent(redirect)}`} replace />;
   }
 
   if (!isAdmin) {

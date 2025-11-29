@@ -1,51 +1,43 @@
 import React, { useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { useAuth } from '../../contexts/AuthContext';
-import RedirectScreen from '../../components/RedirectScreen';
+import { supabase } from '../../lib/supabaseClient';
 
 const LoginAuthentication = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { user, userProfile, isAuthReady, loading, signInWithGoogle } = useAuth();
-  const from = location.state?.from?.pathname || null;
 
   useEffect(() => {
-    if (!isAuthReady || loading) return;
-    if (!user) return;
+    console.log('[LoginCallback] start', { search: location.search });
 
-    const isAdmin = userProfile?.role === 'admin';
-    const target = isAdmin ? '/admin-dashboard' : '/overview-dashboard';
-    navigate(from || target, { replace: true });
-  }, [user, userProfile, isAuthReady, loading, navigate, from]);
+    const run = async () => {
+      try {
+        const { data, error } = await supabase.auth.getSession();
+        if (error || !data?.session) {
+          console.error('[LoginCallback] getSession error', error);
+          navigate('/login', { replace: true, state: { error: 'Login fehlgeschlagen' } });
+          return;
+        }
 
-  const handleGoogle = async () => {
-    try {
-      await signInWithGoogle();
-    } catch (err) {
-      console.error('[Login] Google Sign-In failed', err);
-    }
-  };
+        const params = new URLSearchParams(location.search);
+        const redirect = params.get('redirect') || '/overview-dashboard';
 
-  if (!isAuthReady || loading) {
-    return (
-      <RedirectScreen title="Lade Login…" subtitle="Bitte warten." />
-    );
-  }
+        console.log('[LoginCallback] session found, redirecting', { redirect });
+        navigate(redirect, { replace: true });
+      } catch (err) {
+        console.error('[LoginCallback] error', err);
+        navigate('/login', { replace: true, state: { error: 'Login fehlgeschlagen' } });
+      }
+    };
+
+    run();
+  }, [location.search, navigate]);
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-50 flex items-center justify-center px-6 py-10">
-      <div className="w-full max-w-md bg-slate-900 border border-slate-800 rounded-2xl p-8 shadow-xl space-y-6">
-        <div className="space-y-2 text-center">
-          <h1 className="text-2xl font-bold">Willkommen zurück</h1>
-          <p className="text-slate-300 text-sm">Melde dich an, um dein Dashboard zu öffnen.</p>
-        </div>
-        <button
-          onClick={handleGoogle}
-          className="w-full bg-slate-100 text-slate-900 px-4 py-3 rounded-lg font-medium hover:bg-white transition"
-        >
-          Mit Google anmelden
-        </button>
-        <p className="text-xs text-slate-500 text-center">AdRuby – KI-gestützte Ad Intelligence</p>
+      <div className="text-center space-y-3">
+        <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-primary mx-auto" />
+        <h1 className="text-lg font-semibold">Login wird verarbeitet…</h1>
+        <p className="text-sm text-slate-400">Du wirst gleich weitergeleitet.</p>
       </div>
     </div>
   );

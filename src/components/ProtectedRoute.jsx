@@ -6,6 +6,7 @@ import { useAuth } from '../contexts/AuthContext';
 const ProtectedRoute = ({ children }) => {
   const location = useLocation();
   const { user, isAuthReady, loading } = useAuth();
+  const redirect = `${location.pathname}${location.search}`;
 
   if (!isAuthReady || loading) {
     return (
@@ -18,7 +19,7 @@ const ProtectedRoute = ({ children }) => {
   }
 
   if (!user) {
-    return <Navigate to="/login-authentication" state={{ from: location }} replace />;
+    return <Navigate to={`/login?redirect=${encodeURIComponent(redirect)}`} replace />;
   }
 
   return children;

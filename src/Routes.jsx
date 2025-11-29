@@ -9,6 +9,7 @@ import AdminRoute from './components/AdminRoute';
 import PublicLandingHome from './pages/public-landing-home';
 import PublicServiceOverview from './pages/public-service-overview';
 import PublicPricingPlans from './pages/public-pricing-plans';
+import LoginPage from './pages/login';
 import LoginAuthentication from './pages/login-authentication';
 import OverviewDashboard from './pages/overview-dashboard';
 import AppBuilderInterface from './pages/app-builder-interface';
@@ -41,6 +42,7 @@ const Routes = () => {
             <Route path="/" element={<PublicLandingHome />} />
             <Route path="/services" element={<PublicServiceOverview />} />
             <Route path="/pricing" element={<PublicPricingPlans />} />
+            <Route path="/login" element={<LoginPage />} />
             <Route path="/login-authentication" element={<LoginAuthentication />} />
 
             <Route path="/signup" element={<AdRubyRegistration />} />
