@@ -57,7 +57,6 @@ const HighConversionAdBuilder = () => {
   const [personaChips, setPersonaChips] = useState([]);
   const [placement, setPlacement] = useState('feed'); // feed | story | reel
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
-  const [isPanelOverlayOpen, setIsPanelOverlayOpen] = useState(false);
 
   // Error and success states
   const [error, setError] = useState(null);
