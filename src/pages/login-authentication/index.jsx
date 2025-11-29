@@ -1,92 +1,51 @@
 import React, { useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { motion } from 'framer-motion';
-import { useAuth } from '../../contexts/AuthContext';
-import LoginForm from './components/LoginForm';
-import SecurityFeatures from './components/SecurityFeatures';
+import { useLocation, useNavigate } from 'react-router-dom';
+import { useAuth } from '../../contexts/AuthContext.jsx';
+import RedirectScreen from '../../components/RedirectScreen.jsx';
 
 const LoginAuthentication = () => {
   const navigate = useNavigate();
-  const { user, loading, isSubscribed, subscriptionStatus, isAuthReady } = useAuth();
+  const location = useLocation();
+  const { user, userProfile, isAuthReady, loading, signInWithGoogle } = useAuth();
+  const from = location.state?.from?.pathname || null;
 
   useEffect(() => {
-    if (loading || !isAuthReady) {
-      console.log('[AuthTrace] LoginAuth waiting', { loading, isAuthReady, path: window.location.pathname, ts: new Date().toISOString() });
-      return;
-    }
+    if (!isAuthReady || loading) return;
+    if (!user) return;
 
-    if (!user) {
-      console.log('[AuthTrace] LoginAuth no user -> stay on login/registration page', { path: window.location.pathname, ts: new Date().toISOString() });
-      return;
-    }
+    const isAdmin = userProfile?.role === 'admin';
+    const target = isAdmin ? '/admin-dashboard' : '/overview-dashboard';
+    navigate(from || target, { replace: true });
+  }, [user, userProfile, isAuthReady, loading, navigate, from]);
 
-    const hasActiveSub = typeof isSubscribed === 'function' ? isSubscribed() : false;
-    const subStatus = subscriptionStatus || null;
-
-    if (hasActiveSub) {
-      console.log('[AuthTrace] LoginAuth redirect to dashboard', { path: window.location.pathname, subStatus, ts: new Date().toISOString() });
-      navigate('/overview-dashboard');
-    } else {
-      console.log('[AuthTrace] LoginAuth redirect to payment verification', { path: window.location.pathname, subStatus, ts: new Date().toISOString() });
-      navigate('/payment-verification');
+  const handleGoogle = async () => {
+    try {
+      await signInWithGoogle();
+    } catch (err) {
+      console.error('[Login] Google Sign-In failed', err);
     }
-  }, [user, loading, isSubscribed, subscriptionStatus, navigate, isAuthReady]);
+  };
+
+  if (!isAuthReady || loading) {
+    return (
+      <RedirectScreen title="Lade Login…" subtitle="Bitte warten." />
+    );
+  }
 
   return (
-    <div className="min-h-screen bg-background">
-      {/* Background Pattern */}
-      <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-primary/10" />
-      <div className="relative min-h-screen flex">
-        {/* Left Side - Security Features (Desktop Only) */}
-        <div className="hidden lg:flex lg:w-1/2 xl:w-2/5 bg-card border-r border-border">
-          <div className="flex items-center justify-center w-full p-12">
-            <div className="max-w-md">
-              <SecurityFeatures />
-            </div>
-          </div>
+    <div className="min-h-screen bg-slate-950 text-slate-50 flex items-center justify-center px-6 py-10">
+      <div className="w-full max-w-md bg-slate-900 border border-slate-800 rounded-2xl p-8 shadow-xl space-y-6">
+        <div className="space-y-2 text-center">
+          <h1 className="text-2xl font-bold">Willkommen zurück</h1>
+          <p className="text-slate-300 text-sm">Melde dich an, um dein Dashboard zu öffnen.</p>
         </div>
-
-        {/* Right Side - Login Form */}
-        <div className="flex-1 lg:w-1/2 xl:w-3/5">
-          <div className="flex items-center justify-center min-h-screen p-6 lg:p-12">
-            <div className="w-full max-w-md">
-              <LoginForm />
-            </div>
-          </div>
-        </div>
-      </div>
-      {/* Mobile Security Info */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.6, delay: 0.4 }}
-        className="lg:hidden bg-card border-t border-border p-6"
-      >
-        <div className="max-w-md mx-auto text-center">
-          <div className="flex items-center justify-center space-x-6 mb-4">
-            <div className="flex items-center space-x-2">
-              <div className="w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center">
-                <span className="text-primary text-xs font-medium">SSL</span>
-              </div>
-              <span className="text-sm text-muted-foreground">Verschlüsselt</span>
-            </div>
-            <div className="flex items-center space-x-2">
-              <div className="w-8 h-8 bg-success/10 rounded-full flex items-center justify-center">
-                <span className="text-success text-xs font-medium">✓</span>
-              </div>
-              <span className="text-sm text-muted-foreground">DSGVO</span>
-            </div>
-          </div>
-          <p className="text-xs text-muted-foreground">
-            Ihre Daten sind sicher und werden gemäß den europäischen Datenschutzbestimmungen verarbeitet.
-          </p>
-        </div>
-      </motion.div>
-      {/* Footer */}
-      <div className="absolute bottom-0 left-0 right-0 p-6 text-center">
-        <p className="text-xs text-muted-foreground">
-          © {new Date()?.getFullYear()} BlackRuby Dashboard. Alle Rechte vorbehalten.
-        </p>
+        <button
+          onClick={handleGoogle}
+          className="w-full bg-slate-100 text-slate-900 px-4 py-3 rounded-lg font-medium hover:bg-white transition"
+        >
+          Mit Google anmelden
+        </button>
+        <p className="text-xs text-slate-500 text-center">AdRuby – KI-gestützte Ad Intelligence</p>
       </div>
     </div>
   );
