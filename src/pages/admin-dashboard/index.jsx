@@ -6,6 +6,19 @@ import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, Tooltip, CartesianG
 const currencyFormat = (value = 0) =>
   new Intl.NumberFormat('de-DE', { style: 'currency', currency: 'EUR' }).format(Number(value) || 0);
 
+function logSupabaseError(context, error) {
+  console.group(`[Supabase Error] ${context}`);
+  console.error('name:', error?.name);
+  console.error('code:', error?.code);
+  console.error('message:', error?.message);
+  console.error('details:', error?.details);
+  console.error('hint:', error?.hint);
+  console.error('status:', error?.status);
+  console.error('query:', error?.__isql);
+  console.error('full error object:', error);
+  console.groupEnd();
+}
+
 const AdminDashboard = () => {
   const { user } = useAuth();
   const [loading, setLoading] = useState(true);
@@ -26,16 +39,22 @@ const AdminDashboard = () => {
       const { count: userCount, error: userCountError } = await supabase
         .from('user_profiles')
         .select('id', { count: 'exact', head: true });
-      if (userCountError) throw userCountError;
+      if (userCountError) {
+        logSupabaseError('load userCount', userCountError);
+      }
 
       const { data: revenueData, error: revenueError } = await supabase.rpc('get_revenue_stats');
-      if (revenueError) throw revenueError;
+      if (revenueError) {
+        logSupabaseError('load revenueData', revenueError);
+      }
       const statsRow = Array.isArray(revenueData) ? revenueData[0] : revenueData;
 
       const { data: leaderboardData, error: leaderboardError } = await supabase.rpc(
         'get_affiliate_leaderboard'
       );
-      if (leaderboardError) throw leaderboardError;
+      if (leaderboardError) {
+        logSupabaseError('load leaderboardData', leaderboardError);
+      }
 
 // Affiliate Payouts
       const { data: payoutData, error: payoutError } = await supabase
@@ -60,7 +79,9 @@ const AdminDashboard = () => {
         )
         .order('requested_at', { ascending: false })
         .limit(50);
-      if (payoutError) throw payoutError;
+      if (payoutError) {
+        logSupabaseError('load payoutData', payoutError);
+      }
 
       setStats({
         userCount: userCount || 0,

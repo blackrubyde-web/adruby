@@ -84,8 +84,9 @@ CREATE TABLE IF NOT EXISTS public.affiliate_payouts (
   affiliate_id UUID NOT NULL REFERENCES public.user_profiles (id),
   amount NUMERIC(10,2) NOT NULL,
   currency TEXT DEFAULT 'EUR',
-  status TEXT DEFAULT 'requested',  -- 'requested' | 'approved' | 'paid' | 'rejected'
+  status TEXT DEFAULT 'requested',
   created_at TIMESTAMPTZ DEFAULT now(),
+  requested_at TIMESTAMPTZ DEFAULT now(),   -- << HINZUFÜGEN
   approved_at TIMESTAMPTZ,
   paid_at TIMESTAMPTZ,
   processed_at TIMESTAMPTZ,
@@ -96,8 +97,9 @@ CREATE TABLE IF NOT EXISTS public.affiliate_payouts (
   bank_bic TEXT
 );
 
+
 ALTER TABLE public.affiliate_payouts
-ADD CONSTRAINT IF NOT EXISTS chk_affiliate_payouts_amount_positive
+ADD COLUMN IF NOT EXISTS requested_at TIMESTAMPTZ DEFAULT now();
 CHECK (amount > 0);
 
 CREATE INDEX IF NOT EXISTS idx_affiliate_payouts_affiliate_id
