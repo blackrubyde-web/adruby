@@ -1,7 +1,7 @@
 import React from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
-import RedirectScreen from './RedirectScreen.jsx';
-import { useAuth } from '../contexts/AuthContext.jsx';
+import RedirectScreen from './RedirectScreen';
+import { useAuth } from '../contexts/AuthContext';
 
 const ProtectedRoute = ({ children }) => {
   const location = useLocation();

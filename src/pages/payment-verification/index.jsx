@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import RedirectScreen from '../../components/RedirectScreen.jsx';
+import RedirectScreen from '../../components/RedirectScreen';
 
 const PaymentVerificationPage = () => {
   const navigate = useNavigate();

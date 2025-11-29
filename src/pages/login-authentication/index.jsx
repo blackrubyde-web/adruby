@@ -1,7 +1,7 @@
 import React, { useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { useAuth } from '../../contexts/AuthContext.jsx';
-import RedirectScreen from '../../components/RedirectScreen.jsx';
+import { useAuth } from '../../contexts/AuthContext';
+import RedirectScreen from '../../components/RedirectScreen';
 
 const LoginAuthentication = () => {
   const navigate = useNavigate();

@@ -1,10 +1,10 @@
 import React from 'react';
 import { BrowserRouter, Routes as RouterRoutes, Route } from 'react-router-dom';
-import { AuthProvider } from './contexts/AuthContext.jsx';
+import { AuthProvider } from './contexts/AuthContext';
 import ScrollToTop from './components/ScrollToTop';
 import ErrorBoundary from './components/ErrorBoundary';
-import ProtectedRoute from './components/ProtectedRoute.jsx';
-import AdminRoute from './components/AdminRoute.jsx';
+import ProtectedRoute from './components/ProtectedRoute';
+import AdminRoute from './components/AdminRoute';
 
 import PublicLandingHome from './pages/public-landing-home';
 import PublicServiceOverview from './pages/public-service-overview';
