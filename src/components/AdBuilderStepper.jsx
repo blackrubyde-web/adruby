@@ -81,7 +81,7 @@ const AdBuilderStepper = ({ currentStep = 0, onStepChange = () => {} }) => {
   return (
     <div className="relative h-12 w-full overflow-hidden rounded-xl border border-white/30 bg-white/40 backdrop-blur-xl shadow-[0_10px_30px_rgba(0,0,0,0.06)] dark:border-white/10 dark:bg-white/10">
       <div className="pointer-events-none absolute inset-0 bg-gradient-to-r from-white/40 via-white/10 to-white/5 dark:from-white/10 dark:via-white/5" />
-      <div className="relative flex h-full items-center">
+      <div className="relative flex h-full items-center pb-3">
         {steps.map((step, index) => {
           const Icon = step.icon;
           const isActive = index === currentStep;
@@ -107,7 +107,7 @@ const AdBuilderStepper = ({ currentStep = 0, onStepChange = () => {} }) => {
               >
                 <Icon />
               </motion.div>
-              <div className="flex flex-col leading-tight">
+              <div className="flex flex-col leading-tight mt-1">
                 <span
                   className={`text-[13px] font-semibold transition ${
                     isActive
@@ -128,7 +128,7 @@ const AdBuilderStepper = ({ currentStep = 0, onStepChange = () => {} }) => {
           );
         })}
 
-        <div className="pointer-events-none absolute inset-x-2 bottom-1 h-[3px] rounded-full bg-white/40 dark:bg-white/10">
+        <div className="pointer-events-none absolute inset-x-2 bottom-0 h-[3px] rounded-full bg-white/40 dark:bg-white/10">
           <motion.div
             className="absolute inset-y-0 rounded-full bg-gradient-to-r from-[#C80000] via-red-500 to-orange-400 shadow-[0_6px_18px_rgba(200,0,0,0.28)]"
             style={{ width: stepWidth }}

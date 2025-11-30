@@ -10,10 +10,9 @@ const Sidebar = ({
   isOpen = false,
   onClose,
   className = '',
-  isCollapsed = false,
-  onCollapseToggle = () => {},
-  isNavCollapsed,
-  setCollapsed = () => {}
+  isCollapsed,
+  onCollapseToggle,
+  isNavCollapsed
 }) => {
   const location = useLocation();
   const navigate = useNavigate();
@@ -23,7 +22,23 @@ const Sidebar = ({
   const [creditStatus, setCreditStatus] = useState(null);
   const [creditsLoading, setCreditsLoading] = useState(true);
   const { user, userProfile } = useAuth();
-  const collapsed = typeof isNavCollapsed === 'boolean' ? isNavCollapsed : isCollapsed;
+  const [internalCollapsed, setInternalCollapsed] = useState(true);
+  const collapsed = typeof isNavCollapsed === 'boolean'
+    ? isNavCollapsed
+    : typeof isCollapsed === 'boolean'
+      ? isCollapsed
+      : internalCollapsed;
+
+  const collapseSidebar = () => {
+    if (typeof isNavCollapsed === 'boolean' || typeof isCollapsed === 'boolean') {
+      if (!collapsed && onCollapseToggle) {
+        onCollapseToggle();
+      }
+    } else {
+      setInternalCollapsed(true);
+    }
+    if (onClose) onClose();
+  };
 
   const navigationItems = useMemo(() => {
     const baseItems = [
@@ -139,16 +154,13 @@ const Sidebar = ({
     if (activeNav) {
       setActiveItem(activeNav?.path);
     }
-    setCollapsed(true);
-    if (onClose) onClose();
+    collapseSidebar();
   }, [location?.pathname, navigationItems]);
 
   const handleNavigation = (path) => {
     navigate(path);
     setActiveItem(path);
-    if (onClose) {
-      onClose();
-    }
+    collapseSidebar();
   };
 
   const handleKeyNavigation = (event, path) => {
@@ -174,7 +186,7 @@ const Sidebar = ({
       {isOpen && (
         <div
           className="fixed inset-0 bg-black/30 backdrop-blur-xl z-[40]"
-          onClick={onClose}
+          onClick={collapseSidebar}
         />
       )}
       {/* Sidebar */}
@@ -222,7 +234,13 @@ const Sidebar = ({
             variant="ghost"
             size="sm"
             className="w-full flex items-center justify-start gap-2 px-3"
-            onClick={onCollapseToggle}
+            onClick={() => {
+              if (typeof isNavCollapsed === 'boolean' || typeof isCollapsed === 'boolean') {
+                onCollapseToggle?.();
+              } else {
+                setInternalCollapsed((prev) => !prev);
+              }
+            }}
           >
             <Icon name={collapsed ? 'ChevronsRight' : 'ChevronsLeft'} size={16} />
             {!collapsed && <span className="text-sm font-medium">Sidebar einklappen</span>}

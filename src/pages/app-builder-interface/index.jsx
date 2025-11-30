@@ -342,9 +342,9 @@ const HighConversionAdBuilder = () => {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -20 }}
-                className="grid grid-cols-1 xl:grid-cols-12 gap-6"
+                className="grid grid-cols-1 xl:grid-cols-2 gap-6"
               >
-                <div className="xl:col-span-4 space-y-4 order-1 xl:order-none">
+                <div className="space-y-4 order-1 xl:order-none">
                   <div className="rounded-2xl border border-slate-200 bg-white shadow-lg dark:border-white/10 dark:bg-[#0b0b10]">
                     <div className="flex items-center justify-between p-4">
                       <div className="flex gap-2">
@@ -391,7 +391,7 @@ const HighConversionAdBuilder = () => {
                   </div>
                 </div>
 
-                <div className="xl:col-span-8 space-y-4 order-2 xl:order-none">
+                <div className="space-y-4 order-2 xl:order-none">
                   <div className="rounded-2xl border border-slate-200 bg-white p-4 sm:p-5 shadow-lg dark:border-white/10 dark:bg-[#0b0b10]">
                     <div className="flex items-start justify-between gap-3">
                       <div>
@@ -503,9 +503,9 @@ const HighConversionAdBuilder = () => {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -20 }}
-                className="grid grid-cols-1 xl:grid-cols-12 gap-6"
+                className="grid grid-cols-1 xl:grid-cols-3 gap-6"
               >
-                <div className="xl:col-span-5 space-y-4 order-2 xl:order-none">
+                <div className="space-y-4 order-1">
                   <div className="rounded-2xl border border-white/5 bg-[#141418] p-4 sm:p-5 backdrop-blur shadow-[0_20px_80px_rgba(0,0,0,0.35)]">
                     <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
                       <div className="flex flex-wrap items-center gap-2">
@@ -628,7 +628,9 @@ const HighConversionAdBuilder = () => {
                       )}
                     </div>
                   </div>
+                </div>
 
+                <div className="order-2">
                   <PreviewPanel
                     selectedAd={selectedAd}
                     isGenerating={isGenerating}
@@ -638,7 +640,7 @@ const HighConversionAdBuilder = () => {
                   />
                 </div>
 
-                <div className="xl:col-span-4 space-y-4 order-1 xl:order-none">
+                <div className="space-y-4 order-3">
                   <div className="rounded-2xl border border-slate-200 bg-white p-4 sm:p-5 backdrop-blur shadow-[0_20px_60px_rgba(0,0,0,0.35)] dark:border-white/10 dark:bg-[#0b0b10]">
                     <div className="flex items-center justify-between mb-4">
                       <div>
@@ -774,9 +776,6 @@ const HighConversionAdBuilder = () => {
                       )}
                     </div>
                   </div>
-                </div>
-
-                <div className="xl:col-span-3 order-3 xl:order-none">
                   <AnalysisPanel
                     marketInsights={marketInsights}
                     generatedAds={generatedAds}
