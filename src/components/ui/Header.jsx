@@ -75,15 +75,15 @@ const Header = ({
     }
   ];
 
-  const paddingClasses = isNavCollapsed
-    ? 'pl-4 lg:pl-[72px]'
-    : 'pl-4 lg:pl-[260px]';
+  const layoutClasses = isNavCollapsed
+    ? "left-[72px] w-[calc(100%-72px)]"
+    : "left-60 w-[calc(100%-240px)]";
 
   return (
     <header
-      className={`sticky top-0 z-30 bg-background border-b border-border h-16 ${paddingClasses} ${className}`}
+      className={`fixed top-0 h-16 transition-all duration-300 bg-background border-b border-border z-30 ${layoutClasses} ${className}`}
     >
-      <div className="flex items-center justify-between h-full px-6">
+      <div className="flex items-center justify-between h-full px-4 lg:px-6">
         {/* Mobile Menu Toggle */}
         <div className="lg:hidden">
           <Button
