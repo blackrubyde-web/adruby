@@ -787,8 +787,7 @@ const HighConversionAdBuilder = () => {
             )}
           </AnimatePresence>
         </div>
-        </motion.main>
-      </div>
+      </motion.main>
     </div>
   );
 };
