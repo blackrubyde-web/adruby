@@ -185,7 +185,6 @@ const SettingsConfiguration = () => {
               </p>
             </motion.div>
           </div>
-        </div>
       </main>
     </div>
   );
