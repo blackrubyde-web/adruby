@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { useLocation } from "react-router-dom";
 import Header from "../../components/ui/Header";
 import Sidebar from "../../components/ui/Sidebar";
 import { useAuth } from "../../contexts/AuthContext";
@@ -12,8 +13,9 @@ import AdBuilderService from "../../services/adBuilderService";
 
 const HighConversionAdBuilder = () => {
   const { user } = useAuth();
+  const location = useLocation();
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [isNavCollapsed, setIsNavCollapsed] = useState(false);
+  const [isNavCollapsed, setIsNavCollapsed] = useState(true);
 
   // Form and generation state
   const [formData, setFormData] = useState({
@@ -56,6 +58,11 @@ const HighConversionAdBuilder = () => {
       loadUserStats();
     }
   }, [user?.id]);
+
+  useEffect(() => {
+    setIsNavCollapsed(true);
+    setSidebarOpen(false);
+  }, [location?.pathname]);
 
   const loadUserStats = async () => {
     try {
@@ -124,6 +131,12 @@ const HighConversionAdBuilder = () => {
     setSelectedAd(null);
     setError(null);
     setSuccess(null);
+  };
+
+  const handleStepChange = (index) => {
+    setCurrentStep(index);
+    setIsNavCollapsed(true);
+    setSidebarOpen(false);
   };
 
   const handleSelectAd = (ad) => {
@@ -248,6 +261,7 @@ const HighConversionAdBuilder = () => {
         onClose={() => setSidebarOpen(false)}
         isCollapsed={isNavCollapsed}
         onCollapseToggle={() => setIsNavCollapsed((prev) => !prev)}
+        setCollapsed={setIsNavCollapsed}
       />
       <Header
         onMenuToggle={() => setSidebarOpen(!sidebarOpen)}
@@ -265,10 +279,10 @@ const HighConversionAdBuilder = () => {
       >
         <div className="p-4 sm:p-6">
           <motion.div
-            className="mb-6 sm:mb-8 flex flex-col gap-3"
+            className="mb-6 sm:mb-8 space-y-3"
             variants={itemVariants}
           >
-            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+            <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
               <div className="space-y-1">
                 <h1 className="text-3xl font-semibold">Ad Builder: AdCreative Lab</h1>
                 <p className={`text-sm ${subtleText}`}>
@@ -276,20 +290,23 @@ const HighConversionAdBuilder = () => {
                 </p>
               </div>
 
-              {generatedAds?.length > 0 && (
-                <motion.button
-                  onClick={handleNewAnalysis}
-                  className="inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold rounded-lg transition shadow-[0_10px_30px_rgba(200,0,0,0.25)] bg-[#C80000] text-white hover:bg-[#a50000]"
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
-                >
-                  <Icon name="Plus" size={20} />
-                  <span>Neue Analyse</span>
-                </motion.button>
-              )}
+              <div className="flex w-full flex-col gap-3 lg:w-[620px]">
+                <AdBuilderStepper currentStep={currentStep} onStepChange={handleStepChange} />
+                {generatedAds?.length > 0 && (
+                  <div className="flex lg:justify-end">
+                    <motion.button
+                      onClick={handleNewAnalysis}
+                      className="inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold rounded-lg transition shadow-[0_10px_30px_rgba(200,0,0,0.25)] bg-[#C80000] text-white hover:bg-[#a50000]"
+                      whileHover={{ scale: 1.02 }}
+                      whileTap={{ scale: 0.98 }}
+                    >
+                      <Icon name="Plus" size={20} />
+                      <span>Neue Analyse</span>
+                    </motion.button>
+                  </div>
+                )}
+              </div>
             </div>
-
-            <AdBuilderStepper currentStep={currentStep} onStepChange={setCurrentStep} />
           </motion.div>
 
           {error && (

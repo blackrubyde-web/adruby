@@ -79,9 +79,9 @@ const AdBuilderStepper = ({ currentStep = 0, onStepChange = () => {} }) => {
   const indicatorLeft = `${(100 / steps.length) * currentStep}%`;
 
   return (
-    <div className="relative w-full overflow-hidden rounded-2xl border border-zinc-200/60 bg-white/30 shadow-[0_20px_80px_rgba(0,0,0,0.06)] backdrop-blur-xl transition dark:border-white/10 dark:bg-white/5">
-      <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-red-500/5 via-transparent to-blue-500/5 dark:from-red-500/10 dark:to-blue-500/10" />
-      <div className="relative flex items-stretch justify-between divide-x divide-zinc-200/50 dark:divide-white/5">
+    <div className="relative h-12 w-full overflow-hidden rounded-xl border border-white/30 bg-white/40 backdrop-blur-xl shadow-[0_10px_30px_rgba(0,0,0,0.06)] dark:border-white/10 dark:bg-white/10">
+      <div className="pointer-events-none absolute inset-0 bg-gradient-to-r from-white/40 via-white/10 to-white/5 dark:from-white/10 dark:via-white/5" />
+      <div className="relative flex h-full items-center">
         {steps.map((step, index) => {
           const Icon = step.icon;
           const isActive = index === currentStep;
@@ -92,53 +92,48 @@ const AdBuilderStepper = ({ currentStep = 0, onStepChange = () => {} }) => {
               key={step.label}
               type="button"
               onClick={() => onStepChange(index)}
-              className="group relative flex flex-1 flex-col items-start gap-2 px-4 py-5 text-left sm:px-6"
-              initial={{ opacity: 0.85, scale: 0.98 }}
-              animate={{
-                opacity: isActive ? 1 : 0.85,
-                scale: isActive ? 1.01 : 0.98,
-              }}
-              transition={{ duration: 0.2, ease: "easeInOut" }}
+              className="group relative flex h-full flex-1 items-center gap-2 px-3 text-left sm:px-4"
+              initial={{ opacity: 0.85 }}
+              animate={{ opacity: isActive ? 1 : 0.85 }}
+              transition={{ duration: 0.15, ease: "easeInOut" }}
             >
               <motion.div
-                whileHover={{ scale: 1.07, rotate: 1 }}
-                transition={{ type: "spring", stiffness: 260, damping: 16 }}
-                className={`flex h-11 w-11 items-center justify-center rounded-2xl border transition ${
+                whileHover={{ scale: 1.05 }}
+                className={`flex h-8 w-8 items-center justify-center rounded-2xl border transition ${
                   isActive
-                    ? "border-red-500/60 bg-gradient-to-br from-red-500/20 via-white/40 to-red-300/20 text-red-600 shadow-[0_12px_40px_rgba(200,0,0,0.25)] dark:via-white/10"
-                    : "border-zinc-200/70 bg-white/60 text-zinc-500 shadow-[0_10px_35px_rgba(0,0,0,0.04)] dark:border-white/10 dark:bg-white/5 dark:text-zinc-300"
+                    ? "border-[#C80000]/70 bg-[#C80000]/10 text-[#C80000]"
+                    : "border-white/30 bg-white/60 text-zinc-500 dark:border-white/10 dark:bg-white/5 dark:text-zinc-300"
                 }`}
               >
                 <Icon />
               </motion.div>
-              <div className="flex flex-col">
+              <div className="flex flex-col leading-tight">
                 <span
-                  className={`text-sm font-semibold tracking-tight transition ${
+                  className={`text-[13px] font-semibold transition ${
                     isActive
-                      ? "text-red-700 dark:text-red-400"
+                      ? "text-[#C80000]"
                       : "text-zinc-700 dark:text-zinc-200"
                   }`}
                 >
                   {step.label}
                 </span>
-                <span className="text-xs text-zinc-500 transition dark:text-zinc-400">
+                <span className="text-[11px] text-zinc-500 transition dark:text-zinc-400">
                   {step.description}
                 </span>
               </div>
               {isCompleted && (
-                <span className="absolute right-4 top-4 h-2 w-2 rounded-full bg-red-500 shadow-[0_0_0_6px_rgba(200,0,0,0.15)]" />
+                <span className="absolute right-2 top-2 h-1.5 w-1.5 rounded-full bg-[#C80000] shadow-[0_0_0_4px_rgba(200,0,0,0.12)]" />
               )}
             </motion.button>
           );
         })}
 
-        <div className="pointer-events-none absolute inset-x-0 bottom-0 h-1.5">
-          <div className="absolute inset-0 bg-gradient-to-r from-red-500/0 via-red-500/15 to-blue-500/10 opacity-80" />
+        <div className="pointer-events-none absolute inset-x-2 bottom-1 h-[3px] rounded-full bg-white/40 dark:bg-white/10">
           <motion.div
-            className="absolute h-full rounded-full bg-gradient-to-r from-red-500 via-red-400 to-orange-400 shadow-[0_10px_30px_rgba(200,0,0,0.35)]"
+            className="absolute inset-y-0 rounded-full bg-gradient-to-r from-[#C80000] via-red-500 to-orange-400 shadow-[0_6px_18px_rgba(200,0,0,0.28)]"
             style={{ width: stepWidth }}
             animate={{ left: indicatorLeft }}
-            transition={{ type: "spring", stiffness: 200, damping: 22 }}
+            transition={{ type: "spring", stiffness: 220, damping: 22 }}
           />
         </div>
       </div>

@@ -12,7 +12,8 @@ const Sidebar = ({
   className = '',
   isCollapsed = false,
   onCollapseToggle = () => {},
-  isNavCollapsed
+  isNavCollapsed,
+  setCollapsed = () => {}
 }) => {
   const location = useLocation();
   const navigate = useNavigate();
@@ -138,6 +139,8 @@ const Sidebar = ({
     if (activeNav) {
       setActiveItem(activeNav?.path);
     }
+    setCollapsed(true);
+    if (onClose) onClose();
   }, [location?.pathname, navigationItems]);
 
   const handleNavigation = (path) => {
@@ -170,16 +173,16 @@ const Sidebar = ({
       {/* Mobile Overlay */}
       {isOpen && (
         <div
-          className="fixed inset-0 bg-black/50 backdrop-blur-sm z-40 lg:hidden"
+          className="fixed inset-0 bg-black/30 backdrop-blur-xl z-[40]"
           onClick={onClose}
         />
       )}
       {/* Sidebar */}
       <aside
         className={`
-          fixed top-0 left-0 h-full w-60 ${collapsed ? 'lg:w-[72px]' : 'lg:w-60'} bg-card border-r border-border z-50
+          fixed top-0 left-0 h-full w-60 ${collapsed ? 'lg:w-[72px]' : 'lg:w-60'} bg-card border-r border-border z-[50]
           transform transition-transform duration-300 ease-in-out
-          lg:translate-x-0 lg:z-40
+          lg:translate-x-0
           ${isOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
           ${className}
         `}
