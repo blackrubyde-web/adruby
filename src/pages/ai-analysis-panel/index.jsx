@@ -381,20 +381,22 @@ const AIAnalysisPanel = () => {
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="flex min-h-screen bg-background">
       <Sidebar 
         isOpen={sidebarOpen} 
         onClose={handleSidebarClose}
       />
-      <Header onMenuToggle={handleSidebarToggle} />
+      <div className="hidden lg:block w-[72px] flex-shrink-0" />
+      <div className="flex-1 min-h-screen flex flex-col">
+        <Header onMenuToggle={handleSidebarToggle} />
         
-      <motion.main 
-        className="pt-16 p-6"
-        variants={pageVariants}
-        initial="initial"
-        animate="animate"
-        exit="exit"
-      >
+        <motion.main 
+          className="pt-16 p-6"
+          variants={pageVariants}
+          initial="initial"
+          animate="animate"
+          exit="exit"
+        >
           <div className="max-w-7xl mx-auto">
             {/* Page Header */}
             <motion.div 
@@ -1112,6 +1114,7 @@ const AIAnalysisPanel = () => {
             </motion.div>
           </div>
         </motion.main>
+      </div>
     </div>
   );
 };

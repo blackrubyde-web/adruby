@@ -244,21 +244,23 @@ const CreditsPage = () => {
   const colorClasses = creditStatus ? creditService?.getCreditColorClasses(creditStatus?.credits) : {};
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="flex min-h-screen bg-background">
       <Sidebar 
         isOpen={sidebarOpen} 
         onClose={() => setSidebarOpen(false)} 
       />
-      <Header onMenuToggle={() => setSidebarOpen(true)} />
-      
-      <main className="pt-16">
-        <motion.div 
-          className="p-6 space-y-8"
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
-        >
-          <div className="max-w-6xl mx-auto space-y-8">
+      <div className="hidden lg:block w-[72px] flex-shrink-0" />
+      <div className="flex-1 min-h-screen flex flex-col">
+        <Header onMenuToggle={() => setSidebarOpen(true)} />
+        
+        <main className="pt-16">
+          <motion.div 
+            className="p-6 space-y-8"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5 }}
+          >
+            <div className="max-w-6xl mx-auto space-y-8">
               {/* Header */}
               <motion.div 
                 initial={{ opacity: 0, y: 20 }}
@@ -617,6 +619,7 @@ const CreditsPage = () => {
             </div>
           </motion.div>
         </main>
+      </div>
     </div>
   );
 };

@@ -64,15 +64,17 @@ const SettingsConfiguration = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="flex min-h-screen bg-background">
       <Sidebar 
         isOpen={sidebarOpen} 
         onClose={() => setSidebarOpen(false)} 
       />
-      <Header onMenuToggle={() => setSidebarOpen(true)} />
-      
-      <main className="pt-16">
-        <div className="p-6">
+      <div className="hidden lg:block w-[72px] flex-shrink-0" />
+      <div className="flex-1 min-h-screen flex flex-col">
+        <Header onMenuToggle={() => setSidebarOpen(true)} />
+        
+        <main className="pt-16">
+          <div className="p-6">
             {/* Page Header */}
             <motion.div
               initial={{ opacity: 0, y: 20 }}
@@ -185,7 +187,8 @@ const SettingsConfiguration = () => {
               </p>
             </motion.div>
           </div>
-      </main>
+        </main>
+      </div>
     </div>
   );
 };

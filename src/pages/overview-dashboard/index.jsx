@@ -87,20 +87,22 @@ const OverviewDashboard = () => {
   }, []);
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="flex min-h-screen bg-background">
       <Sidebar 
         isOpen={sidebarOpen} 
         onClose={() => setSidebarOpen(false)} 
       />
-      <Header onMenuToggle={() => setSidebarOpen(true)} />
-      
-      <main className="pt-16">
-        <motion.div 
-          className="p-6 space-y-8"
-          variants={containerVariants}
-          initial="hidden"
-          animate="visible"
-        >
+      <div className="hidden lg:block w-[72px] flex-shrink-0" />
+      <div className="flex-1 min-h-screen flex flex-col">
+        <Header onMenuToggle={() => setSidebarOpen(true)} />
+        
+        <main className="pt-16">
+          <motion.div 
+            className="p-6 space-y-8"
+            variants={containerVariants}
+            initial="hidden"
+            animate="visible"
+          >
             {/* Page Header */}
             <motion.div variants={itemVariants}>
               <div className="mb-8">
@@ -221,6 +223,7 @@ const OverviewDashboard = () => {
             </motion.div>
           </motion.div>
         </main>
+      </div>
     </div>
   );
 };

@@ -254,7 +254,7 @@ const HighConversionAdBuilder = () => {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-900 dark:bg-[#050509] dark:text-slate-50">
+    <div className="flex min-h-screen bg-slate-50 text-slate-900 dark:bg-[#050509] dark:text-slate-50">
       <Sidebar
         isOpen={sidebarOpen}
         onClose={() => setSidebarOpen(false)}
@@ -262,20 +262,23 @@ const HighConversionAdBuilder = () => {
         onCollapseToggle={() => setIsNavCollapsed((prev) => !prev)}
         setCollapsed={setIsNavCollapsed}
       />
-      <Header
-        onMenuToggle={() => setSidebarOpen(!sidebarOpen)}
-        isNavCollapsed={isNavCollapsed}
-        onNavCollapseToggle={() => setIsNavCollapsed((prev) => !prev)}
-      />
+      <div className="hidden lg:block w-[72px] flex-shrink-0" />
 
-      <motion.main
-        className="pt-16"
-        variants={pageVariants}
-        initial="initial"
-        animate="animate"
-        exit="exit"
-        transition={{ duration: 0.3 }}
-      >
+      <div className="flex-1 min-h-screen flex flex-col">
+        <Header
+          onMenuToggle={() => setSidebarOpen(!sidebarOpen)}
+          isNavCollapsed={isNavCollapsed}
+          onNavCollapseToggle={() => setIsNavCollapsed((prev) => !prev)}
+        />
+
+        <motion.main
+          className="pt-16"
+          variants={pageVariants}
+          initial="initial"
+          animate="animate"
+          exit="exit"
+          transition={{ duration: 0.3 }}
+        >
         <div className="p-4 sm:p-6">
           <motion.div
             className="mb-6 sm:mb-8 space-y-3"
@@ -788,7 +791,8 @@ const HighConversionAdBuilder = () => {
             )}
           </AnimatePresence>
         </div>
-      </motion.main>
+        </motion.main>
+      </div>
     </div>
   );
 };

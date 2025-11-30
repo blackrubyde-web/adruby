@@ -254,38 +254,43 @@ const AffiliatePage = () => {
 
   if (!userProfile?.affiliate_enabled) {
     return (
-      <div className="min-h-screen bg-background">
+      <div className="flex min-h-screen bg-background">
         <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
-        <Header onMenuToggle={() => setSidebarOpen(true)} />
-        <main className="pt-16">
-          <div className="p-6">
-            <div className="max-w-3xl mx-auto">
-              <div className="bg-card border border-border rounded-xl p-8 shadow-sm">
-                <div className="flex items-start space-x-3">
-                  <div className="p-2 rounded-lg bg-muted text-muted-foreground">
-                    <Icon name="Lock" size={20} />
-                  </div>
-                  <div className="space-y-2">
-                    <h1 className="text-2xl font-semibold text-foreground">
-                      Affiliate-Programm ist nicht freigeschaltet
-                    </h1>
-                    <p className="text-muted-foreground">
-                      Bitte wende dich an das AdRuby-Team, um als Affiliate freigeschaltet zu werden.
-                    </p>
+        <div className="hidden lg:block w-[72px] flex-shrink-0" />
+        <div className="flex-1 min-h-screen flex flex-col">
+          <Header onMenuToggle={() => setSidebarOpen(true)} />
+          <main className="pt-16">
+            <div className="p-6">
+              <div className="max-w-3xl mx-auto">
+                <div className="bg-card border border-border rounded-xl p-8 shadow-sm">
+                  <div className="flex items-start space-x-3">
+                    <div className="p-2 rounded-lg bg-muted text-muted-foreground">
+                      <Icon name="Lock" size={20} />
+                    </div>
+                    <div className="space-y-2">
+                      <h1 className="text-2xl font-semibold text-foreground">
+                        Affiliate-Programm ist nicht freigeschaltet
+                      </h1>
+                      <p className="text-muted-foreground">
+                        Bitte wende dich an das AdRuby-Team, um als Affiliate freigeschaltet zu werden.
+                      </p>
+                    </div>
                   </div>
                 </div>
               </div>
             </div>
-          </div>
-        </main>
+          </main>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="flex min-h-screen bg-background">
       <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
-      <Header onMenuToggle={() => setSidebarOpen(true)} />
+      <div className="hidden lg:block w-[72px] flex-shrink-0" />
+      <div className="flex-1 min-h-screen flex flex-col">
+        <Header onMenuToggle={() => setSidebarOpen(true)} />
 
         <main className="pt-16">
           <div className="p-6">
@@ -592,6 +597,7 @@ const AffiliatePage = () => {
             )}
           </div>
         </main>
+      </div>
     </div>
   );
 };

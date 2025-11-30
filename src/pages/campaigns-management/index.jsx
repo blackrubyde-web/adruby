@@ -356,20 +356,22 @@ const CampaignsManagement = () => {
   const currentCampaigns = filteredCampaigns?.slice(startIndex, endIndex);
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="flex min-h-screen bg-background">
       <Sidebar 
         isOpen={sidebarOpen} 
         onClose={() => setSidebarOpen(false)} 
       />
-      <Header onMenuToggle={() => setSidebarOpen(true)} />
-      
-      <main className="pt-16">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
-          className="p-6"
-        >
+      <div className="hidden lg:block w-[72px] flex-shrink-0" />
+      <div className="flex-1 min-h-screen flex flex-col">
+        <Header onMenuToggle={() => setSidebarOpen(true)} />
+        
+        <main className="pt-16">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5 }}
+            className="p-6"
+          >
             {/* Page Header */}
             <div className="mb-8">
               <h1 className="text-3xl font-semibold text-foreground mb-2">
@@ -439,17 +441,18 @@ const CampaignsManagement = () => {
             )}
           </motion.div>
         </main>
-      {/* Confirmation Modal */}
-      <ConfirmationModal
-        isOpen={confirmModal?.isOpen}
-        onClose={() => setConfirmModal({ ...confirmModal, isOpen: false })}
-        onConfirm={handleConfirmAction}
-        title={confirmModal?.title}
-        message={confirmModal?.message}
-        confirmText={confirmModal?.confirmText}
-        type={confirmModal?.type}
-        campaignName={confirmModal?.campaignName}
-      />
+        {/* Confirmation Modal */}
+        <ConfirmationModal
+          isOpen={confirmModal?.isOpen}
+          onClose={() => setConfirmModal({ ...confirmModal, isOpen: false })}
+          onConfirm={handleConfirmAction}
+          title={confirmModal?.title}
+          message={confirmModal?.message}
+          confirmText={confirmModal?.confirmText}
+          type={confirmModal?.type}
+          campaignName={confirmModal?.campaignName}
+        />
+      </div>
     </div>
   );
 };

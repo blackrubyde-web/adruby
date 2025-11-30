@@ -463,23 +463,25 @@ const AdStrategy = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="flex min-h-screen bg-background">
       <Sidebar 
         isOpen={sidebarOpen} 
         onClose={() => setSidebarOpen(false)} 
       />
-      <Header 
-        onMenuToggle={() => setSidebarOpen(!sidebarOpen)}
-      />
-      <motion.main 
-        className="pt-16"
-        variants={pageVariants}
-        initial="initial"
-        animate="animate"
-        exit="exit"
-        transition={{ duration: 0.3 }}
-      >
-        <div className="p-6">
+      <div className="hidden lg:block w-[72px] flex-shrink-0" />
+      <div className="flex-1 min-h-screen flex flex-col">
+        <Header 
+          onMenuToggle={() => setSidebarOpen(!sidebarOpen)}
+        />
+        <motion.main 
+          className="pt-16"
+          variants={pageVariants}
+          initial="initial"
+          animate="animate"
+          exit="exit"
+          transition={{ duration: 0.3 }}
+        >
+          <div className="p-6">
           {/* ENHANCED: Page Header - Shows strategies by default */}
           <motion.div 
             className="mb-8"
@@ -1650,6 +1652,7 @@ const AdStrategy = () => {
         </AnimatePresence>
       )}
     </div>
+  </div>
   );
 };
 
