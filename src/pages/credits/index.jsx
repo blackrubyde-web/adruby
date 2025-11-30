@@ -161,20 +161,19 @@ const CreditsPage = () => {
         <Header onMenuToggle={() => setSidebarOpen(true)} />
           
         <main className="pt-16">
-            <div className="p-6">
-              <div className="max-w-6xl mx-auto">
-                <div className="animate-pulse space-y-6">
-                  <div className="h-8 bg-muted rounded w-1/3"></div>
-                  <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                    <div className="h-32 bg-muted rounded-lg"></div>
-                    <div className="h-32 bg-muted rounded-lg"></div>
-                    <div className="h-32 bg-muted rounded-lg"></div>
-                  </div>
+          <div className="p-6">
+            <div className="max-w-6xl mx-auto">
+              <div className="animate-pulse space-y-6">
+                <div className="h-8 bg-muted rounded w-1/3"></div>
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                  <div className="h-32 bg-muted rounded-lg"></div>
+                  <div className="h-32 bg-muted rounded-lg"></div>
+                  <div className="h-32 bg-muted rounded-lg"></div>
                 </div>
               </div>
             </div>
-          </main>
-        </div>
+          </div>
+        </main>
       </div>
     );
   }
@@ -196,48 +195,47 @@ const CreditsPage = () => {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5 }}
             >
-                <div className="max-w-2xl mx-auto">
-                  {/* Header */}
-                  <div className="flex items-center space-x-4 mb-8">
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => setShowPayment(false)}
-                    >
-                      <Icon name="ArrowLeft" size={20} />
-                    </Button>
-                    <div>
-                      <h1 className="text-2xl font-bold text-foreground">
-                        Credit-Zahlung
-                      </h1>
-                      <p className="text-muted-foreground">
-                        {paymentData?.packageName} - {creditService?.formatCredits(paymentData?.credits)} Credits
-                      </p>
-                    </div>
+              <div className="max-w-2xl mx-auto">
+                {/* Header */}
+                <div className="flex items-center space-x-4 mb-8">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => setShowPayment(false)}
+                  >
+                    <Icon name="ArrowLeft" size={20} />
+                  </Button>
+                  <div>
+                    <h1 className="text-2xl font-bold text-foreground">
+                      Credit-Zahlung
+                    </h1>
+                    <p className="text-muted-foreground">
+                      {paymentData?.packageName} - {creditService?.formatCredits(paymentData?.credits)} Credits
+                    </p>
                   </div>
-
-                  {/* Payment Form */}
-                  <StripePaymentForm
-                    clientSecret={paymentData?.clientSecret}
-                    amount={paymentData?.amount}
-                    currency={paymentData?.currency}
-                    orderData={{
-                      orderId: paymentData?.orderId,
-                      orderNumber: paymentData?.orderNumber
-                    }}
-                    customerInfo={{
-                      firstName: user?.user_metadata?.first_name || user?.email?.split('@')?.[0],
-                      lastName: user?.user_metadata?.last_name || '',
-                      email: user?.email
-                    }}
-                    onSuccess={handlePaymentSuccess}
-                    onError={handlePaymentError}
-                    confirmButtonText={`${stripeService?.formatPrice(paymentData?.amount, paymentData?.currency)} bezahlen`}
-                  />
                 </div>
-              </motion.div>
-            </main>
-          </div>
+
+                {/* Payment Form */}
+                <StripePaymentForm
+                  clientSecret={paymentData?.clientSecret}
+                  amount={paymentData?.amount}
+                  currency={paymentData?.currency}
+                  orderData={{
+                    orderId: paymentData?.orderId,
+                    orderNumber: paymentData?.orderNumber
+                  }}
+                  customerInfo={{
+                    firstName: user?.user_metadata?.first_name || user?.email?.split('@')?.[0],
+                    lastName: user?.user_metadata?.last_name || '',
+                    email: user?.email
+                  }}
+                  onSuccess={handlePaymentSuccess}
+                  onError={handlePaymentError}
+                  confirmButtonText={`${stripeService?.formatPrice(paymentData?.amount, paymentData?.currency)} bezahlen`}
+                />
+              </div>
+            </motion.div>
+          </main>
         </div>
       </StripeProvider>
     );
@@ -619,7 +617,6 @@ const CreditsPage = () => {
             </div>
           </motion.div>
         </main>
-      </div>
     </div>
   );
 };
