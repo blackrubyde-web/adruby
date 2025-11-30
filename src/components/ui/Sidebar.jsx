@@ -1,355 +1,248 @@
-import React, { useState, useEffect, useMemo } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
-import { useAuth } from '../../contexts/AuthContext';
-import { supabasePublic } from '../../lib/supabaseClient';
-import { creditService } from '../../services/creditService';
-import Icon from '../AppIcon';
-import Button from './Button';
+import React, { useMemo, useEffect, useState } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
+import { useAuth } from "../../contexts/AuthContext";
+import Icon from "../AppIcon";
+import Button from "./Button";
+import { creditService } from "../../services/creditService";
+
+const navItems = [
+  { label: "Overview", path: "/overview-dashboard", icon: "BarChart3" },
+  { label: "Ads Strategien", path: "/strategy", icon: "Target" },
+  { label: "Campaigns", path: "/campaigns-management", icon: "Target" },
+  { label: "App Builder", path: "/app-builder-interface", icon: "Layers" },
+  { label: "AI Analysis", path: "/ai-analysis-panel", icon: "Brain" },
+  { label: "Settings", path: "/settings-configuration", icon: "Settings" },
+];
 
 const Sidebar = ({
   isOpen = false,
   onClose,
-  className = '',
-  isCollapsed,
-  onCollapseToggle,
-  isNavCollapsed
+  isCollapsed = false,
+  isNavCollapsed,
+  onCollapseToggle = () => {},
 }) => {
   const location = useLocation();
   const navigate = useNavigate();
-  const [activeItem, setActiveItem] = useState('');
-  const [displayName, setDisplayName] = useState('');
-  const [loading, setLoading] = useState(true);
+  const { user, userProfile } = useAuth();
+  const collapsed = typeof isNavCollapsed === "boolean" ? isNavCollapsed : isCollapsed;
+
+  const [activeItem, setActiveItem] = useState("");
+  const [displayName, setDisplayName] = useState("");
+  const [loadingName, setLoadingName] = useState(true);
   const [creditStatus, setCreditStatus] = useState(null);
   const [creditsLoading, setCreditsLoading] = useState(true);
-  const { user, userProfile } = useAuth();
-  const [internalCollapsed, setInternalCollapsed] = useState(true);
-  const collapsed = typeof isNavCollapsed === 'boolean'
-    ? isNavCollapsed
-    : typeof isCollapsed === 'boolean'
-      ? isCollapsed
-      : internalCollapsed;
 
-  const collapseSidebar = () => {
-    if (typeof isNavCollapsed === 'boolean' || typeof isCollapsed === 'boolean') {
-      if (!collapsed && onCollapseToggle) {
-        onCollapseToggle();
-      }
-    } else {
-      setInternalCollapsed(true);
-    }
-    if (onClose) onClose();
-  };
-
-  const navigationItems = useMemo(() => {
-    const baseItems = [
-      {
-        label: 'Overview',
-        path: '/overview-dashboard',
-        icon: 'BarChart3',
-        description: 'Performance metrics and activity monitoring'
-      },
-      {
-        label: 'Ads Strategien',
-        path: '/strategy',
-        icon: 'Target',
-        description: 'AI-powered advertising strategy recommendations'
-      },
-      {
-        label: 'Campaigns',
-        path: '/campaigns-management',
-        icon: 'Target',
-        description: 'Campaign management and bulk operations'
-      },
-      {
-        label: 'App Builder',
-        path: '/app-builder-interface',
-        icon: 'Layers',
-        description: 'Creative asset generation tools'
-      },
-      {
-        label: 'AI Analysis',
-        path: '/ai-analysis-panel',
-        icon: 'Brain',
-        description: 'Advanced optimization insights'
-      },
-      {
-        label: 'Settings',
-        path: '/settings-configuration',
-        icon: 'Settings',
-        description: 'Account preferences and configuration'
-      }
-    ];
-
-    if (userProfile?.affiliate_enabled) {
-      baseItems.splice(baseItems.length - 1, 0, {
-        label: 'Affiliate',
-        path: '/affiliate',
-        icon: 'Share2',
-        description: 'Affiliate-Link, Statistiken und Auszahlungen'
-      });
-    }
-
-    return baseItems;
-  }, [userProfile?.affiliate_enabled]);
-
-  // Load user display name using database function
   useEffect(() => {
-    const loadUserDisplayName = async () => {
-      if (!user?.id) {
-        setDisplayName('Guest');
-        setLoading(false);
-        return;
-      }
+    const currentPath = location?.pathname;
+    const activeNav = navItems?.find((item) => item?.path === currentPath);
+    if (activeNav) {
+      setActiveItem(activeNav?.path);
+    }
+  }, [location?.pathname]);
 
+  useEffect(() => {
+    if (!user?.id) {
+      setDisplayName("Guest");
+      setLoadingName(false);
+      setCreditStatus(null);
+      setCreditsLoading(false);
+      return;
+    }
+
+    const fetchNameAndCredits = async () => {
       try {
-        // Use the existing get_user_display_name function
-        const { data, error } = await supabasePublic?.rpc('get_user_display_name', { 
-          user_uuid: user?.id 
-        });
-
-        if (error) {
-          console.error('Error fetching display name:', error);
-          setDisplayName(user?.email?.split('@')?.[0] || 'User');
-          return;
-        }
-
-        setDisplayName(data || 'User');
-      } catch (error) {
-        console.error('Error loading user display name:', error);
-        setDisplayName(user?.email?.split('@')?.[0] || 'User');
+        setLoadingName(true);
+        const name = user?.email?.split("@")?.[0] || "User";
+        setDisplayName(name);
+      } catch (err) {
+        setDisplayName("User");
       } finally {
-        setLoading(false);
-      }
-    };
-
-    loadUserDisplayName();
-  }, [user]);
-
-  // Load user credit status
-  useEffect(() => {
-    const loadUserCredits = async () => {
-      if (!user?.id) {
-        setCreditStatus(null);
-        setCreditsLoading(false);
-        return;
+        setLoadingName(false);
       }
 
       try {
         const credits = await creditService?.getUserCreditStatus(user?.id);
         setCreditStatus(credits);
-      } catch (error) {
-        console.error('Error loading user credits:', error);
+      } catch (err) {
         setCreditStatus(null);
       } finally {
         setCreditsLoading(false);
       }
     };
 
-    loadUserCredits();
-  }, [user]);
-
-  useEffect(() => {
-    const currentPath = location?.pathname;
-    const activeNav = navigationItems?.find(item => item?.path === currentPath);
-    if (activeNav) {
-      setActiveItem(activeNav?.path);
-    }
-    collapseSidebar();
-  }, [location?.pathname, navigationItems]);
+    fetchNameAndCredits();
+  }, [user?.id]);
 
   const handleNavigation = (path) => {
     navigate(path);
     setActiveItem(path);
-    collapseSidebar();
+    if (onClose) onClose();
   };
 
-  const handleKeyNavigation = (event, path) => {
-    if (event?.key === 'Enter' || event?.key === ' ') {
-      event?.preventDefault();
-      handleNavigation(path);
-    }
+  const renderIconOnlyItem = (item) => {
+    const isActive = activeItem === item?.path;
+    return (
+      <button
+        key={item?.path}
+        onClick={() => handleNavigation(item?.path)}
+        className={`flex items-center justify-center h-12 w-12 rounded-xl transition-colors ${
+          isActive
+            ? "bg-primary text-primary-foreground shadow-sm"
+            : "text-muted-foreground hover:bg-accent"
+        }`}
+        aria-label={item?.label}
+        title={item?.label}
+      >
+        <Icon name={item?.icon} size={20} />
+      </button>
+    );
   };
 
-  // Get credit color classes based on current credits
-  const getCreditDisplayClasses = () => {
-    if (!creditStatus?.credits) return 'text-muted-foreground';
-    
+  const renderIconLabelItem = (item) => {
+    const isActive = activeItem === item?.path;
+    return (
+      <button
+        key={item?.path}
+        onClick={() => handleNavigation(item?.path)}
+        className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-colors ${
+          isActive
+            ? "bg-primary text-primary-foreground shadow-sm"
+            : "text-foreground hover:bg-accent"
+        }`}
+      >
+        <Icon
+          name={item?.icon}
+          size={20}
+          className={isActive ? "text-primary-foreground" : "text-muted-foreground"}
+        />
+        <span className="text-sm font-medium truncate">{item?.label}</span>
+      </button>
+    );
+  };
+
+  const creditDisplayClasses = () => {
+    if (!creditStatus?.credits) return "text-muted-foreground";
     const credits = creditStatus?.credits;
-    if (credits > 250) return 'text-green-600';
-    if (credits <= 250 && credits > 50) return 'text-orange-600';
-    return 'text-red-600';
+    if (credits > 250) return "text-green-600";
+    if (credits <= 250 && credits > 50) return "text-orange-600";
+    return "text-red-600";
   };
 
   return (
     <>
-      {/* Mobile Overlay */}
-      {isOpen && (
-        <div
-          className="fixed inset-0 bg-black/30 backdrop-blur-xl z-[40]"
-          onClick={collapseSidebar}
-        />
-      )}
-      {/* Sidebar */}
-      <aside
-        className={`
-          fixed top-0 left-0 h-full w-60 ${collapsed ? 'lg:w-[72px]' : 'lg:w-60'} bg-card border-r border-border z-[50]
-          transform transition-transform duration-300 ease-in-out
-          lg:translate-x-0
-          ${isOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
-          ${className}
-        `}
-      >
-        {/* Logo Section */}
-        <div className="flex items-center justify-between h-16 px-6 border-b border-border">
-          <div className="flex items-center space-x-3">
-            <div className="w-8 h-8 rounded flex items-center justify-center">
-              <img 
-                src="/assets/images/Screenshot_2025-10-21_000636-removebg-preview-1762544374259.png" 
-                alt="AdRuby Logo"
-                className="w-8 h-8 object-contain"
-              />
-            </div>
-            {!collapsed && (
-              <div>
-                <h1 className="font-semibold text-lg text-foreground">AdRuby</h1>
-                <p className="text-xs text-muted-foreground">Dashboard</p>
-              </div>
-            )}
+      {/* Desktop Icon Rail */}
+      <aside className="hidden lg:flex lg:flex-col w-[72px] flex-shrink-0 bg-card border-r border-border z-30">
+        <div className="flex items-center justify-center h-16 border-b border-border">
+          <img
+            src="/assets/images/Screenshot_2025-10-21_000636-removebg-preview-1762544374259.png"
+            alt="AdRuby Logo"
+            className="w-8 h-8 object-contain"
+          />
+        </div>
+        <div className="flex-1 flex flex-col items-center gap-3 py-4">
+          {navItems.map(renderIconOnlyItem)}
+        </div>
+        <div className="border-t border-border p-3 flex flex-col items-center gap-2">
+          <div className="w-10 h-10 bg-muted rounded-full flex items-center justify-center">
+            <Icon name="User" size={16} className="text-muted-foreground" />
           </div>
-
-          {/* Mobile Close Button */}
+          {!loadingName && (
+            <span className="sr-only">{displayName || "Guest"}</span>
+          )}
+          {!creditsLoading && (
+            <span className="sr-only">
+              Credits:{" "}
+              {creditStatus?.credits
+                ? creditService?.formatCredits(creditStatus?.credits)
+                : user
+                ? "0"
+                : "--"}
+            </span>
+          )}
           <Button
             variant="ghost"
             size="icon"
-            onClick={onClose}
-            className="lg:hidden h-8 w-8"
+            onClick={onCollapseToggle}
+            className="mt-1"
           >
-            <Icon name="X" size={16} />
+            <Icon name={collapsed ? "ChevronsRight" : "ChevronsLeft"} size={18} />
           </Button>
         </div>
-
-        {/* Collapse Toggle (desktop) */}
-        <div className="hidden lg:block px-4 py-3">
-          <Button
-            variant="ghost"
-            size="sm"
-            className="w-full flex items-center justify-start gap-2 px-3"
-            onClick={() => {
-              if (typeof isNavCollapsed === 'boolean' || typeof isCollapsed === 'boolean') {
-                onCollapseToggle?.();
-              } else {
-                setInternalCollapsed((prev) => !prev);
-              }
-            }}
-          >
-            <Icon name={collapsed ? 'ChevronsRight' : 'ChevronsLeft'} size={16} />
-            {!collapsed && <span className="text-sm font-medium">Sidebar einklappen</span>}
-          </Button>
-        </div>
-
-        {/* Navigation */}
-        <nav className="flex-1 px-4 py-6">
-          <div className="space-y-2">
-            {navigationItems?.map((item) => {
-              const isActive = activeItem === item?.path;
-              
-              return (
-                <div
-                  key={item?.path}
-                  role="button"
-                  tabIndex={0}
-                  onClick={() => handleNavigation(item?.path)}
-                  onKeyDown={(e) => handleKeyNavigation(e, item?.path)}
-                  className={`
-                    group relative flex items-center px-3 py-3 rounded-lg cursor-pointer
-                    transition-all duration-200 ease-out
-                    hover:bg-accent focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2
-                    ${isActive 
-                      ? 'bg-primary text-primary-foreground shadow-minimal' 
-                      : 'text-foreground hover:text-foreground'
-                    }
-                  `}
-                  aria-label={`Navigate to ${item?.label}: ${item?.description}`}
-                >
-                  {/* Active Indicator */}
-                  {isActive && (
-                    <div className="absolute left-0 top-0 bottom-0 w-1 bg-primary-foreground rounded-r" />
-                  )}
-                  {/* Icon */}
-                  <div className="flex-shrink-0 mr-3">
-                    <Icon 
-                      name={item?.icon} 
-                      size={20} 
-                      className={`transition-colors duration-200 ${
-                        isActive ? 'text-primary-foreground' : 'text-muted-foreground group-hover:text-foreground'
-                      }`}
-                    />
-                  </div>
-                  {/* Label */}
-                  <div className={`flex-1 min-w-0 ${collapsed ? 'hidden lg:block' : 'block'}`}>
-                    <p className={`font-medium text-sm ${
-                      isActive ? 'text-primary-foreground' : 'text-foreground'
-                    }`}>
-                      {item?.label}
-                    </p>
-                  </div>
-                  {/* Hover Effect */}
-                  {!isActive && (
-                    <div className="absolute inset-0 bg-primary opacity-0 group-hover:opacity-5 rounded-lg transition-opacity duration-200" />
-                  )}
-                </div>
-              );
-            })}
-          </div>
-        </nav>
-
-        {/* Updated Footer with German requirements and Credits */}
-        {!collapsed && (
-          <div className="p-4 border-t border-border">
-            <div className="flex items-center gap-3 rounded-xl bg-zinc-50 px-3 py-2 dark:bg-zinc-900">
-              <div className="w-8 h-8 bg-muted rounded-full flex items-center justify-center">
-                <Icon name="User" size={16} className="text-muted-foreground" />
-              </div>
-              <div className="flex-1 min-w-0 space-y-1">
-                {loading ? (
-                  <div className="animate-pulse">
-                    <div className="h-4 bg-muted rounded w-20 mb-2"></div>
-                    <div className="h-3 bg-muted rounded w-16 mb-2"></div>
-                    <div className="h-3 bg-muted rounded w-12"></div>
-                  </div>
-                ) : (
-                  <div className="sidebar-user">
-                    <p className="text-sm font-semibold text-zinc-900 dark:text-zinc-50 truncate" title={displayName || "Guest"}>
-                      {displayName || "Guest"}
-                    </p>
-                    <p className="text-xs text-zinc-500 dark:text-zinc-400">Active Session</p>
-                    
-                    <div className="flex items-center space-x-1 mt-1">
-                      <Icon name="Coins" size={12} className="text-muted-foreground" />
-                      {creditsLoading ? (
-                        <div className="animate-pulse">
-                          <div className="h-3 bg-muted rounded w-16"></div>
-                        </div>
-                      ) : (
-                        <p 
-                          className="text-xs font-medium text-emerald-700 dark:text-emerald-400"
-                          title="Verfügbare Credits"
-                        >
-                          Credits: {creditStatus?.credits ? 
-                            creditService?.formatCredits(creditStatus?.credits) : 
-                            (user ? '0' : '--')
-                          }
-                        </p>
-                      )}
-                    </div>
-                  </div>
-                )}
-              </div>
-              <div className="w-2 h-2 rounded-full bg-emerald-500 dark:bg-emerald-400" />
-            </div>
-          </div>
-        )}
       </aside>
+
+      {/* Mobile Overlay Sidebar */}
+      {isOpen && (
+        <>
+          <div
+            className="fixed inset-0 bg-black/30 backdrop-blur-sm z-40 lg:hidden"
+            onClick={onClose}
+          />
+          <aside className="fixed inset-y-0 left-0 w-[260px] bg-card border-r border-border z-50 flex flex-col lg:hidden">
+            <div className="flex items-center justify-between h-16 px-4 border-b border-border">
+              <div className="flex items-center gap-2">
+                <img
+                  src="/assets/images/Screenshot_2025-10-21_000636-removebg-preview-1762544374259.png"
+                  alt="AdRuby Logo"
+                  className="w-9 h-9 object-contain"
+                />
+                <div>
+                  <p className="text-sm font-semibold text-foreground">AdRuby</p>
+                  <p className="text-xs text-muted-foreground">Dashboard</p>
+                </div>
+              </div>
+              <Button variant="ghost" size="icon" onClick={onClose}>
+                <Icon name="X" size={18} />
+              </Button>
+            </div>
+
+            <div className="flex-1 overflow-y-auto px-3 py-4 space-y-2">
+              {navItems.map(renderIconLabelItem)}
+            </div>
+
+            <div className="border-t border-border p-4">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-muted rounded-full flex items-center justify-center">
+                  <Icon name="User" size={16} className="text-muted-foreground" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  {loadingName ? (
+                    <div className="animate-pulse space-y-1">
+                      <div className="h-4 bg-muted rounded w-24" />
+                      <div className="h-3 bg-muted rounded w-16" />
+                    </div>
+                  ) : (
+                    <>
+                      <p className="text-sm font-semibold text-foreground truncate">
+                        {displayName || "Guest"}
+                      </p>
+                      <p className="text-xs text-muted-foreground">Active Session</p>
+                    </>
+                  )}
+                  <div className="flex items-center gap-1 mt-2">
+                    <Icon name="Coins" size={12} className="text-muted-foreground" />
+                    {creditsLoading ? (
+                      <div className="animate-pulse h-3 bg-muted rounded w-16" />
+                    ) : (
+                      <p
+                        className={`text-xs font-medium ${creditDisplayClasses()}`}
+                        title="Verfügbare Credits"
+                      >
+                        Credits:{" "}
+                        {creditStatus?.credits
+                          ? creditService?.formatCredits(creditStatus?.credits)
+                          : user
+                          ? "0"
+                          : "--"}
+                      </p>
+                    )}
+                  </div>
+                </div>
+                <div className="w-2 h-2 rounded-full bg-emerald-500" />
+              </div>
+            </div>
+          </aside>
+        </>
+      )}
     </>
   );
 };
