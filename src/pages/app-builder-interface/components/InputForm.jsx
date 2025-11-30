@@ -2,7 +2,7 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import Icon from '../../../components/AppIcon';
 import Input from '../../../components/ui/Input';
-import Select from '../../../components/ui/Select';
+import AppSelect from '../../../components/ui/AppSelect';
 import { Checkbox } from '../../../components/ui/Checkbox';
 import Button from '../../../components/ui/Button';
 
@@ -101,16 +101,19 @@ const InputForm = ({
 
         {/* Branche */}
         <div>
-          <label className="block text-sm font-medium text-foreground mb-2">
-            Branche
-          </label>
-          <Select
+          <AppSelect
+            label="Branche"
+            name="industry"
             value={formData?.industry || 'e_commerce'}
-            onChange={(value) => handleInputChange('industry', value)}
-            options={industryOptions}
+            onChange={(e) => handleInputChange('industry', e.target.value)}
             disabled={isDisabled}
-            placeholder="Branche auswählen"
-          />
+          >
+            {industryOptions?.map((opt) => (
+              <option key={opt.value} value={opt.value}>
+                {opt.label}
+              </option>
+            ))}
+          </AppSelect>
         </div>
 
         {/* Zielgruppe */}
@@ -190,16 +193,19 @@ const InputForm = ({
 
         {/* Tonalität */}
         <div>
-          <label className="block text-sm font-medium text-foreground mb-2">
-            Tonalität
-          </label>
-          <Select
+          <AppSelect
+            label="Tonalität"
+            name="tonality"
             value={formData?.tonality || 'professional'}
-            onChange={(value) => handleInputChange('tonality', value)}
-            options={tonalityOptions}
+            onChange={(e) => handleInputChange('tonality', e.target.value)}
             disabled={isDisabled}
-            placeholder="Tonalität auswählen"
-          />
+          >
+            {tonalityOptions?.map((opt) => (
+              <option key={opt.value} value={opt.value}>
+                {opt.label}
+              </option>
+            ))}
+          </AppSelect>
         </div>
 
         {/* CTA-Text */}

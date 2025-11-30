@@ -241,7 +241,6 @@ const HighConversionAdBuilder = () => {
     }
   };
 
-  const navOffset = isNavCollapsed ? "lg:ml-[72px]" : "lg:ml-60";
   const subtleText = "text-slate-500 dark:text-slate-400";
 
   const scoreValue = Math.min(
@@ -270,7 +269,7 @@ const HighConversionAdBuilder = () => {
       />
 
       <motion.main
-        className={`${navOffset} pt-16`}
+        className="pt-16"
         variants={pageVariants}
         initial="initial"
         animate="animate"

@@ -361,16 +361,15 @@ const CampaignsManagement = () => {
         isOpen={sidebarOpen} 
         onClose={() => setSidebarOpen(false)} 
       />
-      <div className="lg:ml-60">
-        <Header onMenuToggle={() => setSidebarOpen(true)} />
-        
-        <main className="pt-16">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5 }}
-            className="p-6"
-          >
+      <Header onMenuToggle={() => setSidebarOpen(true)} />
+      
+      <main className="pt-16">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+          className="p-6"
+        >
             {/* Page Header */}
             <div className="mb-8">
               <h1 className="text-3xl font-semibold text-foreground mb-2">
@@ -440,7 +439,6 @@ const CampaignsManagement = () => {
             )}
           </motion.div>
         </main>
-      </div>
       {/* Confirmation Modal */}
       <ConfirmationModal
         isOpen={confirmModal?.isOpen}

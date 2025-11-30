@@ -308,11 +308,11 @@ const Sidebar = ({
         {/* Updated Footer with German requirements and Credits */}
         {!collapsed && (
           <div className="p-4 border-t border-border">
-            <div className="flex items-center space-x-3 px-3 py-2">
+            <div className="flex items-center gap-3 rounded-xl bg-zinc-50 px-3 py-2 dark:bg-zinc-900">
               <div className="w-8 h-8 bg-muted rounded-full flex items-center justify-center">
                 <Icon name="User" size={16} className="text-muted-foreground" />
               </div>
-              <div className="flex-1 min-w-0 space-y-2">
+              <div className="flex-1 min-w-0 space-y-1">
                 {loading ? (
                   <div className="animate-pulse">
                     <div className="h-4 bg-muted rounded w-20 mb-2"></div>
@@ -321,12 +321,11 @@ const Sidebar = ({
                   </div>
                 ) : (
                   <div className="sidebar-user">
-                    <p className="text-sm font-medium text-black truncate" title={displayName || "Guest"}>
+                    <p className="text-sm font-semibold text-zinc-900 dark:text-zinc-50 truncate" title={displayName || "Guest"}>
                       {displayName || "Guest"}
                     </p>
-                    <p className="text-xs" style={{ color: '#AAAAAA' }}>Active Session</p>
+                    <p className="text-xs text-zinc-500 dark:text-zinc-400">Active Session</p>
                     
-                    {/* Credits Display */}
                     <div className="flex items-center space-x-1 mt-1">
                       <Icon name="Coins" size={12} className="text-muted-foreground" />
                       {creditsLoading ? (
@@ -335,7 +334,7 @@ const Sidebar = ({
                         </div>
                       ) : (
                         <p 
-                          className={`text-xs font-medium ${getCreditDisplayClasses()}`}
+                          className="text-xs font-medium text-emerald-700 dark:text-emerald-400"
                           title="Verfügbare Credits"
                         >
                           Credits: {creditStatus?.credits ? 
@@ -348,7 +347,7 @@ const Sidebar = ({
                   </div>
                 )}
               </div>
-              <div className="w-2 h-2 bg-success rounded-full" />
+              <div className="w-2 h-2 rounded-full bg-emerald-500 dark:bg-emerald-400" />
             </div>
           </div>
         )}

@@ -92,16 +92,15 @@ const OverviewDashboard = () => {
         isOpen={sidebarOpen} 
         onClose={() => setSidebarOpen(false)} 
       />
-      <div className="lg:ml-60">
-        <Header onMenuToggle={() => setSidebarOpen(true)} />
-        
-        <main className="pt-16">
-          <motion.div 
-            className="p-6 space-y-8"
-            variants={containerVariants}
-            initial="hidden"
-            animate="visible"
-          >
+      <Header onMenuToggle={() => setSidebarOpen(true)} />
+      
+      <main className="pt-16">
+        <motion.div 
+          className="p-6 space-y-8"
+          variants={containerVariants}
+          initial="hidden"
+          animate="visible"
+        >
             {/* Page Header */}
             <motion.div variants={itemVariants}>
               <div className="mb-8">
@@ -222,7 +221,6 @@ const OverviewDashboard = () => {
             </motion.div>
           </motion.div>
         </main>
-      </div>
     </div>
   );
 };

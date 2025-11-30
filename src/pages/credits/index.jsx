@@ -158,10 +158,9 @@ const CreditsPage = () => {
           isOpen={sidebarOpen} 
           onClose={() => setSidebarOpen(false)} 
         />
-        <div className="lg:ml-60">
-          <Header onMenuToggle={() => setSidebarOpen(true)} />
+        <Header onMenuToggle={() => setSidebarOpen(true)} />
           
-          <main className="pt-16">
+        <main className="pt-16">
             <div className="p-6">
               <div className="max-w-6xl mx-auto">
                 <div className="animate-pulse space-y-6">
@@ -188,16 +187,15 @@ const CreditsPage = () => {
             isOpen={sidebarOpen} 
             onClose={() => setSidebarOpen(false)} 
           />
-          <div className="lg:ml-60">
-            <Header onMenuToggle={() => setSidebarOpen(true)} />
+          <Header onMenuToggle={() => setSidebarOpen(true)} />
             
-            <main className="pt-16">
-              <motion.div 
-                className="p-6"
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5 }}
-              >
+          <main className="pt-16">
+            <motion.div 
+              className="p-6"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5 }}
+            >
                 <div className="max-w-2xl mx-auto">
                   {/* Header */}
                   <div className="flex items-center space-x-4 mb-8">
@@ -253,17 +251,16 @@ const CreditsPage = () => {
         isOpen={sidebarOpen} 
         onClose={() => setSidebarOpen(false)} 
       />
-      <div className="lg:ml-60">
-        <Header onMenuToggle={() => setSidebarOpen(true)} />
-        
-        <main className="pt-16">
-          <motion.div 
-            className="p-6 space-y-8"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5 }}
-          >
-            <div className="max-w-6xl mx-auto space-y-8">
+      <Header onMenuToggle={() => setSidebarOpen(true)} />
+      
+      <main className="pt-16">
+        <motion.div 
+          className="p-6 space-y-8"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+        >
+          <div className="max-w-6xl mx-auto space-y-8">
               {/* Header */}
               <motion.div 
                 initial={{ opacity: 0, y: 20 }}

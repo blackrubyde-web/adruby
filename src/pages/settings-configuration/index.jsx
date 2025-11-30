@@ -69,11 +69,10 @@ const SettingsConfiguration = () => {
         isOpen={sidebarOpen} 
         onClose={() => setSidebarOpen(false)} 
       />
-      <div className="lg:ml-60">
-        <Header onMenuToggle={() => setSidebarOpen(true)} />
-        
-        <main className="pt-16">
-          <div className="p-6">
+      <Header onMenuToggle={() => setSidebarOpen(true)} />
+      
+      <main className="pt-16">
+        <div className="p-6">
             {/* Page Header */}
             <motion.div
               initial={{ opacity: 0, y: 20 }}
@@ -186,8 +185,8 @@ const SettingsConfiguration = () => {
               </p>
             </motion.div>
           </div>
-        </main>
-      </div>
+        </div>
+      </main>
     </div>
   );
 };

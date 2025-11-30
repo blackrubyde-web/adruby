@@ -470,10 +470,9 @@ const AdStrategy = () => {
       />
       <Header 
         onMenuToggle={() => setSidebarOpen(!sidebarOpen)}
-        className="lg:left-60"
       />
       <motion.main 
-        className="lg:ml-60 pt-16"
+        className="pt-16"
         variants={pageVariants}
         initial="initial"
         animate="animate"
