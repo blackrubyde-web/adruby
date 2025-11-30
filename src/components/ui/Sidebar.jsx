@@ -286,15 +286,13 @@ const Sidebar = ({
                     />
                   </div>
                   {/* Label */}
-                  {!collapsed && (
-                    <div className="flex-1 min-w-0">
-                      <p className={`font-medium text-sm ${
-                        isActive ? 'text-primary-foreground' : 'text-foreground'
-                      }`}>
-                        {item?.label}
-                      </p>
-                    </div>
-                  )}
+                  <div className={`flex-1 min-w-0 ${collapsed ? 'hidden lg:block' : 'block'}`}>
+                    <p className={`font-medium text-sm ${
+                      isActive ? 'text-primary-foreground' : 'text-foreground'
+                    }`}>
+                      {item?.label}
+                    </p>
+                  </div>
                   {/* Hover Effect */}
                   {!isActive && (
                     <div className="absolute inset-0 bg-primary opacity-0 group-hover:opacity-5 rounded-lg transition-opacity duration-200" />

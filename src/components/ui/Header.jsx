@@ -5,7 +5,12 @@ import Icon from '../AppIcon';
 import Button from './Button';
 import CreditDisplay from './CreditDisplay';
 
-const Header = ({ onMenuToggle, className = '', isNavCollapsed = false, onNavCollapseToggle }) => {
+const Header = ({
+  onMenuToggle,
+  className = '',
+  isNavCollapsed = false,
+  onNavCollapseToggle
+}) => {
   const navigate = useNavigate();
   const { user, signOut } = useAuth();
   const [showNotifications, setShowNotifications] = useState(false);
@@ -70,10 +75,14 @@ const Header = ({ onMenuToggle, className = '', isNavCollapsed = false, onNavCol
     }
   ];
 
-  const navOffset = isNavCollapsed ? 'lg:left-[72px]' : 'lg:left-60';
+  const paddingClasses = isNavCollapsed
+    ? 'pl-4 lg:pl-[72px]'
+    : 'pl-4 lg:pl-[260px]';
 
   return (
-    <header className={`fixed top-0 right-0 left-0 ${navOffset} z-30 bg-background border-b border-border h-16 ${className}`}>
+    <header
+      className={`sticky top-0 z-30 bg-background border-b border-border h-16 ${paddingClasses} ${className}`}
+    >
       <div className="flex items-center justify-between h-full px-6">
         {/* Mobile Menu Toggle */}
         <div className="lg:hidden">

@@ -453,7 +453,7 @@ const HighConversionAdBuilder = () => {
                           onClick={() => setCurrentStep(2)}
                           className="inline-flex items-center gap-2 rounded-lg bg-[#C80000] px-4 py-2 text-sm font-semibold text-white shadow-[0_10px_30px_rgba(200,0,0,0.25)] hover:bg-[#a50000]"
                         >
-                          Weiter zur Ad-Generierung
+                     ‚     Weiter zur Ad-Generierung
                         </button>
                       </div>
                     </div>

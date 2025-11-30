@@ -79,7 +79,7 @@ const AdBuilderStepper = ({ currentStep = 0, onStepChange = () => {} }) => {
   const indicatorLeft = `${(100 / steps.length) * currentStep}%`;
 
   return (
-    <div className="relative h-12 w-full overflow-hidden rounded-xl border border-white/30 bg-white/40 backdrop-blur-xl shadow-[0_10px_30px_rgba(0,0,0,0.06)] dark:border-white/10 dark:bg-white/10">
+    <div className="relative h-12 w-full overflow-hidden rounded-xl border border-white/30 bg-white/40 backdrop-blur-xl shadow-[0_10px_30px_rgba(0,0,0,0.06)] dark:border-white/10 dark:bg-white/10 mt-4 mb-4 sm:mt-6 sm:mb-6 lg:mt-4 lg:mb-4">
       <div className="pointer-events-none absolute inset-0 bg-gradient-to-r from-white/40 via-white/10 to-white/5 dark:from-white/10 dark:via-white/5" />
       <div className="relative flex h-full items-center pb-3">
         {steps.map((step, index) => {
