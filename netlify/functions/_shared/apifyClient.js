@@ -46,10 +46,24 @@ async function runAdResearchActor(params = {}) {
     );
   }
 
+  let finalUrl;
+  try {
+    const parsed = new URL(searchUrl);
+    finalUrl = parsed.toString();
+  } catch (err) {
+    console.error(
+      "[ApifyClient] Ungültige searchUrl, keine valide URL:",
+      { searchUrl, type: typeof searchUrl }
+    );
+    throw new Error(
+      `searchUrl ist keine gültige URL: "${searchUrl}". Erwartet wird eine vollständige https://www.facebook.com/ads/library/... URL.`
+    );
+  }
+
   const actorId = normalizeActorId(APIFY_FACEBOOK_ADS_ACTOR_ID);
 
   const input = {
-    urls: [searchUrl],
+    urls: [finalUrl],
     max: typeof maxAds === "number" ? maxAds : 200,
   };
 
