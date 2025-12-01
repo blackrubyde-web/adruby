@@ -453,7 +453,6 @@ const CampaignsManagement = () => {
           type={confirmModal?.type}
           campaignName={confirmModal?.campaignName}
         />
-      </div>
     </div>
   );
 };
