@@ -9,6 +9,7 @@ import Icon from '../../components/AppIcon';
 
 const AdStrategy = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [isNavCollapsed, setIsNavCollapsed] = useState(true);
   const { user } = useAuth();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -463,25 +464,26 @@ const AdStrategy = () => {
   };
 
   return (
-    <div className="flex min-h-screen bg-background">
+    <div className="min-h-screen bg-background">
       <Sidebar 
         isOpen={sidebarOpen} 
         onClose={() => setSidebarOpen(false)} 
+        isNavCollapsed={isNavCollapsed}
+        setIsNavCollapsed={setIsNavCollapsed}
       />
-      <div className="hidden lg:block w-[72px] flex-shrink-0" />
-      <div className="flex-1 min-h-screen flex flex-col">
-        <Header 
-          onMenuToggle={() => setSidebarOpen(!sidebarOpen)}
-        />
-        <motion.main 
-          className="pt-16"
-          variants={pageVariants}
-          initial="initial"
-          animate="animate"
-          exit="exit"
-          transition={{ duration: 0.3 }}
-        >
-          <div className="p-6">
+      <Header 
+        onMenuToggle={() => setSidebarOpen(true)}
+        isNavCollapsed={isNavCollapsed}
+      />
+      <motion.main 
+        className={`pt-16 transition-all duration-300 ${isNavCollapsed ? "lg:ml-[72px]" : "lg:ml-60"}`}
+        variants={pageVariants}
+        initial="initial"
+        animate="animate"
+        exit="exit"
+        transition={{ duration: 0.3 }}
+      >
+        <div className="p-6">
           {/* ENHANCED: Page Header - Shows strategies by default */}
           <motion.div 
             className="mb-8"
@@ -1652,7 +1654,6 @@ const AdStrategy = () => {
         </AnimatePresence>
       )}
     </div>
-  </div>
   );
 };
 

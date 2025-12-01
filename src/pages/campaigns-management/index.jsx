@@ -10,6 +10,7 @@ import ConfirmationModal from './components/ConfirmationModal';
 
 const CampaignsManagement = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [isNavCollapsed, setIsNavCollapsed] = useState(true);
   const [campaigns, setCampaigns] = useState([]);
   const [filteredCampaigns, setFilteredCampaigns] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
@@ -356,22 +357,22 @@ const CampaignsManagement = () => {
   const currentCampaigns = filteredCampaigns?.slice(startIndex, endIndex);
 
   return (
-    <div className="flex min-h-screen bg-background">
+    <div className="min-h-screen bg-background">
       <Sidebar 
         isOpen={sidebarOpen} 
         onClose={() => setSidebarOpen(false)} 
+        isNavCollapsed={isNavCollapsed}
+        setIsNavCollapsed={setIsNavCollapsed}
       />
-      <div className="hidden lg:block w-[72px] flex-shrink-0" />
-      <div className="flex-1 min-h-screen flex flex-col">
-        <Header onMenuToggle={() => setSidebarOpen(true)} />
+      <Header onMenuToggle={() => setSidebarOpen(true)} isNavCollapsed={isNavCollapsed} />
         
-        <main className="pt-16">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5 }}
-            className="p-6"
-          >
+      <main className={`pt-16 transition-all duration-300 ${isNavCollapsed ? "lg:ml-[72px]" : "lg:ml-60"}`}>
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+          className="p-6"
+        >
             {/* Page Header */}
             <div className="mb-8">
               <h1 className="text-3xl font-semibold text-foreground mb-2">

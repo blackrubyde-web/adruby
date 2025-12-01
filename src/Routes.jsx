@@ -80,7 +80,7 @@ const Routes = () => {
               }
             />
             <Route
-              path="/strategy"
+              path="/ad-strategy"
               element={
                 <ProtectedRoute>
                   <AdStrategy />

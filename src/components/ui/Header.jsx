@@ -76,12 +76,12 @@ const Header = ({
   ];
 
   const layoutClasses = isNavCollapsed
-    ? "left-[72px] w-[calc(100%-72px)]"
-    : "left-60 w-[calc(100%-240px)]";
+    ? "lg:left-[72px] lg:w-[calc(100%-72px)]"
+    : "lg:left-60 lg:w-[calc(100%-240px)]";
 
   return (
     <header
-      className={`fixed top-0 h-16 transition-all duration-300 bg-background border-b border-border z-30 ${layoutClasses} ${className}`}
+      className={`fixed top-0 h-16 transition-all duration-300 bg-background border-b border-border z-30 left-0 w-full ${layoutClasses} ${className}`}
     >
       <div className="flex items-center justify-between h-full px-4 lg:px-6">
         {/* Mobile Menu Toggle */}

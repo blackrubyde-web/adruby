@@ -16,6 +16,7 @@ import FacebookDataSync from './components/FacebookDataSync';
 
 const AIAnalysisPanel = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [isNavCollapsed, setIsNavCollapsed] = useState(true);
   const [currentLanguage, setCurrentLanguage] = useState('de');
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [facebookConnection, setFacebookConnection] = useState(null);
@@ -381,23 +382,23 @@ const AIAnalysisPanel = () => {
   }
 
   return (
-    <div className="flex min-h-screen bg-background">
+    <div className="min-h-screen bg-background">
       <Sidebar 
         isOpen={sidebarOpen} 
         onClose={handleSidebarClose}
+        isNavCollapsed={isNavCollapsed}
+        setIsNavCollapsed={setIsNavCollapsed}
       />
-      <div className="hidden lg:block w-[72px] flex-shrink-0" />
-      <div className="flex-1 min-h-screen flex flex-col">
-        <Header onMenuToggle={handleSidebarToggle} />
+      <Header onMenuToggle={handleSidebarToggle} isNavCollapsed={isNavCollapsed} />
         
-        <motion.main 
-          className="pt-16 p-6"
-          variants={pageVariants}
-          initial="initial"
-          animate="animate"
-          exit="exit"
-        >
-          <div className="max-w-7xl mx-auto">
+      <motion.main 
+        className={`pt-16 p-6 transition-all duration-300 ${isNavCollapsed ? "lg:ml-[72px]" : "lg:ml-60"}`}
+        variants={pageVariants}
+        initial="initial"
+        animate="animate"
+        exit="exit"
+      >
+        <div className="max-w-7xl mx-auto">
             {/* Page Header */}
             <motion.div 
               className="mb-8"
