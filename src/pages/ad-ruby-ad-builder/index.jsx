@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { PlayCircle, ArrowRight, CheckCircle, Brain, Zap, Target, BarChart3, Sparkles, TrendingUp, Clock, Award } from 'lucide-react';
@@ -6,9 +6,109 @@ import Header from '../public-landing-home/components/Header';
 
 const AdRubyAdBuilder = () => {
   const navigate = useNavigate();
+  const [isRunning, setIsRunning] = useState(false);
+  const [step, setStep] = useState("idle"); // idle | scraping | analyzing | done | error
+  const [scrapedAds, setScrapedAds] = useState([]);
+  const [generatedAds, setGeneratedAds] = useState([]);
+  const [error, setError] = useState(null);
+  // Annahme: vorhandene Form-States wie product, goal, market, language, searchUrl existieren bereits im realen Flow
+  // Platzhalter, falls im Layout noch nicht definiert
+  const [product, setProduct] = useState("");
+  const [goal, setGoal] = useState("");
+  const [market, setMarket] = useState("");
+  const [language, setLanguage] = useState("de");
+  const [searchUrl, setSearchUrl] = useState("");
 
   const handleStartFreeTrial = () => {
     navigate('/ad-ruby-registration');
+  };
+
+  const handleAdCreationStart = async () => {
+    setError(null);
+    setIsRunning(true);
+    setStep("scraping");
+    setGeneratedAds([]);
+    setScrapedAds([]);
+
+    try {
+      // 1️⃣ Scraping
+      console.log("[AdBuilder] Starting scraping request", { searchUrl });
+
+      const scrapeRes = await fetch("/.netlify/functions/ad-research-start", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          searchUrl,
+          maxAds: 30,
+        }),
+      });
+
+      if (!scrapeRes.ok) {
+        throw new Error(`Scraping failed with status ${scrapeRes.status}`);
+      }
+
+      const scrapeData = await scrapeRes.json();
+      console.log("[AdBuilder] Scrape result", scrapeData);
+
+      const items = scrapeData.items || [];
+
+      if (!Array.isArray(items) || items.length === 0) {
+        throw new Error(
+          "Es konnten keine Ads aus der Facebook Ads Library geladen werden. Bitte URL oder Filter anpassen."
+        );
+      }
+
+      setScrapedAds(items);
+
+      // 2️⃣ KI-Analyse
+      setStep("analyzing");
+
+      console.log("[AdBuilder] Starting AI analysis", {
+        product,
+        goal,
+        market,
+        language,
+        itemsCount: items.length,
+      });
+
+      const aiRes = await fetch("/.netlify/functions/ai-ad-analysis", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          userBriefing: {
+            product,
+            goal,
+            market,
+            language,
+          },
+          scrapedAds: items,
+        }),
+      });
+
+      if (!aiRes.ok) {
+        throw new Error(`AI analysis failed with status ${aiRes.status}`);
+      }
+
+      const aiData = await aiRes.json();
+      console.log("[AdBuilder] AI result", aiData);
+
+      const finalAds = aiData.ads || aiData.results || [];
+
+      if (!Array.isArray(finalAds) || finalAds.length === 0) {
+        throw new Error(
+          "Die KI konnte aus den Daten keine Ads generieren. Bitte Eingaben überprüfen."
+        );
+      }
+
+      setGeneratedAds(finalAds);
+      setStep("done");
+    } catch (err) {
+      console.error("[AdBuilder] Ad creation error", err);
+      setError(err.message || "Unbekannter Fehler bei der Ad-Erstellung");
+      setStep("error");
+    } finally {
+      setIsRunning(false);
+    }
   };
 
   const containerVariants = {
@@ -168,15 +268,73 @@ const AdRubyAdBuilder = () => {
                     <div className="text-2xl font-bold text-[#C80000] mb-1">+340%</div>
                     <div className="text-xs text-[#666]">CTR Verbesserung</div>
                   </div>
-                  <div className="text-center">
-                    <div className="text-2xl font-bold text-[#C80000] mb-1">4.2x</div>
-                    <div className="text-xs text-[#666]">ROAS Steigerung</div>
-                  </div>
-                </motion.div>
-              </div>
+                <div className="text-center">
+                  <div className="text-2xl font-bold text-[#C80000] mb-1">4.2x</div>
+                  <div className="text-xs text-[#666]">ROAS Steigerung</div>
+                </div>
+              </motion.div>
 
-              {/* Right Content - Interactive Dashboard Preview */}
-              <div className="relative">
+              {/* Status Anzeige */}
+              {step !== "idle" && (
+                <div className="mt-4 rounded-xl border border-[#e0e0e0] bg-white/80 p-4 shadow-sm backdrop-blur-sm">
+                  {step === "scraping" && (
+                    <p className="text-sm text-[#C80000] font-medium">
+                      Marktrecherche läuft… (Scraping der Ads)
+                    </p>
+                  )}
+                  {step === "analyzing" && (
+                    <p className="text-sm text-[#C80000] font-medium">
+                      KI analysiert die Ads und erstellt dein Creative…
+                    </p>
+                  )}
+                  {step === "done" && (
+                    <p className="text-sm text-emerald-600 font-medium">
+                      Fertige Ads wurden erstellt.
+                    </p>
+                  )}
+                  {step === "error" && (
+                    <p className="text-sm text-red-500 font-medium">
+                      Fehler: {error}
+                    </p>
+                  )}
+                </div>
+              )}
+
+              {/* Generierte Ads */}
+              {generatedAds.length > 0 && (
+                <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3 mt-4">
+                  {generatedAds.map((ad, idx) => (
+                    <div
+                      key={idx}
+                      className="rounded-xl border border-[#e0e0e0] bg-white p-4 shadow-sm flex flex-col gap-2"
+                    >
+                      <h3 className="font-semibold">
+                        {ad.headline || `Variante ${idx + 1}`}
+                      </h3>
+                      {ad.hook && (
+                        <p className="text-xs uppercase tracking-wide text-[#666]">
+                          Hook: {ad.hook}
+                        </p>
+                      )}
+                      <p className="text-sm whitespace-pre-line text-[#333]">
+                        {ad.primaryText || ad.text || ad.copy}
+                      </p>
+                      {ad.description && (
+                        <p className="text-xs text-[#666]">{ad.description}</p>
+                      )}
+                      {ad.cta && (
+                        <div className="mt-2 text-xs font-medium text-[#000]">
+                          Call to Action: {ad.cta}
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Right Content - Interactive Dashboard Preview */}
+            <div className="relative">
                 <motion.div
                   variants={itemVariants}
                   className="relative"
