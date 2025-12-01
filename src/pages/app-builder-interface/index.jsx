@@ -172,6 +172,20 @@ const HighConversionAdBuilder = () => {
     handleAnalyzeAndGenerate();
   };
 
+  const buildFacebookAdsLibraryUrl = ({ country, searchTerm, pageId }) => {
+    const base = "https://www.facebook.com/ads/library/";
+    const params = new URLSearchParams({
+      active_status: "all",
+      ad_type: "all",
+      country: country || "DE",
+      q: searchTerm || "",
+    });
+    if (pageId) {
+      params.set("view_all_page_id", pageId);
+    }
+    return `${base}?${params.toString()}`;
+  };
+
   const startAdResearch = async () => {
     if (!validateForm()) return;
     setResearchError(null);
@@ -189,18 +203,24 @@ const HighConversionAdBuilder = () => {
         return;
       }
 
-      const payload = {
-        userId: user?.id,
-        keyword,
-        country: formData.research_country || formData.market_country || "DE",
-        maxResults: Number(formData.research_max_results) || 30,
-        period: formData.research_period || "",
-      };
+      const country =
+        formData.research_country || formData.market_country || "DE";
+      const searchUrl = buildFacebookAdsLibraryUrl({
+        country,
+        searchTerm: keyword,
+        pageId: formData?.page_id,
+      });
+      const maxAds = Number(formData.research_max_results) || 30;
+
+      console.log("[AdResearch][Frontend] searchUrl", searchUrl);
 
       const res = await fetch("/.netlify/functions/ad-research-start", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
+        body: JSON.stringify({
+          searchUrl,
+          maxAds,
+        }),
       });
 
       if (!res.ok) {
