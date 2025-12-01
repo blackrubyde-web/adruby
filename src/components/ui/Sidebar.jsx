@@ -17,15 +17,14 @@ const navItems = [
 const Sidebar = ({
   isOpen = false,
   onClose,
-  isCollapsed = false,
-  isNavCollapsed,
-  onCollapseToggle = () => {},
+  isNavCollapsed = false,
+  setIsNavCollapsed = () => {},
 }) => {
   const location = useLocation();
   const navigate = useNavigate();
   const { user } = useAuth();
 
-  const collapsed = typeof isNavCollapsed === "boolean" ? isNavCollapsed : isCollapsed;
+  const collapsed = !!isNavCollapsed;
 
   const [activeItem, setActiveItem] = useState("");
   const [displayName, setDisplayName] = useState("");
@@ -138,7 +137,7 @@ const Sidebar = ({
           <Button
             variant="ghost"
             size="icon"
-            onClick={onCollapseToggle}
+            onClick={() => setIsNavCollapsed(!collapsed)}
             className="h-8 w-8"
           >
             <Icon name={collapsed ? "ChevronsRight" : "ChevronsLeft"} size={16} />

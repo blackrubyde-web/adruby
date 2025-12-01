@@ -258,13 +258,12 @@ const HighConversionAdBuilder = () => {
       <Sidebar
         isOpen={sidebarOpen}
         onClose={() => setSidebarOpen(false)}
-        isCollapsed={isNavCollapsed}
-        onCollapseToggle={() => setIsNavCollapsed((prev) => !prev)}
+        isNavCollapsed={isNavCollapsed}
+        setIsNavCollapsed={setIsNavCollapsed}
       />
       <Header
         onMenuToggle={() => setSidebarOpen(!sidebarOpen)}
         isNavCollapsed={isNavCollapsed}
-        onNavCollapseToggle={() => setIsNavCollapsed((prev) => !prev)}
       />
 
       <motion.main

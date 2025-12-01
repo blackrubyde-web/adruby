@@ -10,6 +10,7 @@ import CampaignsTable from './components/CampaignsTable';
 
 const OverviewDashboard = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [isNavCollapsed, setIsNavCollapsed] = useState(true);
   const navigate = useNavigate();
   const { user, loading, isAuthReady, isSubscribed, subscriptionStatus } = useAuth();
 
@@ -87,22 +88,22 @@ const OverviewDashboard = () => {
   }, []);
 
   return (
-    <div className="flex min-h-screen bg-background">
+    <div className="min-h-screen bg-background">
       <Sidebar 
         isOpen={sidebarOpen} 
         onClose={() => setSidebarOpen(false)} 
+        isNavCollapsed={isNavCollapsed}
+        setIsNavCollapsed={setIsNavCollapsed}
       />
-      <div className="hidden lg:block w-[72px] flex-shrink-0" />
-      <div className="flex-1 min-h-screen flex flex-col">
-        <Header onMenuToggle={() => setSidebarOpen(true)} />
+      <Header onMenuToggle={() => setSidebarOpen(true)} isNavCollapsed={isNavCollapsed} />
         
-        <main className="pt-16">
-          <motion.div 
-            className="p-6 space-y-8"
-            variants={containerVariants}
-            initial="hidden"
-            animate="visible"
-          >
+      <main className={`pt-16 transition-all duration-300 ${isNavCollapsed ? "lg:ml-[72px]" : "lg:ml-60"}`}>
+        <motion.div 
+          className="p-6 space-y-8"
+          variants={containerVariants}
+          initial="hidden"
+          animate="visible"
+        >
             {/* Page Header */}
             <motion.div variants={itemVariants}>
               <div className="mb-8">
