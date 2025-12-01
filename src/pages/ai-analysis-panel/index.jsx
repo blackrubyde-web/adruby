@@ -391,14 +391,15 @@ const AIAnalysisPanel = () => {
       />
       <Header onMenuToggle={handleSidebarToggle} isNavCollapsed={isNavCollapsed} />
         
-      <motion.main 
-        className={`pt-16 p-6 transition-all duration-300 ${isNavCollapsed ? "lg:ml-[72px]" : "lg:ml-60"}`}
-        variants={pageVariants}
-        initial="initial"
-        animate="animate"
-        exit="exit"
-      >
-        <div className="max-w-7xl mx-auto">
+      <main className={`pt-16 transition-all duration-300 ${isNavCollapsed ? "lg:ml-[72px]" : "lg:ml-60"}`}>
+        <motion.main 
+          className="p-6"
+          variants={pageVariants}
+          initial="initial"
+          animate="animate"
+          exit="exit"
+        >
+          <div className="max-w-7xl mx-auto">
             {/* Page Header */}
             <motion.div 
               className="mb-8"
@@ -1115,7 +1116,7 @@ const AIAnalysisPanel = () => {
             </motion.div>
           </div>
         </motion.main>
-      </div>
+      </main>
     </div>
   );
 };
