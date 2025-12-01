@@ -58,7 +58,8 @@ async function runAdResearchActor(params = {}) {
   const client = new ApifyClient({ token: APIFY_API_TOKEN });
 
   try {
-    const run = await client.actor(actorId).call({ input });
+    // WICHTIG: input direkt übergeben, NICHT { input }
+    const run = await client.actor(actorId).call(input);
     console.log("[ApifyClient] Actor run response", {
       runId: run?.id,
       status: run?.status,
