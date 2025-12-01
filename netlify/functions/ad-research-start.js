@@ -35,14 +35,16 @@ exports.handler = async (event) => {
       maxAds,
     });
 
-    const run = await runAdResearchActor({ searchUrl, maxAds });
+    const result = await runAdResearchActor({ searchUrl, maxAds });
 
     return {
       statusCode: 200,
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        runId: run?.id,
-        status: run?.status,
+        jobId: result?.runId || null,
+        status: result?.status || null,
+        ads: Array.isArray(result?.items) ? result.items : [],
+        datasetId: result?.defaultDatasetId || null,
       }),
     };
   } catch (error) {
