@@ -54,9 +54,9 @@ ${JSON.stringify(adsPayload, null, 2)}
       { role: "system", content: systemPrompt },
       { role: "user", content: userPrompt },
     ],
-    response_format: {
-      type: "json_schema",
-      json_schema: {
+    text: {
+      format: {
+        type: "json_schema",
         name: "ad_analysis_response",
         schema: {
           type: "object",
@@ -77,13 +77,14 @@ ${JSON.stringify(adsPayload, null, 2)}
           },
           required: ["results"],
         },
-        strict: true,
       },
     },
   });
 
   try {
-    const raw = completion.output?.[0]?.content?.[0]?.text || "{}";
+    const output = completion.output?.[0];
+    const content = output?.content?.[0];
+    const raw = content?.text || "{}";
     const parsed = JSON.parse(raw);
     return parsed.results || [];
   } catch (err) {
@@ -171,9 +172,9 @@ ${JSON.stringify(adsPayload, null, 2)}
       { role: "system", content: systemPrompt },
       { role: "user", content: userPrompt },
     ],
-    response_format: {
-      type: "json_schema",
-      json_schema: {
+    text: {
+      format: {
+        type: "json_schema",
         name: "ad_creative_response",
         schema: {
           type: "object",
@@ -199,13 +200,14 @@ ${JSON.stringify(adsPayload, null, 2)}
           },
           required: ["ads"],
         },
-        strict: true,
       },
     },
   });
 
   try {
-    const raw = completion.output?.[0]?.content?.[0]?.text || "{}";
+    const output = completion.output?.[0];
+    const content = output?.content?.[0];
+    const raw = content?.text || "{}";
     const parsed = JSON.parse(raw);
     return parsed.ads || [];
   } catch (err) {
