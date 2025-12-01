@@ -423,25 +423,11 @@ const InputForm = ({
         <div className="pt-2">
           <Button
             onClick={startHandler}
-            disabled={isDisabled}
+            disabled={isRunning}
             className="w-full bg-[#E50914] hover:bg-[#E50914]/90 text-white font-semibold py-3 px-6 text-lg"
             variant="default"
           >
-            {isRunning || isAnalyzing || isGenerating ? (
-              <div className="flex items-center justify-center space-x-2">
-                <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
-                <span>
-                  {isRunning && 'Ads werden erstellt...'}
-                  {!isRunning && isAnalyzing && 'Analysiere Markt...'}
-                  {!isRunning && !isAnalyzing && isGenerating && 'Generiere Anzeigen...'}
-                </span>
-              </div>
-            ) : (
-              <div className="flex items-center justify-center space-x-2">
-                <Icon name="Sparkles" size={20} />
-                <span>Ad-Erstellung starten</span>
-              </div>
-            )}
+            {isRunning ? "Ads werden erstellt..." : "Ad-Erstellung starten"}
           </Button>
         </div>
 
