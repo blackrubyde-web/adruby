@@ -532,38 +532,17 @@ const HighConversionAdBuilder = () => {
                       </div>
                     </div>
                     <div className="p-4 sm:p-5">
-                      <div className="flex flex-wrap gap-3 mb-4">
-                        <Button
-                          variant="outline"
-                          onClick={startAdResearch}
-                          disabled={
-                            isAnalyzing ||
-                            isGenerating ||
-                            isResearchLoading ||
-                            isResearchAnalyzing
-                          }
-                        >
-                          {isResearchLoading ? "Recherche läuft..." : "Top Ads recherchieren"}
-                        </Button>
-                        <Button
-                          variant="default"
-                          onClick={analyzeResearchAds}
-                          disabled={
-                            isAnalyzing ||
-                            isGenerating ||
-                            isResearchLoading ||
-                            isResearchAnalyzing
-                          }
-                        >
-                          {isResearchAnalyzing
-                            ? "Analyse läuft..."
-                            : "Gescrapte Ads analysieren"}
-                        </Button>
-                      </div>
                       <InputForm
                         formData={formData}
                         setFormData={setFormData}
+                        handleAdCreationStart={handleAnalyzeAndGenerate}
                         onGenerate={handleAnalyzeAndGenerate}
+                        isRunning={
+                          isAnalyzing ||
+                          isGenerating ||
+                          isResearchLoading ||
+                          isResearchAnalyzing
+                        }
                         isGenerating={isGenerating}
                         isAnalyzing={isAnalyzing}
                       />
