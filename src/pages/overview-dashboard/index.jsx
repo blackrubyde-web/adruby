@@ -223,8 +223,7 @@ const OverviewDashboard = () => {
               </div>
             </motion.div>
           </motion.div>
-        </main>
-      </div>
+      </main>
     </div>
   );
 };
