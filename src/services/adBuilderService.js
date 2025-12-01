@@ -180,14 +180,44 @@ export class AdBuilderService {
   }
 
   // NEW: Dedicated market analysis method as requested with enhanced error handling
-  static async analyzeMarket(formData = {}) {
+  static async analyzeMarket(formData = {}, researchContext = null) {
     console.log("AdBuilderService.analyzeMarket() aufgerufen mit:", formData);
     
     try {
-      // First attempt: Try OpenAI API
+      const payload = { product: formData };
+      if (researchContext) payload.researchContext = researchContext;
+      console.log("[AdBuilderService] analyzeMarket payload", payload);
+
+      // Prefer serverless/backend analysis if available
+      try {
+        const res = await fetch("/.netlify/functions/ad-builder-analyze-market", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        });
+
+        if (res.ok) {
+          const json = await res.json();
+          return {
+            data: json?.insights || json?.data || json || null,
+            error: null,
+            fallbackUsed: json?.fallbackUsed || false,
+            fallbackReason: json?.fallbackReason || null,
+          };
+        }
+      } catch (remoteErr) {
+        console.warn("[AdBuilderService] analyzeMarket backend call failed, fallback to client flow", remoteErr);
+      }
+
+      // Fallback: Try OpenAI API
       const result = await this.analyzeProduct(formData);
       console.log("Marktanalyse-Ergebnis von API:", result);
-      return result;
+      return {
+        data: result?.data || result || null,
+        error: result?.error || null,
+        fallbackUsed: result?.fallbackUsed || false,
+        fallbackReason: result?.fallbackReason || null,
+      };
     } catch (error) {
       console.error("Fehler in analyzeMarket:", error);
       
@@ -317,8 +347,33 @@ Format: {"common_hooks": [], "common_ctas": [], "emotional_triggers": [], "visua
     }
   }
 
-  static async generateAds(productData, marketInsights) {
+  static async generateAds(productData, marketInsights, researchContext = null) {
     try {
+      const payload = { product: productData, insights: marketInsights };
+      if (researchContext) payload.researchContext = researchContext;
+      console.log("[AdBuilderService] generateAds payload", payload);
+
+      // Prefer serverless/backend generation if available
+      try {
+        console.log("[AdBuilderService] Sending researchContext to backend", !!researchContext);
+        const res = await fetch("/.netlify/functions/ad-builder-generate-ads", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        });
+
+        if (res.ok) {
+          const json = await res.json();
+          return {
+            data: json?.ads || json?.data || null,
+            error: null,
+            fallbackGenerated: json?.fallbackGenerated ?? false,
+          };
+        }
+      } catch (remoteErr) {
+        console.warn("[AdBuilderService] generateAds backend call failed, fallback to client flow", remoteErr);
+      }
+
       // Create focus descriptions based on checkboxes
       const focusAreas = [];
       if (productData?.focus_emotion) focusAreas?.push('emotionale Ansprache');
@@ -406,7 +461,7 @@ Pro Variante:
       }
 
       const generatedAds = JSON.parse(adResponse?.choices?.[0]?.message?.content);
-      return { data: generatedAds?.ads, error: null };
+      return { data: generatedAds?.ads, error: null, fallbackGenerated: false };
 
     } catch (error) {
       console.error('Ad generation error:', error);

@@ -12,7 +12,6 @@ const InputForm = ({
   onGenerate, 
   isGenerating, 
   isAnalyzing,
-  currentStep 
 }) => {
   const handleInputChange = (field, value) => {
     setFormData(prev => ({
@@ -51,7 +50,46 @@ const InputForm = ({
     { value: 'exclusive', label: 'Exklusiv' }
   ];
 
-  const isDisabled = isGenerating || currentStep !== 'input';
+  const adGoalOptions = [
+    { value: 'sales', label: 'Verkäufe / Käufe' },
+    { value: 'leads', label: 'Leads / Anfragen' },
+    { value: 'awareness', label: 'Brand Awareness / Reichweite' }
+  ];
+
+  const marketCountryOptions = [
+    { value: 'DE', label: 'Deutschland (DE)' },
+    { value: 'AT', label: 'Österreich (AT)' },
+    { value: 'CH', label: 'Schweiz (CH)' },
+    { value: 'BE', label: 'Belgien (BE)' },
+    { value: 'NL', label: 'Niederlande (NL)' },
+    { value: 'US', label: 'USA (US)' },
+    { value: 'GB', label: 'Großbritannien (GB)' }
+  ];
+
+  const languageOptions = [
+    { value: 'de', label: 'Deutsch' },
+    { value: 'en', label: 'Englisch' },
+    { value: 'fr', label: 'Französisch' },
+    { value: 'es', label: 'Spanisch' }
+  ];
+
+  const researchCountryOptions = [
+    { value: 'DE', label: 'Deutschland' },
+    { value: 'AT', label: 'Österreich' },
+    { value: 'CH', label: 'Schweiz' },
+    { value: 'US', label: 'USA' },
+    { value: 'GB', label: 'Großbritannien' },
+    { value: 'FR', label: 'Frankreich' },
+    { value: 'NL', label: 'Niederlande' }
+  ];
+
+  const researchPeriodOptions = [
+    { value: '', label: 'Alle' },
+    { value: '30d', label: 'Letzte 30 Tage' },
+    { value: '90d', label: 'Letzte 90 Tage' }
+  ];
+
+  const isDisabled = isGenerating || isAnalyzing;
 
   return (
     <motion.div 
@@ -223,6 +261,129 @@ const InputForm = ({
           />
         </div>
 
+        {/* Kampagnenparameter & Research */}
+        <div className="border-t border-border pt-6 mt-2 space-y-4">
+          <div className="flex items-center space-x-3">
+            <div className="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center">
+              <Icon name="Target" size={18} className="text-primary" />
+            </div>
+            <div>
+              <h3 className="text-base font-semibold text-foreground">Kampagnenparameter & Research</h3>
+              <p className="text-sm text-muted-foreground">Definiere Ziel, Markt und Research-Einstellungen</p>
+            </div>
+          </div>
+
+          <div className="space-y-4">
+            <AppSelect
+              label="Ziel der Anzeige *"
+              name="ad_goal"
+              value={formData?.ad_goal || 'sales'}
+              onChange={(e) => handleInputChange('ad_goal', e.target.value)}
+              disabled={isDisabled}
+            >
+              {adGoalOptions?.map((opt) => (
+                <option key={opt.value} value={opt.value}>
+                  {opt.label}
+                </option>
+              ))}
+            </AppSelect>
+
+            <AppSelect
+              label="Zielmarkt / Land *"
+              name="market_country"
+              value={formData?.market_country || 'DE'}
+              onChange={(e) => handleInputChange('market_country', e.target.value)}
+              disabled={isDisabled}
+            >
+              {marketCountryOptions?.map((opt) => (
+                <option key={opt.value} value={opt.value}>
+                  {opt.label}
+                </option>
+              ))}
+            </AppSelect>
+
+            <AppSelect
+              label="Sprache *"
+              name="language"
+              value={formData?.language || 'de'}
+              onChange={(e) => handleInputChange('language', e.target.value)}
+              disabled={isDisabled}
+            >
+              {languageOptions?.map((opt) => (
+                <option key={opt.value} value={opt.value}>
+                  {opt.label}
+                </option>
+              ))}
+            </AppSelect>
+
+            <div className="space-y-2">
+              <label className="block text-sm font-medium text-foreground">
+                Research-Keyword (Brand, Produkt oder Nische)
+              </label>
+              <Input
+                type="text"
+                value={formData?.research_keyword || ''}
+                onChange={(e) => handleInputChange('research_keyword', e?.target?.value)}
+                placeholder='z.B. "FitMax", "Proteinpulver", "Online Coaching"'
+                disabled={isDisabled}
+                className="w-full"
+              />
+              <p className="text-xs text-muted-foreground">
+                Wenn leer, wird automatisch der Produktname als Keyword verwendet.
+              </p>
+            </div>
+
+            <AppSelect
+              label="Research-Land"
+              name="research_country"
+              value={formData?.research_country || 'DE'}
+              onChange={(e) => handleInputChange('research_country', e.target.value)}
+              disabled={isDisabled}
+            >
+              {researchCountryOptions?.map((opt) => (
+                <option key={opt.value} value={opt.value}>
+                  {opt.label}
+                </option>
+              ))}
+            </AppSelect>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <AppSelect
+                label="Zeitraum"
+                name="research_period"
+                value={formData?.research_period ?? ''}
+                onChange={(e) => handleInputChange('research_period', e.target.value)}
+                disabled={isDisabled}
+              >
+                {researchPeriodOptions?.map((opt) => (
+                  <option key={opt.value} value={opt.value}>
+                    {opt.label}
+                  </option>
+                ))}
+              </AppSelect>
+
+              <div>
+                <label className="block text-sm font-medium text-foreground mb-2">
+                  Max. Ads
+                </label>
+                <Input
+                  type="number"
+                  min={10}
+                  max={100}
+                  value={formData?.research_max_results ?? 30}
+                  onChange={(e) => {
+                    const val = Number(e?.target?.value);
+                    handleInputChange('research_max_results', val);
+                  }}
+                  disabled={isDisabled}
+                  className="w-full"
+                />
+                <p className="text-xs text-muted-foreground mt-1">Zwischen 10 und 100, Standard: 30</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
         {/* Fokus-Checkboxen */}
         <div>
           <label className="block text-sm font-medium text-foreground mb-4">
@@ -263,13 +424,12 @@ const InputForm = ({
             className="w-full bg-[#E50914] hover:bg-[#E50914]/90 text-white font-semibold py-3 px-6 text-lg"
             variant="default"
           >
-            {isGenerating ? (
+            {isAnalyzing || isGenerating ? (
               <div className="flex items-center justify-center space-x-2">
                 <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
                 <span>
-                  {currentStep === 'analyzing' && 'Analysiere Markt...'}
-                  {currentStep === 'generating' && 'Generiere Anzeigen...'}
-                  {currentStep === 'input' && 'Ad-Erstellung starten'}
+                  {isAnalyzing && 'Analysiere Markt...'}
+                  {isGenerating && !isAnalyzing && 'Generiere Anzeigen...'}
                 </span>
               </div>
             ) : (

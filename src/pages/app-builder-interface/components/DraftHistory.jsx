@@ -42,8 +42,17 @@ const DraftHistory = ({ drafts, onLoadDraft, onSaveDraft, currentDraft }) => {
     }
   ];
 
-  const allDrafts = [...mockDrafts, ...drafts];
-  const recentDrafts = allDrafts?.slice(0, 3);
+  const safeDrafts = Array.isArray(drafts) ? drafts : [];
+  const allDrafts = [...safeDrafts, ...mockDrafts];
+
+  const recentDrafts = allDrafts
+    .slice()
+    .sort((a, b) => {
+      const da = a?.date ? new Date(a.date) : 0;
+      const db = b?.date ? new Date(b.date) : 0;
+      return db - da;
+    })
+    .slice(0, 3);
 
   const formatDate = (dateString) => {
     const date = new Date(dateString);

@@ -130,12 +130,40 @@ async function runAdResearchActor({ actorId = APIFY_AD_RESEARCH_ACTOR_ID, input 
     count,
   });
 
-  // Wir nennen es hier "ads", die Struktur hängt von deinem Actor ab.
   return {
     ads: Array.isArray(items) ? items : [],
   };
 }
 
+/**
+ * High-Level Helper für den Facebook Ads Library Scraper.
+ * Passt den Input an deinen Apify Actor an und gibt direkt die Ads zurück.
+ */
+async function callApifyFacebookAdsLibrary({
+  urls = [],
+  period = "",
+  limitPerSource = 30,
+  count = 30,
+  countryCode = "DE",
+  activeStatus = "all",
+  scrapeAdDetails = true,
+} = {}) {
+  const input = {
+    startUrls: urls.map((url) => ({ url })),
+    country: countryCode,
+    period,
+    limit: count,
+    activeStatus,
+    scrapeAdDetails,
+  };
+
+  console.log("[ApifyClient] callApifyFacebookAdsLibrary input", input);
+
+  const { ads } = await runAdResearchActor({ input });
+  return ads;
+}
+
 module.exports = {
   runAdResearchActor,
+  callApifyFacebookAdsLibrary,
 };

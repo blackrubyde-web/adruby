@@ -9,7 +9,11 @@ const AnalysisPanel = ({
   isAnalyzing, 
   isGenerating, 
   onSelectAd, 
-  selectedAd 
+  selectedAd,
+  researchAds,
+  analyzedResearchAds,
+  isResearchLoading,
+  isResearchAnalyzing
 }) => {
   // Progress states
   const [progress, setProgress] = useState(0);
@@ -51,7 +55,7 @@ const AnalysisPanel = ({
   const handlePlanStrategy = async (ad) => {
     if (ad?.id) {
       // Navigate to strategy page
-      const strategyUrl = AdBuilderService?.getStrategyPageUrl(ad?.id);
+      const strategyUrl = AdBuilderService.getStrategyPageUrl(ad?.id);
       window.location.href = strategyUrl;
     }
   };
@@ -139,6 +143,85 @@ const AnalysisPanel = ({
 
         {!isAnalyzing && !marketInsights && (
           <p className="text-muted-foreground">Starten Sie die Analyse, um Marktinsights zu erhalten.</p>
+        )}
+      </motion.div>
+
+      {/* Top Ads from Research */}
+      <motion.div 
+        className="bg-card border border-border rounded-lg p-6"
+        variants={itemVariants}
+      >
+        <h3 className="text-lg font-semibold text-foreground mb-4 flex items-center">
+          <Icon name="BarChart3" size={20} className="mr-2 text-primary" />
+          Top-Ads aus deinem Markt
+        </h3>
+
+        {(isResearchLoading || isResearchAnalyzing) && (
+          <div className="space-y-4">
+            <div className="animate-pulse space-y-3">
+              {[...Array(3)]?.map((_, i) => (
+                <div key={i} className="rounded-lg border border-border p-3">
+                  <div className="h-4 bg-muted rounded w-1/3 mb-2"></div>
+                  <div className="h-3 bg-muted rounded w-1/2 mb-1"></div>
+                  <div className="h-3 bg-muted rounded w-1/4"></div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {!isResearchLoading && !isResearchAnalyzing && analyzedResearchAds?.length > 0 && (
+          <div className="space-y-3">
+            {analyzedResearchAds
+              ?.slice()
+              ?.sort((a, b) => (b?.score || 0) - (a?.score || 0))
+              ?.slice(0, 3)
+              ?.map((ad, index) => (
+                <div
+                  key={ad?.id || index}
+                  className="border border-border rounded-lg p-4 bg-white/5 dark:bg-white/5"
+                >
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center space-x-2">
+                      <span className="text-sm font-semibold text-foreground">
+                        {ad?.pageName || ad?.page_name || "Unbekannte Seite"}
+                      </span>
+                    </div>
+                    <div className="flex items-center space-x-2 text-sm">
+                      <span className="px-2 py-1 rounded-full bg-primary/10 text-primary">
+                        Score: {Math.round(ad?.score || 0)}/100
+                      </span>
+                    </div>
+                  </div>
+                  <p className="text-sm text-muted-foreground mb-2">
+                    Hook: {ad?.mainHook || ad?.main_hook || "—"}
+                  </p>
+                  <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                    <span className="px-2 py-1 rounded-full bg-muted">
+                      {ad?.country || "n/a"}
+                    </span>
+                    <span className="px-2 py-1 rounded-full bg-muted">
+                      {ad?.language || "n/a"}
+                    </span>
+                  </div>
+                </div>
+              ))}
+            <p className="text-xs text-muted-foreground">
+              Diese Patterns werden für deine KI-Ads genutzt.
+            </p>
+          </div>
+        )}
+
+        {!isResearchLoading && !isResearchAnalyzing && (!analyzedResearchAds || analyzedResearchAds.length === 0) && researchAds?.length > 0 && (
+          <p className="text-sm text-muted-foreground">
+            Research abgeschlossen, aber noch nicht analysiert. Bitte "Gescrapte Ads analysieren" ausführen.
+          </p>
+        )}
+
+        {!isResearchLoading && !isResearchAnalyzing && (!researchAds || researchAds.length === 0) && (!analyzedResearchAds || analyzedResearchAds.length === 0) && (
+          <p className="text-sm text-muted-foreground">
+            Nutze das Research, um Top-Ads aus deiner Nische zu sehen.
+          </p>
         )}
       </motion.div>
       {/* Generated Ads Section */}

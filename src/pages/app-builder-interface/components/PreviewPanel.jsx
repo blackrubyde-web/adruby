@@ -87,7 +87,7 @@ const PreviewPanel = ({ selectedAd, isGenerating, productData, generatedAds = []
       // Upload custom image if available
       let customImageUrl = null;
       if (uploadedImage) {
-        const { data: imageData, error: imageError } = await AdStrategyService?.uploadAdImage(uploadedImage, user?.id);
+        const { data: imageData, error: imageError } = await AdStrategyService.uploadAdImage(uploadedImage, user?.id);
         if (imageError) {
           console.error('Image upload error:', imageError);
           // Continue without custom image
@@ -102,7 +102,7 @@ const PreviewPanel = ({ selectedAd, isGenerating, productData, generatedAds = []
         productData,
         {
           customImageUrl,
-          notes: `Übernommen mit${uploadedImage ? ' eigenem Bild' : 'out custom image'} - ${new Date()?.toLocaleDateString('de-DE')}`
+          notes: `Übernommen ${uploadedImage ? 'mit eigenem Bild' : 'ohne eigenes Bild'} - ${new Date().toLocaleDateString('de-DE')}`
         }
       );
 

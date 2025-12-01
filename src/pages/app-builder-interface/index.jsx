@@ -10,6 +10,7 @@ import AnalysisPanel from "./components/AnalysisPanel";
 import PreviewPanel from "./components/PreviewPanel";
 import Icon from "../../components/AppIcon";
 import AdBuilderService from "../../services/adBuilderService";
+import Button from "../../components/ui/Button";
 
 const HighConversionAdBuilder = () => {
   const { user } = useAuth();
@@ -32,6 +33,13 @@ const HighConversionAdBuilder = () => {
     focus_emotion: false,
     focus_benefits: true,
     focus_urgency: false,
+    ad_goal: "sales",
+    market_country: "DE",
+    language: "de",
+    research_keyword: "",
+    research_country: "DE",
+    research_max_results: 30,
+    research_period: "30d",
   });
 
   const [currentStep, setCurrentStep] = useState(0); // 0=input,1=analyse,2=ads
@@ -45,6 +53,12 @@ const HighConversionAdBuilder = () => {
   const [adPressure, setAdPressure] = useState("mittel");
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(null);
+  const [researchJobId, setResearchJobId] = useState(null);
+  const [researchAds, setResearchAds] = useState([]);
+  const [analyzedResearchAds, setAnalyzedResearchAds] = useState([]);
+  const [isResearchLoading, setIsResearchLoading] = useState(false);
+  const [isResearchAnalyzing, setIsResearchAnalyzing] = useState(false);
+  const [researchError, setResearchError] = useState(null);
 
   // Load stats for badge feel (optional)
   const [stats, setStats] = useState({
@@ -66,7 +80,7 @@ const HighConversionAdBuilder = () => {
 
   const loadUserStats = async () => {
     try {
-      const { data: products } = await AdBuilderService?.getProducts(user?.id);
+      const { data: products } = await AdBuilderService.getProducts(user?.id);
       const totalAds =
         products?.reduce(
           (sum, product) => sum + (product?.generated_ads?.length || 0),
@@ -158,6 +172,93 @@ const HighConversionAdBuilder = () => {
     handleAnalyzeAndGenerate();
   };
 
+  const startAdResearch = async () => {
+    if (!validateForm()) return;
+    setResearchError(null);
+    setIsResearchLoading(true);
+
+    try {
+      const keyword =
+        formData.research_keyword?.trim() || formData.product_name?.trim();
+
+      if (!keyword) {
+        setResearchError(
+          "Bitte geben Sie ein Research-Keyword oder einen Produktnamen ein."
+        );
+        setIsResearchLoading(false);
+        return;
+      }
+
+      const payload = {
+        userId: user?.id,
+        keyword,
+        country: formData.research_country || formData.market_country || "DE",
+        maxResults: Number(formData.research_max_results) || 30,
+        period: formData.research_period || "",
+      };
+
+      const res = await fetch("/.netlify/functions/ad-research-start", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+
+      if (!res.ok) {
+        const text = await res.text();
+        throw new Error(`Ad Research Start failed: ${res.status} ${text}`);
+      }
+
+      const json = await res.json();
+      setResearchJobId(json.jobId || json.job_id || null);
+      setResearchAds(json.ads || []);
+    } catch (err) {
+      console.error("[AdBuilder] startAdResearch error", err);
+      setResearchError(
+        err?.message || "Fehler beim Start des Ad Research"
+      );
+    } finally {
+      setIsResearchLoading(false);
+    }
+  };
+
+  const analyzeResearchAds = async () => {
+    if (!researchJobId) {
+      setResearchError(
+        "Kein Research-Job vorhanden. Bitte zuerst Research starten."
+      );
+      return;
+    }
+    setResearchError(null);
+    setIsResearchAnalyzing(true);
+
+    try {
+      const res = await fetch("/.netlify/functions/ad-research-analyze", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          jobId: researchJobId,
+          limit: Number(formData.research_max_results) || 30,
+        }),
+      });
+
+      if (!res.ok) {
+        const text = await res.text();
+        throw new Error(`Ad Research Analyze failed: ${res.status} ${text}`);
+      }
+
+      const json = await res.json();
+      const ads = json.ads || json.results || [];
+      setAnalyzedResearchAds(ads);
+    } catch (err) {
+      console.error("[AdBuilder] analyzeResearchAds error", err);
+      setResearchError(
+        err?.message || "Fehler bei der Analyse der gescrapten Ads"
+      );
+    } finally {
+      setIsResearchAnalyzing(false);
+    }
+  };
+
   const handleAnalyzeAndGenerate = async () => {
     if (!validateForm()) return;
     setError(null);
@@ -170,9 +271,20 @@ const HighConversionAdBuilder = () => {
         ...formData,
         ad_pressure: adPressure,
       };
+      const researchContext =
+        analyzedResearchAds && analyzedResearchAds.length > 0
+          ? {
+              topAds: analyzedResearchAds.slice(0, 10),
+              topHooks: analyzedResearchAds
+                .map((a) => a.mainHook || a.main_hook)
+                .filter(Boolean)
+                .slice(0, 10),
+              source: "meta_ad_library",
+            }
+          : null;
 
       const { data: product, error: productError } =
-        await AdBuilderService?.createProduct(extendedForm);
+        await AdBuilderService.createProduct(extendedForm);
       if (productError) throw productError;
 
       const {
@@ -180,7 +292,7 @@ const HighConversionAdBuilder = () => {
         error: analysisError,
         fallbackUsed,
         fallbackReason,
-      } = await AdBuilderService?.analyzeMarket(product);
+      } = await AdBuilderService.analyzeMarket(product, researchContext || undefined);
 
       if (!insights && analysisError) throw analysisError;
       setMarketInsights(insights);
@@ -192,15 +304,19 @@ const HighConversionAdBuilder = () => {
       setIsGenerating(true);
       setCurrentStep(2);
 
+      if (researchContext) {
+        console.log("[AdBuilder] Using researchContext for generation", researchContext);
+      }
+
       const { data: ads, error: adsError, fallbackGenerated } =
-        await AdBuilderService?.generateAds(product, insights);
+        await AdBuilderService.generateAds(product, insights, researchContext || undefined);
       if (!ads && adsError) throw adsError;
 
       const { data: savedAds, error: saveError } =
-        await AdBuilderService?.saveGeneratedAds(product?.id, ads);
+        await AdBuilderService.saveGeneratedAds(product?.id, ads);
       if (saveError) throw saveError;
 
-      await AdBuilderService?.saveMarketInsights(product?.id, insights);
+      await AdBuilderService.saveMarketInsights(product?.id, insights);
 
       setGeneratedAds(savedAds || []);
       setSelectedAd(savedAds?.[0] || null);
@@ -281,9 +397,17 @@ const HighConversionAdBuilder = () => {
           >
             <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
               <div className="space-y-1">
-                <h1 className="text-3xl font-semibold">Ad Builder: AdCreative Lab</h1>
+                <div className="flex flex-wrap items-center gap-3">
+                  <h1 className="text-3xl font-semibold">Ad Builder: AdCreative Lab</h1>
+                  <span className="px-3 py-1 rounded-full text-xs bg-blue-500/10 text-blue-700 dark:text-blue-200">
+                    Beta: Ad Research
+                  </span>
+                </div>
                 <p className={`text-sm ${subtleText}`}>
                   KI-gestützter Anzeigengenerator für maximale Conversion-Raten
+                </p>
+                <p className="text-sm text-muted-foreground">
+                  Optional: Nutze das Ad Research, um Top-Performer aus der Meta Ad Library zu scannen und deine KI-Ads daran auszurichten.
                 </p>
               </div>
 
@@ -328,6 +452,18 @@ const HighConversionAdBuilder = () => {
               <div className="flex items-center space-x-2">
                 <Icon name="CheckCircle" size={20} />
                 <span>{success}</span>
+              </div>
+            </motion.div>
+          )}
+          {researchError && (
+            <motion.div
+              className="mb-4 sm:mb-6 p-4 bg-rose-500/10 border border-rose-500/40 rounded-lg text-rose-900 dark:text-rose-100"
+              initial={{ opacity: 0, y: -20 }}
+              animate={{ opacity: 1, y: 0 }}
+            >
+              <div className="flex items-center space-x-2">
+                <Icon name="AlertCircle" size={20} />
+                <span>{researchError}</span>
               </div>
             </motion.div>
           )}
@@ -376,21 +512,48 @@ const HighConversionAdBuilder = () => {
                       </div>
                     </div>
                     <div className="p-4 sm:p-5">
+                      <div className="flex flex-wrap gap-3 mb-4">
+                        <Button
+                          variant="outline"
+                          onClick={startAdResearch}
+                          disabled={
+                            isAnalyzing ||
+                            isGenerating ||
+                            isResearchLoading ||
+                            isResearchAnalyzing
+                          }
+                        >
+                          {isResearchLoading ? "Recherche läuft..." : "Top Ads recherchieren"}
+                        </Button>
+                        <Button
+                          variant="default"
+                          onClick={analyzeResearchAds}
+                          disabled={
+                            isAnalyzing ||
+                            isGenerating ||
+                            isResearchLoading ||
+                            isResearchAnalyzing
+                          }
+                        >
+                          {isResearchAnalyzing
+                            ? "Analyse läuft..."
+                            : "Gescrapte Ads analysieren"}
+                        </Button>
+                      </div>
                       <InputForm
                         formData={formData}
                         setFormData={setFormData}
                         onGenerate={handleAnalyzeAndGenerate}
-                        isGenerating={isAnalyzing || isGenerating}
+                        isGenerating={isGenerating}
                         isAnalyzing={isAnalyzing}
-                        currentStep="input"
                       />
                     </div>
                   </div>
                 </div>
 
-                <div className="space-y-4 order-2 xl:order-none">
-                  <div className="rounded-2xl border border-slate-200 bg-white p-4 sm:p-5 shadow-lg dark:border-white/10 dark:bg-[#0b0b10]">
-                    <div className="flex items-start justify-between gap-3">
+                  <div className="space-y-4 order-2 xl:order-none">
+                    <div className="rounded-2xl border border-slate-200 bg-white p-4 sm:p-5 shadow-lg dark:border-white/10 dark:bg-[#0b0b10]">
+                      <div className="flex items-start justify-between gap-3">
                       <div>
                         <p className="text-xs uppercase tracking-[0.2em] text-rose-500">
                           Schnellvorschau
@@ -426,21 +589,26 @@ const HighConversionAdBuilder = () => {
               >
                 <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-xl dark:border-white/10 dark:bg-[#0b0b10]">
                   <div className="flex flex-col gap-4">
-                    <div className="flex flex-wrap items-center justify-between gap-3">
-                      <div>
-                        <p className="text-xs uppercase tracking-[0.2em] text-emerald-500">
-                          Stage 2
-                        </p>
-                        <h3 className="text-xl font-semibold">Marktanalyse</h3>
-                        <p className={`text-sm ${subtleText}`}>
-                          Zielgruppen-Insights, Schmerzpunkte und Wettbewerbsabgrenzung.
-                        </p>
-                      </div>
-                      <div className="flex gap-2">
-                        <button
-                          onClick={handleAnalyzeAndGenerate}
-                          className="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 transition hover:border-slate-300 dark:border-white/10 dark:bg-white/5 dark:text-slate-200"
-                        >
+                  <div className="flex flex-wrap items-center justify-between gap-3">
+                    <div>
+                      <p className="text-xs uppercase tracking-[0.2em] text-emerald-500">
+                        Stage 2
+                      </p>
+                      <h3 className="text-xl font-semibold">Marktanalyse</h3>
+                      <p className={`text-sm ${subtleText}`}>
+                        Zielgruppen-Insights, Schmerzpunkte und Wettbewerbsabgrenzung.
+                      </p>
+                    </div>
+                    {analyzedResearchAds?.length > 0 && (
+                      <span className="px-3 py-1 rounded-full text-xs bg-primary/10 text-primary">
+                        Generiert mit Markt-Research-Signalen
+                      </span>
+                    )}
+                    <div className="flex gap-2">
+                      <button
+                        onClick={handleAnalyzeAndGenerate}
+                        className="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 transition hover:border-slate-300 dark:border-white/10 dark:bg-white/5 dark:text-slate-200"
+                      >
                           <Icon name="RefreshCw" size={16} />
                           Neu analysieren
                         </button>
@@ -780,6 +948,10 @@ const HighConversionAdBuilder = () => {
                     isGenerating={isGenerating}
                     onSelectAd={setSelectedAd}
                     selectedAd={selectedAd}
+                    researchAds={researchAds}
+                    analyzedResearchAds={analyzedResearchAds}
+                    isResearchLoading={isResearchLoading}
+                    isResearchAnalyzing={isResearchAnalyzing}
                   />
                 </div>
               </motion.div>
