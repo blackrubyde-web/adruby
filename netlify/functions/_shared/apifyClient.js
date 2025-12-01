@@ -59,14 +59,11 @@ async function runAdResearchActor(params = {}) {
     const urlObj = new URL(searchUrl);
     finalUrl = urlObj.toString();
   } catch (e) {
-    console.error(
-      "[ApifyClient] Ungültige searchUrl, keine valide URL:",
-      {
-        searchUrl,
-        typeOfSearchUrl: typeof searchUrl,
-        error: e.message,
-      }
-    );
+    console.error("[ApifyClient] Ungültige searchUrl, keine valide URL:", {
+      searchUrl,
+      typeOfSearchUrl: typeof searchUrl,
+      error: e.message,
+    });
     throw new Error(
       `searchUrl ist keine gültige URL: "${searchUrl}". Erwartet wird eine vollständige https://www.facebook.com/ads/library/... URL.`
     );
@@ -74,9 +71,13 @@ async function runAdResearchActor(params = {}) {
 
   const actorId = normalizeActorId(APIFY_FACEBOOK_ADS_ACTOR_ID);
 
+  // 🔧 WICHTIG: Input-Shape an Actor-Schema anpassen
   const input = {
-    urls: [finalUrl],
-    max: typeof maxAds === "number" ? maxAds : 200,
+    urls: [{ url: finalUrl }],
+    count: typeof maxAds === "number" ? maxAds : 200,
+    // period: "",
+    // "scrapePageAds.activeStatus": "all",
+    // "scrapePageAds.countryCode": "ALL",
   };
 
   console.log("[ApifyClient] Starting actor run", { actorId, input });
@@ -84,7 +85,6 @@ async function runAdResearchActor(params = {}) {
   const client = new ApifyClient({ token: APIFY_API_TOKEN });
 
   try {
-    // WICHTIG: input direkt übergeben
     const run = await client.actor(actorId).call(input);
     console.log("[ApifyClient] Actor run response", {
       runId: run?.id,
@@ -99,7 +99,9 @@ async function runAdResearchActor(params = {}) {
     });
     throw new Error(
       `Failed to start Apify actor: ${
-        error?.status || error?.message || String(error)
+        (error?.body && error.body.error && error.body.error.message) ||
+        error?.message ||
+        String(error)
       }`
     );
   }
