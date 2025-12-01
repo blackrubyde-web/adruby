@@ -1,16 +1,13 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useAuth } from '../../contexts/AuthContext';
-import Header from '../../components/ui/Header';
-import Sidebar from '../../components/ui/Sidebar';
 import StatisticsCard from './components/StatisticsCard';
 import PerformanceChart from './components/PerformanceChart';
 import CampaignsTable from './components/CampaignsTable';
+import DashboardLayout from '../../layouts/DashboardLayout';
 
 const OverviewDashboard = () => {
-  const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [isNavCollapsed, setIsNavCollapsed] = useState(true);
   const navigate = useNavigate();
   const { user, loading, isAuthReady, isSubscribed, subscriptionStatus } = useAuth();
 
@@ -88,143 +85,126 @@ const OverviewDashboard = () => {
   }, []);
 
   return (
-    <div className="min-h-screen bg-background">
-      <Sidebar 
-        isOpen={sidebarOpen} 
-        onClose={() => setSidebarOpen(false)} 
-        isNavCollapsed={isNavCollapsed}
-        setIsNavCollapsed={setIsNavCollapsed}
-      />
-      <Header onMenuToggle={() => setSidebarOpen(true)} isNavCollapsed={isNavCollapsed} />
-        
-      <main className={`pt-16 transition-all duration-300 ${isNavCollapsed ? "lg:ml-[72px]" : "lg:ml-60"}`}>
-        <motion.div 
-          className="p-6 space-y-8"
-          variants={containerVariants}
-          initial="hidden"
-          animate="visible"
-        >
-            {/* Page Header */}
-            <motion.div variants={itemVariants}>
-              <div className="mb-8">
-                <h1 className="text-3xl font-bold text-foreground mb-2">
-                  Dashboard Übersicht
-                </h1>
-                <p className="text-muted-foreground">
-                  Willkommen zurück! Hier ist eine Übersicht Ihrer Kampagnen-Performance.
-                </p>
-              </div>
-            </motion.div>
+    <DashboardLayout>
+      <motion.div
+        className="p-6 space-y-8"
+        variants={containerVariants}
+        initial="hidden"
+        animate="visible"
+      >
+        {/* Page Header */}
+        <motion.div variants={itemVariants}>
+          <div className="mb-8">
+            <h1 className="text-3xl font-bold text-foreground mb-2">Dashboard Übersicht</h1>
+            <p className="text-muted-foreground">
+              Willkommen zurück! Hier ist eine Übersicht Ihrer Kampagnen-Performance.
+            </p>
+          </div>
+        </motion.div>
 
-            {/* Statistics Cards */}
-            <motion.div variants={itemVariants}>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
-                {statisticsData?.map((stat, index) => (
-                  <motion.div
-                    key={index}
-                    variants={itemVariants}
-                    whileHover={{ 
-                      scale: 1.02,
-                      transition: { duration: 0.2 }
-                    }}
-                  >
-                    <StatisticsCard {...stat} />
-                  </motion.div>
-                ))}
-              </div>
-            </motion.div>
+        {/* Statistics Cards */}
+        <motion.div variants={itemVariants}>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+            {statisticsData?.map((stat, index) => (
+              <motion.div
+                key={index}
+                variants={itemVariants}
+                whileHover={{
+                  scale: 1.02,
+                  transition: { duration: 0.2 },
+                }}
+              >
+                <StatisticsCard {...stat} />
+              </motion.div>
+            ))}
+          </div>
+        </motion.div>
 
-            {/* Performance Chart */}
-            <motion.div variants={itemVariants}>
-              <PerformanceChart />
-            </motion.div>
+        {/* Performance Chart */}
+        <motion.div variants={itemVariants}>
+          <PerformanceChart />
+        </motion.div>
 
-            {/* Recent Campaigns Table */}
-            <motion.div variants={itemVariants}>
-              <CampaignsTable />
-            </motion.div>
+        {/* Recent Campaigns Table */}
+        <motion.div variants={itemVariants}>
+          <CampaignsTable />
+        </motion.div>
 
-            {/* Quick Actions Section */}
-            <motion.div variants={itemVariants}>
-              <div className="bg-card border border-border rounded-lg p-6 shadow-minimal">
-                <h2 className="text-lg font-semibold text-foreground mb-4">
-                  Schnellaktionen
-                </h2>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                  <motion.div
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
-                    className="p-4 bg-accent rounded-lg border border-border cursor-pointer hover:bg-primary/5 transition-colors"
-                  >
-                    <div className="flex items-center space-x-3">
-                      <div className="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center">
-                        <motion.div
-                          whileHover={{ rotate: 360 }}
-                          transition={{ duration: 0.5 }}
-                        >
-                          <span className="text-primary text-lg">+</span>
-                        </motion.div>
-                      </div>
-                      <div>
-                        <p className="font-medium text-foreground">Neue Kampagne</p>
-                        <p className="text-sm text-muted-foreground">Kampagne erstellen</p>
-                      </div>
-                    </div>
-                  </motion.div>
-
-                  <motion.div
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
-                    className="p-4 bg-accent rounded-lg border border-border cursor-pointer hover:bg-primary/5 transition-colors"
-                  >
-                    <div className="flex items-center space-x-3">
-                      <div className="w-10 h-10 bg-success/10 rounded-lg flex items-center justify-center">
-                        <span className="text-success text-lg">📊</span>
-                      </div>
-                      <div>
-                        <p className="font-medium text-foreground">Berichte</p>
-                        <p className="text-sm text-muted-foreground">Performance analysieren</p>
-                      </div>
-                    </div>
-                  </motion.div>
-
-                  <motion.div
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
-                    className="p-4 bg-accent rounded-lg border border-border cursor-pointer hover:bg-primary/5 transition-colors"
-                  >
-                    <div className="flex items-center space-x-3">
-                      <div className="w-10 h-10 bg-warning/10 rounded-lg flex items-center justify-center">
-                        <span className="text-warning text-lg">🎯</span>
-                      </div>
-                      <div>
-                        <p className="font-medium text-foreground">Zielgruppen</p>
-                        <p className="text-sm text-muted-foreground">Segmente verwalten</p>
-                      </div>
-                    </div>
-                  </motion.div>
-
-                  <motion.div
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
-                    className="p-4 bg-accent rounded-lg border border-border cursor-pointer hover:bg-primary/5 transition-colors"
-                  >
-                    <div className="flex items-center space-x-3">
-                      <div className="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center">
-                        <span className="text-primary text-lg">⚙️</span>
-                      </div>
-                      <div>
-                        <p className="font-medium text-foreground">Einstellungen</p>
-                        <p className="text-sm text-muted-foreground">Konto konfigurieren</p>
-                      </div>
-                    </div>
-                  </motion.div>
+        {/* Quick Actions Section */}
+        <motion.div variants={itemVariants}>
+          <div className="bg-card border border-border rounded-lg p-6 shadow-minimal">
+            <h2 className="text-lg font-semibold text-foreground mb-4">Schnellaktionen</h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+              <motion.div
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                className="p-4 bg-accent rounded-lg border border-border cursor-pointer hover:bg-primary/5 transition-colors"
+              >
+                <div className="flex items-center space-x-3">
+                  <div className="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center">
+                    <motion.div whileHover={{ rotate: 360 }} transition={{ duration: 0.5 }}>
+                      <span className="text-primary text-lg">+</span>
+                    </motion.div>
+                  </div>
+                  <div>
+                    <p className="font-medium text-foreground">Neue Kampagne</p>
+                    <p className="text-sm text-muted-foreground">Kampagne erstellen</p>
+                  </div>
                 </div>
-              </div>
-            </motion.div>
-          </motion.div>
-      </main>
-    </div>
+              </motion.div>
+
+              <motion.div
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                className="p-4 bg-accent rounded-lg border border-border cursor-pointer hover:bg-primary/5 transition-colors"
+              >
+                <div className="flex items-center space-x-3">
+                  <div className="w-10 h-10 bg-success/10 rounded-lg flex items-center justify-center">
+                    <span className="text-success text-lg">📊</span>
+                  </div>
+                  <div>
+                    <p className="font-medium text-foreground">Berichte</p>
+                    <p className="text-sm text-muted-foreground">Performance analysieren</p>
+                  </div>
+                </div>
+              </motion.div>
+
+              <motion.div
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                className="p-4 bg-accent rounded-lg border border-border cursor-pointer hover:bg-primary/5 transition-colors"
+              >
+                <div className="flex items-center space-x-3">
+                  <div className="w-10 h-10 bg-warning/10 rounded-lg flex items-center justify-center">
+                    <span className="text-warning text-lg">🎯</span>
+                  </div>
+                  <div>
+                    <p className="font-medium text-foreground">Zielgruppen</p>
+                    <p className="text-sm text-muted-foreground">Segmente verwalten</p>
+                  </div>
+                </div>
+              </motion.div>
+
+              <motion.div
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                className="p-4 bg-accent rounded-lg border border-border cursor-pointer hover:bg-primary/5 transition-colors"
+              >
+                <div className="flex items-center space-x-3">
+                  <div className="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center">
+                    <span className="text-primary text-lg">⚙️</span>
+                  </div>
+                  <div>
+                    <p className="font-medium text-foreground">Einstellungen</p>
+                    <p className="text-sm text-muted-foreground">Konto konfigurieren</p>
+                  </div>
+                </div>
+              </motion.div>
+            </div>
+          </div>
+        </motion.div>
+      </motion.div>
+    </DashboardLayout>
   );
 };
 

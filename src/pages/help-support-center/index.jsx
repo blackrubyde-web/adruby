@@ -1,63 +1,64 @@
-import React, { useState } from 'react';
-import { useAuth } from '../../contexts/AuthContext';
-import Icon from '../../components/AppIcon';
-import Button from '../../components/ui/Button';
-import ContactForm from './components/ContactForm';
-import FAQSection from './components/FAQSection';
-import SupportResources from './components/SupportResources';
-import QuickActionButtons from './components/QuickActionButtons';
+import React, { useState } from "react";
+import { useAuth } from "../../contexts/AuthContext";
+import Icon from "../../components/AppIcon";
+import Button from "../../components/ui/Button";
+import ContactForm from "./components/ContactForm";
+import FAQSection from "./components/FAQSection";
+import SupportResources from "./components/SupportResources";
+import QuickActionButtons from "./components/QuickActionButtons";
+import DashboardLayout from "../../layouts/DashboardLayout";
 
 const HelpSupportCenter = () => {
   const { user } = useAuth();
-  const [activeTab, setActiveTab] = useState('contact');
-  const [success, setSuccess] = useState('');
-  const [error, setError] = useState('');
+  const [activeTab, setActiveTab] = useState("contact");
+  const [success, setSuccess] = useState("");
+  const [error, setError] = useState("");
 
   const tabs = [
-    { id: 'contact', name: 'Kontakt', icon: 'MessageCircle' },
-    { id: 'faq', name: 'Häufige Fragen', icon: 'HelpCircle' },
-    { id: 'resources', name: 'Ressourcen', icon: 'BookOpen' }
+    { id: "contact", name: "Kontakt", icon: "MessageCircle" },
+    { id: "faq", name: "Häufige Fragen", icon: "HelpCircle" },
+    { id: "resources", name: "Ressourcen", icon: "BookOpen" },
   ];
 
   const handleContactSubmit = async (formData) => {
     try {
-      setError('');
-      
+      setError("");
+
       // Simulate contact form submission
       // In real implementation, this would send to support system
-      console.log('Contact form submitted:', formData);
-      
-      setSuccess('Ihre Anfrage wurde erfolgreich übermittelt! Unser Support-Team wird sich innerhalb von 24 Stunden bei Ihnen melden.');
-      setTimeout(() => setSuccess(''), 5000);
-      
+      console.log("Contact form submitted:", formData);
+
+      setSuccess(
+        "Ihre Anfrage wurde erfolgreich übermittelt! Unser Support-Team wird sich innerhalb von 24 Stunden bei Ihnen melden."
+      );
+      setTimeout(() => setSuccess(""), 5000);
+
       return { success: true };
     } catch (err) {
-      const errorMsg = 'Fehler beim Senden der Anfrage: ' + err?.message;
+      const errorMsg = "Fehler beim Senden der Anfrage: " + err?.message;
       setError(errorMsg);
       return { success: false, error: errorMsg };
     }
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-        
-        {/* Header Section */}
-        <div className="text-center mb-12">
-          <div className="inline-flex items-center justify-center w-16 h-16 bg-red-100 rounded-full mb-4">
-            <Icon name="HeadphonesIcon" size={32} className="text-red-600" />
+    <DashboardLayout>
+      <div className="p-6">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+          {/* Header Section */}
+          <div className="text-center mb-12">
+            <div className="inline-flex items-center justify-center w-16 h-16 bg-red-100 rounded-full mb-4">
+              <Icon name="HeadphonesIcon" size={32} className="text-red-600" />
+            </div>
+            <h1 className="text-4xl font-bold text-gray-900 mb-4">Hilfe & Support Center</h1>
+            <p className="text-xl text-gray-600 max-w-3xl mx-auto">
+              Benötigen Sie Unterstützung? Unser Team steht Ihnen zur Verfügung. Finden Sie Antworten auf häufige Fragen
+              oder kontaktieren Sie uns direkt.
+            </p>
           </div>
-          <h1 className="text-4xl font-bold text-gray-900 mb-4">
-            Hilfe & Support Center
-          </h1>
-          <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-            Benötigen Sie Unterstützung? Unser Team steht Ihnen zur Verfügung. 
-            Finden Sie Antworten auf häufige Fragen oder kontaktieren Sie uns direkt.
-          </p>
-        </div>
 
-        {/* Quick Action Buttons */}
-        <QuickActionButtons onError={setError} />
+          {/* Quick Action Buttons */}
+          <QuickActionButtons onError={setError} />
 
         {/* Alert Messages */}
         {error && (
@@ -67,7 +68,7 @@ const HelpSupportCenter = () => {
               <p className="text-red-800">{error}</p>
             </div>
             <button 
-              onClick={() => setError('')}
+              onClick={() => setError("")}
               className="text-red-500 hover:text-red-700"
             >
               <Icon name="X" size={18} />
@@ -82,7 +83,7 @@ const HelpSupportCenter = () => {
               <p className="text-green-800">{success}</p>
             </div>
             <button 
-              onClick={() => setSuccess('')}
+              onClick={() => setSuccess("")}
               className="text-green-500 hover:text-green-700"
             >
               <Icon name="X" size={18} />
@@ -120,13 +121,8 @@ const HelpSupportCenter = () => {
               />
             )}
             
-            {activeTab === 'faq' && (
-              <FAQSection />
-            )}
-            
-            {activeTab === 'resources' && (
-              <SupportResources />
-            )}
+            {activeTab === 'faq' && <FAQSection />}
+            {activeTab === 'resources' && <SupportResources />}
           </div>
         </div>
 
@@ -198,7 +194,8 @@ const HelpSupportCenter = () => {
         </div>
 
       </div>
-    </div>
+      </div>
+    </DashboardLayout>
   );
 };
 
