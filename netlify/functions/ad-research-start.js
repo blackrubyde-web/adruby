@@ -1,13 +1,32 @@
 // netlify/functions/ad-research-start.js
 
-const { runAdResearchActor } = require("./_shared/apifyClient");
-const { supabaseAdmin } = require("./_shared/clients");
+import { runAdResearchActor } from "./_shared/apifyClient.js";
+import { supabaseAdmin } from "./_shared/clients.js";
 
-exports.handler = async (event) => {
+const corsHeaders = () => ({
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers": "Content-Type, Authorization",
+  "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+});
+
+export const handler = async (event) => {
+  const headers = {
+    ...corsHeaders(),
+    "Content-Type": "application/json",
+  };
+
+  if (event.httpMethod === "OPTIONS") {
+    return {
+      statusCode: 200,
+      headers,
+      body: "",
+    };
+  }
+
   if (event.httpMethod !== "POST") {
     return {
       statusCode: 405,
-      headers: { "Content-Type": "application/json" },
+      headers,
       body: JSON.stringify({ error: "Method not allowed" }),
     };
   }
@@ -17,13 +36,10 @@ exports.handler = async (event) => {
     const { searchUrl, maxAds } = body;
 
     if (!searchUrl) {
-      console.warn(
-        "[AdResearch][Start] searchUrl fehlt im Request-Body:",
-        body
-      );
+      console.warn("[AdResearch][Start] searchUrl fehlt im Request-Body:", body);
       return {
         statusCode: 400,
-        headers: { "Content-Type": "application/json" },
+        headers,
         body: JSON.stringify({
           error:
             "searchUrl fehlt. Sende eine gültige Facebook Ad Library URL im Body.",
@@ -40,6 +56,13 @@ exports.handler = async (event) => {
 
     const runId = result?.runId || null;
     const items = Array.isArray(result?.items) ? result.items : [];
+
+    console.log("[AdResearch][Start] Apify result summary", {
+      runId,
+      status: result?.status || null,
+      datasetId: result?.defaultDatasetId || null,
+      itemCount: items.length,
+    });
 
     if (runId && items.length > 0) {
       const rows = items.map((item) => ({
@@ -69,7 +92,12 @@ exports.handler = async (event) => {
         throw new Error(insertError.message || "Failed to insert ads");
       }
 
-      console.log("[AdResearch][Start] Stored ads for job", runId, "count", rows.length);
+      console.log(
+        "[AdResearch][Start] Stored ads for job",
+        runId,
+        "count",
+        rows.length
+      );
     } else {
       console.warn("[AdResearch][Start] No items to insert or missing runId", {
         runId,
@@ -79,7 +107,7 @@ exports.handler = async (event) => {
 
     return {
       statusCode: 200,
-      headers: { "Content-Type": "application/json" },
+      headers,
       body: JSON.stringify({
         jobId: runId,
         status: result?.status || null,
@@ -91,7 +119,7 @@ exports.handler = async (event) => {
     console.error("[AdResearch][Start] Error", error);
     return {
       statusCode: 500,
-      headers: { "Content-Type": "application/json" },
+      headers,
       body: JSON.stringify({
         error: "Failed to start ad research",
         details: error.message,
