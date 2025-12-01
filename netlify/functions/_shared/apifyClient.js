@@ -5,9 +5,6 @@ const { ApifyClient } = require("apify-client");
 const APIFY_API_TOKEN = process.env.APIFY_API_TOKEN;
 const APIFY_FACEBOOK_ADS_ACTOR_ID = process.env.APIFY_FACEBOOK_ADS_ACTOR_ID;
 
-/**
- * Normalize actor id: "user/actor" -> "user~actor" as required by Apify API.
- */
 function normalizeActorId(id) {
   if (!id) return id;
   if (id.includes("/")) {
@@ -17,12 +14,18 @@ function normalizeActorId(id) {
 }
 
 /**
- * Startet den Facebook Ads Library Actor auf Apify.
+ * Startet den Facebook Ads Library Actor auf Apify
+ * und holt direkt die Ergebnisse aus dem Dataset.
  *
  * @param {Object} params
  * @param {string} params.searchUrl - Facebook Ads Library URL
  * @param {number} [params.maxAds] - Maximale Anzahl an Ads
- * @returns {Promise<Object>} Apify Run Objekt
+ * @returns {Promise<{
+ *   runId: string,
+ *   status: string,
+ *   defaultDatasetId?: string,
+ *   items: Array<any>
+ * }>}
  */
 async function runAdResearchActor(params = {}) {
   if (!APIFY_API_TOKEN) {
@@ -53,7 +56,7 @@ async function runAdResearchActor(params = {}) {
     );
   }
 
-  // ✅ Validierung und Normalisierung der URL
+  // ✅ URL validieren
   let finalUrl;
   try {
     const urlObj = new URL(searchUrl);
@@ -71,13 +74,9 @@ async function runAdResearchActor(params = {}) {
 
   const actorId = normalizeActorId(APIFY_FACEBOOK_ADS_ACTOR_ID);
 
-  // 🔧 WICHTIG: Input-Shape an Actor-Schema anpassen
   const input = {
     urls: [{ url: finalUrl }],
     count: typeof maxAds === "number" ? maxAds : 200,
-    // period: "",
-    // "scrapePageAds.activeStatus": "all",
-    // "scrapePageAds.countryCode": "ALL",
   };
 
   console.log("[ApifyClient] Starting actor run", { actorId, input });
@@ -85,20 +84,54 @@ async function runAdResearchActor(params = {}) {
   const client = new ApifyClient({ token: APIFY_API_TOKEN });
 
   try {
+    // ⏳ Wartet, bis der Run fertig ist
     const run = await client.actor(actorId).call(input);
+
     console.log("[ApifyClient] Actor run response", {
       runId: run?.id,
       status: run?.status,
+      defaultDatasetId: run?.defaultDatasetId,
     });
-    return run;
+
+    const defaultDatasetId = run?.defaultDatasetId;
+
+    if (!defaultDatasetId) {
+      console.warn(
+        "[ApifyClient] Kein defaultDatasetId im Run – keine Dataset-Ergebnisse verfügbar."
+      );
+      return {
+        runId: run?.id,
+        status: run?.status,
+        defaultDatasetId: null,
+        items: [],
+      };
+    }
+
+    // 🔽 Ergebnisse aus dem Dataset ziehen
+    const datasetClient = client.dataset(defaultDatasetId);
+    const { items } = await datasetClient.listItems({
+      limit: input.count || 200,
+    });
+
+    console.log("[ApifyClient] Dataset items fetched", {
+      defaultDatasetId,
+      itemCount: items?.length || 0,
+    });
+
+    return {
+      runId: run?.id,
+      status: run?.status,
+      defaultDatasetId,
+      items: items || [],
+    };
   } catch (error) {
-    console.error("[ApifyClient] Failed to start actor run", {
+    console.error("[ApifyClient] Failed to run actor or load dataset", {
       status: error?.status,
       message: error?.message,
       body: error?.body,
     });
     throw new Error(
-      `Failed to start Apify actor: ${
+      `Failed to run Apify actor or fetch dataset: ${
         (error?.body && error.body.error && error.body.error.message) ||
         error?.message ||
         String(error)
