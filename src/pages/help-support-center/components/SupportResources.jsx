@@ -9,7 +9,7 @@ const SupportResources = () => {
     {
       category: 'Video-Tutorials',
       icon: 'Play',
-      color: 'bg-red-100 text-red-600',
+      color: 'bg-primary/10 text-primary',
       items: [
         {
           id: 1,
@@ -43,7 +43,7 @@ const SupportResources = () => {
     {
       category: 'Dokumentation',
       icon: 'FileText',
-      color: 'bg-blue-100 text-blue-600',
+      color: 'bg-primary/10 text-primary',
       items: [
         {
           id: 4,
@@ -77,7 +77,7 @@ const SupportResources = () => {
     {
       category: 'Webinare & Events',
       icon: 'Calendar',
-      color: 'bg-green-100 text-green-600',
+      color: 'bg-primary/10 text-primary',
       items: [
         {
           id: 7,
@@ -102,7 +102,7 @@ const SupportResources = () => {
     {
       category: 'Community & Support',
       icon: 'Users',
-      color: 'bg-purple-100 text-purple-600',
+      color: 'bg-primary/10 text-primary',
       items: [
         {
           id: 9,
@@ -163,10 +163,10 @@ const SupportResources = () => {
 
   const getLevelBadgeColor = (level) => {
     switch (level) {
-      case 'Einsteiger': return 'bg-green-100 text-green-700';
-      case 'Fortgeschritten': return 'bg-orange-100 text-orange-700';
-      case 'Entwickler': return 'bg-purple-100 text-purple-700';
-      default: return 'bg-gray-100 text-gray-700';
+      case 'Einsteiger': return 'bg-emerald-500/10 text-emerald-500';
+      case 'Fortgeschritten': return 'bg-amber-500/10 text-amber-500';
+      case 'Entwickler': return 'bg-primary/10 text-primary';
+      default: return 'bg-muted text-foreground';
     }
   };
 
@@ -187,10 +187,10 @@ const SupportResources = () => {
       
       {/* Header */}
       <div className="text-center mb-12">
-        <h2 className="text-2xl font-bold text-gray-900 mb-2">
+        <h2 className="text-2xl font-bold text-foreground mb-2">
           Support-Ressourcen
         </h2>
-        <p className="text-gray-600">
+        <p className="text-muted-foreground">
           Entdecken Sie Tutorials, Dokumentationen und Community-Ressourcen
         </p>
       </div>
@@ -198,11 +198,11 @@ const SupportResources = () => {
       {/* Resource Categories */}
       <div className="space-y-12">
         {resources?.map((category) => (
-          <div key={category?.category} className="bg-white rounded-xl border border-gray-200 shadow-sm">
+          <div key={category?.category} className="bg-card rounded-xl border border-border shadow-minimal">
             
             {/* Category Header */}
-            <div className="px-6 py-4 border-b border-gray-200 bg-gray-50 rounded-t-xl">
-              <h3 className="text-xl font-semibold text-gray-900 flex items-center">
+            <div className="px-6 py-4 border-b border-border bg-muted rounded-t-xl">
+              <h3 className="text-xl font-semibold text-foreground flex items-center">
                 <div className={`p-2 rounded-lg mr-3 ${category?.color}`}>
                   <Icon name={category?.icon} size={20} />
                 </div>
@@ -214,12 +214,12 @@ const SupportResources = () => {
             <div className="p-6">
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {category?.items?.map((item) => (
-                  <div key={item?.id} className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
+                  <div key={item?.id} className="border border-border rounded-lg p-4 hover:shadow-minimal transition-shadow bg-card">
                     
                     {/* Item Header */}
                     <div className="flex items-start justify-between mb-3">
                       <div className="flex items-center">
-                        <Icon name={getTypeIcon(item?.type)} size={18} className="text-gray-500 mr-2" />
+                        <Icon name={getTypeIcon(item?.type)} size={18} className="text-muted-foreground mr-2" />
                         {item?.level && (
                           <span className={`px-2 py-1 rounded-full text-xs font-medium ${getLevelBadgeColor(item?.level)}`}>
                             {item?.level}
@@ -227,56 +227,56 @@ const SupportResources = () => {
                         )}
                       </div>
                       {item?.status === 'upcoming' && (
-                        <span className="bg-blue-100 text-blue-700 px-2 py-1 rounded-full text-xs font-medium">
+                        <span className="bg-primary/10 text-primary px-2 py-1 rounded-full text-xs font-medium">
                           Bald verfügbar
                         </span>
                       )}
                       {item?.status === 'recording' && (
-                        <span className="bg-gray-100 text-gray-700 px-2 py-1 rounded-full text-xs font-medium">
+                        <span className="bg-muted text-foreground px-2 py-1 rounded-full text-xs font-medium">
                           Aufzeichnung
                         </span>
                       )}
                     </div>
 
                     {/* Item Content */}
-                    <h4 className="font-semibold text-gray-900 mb-2 line-clamp-2">
+                    <h4 className="font-semibold text-foreground mb-2 line-clamp-2">
                       {item?.title}
                     </h4>
                     
-                    <p className="text-sm text-gray-600 mb-4 line-clamp-3">
+                    <p className="text-sm text-muted-foreground mb-4 line-clamp-3">
                       {item?.description}
                     </p>
 
                     {/* Item Metadata */}
                     <div className="space-y-2 mb-4">
                       {item?.duration && (
-                        <div className="flex items-center text-xs text-gray-500">
+                        <div className="flex items-center text-xs text-muted-foreground">
                           <Icon name="Clock" size={14} className="mr-1" />
                           {item?.duration}
                         </div>
                       )}
                       {item?.pages && (
-                        <div className="flex items-center text-xs text-gray-500">
+                        <div className="flex items-center text-xs text-muted-foreground">
                           <Icon name="FileText" size={14} className="mr-1" />
                           {item?.pages}
                           {item?.fileSize && ` • ${item?.fileSize}`}
                         </div>
                       )}
                       {item?.date && (
-                        <div className="flex items-center text-xs text-gray-500">
+                        <div className="flex items-center text-xs text-muted-foreground">
                           <Icon name="Calendar" size={14} className="mr-1" />
                           {item?.date}
                           {item?.time && ` • ${item?.time}`}
                         </div>
                       )}
                       {item?.members && (
-                        <div className="flex items-center text-xs text-gray-500">
+                        <div className="flex items-center text-xs text-muted-foreground">
                           <Icon name="Users" size={14} className="mr-1" />
                           {item?.members}
                         </div>
                       )}
                       {item?.articles && (
-                        <div className="flex items-center text-xs text-gray-500">
+                        <div className="flex items-center text-xs text-muted-foreground">
                           <Icon name="BookOpen" size={14} className="mr-1" />
                           {item?.articles}
                         </div>
@@ -295,7 +295,7 @@ const SupportResources = () => {
                         >
                           {downloadingGuide === item?.id ? (
                             <div className="flex items-center">
-                              <div className="animate-spin rounded-full h-3 w-3 border border-gray-400 border-t-transparent mr-1"></div>
+                              <div className="animate-spin rounded-full h-3 w-3 border border-border border-t-transparent mr-1"></div>
                               Lädt...
                             </div>
                           ) : (
@@ -308,7 +308,7 @@ const SupportResources = () => {
                       )}
                       
                       {(item?.type === 'video' || item?.type === 'webinar') && (
-                        <Button size="sm" className="flex-1 bg-red-600 hover:bg-red-700 text-white">
+                        <Button size="sm" className="flex-1">
                           <Icon name="Play" size={14} className="mr-1" />
                           {item?.type === 'webinar' && item?.status === 'upcoming' ? 'Anmelden' : 'Ansehen'}
                         </Button>
@@ -331,16 +331,16 @@ const SupportResources = () => {
       </div>
 
       {/* Call to Action */}
-      <div className="mt-12 bg-gradient-to-r from-red-50 to-pink-50 rounded-xl p-8 border border-red-100 text-center">
-        <Icon name="BookOpen" size={48} className="text-red-600 mx-auto mb-4" />
-        <h3 className="text-xl font-semibold text-gray-900 mb-2">
+      <div className="mt-12 bg-muted rounded-xl p-8 border border-border text-center">
+        <Icon name="BookOpen" size={48} className="text-primary mx-auto mb-4" />
+        <h3 className="text-xl font-semibold text-foreground mb-2">
           Benötigen Sie zusätzliche Ressourcen?
         </h3>
-        <p className="text-gray-600 mb-6">
+        <p className="text-muted-foreground mb-6">
           Lassen Sie uns wissen, welche Tutorials oder Dokumentationen Sie benötigen. 
           Wir erstellen gerne neue Inhalte basierend auf Ihrem Feedback.
         </p>
-        <Button className="bg-red-600 hover:bg-red-700 text-white px-6 py-3 rounded-lg font-medium">
+        <Button className="px-6 py-3">
           <Icon name="MessageSquare" size={18} className="mr-2" />
           Ressource vorschlagen
         </Button>

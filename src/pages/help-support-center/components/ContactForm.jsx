@@ -95,10 +95,10 @@ const ContactForm = ({ user, onSubmit, onError }) => {
       
       {/* Form Header */}
       <div className="text-center mb-8">
-        <h2 className="text-2xl font-bold text-gray-900 mb-2">
+        <h2 className="text-2xl font-bold text-foreground mb-2">
           Kontaktieren Sie unser Support-Team
         </h2>
-        <p className="text-gray-600">
+        <p className="text-muted-foreground">
           Füllen Sie das Formular aus und wir melden uns schnellstmöglich bei Ihnen zurück.
         </p>
       </div>
@@ -106,18 +106,18 @@ const ContactForm = ({ user, onSubmit, onError }) => {
       <form onSubmit={handleSubmit} className="space-y-6">
         
         {/* User Information (Read-only) */}
-        <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
-          <h3 className="text-sm font-medium text-gray-700 mb-3">Ihre Kontaktdaten</h3>
+        <div className="bg-muted rounded-lg p-4 border border-border">
+          <h3 className="text-sm font-medium text-foreground mb-3">Ihre Kontaktdaten</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm text-gray-600 mb-1">Name</label>
-              <p className="text-gray-900 font-medium">
+              <label className="block text-sm text-muted-foreground mb-1">Name</label>
+              <p className="text-foreground font-medium">
                 {user?.user_metadata?.full_name || 'Nicht verfügbar'}
               </p>
             </div>
             <div>
-              <label className="block text-sm text-gray-600 mb-1">E-Mail</label>
-              <p className="text-gray-900 font-medium">
+              <label className="block text-sm text-muted-foreground mb-1">E-Mail</label>
+              <p className="text-foreground font-medium">
                 {user?.email || 'Nicht verfügbar'}
               </p>
             </div>
@@ -126,7 +126,7 @@ const ContactForm = ({ user, onSubmit, onError }) => {
 
         {/* Inquiry Type */}
         <div>
-          <label htmlFor="inquiryType" className="block text-sm font-medium text-gray-700 mb-2">
+          <label htmlFor="inquiryType" className="block text-sm font-medium text-foreground mb-2">
             Anfrage-Kategorie *
           </label>
           <Select
@@ -137,14 +137,14 @@ const ContactForm = ({ user, onSubmit, onError }) => {
             disabled={submitting}
             className="w-full"
           />
-          <p className="mt-1 text-xs text-gray-500">
+          <p className="mt-1 text-xs text-muted-foreground">
             Wählen Sie die passende Kategorie für eine schnellere Bearbeitung
           </p>
         </div>
 
         {/* Priority Level */}
         <div>
-          <label htmlFor="priority" className="block text-sm font-medium text-gray-700 mb-2">
+          <label htmlFor="priority" className="block text-sm font-medium text-foreground mb-2">
             Priorität
           </label>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
@@ -161,13 +161,10 @@ const ContactForm = ({ user, onSubmit, onError }) => {
                 />
                 <div className={`border-2 rounded-lg p-3 text-center transition-all ${
                   formData?.priority === priority?.value
-                    ? 'border-red-500 bg-red-50 text-red-700' :'border-gray-200 hover:border-gray-300'
+                    ? 'border-primary/70 bg-primary/10 text-primary'
+                    : 'border-border hover:border-border/80'
                 }`}>
-                  <span className={`text-sm font-medium ${
-                    formData?.priority === priority?.value 
-                      ? 'text-red-700' 
-                      : priority?.color
-                  }`}>
+                  <span className="text-sm font-medium text-foreground">
                     {priority?.label}
                   </span>
                 </div>
@@ -178,7 +175,7 @@ const ContactForm = ({ user, onSubmit, onError }) => {
 
         {/* Subject */}
         <div>
-          <label htmlFor="subject" className="block text-sm font-medium text-gray-700 mb-2">
+          <label htmlFor="subject" className="block text-sm font-medium text-foreground mb-2">
             Betreff *
           </label>
           <div className="relative">
@@ -192,15 +189,15 @@ const ContactForm = ({ user, onSubmit, onError }) => {
               maxLength={200}
               className="pl-10 pr-4 py-3 w-full"
             />
-            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-              <Icon name="MessageSquare" size={18} className="text-gray-400" />
+            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-muted-foreground">
+              <Icon name="MessageSquare" size={18} />
             </div>
           </div>
           <div className="flex justify-between items-center mt-1">
-            <p className="text-xs text-gray-500">
+            <p className="text-xs text-muted-foreground">
               Beschreiben Sie Ihr Problem in wenigen Worten
             </p>
-            <span className="text-xs text-gray-400">
+            <span className="text-xs text-muted-foreground">
               {formData?.subject?.length}/200
             </span>
           </div>
@@ -208,7 +205,7 @@ const ContactForm = ({ user, onSubmit, onError }) => {
 
         {/* Message */}
         <div>
-          <label htmlFor="message" className="block text-sm font-medium text-gray-700 mb-2">
+          <label htmlFor="message" className="block text-sm font-medium text-foreground mb-2">
             Nachricht *
           </label>
           <div className="relative">
@@ -220,26 +217,26 @@ const ContactForm = ({ user, onSubmit, onError }) => {
               disabled={submitting}
               rows={6}
               maxLength={2000}
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent resize-none transition-colors"
+              className="w-full px-4 py-3 border border-border rounded-lg bg-background text-foreground focus:ring-2 focus:ring-ring focus:border-transparent resize-none transition-colors"
             />
           </div>
           <div className="flex justify-between items-center mt-1">
-            <p className="text-xs text-gray-500">
+            <p className="text-xs text-muted-foreground">
               Bitte schildern Sie Ihr Problem detailliert
             </p>
-            <span className="text-xs text-gray-400">
+            <span className="text-xs text-muted-foreground">
               {formData?.message?.length}/2000
             </span>
           </div>
         </div>
 
         {/* Helpful Tips */}
-        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+        <div className="bg-muted border border-border rounded-lg p-4">
           <div className="flex items-start space-x-3">
-            <Icon name="Lightbulb" size={20} className="text-blue-500 flex-shrink-0 mt-0.5" />
+            <Icon name="Lightbulb" size={20} className="text-primary flex-shrink-0 mt-0.5" />
             <div>
-              <h4 className="text-sm font-medium text-blue-800">Hilfreiche Tipps</h4>
-              <div className="text-sm text-blue-700 mt-1">
+              <h4 className="text-sm font-medium text-foreground">Hilfreiche Tipps</h4>
+              <div className="text-sm text-muted-foreground mt-1">
                 <ul className="space-y-1 list-disc list-inside">
                   <li>Beschreiben Sie Schritte zur Reproduktion des Problems</li>
                   <li>Geben Sie Fehlermeldungen wörtlich wieder</li>
@@ -252,11 +249,11 @@ const ContactForm = ({ user, onSubmit, onError }) => {
         </div>
 
         {/* Submit Button */}
-        <div className="flex justify-end pt-6 border-t border-gray-200">
+        <div className="flex justify-end pt-6 border-t border-border">
           <Button
             type="submit"
             disabled={submitting || !formData?.inquiryType || !formData?.subject || !formData?.message}
-            className="bg-red-600 hover:bg-red-700 text-white px-8 py-3 rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            className="px-8 py-3"
           >
             {submitting ? (
               <div className="flex items-center">

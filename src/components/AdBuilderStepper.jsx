@@ -79,9 +79,9 @@ const AdBuilderStepper = ({ currentStep = 0, onStepChange = () => {} }) => {
   const indicatorLeft = `${(100 / steps.length) * currentStep}%`;
 
   return (
-    <div className="relative h-12 w-full overflow-hidden rounded-xl border border-white/30 bg-white/40 backdrop-blur-xl shadow-[0_10px_30px_rgba(0,0,0,0.06)] dark:border-white/10 dark:bg-white/10 mt-4 mb-4 sm:mt-6 sm:mb-6 lg:mt-4 lg:mb-4">
+    <div className="relative w-full overflow-hidden rounded-xl border border-white/30 bg-white/40 backdrop-blur-xl shadow-[0_10px_30px_rgba(0,0,0,0.06)] dark:border-white/10 dark:bg-white/10 mt-4 mb-4 sm:mt-6 sm:mb-6 lg:mt-4 lg:mb-4 py-2 sm:py-3">
       <div className="pointer-events-none absolute inset-0 bg-gradient-to-r from-white/40 via-white/10 to-white/5 dark:from-white/10 dark:via-white/5" />
-      <div className="relative flex h-full items-center pb-3">
+      <div className="relative flex items-center pb-3">
         {steps.map((step, index) => {
           const Icon = step.icon;
           const isActive = index === currentStep;
@@ -92,7 +92,7 @@ const AdBuilderStepper = ({ currentStep = 0, onStepChange = () => {} }) => {
               key={step.label}
               type="button"
               onClick={() => onStepChange(index)}
-              className="group relative flex h-full flex-1 items-center gap-2 px-3 text-left sm:px-4"
+              className="group relative flex flex-1 items-center gap-3 sm:gap-4 px-3 sm:px-4 py-3 sm:py-4 md:py-4 text-left"
               initial={{ opacity: 0.85 }}
               animate={{ opacity: isActive ? 1 : 0.85 }}
               transition={{ duration: 0.15, ease: "easeInOut" }}
@@ -107,9 +107,9 @@ const AdBuilderStepper = ({ currentStep = 0, onStepChange = () => {} }) => {
               >
                 <Icon />
               </motion.div>
-              <div className="flex flex-col leading-tight mt-1">
+              <div className="flex flex-col leading-snug mt-0.5">
                 <span
-                  className={`text-[13px] font-semibold transition ${
+                  className={`text-sm sm:text-base font-semibold transition ${
                     isActive
                       ? "text-[#C80000]"
                       : "text-zinc-700 dark:text-zinc-200"
@@ -117,7 +117,7 @@ const AdBuilderStepper = ({ currentStep = 0, onStepChange = () => {} }) => {
                 >
                   {step.label}
                 </span>
-                <span className="text-[11px] text-zinc-500 transition dark:text-zinc-400">
+                <span className="text-xs sm:text-sm text-zinc-500 transition dark:text-zinc-400">
                   {step.description}
                 </span>
               </div>

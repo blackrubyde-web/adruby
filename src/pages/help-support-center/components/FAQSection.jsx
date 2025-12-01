@@ -116,10 +116,10 @@ const FAQSection = () => {
       
       {/* Header */}
       <div className="text-center mb-8">
-        <h2 className="text-2xl font-bold text-gray-900 mb-2">
+        <h2 className="text-2xl font-bold text-foreground mb-2">
           Häufig gestellte Fragen
         </h2>
-        <p className="text-gray-600">
+        <p className="text-muted-foreground">
           Finden Sie schnell Antworten auf die häufigsten Fragen zu BlackRuby
         </p>
       </div>
@@ -134,20 +134,20 @@ const FAQSection = () => {
             onChange={(e) => setSearchTerm(e?.target?.value)}
             className="pl-10 pr-4 py-3 w-full"
           />
-          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-            <Icon name="Search" size={18} className="text-gray-400" />
+          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-muted-foreground">
+            <Icon name="Search" size={18} />
           </div>
           {searchTerm && (
             <button
               onClick={() => setSearchTerm('')}
-              className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600"
+              className="absolute inset-y-0 right-0 pr-3 flex items-center text-muted-foreground hover:text-foreground"
             >
               <Icon name="X" size={18} />
             </button>
           )}
         </div>
         {searchTerm && (
-          <p className="text-center text-sm text-gray-500 mt-2">
+          <p className="text-center text-sm text-muted-foreground mt-2">
             {filteredCategories?.reduce((acc, cat) => acc + cat?.items?.length, 0)} Ergebnisse gefunden
           </p>
         )}
@@ -157,12 +157,12 @@ const FAQSection = () => {
       <div className="space-y-8">
         {filteredCategories?.length > 0 ? (
           filteredCategories?.map((category) => (
-            <div key={category?.title} className="bg-white rounded-xl border border-gray-200 shadow-sm">
+            <div key={category?.title} className="bg-card rounded-xl border border-border shadow-minimal">
               
               {/* Category Header */}
-              <div className="px-6 py-4 border-b border-gray-200 bg-gray-50 rounded-t-xl">
-                <h3 className="text-lg font-semibold text-gray-900 flex items-center">
-                  <Icon name={category?.icon} size={20} className="mr-2 text-red-600" />
+              <div className="px-6 py-4 border-b border-border bg-muted rounded-t-xl">
+                <h3 className="text-lg font-semibold text-foreground flex items-center">
+                  <Icon name={category?.icon} size={20} className="mr-2 text-primary" />
                   {category?.title}
                 </h3>
               </div>
@@ -171,30 +171,30 @@ const FAQSection = () => {
               <div className="p-6">
                 <div className="space-y-4">
                   {category?.items?.map((item, index) => (
-                    <div key={item?.id} className={`border border-gray-200 rounded-lg ${
+                    <div key={item?.id} className={`border border-border rounded-lg ${
                       index === category?.items?.length - 1 ? '' : 'mb-4'
                     }`}>
                       
                       {/* Question */}
                       <button
                         onClick={() => toggleItem(item?.id)}
-                        className="w-full px-4 py-4 text-left hover:bg-gray-50 transition-colors rounded-lg flex items-center justify-between"
+                        className="w-full px-4 py-4 text-left hover:bg-muted transition-colors rounded-lg flex items-center justify-between"
                       >
-                        <span className="font-medium text-gray-900 pr-4">
+                        <span className="font-medium text-foreground pr-4">
                           {item?.question}
                         </span>
                         <Icon 
                           name={expandedItems?.has(item?.id) ? "ChevronUp" : "ChevronDown"} 
                           size={18} 
-                          className="text-gray-500 flex-shrink-0" 
+                          className="text-muted-foreground flex-shrink-0" 
                         />
                       </button>
 
                       {/* Answer */}
                       {expandedItems?.has(item?.id) && (
-                        <div className="px-4 pb-4 border-t border-gray-200 bg-gray-50 rounded-b-lg">
+                        <div className="px-4 pb-4 border-t border-border bg-muted rounded-b-lg">
                           <div className="pt-4">
-                            <p className="text-gray-700 leading-relaxed">
+                            <p className="text-foreground leading-relaxed">
                               {item?.answer}
                             </p>
                           </div>
@@ -208,10 +208,10 @@ const FAQSection = () => {
             </div>
           ))
         ) : (
-          <div className="text-center py-12 bg-white rounded-xl border border-gray-200">
-            <Icon name="Search" size={48} className="text-gray-300 mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-gray-900 mb-2">Keine Ergebnisse gefunden</h3>
-            <p className="text-gray-600 mb-4">
+          <div className="text-center py-12 bg-card rounded-xl border border-border shadow-minimal">
+            <Icon name="Search" size={48} className="text-muted-foreground mx-auto mb-4" />
+            <h3 className="text-lg font-medium text-foreground mb-2">Keine Ergebnisse gefunden</h3>
+            <p className="text-muted-foreground mb-4">
               {searchTerm ? 
                 `Keine FAQ-Einträge gefunden für "${searchTerm}"` : 
                 'Keine FAQ-Kategorien verfügbar'
@@ -220,7 +220,7 @@ const FAQSection = () => {
             {searchTerm && (
               <button
                 onClick={() => setSearchTerm('')}
-                className="text-red-600 hover:text-red-700 font-medium"
+                className="text-primary hover:opacity-80 font-medium"
               >
                 Suche zurücksetzen
               </button>
@@ -230,17 +230,17 @@ const FAQSection = () => {
       </div>
 
       {/* Still need help */}
-      <div className="mt-12 text-center bg-gradient-to-r from-red-50 to-pink-50 rounded-xl p-8 border border-red-100">
-        <Icon name="MessageCircle" size={48} className="text-red-600 mx-auto mb-4" />
-        <h3 className="text-xl font-semibold text-gray-900 mb-2">
+      <div className="mt-12 text-center bg-muted rounded-xl p-8 border border-border">
+        <Icon name="MessageCircle" size={48} className="text-primary mx-auto mb-4" />
+        <h3 className="text-xl font-semibold text-foreground mb-2">
           Antwort nicht gefunden?
         </h3>
-        <p className="text-gray-600 mb-6">
+        <p className="text-muted-foreground mb-6">
           Unser Support-Team hilft Ihnen gerne weiter. Kontaktieren Sie uns für individuelle Unterstützung.
         </p>
         <button
           onClick={() => window?.scrollTo({ top: 0, behavior: 'smooth' })}
-          className="bg-red-600 hover:bg-red-700 text-white px-6 py-3 rounded-lg font-medium transition-colors inline-flex items-center"
+          className="bg-primary hover:bg-primary/90 text-primary-foreground px-6 py-3 rounded-lg font-medium transition-colors inline-flex items-center"
         >
           <Icon name="Mail" size={18} className="mr-2" />
           Support kontaktieren

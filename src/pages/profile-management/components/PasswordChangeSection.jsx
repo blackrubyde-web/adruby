@@ -133,7 +133,7 @@ const PasswordChangeSection = ({ onPasswordUpdate }) => {
         
         {/* Current Password */}
         <div>
-          <label htmlFor="currentPassword" className="block text-sm font-medium text-gray-700 mb-2">
+          <label htmlFor="currentPassword" className="block text-sm font-medium text-foreground mb-2">
             Aktuelles Passwort *
           </label>
           <div className="relative">
@@ -144,30 +144,29 @@ const PasswordChangeSection = ({ onPasswordUpdate }) => {
               onChange={(e) => handleInputChange('currentPassword', e?.target?.value)}
               placeholder="Ihr aktuelles Passwort"
               disabled={changing}
-              className={`pl-10 pr-12 py-3 w-full border rounded-lg transition-colors ${
-                errors?.currentPassword ? 
-                'border-red-300 focus:ring-red-500' : 'border-gray-300 focus:ring-red-500 focus:border-transparent'
+              className={`pl-10 pr-12 h-11 ${
+                errors?.currentPassword ? "border-destructive focus-visible:ring-destructive" : ""
               }`}
             />
-            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-              <Icon name="Lock" size={18} className="text-gray-400" />
+            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-muted-foreground">
+              <Icon name="Lock" size={18} />
             </div>
             <button
               type="button"
               onClick={() => togglePasswordVisibility('current')}
-              className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600"
+              className="absolute inset-y-0 right-0 pr-3 flex items-center text-muted-foreground hover:text-foreground"
             >
               <Icon name={showPasswords?.current ? "EyeOff" : "Eye"} size={18} />
             </button>
           </div>
           {errors?.currentPassword && (
-            <p className="mt-1 text-sm text-red-600">{errors?.currentPassword}</p>
+            <p className="mt-1 text-sm text-destructive">{errors?.currentPassword}</p>
           )}
         </div>
 
         {/* New Password */}
         <div>
-          <label htmlFor="newPassword" className="block text-sm font-medium text-gray-700 mb-2">
+          <label htmlFor="newPassword" className="block text-sm font-medium text-foreground mb-2">
             Neues Passwort *
           </label>
           <div className="relative">
@@ -178,33 +177,32 @@ const PasswordChangeSection = ({ onPasswordUpdate }) => {
               onChange={(e) => handleInputChange('newPassword', e?.target?.value)}
               placeholder="Ihr neues Passwort"
               disabled={changing}
-              className={`pl-10 pr-12 py-3 w-full border rounded-lg transition-colors ${
-                errors?.newPassword ? 
-                'border-red-300 focus:ring-red-500' : 'border-gray-300 focus:ring-red-500 focus:border-transparent'
+              className={`pl-10 pr-12 h-11 ${
+                errors?.newPassword ? "border-destructive focus-visible:ring-destructive" : ""
               }`}
             />
-            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-              <Icon name="Key" size={18} className="text-gray-400" />
+            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-muted-foreground">
+              <Icon name="Key" size={18} />
             </div>
             <button
               type="button"
               onClick={() => togglePasswordVisibility('new')}
-              className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600"
+              className="absolute inset-y-0 right-0 pr-3 flex items-center text-muted-foreground hover:text-foreground"
             >
               <Icon name={showPasswords?.new ? "EyeOff" : "Eye"} size={18} />
             </button>
           </div>
           {errors?.newPassword && (
-            <p className="mt-1 text-sm text-red-600">{errors?.newPassword}</p>
+            <p className="mt-1 text-sm text-destructive">{errors?.newPassword}</p>
           )}
           
           {/* Password Strength Indicator */}
           {passwordData?.newPassword && passwordValidation && (
-            <div className="mt-3 p-3 bg-gray-50 rounded-lg border">
-              <p className="text-sm font-medium text-gray-700 mb-2">Passwort-Anforderungen:</p>
+            <div className="mt-3 p-3 bg-muted rounded-lg border border-border">
+              <p className="text-sm font-medium text-foreground mb-2">Passwort-Anforderungen:</p>
               <div className="space-y-1">
                 <div className={`flex items-center text-xs ${
-                  passwordValidation?.minLength ? 'text-green-600' : 'text-gray-500'
+                  passwordValidation?.minLength ? 'text-emerald-500' : 'text-muted-foreground'
                 }`}>
                   <Icon 
                     name={passwordValidation?.minLength ? "CheckCircle" : "Circle"} 
@@ -214,7 +212,7 @@ const PasswordChangeSection = ({ onPasswordUpdate }) => {
                   Mindestens 6 Zeichen
                 </div>
                 <div className={`flex items-center text-xs ${
-                  passwordValidation?.hasUpperCase ? 'text-green-600' : 'text-gray-500'
+                  passwordValidation?.hasUpperCase ? 'text-emerald-500' : 'text-muted-foreground'
                 }`}>
                   <Icon 
                     name={passwordValidation?.hasUpperCase ? "CheckCircle" : "Circle"} 
@@ -224,7 +222,7 @@ const PasswordChangeSection = ({ onPasswordUpdate }) => {
                   Mindestens einen Großbuchstaben
                 </div>
                 <div className={`flex items-center text-xs ${
-                  passwordValidation?.hasLowerCase ? 'text-green-600' : 'text-gray-500'
+                  passwordValidation?.hasLowerCase ? 'text-emerald-500' : 'text-muted-foreground'
                 }`}>
                   <Icon 
                     name={passwordValidation?.hasLowerCase ? "CheckCircle" : "Circle"} 
@@ -234,7 +232,7 @@ const PasswordChangeSection = ({ onPasswordUpdate }) => {
                   Mindestens einen Kleinbuchstaben
                 </div>
                 <div className={`flex items-center text-xs ${
-                  passwordValidation?.hasNumbers ? 'text-green-600' : 'text-gray-500'
+                  passwordValidation?.hasNumbers ? 'text-emerald-500' : 'text-muted-foreground'
                 }`}>
                   <Icon 
                     name={passwordValidation?.hasNumbers ? "CheckCircle" : "Circle"} 
@@ -250,7 +248,7 @@ const PasswordChangeSection = ({ onPasswordUpdate }) => {
 
         {/* Confirm Password */}
         <div>
-          <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 mb-2">
+          <label htmlFor="confirmPassword" className="block text-sm font-medium text-foreground mb-2">
             Passwort bestätigen *
           </label>
           <div className="relative">
@@ -261,24 +259,23 @@ const PasswordChangeSection = ({ onPasswordUpdate }) => {
               onChange={(e) => handleInputChange('confirmPassword', e?.target?.value)}
               placeholder="Passwort erneut eingeben"
               disabled={changing}
-              className={`pl-10 pr-12 py-3 w-full border rounded-lg transition-colors ${
-                errors?.confirmPassword ? 
-                'border-red-300 focus:ring-red-500' : 'border-gray-300 focus:ring-red-500 focus:border-transparent'
+              className={`pl-10 pr-12 h-11 ${
+                errors?.confirmPassword ? "border-destructive focus-visible:ring-destructive" : ""
               }`}
             />
-            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-              <Icon name="Shield" size={18} className="text-gray-400" />
+            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-muted-foreground">
+              <Icon name="Shield" size={18} />
             </div>
             <button
               type="button"
               onClick={() => togglePasswordVisibility('confirm')}
-              className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600"
+              className="absolute inset-y-0 right-0 pr-3 flex items-center text-muted-foreground hover:text-foreground"
             >
               <Icon name={showPasswords?.confirm ? "EyeOff" : "Eye"} size={18} />
             </button>
           </div>
           {errors?.confirmPassword && (
-            <p className="mt-1 text-sm text-red-600">{errors?.confirmPassword}</p>
+            <p className="mt-1 text-sm text-destructive">{errors?.confirmPassword}</p>
           )}
         </div>
 
@@ -287,7 +284,7 @@ const PasswordChangeSection = ({ onPasswordUpdate }) => {
           <Button
             type="submit"
             disabled={changing || !passwordData?.currentPassword || !passwordData?.newPassword || !passwordData?.confirmPassword}
-            className="bg-red-600 hover:bg-red-700 text-white px-6 py-2 rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            className="px-6 py-2"
           >
             {changing ? (
               <div className="flex items-center">
@@ -303,12 +300,12 @@ const PasswordChangeSection = ({ onPasswordUpdate }) => {
       </form>
 
       {/* Security Tips */}
-      <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
+      <div className="bg-muted border border-border rounded-lg p-4">
         <div className="flex items-start space-x-3">
-          <Icon name="Shield" size={20} className="text-amber-500 flex-shrink-0 mt-0.5" />
+          <Icon name="Shield" size={20} className="text-primary flex-shrink-0 mt-0.5" />
           <div>
-            <h4 className="text-sm font-medium text-amber-800">Sicherheits-Tipps</h4>
-            <div className="text-sm text-amber-700 mt-1">
+            <h4 className="text-sm font-medium text-foreground">Sicherheits-Tipps</h4>
+            <div className="text-sm text-muted-foreground mt-1">
               <ul className="space-y-1 list-disc list-inside">
                 <li>Verwenden Sie ein starkes, einzigartiges Passwort</li>
                 <li>Teilen Sie Ihr Passwort niemals mit anderen</li>
