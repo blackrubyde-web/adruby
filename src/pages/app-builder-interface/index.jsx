@@ -187,7 +187,10 @@ const HighConversionAdBuilder = () => {
   };
 
   const startAdResearch = async () => {
-    if (!validateForm()) return;
+    // optional: Formular prüfen, aber nicht hart abbrechen,
+    // weil handleAnalyzeAndGenerate schon validiert
+    console.log("[AdBuilder] startAdResearch (auto/manual) triggered");
+
     setResearchError(null);
     setIsResearchLoading(true);
 
@@ -196,23 +199,29 @@ const HighConversionAdBuilder = () => {
         formData.research_keyword?.trim() || formData.product_name?.trim();
 
       if (!keyword) {
-        setResearchError(
-          "Bitte geben Sie ein Research-Keyword oder einen Produktnamen ein."
-        );
+        const msg =
+          "Bitte geben Sie ein Research-Keyword oder einen Produktnamen ein.";
+        console.warn("[AdBuilder] startAdResearch aborted:", msg);
+        setResearchError(msg);
         setIsResearchLoading(false);
-        return;
+        return null;
       }
 
       const country =
         formData.research_country || formData.market_country || "DE";
+
       const searchUrl = buildFacebookAdsLibraryUrl({
         country,
         searchTerm: keyword,
         pageId: formData?.page_id,
       });
+
       const maxAds = Number(formData.research_max_results) || 30;
 
-      console.log("[AdResearch][Frontend] searchUrl", searchUrl);
+      console.log("[AdResearch][Frontend] startAdResearch", {
+        searchUrl,
+        maxAds,
+      });
 
       const res = await fetch("/.netlify/functions/ad-research-start", {
         method: "POST",
@@ -229,35 +238,61 @@ const HighConversionAdBuilder = () => {
       }
 
       const json = await res.json();
-      setResearchJobId(json.jobId || json.job_id || null);
-      setResearchAds(json.ads || []);
+
+      const jobId = json.jobId || json.job_id || null;
+      const ads = Array.isArray(json.ads) ? json.ads : [];
+
+      setResearchJobId(jobId);
+      setResearchAds(ads);
+
+      console.log("[AdBuilder] startAdResearch result", {
+        jobId,
+        adsCount: ads.length,
+        status: json.status,
+        datasetId: json.datasetId || json.defaultDatasetId || null,
+      });
+
+      // Wichtig: Ergebnis an Aufrufer zurückgeben
+      return { jobId, ads, raw: json };
     } catch (err) {
       console.error("[AdBuilder] startAdResearch error", err);
       setResearchError(
         err?.message || "Fehler beim Start des Ad Research"
       );
+      return null;
     } finally {
       setIsResearchLoading(false);
     }
   };
 
-  const analyzeResearchAds = async () => {
-    if (!researchJobId) {
-      setResearchError(
-        "Kein Research-Job vorhanden. Bitte zuerst Research starten."
-      );
-      return;
+  const analyzeResearchAds = async (jobIdOverride) => {
+    const effectiveJobId = jobIdOverride || researchJobId;
+
+    console.log("[AdBuilder] analyzeResearchAds triggered", {
+      jobIdOverride,
+      effectiveJobId,
+    });
+
+    if (!effectiveJobId) {
+      const msg =
+        "Kein Research-Job vorhanden. Bitte zuerst Research starten.";
+      console.warn("[AdBuilder] analyzeResearchAds aborted:", msg);
+      setResearchError(msg);
+      return null;
     }
+
     setResearchError(null);
     setIsResearchAnalyzing(true);
 
     try {
+      const limit = Number(formData.research_max_results) || 30;
+
       const res = await fetch("/.netlify/functions/ad-research-analyze", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          jobId: researchJobId,
-          limit: Number(formData.research_max_results) || 30,
+          jobId: effectiveJobId,
+          limit,
         }),
       });
 
@@ -268,163 +303,201 @@ const HighConversionAdBuilder = () => {
 
       const json = await res.json();
       const ads = json.ads || json.results || [];
+
       setAnalyzedResearchAds(ads);
+
+      console.log("[AdBuilder] analyzeResearchAds result", {
+        jobId: effectiveJobId,
+        adsCount: ads.length,
+      });
+
+      // Wichtig: Ergebnis zurückgeben
+      return { jobId: effectiveJobId, ads, raw: json };
     } catch (err) {
       console.error("[AdBuilder] analyzeResearchAds error", err);
       setResearchError(
         err?.message || "Fehler bei der Analyse der gescrapten Ads"
       );
+      return null;
     } finally {
       setIsResearchAnalyzing(false);
     }
   };
 
-const handleAnalyzeAndGenerate = async () => {
-  console.log("[AdBuilder] handleAnalyzeAndGenerate triggered", {
-    formData,
-    hasAnalyzedResearchAds:
-      Array.isArray(analyzedResearchAds) && analyzedResearchAds.length > 0,
-  });
+  const handleAnalyzeAndGenerate = async () => {
+    console.log("[AdBuilder] handleAnalyzeAndGenerate triggered", {
+      formData,
+      hasResearchAds: Array.isArray(researchAds) && researchAds.length > 0,
+      hasAnalyzedResearchAds:
+        Array.isArray(analyzedResearchAds) && analyzedResearchAds.length > 0,
+    });
 
-  if (!validateForm()) return;
-  console.log("[AdBuilder] validateForm passed");
+    if (!validateForm()) return;
+    console.log("[AdBuilder] validateForm passed");
 
-  setError(null);
-  setSuccess(null);
-  setIsAnalyzing(true);
-  setCurrentStep(1);
+    setError(null);
+    setSuccess(null);
+    setIsAnalyzing(true);
+    setCurrentStep(1);
 
-  try {
-    const extendedForm = {
-      ...formData,
-      ad_pressure: adPressure,
-    };
+    // 1) Automatischer Research-Flow (Scraping + Analyse)
+    let researchContext = null;
 
-    // 🔁 researchContext wieder rein
-    const researchContext =
-      analyzedResearchAds && analyzedResearchAds.length > 0
-        ? {
-            topAds: analyzedResearchAds.slice(0, 10),
-            topHooks: analyzedResearchAds
+    try {
+      console.log("[AdBuilder] Auto research flow: start");
+
+      // a) Scraping (Apify)
+      const researchStartResult = await startAdResearch();
+      const jobId = researchStartResult?.jobId || researchJobId || null;
+
+      if (jobId) {
+        // b) Analyse der gescrapten Ads
+        const analyzeResult = await analyzeResearchAds(jobId);
+        const analyzedAds = analyzeResult?.ads || [];
+
+        if (Array.isArray(analyzedAds) && analyzedAds.length > 0) {
+          researchContext = {
+            topAds: analyzedAds.slice(0, 10),
+            topHooks: analyzedAds
               .map((a) => a.mainHook || a.main_hook)
               .filter(Boolean)
               .slice(0, 10),
             source: "meta_ad_library",
-          }
-        : null;
+            jobId,
+          };
+        }
 
-    console.log("[AdBuilder] Creating product with payload", extendedForm);
-    const { data: product, error: productError } =
-      await AdBuilderService.createProduct(extendedForm);
-    if (productError) throw productError;
-    console.log("[AdBuilder] Product created", { productId: product?.id });
-
-    console.log("[AdBuilder] Starting market analysis", {
-      hasResearchContext: !!researchContext,
-    });
-
-    const {
-      data: insights,
-      error: analysisError,
-      fallbackUsed,
-      fallbackReason,
-    } = await AdBuilderService.analyzeMarket(
-      product,
-      researchContext || undefined
-    );
-
-    if (!insights && analysisError) throw analysisError;
-    setMarketInsights(insights);
-    if (fallbackUsed) {
-      setSuccess(
-        `Marktanalyse mit Fallback-Daten abgeschlossen (${fallbackReason})`
-      );
+        console.log("[AdBuilder] Auto research flow finished", {
+          jobId,
+          analyzedAdsCount: analyzedAds.length,
+          hasResearchContext: !!researchContext,
+        });
+      } else {
+        console.warn(
+          "[AdBuilder] Auto research flow: no jobId available, continuing without researchContext"
+        );
+      }
+    } catch (researchErr) {
+      console.error("[AdBuilder] Error in automatic research flow", researchErr);
+      // Fehler im Research sollen die Ad-Erstellung nicht komplett blockieren
     }
 
-    console.log("[AdBuilder] Market analysis finished", {
-      hasInsights: !!insights,
-      fallbackUsed,
-      fallbackReason,
-    });
+    try {
+      // 2) Produktdaten mit Werbedruck erweitern
+      const extendedForm = {
+        ...formData,
+        ad_pressure: adPressure,
+      };
 
-    setIsAnalyzing(false);
-    setIsGenerating(true);
-    setCurrentStep(2);
+      console.log("[AdBuilder] Creating product with payload", extendedForm);
+      const { data: product, error: productError } =
+        await AdBuilderService.createProduct(extendedForm);
+      if (productError) throw productError;
 
-    if (researchContext) {
-      console.log(
-        "[AdBuilder] Using researchContext for generation",
-        researchContext
-      );
-    }
+      console.log("[AdBuilder] Product created", { productId: product?.id });
 
-    console.log("[AdBuilder] Generating ads", {
-      productId: product?.id,
-      hasInsights: !!insights,
-      hasResearchContext: !!researchContext,
-    });
+      // 3) Marktanalyse mit optionalem Research-Context
+      console.log("[AdBuilder] Starting market analysis", {
+        hasResearchContext: !!researchContext,
+      });
 
-    const { data: ads, error: adsError, fallbackGenerated } =
-      await AdBuilderService.generateAds(
+      const {
+        data: insights,
+        error: analysisError,
+        fallbackUsed,
+        fallbackReason,
+      } = await AdBuilderService.analyzeMarket(
         product,
-        insights,
         researchContext || undefined
       );
-    if (!ads && adsError) throw adsError;
 
-    const { data: savedAds, error: saveError } =
-      await AdBuilderService.saveGeneratedAds(product?.id, ads);
-    if (saveError) throw saveError;
+      if (!insights && analysisError) throw analysisError;
+      setMarketInsights(insights);
 
-    await AdBuilderService.saveMarketInsights(product?.id, insights);
+      if (fallbackUsed) {
+        setSuccess(
+          `Marktanalyse mit Fallback-Daten abgeschlossen (${fallbackReason})`
+        );
+      }
 
-    setGeneratedAds(savedAds || []);
-    setSelectedAd(savedAds?.[0] || null);
-    console.log("[AdBuilder] Ads generated and saved", {
-      count: savedAds?.length || 0,
-    });
+      console.log("[AdBuilder] Market analysis finished", {
+        hasInsights: !!insights,
+        fallbackUsed,
+        fallbackReason,
+      });
 
-    let successMsg = "Anzeigen erfolgreich generiert!";
-    if (fallbackGenerated && fallbackUsed) {
-      successMsg =
-        "Anzeigen mit Fallback-Systemen generiert - vollständig funktionsfähig!";
-    } else if (fallbackGenerated) {
-      successMsg = "Anzeigen mit alternativer Generierung erstellt!";
-    } else if (fallbackUsed) {
-      successMsg =
-        "Anzeigen erfolgreich generiert (mit Fallback-Marktdaten)!";
+      // 4) Ad-Generierung
+      setIsAnalyzing(false);
+      setIsGenerating(true);
+      setCurrentStep(2);
+
+      console.log("[AdBuilder] Generating ads", {
+        productId: product?.id,
+        hasInsights: !!insights,
+        hasResearchContext: !!researchContext,
+      });
+
+      const { data: ads, error: adsError, fallbackGenerated } =
+        await AdBuilderService.generateAds(
+          product,
+          insights,
+          researchContext || undefined
+        );
+      if (!ads && adsError) throw adsError;
+
+      const { data: savedAds, error: saveError } =
+        await AdBuilderService.saveGeneratedAds(product?.id, ads);
+      if (saveError) throw saveError;
+
+      await AdBuilderService.saveMarketInsights(product?.id, insights);
+
+      setGeneratedAds(savedAds || []);
+      setSelectedAd(savedAds?.[0] || null);
+      console.log("[AdBuilder] Ads generated and saved", {
+        count: savedAds?.length || 0,
+      });
+
+      let successMsg = "Anzeigen erfolgreich generiert!";
+      if (fallbackGenerated && fallbackUsed) {
+        successMsg =
+          "Anzeigen mit Fallback-Systemen generiert - vollständig funktionsfähig!";
+      } else if (fallbackGenerated) {
+        successMsg = "Anzeigen mit alternativer Generierung erstellt!";
+      } else if (fallbackUsed) {
+        successMsg =
+          "Anzeigen erfolgreich generiert (mit Fallback-Marktdaten)!";
+      }
+
+      setSuccess(successMsg);
+      loadUserStats();
+    } catch (err) {
+      console.error(
+        "[AdBuilder] Global error in handleAnalyzeAndGenerate",
+        err
+      );
+
+      let errorMessage =
+        "Ein Fehler ist aufgetreten. Bitte versuchen Sie es erneut.";
+
+      if (AdBuilderService?.isOpenAIQuotaError?.(err)) {
+        errorMessage =
+          "OpenAI API-Limit erreicht. Bitte überprüfen Sie Ihr OpenAI-Konto oder kontaktieren Sie den Support.";
+      } else if (AdBuilderService?.isNetworkError?.(err)) {
+        errorMessage =
+          "Netzwerkproblem festgestellt. Bitte überprüfen Sie Ihre Internetverbindung und versuchen Sie es erneut.";
+      } else if (err?.message?.includes("User not authenticated")) {
+        errorMessage = "Sitzung abgelaufen. Bitte melden Sie sich erneut an.";
+      } else if (err?.message) {
+        errorMessage = `Fehler: ${err?.message}`;
+      }
+
+      setError(errorMessage);
+      setCurrentStep(0);
+    } finally {
+      setIsAnalyzing(false);
+      setIsGenerating(false);
     }
-
-    setSuccess(successMsg);
-    loadUserStats();
-  } catch (err) {
-    console.error(
-      "[AdBuilder] Global error in handleAnalyzeAndGenerate",
-      err
-    );
-
-    let errorMessage =
-      "Ein Fehler ist aufgetreten. Bitte versuchen Sie es erneut.";
-
-    if (AdBuilderService?.isOpenAIQuotaError?.(err)) {
-      errorMessage =
-        "OpenAI API-Limit erreicht. Bitte überprüfen Sie Ihr OpenAI-Konto oder kontaktieren Sie den Support.";
-    } else if (AdBuilderService?.isNetworkError?.(err)) {
-      errorMessage =
-        "Netzwerkproblem festgestellt. Bitte überprüfen Sie Ihre Internetverbindung und versuchen Sie es erneut.";
-    } else if (err?.message?.includes("User not authenticated")) {
-      errorMessage = "Sitzung abgelaufen. Bitte melden Sie sich erneut an.";
-    } else if (err?.message) {
-      errorMessage = `Fehler: ${err?.message}`;
-    }
-
-    setError(errorMessage);
-    setCurrentStep(0);
-  } finally {
-    setIsAnalyzing(false);
-    setIsGenerating(false);
-  }
-};
+  };
 
 
   const subtleText = "text-slate-500 dark:text-slate-400";
@@ -477,31 +550,12 @@ const handleAnalyzeAndGenerate = async () => {
                   KI-gestützter Anzeigengenerator für maximale Conversion-Raten
                 </p>
                 <p className="text-sm text-muted-foreground">
-                  Optional: Nutze das Ad Research, um Top-Performer aus der Meta Ad Library zu scannen und deine KI-Ads daran auszurichten.
+                  Beim Klick auf <span className="font-semibold">„Ad-Erstellung starten“</span> führt das System automatisch ein Ad&nbsp;Research in der Meta Ad Library durch und richtet deine KI-Ads an den gefundenen Top-Performern aus.
                 </p>
-                <div className="mt-4 flex flex-wrap gap-3">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={startAdResearch}
-                    disabled={isResearchLoading || isResearchAnalyzing}
-                  >
-                    <Icon name="Search" size={16} className="mr-2" />
-                    Ad Research starten
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={analyzeResearchAds}
-                    disabled={isResearchAnalyzing || !researchJobId}
-                  >
-                    <Icon name="BarChart3" size={16} className="mr-2" />
-                    Gescrapte Ads analysieren
-                  </Button>
-                </div>
+
                 {(researchAds?.length > 0 || analyzedResearchAds?.length > 0) && (
                   <p className="mt-2 text-xs text-muted-foreground">
-                    Research-Ads: {researchAds?.length || 0} • Analysierte Ads: {analyzedResearchAds?.length || 0}
+                    Automatisches Research aktiv • Gescrapte Ads: {researchAds?.length || 0} • Analysierte Ads: {analyzedResearchAds?.length || 0}
                   </p>
                 )}
               </div>
