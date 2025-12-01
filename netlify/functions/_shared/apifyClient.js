@@ -1,116 +1,141 @@
 // netlify/functions/_shared/apifyClient.js
 
-const DEFAULT_ACTOR_URL =
-  "https://api.apify.com/v2/acts/curious_coder~facebook-ads-library-scraper/run-sync-get-dataset-items";
+const APIFY_API_TOKEN = process.env.APIFY_API_TOKEN;
+const APIFY_AD_RESEARCH_ACTOR_ID = process.env.APIFY_AD_RESEARCH_ACTOR_ID;
 
-const APIFY_API_KEY = process.env.APIFY_API_KEY;
-const ACTOR_URL = process.env.APIFY_FB_ADLIB_ACTOR_URL || DEFAULT_ACTOR_URL;
-
-if (!APIFY_API_KEY) {
-  console.error("[Apify] Missing APIFY_API_KEY environment variable");
-  throw new Error("APIFY_API_KEY is required for Apify integration");
+/**
+ * Kleiner Helper zum Warten (Polling für Apify-Run).
+ */
+function sleep(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
 /**
- * Ruft den Apify Facebook Ad Library Scraper synchron auf
- * und gibt ein normalisiertes Array von Ads zurück.
+ * Startet einen Apify Actor und holt danach die Dataset-Items (Ads).
+ *
+ * @param {Object} params
+ * @param {string} [params.actorId] - Optional eigener Actor, sonst ENV
+ * @param {Object} [params.input]   - Input für den Actor
+ *
+ * @returns {Promise<{ ads: any[] }>}
  */
-async function callApifyFacebookAdsLibrary(params = {}) {
-  const {
-    urls,
-    period = "",
-    limitPerSource,
-    count,
-    scrapeAdDetails,
-    countryCode = "ALL",
-    activeStatus = "all",
-  } = params;
-
-  if (!Array.isArray(urls) || urls.length === 0 || urls.some((u) => typeof u !== "string")) {
-    throw new Error("urls must be a non-empty array of strings");
+async function runAdResearchActor({ actorId = APIFY_AD_RESEARCH_ACTOR_ID, input = {} } = {}) {
+  if (!APIFY_API_TOKEN) {
+    console.error("[ApifyClient] Missing APIFY_API_TOKEN");
+    throw new Error("APIFY_API_TOKEN is not set");
   }
 
-  const input = {
-    urls,
-    scrapeAdDetails: !!scrapeAdDetails,
-    limitPerSource,
-    count,
-    period: period || "",
-    scrapePageAds: {
-      activeStatus: activeStatus || "all",
-      countryCode: countryCode || "ALL",
-    },
-  };
+  if (!actorId) {
+    console.error("[ApifyClient] Missing APIFY_AD_RESEARCH_ACTOR_ID");
+    throw new Error("APIFY_AD_RESEARCH_ACTOR_ID is not set");
+  }
 
-  // Remove undefined keys
-  Object.keys(input).forEach((key) => input[key] === undefined && delete input[key]);
-  if (input.scrapePageAds) {
-    Object.keys(input.scrapePageAds).forEach(
-      (key) => input.scrapePageAds[key] === undefined && delete input.scrapePageAds[key]
-    );
-    if (Object.keys(input.scrapePageAds).length === 0) {
-      delete input.scrapePageAds;
+  const baseUrl = "https://api.apify.com/v2";
+
+  console.log("[ApifyClient] Starting actor run", {
+    actorId,
+    hasInput: !!input,
+  });
+
+  // 1) Actor-Run starten
+  const startRes = await fetch(`${baseUrl}/actors/${actorId}/runs?token=${APIFY_API_TOKEN}`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(input || {}),
+  });
+
+  if (!startRes.ok) {
+    const text = await startRes.text();
+    console.error("[ApifyClient] Failed to start actor run", {
+      status: startRes.status,
+      body: text,
+    });
+    throw new Error(`Failed to start Apify actor: ${startRes.status}`);
+  }
+
+  const startJson = await startRes.json();
+  const run = startJson?.data;
+  const runId = run?.id;
+
+  if (!runId) {
+    console.error("[ApifyClient] No runId in start response", startJson);
+    throw new Error("Apify did not return a runId");
+  }
+
+  console.log("[ApifyClient] Actor run started", { runId });
+
+  // 2) Polling bis der Run fertig ist
+  let status = run?.status;
+  let datasetId = run?.defaultDatasetId;
+
+  while (!status || ["READY", "RUNNING", "STARTING"].includes(status)) {
+    console.log("[ApifyClient] Polling run status", { runId, status });
+    await sleep(5000);
+
+    const runRes = await fetch(`${baseUrl}/actor-runs/${runId}?token=${APIFY_API_TOKEN}`);
+    if (!runRes.ok) {
+      const text = await runRes.text();
+      console.error("[ApifyClient] Failed to fetch run status", {
+        status: runRes.status,
+        body: text,
+      });
+      throw new Error(`Failed to fetch Apify run status: ${runRes.status}`);
     }
+
+    const runJson = await runRes.json();
+    status = runJson?.data?.status;
+    datasetId = runJson?.data?.defaultDatasetId;
+
+    if (!status) {
+      console.error("[ApifyClient] No status in run status response", runJson);
+      throw new Error("Apify run status is unknown");
+    }
+
+    if (!["READY", "RUNNING", "STARTING", "SUCCEEDED"].includes(status)) {
+      console.error("[ApifyClient] Run ended with non-success status", {
+        runId,
+        status,
+      });
+      throw new Error(`Apify run did not succeed. Status: ${status}`);
+    }
+
+    if (status === "SUCCEEDED") break;
   }
 
-  const requestUrl = `${ACTOR_URL}?token=${encodeURIComponent(APIFY_API_KEY)}`;
+  if (!datasetId) {
+    console.error("[ApifyClient] No datasetId for run", { runId, status });
+    throw new Error("Apify run did not provide a datasetId");
+  }
 
-  console.log("[Apify] Calling Facebook Ads Library Scraper", {
-    urlsCount: urls.length,
-    period,
-    countryCode,
-    limitPerSource,
+  // 3) Dataset-Items (Ads) holen
+  const itemsRes = await fetch(
+    `${baseUrl}/datasets/${datasetId}/items?token=${APIFY_API_TOKEN}&clean=true&format=json`
+  );
+
+  if (!itemsRes.ok) {
+    const text = await itemsRes.text();
+    console.error("[ApifyClient] Failed to fetch dataset items", {
+      status: itemsRes.status,
+      body: text,
+    });
+    throw new Error(`Failed to fetch Apify dataset items: ${itemsRes.status}`);
+  }
+
+  const items = await itemsRes.json();
+  const count = Array.isArray(items) ? items.length : 0;
+
+  console.log("[ApifyClient] Retrieved dataset items", {
+    runId,
+    datasetId,
     count,
   });
 
-  let response;
-  try {
-    response = await fetch(requestUrl, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(input),
-    });
-  } catch (error) {
-    console.error("[Apify] Network error calling Facebook Ads Library Scraper", error);
-    throw error;
-  }
-
-  if (!response.ok) {
-    const snippet = await response.text().catch(() => "<no body>");
-    console.error("[Apify] HTTP error", {
-      status: response.status,
-      body: snippet.slice(0, 500),
-    });
-    throw new Error(`Apify request failed with status ${response.status}`);
-  }
-
-  let data;
-  try {
-    data = await response.json();
-  } catch (error) {
-    console.error("[Apify] Failed to parse JSON response", error);
-    throw new Error("Failed to parse Apify response JSON");
-  }
-
-  const ads = Array.isArray(data) ? data : [];
-  console.log("[Apify] Received", ads.length, "ads from Apify");
-
-  const normalized = ads.map((raw) => ({
-    adId: raw.adId || raw.id || null,
-    pageName: raw.pageName || raw.page_name || null,
-    pageId: raw.pageId || raw.page_id || null,
-    primaryText: raw.primaryText || raw.ad_creative_body || raw.text || null,
-    headline: raw.headline || raw.ad_creative_link_title || null,
-    description: raw.description || raw.ad_creative_link_description || null,
-    ctaLabel: raw.callToActionType || raw.cta || null,
-    creativeType: raw.publisherPlatform || raw.creativeType || null,
-    country: (raw.politicalCountries && raw.politicalCountries[0]) || raw.country || null,
-    language: raw.language || null,
-    platform: raw.publisherPlatform || null,
-    raw,
-  }));
-
-  return normalized;
+  // Wir nennen es hier "ads", die Struktur hängt von deinem Actor ab.
+  return {
+    ads: Array.isArray(items) ? items : [],
+  };
 }
 
-module.exports = { callApifyFacebookAdsLibrary };
+module.exports = {
+  runAdResearchActor,
+};

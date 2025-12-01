@@ -1,6 +1,11 @@
+// netlify/functions/ad-research-start.js
+
 const { callApifyFacebookAdsLibrary } = require("./_shared/apifyClient");
 const { getSupabaseClient } = require("./_shared/supabaseClient");
 
+/**
+ * Baut die URL für die Meta Ad Library
+ */
 function buildFacebookAdsLibraryUrl(keyword, country) {
   const base = "https://www.facebook.com/ads/library/";
   const params = new URLSearchParams({
@@ -28,9 +33,16 @@ exports.handler = async (event) => {
     const body = JSON.parse(event.body || "{}");
     console.log("[AdResearch][Start] Request body", body);
 
-    const { userId, keyword, country: rawCountry, maxResults: rawMaxResults, period = "" } = body;
+    const {
+      userId,
+      keyword,
+      country: rawCountry,
+      maxResults: rawMaxResults,
+      period = "",
+    } = body;
 
     if (!userId || !keyword) {
+      console.warn("[AdResearch][Start] Missing userId or keyword");
       return {
         statusCode: 400,
         headers: { "Content-Type": "application/json" },
@@ -41,7 +53,9 @@ exports.handler = async (event) => {
     const country = rawCountry || "DE";
     const maxResults = Math.min(rawMaxResults || 30, 100);
 
-    // Create job
+    // --------------------------------------------
+    // 1) Job in Supabase anlegen
+    // --------------------------------------------
     const { data: createdJob, error: jobError } = await supabase
       .from("ad_research_jobs")
       .insert({
@@ -55,15 +69,27 @@ exports.handler = async (event) => {
       .select()
       .single();
 
-    if (jobError) {
-      throw jobError;
-    }
+    if (jobError) throw jobError;
 
     job = createdJob;
     console.log("[AdResearch][Start] Job created", { jobId: job.id });
 
+    // --------------------------------------------
+    // 2) Apify Call vorbereiten
+    // --------------------------------------------
     const adsUrl = buildFacebookAdsLibraryUrl(keyword, country);
 
+    console.log("[AdResearch][Start] Calling Apify", {
+      actor: "callApifyFacebookAdsLibrary",
+      adsUrl,
+      country,
+      maxResults,
+      period,
+    });
+
+    // --------------------------------------------
+    // 3) Apify Scraper laufen lassen
+    // --------------------------------------------
     const ads = await callApifyFacebookAdsLibrary({
       urls: [adsUrl],
       period,
@@ -74,39 +100,51 @@ exports.handler = async (event) => {
       scrapeAdDetails: true,
     });
 
-    console.log("[AdResearch][Start] Received", ads.length, "ads from Apify");
+    console.log("[AdResearch][Start] Apify returned", ads.length, "ads");
 
+    // --------------------------------------------
+    // 4) Ads in DB speichern
+    // --------------------------------------------
     let insertedAds = [];
+
     if (ads.length > 0) {
       const mappedAds = ads.map((ad) => ({
         job_id: job.id,
-        external_ad_id: ad.adId,
-        page_name: ad.pageName,
-        page_id: ad.pageId,
-        primary_text: ad.primaryText,
-        headline: ad.headline,
-        description: ad.description,
-        cta_label: ad.ctaLabel,
-        creative_type: ad.creativeType,
-        platform: ad.platform,
-        country: ad.country,
-        language: ad.language,
-        meta_raw: ad.raw,
+        external_ad_id: ad.adId || null,
+        page_name: ad.pageName || null,
+        page_id: ad.pageId || null,
+        primary_text: ad.primaryText || null,
+        headline: ad.headline || null,
+        description: ad.description || null,
+        cta_label: ad.ctaLabel || null,
+        creative_type: ad.creativeType || null,
+        platform: ad.platform || null,
+        country: ad.country || null,
+        language: ad.language || null,
+        meta_raw: ad.raw || ad || null,
+        created_at: new Date().toISOString(),
       }));
 
       const { data: inserted, error: insertError } = await supabase
         .from("ad_research_ads")
         .insert(mappedAds)
-        .select("id, page_name, primary_text, headline, cta_label, creative_type, country, language");
+        .select(
+          "id, page_name, primary_text, headline, cta_label, creative_type, country, language"
+        );
 
-      if (insertError) {
-        throw insertError;
-      }
+      if (insertError) throw insertError;
 
-      insertedAds = inserted || [];
-      console.log("[AdResearch][Start] Inserted", insertedAds.length, "ads into ad_research_ads");
+      insertedAds = inserted;
+      console.log(
+        "[AdResearch][Start] Inserted",
+        insertedAds.length,
+        "ads into ad_research_ads"
+      );
     }
 
+    // --------------------------------------------
+    // 5) Job abschließen
+    // --------------------------------------------
     const { error: updateError } = await supabase
       .from("ad_research_jobs")
       .update({
@@ -116,29 +154,26 @@ exports.handler = async (event) => {
       })
       .eq("id", job.id);
 
-    if (updateError) {
-      throw updateError;
-    }
+    if (updateError) throw updateError;
 
-    const responseAds = insertedAds.map((ad) => ({
-      id: ad.id,
-      pageName: ad.page_name,
-      primaryText: ad.primary_text,
-      headline: ad.headline,
-      ctaLabel: ad.cta_label,
-      creativeType: ad.creative_type,
-      country: ad.country,
-      language: ad.language,
-    }));
-
+    // Antwort für das Frontend
     return {
       statusCode: 200,
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         jobId: job.id,
         status: "completed",
-        adsCount: responseAds.length,
-        ads: responseAds,
+        adsCount: insertedAds.length,
+        ads: insertedAds.map((ad) => ({
+          id: ad.id,
+          pageName: ad.page_name,
+          primaryText: ad.primary_text,
+          headline: ad.headline,
+          ctaLabel: ad.cta_label,
+          creativeType: ad.creative_type,
+          country: ad.country,
+          language: ad.language,
+        })),
       }),
     };
   } catch (error) {
