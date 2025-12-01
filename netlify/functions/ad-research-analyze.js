@@ -1,201 +1,132 @@
 // netlify/functions/ad-research-analyze.js
 
-const { getSupabaseClient } = require("./_shared/supabaseClient");
-const { analyzeAdsWithOpenAI } = require("./_shared/aiAdAnalysis.js");
+import { supabaseAdmin } from "./_shared/clients.js";
 
-/**
- * Netlify Function:
- *  - Nimmt jobId (+ optional limit) entgegen
- *  - Holt Ads aus ad_research_ads
- *  - Schickt sie an OpenAI
- *  - Speichert score + analysis zurück in Supabase
- *  - Gibt die analysierten Ads zurück
- */
-exports.handler = async (event) => {
+const corsHeaders = () => ({
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers": "Content-Type, Authorization",
+  "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+});
+
+export const handler = async (event) => {
+  const headers = corsHeaders();
+
+  if (event.httpMethod === "OPTIONS") {
+    return { statusCode: 200, headers, body: "" };
+  }
+
   if (event.httpMethod !== "POST") {
     return {
       statusCode: 405,
-      headers: { "Content-Type": "application/json" },
+      headers,
       body: JSON.stringify({ error: "Method not allowed" }),
     };
   }
 
-  let body;
+  let jobId;
+  let limit;
+
   try {
-    body = JSON.parse(event.body || "{}");
+    const body = JSON.parse(event.body || "{}");
+    jobId = body.jobId;
+    limit = body.limit;
   } catch (err) {
     console.error("[AdResearch][Analyze] Failed to parse body", err);
     return {
       statusCode: 400,
-      headers: { "Content-Type": "application/json" },
+      headers,
       body: JSON.stringify({ error: "Invalid JSON body" }),
     };
   }
 
-  const { jobId, limit: rawLimit } = body;
-  console.log("[AdResearch][Analyze] Body", body);
+  // fallback to query params
+  const params = event.queryStringParameters || {};
+  jobId = jobId || params.jobId;
+  limit = limit || (params.limit ? Number(params.limit) : undefined);
+
+  if (limit) {
+    limit = Number(limit);
+  }
+  if (!limit || Number.isNaN(limit)) limit = 30;
+  if (limit > 50) limit = 50;
+
+  console.log("[AdResearch][Analyze] Loading ads for job", jobId, "limit", limit);
 
   if (!jobId) {
+    console.error("[AdResearch][Analyze] Missing jobId");
     return {
       statusCode: 400,
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ error: "jobId is required" }),
+      headers,
+      body: JSON.stringify({ error: "Missing jobId" }),
     };
   }
 
-  let limit = Number(rawLimit) || 20;
-  if (limit > 50) limit = 50;
-
-  const supabase = getSupabaseClient();
-
   try {
-    // 1) Ads zu diesem Job holen
-    const { data: ads, error: adsError } = await supabase
+    const { data: ads, error } = await supabaseAdmin
       .from("ad_research_ads")
       .select(
-        "id, primary_text, headline, description, score, analysis, page_name, country, language"
+        `
+          id,
+          job_id,
+          ad_library_id,
+          page_id,
+          page_name,
+          primary_text,
+          headline,
+          description,
+          image_url,
+          video_url,
+          score,
+          main_hook,
+          summary,
+          created_at
+        `
       )
       .eq("job_id", jobId)
-      .order("created_at", { ascending: true })
+      .order("score", { ascending: false, nullsLast: true })
       .limit(limit);
 
-    if (adsError) {
-      console.error("[AdResearch][Analyze] Failed to load ads", adsError);
+    if (error) {
+      console.error("[AdResearch][Analyze] Supabase error while loading ads", error);
       return {
         statusCode: 500,
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ error: "Failed to load ads for analysis" }),
+        headers,
+        body: JSON.stringify({
+          error: "Failed to load ads for analysis",
+          details: error.message,
+        }),
       };
     }
 
     if (!ads || ads.length === 0) {
-      console.warn("[AdResearch][Analyze] No ads found for job", jobId);
+      console.log("[AdResearch][Analyze] No ads found for job", jobId);
       return {
-        statusCode: 400,
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ error: "No ads found for this job" }),
+        statusCode: 200,
+        headers,
+        body: JSON.stringify({
+          ads: [],
+          hasResearchContext: false,
+        }),
       };
     }
 
-    console.log(
-      "[AdResearch][Analyze] Loaded",
-      ads.length,
-      "ads for job",
-      jobId
-    );
-
-    const adsForAi = ads.map((ad) => ({
-      id: ad.id,
-      primary_text: ad.primary_text || "",
-      headline: ad.headline || "",
-      description: ad.description || "",
-    }));
-
-    // 2) OpenAI-Analyse
-    const analysisResults = await analyzeAdsWithOpenAI(adsForAi);
-    console.log(
-      "[AdResearch][Analyze] AI returned",
-      analysisResults.length,
-      "items"
-    );
-
-    if (!analysisResults || analysisResults.length === 0) {
-      return {
-        statusCode: 500,
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ error: "AI analysis returned no results" }),
-      };
-    }
-
-    // 3) Ergebnisse zurück in Supabase schreiben
-    let updatedCount = 0;
-
-    for (const result of analysisResults) {
-      const adId = result.id;
-      if (!adId) continue;
-
-      const score =
-        typeof result.score === "number" ? result.score : Number(result.score) || 0;
-
-      const analysis = {
-        main_hook: result.main_hook || "",
-        summary: result.summary || "",
-        analyzed_at: new Date().toISOString(),
-        model: "gpt-4.1-mini",
-      };
-
-      const { error: updateError } = await supabase
-        .from("ad_research_ads")
-        .update({ score, analysis })
-        .eq("id", adId);
-
-      if (updateError) {
-        console.error(
-          "[AdResearch][Analyze] Failed to update ad",
-          adId,
-          updateError
-        );
-      } else {
-        updatedCount += 1;
-      }
-    }
-
-    // 4) Enriched Ads für Response bauen
-    const enrichedAds = ads.map((ad) => {
-      const ai = analysisResults.find((a) => a.id === ad.id);
-      const existingAnalysis = ad.analysis || {};
-
-      const score =
-        ai?.score ?? existingAnalysis.score ?? ad.score ?? 0;
-
-      const mainHook =
-        ai?.main_hook ?? existingAnalysis.main_hook ?? null;
-
-      const summary =
-        ai?.summary ?? existingAnalysis.summary ?? null;
-
-      return {
-        id: ad.id,
-        pageName: ad.page_name || null,
-        primaryText: ad.primary_text || null,
-        headline: ad.headline || null,
-        description: ad.description || null,
-        country: ad.country || null,
-        language: ad.language || null,
-        score,
-        mainHook,
-        summary,
-      };
-    });
-
-    console.log(
-      "[AdResearch][Analyze] Updated scores for",
-      updatedCount,
-      "ads"
-    );
+    console.log("[AdResearch][Analyze] Loaded ads for job", jobId, "count", ads.length);
 
     return {
       statusCode: 200,
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(
-        {
-          jobId,
-          adsCount: enrichedAds.length,
-          updatedCount,
-          ads: enrichedAds,
-        },
-        null,
-        2
-      ),
+      headers,
+      body: JSON.stringify({
+        ads,
+        hasResearchContext: true,
+      }),
     };
-  } catch (error) {
-    console.error("[AdResearch][Analyze] Unexpected error", error);
+  } catch (err) {
+    console.error("[AdResearch][Analyze] Unexpected error", err);
     return {
       statusCode: 500,
-      headers: { "Content-Type": "application/json" },
+      headers,
       body: JSON.stringify({
-        error: "Ad analysis failed",
-        details: error.message || String(error),
+        error: "Unexpected error during analysis",
       }),
     };
   }
