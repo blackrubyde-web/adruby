@@ -3,6 +3,14 @@
 const APIFY_API_TOKEN = process.env.APIFY_API_TOKEN;
 const APIFY_AD_RESEARCH_ACTOR_ID = process.env.APIFY_AD_RESEARCH_ACTOR_ID;
 
+function normalizeActorId(id) {
+  if (!id) return id;
+  if (id.includes("/")) {
+    return id.replace("/", "~");
+  }
+  return id;
+}
+
 /**
  * Kleiner Helper zum Warten (Polling für Apify-Run).
  */
@@ -20,6 +28,7 @@ function sleep(ms) {
  * @returns {Promise<{ ads: any[] }>}
  */
 async function runAdResearchActor({ actorId = APIFY_AD_RESEARCH_ACTOR_ID, input = {} } = {}) {
+  actorId = normalizeActorId(actorId);
   if (!APIFY_API_TOKEN) {
     console.error("[ApifyClient] Missing APIFY_API_TOKEN");
     throw new Error("APIFY_API_TOKEN is not set");
@@ -38,7 +47,7 @@ async function runAdResearchActor({ actorId = APIFY_AD_RESEARCH_ACTOR_ID, input 
   });
 
   // 1) Actor-Run starten
-  const startRes = await fetch(`${baseUrl}/actors/${actorId}/runs?token=${APIFY_API_TOKEN}`, {
+  const startRes = await fetch(`${baseUrl}/acts/${actorId}/runs?token=${APIFY_API_TOKEN}`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(input || {}),
