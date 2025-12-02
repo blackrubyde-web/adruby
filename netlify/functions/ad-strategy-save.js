@@ -49,15 +49,48 @@ exports.handler = async (event, context) => {
       };
     }
 
+    const selectedStrategy = strategyRecommendation?.strategy || null;
+
+    const insertPayload = {
+      user_id: userId,
+      ad_variant_id: adVariantId,
+
+      // Legacy + neue Antworten
+      questionnaire_answers: answers || null,
+      answers: answers || null,
+
+      // Strategy-Infos
+      selected_strategy_id: selectedStrategy?.id || null,
+      selected_strategy_data: selectedStrategy
+        ? {
+            title: selectedStrategy.title,
+            description: selectedStrategy.description,
+            recommended_actions: selectedStrategy.recommended_actions || [],
+          }
+        : null,
+
+      // Neue Spalte für die UI – komplette Strategie
+      selected_strategy: selectedStrategy || null,
+
+      // Vollständige KI-Analyse
+      ai_analysis: strategyRecommendation || null,
+
+      // Scoring / Meta
+      matching_score:
+        typeof strategyRecommendation?.score === "number"
+          ? strategyRecommendation.score
+          : null,
+      confidence_level: strategyRecommendation?.confidence || null,
+
+      // Status-Feld – Standardwert
+      status: "analyzed",
+    };
+
+    console.log("[AdStrategySave] Insert payload:", insertPayload);
+
     const { data, error } = await supabase
       .from("ad_strategies")
-      .insert({
-        user_id: userId,
-        ad_variant_id: adVariantId,
-        answers: answers || null,
-        selected_strategy: strategyRecommendation?.strategy || null,
-        ai_analysis: strategyRecommendation || null,
-      })
+      .insert(insertPayload)
       .select("*")
       .single();
 
