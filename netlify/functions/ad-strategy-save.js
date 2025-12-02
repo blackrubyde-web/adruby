@@ -2,7 +2,7 @@
 
 const { getSupabaseClient } = require("./_shared/supabaseClient");
 
-exports.handler = async (event, context) => {
+exports.handler = async (event) => {
   console.log("[AdStrategySave] Incoming request:", {
     method: event.httpMethod,
     body: event.body,
@@ -36,10 +36,19 @@ exports.handler = async (event, context) => {
   }
 
   try {
-    const { adVariantId, userId, answers, strategyRecommendation } = JSON.parse(
-      event.body || "{}"
-    );
-    console.log("[AdStrategySave] Incoming payload:", { adVariantId, userId });
+    const {
+      adVariantId,
+      userId,
+      answers,
+      strategyRecommendation,
+    } = JSON.parse(event.body || "{}");
+
+    console.log("[AdStrategySave] Parsed payload:", {
+      adVariantId,
+      userId,
+      hasAnswers: !!answers,
+      hasStrategyRecommendation: !!strategyRecommendation,
+    });
 
     if (!adVariantId || !userId) {
       console.error("[AdStrategySave] Missing adVariantId or userId");
@@ -88,19 +97,55 @@ exports.handler = async (event, context) => {
 
     console.log("[AdStrategySave] Insert payload:", insertPayload);
 
-    const { data, error } = await supabase
+    // 1. Versuch: Insert
+    let { data, error } = await supabase
       .from("ad_strategies")
       .insert(insertPayload)
       .select("*")
       .single();
 
+    // Falls Insert wegen Unique-Constraint scheitert → Update statt 500
+    if (error && error.code === "23505") {
+      console.warn(
+        "[AdStrategySave] Duplicate strategy detected – running UPDATE instead",
+        {
+          code: error.code,
+          message: error.message,
+          details: error.details,
+        }
+      );
+
+      const updatePayload = { ...insertPayload, updated_at: new Date().toISOString() };
+
+      const updateResult = await supabase
+        .from("ad_strategies")
+        .update(updatePayload)
+        .eq("ad_variant_id", adVariantId)
+        .eq("user_id", userId)
+        .select("*")
+        .single();
+
+      data = updateResult.data;
+      error = updateResult.error;
+    }
+
     if (error) {
-      console.error("[AdStrategySave] Supabase error:", error);
+      console.error("[AdStrategySave] Supabase error:", {
+        message: error.message,
+        code: error.code,
+        details: error.details,
+        hint: error.hint,
+      });
+
       return {
         statusCode: 500,
         body: JSON.stringify({
           error: "Failed to save strategy",
-          details: error.message || error,
+          details:
+            error.message ||
+            error.details ||
+            error.hint ||
+            JSON.stringify(error),
         }),
       };
     }
