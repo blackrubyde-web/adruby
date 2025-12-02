@@ -28,7 +28,6 @@ const AdStrategy = ({ loadStrategies }) => {
   const [success, setSuccess] = useState(null);
   const [analysisError, setAnalysisError] = useState(null);
   const [strategyResult, setStrategyResult] = useState(null);
-  const [showStrategyOverlay, setShowStrategyOverlay] = useState(false);
   
   // Saved ads states (DEFAULT VIEW NOW)
   const [savedAds, setSavedAds] = useState([]);
@@ -116,6 +115,42 @@ const AdStrategy = ({ loadStrategies }) => {
     }
   };
 
+  const loadStrategiesFromBackend = async (adVariantIdOverride) => {
+    const userId = user?.id || user?.user?.id || null;
+    if (!userId) {
+      console.warn('[AdStrategy][Frontend] Missing userId – skip ad-strategies-get');
+      return;
+    }
+
+    try {
+      const adVariantId = adVariantIdOverride || selectedAdForStrategy?.id || null;
+      const params = new URLSearchParams({ userId });
+
+      if (adVariantId) {
+        params.set('adVariantId', adVariantId);
+      }
+
+      const url = `/.netlify/functions/ad-strategies-get?${params.toString()}`;
+      console.log('[AdStrategy][Frontend][AdStrategiesGet] Request URL:', url);
+
+      const res = await fetch(url);
+      if (!res.ok) {
+        console.error('[AdStrategy][Frontend][AdStrategiesGet] Failed:', res.status);
+        setError('Strategien konnten nicht geladen werden.');
+        return;
+      }
+
+      const json = await res.json();
+      const list = json?.strategies || [];
+
+      console.log('[AdStrategy][Frontend][AdStrategiesGet] Loaded strategies:', list.length);
+      setStrategies(list);
+    } catch (err) {
+      console.error('[AdStrategy][Frontend][AdStrategiesGet] Error:', err);
+      setError('Ein unerwarteter Fehler ist bei der Strategie-Ladung aufgetreten.');
+    }
+  };
+
   // COMPREHENSIVE: Handle comprehensive strategy finder with 7-step questionnaire
   const handleFindStrategy = async (adVariant) => {
     setSelectedAdForStrategy(adVariant);
@@ -196,7 +231,6 @@ const AdStrategy = ({ loadStrategies }) => {
 
     setIsAnalyzing(true);
     setAnalysisError(null);
-    setShowStrategyOverlay(false);
     setStrategyResult(null);
 
     try {
@@ -273,11 +307,24 @@ const AdStrategy = ({ loadStrategies }) => {
         await loadStrategies();
       }
 
+      await loadStrategiesFromBackend(adVariantId);
+
+      try {
+        const { data: setupData, error: setupError } = await AdStrategyService?.generateMetaAdsSetupForStrategy(adVariantId);
+        if (setupError) {
+          console.error('[AdStrategy][Frontend][MetaAdsSetup] Error:', setupError);
+        } else if (setupData) {
+          setMetaAdsSetupData(setupData);
+        }
+      } catch (metaErr) {
+        console.error('[AdStrategy][Frontend][MetaAdsSetup] Unexpected error:', metaErr);
+      }
+
       setStrategyResult({
         ...strategyRecommendation,
         savedRecord: savedStrategy,
       });
-      setShowStrategyOverlay(true);
+      setShowMetaAdsSetup(true);
     } catch (err) {
       console.error('[AdStrategy][Frontend][Flow] Error:', err);
       setAnalysisError('Es ist ein unerwarteter Fehler aufgetreten.');
@@ -1710,6 +1757,43 @@ const AdStrategy = ({ loadStrategies }) => {
 
               {/* Modal Content */}
               <div className="p-6 space-y-8">
+                {strategyResult?.strategy && (
+                  <motion.div
+                    className="bg-gradient-to-br from-[#C80000]/10 to-[#C80000]/5 rounded-xl p-4 border border-[#C80000]/20"
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                  >
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <h3 className="text-lg font-semibold text-foreground flex items-center">
+                          <Icon name="Target" size={18} className="mr-2 text-[#C80000]" />
+                          Ausgewählte Werbestrategie
+                        </h3>
+                        <p className="text-sm text-muted-foreground mt-1">
+                          {strategyResult.strategy.title}
+                        </p>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        {strategyResult.score != null && (
+                          <span className="px-3 py-1 text-xs bg-green-500/10 text-green-700 rounded-full">
+                            Match: {strategyResult.score}%
+                          </span>
+                        )}
+                        {strategyResult.confidence && (
+                          <span className="px-3 py-1 text-xs bg-blue-500/10 text-blue-700 rounded-full capitalize">
+                            {strategyResult.confidence.replace('_', ' ')}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                    {strategyResult.strategy.description && (
+                      <p className="text-xs text-muted-foreground mt-3">
+                        {strategyResult.strategy.description}
+                      </p>
+                    )}
+                  </motion.div>
+                )}
+
                 {/* Campaign Configuration */}
                 {metaAdsSetupData?.campaign_config && (
                   <motion.div
