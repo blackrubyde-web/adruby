@@ -64,6 +64,7 @@
   "scripts": {
     "start": "vite",
     "build:local": "vite build",
+    "prebuild": "node scripts/import-blueprints.cjs",
     "build": "vite build",
     "serve": "vite preview"
   },
