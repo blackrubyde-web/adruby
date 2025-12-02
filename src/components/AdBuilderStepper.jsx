@@ -79,9 +79,9 @@ const AdBuilderStepper = ({ currentStep = 0, onStepChange = () => {} }) => {
   const indicatorLeft = `${(100 / steps.length) * currentStep}%`;
 
   return (
-    <div className="relative w-full max-w-[900px] mx-auto overflow-hidden rounded-xl border border-white/30 bg-white/40 backdrop-blur-xl shadow-[0_10px_30px_rgba(0,0,0,0.06)] dark:border-white/10 dark:bg-white/10 mt-3 mb-3 sm:mt-4 sm:mb-4 lg:mt-3 lg:mb-3 py-1.5 sm:py-2.5">
+    <div className="relative w-full max-w-[900px] mx-auto overflow-hidden rounded-xl border border-white/30 bg-white/40 backdrop-blur-xl shadow-[0_10px_30px_rgba(0,0,0,0.06)] dark:border-white/10 dark:bg-white/10 mt-3 mb-3 sm:mt-4 sm:mb-4 lg:mt-3 lg:mb-3 py-1 sm:py-2">
       <div className="pointer-events-none absolute inset-0 bg-gradient-to-r from-white/40 via-white/10 to-white/5 dark:from-white/10 dark:via-white/5" />
-      <div className="relative flex items-stretch pb-2 sm:pb-3">
+      <div className="relative flex items-center pb-1.5 sm:pb-2">
         {steps.map((step, index) => {
           const Icon = step.icon;
           const isActive = index === currentStep;
@@ -107,7 +107,7 @@ const AdBuilderStepper = ({ currentStep = 0, onStepChange = () => {} }) => {
               >
                 <Icon />
               </motion.div>
-              <div className="flex flex-col leading-snug mt-0.5 min-w-0">
+              <div className="flex flex-col leading-snug mt-0 min-w-0">
                 <span
                   className={`text-xs sm:text-sm md:text-base font-semibold transition whitespace-normal break-words ${
                     isActive
