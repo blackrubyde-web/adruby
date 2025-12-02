@@ -59,6 +59,8 @@ const HighConversionAdBuilder = () => {
   const [isResearchLoading, setIsResearchLoading] = useState(false);
   const [isResearchAnalyzing, setIsResearchAnalyzing] = useState(false);
   const [researchError, setResearchError] = useState(null);
+  const [analysisProgress, setAnalysisProgress] = useState(0);
+  const [analysisRemaining, setAnalysisRemaining] = useState(45);
 
   // Load stats for badge feel (optional)
   const [stats, setStats] = useState({
@@ -77,6 +79,34 @@ const HighConversionAdBuilder = () => {
     setIsNavCollapsed(true);
     setSidebarOpen(false);
   }, [location?.pathname]);
+
+  // Progress-Bar für Marktanalyse (Stage 2)
+  useEffect(() => {
+    let interval;
+
+    if (isAnalyzing) {
+      // Reset beim Start
+      setAnalysisProgress(0);
+      setAnalysisRemaining(45);
+
+      interval = setInterval(() => {
+        setAnalysisProgress((prev) => {
+          const next = Math.min(prev + 10, 100); // 0 → 100% in ~45s
+          return next;
+        });
+
+        setAnalysisRemaining((prev) => Math.max(prev - 3, 0));
+      }, 3000);
+    } else {
+      // Wenn Analyse vorbei ist, auf 100% oder 0 setzen – hier lieber clean reset
+      setAnalysisProgress((prev) => (prev === 100 ? 100 : 0));
+      setAnalysisRemaining(0);
+    }
+
+    return () => {
+      if (interval) clearInterval(interval);
+    };
+  }, [isAnalyzing]);
 
   const loadUserStats = async () => {
     try {
@@ -426,10 +456,9 @@ const HighConversionAdBuilder = () => {
         fallbackReason,
       });
 
-      // 4) Ad-Generierung
-      setIsAnalyzing(false);
+      // 4) Ad-Generierung (läuft noch innerhalb Stage 2)
+      // Wir bleiben in currentStep 1, zeigen dort den Ladebalken
       setIsGenerating(true);
-      setCurrentStep(2);
 
       console.log("[AdBuilder] Generating ads", {
         productId: product?.id,
@@ -469,6 +498,7 @@ const HighConversionAdBuilder = () => {
       }
 
       setSuccess(successMsg);
+      setCurrentStep(2); // <-- nach erfolgreicher Analyse + Generierung automatisch weiter zu Step 3
       loadUserStats();
     } catch (err) {
       console.error(
@@ -727,27 +757,29 @@ const HighConversionAdBuilder = () => {
                         Zielgruppen-Insights, Schmerzpunkte und Wettbewerbsabgrenzung.
                       </p>
                     </div>
+
                     {analyzedResearchAds?.length > 0 && (
                       <span className="px-3 py-1 rounded-full text-xs bg-primary/10 text-primary">
                         Generiert mit Markt-Research-Signalen
                       </span>
                     )}
-                    <div className="flex gap-2">
-                      <button
-                        onClick={handleAnalyzeAndGenerate}
-                        className="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 transition hover:border-slate-300 dark:border-white/10 dark:bg-white/5 dark:text-slate-200"
-                      >
-                          <Icon name="RefreshCw" size={16} />
-                          Neu analysieren
-                        </button>
-                        <button
-                          onClick={() => setCurrentStep(2)}
-                          className="inline-flex items-center gap-2 rounded-lg bg-[#C80000] px-4 py-2 text-sm font-semibold text-white shadow-[0_10px_30px_rgba(200,0,0,0.25)] hover:bg-[#a50000]"
-                        >
-                     ‚     Weiter zur Ad-Generierung
-                        </button>
+
+                    {(isAnalyzing || isGenerating) && (
+                      <div className="flex-1 min-w-[220px] max-w-xs ml-auto">
+                        <p className="text-xs text-muted-foreground mb-1 text-right">
+                          {isGenerating
+                            ? "Anzeigen werden generiert..."
+                            : `Analyse läuft… geschätzte Dauer: ${analysisRemaining || 0}s`}
+                        </p>
+                        <div className="w-full h-2 rounded-full bg-slate-800 overflow-hidden">
+                          <div
+                            className="h-2 rounded-full bg-[#C80000] transition-all duration-500"
+                            style={{ width: `${analysisProgress}%` }}
+                          />
+                        </div>
                       </div>
-                    </div>
+                    )}
+                  </div>
 
                     <div className="grid gap-4 lg:grid-cols-3">
                       <AnalysisCard
