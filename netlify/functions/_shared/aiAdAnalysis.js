@@ -1,6 +1,6 @@
 // netlify/functions/_shared/aiAdAnalysis.js
 
-const OpenAI = require("openai");
+import OpenAI from "openai";
 
 const apiKey = process.env.OPENAI_API_KEY;
 
@@ -55,38 +55,28 @@ ${JSON.stringify(adsPayload, null, 2)}
       { role: "user", content: userPrompt },
     ],
     text: {
-      format: {
-        type: "json_schema",
-        name: "ad_analysis_response",
-        schema: {
-          type: "object",
-          properties: {
-            results: {
-              type: "array",
-              items: {
-                type: "object",
-                properties: {
-                  id: { type: "string" },
-                  score: { type: "number" },
-                  main_hook: { type: "string" },
-                  summary: { type: "string" },
-                },
-                required: ["id", "score", "main_hook", "summary"],
-              },
-            },
-          },
-          required: ["results"],
-        },
-      },
+      format: "json",
     },
   });
 
   try {
     const output = completion.output?.[0];
     const content = output?.content?.[0];
-    const raw = content?.text || "{}";
-    const parsed = JSON.parse(raw);
-    return parsed.results || [];
+    const jsonString = content?.text || "{}";
+    let parsed;
+    try {
+      parsed = JSON.parse(jsonString);
+    } catch (e) {
+      console.error("[AIAnalysis] Failed to parse JSON from OpenAI", jsonString, e);
+      throw new Error("Failed to parse AI analysis JSON");
+    }
+    if (!parsed || !Array.isArray(parsed.ads)) return [];
+    return parsed.ads.map((ad) => ({
+      id: ad.id,
+      score: ad.score,
+      main_hook: ad.main_hook,
+      summary: ad.summary,
+    }));
   } catch (err) {
     console.error("[AIAnalysis] Failed to parse JSON response", err);
     throw err;
@@ -173,50 +163,40 @@ ${JSON.stringify(adsPayload, null, 2)}
       { role: "user", content: userPrompt },
     ],
     text: {
-      format: {
-        type: "json_schema",
-        name: "ad_creative_response",
-        schema: {
-          type: "object",
-          properties: {
-            ads: {
-              type: "array",
-              items: {
-                type: "object",
-                properties: {
-                  id: { type: "string" },
-                  base_ad_id: { type: "string" },
-                  headline: { type: "string" },
-                  primaryText: { type: "string" },
-                  description: { type: "string" },
-                  hook: { type: "string" },
-                  angle: { type: "string" },
-                  cta: { type: "string" },
-                  visualIdea: { type: "string" },
-                },
-                required: ["id", "headline", "primaryText", "hook", "cta"],
-              },
-            },
-          },
-          required: ["ads"],
-        },
-      },
+      format: "json",
     },
   });
 
   try {
     const output = completion.output?.[0];
     const content = output?.content?.[0];
-    const raw = content?.text || "{}";
-    const parsed = JSON.parse(raw);
-    return parsed.ads || [];
+    const jsonString = content?.text || "{}";
+    let parsed;
+    try {
+      parsed = JSON.parse(jsonString);
+    } catch (e) {
+      console.error("[AIAnalysis] Failed to parse JSON from OpenAI", jsonString, e);
+      throw new Error("Failed to parse AI analysis JSON");
+    }
+    if (!parsed || !Array.isArray(parsed.ads)) return [];
+    return parsed.ads.map((ad) => ({
+      id: ad.id,
+      base_ad_id: ad.base_ad_id,
+      headline: ad.headline,
+      primaryText: ad.primaryText,
+      description: ad.description,
+      hook: ad.hook,
+      angle: ad.angle,
+      cta: ad.cta,
+      visualIdea: ad.visualIdea,
+    }));
   } catch (err) {
     console.error("[AIAnalysis] Failed to parse JSON response for creatives", err);
     throw err;
   }
 }
 
-module.exports = {
+export {
   analyzeAdsWithOpenAI,
   generateCreativesFromAds,
 };
