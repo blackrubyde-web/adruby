@@ -1,11 +1,23 @@
-import React, { useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useEffect, useState } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { PlayCircle, ArrowRight, CheckCircle, Brain, Target, BarChart3, TrendingUp, Users, DollarSign, Eye } from 'lucide-react';
 import Header from '../public-landing-home/components/Header';
+import { useAuth } from '../../contexts/AuthContext';
 
 const AdRubyAdStrategies = () => {
   const navigate = useNavigate();
+  const location = useLocation();
+  const { user } = useAuth?.() || {};
+
+  const [strategies, setStrategies] = useState([]);
+  const [selectedStrategy, setSelectedStrategy] = useState(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState(null);
+
+  const searchParams = new URLSearchParams(location.search);
+  const adVariantId = searchParams.get('adVariantId') || null;
+  const userId = user?.id || user?.user?.id || null;
 
   const handleStartFreeTrial = () => {
     navigate('/ad-ruby-registration');
@@ -99,6 +111,39 @@ const AdRubyAdStrategies = () => {
       color: "from-purple-500 to-purple-600"
     }
   ];
+
+  useEffect(() => {
+    const loadStrategies = async () => {
+      if (!userId) return;
+      setIsLoading(true);
+      setError(null);
+
+      try {
+        const query = new URLSearchParams({ userId });
+        if (adVariantId) query.set('adVariantId', adVariantId);
+
+        const res = await fetch(`/.netlify/functions/ad-strategies-get?${query.toString()}`);
+        if (!res.ok) {
+          console.error('[Frontend][AdStrategiesGet] Failed:', res.status);
+          setError('Strategien konnten nicht geladen werden.');
+          return;
+        }
+
+        const data = await res.json();
+        const list = data?.strategies || [];
+        setStrategies(list);
+        if (list.length > 0) setSelectedStrategy(list[0]);
+        console.log('[Frontend][AdStrategiesGet] Loaded:', list.length);
+      } catch (err) {
+        console.error('[Frontend][AdStrategiesGet] Error:', err);
+        setError('Ein unerwarteter Fehler ist aufgetreten.');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadStrategies();
+  }, [userId, adVariantId]);
 
   return (
     <>
@@ -309,6 +354,121 @@ const AdRubyAdStrategies = () => {
                     <div className="text-sm font-bold text-[#C80000]">E-Commerce Boost</div>
                   </motion.div>
                 </motion.div>
+              </div>
+            </div>
+          </div>
+        </motion.section>
+
+        {/* Stored Strategies List & Detail */}
+        <motion.section
+          className="py-12 px-4 bg-white border-t border-[#e0e0e0]"
+          variants={containerVariants}
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ once: true, amount: 0.2 }}
+        >
+          <div className="max-w-6xl mx-auto">
+            <motion.h2
+              variants={itemVariants}
+              className="text-2xl md:text-3xl font-bold text-[#000000] mb-4"
+            >
+              Deine gespeicherten Strategien
+            </motion.h2>
+            <motion.p
+              variants={itemVariants}
+              className="text-sm text-[#555] mb-6"
+            >
+              Lade gespeicherte Werbestrategien anhand deines Accounts und optional nach Ad-Variante.
+            </motion.p>
+
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              <div className="bg-white rounded-xl border border-[#e0e0e0] p-4 lg:col-span-1">
+                <h3 className="text-sm font-semibold mb-3 text-[#000]">Gespeicherte Strategien</h3>
+
+                {isLoading && <p className="text-xs text-[#666]">Lade Strategien...</p>}
+                {error && <p className="text-xs text-red-500">{error}</p>}
+
+                <ul className="space-y-2 max-h-[360px] overflow-auto">
+                  {strategies.map((s) => (
+                    <li key={s.id}>
+                      <button
+                        type="button"
+                        onClick={() => setSelectedStrategy(s)}
+                        className={`w-full text-left text-xs px-3 py-2 rounded-lg border ${
+                          selectedStrategy?.id === s.id
+                            ? 'border-[#C80000] bg-[#C80000]/5'
+                            : 'border-gray-200 hover:bg-gray-50'
+                        }`}
+                      >
+                        <div className="font-semibold truncate text-[#000]">
+                          {s.selected_strategy || 'Unbenannte Strategie'}
+                        </div>
+                        <div className="text-[10px] text-[#666] mt-1">
+                          {s.created_at ? new Date(s.created_at).toLocaleString() : '—'}
+                        </div>
+                      </button>
+                    </li>
+                  ))}
+
+                  {!isLoading && strategies.length === 0 && !error && (
+                    <p className="text-xs text-[#666]">
+                      Noch keine Strategien gespeichert. Starte zuerst den Fragebogen.
+                    </p>
+                  )}
+                </ul>
+              </div>
+
+              <div className="bg-white rounded-xl border border-[#e0e0e0] p-6 lg:col-span-2">
+                {selectedStrategy ? (
+                  <>
+                    <h3 className="text-lg font-bold mb-2 text-[#000]">
+                      {selectedStrategy.selected_strategy || 'Strategie'}
+                    </h3>
+                    <p className="text-xs text-[#666] mb-4">
+                      Erstellt am{' '}
+                      {selectedStrategy.created_at
+                        ? new Date(selectedStrategy.created_at).toLocaleString()
+                        : '—'}
+                    </p>
+
+                    <div className="space-y-4 text-sm">
+                      <div>
+                        <h4 className="text-sm font-semibold mb-1 text-[#000]">Diagnose & Analyse</h4>
+                        <pre className="text-xs bg-[#fafafa] border border-[#e0e0e0] rounded-lg p-3 overflow-auto text-[#111]">
+                          {JSON.stringify(selectedStrategy.ai_analysis?.diagnosis || {}, null, 2)}
+                        </pre>
+                      </div>
+
+                      {Array.isArray(selectedStrategy.ai_analysis?.implementation_recommendations) && (
+                        <div>
+                          <h4 className="text-sm font-semibold mb-1 text-[#000]">Umsetzungsempfehlungen</h4>
+                          <ul className="list-disc pl-4 text-xs space-y-1 text-[#111]">
+                            {selectedStrategy.ai_analysis.implementation_recommendations.map((rec, idx) => (
+                              <li key={idx}>{rec}</li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+
+                      {Array.isArray(selectedStrategy.ai_analysis?.deep_dive_sections) && (
+                        <div>
+                          <h4 className="text-sm font-semibold mb-1 text-[#000]">Deep-Dive Kapitel</h4>
+                          <ul className="list-disc pl-4 text-xs space-y-1 text-[#111]">
+                            {selectedStrategy.ai_analysis.deep_dive_sections.map((sec) => (
+                              <li key={sec.section_id || sec.title}>
+                                {sec.title || sec.anchor || 'Abschnitt'}
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+                    </div>
+                  </>
+                ) : (
+                  <p className="text-xs text-[#666]">
+                    Wähle links eine gespeicherte Strategie aus, um die Details zu sehen.
+                  </p>
+                )}
               </div>
             </div>
           </div>

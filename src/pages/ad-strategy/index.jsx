@@ -26,6 +26,9 @@ const AdStrategy = () => {
   const [aiAnalysis, setAiAnalysis] = useState(null);
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(null);
+  const [analysisError, setAnalysisError] = useState(null);
+  const [strategyResult, setStrategyResult] = useState(null);
+  const [showStrategyOverlay, setShowStrategyOverlay] = useState(false);
   
   // Saved ads states (DEFAULT VIEW NOW)
   const [savedAds, setSavedAds] = useState([]);
@@ -166,6 +169,114 @@ const AdStrategy = () => {
     }
   };
 
+  // NEW: Unified generate flow (Questionnaire → Save → Overlay)
+  const handleGenerateStrategy = async () => {
+    const userId = user?.id || user?.user?.id || null;
+    const adVariantId = selectedAdForStrategy?.id || adId;
+
+    if (!userId) {
+      console.error('[AdStrategy][Frontend] Missing userId');
+      setAnalysisError('Bitte logge dich ein, um die Strategie zu generieren.');
+      return;
+    }
+
+    if (!adVariantId) {
+      console.error('[AdStrategy][Frontend] Missing adVariantId');
+      setAnalysisError('Es konnte keine gültige Ad-Variante gefunden werden.');
+      return;
+    }
+
+    if (!answers || typeof answers !== 'object') {
+      console.error('[AdStrategy][Frontend] Missing answers');
+      setAnalysisError('Bitte beantworte zuerst alle Fragen zur Kampagne.');
+      return;
+    }
+
+    setIsAnalyzing(true);
+    setAnalysisError(null);
+    setShowStrategyOverlay(false);
+    setStrategyResult(null);
+
+    try {
+      // 1) Questionnaire-Analyse aufrufen
+      const questionnairePayload = {
+        answers: {
+          ...answers,
+          adVariantId,
+          userId,
+        },
+        strategies: [],
+      };
+
+      console.log('[AdStrategy][Frontend] Sending questionnaire payload', questionnairePayload);
+
+      const questionnaireRes = await fetch('/.netlify/functions/questionnaire', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(questionnairePayload),
+      });
+
+      if (!questionnaireRes.ok) {
+        console.error('[AdStrategy][Frontend][Questionnaire] Failed:', questionnaireRes.status);
+        setAnalysisError('Die Strategieanalyse ist fehlgeschlagen.');
+        return;
+      }
+
+      const questionnaireData = await questionnaireRes.json();
+      console.log('[AdStrategy][Frontend][Questionnaire] Result:', questionnaireData);
+
+      const strategyRecommendation = questionnaireData?.strategyRecommendation;
+
+      if (!strategyRecommendation?.strategy) {
+        console.error('[AdStrategy][Frontend][Questionnaire] No strategy in response');
+        setAnalysisError('Die KI hat keine gültige Strategie zurückgegeben.');
+        return;
+      }
+
+      // 2) Strategie speichern
+      const savePayload = {
+        adVariantId,
+        userId,
+        answers,
+        strategyRecommendation,
+      };
+
+      console.log('[AdStrategy][Frontend][AdStrategySave] Sending payload', savePayload);
+
+      const saveRes = await fetch('/.netlify/functions/ad-strategy-save', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(savePayload),
+      });
+
+      if (!saveRes.ok) {
+        console.error('[AdStrategy][Frontend][AdStrategySave] Failed:', saveRes.status);
+        setAnalysisError('Die Strategie konnte nicht vollständig gespeichert werden.');
+        setStrategyResult(strategyRecommendation);
+        setShowStrategyOverlay(true);
+        return;
+      }
+
+      const savedStrategy = await saveRes.json();
+      console.log('[AdStrategy][Frontend][AdStrategySave] Saved:', savedStrategy);
+
+      setStrategyResult({
+        ...strategyRecommendation,
+        savedRecord: savedStrategy,
+      });
+      setShowStrategyOverlay(true);
+    } catch (err) {
+      console.error('[AdStrategy][Frontend][Flow] Error:', err);
+      setAnalysisError('Es ist ein unerwarteter Fehler aufgetreten.');
+    } finally {
+      setIsAnalyzing(false);
+    }
+  };
+
   // Go to previous question
   const handlePreviousQuestion = () => {
     if (currentQuestionIndex > 0) {
@@ -301,14 +412,41 @@ const AdStrategy = () => {
       }
 
       // AI-powered comprehensive questionnaire analysis
-      const { data: recommendation, error: analysisError } = await AdStrategyService?.analyzeQuestionnaire(answers, strategies);
+      const { data: recommendation, error: analysisError } = await AdStrategyService?.analyzeQuestionnaire(
+        answers,
+        strategies
+      );
       console.log('[AdStrategy][processComprehensiveStrategyRecommendation] Service result:', {
         recommendation,
         analysisError,
       });
       if (analysisError) throw analysisError;
 
-      setStrategyRecommendation(recommendation);
+      const strategyFromService = recommendation?.strategyRecommendation || recommendation;
+
+      if (!strategyFromService?.strategy) {
+        console.error('[AdStrategy][processComprehensiveStrategyRecommendation] No strategy in response');
+        setError('Keine Strategieempfehlung erhalten. Bitte erneut versuchen.');
+        return;
+      }
+
+      setStrategyRecommendation(strategyFromService);
+
+      // Direkt speichern und weiterleiten
+      const { error: saveError } = await AdStrategyService?.saveAdStrategy(
+        selectedAdForStrategy?.id,
+        user?.id,
+        answers,
+        strategyFromService
+      );
+
+      if (saveError) {
+        console.error('[AdStrategy][processComprehensiveStrategyRecommendation] saveAdStrategy error:', saveError);
+        setError(saveError?.message || 'Fehler beim Speichern der Strategie.');
+        return;
+      }
+
+      navigate(`/ad-strategies?adVariantId=${encodeURIComponent(selectedAdForStrategy?.id || '')}`);
 
       // REMOVED: Auto-save during processing to allow user choice
       // The strategy will be saved when user clicks "Strategie speichern & anwenden"
@@ -1212,16 +1350,24 @@ const AdStrategy = () => {
                       </div>
 
                       <button
-                        onClick={handleNextQuestion}
-                        disabled={!answers?.[questionnaireQuestions?.[currentQuestionIndex]?.id] || isProcessingStrategy}
+                        onClick={
+                          currentQuestionIndex === questionnaireQuestions?.length - 1
+                            ? handleGenerateStrategy
+                            : handleNextQuestion
+                        }
+                        disabled={
+                          currentQuestionIndex === questionnaireQuestions?.length - 1
+                            ? isAnalyzing
+                            : !answers?.[questionnaireQuestions?.[currentQuestionIndex]?.id] || isProcessingStrategy
+                        }
                         className="flex items-center space-x-2 px-6 py-3 bg-gradient-to-r from-[#C80000] to-[#A00000] text-white rounded-lg hover:from-[#B00000] hover:to-[#900000] transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-[#C80000]/25"
                       >
                         {currentQuestionIndex === questionnaireQuestions?.length - 1 ? (
                           <>
-                            {isProcessingStrategy ? (
+                            {isAnalyzing ? (
                               <>
                                 <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
-                                <span>KI analysiert Strategie...</span>
+                                <span>Strategie wird generiert...</span>
                               </>
                             ) : (
                               <>
@@ -1462,6 +1608,29 @@ const AdStrategy = () => {
                             </div>
                           ))}
                         </div>
+                      </div>
+                    )}
+                    {strategyRecommendation?.strategy && (
+                      <div className="bg-white p-6 rounded-xl shadow border border-border mt-6">
+                        <h2 className="text-xl font-bold mb-4">
+                          {strategyRecommendation.strategy.title}
+                        </h2>
+
+                        <p className="text-sm text-muted-foreground mb-6">
+                          {strategyRecommendation.strategy.description}
+                        </p>
+
+                        <h3 className="text-lg font-semibold mt-6 mb-2">
+                          Deep Dive Empfehlungen
+                        </h3>
+
+                        <ul className="list-disc pl-5 space-y-2 text-sm text-foreground">
+                          {strategyRecommendation.deep_dive_sections?.map((s) => (
+                            <li key={s.section_id}>
+                              {s.title}
+                            </li>
+                          ))}
+                        </ul>
                       </div>
                     )}
                     {/* Action Buttons - ENHANCED */}
