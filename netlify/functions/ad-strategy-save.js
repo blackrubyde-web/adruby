@@ -1,4 +1,4 @@
-const { supabase } = require("./_shared/supabaseClient");
+const { getSupabaseClient } = require("./_shared/supabaseClient");
 
 exports.handler = async (event, context) => {
   console.log("[AdStrategySave] Incoming request:", {
@@ -13,6 +13,20 @@ exports.handler = async (event, context) => {
     };
   }
 
+  let supabase;
+  try {
+    supabase = getSupabaseClient();
+  } catch (err) {
+    console.error("[AdStrategySave] Failed to init Supabase client:", err);
+    return {
+      statusCode: 500,
+      body: JSON.stringify({
+        error: "Supabase client init failed",
+        details: err.message || String(err),
+      }),
+    };
+  }
+
   try {
     const { adVariantId, userId, answers, strategyRecommendation } = JSON.parse(event.body || "{}");
 
@@ -22,14 +36,6 @@ exports.handler = async (event, context) => {
       hasAnswers: !!answers,
       hasStrategyRecommendation: !!strategyRecommendation,
     });
-
-    if (!supabase) {
-      console.error("[AdStrategySave] Supabase client not initialized");
-      return {
-        statusCode: 500,
-        body: JSON.stringify({ error: "Supabase client not initialized" }),
-      };
-    }
 
     if (!adVariantId || !userId || !strategyRecommendation || !strategyRecommendation.strategy) {
       console.error("[AdStrategySave] Missing required fields");
