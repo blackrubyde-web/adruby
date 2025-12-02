@@ -108,44 +108,114 @@ exports.handler = async (event, context) => {
       },
     };
 
-    console.log("[AdStrategySave] Upserting payload into ad_strategies:", {
-      insertPayload,
-    });
+    console.log("[AdStrategySave] Determining whether to INSERT or UPDATE for ad_variant_id:", adVariantId);
 
-    const { data, error } = await supabase
+    // 1) Check, ob bereits ein Datensatz für diese ad_variant_id existiert
+    const { data: existing, error: fetchError } = await supabase
       .from("ad_strategies")
-      .upsert(insertPayload, { onConflict: "ad_variant_id" })
-      .select()
-      .single();
+      .select("id, ad_variant_id")
+      .eq("ad_variant_id", adVariantId)
+      .maybeSingle();
 
-    if (error) {
-      console.error("[AdStrategySave] Supabase error:", {
-        message: error.message,
-        details: error.details,
-        hint: error.hint,
-        code: error.code,
-        fullError: error,
+    if (fetchError) {
+      console.error("[AdStrategySave] Failed to fetch existing strategy:", {
+        message: fetchError.message,
+        details: fetchError.details,
+        hint: fetchError.hint,
+        code: fetchError.code,
       });
 
       return {
         statusCode: 500,
         body: JSON.stringify({
-          error: "Failed to save strategy",
-          details: error.message || error,
-          supabase: {
-            code: error.code,
-            details: error.details,
-            hint: error.hint,
-          },
+          error: "Failed to fetch existing strategy",
+          details: fetchError.message || fetchError,
         }),
       };
     }
 
-    console.log("[AdStrategySave] Strategy saved successfully:", data);
+    let dbResult;
+    if (existing) {
+      // UPDATE-Fall
+      console.log("[AdStrategySave] Existing strategy found, performing UPDATE:", {
+        existingId: existing.id,
+        ad_variant_id: existing.ad_variant_id,
+      });
+
+      const { data, error } = await supabase
+        .from("ad_strategies")
+        .update(insertPayload)
+        .eq("ad_variant_id", adVariantId)
+        .select()
+        .single();
+
+      if (error) {
+        console.error("[AdStrategySave] Supabase UPDATE error:", {
+          message: error.message,
+          details: error.details,
+          hint: error.hint,
+          code: error.code,
+          fullError: error,
+        });
+
+        return {
+          statusCode: 500,
+          body: JSON.stringify({
+            error: "Failed to update strategy",
+            details: error.message || error,
+            supabase: {
+              code: error.code,
+              details: error.details,
+              hint: error.hint,
+            },
+          }),
+        };
+      }
+
+      dbResult = data;
+    } else {
+      // INSERT-Fall
+      console.log("[AdStrategySave] No existing strategy, performing INSERT:", {
+        ad_variant_id: adVariantId,
+      });
+
+      const { data, error } = await supabase
+        .from("ad_strategies")
+        .insert(insertPayload)
+        .select()
+        .single();
+
+      if (error) {
+        console.error("[AdStrategySave] Supabase INSERT error:", {
+          message: error.message,
+          details: error.details,
+          hint: error.hint,
+          code: error.code,
+          fullError: error,
+        });
+
+        return {
+          statusCode: 500,
+          body: JSON.stringify({
+            error: "Failed to insert strategy",
+            details: error.message || error,
+            supabase: {
+              code: error.code,
+              details: error.details,
+              hint: error.hint,
+            },
+          }),
+        };
+      }
+
+      dbResult = data;
+    }
+
+    console.log("[AdStrategySave] Strategy saved successfully:", dbResult);
 
     return {
       statusCode: 200,
-      body: JSON.stringify(data),
+      body: JSON.stringify(dbResult),
     };
   } catch (err) {
     console.error("[AdStrategySave] Handler error:", {
