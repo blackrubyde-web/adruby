@@ -35,6 +35,7 @@ const AdStrategy = ({ loadStrategies }) => {
   const [loadingSaved, setLoadingSaved] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [strategies, setStrategies] = useState([]);
+  const [isStrategyFlowLoading, setIsStrategyFlowLoading] = useState(false);
 
   // COMPREHENSIVE: Enhanced strategy finder states for 7-step questionnaire
   const [showStrategyFinder, setShowStrategyFinder] = useState(false);
@@ -232,7 +233,11 @@ const AdStrategy = ({ loadStrategies }) => {
     setIsAnalyzing(true);
     setAnalysisError(null);
     setStrategyResult(null);
+    setIsStrategyFlowLoading(true);
+    setShowStrategyFinder(false);
+    setShowMetaAdsSetup(false);
 
+    let flowErrored = false;
     try {
       // 1) Questionnaire-Analyse aufrufen
       const questionnairePayload = {
@@ -257,6 +262,7 @@ const AdStrategy = ({ loadStrategies }) => {
       if (!questionnaireRes.ok) {
         console.error('[AdStrategy][Frontend][Questionnaire] Failed:', questionnaireRes.status);
         setAnalysisError('Die Strategieanalyse ist fehlgeschlagen.');
+        flowErrored = true;
         return;
       }
 
@@ -268,6 +274,8 @@ const AdStrategy = ({ loadStrategies }) => {
       if (!strategyFromApi?.strategy) {
         console.error('[AdStrategy][Frontend][Questionnaire] No strategy in response');
         setAnalysisError('Die KI hat keine gültige Strategie zurückgegeben.');
+        flowErrored = true;
+        setIsStrategyFlowLoading(false);
         return;
       }
 
@@ -300,8 +308,8 @@ const AdStrategy = ({ loadStrategies }) => {
       if (!saveRes.ok) {
         console.error('[AdStrategy][Frontend][AdStrategySave] Failed:', saveRes.status);
         setAnalysisError('Die Strategie konnte nicht vollständig gespeichert werden.');
-        setStrategyResult(strategyRecommendation);
-        setShowStrategyOverlay(true);
+        setStrategyResult(strategyFromApi);
+        flowErrored = true;
         return;
       }
 
@@ -312,17 +320,6 @@ const AdStrategy = ({ loadStrategies }) => {
       }
 
       await loadStrategiesFromBackend(adVariantId);
-
-      try {
-        const { data: setupData, error: setupError } = await AdStrategyService?.generateMetaAdsSetupForStrategy(adVariantId);
-        if (setupError) {
-          console.error('[AdStrategy][Frontend][MetaAdsSetup] Error:', setupError);
-        } else if (setupData) {
-          setMetaAdsSetupData(setupData);
-        }
-      } catch (metaErr) {
-        console.error('[AdStrategy][Frontend][MetaAdsSetup] Unexpected error:', metaErr);
-      }
 
       setStrategyResult(prev => ({
         ...(prev || strategyFromApi),
@@ -345,10 +342,17 @@ const AdStrategy = ({ loadStrategies }) => {
       setShowMetaAdsSetup(true);
     } catch (err) {
       console.error('[AdStrategy][Frontend][Flow] Error:', err);
+      flowErrored = true;
       setAnalysisError('Es ist ein unerwarteter Fehler aufgetreten.');
     } finally {
       setIsAnalyzing(false);
       setIsSaving(false);
+      setIsStrategyFlowLoading(false);
+
+      if (!flowErrored && !analysisError) {
+        setShowStrategyFinder(true);
+        setShowMetaAdsSetup(true);
+      }
     }
   };
 
@@ -704,6 +708,7 @@ const AdStrategy = ({ loadStrategies }) => {
     animate: { opacity: 1, scale: 1 },
     exit: { opacity: 0, scale: 0.95 }
   };
+  const effectiveStrategy = strategyResult?.strategy || strategyRecommendation?.strategy;
 
   return (
     <div className="min-h-screen bg-background">
@@ -1246,11 +1251,49 @@ const AdStrategy = ({ loadStrategies }) => {
           )}
         </div>
       </motion.main>
+      {isStrategyFlowLoading && (
+        <AnimatePresence>
+          <motion.div
+            className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+          >
+            <motion.div
+              className="bg-card border border-border rounded-2xl px-8 py-6 shadow-2xl max-w-md w-full mx-4"
+              initial={{ opacity: 0, y: 20, scale: 0.95 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: -10, scale: 0.95 }}
+            >
+              <div className="flex flex-col items-center text-center space-y-4">
+                <div className="w-12 h-12 rounded-full border-2 border-[#C80000]/30 border-t-[#C80000] animate-spin" />
+
+                <div>
+                  <h2 className="text-lg font-semibold text-foreground">
+                    KI erstellt deine Werbestrategie
+                  </h2>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    Marktanalyse, Fragebogen-Auswertung und Meta Ads Setup werden vorbereitet.
+                  </p>
+                </div>
+
+                <div className="w-full h-2 rounded-full bg-muted overflow-hidden">
+                  <div className="h-2 rounded-full bg-gradient-to-r from-[#C80000] to-[#A00000] animate-[loaderstripe_1.4s_ease-in-out_infinite]" />
+                </div>
+
+                <p className="text-xs text-muted-foreground">
+                  Dies kann je nach Komplexität deiner Kampagne ein paar Sekunden dauern.
+                </p>
+              </div>
+            </motion.div>
+          </motion.div>
+        </AnimatePresence>
+      )}
       {/* COMPREHENSIVE: Enhanced Interactive Strategy Finder Modal with 7-Step Questionnaire */}
       {showStrategyFinder && (
         <AnimatePresence>
           <motion.div
-            className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4"
+            className="fixed inset-0 bg-background/80 backdrop-blur-sm flex items-center justify-center z-50 p-4"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
@@ -1686,7 +1729,7 @@ const AdStrategy = ({ loadStrategies }) => {
                       </div>
                     )}
                     {strategyRecommendation?.strategy && (
-                      <div className="bg-white p-6 rounded-xl shadow border border-border mt-6">
+                      <div className="bg-card p-6 rounded-xl shadow border border-border mt-6">
                         <h2 className="text-xl font-bold mb-4">
                           {strategyRecommendation.strategy.title}
                         </h2>
@@ -1735,7 +1778,7 @@ const AdStrategy = ({ loadStrategies }) => {
       {showMetaAdsSetup && (
         <AnimatePresence>
           <motion.div
-            className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4"
+            className="fixed inset-0 bg-background/80 backdrop-blur-sm flex items-center justify-center z-50 p-4"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
@@ -1745,9 +1788,9 @@ const AdStrategy = ({ loadStrategies }) => {
               className="bg-card border border-border rounded-lg max-w-6xl w-full max-h-[95vh] overflow-y-auto"
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.95 }}
-            onClick={(e) => e?.stopPropagation()}
-          >
+              exit={{ opacity: 0, scale: 0.95 }}
+              onClick={(e) => e?.stopPropagation()}
+            >
               {/* Modal Header */}
               <div className="p-6 border-b border-border bg-gradient-to-r from-blue-500/10 to-indigo-500/5">
                 <div className="flex items-center justify-between">
@@ -1778,50 +1821,47 @@ const AdStrategy = ({ loadStrategies }) => {
                   {/* Modal Content */}
                   <div className="p-6 space-y-8">
                     {process.env.NODE_ENV === 'development' && (
-                      <pre className="hidden md:block text-[10px] bg-black/20 text-white/80 p-3 rounded mb-4 overflow-x-auto">
+                      <pre className="hidden md:block text-[10px] bg-muted text-muted-foreground p-3 rounded mb-4 overflow-x-auto">
                         {JSON.stringify({ strategyResult, strategyRecommendation, metaAdsSetupData }, null, 2)}
                       </pre>
                     )}
 
-                    {(() => {
-                      const effectiveStrategy = strategyResult?.strategy || strategyRecommendation?.strategy;
-                      return effectiveStrategy ? (
-                        <motion.div
-                          className="bg-gradient-to-br from-[#C80000]/10 to-[#C80000]/5 rounded-xl p-4 border border-[#C80000]/20"
-                          initial={{ opacity: 0, y: 10 }}
-                          animate={{ opacity: 1, y: 0 }}
-                        >
-                          <div className="flex items-center justify-between">
-                            <div>
-                              <h3 className="text-lg font-semibold text-foreground flex items-center">
-                                <Icon name="Target" size={18} className="mr-2 text-[#C80000]" />
-                                Ausgewählte Werbestrategie
-                              </h3>
-                              <p className="text-sm text-muted-foreground mt-1">
-                                {effectiveStrategy.title}
-                              </p>
-                            </div>
-                            <div className="flex items-center space-x-2">
-                              {strategyResult?.score != null && (
-                                <span className="px-3 py-1 text-xs bg-green-500/10 text-green-700 rounded-full">
-                                  Match: {strategyResult.score}%
-                                </span>
-                              )}
-                              {strategyResult?.confidence && (
-                                <span className="px-3 py-1 text-xs bg-blue-500/10 text-blue-700 rounded-full capitalize">
-                                  {strategyResult.confidence.replace('_', ' ')}
-                                </span>
-                              )}
-                            </div>
-                          </div>
-                          {effectiveStrategy.description && (
-                            <p className="text-xs text-muted-foreground mt-3">
-                              {effectiveStrategy.description}
+                    {effectiveStrategy && (
+                      <motion.div
+                        className="bg-gradient-to-br from-[#C80000]/10 to-[#C80000]/5 rounded-xl p-4 border border-[#C80000]/20"
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                      >
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <h3 className="text-lg font-semibold text-foreground flex items-center">
+                              <Icon name="Target" size={18} className="mr-2 text-[#C80000]" />
+                              Ausgewählte Werbestrategie
+                            </h3>
+                            <p className="text-sm text-muted-foreground mt-1">
+                              {effectiveStrategy.title}
                             </p>
-                          )}
-                        </motion.div>
-                      ) : null;
-                    })()}
+                          </div>
+                          <div className="flex items-center space-x-2">
+                            {strategyResult?.score != null && (
+                              <span className="px-3 py-1 text-xs bg-green-500/10 text-green-700 rounded-full">
+                                Match: {strategyResult.score}%
+                              </span>
+                            )}
+                            {strategyResult?.confidence && (
+                              <span className="px-3 py-1 text-xs bg-blue-500/10 text-blue-700 rounded-full capitalize">
+                                {strategyResult.confidence.replace('_', ' ')}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                        {effectiveStrategy.description && (
+                          <p className="text-xs text-muted-foreground mt-3">
+                            {effectiveStrategy.description}
+                          </p>
+                        )}
+                      </motion.div>
+                    )}
 
                     {/* Campaign Configuration */}
                     {metaAdsSetupData?.campaign_config && (
