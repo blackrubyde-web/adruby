@@ -263,20 +263,23 @@ const AdStrategy = ({ loadStrategies }) => {
       const questionnaireData = await questionnaireRes.json();
       console.log('[AdStrategy][Frontend][Questionnaire] Result:', questionnaireData);
 
-      const strategyRecommendation = questionnaireData?.strategyRecommendation;
+      const strategyFromApi = questionnaireData?.strategyRecommendation;
 
-      if (!strategyRecommendation?.strategy) {
+      if (!strategyFromApi?.strategy) {
         console.error('[AdStrategy][Frontend][Questionnaire] No strategy in response');
         setAnalysisError('Die KI hat keine gültige Strategie zurückgegeben.');
         return;
       }
+
+      console.log('[AdStrategy][Frontend] About to set strategyRecommendation from API', strategyFromApi);
+      setStrategyRecommendation(strategyFromApi);
 
       // 2) Strategie speichern
       const savePayload = {
         adVariantId,
         userId,
         answers,
-        strategyRecommendation,
+        strategyRecommendation: strategyFromApi,
       };
 
       console.log('[AdStrategy][Frontend][AdStrategySave] Sending payload', savePayload);
@@ -321,9 +324,11 @@ const AdStrategy = ({ loadStrategies }) => {
       }
 
       setStrategyResult({
-        ...strategyRecommendation,
+        ...strategyFromApi,
         savedRecord: savedStrategy,
       });
+      console.log('[AdStrategy][Frontend] strategyRecommendation state after save', strategyRecommendation);
+      setShowStrategyFinder(true);
       setShowMetaAdsSetup(true);
     } catch (err) {
       console.error('[AdStrategy][Frontend][Flow] Error:', err);
