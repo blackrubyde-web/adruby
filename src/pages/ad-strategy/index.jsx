@@ -519,7 +519,7 @@ const AdStrategy = () => {
                 
                 <button
                   onClick={handleBackToBuilder}
-                  className="flex items-center space-x-2 px-4 py-2 bg-[#C80000] text-white hover:bg-[#C80000]/90 rounded-lg transition-colors"
+                  className="flex items-center space-x-2 px-3 py-2 text-sm bg-[#C80000] text-white hover:bg-[#C80000]/90 rounded-lg transition-colors"
                 >
                   <Icon name="Plus" size={20} />
                   <span>Neue Anzeige erstellen</span>
@@ -743,7 +743,7 @@ const AdStrategy = () => {
                         <div className="mb-4">
                           <button
                             onClick={() => handleFindStrategy(variant)}
-                            className="w-full px-4 py-3 bg-gradient-to-r from-[#C80000] to-[#A00000] text-white rounded-lg hover:from-[#B00000] hover:to-[#900000] transition-all duration-200 flex items-center justify-center space-x-2 shadow-lg shadow-[#C80000]/25"
+                            className="w-full px-3 py-2 text-sm bg-gradient-to-r from-[#C80000] to-[#A00000] text-white rounded-lg hover:from-[#B00000] hover:to-[#900000] transition-all duration-200 flex items-center justify-center space-x-2 shadow-lg shadow-[#C80000]/25"
                           >
                             <Icon name="Target" size={16} />
                             <span className="font-medium">Werbestrategie</span>
