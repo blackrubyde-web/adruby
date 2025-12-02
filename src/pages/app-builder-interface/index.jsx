@@ -590,10 +590,10 @@ const HighConversionAdBuilder = () => {
                 )}
               </div>
 
-              <div className="flex w-full flex-col gap-3 lg:w-[620px]">
+              <div className="flex w-full flex-col gap-3 lg:w-1/2">
                 <AdBuilderStepper currentStep={currentStep} onStepChange={handleStepChange} />
                 {generatedAds?.length > 0 && (
-                  <div className="flex lg:justify-end">
+                  <div className="hidden lg:flex lg:justify-end">
                     <motion.button
                       onClick={handleNewAnalysis}
                       className="inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold rounded-lg transition shadow-[0_10px_30px_rgba(200,0,0,0.25)] bg-[#C80000] text-white hover:bg-[#a50000]"
@@ -832,13 +832,14 @@ const HighConversionAdBuilder = () => {
               >
                 <div className="space-y-4 order-1">
                   <div className="rounded-2xl border border-white/5 bg-[#141418] p-4 sm:p-5 backdrop-blur shadow-[0_20px_80px_rgba(0,0,0,0.35)]">
-                    <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
+                    <div className="flex flex-col gap-3 mb-4">
+                      {/* Tabs: Copy / Image Prompts / Struktur */}
                       <div className="flex flex-wrap items-center gap-2">
                         {["copy", "image", "structure"].map((tab) => (
                           <button
                             key={tab}
                             onClick={() => setCanvasTab(tab)}
-                            className={`px-3 py-2 text-xs font-semibold rounded-lg transition ${
+                            className={`px-3 py-2 text-xs sm:text-sm font-semibold rounded-lg transition ${
                               canvasTab === tab
                                 ? "bg-[#C80000] text-white"
                                 : "bg-white/5 text-slate-200 border border-white/10 hover:bg-white/10"
@@ -850,37 +851,23 @@ const HighConversionAdBuilder = () => {
                           </button>
                         ))}
                       </div>
-                      <div className="flex items-center gap-2">
-                        <div className="hidden sm:flex items-center gap-1 rounded-lg p-1 border border-slate-200 dark:border-white/10 bg-white dark:bg-white/5">
-                          {["feed", "story", "reel"].map((p) => (
-                            <button
-                              key={p}
-                              onClick={() => setPlacement(p)}
-                              className={`px-2 py-1 text-[10px] rounded-md transition ${
-                                placement === p
-                                  ? "bg-[#C80000] text-white"
-                                  : "text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-white/10"
-                              }`}
-                            >
-                              {p === "feed" && "Feed"}
-                              {p === "story" && "Story"}
-                              {p === "reel" && "Reel"}
-                            </button>
-                          ))}
-                        </div>
+
+                      {/* Actions: 2 Buttons, jeweils 50/50 Breite */}
+                      <div className="flex gap-3">
                         <button
                           onClick={handleRerollHook}
-                          className="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-700 transition hover:border-slate-300 dark:border-white/10 dark:bg-white/5 dark:text-slate-200"
+                          className="flex-1 inline-flex items-center justify-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-700 transition hover:border-slate-300 dark:border-white/10 dark:bg-white/5 dark:text-slate-200"
                         >
                           <Icon name="Dice5" size={16} />
-                          Hook neu würfeln
+                          <span>Hook neu würfeln</span>
                         </button>
+
                         <button
                           onClick={handleDuplicateVariant}
-                          className="inline-flex items-center gap-2 rounded-lg bg-[#C80000] px-3 py-2 text-xs font-semibold text-white shadow-[0_10px_30px_rgba(200,0,0,0.25)] hover:bg-[#a50000]"
+                          className="flex-1 inline-flex items-center justify-center gap-2 rounded-lg bg-[#C80000] px-3 py-2 text-xs font-semibold text-white shadow-[0_10px_30px_rgba(200,0,0,0.25)] hover:bg-[#a50000]"
                         >
                           <Icon name="Copy" size={16} />
-                          Variante duplizieren
+                          <span>Variante duplizieren</span>
                         </button>
                       </div>
                     </div>
