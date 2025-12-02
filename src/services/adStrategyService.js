@@ -1158,44 +1158,35 @@ Erstelle eine praxisnahe Meta Ads Manager Anleitung für 2025 mit konkreten Schr
   // NEW: Generate Meta Ads Setup for existing strategy with ad data
   static async generateMetaAdsSetupForStrategy(adVariantId) {
     try {
-      // Get ad variant with strategy and ad data
-      const { data: adVariant, error: variantError } = await supabase
-        ?.from('saved_ad_variants')
-        ?.select(`
-          *,
-          generated_ad:generated_ads(
-            *,
-            product:products(*)
-          ),
-          ad_strategy:ad_strategies(
-            *,
-            selected_strategy:strategies(*)
-          )
-        `)
-        ?.eq('id', adVariantId)
-        ?.single();
+      const res = await fetch('/.netlify/functions/ad-strategy-generate-meta-setup', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ adVariantId }),
+      });
 
-      if (variantError) throw variantError;
-
-      if (!adVariant?.ad_strategy?.[0]) {
-        throw new Error('Keine Strategie für diese Anzeige gefunden');
+      if (!res.ok) {
+        const errorBody = await res.json().catch(() => ({}));
+        console.error('[AdStrategyService][MetaAdsSetup] Failed:', res.status, errorBody);
+        return {
+          data: null,
+          error: new Error(errorBody?.error || 'Meta Ads Setup request failed'),
+        };
       }
 
-      const strategy = adVariant?.ad_strategy?.[0];
-      
-      // Generate Meta Ads setup
-      return await this.generateMetaAdsSetup(
-        strategy?.id,
-        adVariant,
-        strategy?.selected_strategy
-      );
+      const json = await res.json();
+      console.log('[AdStrategyService][MetaAdsSetup] Success:', json);
+
+      return {
+        data: json?.setup || json,
+        error: null,
+      };
     } catch (error) {
-      console.error('Error generating Meta Ads setup for strategy:', error);
+      console.error('[AdStrategyService][MetaAdsSetup] Error:', error);
       return { data: null, error };
     }
   }
 
-  // ENHANCED: Get saved ad variants with strategy AND Meta Ads setup
+// ENHANCED: Get saved ad variants with strategy AND Meta Ads setup
   static async getSavedAdVariants(userId) {
     try {
       const { data, error } = await supabase?.from('saved_ad_variants')?.select(`
