@@ -197,6 +197,8 @@ Wähle die BESTE Strategie aus und erkläre detailliert warum.
         body: JSON.stringify({ answers, strategies })
       });
 
+      console.log('[AdStrategyService][analyzeQuestionnaire] Response status:', res?.status);
+
       if (!res?.ok) {
         const text = await res?.text?.();
         console.error('[AdStrategyService][analyzeQuestionnaire] Error response:', res?.status, text);
@@ -204,6 +206,7 @@ Wähle die BESTE Strategie aus und erkläre detailliert warum.
       }
 
       const json = await res?.json?.();
+      console.log('[AdStrategyService][analyzeQuestionnaire] Parsed JSON:', json);
       return { data: json, error: null };
     } catch (err) {
       console.error('[AdStrategyService][analyzeQuestionnaire] Request failed:', err);
@@ -837,53 +840,49 @@ Wähle die BESTE Strategie aus und erkläre detailliert warum.
     }
   }
 
-  // NEW: Save comprehensive ad strategy to database
-  static async saveAdStrategy(adVariantId, userId, answers, recommendation) {
+  // Save comprehensive ad strategy via Netlify Function
+  static async saveAdStrategy(adVariantId, userId, answers, strategyRecommendation) {
     try {
-      const { data: { user } } = await supabase?.auth?.getUser();
-      if (!user?.id) {
-        throw new Error('Benutzer nicht authentifiziert');
-      }
-
-      const strategyData = {
-        ad_variant_id: adVariantId,
-        user_id: userId,
-        questionnaire_answers: answers,
-        selected_strategy_id: recommendation?.strategy?.id,
-        selected_strategy_data: {
-          title: recommendation?.strategy?.title,
-          description: recommendation?.strategy?.description,
-          recommended_actions: recommendation?.strategy?.recommended_actions || []
-        },
-        ai_analysis: {
-          reasoning: recommendation?.reasoning,
-          confidence: recommendation?.confidence,
-          key_alignments: recommendation?.key_alignments || [],
-          implementation_recommendations: recommendation?.implementation_recommendations || [],
-          alternatives: recommendation?.alternatives || []
-        },
-        matching_score: recommendation?.score,
-        confidence_level: recommendation?.confidence,
-        status: 'analyzed'
+      const payload = {
+        adVariantId,
+        userId,
+        answers,
+        strategyRecommendation,
       };
 
-      const { data, error } = await supabase?.from('ad_strategies')?.insert(strategyData)?.select(`
-          *,
-          selected_strategy:strategies(*),
-          ad_variant:saved_ad_variants(
-            *,
-            generated_ad:generated_ads(
-              *,
-              product:products(*)
-            )
-          )
-        `)?.single();
+      console.log('[AdStrategyService][saveAdStrategy] Request payload:', payload);
 
-      if (error) throw error;
-      return { data, error: null };
-    } catch (error) {
-      console.error('Error saving ad strategy:', error);
-      return { data: null, error };
+      const res = await fetch('/.netlify/functions/ad-strategy-save', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(payload),
+      });
+
+      console.log('[AdStrategyService][saveAdStrategy] Response status:', res.status);
+
+      const text = await res.text();
+      let json = null;
+      try {
+        json = text ? JSON.parse(text) : null;
+      } catch (e) {
+        console.warn('[AdStrategyService][saveAdStrategy] Failed to parse JSON response, raw text:', text);
+      }
+
+      console.log('[AdStrategyService][saveAdStrategy] Parsed response:', json);
+
+      if (!res.ok) {
+        const message =
+          (json && (json.error || json.message)) ||
+          `Failed to save strategy (HTTP ${res.status})`;
+        return { data: null, error: new Error(message) };
+      }
+
+      return { data: json, error: null };
+    } catch (err) {
+      console.error('[AdStrategyService][saveAdStrategy] Request failed:', err);
+      return { data: null, error: err };
     }
   }
 

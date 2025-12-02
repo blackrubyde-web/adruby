@@ -224,7 +224,28 @@ const AdStrategy = () => {
         );
         
         if (saveError) {
-          throw saveError;
+          console.error('[AdStrategy][handleSaveStrategy] saveAdStrategy error:', saveError);
+
+          // ROLLBACK: Revert optimistic update on error
+          setSavedAds(prevAds => 
+            prevAds?.map(variant => {
+              if (variant?.id === selectedAdForStrategy?.id) {
+                return {
+                  ...variant,
+                  ad_strategy: variant?.ad_strategy?.filter(s => !String(s?.id).startsWith('temp_')) || []
+                };
+              }
+              return variant;
+            })
+          );
+
+          const message =
+            saveError?.message ||
+            'Fehler beim Speichern der Strategie. Bitte versuchen Sie es erneut.';
+
+          setError(message);
+          setSuccess(null);
+          return;
         }
 
         // FINAL SYNC: Reload data to get real IDs and complete data
@@ -233,7 +254,7 @@ const AdStrategy = () => {
         }, 1500); // Delay to allow user to see immediate change
 
       } catch (syncError) {
-        console.error('Background sync error:', syncError);
+        console.error('[AdStrategy][handleSaveStrategy] Background sync error:', syncError);
         
         // ROLLBACK: Revert optimistic update on error
         setSavedAds(prevAds => 
@@ -241,14 +262,18 @@ const AdStrategy = () => {
             if (variant?.id === selectedAdForStrategy?.id) {
               return {
                 ...variant,
-                ad_strategy: variant?.ad_strategy?.filter(s => s?.id !== optimisticStrategyData?.id) || []
+                ad_strategy: variant?.ad_strategy?.filter(s => !String(s?.id).startsWith('temp_')) || []
               };
             }
             return variant;
           })
         );
-        
-        setError('Fehler beim Speichern der Strategie. Bitte versuchen Sie es erneut.');
+
+        const message =
+          syncError?.message ||
+          'Fehler beim Speichern der Strategie. Bitte versuchen Sie es erneut.';
+
+        setError(message);
         setSuccess(null);
       }
 
@@ -277,6 +302,10 @@ const AdStrategy = () => {
 
       // AI-powered comprehensive questionnaire analysis
       const { data: recommendation, error: analysisError } = await AdStrategyService?.analyzeQuestionnaire(answers, strategies);
+      console.log('[AdStrategy][processComprehensiveStrategyRecommendation] Service result:', {
+        recommendation,
+        analysisError,
+      });
       if (analysisError) throw analysisError;
 
       setStrategyRecommendation(recommendation);
@@ -1230,6 +1259,11 @@ const AdStrategy = () => {
                     </div>
                     {strategyRecommendation?.strategy && (
                       <div className="bg-gradient-to-br from-muted/30 to-muted/10 rounded-xl p-8 border">
+                        {process.env.NODE_ENV === 'development' && (
+                          <pre className="hidden">
+                            {JSON.stringify(strategyRecommendation, null, 2)}
+                          </pre>
+                        )}
                         {/* Strategy Header - ENHANCED */}
                         <div className="flex items-center justify-between mb-6">
                           <div className="flex items-center space-x-4">

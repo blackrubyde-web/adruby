@@ -91,6 +91,11 @@ async function generateStrategyRecommendation(answers, strategies) {
 }
 
 exports.handler = async (event) => {
+  console.log("[Questionnaire] Incoming request:", {
+    method: event.httpMethod,
+    rawBody: event.body || null,
+  });
+
   if (event.httpMethod !== "POST") {
     return {
       statusCode: 405,
@@ -100,6 +105,10 @@ exports.handler = async (event) => {
 
   try {
     const { answers, strategies = [] } = JSON.parse(event.body || "{}");
+    console.log("[Questionnaire] Parsed payload:", {
+      answers,
+      hasStrategies: Array.isArray(strategies),
+    });
 
     if (!answers || typeof answers !== "object") {
       return {
@@ -113,6 +122,7 @@ exports.handler = async (event) => {
     let diagnosis = { primary_problem: "hook", secondary_problems: [], kpi_snapshot: {}, kpi_pattern_tags: [] };
     try {
       diagnosis = buildDiagnosis(answers);
+      console.log("[Questionnaire] Diagnosis:", diagnosis);
     } catch (err) {
       console.error("[Questionnaire][Diagnosis] Failed to build diagnosis", err);
     }
@@ -127,6 +137,12 @@ exports.handler = async (event) => {
         const { data: s } = await getBlueprintSections(blueprint.id);
         sections = s || [];
       }
+      console.log("[Questionnaire] Blueprint resolve:", {
+        category,
+        blueprintId: blueprint?.id || null,
+        blueprintTitle: blueprint?.title || null,
+        sectionCount: Array.isArray(sections) ? sections.length : 0,
+      });
     } catch (err) {
       console.error("[Questionnaire][Blueprint] Failed to load blueprint/sections", err);
     }
@@ -173,6 +189,10 @@ exports.handler = async (event) => {
           }
         }
       }
+      console.log("[Questionnaire] Deep dive sections:", {
+        count: Array.isArray(deepDiveSections) ? deepDiveSections.length : 0,
+        priorities: deepDiveSections.map((s) => s.priority),
+      });
     } catch (err) {
       console.error("[Questionnaire][DeepDive] Failed to map sections", err);
     }
@@ -184,6 +204,16 @@ exports.handler = async (event) => {
       blueprint_id: blueprint?.id || null,
       blueprint_title: blueprint?.title || null,
     };
+
+    console.log("[Questionnaire] Final recommendation shape:", {
+      hasStrategy: !!extendedRecommendation.strategy,
+      score: extendedRecommendation.score,
+      confidence: extendedRecommendation.confidence,
+      hasDiagnosis: !!extendedRecommendation.diagnosis,
+      deepDiveCount: Array.isArray(extendedRecommendation.deep_dive_sections)
+        ? extendedRecommendation.deep_dive_sections.length
+        : 0,
+    });
 
     return {
       statusCode: 200,
