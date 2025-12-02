@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { PlayCircle, ArrowRight, CheckCircle, Brain, Target, BarChart3, TrendingUp, Users, DollarSign, Eye } from 'lucide-react';
@@ -112,38 +112,42 @@ const AdRubyAdStrategies = () => {
     }
   ];
 
-  useEffect(() => {
-    const loadStrategies = async () => {
-      if (!userId) return;
-      setIsLoading(true);
-      setError(null);
+  const loadStrategies = useCallback(async () => {
+    if (!userId) return;
+    setIsLoading(true);
+    setError(null);
 
-      try {
-        const query = new URLSearchParams({ userId });
-        if (adVariantId) query.set('adVariantId', adVariantId);
+    try {
+      const query = new URLSearchParams({ userId });
+      if (adVariantId) query.set('adVariantId', adVariantId);
+      console.log(
+        "[Frontend][AdStrategiesGet] Request URL:",
+        `/.netlify/functions/ad-strategies-get?${query.toString()}`
+      );
 
-        const res = await fetch(`/.netlify/functions/ad-strategies-get?${query.toString()}`);
-        if (!res.ok) {
-          console.error('[Frontend][AdStrategiesGet] Failed:', res.status);
-          setError('Strategien konnten nicht geladen werden.');
-          return;
-        }
-
-        const data = await res.json();
-        const list = data?.strategies || [];
-        setStrategies(list);
-        if (list.length > 0) setSelectedStrategy(list[0]);
-        console.log('[Frontend][AdStrategiesGet] Loaded:', list.length);
-      } catch (err) {
-        console.error('[Frontend][AdStrategiesGet] Error:', err);
-        setError('Ein unerwarteter Fehler ist aufgetreten.');
-      } finally {
-        setIsLoading(false);
+      const res = await fetch(`/.netlify/functions/ad-strategies-get?${query.toString()}`);
+      if (!res.ok) {
+        console.error('[Frontend][AdStrategiesGet] Failed:', res.status);
+        setError('Strategien konnten nicht geladen werden.');
+        return;
       }
-    };
 
-    loadStrategies();
+      const data = await res.json();
+      const list = data?.strategies || [];
+      setStrategies(list);
+      if (list.length > 0) setSelectedStrategy(list[0]);
+      console.log('[Frontend][AdStrategiesGet] Loaded:', list.length);
+    } catch (err) {
+      console.error('[Frontend][AdStrategiesGet] Error:', err);
+      setError('Ein unerwarteter Fehler ist aufgetreten.');
+    } finally {
+      setIsLoading(false);
+    }
   }, [userId, adVariantId]);
+
+  useEffect(() => {
+    loadStrategies();
+  }, [loadStrategies]);
 
   return (
     <>

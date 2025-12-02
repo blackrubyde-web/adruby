@@ -7,7 +7,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import AdStrategyService from '../../services/adStrategyService';
 import Icon from '../../components/AppIcon';
 
-const AdStrategy = () => {
+const AdStrategy = ({ loadStrategies }) => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [isNavCollapsed, setIsNavCollapsed] = useState(true);
   const { user } = useAuth();
@@ -34,6 +34,8 @@ const AdStrategy = () => {
   const [savedAds, setSavedAds] = useState([]);
   const [showSavedAds, setShowSavedAds] = useState(true); // DEFAULT: Always show saved ads first
   const [loadingSaved, setLoadingSaved] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [strategies, setStrategies] = useState([]);
 
   // COMPREHENSIVE: Enhanced strategy finder states for 7-step questionnaire
   const [showStrategyFinder, setShowStrategyFinder] = useState(false);
@@ -245,6 +247,10 @@ const AdStrategy = () => {
 
       console.log('[AdStrategy][Frontend][AdStrategySave] Sending payload', savePayload);
 
+      setIsSaving(true);
+      setError(null);
+      setStrategies((prev) => [...prev]);
+
       const saveRes = await fetch('/.netlify/functions/ad-strategy-save', {
         method: 'POST',
         headers: {
@@ -263,6 +269,9 @@ const AdStrategy = () => {
 
       const savedStrategy = await saveRes.json();
       console.log('[AdStrategy][Frontend][AdStrategySave] Saved:', savedStrategy);
+      if (typeof loadStrategies === 'function') {
+        await loadStrategies();
+      }
 
       setStrategyResult({
         ...strategyRecommendation,
@@ -274,6 +283,7 @@ const AdStrategy = () => {
       setAnalysisError('Es ist ein unerwarteter Fehler aufgetreten.');
     } finally {
       setIsAnalyzing(false);
+      setIsSaving(false);
     }
   };
 
