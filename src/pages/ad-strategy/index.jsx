@@ -273,6 +273,7 @@ const AdStrategy = ({ loadStrategies }) => {
 
       console.log('[AdStrategy][Frontend] About to set strategyRecommendation from API', strategyFromApi);
       setStrategyRecommendation(strategyFromApi);
+      setStrategyResult(strategyFromApi);
 
       // 2) Strategie speichern
       const savePayload = {
@@ -323,10 +324,22 @@ const AdStrategy = ({ loadStrategies }) => {
         console.error('[AdStrategy][Frontend][MetaAdsSetup] Unexpected error:', metaErr);
       }
 
-      setStrategyResult({
-        ...strategyFromApi,
+      setStrategyResult(prev => ({
+        ...(prev || strategyFromApi),
         savedRecord: savedStrategy,
-      });
+      }));
+
+      try {
+        const { data: setupData, error: setupError } = await AdStrategyService?.generateMetaAdsSetupForStrategy(adVariantId);
+        if (setupError) {
+          console.error('[AdStrategy][Frontend][MetaAdsSetup] Error:', setupError);
+        } else if (setupData) {
+          setMetaAdsSetupData(setupData);
+        }
+      } catch (metaErr) {
+        console.error('[AdStrategy][Frontend][MetaAdsSetup] Unexpected error:', metaErr);
+      }
+
       console.log('[AdStrategy][Frontend] strategyRecommendation state after save', strategyRecommendation);
       setShowStrategyFinder(true);
       setShowMetaAdsSetup(true);
@@ -1719,7 +1732,7 @@ const AdStrategy = ({ loadStrategies }) => {
         </AnimatePresence>
       )}
       {/* NEW: Meta Ads Setup Modal */}
-      {showMetaAdsSetup && metaAdsSetupData && (
+      {showMetaAdsSetup && (
         <AnimatePresence>
           <motion.div
             className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4"
@@ -1732,9 +1745,9 @@ const AdStrategy = ({ loadStrategies }) => {
               className="bg-card border border-border rounded-lg max-w-6xl w-full max-h-[95vh] overflow-y-auto"
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.95 }}
-              onClick={(e) => e?.stopPropagation()}
-            >
+            exit={{ opacity: 0, scale: 0.95 }}
+            onClick={(e) => e?.stopPropagation()}
+          >
               {/* Modal Header */}
               <div className="p-6 border-b border-border bg-gradient-to-r from-blue-500/10 to-indigo-500/5">
                 <div className="flex items-center justify-between">
@@ -1760,284 +1773,302 @@ const AdStrategy = ({ loadStrategies }) => {
                 </div>
               </div>
 
-              {/* Modal Content */}
-              <div className="p-6 space-y-8">
-                {strategyResult?.strategy && (
-                  <motion.div
-                    className="bg-gradient-to-br from-[#C80000]/10 to-[#C80000]/5 rounded-xl p-4 border border-[#C80000]/20"
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                  >
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <h3 className="text-lg font-semibold text-foreground flex items-center">
-                          <Icon name="Target" size={18} className="mr-2 text-[#C80000]" />
-                          Ausgewählte Werbestrategie
-                        </h3>
-                        <p className="text-sm text-muted-foreground mt-1">
-                          {strategyResult.strategy.title}
-                        </p>
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        {strategyResult.score != null && (
-                          <span className="px-3 py-1 text-xs bg-green-500/10 text-green-700 rounded-full">
-                            Match: {strategyResult.score}%
-                          </span>
-                        )}
-                        {strategyResult.confidence && (
-                          <span className="px-3 py-1 text-xs bg-blue-500/10 text-blue-700 rounded-full capitalize">
-                            {strategyResult.confidence.replace('_', ' ')}
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                    {strategyResult.strategy.description && (
-                      <p className="text-xs text-muted-foreground mt-3">
-                        {strategyResult.strategy.description}
-                      </p>
+              {metaAdsSetupData ? (
+                <>
+                  {/* Modal Content */}
+                  <div className="p-6 space-y-8">
+                    {process.env.NODE_ENV === 'development' && (
+                      <pre className="hidden md:block text-[10px] bg-black/20 text-white/80 p-3 rounded mb-4 overflow-x-auto">
+                        {JSON.stringify({ strategyResult, strategyRecommendation, metaAdsSetupData }, null, 2)}
+                      </pre>
                     )}
-                  </motion.div>
-                )}
 
-                {/* Campaign Configuration */}
-                {metaAdsSetupData?.campaign_config && (
-                  <motion.div
-                    className="bg-gradient-to-br from-muted/30 to-muted/10 rounded-xl p-6 border"
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                  >
-                    <div className="flex items-center justify-between mb-4">
-                      <h3 className="text-lg font-semibold text-foreground flex items-center">
-                        <Icon name="Target" size={20} className="mr-2 text-blue-600" />
-                        1. Kampagne erstellen
-                      </h3>
-                      <button
-                        onClick={() => handleCopyMetaAdsData(metaAdsSetupData?.campaign_config, 'Kampagne')}
-                        className="flex items-center space-x-2 px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors text-sm"
-                      >
-                        <Icon name="Copy" size={14} />
-                        <span>Kopieren</span>
-                      </button>
-                    </div>
-                    
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div className="space-y-3">
-                        <div>
-                          <label className="text-sm font-medium text-muted-foreground">Kampagnenziel</label>
-                          <p className="text-foreground font-medium">{metaAdsSetupData?.campaign_config?.objective}</p>
-                        </div>
-                        <div>
-                          <label className="text-sm font-medium text-muted-foreground">Kampagnenname</label>
-                          <p className="text-foreground font-medium break-words">{metaAdsSetupData?.campaign_config?.campaign_name}</p>
-                        </div>
-                        <div>
-                          <label className="text-sm font-medium text-muted-foreground">Tagesbudget</label>
-                          <p className="text-foreground font-medium">{metaAdsSetupData?.campaign_config?.budget}</p>
-                        </div>
-                      </div>
-                      <div className="space-y-3">
-                        <div>
-                          <label className="text-sm font-medium text-muted-foreground">Optimierungsziel</label>
-                          <p className="text-foreground font-medium">{metaAdsSetupData?.campaign_config?.optimization_goal}</p>
-                        </div>
-                        <div>
-                          <label className="text-sm font-medium text-muted-foreground">Laufzeit</label>
-                          <p className="text-foreground font-medium">{metaAdsSetupData?.campaign_config?.duration}</p>
-                        </div>
-                        {metaAdsSetupData?.campaign_config?.notes && (
-                          <div>
-                            <label className="text-sm font-medium text-muted-foreground">Wichtige Hinweise</label>
-                            <p className="text-sm text-muted-foreground">{metaAdsSetupData?.campaign_config?.notes}</p>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  </motion.div>
-                )}
-
-                {/* AdSets Configuration */}
-                {metaAdsSetupData?.adsets_config?.length > 0 && (
-                  <motion.div
-                    className="space-y-4"
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.1 }}
-                  >
-                    <div className="flex items-center justify-between">
-                      <h3 className="text-lg font-semibold text-foreground flex items-center">
-                        <Icon name="Users" size={20} className="mr-2 text-green-600" />
-                        2. AdSets konfigurieren ({metaAdsSetupData?.adsets_config?.length} Zielgruppen)
-                      </h3>
-                      <button
-                        onClick={() => handleCopyMetaAdsData(metaAdsSetupData?.adsets_config, 'AdSets')}
-                        className="flex items-center space-x-2 px-3 py-1 bg-green-600 text-white rounded hover:bg-green-700 transition-colors text-sm"
-                      >
-                        <Icon name="Copy" size={14} />
-                        <span>Alle kopieren</span>
-                      </button>
-                    </div>
-
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      {metaAdsSetupData?.adsets_config?.map((adset, index) => (
-                        <div key={index} className="bg-gradient-to-br from-green-500/10 to-emerald-500/5 rounded-lg p-4 border border-green-500/20">
-                          <div className="flex items-center justify-between mb-3">
-                            <h4 className="font-semibold text-foreground">{adset?.name}</h4>
-                            <span className="text-sm font-medium text-green-600">{adset?.budget}</span>
-                          </div>
-                          
-                          <div className="space-y-2 text-sm">
-                            <div className="flex justify-between">
-                              <span className="text-muted-foreground">Platzierungen:</span>
-                              <span className="text-foreground">{adset?.placements}</span>
+                    {(() => {
+                      const effectiveStrategy = strategyResult?.strategy || strategyRecommendation?.strategy;
+                      return effectiveStrategy ? (
+                        <motion.div
+                          className="bg-gradient-to-br from-[#C80000]/10 to-[#C80000]/5 rounded-xl p-4 border border-[#C80000]/20"
+                          initial={{ opacity: 0, y: 10 }}
+                          animate={{ opacity: 1, y: 0 }}
+                        >
+                          <div className="flex items-center justify-between">
+                            <div>
+                              <h3 className="text-lg font-semibold text-foreground flex items-center">
+                                <Icon name="Target" size={18} className="mr-2 text-[#C80000]" />
+                                Ausgewählte Werbestrategie
+                              </h3>
+                              <p className="text-sm text-muted-foreground mt-1">
+                                {effectiveStrategy.title}
+                              </p>
                             </div>
-                            
-                            {adset?.target_audience && (
-                              <div className="mt-3 p-2 bg-muted/30 rounded">
-                                <p className="text-xs font-medium text-muted-foreground mb-2">Zielgruppe:</p>
-                                {adset?.target_audience?.age && (
-                                  <p className="text-xs">Alter: {adset?.target_audience?.age}</p>
-                                )}
-                                {adset?.target_audience?.locations?.length > 0 && (
-                                  <p className="text-xs">Standorte: {adset?.target_audience?.locations?.join(', ')}</p>
-                                )}
-                                {adset?.target_audience?.interests?.length > 0 && (
-                                  <p className="text-xs">Interessen: {adset?.target_audience?.interests?.slice(0, 3)?.join(', ')}{adset?.target_audience?.interests?.length > 3 ? '...' : ''}</p>
-                                )}
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </motion.div>
-                )}
-
-                {/* Ads Configuration */}
-                {metaAdsSetupData?.ads_config?.length > 0 && (
-                  <motion.div
-                    className="space-y-4"
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.2 }}
-                  >
-                    <div className="flex items-center justify-between">
-                      <h3 className="text-lg font-semibold text-foreground flex items-center">
-                        <Icon name="Image" size={20} className="mr-2 text-purple-600" />
-                        3. Anzeigen erstellen ({metaAdsSetupData?.ads_config?.length} Varianten)
-                      </h3>
-                      <button
-                        onClick={() => handleCopyMetaAdsData(metaAdsSetupData?.ads_config, 'Anzeigen')}
-                        className="flex items-center space-x-2 px-3 py-1 bg-purple-600 text-white rounded hover:bg-purple-700 transition-colors text-sm"
-                      >
-                        <Icon name="Copy" size={14} />
-                        <span>Alle kopieren</span>
-                      </button>
-                    </div>
-
-                    <div className="grid grid-cols-1 gap-4">
-                      {metaAdsSetupData?.ads_config?.map((ad, index) => (
-                        <div key={index} className="bg-gradient-to-br from-purple-500/10 to-pink-500/5 rounded-lg p-4 border border-purple-500/20">
-                          <div className="flex items-center justify-between mb-3">
-                            <h4 className="font-semibold text-foreground">{ad?.name}</h4>
                             <div className="flex items-center space-x-2">
-                              <span className="text-xs px-2 py-1 bg-purple-100 text-purple-700 rounded">{ad?.format}</span>
-                              <span className="text-xs px-2 py-1 bg-blue-100 text-blue-700 rounded">{ad?.cta}</span>
+                              {strategyResult?.score != null && (
+                                <span className="px-3 py-1 text-xs bg-green-500/10 text-green-700 rounded-full">
+                                  Match: {strategyResult.score}%
+                                </span>
+                              )}
+                              {strategyResult?.confidence && (
+                                <span className="px-3 py-1 text-xs bg-blue-500/10 text-blue-700 rounded-full capitalize">
+                                  {strategyResult.confidence.replace('_', ' ')}
+                                </span>
+                              )}
                             </div>
                           </div>
-                          
-                          <div className="space-y-2">
+                          {effectiveStrategy.description && (
+                            <p className="text-xs text-muted-foreground mt-3">
+                              {effectiveStrategy.description}
+                            </p>
+                          )}
+                        </motion.div>
+                      ) : null;
+                    })()}
+
+                    {/* Campaign Configuration */}
+                    {metaAdsSetupData?.campaign_config && (
+                      <motion.div
+                        className="bg-gradient-to-br from-muted/30 to-muted/10 rounded-xl p-6 border"
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                      >
+                        <div className="flex items-center justify-between mb-4">
+                          <h3 className="text-lg font-semibold text-foreground flex items-center">
+                            <Icon name="Target" size={20} className="mr-2 text-blue-600" />
+                            1. Kampagne erstellen
+                          </h3>
+                          <button
+                            onClick={() => handleCopyMetaAdsData(metaAdsSetupData?.campaign_config, 'Kampagne')}
+                            className="flex items-center space-x-2 px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors text-sm"
+                          >
+                            <Icon name="Copy" size={14} />
+                            <span>Kopieren</span>
+                          </button>
+                        </div>
+                        
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <div className="space-y-3">
                             <div>
-                              <label className="text-xs font-medium text-muted-foreground">Headline:</label>
-                              <p className="text-sm text-foreground">{ad?.headline}</p>
+                              <label className="text-sm font-medium text-muted-foreground">Kampagnenziel</label>
+                              <p className="text-foreground font-medium">{metaAdsSetupData?.campaign_config?.objective}</p>
                             </div>
                             <div>
-                              <label className="text-xs font-medium text-muted-foreground">Text:</label>
-                              <p className="text-sm text-foreground line-clamp-2">{ad?.primary_text}</p>
+                              <label className="text-sm font-medium text-muted-foreground">Kampagnenname</label>
+                              <p className="text-foreground font-medium break-words">{metaAdsSetupData?.campaign_config?.campaign_name}</p>
                             </div>
-                            {ad?.tracking && (
+                            <div>
+                              <label className="text-sm font-medium text-muted-foreground">Tagesbudget</label>
+                              <p className="text-foreground font-medium">{metaAdsSetupData?.campaign_config?.budget}</p>
+                            </div>
+                          </div>
+                          <div className="space-y-3">
+                            <div>
+                              <label className="text-sm font-medium text-muted-foreground">Optimierungsziel</label>
+                              <p className="text-foreground font-medium">{metaAdsSetupData?.campaign_config?.optimization_goal}</p>
+                            </div>
+                            <div>
+                              <label className="text-sm font-medium text-muted-foreground">Laufzeit</label>
+                              <p className="text-foreground font-medium">{metaAdsSetupData?.campaign_config?.duration}</p>
+                            </div>
+                            {metaAdsSetupData?.campaign_config?.notes && (
                               <div>
-                                <label className="text-xs font-medium text-muted-foreground">Tracking:</label>
-                                <p className="text-xs text-muted-foreground">{ad?.tracking}</p>
+                                <label className="text-sm font-medium text-muted-foreground">Wichtige Hinweise</label>
+                                <p className="text-sm text-muted-foreground">{metaAdsSetupData?.campaign_config?.notes}</p>
                               </div>
                             )}
                           </div>
                         </div>
-                      ))}
-                    </div>
-                  </motion.div>
-                )}
+                      </motion.div>
+                    )}
 
-                {/* Recommendations */}
-                {metaAdsSetupData?.recommendations && (
-                  <motion.div
-                    className="bg-gradient-to-br from-yellow-500/10 to-orange-500/5 rounded-xl p-6 border border-yellow-500/20"
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.3 }}
-                  >
-                    <div className="flex items-center justify-between mb-4">
-                      <h3 className="text-lg font-semibold text-foreground flex items-center">
-                        <Icon name="Lightbulb" size={20} className="mr-2 text-yellow-600" />
-                        4. Empfehlungen & Best Practices
-                      </h3>
-                      <button
-                        onClick={() => handleCopyMetaAdsData(metaAdsSetupData?.recommendations, 'Empfehlungen')}
-                        className="flex items-center space-x-2 px-3 py-1 bg-yellow-600 text-white rounded hover:bg-yellow-700 transition-colors text-sm"
+                    {/* AdSets Configuration */}
+                    {metaAdsSetupData?.adsets_config?.length > 0 && (
+                      <motion.div
+                        className="space-y-4"
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 0.1 }}
                       >
-                        <Icon name="Copy" size={14} />
-                        <span>Kopieren</span>
+                        <div className="flex items-center justify-between">
+                          <h3 className="text-lg font-semibold text-foreground flex items-center">
+                            <Icon name="Users" size={20} className="mr-2 text-green-600" />
+                            2. AdSets konfigurieren ({metaAdsSetupData?.adsets_config?.length} Zielgruppen)
+                          </h3>
+                          <button
+                            onClick={() => handleCopyMetaAdsData(metaAdsSetupData?.adsets_config, 'AdSets')}
+                            className="flex items-center space-x-2 px-3 py-1 bg-green-600 text-white rounded hover:bg-green-700 transition-colors text-sm"
+                          >
+                            <Icon name="Copy" size={14} />
+                            <span>Alle kopieren</span>
+                          </button>
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          {metaAdsSetupData?.adsets_config?.map((adset, index) => (
+                            <div key={index} className="bg-gradient-to-br from-green-500/10 to-emerald-500/5 rounded-lg p-4 border border-green-500/20">
+                              <div className="flex items-center justify-between mb-3">
+                                <h4 className="font-semibold text-foreground">{adset?.name}</h4>
+                                <span className="text-sm font-medium text-green-600">{adset?.budget}</span>
+                              </div>
+                              
+                              <div className="space-y-2 text-sm">
+                                <div className="flex justify-between">
+                                  <span className="text-muted-foreground">Platzierungen:</span>
+                                  <span className="text-foreground">{adset?.placements}</span>
+                                </div>
+                                
+                                {adset?.target_audience && (
+                                  <div className="mt-3 p-2 bg-muted/30 rounded">
+                                    <p className="text-xs font-medium text-muted-foreground mb-2">Zielgruppe:</p>
+                                    {adset?.target_audience?.age && (
+                                      <p className="text-xs">Alter: {adset?.target_audience?.age}</p>
+                                    )}
+                                    {adset?.target_audience?.locations?.length > 0 && (
+                                      <p className="text-xs">Standorte: {adset?.target_audience?.locations?.join(', ')}</p>
+                                    )}
+                                    {adset?.target_audience?.interests?.length > 0 && (
+                                      <p className="text-xs">Interessen: {adset?.target_audience?.interests?.slice(0, 3)?.join(', ')}{adset?.target_audience?.interests?.length > 3 ? '...' : ''}</p>
+                                    )}
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </motion.div>
+                    )}
+
+                    {/* Ads Configuration */}
+                    {metaAdsSetupData?.ads_config?.length > 0 && (
+                      <motion.div
+                        className="space-y-4"
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 0.2 }}
+                      >
+                        <div className="flex items-center justify-between">
+                          <h3 className="text-lg font-semibold text-foreground flex items-center">
+                            <Icon name="Image" size={20} className="mr-2 text-purple-600" />
+                            3. Anzeigen erstellen ({metaAdsSetupData?.ads_config?.length} Varianten)
+                          </h3>
+                          <button
+                            onClick={() => handleCopyMetaAdsData(metaAdsSetupData?.ads_config, 'Anzeigen')}
+                            className="flex items-center space-x-2 px-3 py-1 bg-purple-600 text-white rounded hover:bg-purple-700 transition-colors text-sm"
+                          >
+                            <Icon name="Copy" size={14} />
+                            <span>Alle kopieren</span>
+                          </button>
+                        </div>
+
+                        <div className="grid grid-cols-1 gap-4">
+                          {metaAdsSetupData?.ads_config?.map((ad, index) => (
+                            <div key={index} className="bg-gradient-to-br from-purple-500/10 to-pink-500/5 rounded-lg p-4 border border-purple-500/20">
+                              <div className="flex items-center justify-between mb-3">
+                                <h4 className="font-semibold text-foreground">{ad?.name}</h4>
+                                <div className="flex items-center space-x-2">
+                                  <span className="text-xs px-2 py-1 bg-purple-100 text-purple-700 rounded">{ad?.format}</span>
+                                  <span className="text-xs px-2 py-1 bg-blue-100 text-blue-700 rounded">{ad?.cta}</span>
+                                </div>
+                              </div>
+                              
+                              <div className="space-y-2">
+                                <div>
+                                  <label className="text-xs font-medium text-muted-foreground">Headline:</label>
+                                  <p className="text-sm text-foreground">{ad?.headline}</p>
+                                </div>
+                                <div>
+                                  <label className="text-xs font-medium text-muted-foreground">Text:</label>
+                                  <p className="text-sm text-foreground line-clamp-2">{ad?.primary_text}</p>
+                                </div>
+                                {ad?.tracking && (
+                                  <div>
+                                    <label className="text-xs font-medium text-muted-foreground">Tracking:</label>
+                                    <p className="text-xs text-muted-foreground">{ad?.tracking}</p>
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </motion.div>
+                    )}
+
+                    {/* Recommendations */}
+                    {metaAdsSetupData?.recommendations && (
+                      <motion.div
+                        className="bg-gradient-to-br from-yellow-500/10 to-orange-500/5 rounded-xl p-6 border border-yellow-500/20"
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 0.3 }}
+                      >
+                        <div className="flex items-center justify-between mb-4">
+                          <h3 className="text-lg font-semibold text-foreground flex items-center">
+                            <Icon name="Lightbulb" size={20} className="mr-2 text-yellow-600" />
+                            4. Empfehlungen & Best Practices
+                          </h3>
+                          <button
+                            onClick={() => handleCopyMetaAdsData(metaAdsSetupData?.recommendations, 'Empfehlungen')}
+                            className="flex items-center space-x-2 px-3 py-1 bg-yellow-600 text-white rounded hover:bg-yellow-700 transition-colors text-sm"
+                          >
+                            <Icon name="Copy" size={14} />
+                            <span>Kopieren</span>
+                          </button>
+                        </div>
+                        
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                          {metaAdsSetupData?.recommendations?.testing && (
+                            <div>
+                              <h4 className="font-medium text-foreground mb-2 flex items-center">
+                                <Icon name="TestTube" size={16} className="mr-1 text-yellow-600" />
+                                Testing
+                              </h4>
+                              <p className="text-sm text-muted-foreground">{metaAdsSetupData?.recommendations?.testing}</p>
+                            </div>
+                          )}
+                          {metaAdsSetupData?.recommendations?.scaling && (
+                            <div>
+                              <h4 className="font-medium text-foreground mb-2 flex items-center">
+                                <Icon name="TrendingUp" size={16} className="mr-1 text-green-600" />
+                                Skalierung
+                              </h4>
+                              <p className="text-sm text-muted-foreground">{metaAdsSetupData?.recommendations?.scaling}</p>
+                            </div>
+                          )}
+                          {metaAdsSetupData?.recommendations?.reporting && (
+                            <div>
+                              <h4 className="font-medium text-foreground mb-2 flex items-center">
+                                <Icon name="BarChart" size={16} className="mr-1 text-blue-600" />
+                                Reporting
+                              </h4>
+                              <p className="text-sm text-muted-foreground">{metaAdsSetupData?.recommendations?.reporting}</p>
+                            </div>
+                          )}
+                        </div>
+                      </motion.div>
+                    )}
+
+                    {/* Action Buttons */}
+                    <div className="flex space-x-4 pt-6 border-t border-border">
+                      <button
+                        onClick={handleCloseMetaAdsSetup}
+                        className="flex-1 px-6 py-3 border border-border rounded-lg hover:bg-muted transition-colors text-center"
+                      >
+                        Schließen
+                      </button>
+                      <button
+                        onClick={() => handleCopyMetaAdsData(metaAdsSetupData?.setup_data, 'Komplettes Setup')}
+                        className="flex-1 px-6 py-3 bg-gradient-to-r from-[#C80000] to-[#A00000] text-white rounded-lg hover:from-[#B00000] hover:to-[#900000] transition-all shadow-lg shadow-[#C80000]/25 text-center font-medium"
+                      >
+                        <Icon name="Download" size={16} className="inline mr-2" />
+                        Komplettes Setup exportieren
                       </button>
                     </div>
-                    
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                      {metaAdsSetupData?.recommendations?.testing && (
-                        <div>
-                          <h4 className="font-medium text-foreground mb-2 flex items-center">
-                            <Icon name="TestTube" size={16} className="mr-1 text-yellow-600" />
-                            Testing
-                          </h4>
-                          <p className="text-sm text-muted-foreground">{metaAdsSetupData?.recommendations?.testing}</p>
-                        </div>
-                      )}
-                      {metaAdsSetupData?.recommendations?.scaling && (
-                        <div>
-                          <h4 className="font-medium text-foreground mb-2 flex items-center">
-                            <Icon name="TrendingUp" size={16} className="mr-1 text-green-600" />
-                            Skalierung
-                          </h4>
-                          <p className="text-sm text-muted-foreground">{metaAdsSetupData?.recommendations?.scaling}</p>
-                        </div>
-                      )}
-                      {metaAdsSetupData?.recommendations?.reporting && (
-                        <div>
-                          <h4 className="font-medium text-foreground mb-2 flex items-center">
-                            <Icon name="BarChart" size={16} className="mr-1 text-blue-600" />
-                            Reporting
-                          </h4>
-                          <p className="text-sm text-muted-foreground">{metaAdsSetupData?.recommendations?.reporting}</p>
-                        </div>
-                      )}
-                    </div>
-                  </motion.div>
-                )}
-
-                {/* Action Buttons */}
-                <div className="flex space-x-4 pt-6 border-t border-border">
-                  <button
-                    onClick={handleCloseMetaAdsSetup}
-                    className="flex-1 px-6 py-3 border border-border rounded-lg hover:bg-muted transition-colors text-center"
-                  >
-                    Schließen
-                  </button>
-                  <button
-                    onClick={() => handleCopyMetaAdsData(metaAdsSetupData?.setup_data, 'Komplettes Setup')}
-                    className="flex-1 px-6 py-3 bg-gradient-to-r from-[#C80000] to-[#A00000] text-white rounded-lg hover:from-[#B00000] hover:to-[#900000] transition-all shadow-lg shadow-[#C80000]/25 text-center font-medium"
-                  >
-                    <Icon name="Download" size={16} className="inline mr-2" />
-                    Komplettes Setup exportieren
-                  </button>
+                  </div>
+                </>
+              ) : (
+                <div className="p-10 text-center text-muted-foreground">
+                  <Icon name="Loader2" className="mx-auto mb-4 animate-spin" size={32} />
+                  <p>Meta Ads Setup wird gerade generiert. Bitte einen Moment warten...</p>
                 </div>
-              </div>
+              )}
             </motion.div>
           </motion.div>
         </AnimatePresence>
