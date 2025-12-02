@@ -1296,6 +1296,93 @@ const AdStrategy = () => {
                           </div>
                         )}
 
+                        {strategyRecommendation?.diagnosis && (
+                          <div className="bg-card p-4 rounded-lg border border-border mb-6">
+                            <h5 className="font-medium text-foreground mb-2 flex items-center">
+                              <Icon name="Activity" size={16} className="mr-2 text-red-500" />
+                              Kampagnen-Diagnose
+                            </h5>
+                            <p className="text-sm text-muted-foreground mb-2">
+                              Hauptproblem:{' '}
+                              <span className="font-medium text-foreground">
+                                {strategyRecommendation?.diagnosis?.primary_problem === 'bof' && 'Bottom-of-Funnel (Kaufabschluss)'}
+                                {strategyRecommendation?.diagnosis?.primary_problem === 'hook' && 'Hook & Creative Performance'}
+                                {strategyRecommendation?.diagnosis?.primary_problem === 'offer' && 'Angebot / Pricing'}
+                                {strategyRecommendation?.diagnosis?.primary_problem === 'retention' && 'Retention & LTV'}
+                                {strategyRecommendation?.diagnosis?.primary_problem === 'tracking' && 'Tracking / Datenqualität'}
+                                {strategyRecommendation?.diagnosis?.primary_problem === 'fatigue' && 'Creative Fatigue'}
+                                {strategyRecommendation?.diagnosis?.primary_problem === 'scaling' && 'Scaling / Budget-Mechanik'}
+                              </span>
+                            </p>
+
+                            {strategyRecommendation?.diagnosis?.kpi_snapshot && (
+                              <div className="flex flex-wrap gap-3 text-xs text-muted-foreground">
+                                {strategyRecommendation?.diagnosis?.kpi_snapshot?.ctr != null && (
+                                  <span>CTR: {strategyRecommendation?.diagnosis?.kpi_snapshot?.ctr}%</span>
+                                )}
+                                {strategyRecommendation?.diagnosis?.kpi_snapshot?.atc_rate != null && (
+                                  <span>ATC: {strategyRecommendation?.diagnosis?.kpi_snapshot?.atc_rate}%</span>
+                                )}
+                                {strategyRecommendation?.diagnosis?.kpi_snapshot?.purchase_cvr != null && (
+                                  <span>Purchase CVR: {strategyRecommendation?.diagnosis?.kpi_snapshot?.purchase_cvr}%</span>
+                                )}
+                                {strategyRecommendation?.diagnosis?.kpi_snapshot?.roas != null && (
+                                  <span>ROAS: {strategyRecommendation?.diagnosis?.kpi_snapshot?.roas}</span>
+                                )}
+                                {strategyRecommendation?.diagnosis?.kpi_snapshot?.frequency != null && (
+                                  <span>Frequency: {strategyRecommendation?.diagnosis?.kpi_snapshot?.frequency}</span>
+                                )}
+                                {strategyRecommendation?.diagnosis?.kpi_snapshot?.cpm != null && (
+                                  <span>CPM: {strategyRecommendation?.diagnosis?.kpi_snapshot?.cpm} €</span>
+                                )}
+                              </div>
+                            )}
+                          </div>
+                        )}
+
+                        {strategyRecommendation?.deep_dive_sections?.length > 0 && (
+                          <div className="mb-6">
+                            <h5 className="font-semibold text-foreground mb-3 flex items-center">
+                              <Icon name="BookOpen" size={16} className="mr-2 text-[#C80000]" />
+                              Deep Dive in deine Meta-Bibel
+                            </h5>
+                            <p className="text-xs text-muted-foreground mb-3">
+                              Diese Kapitel aus deinem Strategie-Blueprint behandeln genau die Probleme, die wir in deiner Kampagne erkannt haben.
+                            </p>
+                            <div className="space-y-2">
+                              {strategyRecommendation?.deep_dive_sections
+                                ?.slice()
+                                ?.sort((a, b) => (a.priority || 2) - (b.priority || 2))
+                                ?.map((section) => (
+                                  <div
+                                    key={section.section_id}
+                                    className="flex items-start space-x-3 p-3 bg-muted/60 rounded-lg border border-border hover:border-[#C80000]/40 transition-colors"
+                                  >
+                                    <div className="mt-1">
+                                      <span
+                                        className={`inline-block w-6 h-6 rounded-full text-xs flex items-center justify-center ${
+                                          section.priority === 1
+                                            ? 'bg-[#C80000]/10 text-[#C80000]'
+                                            : 'bg-muted-foreground/10 text-muted-foreground'
+                                        }`}
+                                      >
+                                        {section.chapter}
+                                      </span>
+                                    </div>
+                                    <div className="flex-1">
+                                      <div className="text-sm font-medium text-foreground">
+                                        {section.title}
+                                      </div>
+                                      <div className="text-xs text-muted-foreground">
+                                        {section.reason}
+                                      </div>
+                                    </div>
+                                  </div>
+                                ))}
+                            </div>
+                          </div>
+                        )}
+
                         {/* AI Reasoning */}
                         {strategyRecommendation?.reasoning && (
                           <div className="bg-card p-4 rounded-lg border border-border mb-6">
