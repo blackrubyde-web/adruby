@@ -664,27 +664,29 @@ const HighConversionAdBuilder = () => {
               >
                 <div className="space-y-4 order-1 xl:order-none">
                   <div className="rounded-2xl border border-slate-200 bg-white shadow-lg dark:border-white/10 dark:bg-[#0b0b10]">
-                    <div className="flex flex-wrap gap-2 sm:gap-3 mt-4 p-4">
-                      <button className="w-1/2 sm:w-auto flex-1 sm:flex-none px-4 py-2 rounded-xl bg-zinc-800 text-white font-semibold text-sm text-center">
-                        Schnellstart
-                      </button>
-                      <button className="w-1/2 sm:w-auto flex-1 sm:flex-none px-4 py-2 rounded-xl bg-zinc-800 text-white font-semibold text-sm text-center">
-                        Pro-Lab
-                      </button>
-
-                      {["soft", "mittel", "aggressiv"].map((p) => (
-                        <button
-                          key={p}
-                          onClick={() => setAdPressure(p)}
-                          className={`w-1/2 sm:w-auto flex-1 sm:flex-none px-4 py-2 rounded-xl font-semibold text-sm text-center transition ${
-                            adPressure === p
-                              ? "bg-[#C80000]/20 border border-[#C80000] text-[#C80000]"
-                              : "bg-zinc-800 text-white"
-                          }`}
-                        >
-                          {p}
+                    <div className="p-4">
+                      <div className="flex flex-wrap gap-2 sm:gap-3 mt-4">
+                        <button className="hidden sm:flex items-center justify-center sm:w-auto flex-1 sm:flex-none px-4 py-2 rounded-xl bg-zinc-800 text-white font-semibold text-sm text-center">
+                          Schnellstart
                         </button>
-                      ))}
+                        <button className="hidden sm:flex items-center justify-center sm:w-auto flex-1 sm:flex-none px-4 py-2 rounded-xl bg-zinc-800 text-white font-semibold text-sm text-center">
+                          Pro-Lab
+                        </button>
+
+                        {["soft", "mittel", "aggressiv"].map((p) => (
+                          <button
+                            key={p}
+                            onClick={() => setAdPressure(p)}
+                            className={`w-1/2 sm:w-auto flex-1 sm:flex-none px-4 py-2 rounded-xl font-semibold text-sm text-center transition ${
+                              adPressure === p
+                                ? "bg-[#C80000]/20 border border-[#C80000] text-[#C80000]"
+                                : "bg-zinc-800 text-white"
+                            }`}
+                          >
+                            {p}
+                          </button>
+                        ))}
+                      </div>
                     </div>
                     <div className="p-4 sm:p-5">
                       <InputForm
