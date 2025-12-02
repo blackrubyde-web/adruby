@@ -1,4 +1,4 @@
-const { getSupabaseClient } = require("./_shared/supabaseClient");
+const { supabase } = require("./_shared/supabaseClient");
 
 exports.handler = async (event, context) => {
   console.log("[AdStrategySave] Incoming request:", {
@@ -23,11 +23,8 @@ exports.handler = async (event, context) => {
       hasStrategyRecommendation: !!strategyRecommendation,
     });
 
-    let supabase = null;
-    try {
-      supabase = getSupabaseClient();
-    } catch (e) {
-      console.error("[AdStrategySave] Supabase client init failed", e);
+    if (!supabase) {
+      console.error("[AdStrategySave] Supabase client not initialized");
       return {
         statusCode: 500,
         body: JSON.stringify({ error: "Supabase client not initialized" }),
@@ -39,7 +36,8 @@ exports.handler = async (event, context) => {
       return {
         statusCode: 400,
         body: JSON.stringify({
-          error: "Missing required fields: adVariantId, userId, strategyRecommendation.strategy",
+          error: "Missing required fields",
+          details: "adVariantId, userId and strategyRecommendation.strategy are required",
         }),
       };
     }
@@ -47,31 +45,29 @@ exports.handler = async (event, context) => {
     const insertPayload = {
       ad_variant_id: adVariantId,
       user_id: userId,
-      questionnaire_answers: answers || {},
-      selected_strategy_id: strategyRecommendation?.strategy?.id || null,
-      selected_strategy_data: strategyRecommendation?.strategy || null,
+      answers: answers || {},
+      selected_strategy:
+        strategyRecommendation.strategy.title ||
+        strategyRecommendation.strategy.id ||
+        "Unknown Strategy",
+      matching_score: strategyRecommendation.score ?? null,
+      confidence_level: strategyRecommendation.confidence ?? null,
       ai_analysis: {
-        reasoning: strategyRecommendation?.reasoning || "",
-        confidence: strategyRecommendation?.confidence || null,
-        key_alignments: strategyRecommendation?.key_alignments || [],
+        key_alignments: strategyRecommendation.key_alignments || [],
         implementation_recommendations:
-          strategyRecommendation?.implementation_recommendations || [],
-        alternatives: strategyRecommendation?.alternatives || [],
-        diagnosis: strategyRecommendation?.diagnosis || null,
-        deep_dive_sections: strategyRecommendation?.deep_dive_sections || [],
-        blueprint_id: strategyRecommendation?.blueprint_id || null,
-        blueprint_title: strategyRecommendation?.blueprint_title || null,
+          strategyRecommendation.implementation_recommendations || [],
+        alternatives: strategyRecommendation.alternatives || [],
+        reasoning: strategyRecommendation.reasoning || "",
+        diagnosis: strategyRecommendation.diagnosis || null,
+        deep_dive_sections: strategyRecommendation.deep_dive_sections || [],
       },
-      matching_score: strategyRecommendation?.score ?? null,
-      confidence_level: strategyRecommendation?.confidence ?? null,
-      status: "analyzed",
     };
 
-    console.log("[AdStrategySave] Upserting payload:", insertPayload);
+    console.log("[AdStrategySave] Upserting payload into ad_strategies:", insertPayload);
 
     const { data, error } = await supabase
       .from("ad_strategies")
-      .upsert(insertPayload)
+      .upsert(insertPayload, { onConflict: "ad_variant_id" })
       .select()
       .single();
 

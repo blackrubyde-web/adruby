@@ -889,7 +889,9 @@ Wähle die BESTE Strategie aus und erkläre detailliert warum.
   // NEW: Get ad strategy for specific ad variant
   static async getAdStrategy(adVariantId) {
     try {
-      const { data, error } = await supabase?.from('ad_strategies')?.select(`
+      const { data, error } = await supabase
+        ?.from('ad_strategies')
+        ?.select(`
           *,
           selected_strategy:strategies(*),
           ad_variant:saved_ad_variants(
@@ -899,12 +901,20 @@ Wähle die BESTE Strategie aus und erkläre detailliert warum.
               product:products(*)
             )
           )
-        `)?.eq('ad_variant_id', adVariantId)?.order('created_at', { ascending: false })?.limit(1)?.single();
+        `)
+        ?.eq('ad_variant_id', adVariantId)
+        ?.order('created_at', { ascending: false })
+        ?.limit(1);
 
-      if (error && error?.code !== 'PGRST116') throw error; // PGRST116 = no rows found
-      return { data, error: null };
+      if (error) {
+        console.error('[AdStrategyService][getAdStrategy] Supabase error:', error);
+        return { data: null, error };
+      }
+
+      const row = Array.isArray(data) && data.length > 0 ? data[0] : null;
+      return { data: row, error: null };
     } catch (error) {
-      console.error('Error fetching ad strategy:', error);
+      console.error('[AdStrategyService][getAdStrategy] Unexpected error:', error);
       return { data: null, error };
     }
   }
