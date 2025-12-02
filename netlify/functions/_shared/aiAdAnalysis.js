@@ -1,6 +1,6 @@
 // netlify/functions/_shared/aiAdAnalysis.js
 
-import OpenAI from "openai";
+const OpenAI = require("openai");
 
 const apiKey = process.env.OPENAI_API_KEY;
 
@@ -77,7 +77,11 @@ ${JSON.stringify(adsPayload, null, 2)}
     try {
       parsed = JSON.parse(jsonString);
     } catch (e) {
-      console.error("[AIAnalysis] Failed to parse JSON from OpenAI (analysis)", jsonString, e);
+      console.error(
+        "[AIAnalysis] Failed to parse JSON from OpenAI (analysis)",
+        jsonString,
+        e
+      );
       throw new Error("Failed to parse AI analysis JSON");
     }
 
@@ -188,7 +192,11 @@ ${JSON.stringify(adsPayload, null, 2)}
     try {
       parsed = JSON.parse(jsonString);
     } catch (e) {
-      console.error("[AIAnalysis] Failed to parse JSON from OpenAI (creatives)", jsonString, e);
+      console.error(
+        "[AIAnalysis] Failed to parse JSON from OpenAI (creatives)",
+        jsonString,
+        e
+      );
       throw new Error("Failed to parse AI creatives JSON");
     }
 
@@ -211,7 +219,7 @@ ${JSON.stringify(adsPayload, null, 2)}
   }
 }
 
-export {
+module.exports = {
   analyzeAdsWithOpenAI,
   generateCreativesFromAds,
 };
