@@ -10,12 +10,6 @@ if (!apiKey) {
 
 const openai = new OpenAI({ apiKey });
 
-/**
- * Nutzt OpenAI, um eine Liste von Ads zu bewerten.
- *
- * @param {Array<{ id: string, primary_text?: string, primaryText?: string, headline?: string, description?: string }>} ads
- * @returns {Promise<Array<{ id: string, score: number, main_hook: string, summary: string }>>}
- */
 async function analyzeAdsWithOpenAI(ads) {
   if (!Array.isArray(ads) || ads.length === 0) return [];
 
@@ -63,9 +57,6 @@ ${JSON.stringify(adsPayload, null, 2)}
       { role: "system", content: systemPrompt },
       { role: "user", content: userPrompt },
     ],
-    text: {
-      format: "json",
-    },
   });
 
   try {
@@ -99,24 +90,6 @@ ${JSON.stringify(adsPayload, null, 2)}
   }
 }
 
-/**
- * Generiert aus gescrapten Ads + User-Briefing fertige Ad-Creatives.
- *
- * @param {Object} params
- * @param {{ product?: string; goal?: string; market?: string; language?: string }} params.userBriefing
- * @param {Array<{ id: string, primary_text?: string, primaryText?: string, headline?: string, description?: string }>} params.ads
- * @returns {Promise<Array<{
- *   id: string,
- *   base_ad_id?: string,
- *   headline: string,
- *   primaryText: string,
- *   description: string,
- *   hook: string,
- *   angle: string,
- *   cta: string,
- *   visualIdea: string
- * }>>}
- */
 async function generateCreativesFromAds({ userBriefing, ads }) {
   if (!Array.isArray(ads) || ads.length === 0) return [];
   if (!apiKey) {
@@ -178,9 +151,6 @@ ${JSON.stringify(adsPayload, null, 2)}
       { role: "system", content: systemPrompt },
       { role: "user", content: userPrompt },
     ],
-    text: {
-      format: "json",
-    },
   });
 
   try {
