@@ -210,12 +210,12 @@ const AdStrategy = () => {
 
       console.log('[AdStrategy][Frontend] Sending questionnaire payload', questionnairePayload);
 
-      const questionnaireRes = await fetch('/.netlify/functions/questionnaire', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(questionnairePayload),
+    const questionnaireRes = await fetch('/.netlify/functions/ad-strategy-analyze-questionnaire', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(questionnairePayload),
       });
 
       if (!questionnaireRes.ok) {
