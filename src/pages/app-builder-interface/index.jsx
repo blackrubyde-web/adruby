@@ -568,9 +568,9 @@ const HighConversionAdBuilder = () => {
             className="mb-6 sm:mb-8 space-y-3"
             variants={itemVariants}
           >
-            <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between lg:gap-8">
+            <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between md:gap-8">
               {/* Linker Text-Block */}
-              <div className="space-y-1 w-full lg:w-1/2">
+              <div className="space-y-1 w-full md:w-1/2">
                 <div className="flex flex-wrap items-center gap-3">
                   <h1 className="text-3xl font-semibold">Ad Builder: AdCreative Lab</h1>
                   <span className="px-3 py-1 rounded-full text-xs bg-blue-500/10 text-blue-700 dark:text-blue-200">
@@ -592,7 +592,7 @@ const HighConversionAdBuilder = () => {
               </div>
 
               {/* Rechter Block: Stepper + Button */}
-              <div className="flex w-full flex-col gap-3 lg:w-1/2 xl:w-[620px]">
+              <div className="flex w-full flex-col gap-3 md:w-1/2">
                 <AdBuilderStepper
                   currentStep={currentStep}
                   onStepChange={handleStepChange}
