@@ -42,7 +42,16 @@ Gib pro Ad zurück:
 - "main_hook": wichtigster Aufhänger / Versprechen
 - "summary": 2-3 Sätze mit den Haupt-Learnings
 
-Antworte im JSON-Format: { "results": [ { "id": "...", "score": 0-100, "main_hook": "...", "summary": "..." }, ... ] }
+Antworte im JSON-Format:
+{
+  "ads": [
+    { "id": "...", "score": 0-100, "main_hook": "...", "summary": "..." }
+  ]
+}
+
+WICHTIG:
+- Antworte NUR mit gültigem JSON.
+- Kein Markdown, keine Erklärungen.
 
 Ads:
 ${JSON.stringify(adsPayload, null, 2)}
@@ -63,14 +72,17 @@ ${JSON.stringify(adsPayload, null, 2)}
     const output = completion.output?.[0];
     const content = output?.content?.[0];
     const jsonString = content?.text || "{}";
+
     let parsed;
     try {
       parsed = JSON.parse(jsonString);
     } catch (e) {
-      console.error("[AIAnalysis] Failed to parse JSON from OpenAI", jsonString, e);
+      console.error("[AIAnalysis] Failed to parse JSON from OpenAI (analysis)", jsonString, e);
       throw new Error("Failed to parse AI analysis JSON");
     }
+
     if (!parsed || !Array.isArray(parsed.ads)) return [];
+
     return parsed.ads.map((ad) => ({
       id: ad.id,
       score: ad.score,
@@ -78,7 +90,7 @@ ${JSON.stringify(adsPayload, null, 2)}
       summary: ad.summary,
     }));
   } catch (err) {
-    console.error("[AIAnalysis] Failed to parse JSON response", err);
+    console.error("[AIAnalysis] Failed to process analysis response", err);
     throw err;
   }
 }
@@ -132,7 +144,7 @@ Du bekommst eine Liste von gescrapten Anzeigen (Wettbewerber). Analysiere Muster
 Erzeuge dann auf Basis dieser Daten und des Briefings NEUE, eigene Ad-Creatives.
 Wichtig: Die Texte sollen NICHT kopiert wirken, sondern eigenständig formuliert sein, aber aus den Learnings der Wettbewerber profitieren.
 
-Gib im JSON-Format folgendes zurück:
+Antworte im JSON-Format:
 {
   "ads": [
     {
@@ -145,12 +157,12 @@ Gib im JSON-Format folgendes zurück:
       "angle": "kurze Beschreibung des strategischen Angles",
       "cta": "prägnanter Call-to-Action",
       "visualIdea": "konkrete Idee für das Visual / die Gestaltung"
-    },
-    ...
+    }
   ]
 }
 
-Erzeuge mindestens 3 unterschiedliche Varianten.
+- Erzeuge mindestens 3 unterschiedliche Varianten.
+- Antworte NUR mit gültigem JSON, ohne zusätzlichen Text oder Markdown.
 
 Gescrapte Ads:
 ${JSON.stringify(adsPayload, null, 2)}
@@ -171,14 +183,17 @@ ${JSON.stringify(adsPayload, null, 2)}
     const output = completion.output?.[0];
     const content = output?.content?.[0];
     const jsonString = content?.text || "{}";
+
     let parsed;
     try {
       parsed = JSON.parse(jsonString);
     } catch (e) {
-      console.error("[AIAnalysis] Failed to parse JSON from OpenAI", jsonString, e);
-      throw new Error("Failed to parse AI analysis JSON");
+      console.error("[AIAnalysis] Failed to parse JSON from OpenAI (creatives)", jsonString, e);
+      throw new Error("Failed to parse AI creatives JSON");
     }
+
     if (!parsed || !Array.isArray(parsed.ads)) return [];
+
     return parsed.ads.map((ad) => ({
       id: ad.id,
       base_ad_id: ad.base_ad_id,
@@ -191,7 +206,7 @@ ${JSON.stringify(adsPayload, null, 2)}
       visualIdea: ad.visualIdea,
     }));
   } catch (err) {
-    console.error("[AIAnalysis] Failed to parse JSON response for creatives", err);
+    console.error("[AIAnalysis] Failed to process creatives response", err);
     throw err;
   }
 }
