@@ -5,7 +5,7 @@ const { getSupabaseClient } = require("./_shared/supabaseClient");
 exports.handler = async (event, context) => {
   console.log("[AdStrategySave] Incoming request:", {
     method: event.httpMethod,
-    bodySnippet: event.body ? event.body.slice(0, 500) : null,
+    body: event.body,
   });
 
   // Nur POST zulassen
@@ -55,12 +55,9 @@ exports.handler = async (event, context) => {
       };
     }
 
-    const {
-      adVariantId,
-      userId,
-      answers,
-      strategyRecommendation,
-    } = parsedBody;
+    console.log("[AdStrategySave] FULL PAYLOAD", parsedBody);
+
+    const { adVariantId, userId, answers, strategyRecommendation } = parsedBody;
 
     console.log("[AdStrategySave] Parsed payload:", {
       adVariantId,
@@ -71,12 +68,7 @@ exports.handler = async (event, context) => {
     });
 
     // Required Fields check
-    if (
-      !adVariantId ||
-      !userId ||
-      !strategyRecommendation ||
-      !strategyRecommendation.strategy
-    ) {
+    if (!strategyRecommendation?.strategy || !adVariantId || !userId) {
       console.error("[AdStrategySave] Missing required fields", {
         adVariantIdPresent: !!adVariantId,
         userIdPresent: !!userId,
@@ -88,8 +80,7 @@ exports.handler = async (event, context) => {
         statusCode: 400,
         body: JSON.stringify({
           error: "Missing required fields",
-          details:
-            "adVariantId, userId and strategyRecommendation.strategy are required",
+          details: "adVariantId, userId and strategyRecommendation.strategy are required",
         }),
       };
     }
@@ -112,6 +103,8 @@ exports.handler = async (event, context) => {
         reasoning: strategyRecommendation.reasoning || "",
         diagnosis: strategyRecommendation.diagnosis || null,
         deep_dive_sections: strategyRecommendation.deep_dive_sections || [],
+        blueprint_id: strategyRecommendation.blueprint_id || null,
+        blueprint_title: strategyRecommendation.blueprint_title || null,
       },
     };
 
@@ -121,7 +114,7 @@ exports.handler = async (event, context) => {
 
     const { data, error } = await supabase
       .from("ad_strategies")
-      .upsert(insertPayload, { onConflict: "ad_variant_id" })
+      .insert(insertPayload)
       .select()
       .single();
 

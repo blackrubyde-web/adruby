@@ -203,6 +203,8 @@ exports.handler = async (event) => {
       deep_dive_sections: deepDiveSections,
       blueprint_id: blueprint?.id || null,
       blueprint_title: blueprint?.title || null,
+      adVariantId: answers?.adVariantId || answers?.ad_variant_id || null,
+      userId: answers?.userId || answers?.user_id || null,
     };
 
     console.log("[Questionnaire] Final recommendation shape:", {
@@ -213,11 +215,15 @@ exports.handler = async (event) => {
       deepDiveCount: Array.isArray(extendedRecommendation.deep_dive_sections)
         ? extendedRecommendation.deep_dive_sections.length
         : 0,
+      adVariantId: extendedRecommendation.adVariantId || null,
+      userId: extendedRecommendation.userId || null,
     });
 
     return {
       statusCode: 200,
-      body: JSON.stringify(extendedRecommendation),
+      body: JSON.stringify({
+        strategyRecommendation: extendedRecommendation,
+      }),
     };
   } catch (err) {
     console.error("[Questionnaire][Handler] Error:", err);
