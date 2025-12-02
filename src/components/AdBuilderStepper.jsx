@@ -79,9 +79,9 @@ const AdBuilderStepper = ({ currentStep = 0, onStepChange = () => {} }) => {
   const indicatorLeft = `${(100 / steps.length) * currentStep}%`;
 
   return (
-    <div className="relative w-full overflow-hidden rounded-xl border border-white/30 bg-white/40 backdrop-blur-xl shadow-[0_10px_30px_rgba(0,0,0,0.06)] dark:border-white/10 dark:bg-white/10 mt-4 mb-4 sm:mt-6 sm:mb-6 lg:mt-4 lg:mb-4 py-2 sm:py-3">
+    <div className="relative w-full overflow-hidden rounded-xl border border-white/30 bg-white/40 backdrop-blur-xl shadow-[0_10px_30px_rgba(0,0,0,0.06)] dark:border-white/10 dark:bg-white/10 mt-3 mb-3 sm:mt-4 sm:mb-4 py-1.5 sm:py-2">
       <div className="pointer-events-none absolute inset-0 bg-gradient-to-r from-white/40 via-white/10 to-white/5 dark:from-white/10 dark:via-white/5" />
-      <div className="relative flex items-center pb-3">
+      <div className="relative flex items-center pb-2 sm:pb-3">
         {steps.map((step, index) => {
           const Icon = step.icon;
           const isActive = index === currentStep;
@@ -92,14 +92,14 @@ const AdBuilderStepper = ({ currentStep = 0, onStepChange = () => {} }) => {
               key={step.label}
               type="button"
               onClick={() => onStepChange(index)}
-              className="group relative flex flex-1 items-center gap-3 sm:gap-4 px-3 sm:px-4 py-3 sm:py-4 md:py-4 text-left"
+              className="group relative flex flex-1 items-center gap-2.5 sm:gap-3 px-2.5 sm:px-3 py-2 sm:py-3 text-left"
               initial={{ opacity: 0.85 }}
               animate={{ opacity: isActive ? 1 : 0.85 }}
               transition={{ duration: 0.15, ease: "easeInOut" }}
             >
               <motion.div
                 whileHover={{ scale: 1.05 }}
-                className={`flex h-8 w-8 items-center justify-center rounded-2xl border transition ${
+                className={`flex h-7 w-7 sm:h-8 sm:w-8 items-center justify-center rounded-2xl border transition ${
                   isActive
                     ? "border-[#C80000]/70 bg-[#C80000]/10 text-[#C80000]"
                     : "border-white/30 bg-white/60 text-zinc-500 dark:border-white/10 dark:bg-white/5 dark:text-zinc-300"
@@ -117,7 +117,7 @@ const AdBuilderStepper = ({ currentStep = 0, onStepChange = () => {} }) => {
                 >
                   {step.label}
                 </span>
-                <span className="text-xs sm:text-sm text-zinc-500 transition dark:text-zinc-400">
+                <span className="hidden sm:block text-xs sm:text-sm text-zinc-500 transition dark:text-zinc-400">
                   {step.description}
                 </span>
               </div>
@@ -128,7 +128,7 @@ const AdBuilderStepper = ({ currentStep = 0, onStepChange = () => {} }) => {
           );
         })}
 
-        <div className="pointer-events-none absolute inset-x-2 bottom-0 h-[3px] rounded-full bg-white/40 dark:bg-white/10">
+        <div className="pointer-events-none absolute inset-x-3 bottom-0 h-[2px] rounded-full bg-white/40 dark:bg-white/10">
           <motion.div
             className="absolute inset-y-0 rounded-full bg-gradient-to-r from-[#C80000] via-red-500 to-orange-400 shadow-[0_6px_18px_rgba(200,0,0,0.28)]"
             style={{ width: stepWidth }}

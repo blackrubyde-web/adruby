@@ -389,27 +389,27 @@ const PreviewPanel = ({ selectedAd, isGenerating, productData, generatedAds = []
         <AnimatePresence mode="wait">
           <motion.div 
             key={`${selectedAdIndex}-${uploadedImagePreview ? 'custom' : 'default'}`}
-            className="bg-white border border-gray-200 rounded-lg shadow-lg overflow-hidden relative"
+            className="bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-700 rounded-lg shadow-lg overflow-hidden relative transition-colors"
             initial={{ opacity: 0, x: 20 }}
             animate={{ opacity: 1, x: 0 }}
             exit={{ opacity: 0, x: -20 }}
             transition={{ duration: 0.3 }}
           >
             {/* Facebook Header */}
-            <div className="p-3 border-b border-gray-100">
+            <div className="p-3 border-b border-gray-100 dark:border-slate-700">
               <div className="flex items-center space-x-3">
                 <div className="w-10 h-10 bg-blue-500 rounded-full flex items-center justify-center">
                   <Icon name="User" size={20} className="text-white" />
                 </div>
                 <div className="flex-1">
                   <div className="flex items-center space-x-2">
-                    <h3 className="font-semibold text-gray-900 text-sm">
+                    <h3 className="font-semibold text-gray-900 dark:text-slate-50 text-sm">
                       {mockFacebookData?.page_name}
                     </h3>
-                    <div className="w-1 h-1 bg-gray-400 rounded-full"></div>
-                    <span className="text-xs text-gray-500">Gesponsert</span>
+                    <div className="w-1 h-1 bg-gray-400 dark:bg-slate-500 rounded-full"></div>
+                    <span className="text-xs text-gray-500 dark:text-slate-400">Gesponsert</span>
                   </div>
-                  <p className="text-xs text-gray-500">Vor 2 Std.</p>
+                  <p className="text-xs text-gray-500 dark:text-slate-400">Vor 2 Std.</p>
                 </div>
                 <button className="p-1">
                   <Icon name="MoreHorizontal" size={16} className="text-gray-400" />
@@ -421,7 +421,7 @@ const PreviewPanel = ({ selectedAd, isGenerating, productData, generatedAds = []
             <div className="p-3">
               {/* Primary Text */}
               {currentAd ? (
-                <p className="text-sm text-gray-900 leading-relaxed mb-3">
+                <p className="text-sm text-gray-900 dark:text-slate-50 leading-relaxed mb-3">
                   {currentAd?.primary_text}
                 </p>
               ) : isGenerating ? (
@@ -437,7 +437,7 @@ const PreviewPanel = ({ selectedAd, isGenerating, productData, generatedAds = []
               )}
 
               {/* ENHANCED: Image Preview with custom upload support */}
-              <div className="bg-gradient-to-br from-gray-100 to-gray-200 rounded-lg h-48 flex flex-col items-center justify-center mb-3 border relative overflow-hidden">
+              <div className="bg-gradient-to-br from-gray-100 to-gray-200 dark:from-slate-800 dark:to-slate-700 rounded-lg h-48 flex flex-col items-center justify-center mb-3 border border-gray-200 dark:border-slate-700 relative overflow-hidden">
                 {uploadedImagePreview ? (
                   <div className="relative w-full h-full">
                     <img 
@@ -453,8 +453,8 @@ const PreviewPanel = ({ selectedAd, isGenerating, productData, generatedAds = []
                   </div>
                 ) : (
                   <>
-                    <Icon name="Image" size={32} className="text-gray-400 mb-2" />
-                    <p className="text-xs text-gray-500 text-center px-4">
+                    <Icon name="Image" size={32} className="text-gray-400 dark:text-slate-500 mb-2" />
+                    <p className="text-xs text-gray-500 dark:text-slate-300 text-center px-4">
                       {currentAd ? (
                         <>Bildvorschlag: {currentAd?.visual_suggestion?.substring(0, 60)}...</>
                       ) : (
@@ -467,19 +467,19 @@ const PreviewPanel = ({ selectedAd, isGenerating, productData, generatedAds = []
 
               {/* Headline and Description - Direct Integration without gray background */}
               <div className="mb-3">
-                <h4 className="font-semibold text-sm text-gray-900 mb-1">
+                <h4 className="font-semibold text-sm text-gray-900 dark:text-slate-50 mb-1">
                   {currentAd?.headline || productData?.product_name || 'Headline wird hier angezeigt'}
                 </h4>
-                <p className="text-xs text-gray-500 mb-2">
+                <p className="text-xs text-gray-500 dark:text-slate-300 mb-2">
                   {productData?.product_description?.substring(0, 100) || 'Produktbeschreibung...'}...
                 </p>
-                <p className="text-xs text-gray-400 mb-3">ihr-unternehmen.de</p>
+                <p className="text-xs text-gray-400 dark:text-slate-500 mb-3">ihr-unternehmen.de</p>
               </div>
 
               {/* CTA Button */}
               <div className="mt-3">
                 <button 
-                  className="w-full bg-blue-500 hover:bg-blue-600 text-white font-semibold py-3 px-4 rounded-lg transition-colors text-sm"
+                  className="w-full bg-blue-500 hover:bg-blue-600 dark:bg-blue-600 dark:hover:bg-blue-500 text-white font-semibold py-3 px-4 rounded-lg transition-colors text-sm"
                   disabled
                 >
                   {currentAd?.cta || productData?.cta_text || 'Call-to-Action'}
@@ -488,15 +488,15 @@ const PreviewPanel = ({ selectedAd, isGenerating, productData, generatedAds = []
             </div>
 
             {/* Engagement Bar */}
-            <div className="px-3 py-2 border-t border-gray-100">
-              <div className="flex items-center justify-between text-xs text-gray-500">
+            <div className="px-3 py-2 border-t border-gray-100 dark:border-slate-700">
+              <div className="flex items-center justify-between text-xs text-gray-500 dark:text-slate-400">
                 <div className="flex items-center space-x-4">
                   <div className="flex items-center space-x-1">
                     <div className="flex -space-x-1">
-                      <div className="w-4 h-4 bg-blue-500 rounded-full border border-white flex items-center justify-center">
+                      <div className="w-4 h-4 bg-blue-500 rounded-full border border-white dark:border-slate-900 flex items-center justify-center">
                         <Icon name="ThumbsUp" size={8} className="text-white" />
                       </div>
-                      <div className="w-4 h-4 bg-red-500 rounded-full border border-white flex items-center justify-center">
+                      <div className="w-4 h-4 bg-red-500 rounded-full border border-white dark:border-slate-900 flex items-center justify-center">
                         <Icon name="Heart" size={8} className="text-white" />
                       </div>
                     </div>
@@ -511,20 +511,20 @@ const PreviewPanel = ({ selectedAd, isGenerating, productData, generatedAds = []
             </div>
 
             {/* Action Buttons */}
-            <div className="px-3 py-2 border-t border-gray-100">
+            <div className="px-3 py-2 border-t border-gray-100 dark:border-slate-700">
               <div className="flex justify-around">
                 {['Like', 'Kommentieren', 'Teilen']?.map((action, index) => (
                   <button 
                     key={action}
-                    className="flex items-center justify-center space-x-1 py-2 px-4 rounded-md hover:bg-gray-50 transition-colors flex-1"
+                    className="flex items-center justify-center space-x-1 py-2 px-4 rounded-md hover:bg-gray-50 dark:hover:bg-slate-800 transition-colors flex-1"
                     disabled
                   >
                     <Icon 
                       name={index === 0 ? 'ThumbsUp' : index === 1 ? 'MessageCircle' : 'Share'} 
                       size={16} 
-                      className="text-gray-500" 
+                      className="text-gray-500 dark:text-slate-300" 
                     />
-                    <span className="text-sm text-gray-600">{action}</span>
+                    <span className="text-sm text-gray-600 dark:text-slate-200">{action}</span>
                   </button>
                 ))}
               </div>
