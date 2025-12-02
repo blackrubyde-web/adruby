@@ -114,7 +114,7 @@ exports.handler = async (event, context) => {
 
     const { data, error } = await supabase
       .from("ad_strategies")
-      .insert(insertPayload)
+      .upsert(insertPayload, { onConflict: "ad_variant_id" })
       .select()
       .single();
 
