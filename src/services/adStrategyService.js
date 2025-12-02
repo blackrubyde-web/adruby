@@ -183,6 +183,34 @@ Wähle die BESTE Strategie aus und erkläre detailliert warum.
     }
   }
 
+  /**
+   * Analyze the 7-step questionnaire via Netlify Function
+   * @param {Object} answers
+   * @param {Array} strategies
+   * @returns {Promise<{ data: any, error: any }>}
+   */
+  static async analyzeQuestionnaire(answers, strategies = []) {
+    try {
+      const res = await fetch('/.netlify/functions/ad-strategy-analyze-questionnaire', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ answers, strategies })
+      });
+
+      if (!res?.ok) {
+        const text = await res?.text?.();
+        console.error('[AdStrategyService][analyzeQuestionnaire] Error response:', res?.status, text);
+        return { data: null, error: new Error('Failed to analyze questionnaire') };
+      }
+
+      const json = await res?.json?.();
+      return { data: json, error: null };
+    } catch (err) {
+      console.error('[AdStrategyService][analyzeQuestionnaire] Request failed:', err);
+      return { data: null, error: err };
+    }
+  }
+
   // Apply strategy to ad
   static async applyStrategyToAd(adId, strategyId) {
     try {
@@ -766,159 +794,6 @@ Wähle die BESTE Strategie aus und erkläre detailliert warum.
 
       return { data: questions, error: null };
     } catch (error) {
-      return { data: null, error };
-    }
-  }
-
-  // ENHANCED: AI-powered questionnaire analysis with comprehensive strategy matching
-  static async analyzeQuestionnaire(answers, availableStrategies = []) {
-    try {
-      // Load local strategies if not provided
-      if (availableStrategies?.length === 0) {
-        availableStrategies = await this.loadLocalStrategies();
-      }
-
-      // Create comprehensive analysis prompt for GPT-5
-      const analysisPrompt = `
-Du bist ein Elite-Facebook-Ads-Strategieexperte mit 10+ Jahren Erfahrung in Performance Marketing.
-
-Analysiere die folgenden Antworten aus einem 7-Schritte-Fragebogen und wähle die beste Strategie:
-
-BENUTZER-ANTWORTEN:
-- Hauptziel: ${answers?.goal}
-- Budget & Skalierung: ${answers?.budget_scaling}
-- Performance-Fokus: ${answers?.performance_goals}
-- Zielgruppen-Strategie: ${answers?.target_audience}
-- Content-Strategie: ${answers?.creative_strategy}
-- Zeitplanung: ${answers?.timeline_commitment}
-- Risikobereitschaft: ${answers?.risk_innovation}
-
-VERFÜGBARE STRATEGIEN:
-${availableStrategies?.map((strategy, index) => `
-${index + 1}. ${strategy?.title} (ID: ${strategy?.id})
-   - Beschreibung: ${strategy?.description}
-   - Ideale Bedingungen: ${JSON.stringify(strategy?.ideal_conditions || {})}
-   - Empfohlene Maßnahmen: ${strategy?.recommended_actions?.join(', ') || 'N/A'}
-`)?.join('\n')}
-
-BEWERTUNGSKRITERIEN (Gewichtung):
-1. Ziel-Kompatibilität (40%): Wie gut passt die Strategie zum Hauptziel?
-2. Budget-Alignment (25%): Passt die Strategie zur Budget- und Skalierungsstrategie?
-3. Performance-Match (15%): Entspricht die Strategie den gewünschten KPIs?
-4. Zielgruppen-Fit (10%): Ist die Targeting-Strategie kompatibel?
-5. Timeline-Eignung (5%): Passt die Strategie zur zeitlichen Planung?
-6. Risiko-Toleranz (5%): Entspricht die Strategie der Risikobereitschaft?
-
-Analysiere systematisch jede Strategie und wähle die beste Option aus.
-`;
-
-      const analysisResponse = await openai?.chat?.completions?.create({
-        model: 'gpt-5',
-        messages: [
-          {
-            role: 'system',
-            content: 'Du bist ein Experte für Facebook Ads Performance Marketing. Analysiere Benutzerantworten und empfiehl die optimale Strategie basierend auf wissenschaftlichen Marketing-Prinzipien. Antworte nur auf Deutsch und im JSON-Format.'
-          },
-          { role: 'user', content: analysisPrompt }
-        ],
-        response_format: {
-          type: 'json_schema',
-          json_schema: {
-            name: 'strategy_recommendation',
-            schema: {
-              type: 'object',
-              properties: {
-                recommended_strategy_id: {
-                  type: 'string',
-                  description: 'ID der empfohlenen Strategie'
-                },
-                matching_score: {
-                  type: 'number',
-                  minimum: 0,
-                  maximum: 100,
-                  description: 'Gesamter Matching-Score (0-100)'
-                },
-                confidence_level: {
-                  type: 'string',
-                  enum: ['sehr_niedrig', 'niedrig', 'mittel', 'hoch', 'sehr_hoch'],
-                  description: 'Vertrauensniveau der Empfehlung'
-                },
-                reasoning: {
-                  type: 'string',
-                  description: 'Detaillierte Begründung für die Strategieauswahl'
-                },
-                key_alignments: {
-                  type: 'array',
-                  items: { type: 'string' },
-                  description: 'Hauptgründe für die Strategiepassung'
-                },
-                implementation_recommendations: {
-                  type: 'array',
-                  items: { type: 'string' },
-                  description: 'Spezifische Umsetzungsempfehlungen'
-                },
-                alternative_strategies: {
-                  type: 'array',
-                  items: {
-                    type: 'object',
-                    properties: {
-                      strategy_id: { type: 'string' },
-                      score: { type: 'number' },
-                      reason: { type: 'string' }
-                    },
-                    required: ['strategy_id', 'score', 'reason']
-                  },
-                  description: 'Alternative Strategien mit Scores'
-                }
-              },
-              required: ['recommended_strategy_id', 'matching_score', 'confidence_level', 'reasoning', 'key_alignments', 'implementation_recommendations'],
-              additionalProperties: false
-            }
-          }
-        },
-        reasoning_effort: 'high',
-        verbosity: 'high'
-      });
-
-      const aiAnalysis = JSON.parse(analysisResponse?.choices?.[0]?.message?.content);
-
-      // Find the recommended strategy
-      const recommendedStrategy = availableStrategies?.find(
-        strategy => strategy?.id === aiAnalysis?.recommended_strategy_id
-      );
-
-      if (!recommendedStrategy) {
-        throw new Error('Empfohlene Strategie nicht in verfügbaren Strategien gefunden');
-      }
-
-      // Process alternative strategies
-      const alternatives = [];
-      if (aiAnalysis?.alternative_strategies?.length > 0) {
-        for (const alt of aiAnalysis?.alternative_strategies) {
-          const altStrategy = availableStrategies?.find(s => s?.id === alt?.strategy_id);
-          if (altStrategy) {
-            alternatives?.push({
-              ...altStrategy,
-              score: alt?.score,
-              reason: alt?.reason
-            });
-          }
-        }
-      }
-
-      const recommendation = {
-        strategy: recommendedStrategy,
-        score: Math.round(aiAnalysis?.matching_score),
-        confidence: aiAnalysis?.confidence_level,
-        reasoning: aiAnalysis?.reasoning,
-        key_alignments: aiAnalysis?.key_alignments || [],
-        implementation_recommendations: aiAnalysis?.implementation_recommendations || [],
-        alternatives: alternatives?.slice(0, 2) // Limit to top 2 alternatives
-      };
-
-      return { data: recommendation, error: null };
-    } catch (error) {
-      console.error('Error analyzing questionnaire:', error);
       return { data: null, error };
     }
   }
