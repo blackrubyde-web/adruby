@@ -192,38 +192,11 @@ const AIAnalysisPanel = () => {
     setSidebarOpen(false);
   };
 
-  // Facebook OAuth via Supabase (echter Flow)
+  // Facebook OAuth via Supabase (auth redirect)
   const handleConnectFacebook = async () => {
-    if (!user) {
-      alert('Bitte melden Sie sich an, um Facebook zu verbinden.');
-      return;
-    }
-
     setIsConnecting(true);
-    try {
-      const { data, error } = await supabase.auth.signInWithOAuth({
-        provider: 'facebook',
-        options: {
-          // Nach Login soll der User wieder auf das AI-Analyse Panel kommen
-          redirectTo: `${window.location.origin}/ai-analysis`,
-        },
-      });
-
-      if (error) {
-        console.error('[Facebook OAuth] Error starting login', error);
-        alert('Fehler beim Starten der Facebook-Verbindung.');
-      } else {
-        console.log('[Facebook OAuth] Redirect initiated', data);
-        // Supabase übernimmt ab hier den Redirect zu Facebook
-      }
-    } catch (err) {
-      console.error('[Facebook OAuth] Exception', err);
-      alert('Fehler beim Verbinden mit Facebook. Bitte versuchen Sie es erneut.');
-    } finally {
-      // In vielen Fällen wird der Redirect sofort passieren,
-      // aber wir setzen vorsichtshalber wieder zurück:
-      setIsConnecting(false);
-    }
+    window.location.href =
+      'https://isyvoxpfhgeziqpwkxtd.supabase.co/auth/v1/authorize?provider=facebook&redirect_to=https://adruby.de/ai-analyse';
   };
 
   const handleDisconnectFacebook = async () => {
