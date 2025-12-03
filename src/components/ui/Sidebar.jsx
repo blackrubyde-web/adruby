@@ -10,6 +10,7 @@ const navItems = [
   { label: "Ads Strategien", path: "/ad-strategy", icon: "Target" },
   { label: "Campaigns", path: "/campaigns-management", icon: "Target" },
   { label: "App Builder", path: "/app-builder-interface", icon: "Layers" },
+  { label: "AI Analyse", path: "/ai-analysis", icon: "Brain" },
   { label: "AI Analysis", path: "/ai-analysis-panel", icon: "Brain" },
   { label: "Settings", path: "/settings-configuration", icon: "Settings" },
 ];
