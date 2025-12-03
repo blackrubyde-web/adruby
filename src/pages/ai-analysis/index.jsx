@@ -196,7 +196,7 @@ const AIAnalysisPanel = () => {
   const handleConnectFacebook = async () => {
     setIsConnecting(true);
     window.location.href =
-      'https://isyvoxpfhgeziqpwkxtd.supabase.co/auth/v1/authorize?provider=facebook&redirect_to=https://adruby.de/ai-analyse';
+      'https://isyvoxpfhgeziqpwkxtd.supabase.co/auth/v1/authorize?provider=facebook&redirect_to=https://adruby.de/ai-analysis';
   };
 
   const handleDisconnectFacebook = async () => {
