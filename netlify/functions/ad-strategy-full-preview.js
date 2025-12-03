@@ -90,12 +90,13 @@ exports.handler = async (event) => {
   const industry = adVariant?.generated_ad?.product?.industry || "generic";
   const goal = answers?.goal || "sales";
 
-  const { data: blueprint, error: blueprintError } = await supabase
+  const { data: blueprints, error: blueprintError } = await supabase
     .from("strategy_blueprints")
     .select("*")
     .eq("industry", industry)
     .eq("primary_goal", goal)
-    .maybeSingle();
+    .order("blueprint_key", { ascending: true });
+  // Kein maybeSingle(), kein limit(1) hier – wir holen alle und wählen selbst das erste
 
   if (blueprintError) {
     console.error("[FullFlow] Blueprint fetch error", blueprintError);
@@ -105,19 +106,26 @@ exports.handler = async (event) => {
     };
   }
 
+  const blueprint = Array.isArray(blueprints) && blueprints.length > 0
+    ? blueprints[0]
+    : null;
+
   if (!blueprint) {
     console.error("[FullFlow] No matching blueprint found", { industry, goal });
     return {
       statusCode: 404,
       body: JSON.stringify({
-        error: "Kein passender Strategy-Blueprint gefunden. Lege zuerst einen Blueprint für diese Branche/Ziel an.",
+        error: "Kein passender Strategy-Blueprint gefunden. Bitte einen Blueprint für diese Branche/Ziel anlegen.",
+        industry,
+        goal,
       }),
     };
   }
 
   console.log("[FullFlow] Loaded blueprint", {
     exists: !!blueprint,
-    key: blueprint?.key,
+    id: blueprint?.id,
+    blueprint_key: blueprint?.blueprint_key,
     industry: blueprint?.industry,
     primary_goal: blueprint?.primary_goal,
   });
