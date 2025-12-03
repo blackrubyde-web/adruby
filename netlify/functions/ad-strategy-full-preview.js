@@ -416,6 +416,7 @@ Halte dich strikt an das JSON-Schema.
       },
     });
 
+    // 🔍 Debug-Logging der rohen Output-Struktur
     const firstOutput = response.output?.[0] || null;
     const contents = firstOutput?.content || [];
 
@@ -425,14 +426,41 @@ Halte dich strikt an das JSON-Schema.
       contentTypes: contents.map((c) => ({
         type: c.type,
         hasJson: !!c.json,
+        hasText: !!c.text,
       })),
     });
 
     let parsedJson = null;
+
+    // 🧠 1. Versuch: direktes JSON-Feld (falls zukünftige Versionen das nutzen)
     for (const item of contents) {
       if (item && typeof item === "object" && item.json) {
         parsedJson = item.json;
         break;
+      }
+    }
+
+    // 🧠 2. Versuch: JSON aus output_text.text.value rausparsen
+    if (!parsedJson) {
+      for (const item of contents) {
+        if (
+          item &&
+          item.type === "output_text" &&
+          item.text &&
+          typeof item.text.value === "string"
+        ) {
+          const raw = item.text.value.trim();
+          try {
+            parsedJson = JSON.parse(raw);
+            console.log("[FullFlow] Parsed JSON from output_text.value");
+            break;
+          } catch (err) {
+            console.warn("[FullFlow] Failed to parse JSON from output_text", {
+              snippet: raw.slice(0, 120),
+              error: err.message,
+            });
+          }
+        }
       }
     }
 
