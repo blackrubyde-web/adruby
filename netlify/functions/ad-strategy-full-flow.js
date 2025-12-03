@@ -104,14 +104,41 @@ exports.handler = async (event) => {
       .single();
 
     if (error) {
-      console.error("[FullFlow] saveError", error);
-      return {
-        statusCode: 500,
-        body: JSON.stringify({ error: "Failed to save strategy" }),
-      };
-    }
+      // Duplicate-Key-Fall: ad_variant_id existiert bereits -> vorhandene Strategie holen
+      if (error.code === "23505") {
+        console.warn(
+          "[FullFlow] Strategy already exists for this ad_variant_id – loading existing strategy..."
+        );
+        const { data: existing, error: fetchError } = await supabase
+          .from("ad_strategies")
+          .select("*")
+          .eq("ad_variant_id", adVariantId)
+          .single();
 
-    savedStrategy = data;
+        if (fetchError || !existing) {
+          console.error(
+            "[FullFlow] Failed to fetch existing strategy after duplicate key",
+            fetchError
+          );
+          return {
+            statusCode: 500,
+            body: JSON.stringify({
+              error: "Failed to load existing strategy after duplicate key",
+            }),
+          };
+        }
+
+        savedStrategy = existing;
+      } else {
+        console.error("[FullFlow] saveError", error);
+        return {
+          statusCode: 500,
+          body: JSON.stringify({ error: "Failed to save strategy" }),
+        };
+      }
+    } else {
+      savedStrategy = data;
+    }
   } catch (err) {
     console.error("[FullFlow] Unexpected error while saving strategy", err);
     return {
@@ -168,54 +195,60 @@ Gib ein JSON mit folgender Struktur zurück:
       input: [
         {
           role: "system",
-          content: "Du bist ein Meta Ads Performance Experte für Facebook & Instagram.",
+          content:
+            "Du bist ein Meta Ads Performance Experte für Facebook & Instagram.",
         },
         {
           role: "user",
           content: prompt,
         },
       ],
-      response_format: {
-        type: "json_schema",
-        json_schema: {
-          name: "meta_ads_setup",
-          strict: true,
-          schema: {
-            type: "object",
-            properties: {
-              campaign_config: {
-                type: "object",
-                description: "Einstellungen auf Kampagnen-Ebene.",
-                additionalProperties: true,
-              },
-              adsets_config: {
-                type: "array",
-                description: "Liste aller Adset-Konfigurationen.",
-                items: {
+      max_output_tokens: 2000,
+      // neues Schema: response_format -> text.format
+      text: {
+        format: {
+          type: "json_schema",
+          json_schema: {
+            name: "meta_ads_setup",
+            strict: true,
+            schema: {
+              type: "object",
+              properties: {
+                campaign_config: {
                   type: "object",
+                  description: "Einstellungen auf Kampagnen-Ebene.",
+                  additionalProperties: true,
+                },
+                adsets_config: {
+                  type: "array",
+                  description: "Liste aller Adset-Konfigurationen.",
+                  items: {
+                    type: "object",
+                    additionalProperties: true,
+                  },
+                },
+                ads_config: {
+                  type: "array",
+                  description:
+                    "Liste aller Ad-Konfigurationen / Creatives.",
+                  items: {
+                    type: "object",
+                    additionalProperties: true,
+                  },
+                },
+                recommendations: {
+                  type: "object",
+                  description:
+                    "Zusätzliche Empfehlungen, Skalierungs- & Testing-Plan.",
                   additionalProperties: true,
                 },
               },
-              ads_config: {
-                type: "array",
-                description: "Liste aller Ad-Konfigurationen / Creatives.",
-                items: {
-                  type: "object",
-                  additionalProperties: true,
-                },
-              },
-              recommendations: {
-                type: "object",
-                description: "Zusätzliche Empfehlungen, Skalierungs- & Testing-Plan.",
-                additionalProperties: true,
-              },
+              required: ["campaign_config", "adsets_config", "ads_config"],
+              additionalProperties: true,
             },
-            required: ["campaign_config", "adsets_config", "ads_config"],
-            additionalProperties: true,
           },
         },
       },
-      max_output_tokens: 2000,
     });
 
     const raw =
