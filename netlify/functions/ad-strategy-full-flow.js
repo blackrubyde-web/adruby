@@ -173,20 +173,54 @@ Erstelle ein vollständiges Kampagnen-Setup basierend auf:
   )}
 
 Ziel:
-- Ein klar strukturiertes Meta Ads Setup, das direkt ins Ads Manager Setup übertragen werden kann.
+- Ein klar strukturiertes Meta Ads Setup, das direkt in den Meta Ads Manager übertragen werden kann.
 
-Gib ein JSON mit folgender Struktur zurück:
+Gib ein JSON mit GENAU folgender Struktur zurück:
 
 {
-  "campaign_config": { ... },
-  "adsets_config": [ ... ],
-  "ads_config": [ ... ],
-  "recommendations": { ... }
+  "campaign_config": {
+    "objective": "CONVERSIONS",
+    "campaign_name": "string",
+    "budget": "z.B. 50–100 € / Tag",
+    "optimization_goal": "z.B. Purchases",
+    "duration": "z.B. Laufend, mit wöchentlichem Review",
+    "notes": "kurze Hinweise zur Kampagnenstruktur"
+  },
+  "adsets_config": [
+    {
+      "name": "z.B. Broad Expansion – CPA Focused – Moderate Scaling",
+      "budget": "z.B. 50 % des Gesamtbudgets",
+      "placements": "z.B. Advantage+ Placements, Reels + Feed priorisieren",
+      "target_audience": {
+        "age": "z.B. 25–54",
+        "locations": ["DE", "AT"],
+        "interests": ["konkrete Interessen aus dem Produktkontext"],
+        "notes": "kurze Begründung für die Zielgruppenwahl"
+      }
+    }
+  ],
+  "ads_config": [
+    {
+      "name": "z.B. UGC Authentic Creative – Haupt-Asset",
+      "format": "z.B. FEED_SINGLE_IMAGE, REEL_VIDEO, STORY",
+      "cta": "z.B. Jetzt kaufen",
+      "headline": "konkrete, hook-basierte Headline in Deutsch",
+      "primary_text": "performanter, deutschsprachiger Anzeigentext mit klarer Value Proposition, Social Proof und CTA",
+      "tracking": "z.B. UTM-Parameter oder interne Bezeichnung"
+    }
+  ],
+  "recommendations": {
+    "testing": "konkrete Hinweise, wie viele Creatives/AdSets parallel getestet werden sollen",
+    "scaling": "konkrete Skalierungslogik (z.B. +20 % alle 3 Tage bei stabiler Performance)",
+    "reporting": "welche KPIs täglich / wöchentlich geprüft werden sollen (CTR, CPC, CPA, ROAS, Frequency, etc.)"
+  }
 }
 
 WICHTIG:
-- Antworte **ausschließlich** mit einem gültigen JSON-Objekt.
-- Kein Markdown, kein Fließtext, keine Kommentare – nur reines JSON.
+- Fülle ALLE Felder mit sinnvollen, konkreten Inhalten. KEINE leeren Strings, KEINE Platzhalter, KEINE 'Lorem ipsum'.
+- Nutze die Informationen aus der generierten Ad (Hooks, Benefits, Angebot, Zielgruppe), um Headlines und Primary Text passgenau und verkaufsstark in DEUTSCH zu schreiben.
+- Jeder Eintrag in "ads_config" MUSS die Felder "name", "format", "cta", "headline" und "primary_text" enthalten.
+- Antworte **ausschließlich** mit einem gültigen JSON-Objekt, ohne Markdown, ohne Kommentare, ohne Erklärtext.
 `;
 
   let openAIResult = null;

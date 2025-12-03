@@ -170,22 +170,72 @@ const AdStrategy = ({ loadStrategies }) => {
     }
   };
 
-  // NEW: Unified generate flow (Questionnaire → Save → Overlay)
+  // NEW: Unified generate flow (Questionnaire → Strategy → FullFlow)
   const handleGenerateStrategy = async () => {
+    if (!selectedAdForStrategy?.id) {
+      setAnalysisError("Es wurde keine Anzeige für die Strategie ausgewählt.");
+      return;
+    }
+
+    const effectiveUserId = user?.id || user?.user?.id;
+    if (!effectiveUserId) {
+      setAnalysisError("Kein Benutzer gefunden. Bitte erneut einloggen.");
+      return;
+    }
+
     setIsStrategyFlowLoading(true);
     setAnalysisError(null);
 
     try {
-      const adVariantId = selectedAdForStrategy?.id;
-      const effectiveUserId = user?.id || user?.user?.id;
+      // 1) Strategien laden, falls noch nicht vorhanden
+      let strategies = allStrategies;
+      if (!strategies || strategies.length === 0) {
+        const { data: strategiesData, error: strategiesError } =
+          await AdStrategyService?.getAllStrategies();
+        if (strategiesError) throw strategiesError;
+        strategies = strategiesData || [];
+        setAllStrategies(strategies);
+      }
 
+      // 2) Fragebogen mit KI analysieren -> Strategy Recommendation holen
+      const { data: recommendation, error: analysisError } =
+        await AdStrategyService?.analyzeQuestionnaire(answers, strategies);
+
+      console.log(
+        "[AdStrategy][handleGenerateStrategy] analyzeQuestionnaire result:",
+        { recommendation, analysisError }
+      );
+
+      if (analysisError) throw analysisError;
+
+      const strategyFromService =
+        recommendation?.strategyRecommendation || recommendation;
+
+      if (!strategyFromService?.strategy) {
+        console.error(
+          "[AdStrategy][handleGenerateStrategy] No strategy in response",
+          strategyFromService
+        );
+        setAnalysisError(
+          "Keine Strategieempfehlung erhalten. Bitte erneut versuchen."
+        );
+        return;
+      }
+
+      // Strategy im State halten (für Header/Overlay)
+      setStrategyRecommendation(strategyFromService);
+      setStrategyResult(strategyFromService);
+
+      // 3) FullFlow-Endpoint aufrufen: Strategie + Meta Setup generieren
       const body = {
-        adVariantId,
+        adVariantId: selectedAdForStrategy.id,
         userId: effectiveUserId,
         answers,
-        strategyRecommendation,
-        generatedAd: selectedAdForStrategy?.generated_ad,
+        strategyRecommendation: strategyFromService,
+        generatedAd: selectedAdForStrategy.generated_ad,
       };
+
+      console.log("[FullFlow][Frontend] Starting full flow…", body);
 
       const res = await fetch("/.netlify/functions/ad-strategy-full-flow", {
         method: "POST",
@@ -195,48 +245,53 @@ const AdStrategy = ({ loadStrategies }) => {
 
       const json = await res.json();
 
-      if (!res.ok || json?.status !== "ok") {
+      if (!res.ok || json.status !== "ok") {
+        console.error("[FullFlow][Frontend] API error", json);
         throw new Error(json?.error || "FullFlow API error");
       }
 
-      setStrategyResult(json.strategy.ai_analysis);
+      console.log("[FullFlow][Frontend] Full flow success", json);
+
+      // Meta Ads Setup Daten im State speichern
       setMetaAdsSetupData(json.meta.setup_data);
 
-      // Update local savedAds to include meta setup for this variant
-      setSavedAds((prev) =>
-        (prev || []).map((variant) => {
-          if (variant?.id !== adVariantId) return variant;
-          const firstStrategy = (variant?.ad_strategy && variant.ad_strategy[0]) || {};
-          return {
-            ...variant,
-            ad_strategy: [
-              {
-                ...firstStrategy,
-                selected_strategy:
-                  firstStrategy?.selected_strategy ||
-                  json?.strategy?.ai_analysis?.strategy ||
-                  strategyRecommendation?.strategy ||
-                  null,
-                matching_score:
-                  firstStrategy?.matching_score ||
-                  json?.strategy?.ai_analysis?.score ||
-                  null,
-                confidence_level:
-                  firstStrategy?.confidence_level ||
-                  json?.strategy?.ai_analysis?.confidence ||
-                  null,
-                meta_ads_setup: [json?.meta?.setup_data],
-              },
-            ],
-          };
-        })
-      );
-
+      // Strategy-Modal schließen, Meta-Setup-Overlay öffnen
       setShowStrategyFinder(false);
       setShowMetaAdsSetup(true);
+
+      // Optional: savedAds updaten, damit die Karte die Strategie + Meta Setup kennt
+      setSavedAds((prevAds) =>
+        prevAds?.map((variant) => {
+          if (variant?.id === selectedAdForStrategy.id) {
+            const firstStrategy =
+              (variant.ad_strategy && variant.ad_strategy[0]) || {};
+
+            return {
+              ...variant,
+              ad_strategy: [
+                {
+                  ...firstStrategy,
+                  selected_strategy:
+                    firstStrategy.selected_strategy ||
+                    strategyFromService.strategy,
+                  matching_score:
+                    firstStrategy.matching_score || strategyFromService.score,
+                  confidence_level:
+                    firstStrategy.confidence_level ||
+                    strategyFromService.confidence,
+                  meta_ads_setup: [json.meta.setup_data],
+                },
+              ],
+            };
+          }
+          return variant;
+        })
+      );
     } catch (err) {
       console.error("[FullFlow][Frontend] Failed to run full flow", err);
-      setAnalysisError(err.message || "Meta Ads Setup konnte nicht erstellt werden.");
+      setAnalysisError(
+        err.message || "Meta Ads Setup konnte nicht erstellt werden."
+      );
     } finally {
       setIsStrategyFlowLoading(false);
     }
