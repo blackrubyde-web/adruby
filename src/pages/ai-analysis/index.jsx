@@ -156,12 +156,15 @@ const AIAnalysisPanel = () => {
 
       const result = await facebookAdsService?.fetchCampaigns(userId);
       if (result?.success) {
-        setCampaignData(result?.data || []);
+        const data = Array.isArray(result?.data) ? result.data : [];
+        setCampaignData(data);
       } else {
         console.error('[AIAnalysis] fetchCampaigns error', result?.error);
+        setCampaignData([]);
       }
     } catch (error) {
       console.error('Error loading campaign data:', error);
+      setCampaignData([]);
     }
   };
 

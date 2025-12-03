@@ -6,26 +6,30 @@ import Tooltip from '../../../components/ui/Tooltip';
 const CampaignPerformanceCards = ({ campaignData, kpiEvaluations, isDarkMode }) => {
   // Calculate aggregate metrics
   const aggregateMetrics = React.useMemo(() => {
-    if (!campaignData || campaignData?.length === 0) return null;
+    const safeCampaignData = Array.isArray(campaignData) ? campaignData : [];
+    if (safeCampaignData.length === 0) return null;
 
-    const totals = campaignData?.reduce((acc, campaign) => ({
-      spend: acc?.spend + parseFloat(campaign?.spend || 0),
-      impressions: acc?.impressions + parseInt(campaign?.impressions || 0),
-      clicks: acc?.clicks + parseInt(campaign?.clicks || 0),
-      conversions: acc?.conversions + parseInt(campaign?.conversions || 0)
-    }), { spend: 0, impressions: 0, clicks: 0, conversions: 0 });
+    const totals = safeCampaignData.reduce(
+      (acc, campaign) => ({
+        spend: acc.spend + parseFloat(campaign?.spend || 0),
+        impressions: acc.impressions + parseInt(campaign?.impressions || 0, 10),
+        clicks: acc.clicks + parseInt(campaign?.clicks || 0, 10),
+        conversions: acc.conversions + parseInt(campaign?.conversions || 0, 10)
+      }),
+      { spend: 0, impressions: 0, clicks: 0, conversions: 0 }
+    );
 
-    const avgCTR = totals?.impressions > 0 ? (totals?.clicks / totals?.impressions) * 100 : 0;
-    const avgCPM = totals?.impressions > 0 ? (totals?.spend / totals?.impressions) * 1000 : 0;
-    const avgROAS = totals?.spend > 0 ? (totals?.conversions * 50) / totals?.spend : 0; // Assuming 50€ AOV
-    const avgCPA = totals?.conversions > 0 ? totals?.spend / totals?.conversions : totals?.spend;
+    const avgCTR = totals.impressions > 0 ? (totals.clicks / totals.impressions) * 100 : 0;
+    const avgCPM = totals.impressions > 0 ? (totals.spend / totals.impressions) * 1000 : 0;
+    const avgROAS = totals.spend > 0 ? (totals.conversions * 50) / totals.spend : 0; // Assuming 50€ AOV
+    const avgCPA = totals.conversions > 0 ? totals.spend / totals.conversions : totals.spend;
 
     return {
       ...totals,
-      avgCTR: avgCTR?.toFixed(2),
-      avgCPM: avgCPM?.toFixed(2),
-      avgROAS: avgROAS?.toFixed(2),
-      avgCPA: avgCPA?.toFixed(2)
+      avgCTR: avgCTR.toFixed(2),
+      avgCPM: avgCPM.toFixed(2),
+      avgROAS: avgROAS.toFixed(2),
+      avgCPA: avgCPA.toFixed(2)
     };
   }, [campaignData]);
 
