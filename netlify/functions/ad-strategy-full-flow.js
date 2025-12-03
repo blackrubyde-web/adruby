@@ -200,12 +200,13 @@ Gib ein JSON mit folgender Struktur zurück:
           schema: {
             type: "object",
             description: "Vollständiges Meta Ads Setup.",
-            // Root darf zusätzliche Felder enthalten (z. B. Debug-Infos der KI)
-            additionalProperties: true,
+            // Root-Objekt: KEINE zusätzlichen Properties erlaubt
+            additionalProperties: false,
             properties: {
               campaign_config: {
                 type: "object",
                 description: "Einstellungen auf Kampagnen-Ebene.",
+                // Kampagnen-Konfiguration flexibel halten
                 additionalProperties: true,
               },
               adsets_config: {
@@ -213,6 +214,7 @@ Gib ein JSON mit folgender Struktur zurück:
                 description: "Liste aller Adset-Konfigurationen.",
                 items: {
                   type: "object",
+                  // Adset-Objekte flexibel halten
                   additionalProperties: true,
                 },
               },
@@ -221,6 +223,7 @@ Gib ein JSON mit folgender Struktur zurück:
                 description: "Liste aller Ad-Konfigurationen / Creatives.",
                 items: {
                   type: "object",
+                  // Ad-Objekte flexibel halten
                   additionalProperties: true,
                 },
               },
@@ -228,6 +231,7 @@ Gib ein JSON mit folgender Struktur zurück:
                 type: "object",
                 description:
                   "Zusätzliche Empfehlungen, Skalierungs- & Testing-Plan.",
+                // Empfehlungen flexibel halten
                 additionalProperties: true,
               },
             },
