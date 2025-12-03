@@ -416,8 +416,33 @@ Halte dich strikt an das JSON-Schema.
       },
     });
 
-    // Responses API: JSON sitzt im output[..].content[..].json
-    aiResult = response.output?.[0]?.content?.[0]?.json || null;
+    const firstOutput = response.output?.[0] || null;
+    const contents = firstOutput?.content || [];
+
+    console.log("[FullFlow] Raw OpenAI output meta", {
+      hasOutput: !!firstOutput,
+      contentLength: contents.length,
+      contentTypes: contents.map((c) => ({
+        type: c.type,
+        hasJson: !!c.json,
+      })),
+    });
+
+    let parsedJson = null;
+    for (const item of contents) {
+      if (item && typeof item === "object" && item.json) {
+        parsedJson = item.json;
+        break;
+      }
+    }
+
+    if (!parsedJson) {
+      console.warn("[FullFlow] No JSON content found in OpenAI response", {
+        outputKeys: Object.keys(firstOutput || {}),
+      });
+    }
+
+    aiResult = parsedJson;
 
     console.log("[FullFlow] OpenAI full strategy generated", {
       hasStrategy: !!aiResult?.strategyResult?.strategy,
