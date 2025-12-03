@@ -768,42 +768,47 @@ Wähle die BESTE Strategie aus und erkläre detailliert warum.
 
   // NEW: Get ad strategy for specific ad variant
   static async getAdStrategy(adVariantId) {
+    if (!adVariantId) {
+      return { data: null, error: new Error('Missing adVariantId for getAdStrategy') };
+    }
+
     try {
       const { data, error } = await supabase
-        ?.from('ad_strategies')
-        ?.select(
-          `
-            id,
-            ad_variant_id,
-            selected_strategy,
-            matching_score,
-            confidence_level,
-            ai_analysis,
-            created_at,
-            meta_ads_setup:meta_ads_setups(
-              id,
-              campaign_config,
-              adsets_config,
-              ads_config,
-              recommendations,
-              created_at
-            )
-          `
+        .from('ad_strategies')
+        .select(`
+        id,
+        ad_variant_id,
+        blueprint_key,
+        answers,
+        selected_strategy,
+        matching_score,
+        confidence_level,
+        ai_analysis,
+        status,
+        created_at,
+        meta_ads_setup:meta_ads_setups (
+          id,
+          campaign_config,
+          adsets_config,
+          ads_config,
+          recommendations,
+          created_at
         )
-        ?.eq('ad_variant_id', adVariantId)
-        ?.order('created_at', { ascending: false })
-        ?.limit(1);
+      `)
+        .eq('ad_variant_id', adVariantId)
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
 
       if (error) {
         console.error('[AdStrategyService][getAdStrategy] Supabase error:', error);
         return { data: null, error };
       }
 
-      const row = Array.isArray(data) && data.length > 0 ? data[0] : null;
-      return { data: row, error: null };
-    } catch (error) {
-      console.error('[AdStrategyService][getAdStrategy] Unexpected error:', error);
-      return { data: null, error };
+      return { data, error: null };
+    } catch (err) {
+      console.error('[AdStrategyService][getAdStrategy] Unexpected error:', err);
+      return { data: null, error: err };
     }
   }
 

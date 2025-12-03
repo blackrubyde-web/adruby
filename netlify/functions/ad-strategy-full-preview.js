@@ -54,10 +54,12 @@ exports.handler = async (event) => {
 
   // Load ad variant with generated ad + product
   const { data: adVariant, error: adError } = await supabase
-    .from("ad_variants")
+    .from("saved_ad_variants")
     .select(
       `
         id,
+        user_id,
+        *,
         generated_ad:generated_ads(
           *,
           product:products(*)
@@ -67,11 +69,14 @@ exports.handler = async (event) => {
     .eq("id", adVariantId)
     .single();
 
-  if (adError || !adVariant) {
+  if (adError) {
     console.error("[FullFlow] Failed to load adVariant:", adError);
     return {
-      statusCode: 404,
-      body: JSON.stringify({ error: "Ad variant not found" }),
+      statusCode: 500,
+      body: JSON.stringify({
+        error: "Failed to load saved ad variant",
+        details: adError.message || adError,
+      }),
     };
   }
 
