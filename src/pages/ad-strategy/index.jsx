@@ -176,6 +176,71 @@ const AdStrategy = ({ loadStrategies }) => {
     setAnalysisError(null);
 
     try {
+      const adVariantId = selectedAdForStrategy?.id;
+      const effectiveUserId = user?.id || user?.user?.id;
+
+      const body = {
+        adVariantId,
+        userId: effectiveUserId,
+        answers,
+        strategyRecommendation,
+        generatedAd: selectedAdForStrategy?.generated_ad,
+      };
+
+      const res = await fetch("/.netlify/functions/ad-strategy-full-flow", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
+
+      const json = await res.json();
+
+      if (!res.ok || json?.status !== "ok") {
+        throw new Error(json?.error || "FullFlow API error");
+      }
+
+      setStrategyResult(json.strategy.ai_analysis);
+      setMetaAdsSetupData(json.meta.setup_data);
+
+      // Update local savedAds to include meta setup for this variant
+      setSavedAds((prev) =>
+        (prev || []).map((variant) => {
+          if (variant?.id !== adVariantId) return variant;
+          const firstStrategy = (variant?.ad_strategy && variant.ad_strategy[0]) || {};
+          return {
+            ...variant,
+            ad_strategy: [
+              {
+                ...firstStrategy,
+                selected_strategy:
+                  firstStrategy?.selected_strategy ||
+                  json?.strategy?.ai_analysis?.strategy ||
+                  strategyRecommendation?.strategy ||
+                  null,
+                matching_score:
+                  firstStrategy?.matching_score ||
+                  json?.strategy?.ai_analysis?.score ||
+                  null,
+                confidence_level:
+                  firstStrategy?.confidence_level ||
+                  json?.strategy?.ai_analysis?.confidence ||
+                  null,
+                meta_ads_setup: [json?.meta?.setup_data],
+              },
+            ],
+          };
+        })
+      );
+
+      setShowStrategyFinder(false);
+      setShowMetaAdsSetup(true);
+    } catch (err) {
+      console.error("[FullFlow][Frontend] Failed to run full flow", err);
+      setAnalysisError(err.message || "Meta Ads Setup konnte nicht erstellt werden.");
+    } finally {
+      setIsStrategyFlowLoading(false);
+    }
+  };
       const body = {
         adVariantId: selectedAdForStrategy?.id,
         userId: user?.id || user?.user?.id,
@@ -1306,21 +1371,23 @@ const AdStrategy = ({ loadStrategies }) => {
                         }
                         disabled={
                           currentQuestionIndex === questionnaireQuestions?.length - 1
-                            ? isAnalyzing
-                            : !answers?.[questionnaireQuestions?.[currentQuestionIndex]?.id] || isProcessingStrategy
+                            ? isStrategyFlowLoading ||
+                              !answers?.[questionnaireQuestions?.[currentQuestionIndex]?.id]
+                            : !answers?.[questionnaireQuestions?.[currentQuestionIndex]?.id] ||
+                              isProcessingStrategy
                         }
                         className="flex items-center space-x-2 px-6 py-3 bg-gradient-to-r from-[#C80000] to-[#A00000] text-white rounded-lg hover:from-[#B00000] hover:to-[#900000] transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-[#C80000]/25"
                       >
                         {currentQuestionIndex === questionnaireQuestions?.length - 1 ? (
                           <>
-                            {isAnalyzing ? (
+                            {isStrategyFlowLoading ? (
                               <>
                                 <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
-                                <span>Strategie wird generiert...</span>
+                                <span>KI analysiert & erstellt Setup…</span>
                               </>
                             ) : (
                               <>
-                                <span>Strategie generieren</span>
+                                <span>Strategie + Meta Setup generieren</span>
                                 <Icon name="Zap" size={16} />
                               </>
                             )}
@@ -1925,7 +1992,7 @@ const AdStrategy = ({ loadStrategies }) => {
                         Schließen
                       </button>
                       <button
-                        onClick={() => handleCopyMetaAdsData(metaAdsSetupData?.setup_data, 'Komplettes Setup')}
+                        onClick={() => handleCopyMetaAdsData(metaAdsSetupData, 'Komplettes Setup')}
                         className="flex-1 px-6 py-3 bg-gradient-to-r from-[#C80000] to-[#A00000] text-white rounded-lg hover:from-[#B00000] hover:to-[#900000] transition-all shadow-lg shadow-[#C80000]/25 text-center font-medium"
                       >
                         <Icon name="Download" size={16} className="inline mr-2" />
