@@ -590,27 +590,6 @@ const PreviewPanel = ({ selectedAd, isGenerating, productData, generatedAds = []
           </motion.div>
         )}
 
-        {/* Action Buttons */}
-        <div className="mt-6 space-y-3">
-          <Button
-            variant="outline"
-            className="w-full"
-            disabled={!currentAd}
-            onClick={() => {
-              // TODO: Implement save functionality
-              if (currentAd) {
-                console.log('Saving ad:', currentAd);
-                if (uploadedImage) {
-                  console.log('With custom image:', uploadedImage?.name);
-                }
-              }
-            }}
-          >
-            <Icon name="Save" size={16} className="mr-2" />
-            Ad speichern
-          </Button>
-        </div>
-
         {/* Performance Metrics */}
         {currentAd && (
           <motion.div 
@@ -647,22 +626,6 @@ const PreviewPanel = ({ selectedAd, isGenerating, productData, generatedAds = []
             )}
           </motion.div>
         )}
-
-        {/* Tips */}
-        <div className="mt-6 bg-amber-50 border border-amber-200 rounded-lg p-4">
-          <h4 className="font-semibold text-sm text-amber-800 mb-2 flex items-center space-x-2">
-            <Icon name="Lightbulb" size={16} className="text-amber-600" />
-            <span>Optimierungs-Tipp</span>
-          </h4>
-          <p className="text-xs text-amber-700">
-            {uploadedImage ? 
-              'Perfekt! Mit Ihrem eigenen Bild können Sie die tatsächliche Performance Ihrer Anzeige besser einschätzen. Achten Sie auf hohe Bildqualität und relevanten Inhalt.' :
-              currentAd ? 
-                `Diese Anzeige nutzt "${currentAd?.emotional_trigger}" als emotionalen Trigger. Für bessere Performance können Sie A/B-Tests mit verschiedenen Bildvarianten durchführen.` :
-                'Wählen Sie eine generierte Anzeige aus, um spezifische Optimierungstipps zu erhalten.'
-            }
-          </p>
-        </div>
 
         {/* NEW: Custom Image Integration Note */}
         {uploadedImagePreview && (

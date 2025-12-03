@@ -832,7 +832,7 @@ const AdStrategy = ({ loadStrategies }) => {
                       {/* ENHANCED: Strategy Assignment Status with Meta Ads Setup */}
                       {variant?.ad_strategy?.length > 0 ? (
                         <div className="mb-4 space-y-2">
-                          <div className="p-3 bg-gradient-to-r from-green-500/10 to-emerald-500/10 border border-green-500/20 rounded-lg">
+                          <div className="p-3 rounded-lg border bg-neutral-100 text-neutral-900 dark:bg-neutral-900 dark:text-white border-green-500/40">
                             <div className="flex items-center space-x-2 mb-2">
                               <Icon name="CheckCircle" size={14} className="text-green-600" />
                               <span className="text-sm font-medium text-green-700">
@@ -854,7 +854,7 @@ const AdStrategy = ({ loadStrategies }) => {
 
                           {/* NEW: Meta Ads Setup Card */}
                           {variant?.ad_strategy?.[0]?.meta_ads_setup?.length > 0 ? (
-                            <div className="p-3 bg-gradient-to-r from-blue-500/10 to-indigo-500/10 border border-blue-500/20 rounded-lg">
+                            <div className="p-3 rounded-lg border bg-neutral-100 text-neutral-900 dark:bg-neutral-900 dark:text-white border-blue-500/40">
                               <div className="flex items-center justify-between mb-2">
                                 <div className="flex items-center space-x-2">
                                   <Icon name="Settings" size={14} className="text-blue-600" />
@@ -1429,14 +1429,14 @@ const AdStrategy = ({ loadStrategies }) => {
                       </p>
                     </div>
                     {strategyRecommendation?.strategy && (
-                      <div className="bg-gradient-to-br from-muted/30 to-muted/10 rounded-xl p-8 border">
+                      <div className="rounded-xl p-8 border bg-neutral-100 dark:bg-neutral-800">
                         {process.env.NODE_ENV === 'development' && (
                           <pre className="hidden">
                             {JSON.stringify(strategyRecommendation, null, 2)}
                           </pre>
                         )}
                         {/* Strategy Header - ENHANCED */}
-                        <div className="flex items-center justify-between mb-6">
+                        <div className="flex flex-wrap items-center justify-between gap-2 mb-6">
                           <div className="flex items-center space-x-4">
                             <div className="w-16 h-16 bg-gradient-to-br from-[#C80000]/20 to-[#C80000]/30 rounded-lg flex items-center justify-center shadow-lg">
                               <Icon name="Target" size={28} className="text-[#C80000]" />
@@ -1450,10 +1450,23 @@ const AdStrategy = ({ loadStrategies }) => {
                               </p>
                             </div>
                           </div>
-                          <div className="text-right">
-                            <div className="flex items-center space-x-2 px-4 py-2 bg-gradient-to-r from-green-500/10 to-emerald-500/10 text-green-600 rounded-full text-lg font-bold shadow-md">
-                              <Icon name="TrendingUp" size={18} />
-                              <span>{strategyRecommendation?.score}% Match</span>
+                          <div className="text-right w-full md:w-auto">
+                            <div
+                              className="
+                                flex flex-col md:flex-row items-center justify-center gap-2 
+                                px-3 py-1.5 
+                                bg-gradient-to-r from-green-500/10 to-emerald-500/10 
+                                text-green-600 font-semibold rounded-full shadow 
+                                text-sm md:text-base
+                                md:inline-flex w-full md:w-auto
+                              "
+                            >
+                              <Icon name="TrendingUp" size={18} className="md:inline-flex hidden" />
+                              <span className="md:inline-flex hidden">{strategyRecommendation?.score}% Match</span>
+                              <Icon name="TrendingUp" size={18} className="inline-flex md:hidden mx-auto mb-1" />
+                              <span className="inline-flex md:hidden text-center w-full">
+                                {strategyRecommendation?.score}% Match
+                              </span>
                             </div>
                           </div>
                         </div>
@@ -1490,7 +1503,10 @@ const AdStrategy = ({ loadStrategies }) => {
                             </h5>
                             <div className="space-y-2">
                               {strategyRecommendation?.implementation_recommendations?.map((recommendation, index) => (
-                                <div key={index} className="flex items-start space-x-3 p-3 bg-blue-50/50 rounded-lg">
+                                <div
+                                  key={index}
+                                  className="flex items-start space-x-3 p-3 rounded-lg border bg-white text-gray-800 border-gray-300 dark:bg-gray-900 dark:text-gray-100 dark:border-gray-700"
+                                >
                                   <div className="w-6 h-6 bg-blue-500/10 text-blue-600 rounded-full flex items-center justify-center text-xs font-medium flex-shrink-0 mt-0.5">
                                     {index + 1}
                                   </div>
@@ -1590,7 +1606,7 @@ const AdStrategy = ({ loadStrategies }) => {
 
                         {/* AI Reasoning */}
                         {strategyRecommendation?.reasoning && (
-                          <div className="bg-card p-4 rounded-lg border border-border mb-6">
+                          <div className="p-4 rounded-lg border border-border mb-6 bg-white text-gray-800 dark:bg-gray-900 dark:text-gray-100 dark:border-gray-700">
                             <h5 className="font-medium text-foreground mb-2 flex items-center">
                               <Icon name="Brain" size={16} className="mr-2 text-purple-500" />
                               KI-Analyse: Warum diese Strategie?
@@ -1603,7 +1619,7 @@ const AdStrategy = ({ loadStrategies }) => {
 
                         {/* Budget Information */}
                         {strategyRecommendation?.strategy?.budget_recommendations && (
-                          <div className="mb-6 flex items-center justify-between text-sm p-4 bg-yellow-50/50 rounded-lg">
+                          <div className="mb-6 flex items-center justify-between text-sm p-4 rounded-lg border bg-white text-gray-800 border-gray-300 dark:bg-gray-900 dark:text-gray-100 dark:border-gray-700">
                             <span className="text-muted-foreground">💰 Empfohlenes Tagesbudget:</span>
                             <span className="font-medium text-[#C80000]">
                               {strategyRecommendation?.strategy?.budget_recommendations?.daily_budget || 'Individuell anpassbar'}
