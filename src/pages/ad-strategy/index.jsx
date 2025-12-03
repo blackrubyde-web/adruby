@@ -172,147 +172,40 @@ const AdStrategy = ({ loadStrategies }) => {
 
   // NEW: Unified generate flow (Questionnaire → Save → Overlay)
   const handleGenerateStrategy = async () => {
-    const userId = user?.id || user?.user?.id || null;
-    const adVariantId = selectedAdForStrategy?.id || adId;
-
-    if (!userId) {
-      console.error('[AdStrategy][Frontend] Missing userId');
-      setAnalysisError('Bitte logge dich ein, um die Strategie zu generieren.');
-      return;
-    }
-
-    if (!adVariantId) {
-      console.error('[AdStrategy][Frontend] Missing adVariantId');
-      setAnalysisError('Es konnte keine gültige Ad-Variante gefunden werden.');
-      return;
-    }
-
-    if (!answers || typeof answers !== 'object') {
-      console.error('[AdStrategy][Frontend] Missing answers');
-      setAnalysisError('Bitte beantworte zuerst alle Fragen zur Kampagne.');
-      return;
-    }
-
-    setIsAnalyzing(true);
-    setAnalysisError(null);
-    setStrategyResult(null);
     setIsStrategyFlowLoading(true);
-    setShowStrategyFinder(false);
-    setShowMetaAdsSetup(false);
+    setAnalysisError(null);
 
-    let flowErrored = false;
     try {
-      // 1) Questionnaire-Analyse aufrufen
-      const questionnairePayload = {
-        answers: {
-          ...answers,
-          adVariantId,
-          userId,
-        },
-        strategies: [],
-      };
-
-      console.log('[AdStrategy][Frontend] Sending questionnaire payload', questionnairePayload);
-
-      const questionnaireRes = await fetch('/.netlify/functions/ad-strategy-analyze-questionnaire', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(questionnairePayload),
-      });
-
-      if (!questionnaireRes.ok) {
-        console.error('[AdStrategy][Frontend][Questionnaire] Failed:', questionnaireRes.status);
-        setAnalysisError('Die Strategieanalyse ist fehlgeschlagen.');
-        flowErrored = true;
-        return;
-      }
-
-      const questionnaireData = await questionnaireRes.json();
-      console.log('[AdStrategy][Frontend][Questionnaire] Result:', questionnaireData);
-
-      const strategyFromApi = questionnaireData?.strategyRecommendation || questionnaireData;
-
-      if (!strategyFromApi?.strategy) {
-        console.error('[AdStrategy][Frontend][Questionnaire] No strategy in response');
-        setAnalysisError('Die KI hat keine gültige Strategie zurückgegeben.');
-        flowErrored = true;
-        setIsStrategyFlowLoading(false);
-        return;
-      }
-
-      console.log('[AdStrategy][Frontend] About to set strategyRecommendation from API', strategyFromApi);
-      setStrategyRecommendation(strategyFromApi);
-      setStrategyResult(strategyFromApi);
-
-      // 2) Strategie speichern
-      const savePayload = {
-        adVariantId,
-        userId,
+      const body = {
+        adVariantId: selectedAdForStrategy?.id,
+        userId: user?.id || user?.user?.id,
         answers,
-        strategyRecommendation: strategyFromApi,
+        strategyRecommendation,
+        generatedAd: selectedAdForStrategy?.generated_ad
       };
 
-      console.log('[AdStrategy][Frontend][AdStrategySave] Sending payload', savePayload);
-
-      setIsSaving(true);
-      setError(null);
-
-      const saveRes = await fetch('/.netlify/functions/ad-strategy-save', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(savePayload),
+      const res = await fetch("/.netlify/functions/ad-strategy-full-flow", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body)
       });
 
-      if (!saveRes.ok) {
-        console.error('[AdStrategy][Frontend][AdStrategySave] Failed:', saveRes.status);
-        setAnalysisError('Die Strategie konnte nicht vollständig gespeichert werden.');
-        setStrategyResult(strategyFromApi);
-        flowErrored = true;
-        return;
-      }
+      if (!res.ok) throw new Error(`FullFlow failed: ${res.status}`);
 
-      const savedStrategy = await saveRes.json();
-      console.log('[AdStrategy][Frontend][AdStrategySave] Saved:', savedStrategy);
-      if (typeof loadStrategies === 'function') {
-        await loadStrategies();
-      }
+      const json = await res.json();
 
-      setStrategyResult(prev => ({
-        ...(prev || strategyFromApi),
-        savedRecord: savedStrategy,
-      }));
+      setStrategyResult(json.strategy.ai_analysis);
+      setMetaAdsSetupData(json.meta.setup_data);
 
-      try {
-        const { data: setupData, error: setupError } = await AdStrategyService?.generateMetaAdsSetupForStrategy(adVariantId);
-        if (setupError) {
-          console.error('[AdStrategy][Frontend][MetaAdsSetup] Error:', setupError);
-        } else if (setupData) {
-          setMetaAdsSetupData(setupData);
-        }
-      } catch (metaErr) {
-        console.error('[AdStrategy][Frontend][MetaAdsSetup] Unexpected error:', metaErr);
-      }
-
-      console.log('[AdStrategy][Frontend] strategyRecommendation state after save', strategyRecommendation);
+      // ONE overlay only
       setShowStrategyFinder(true);
       setShowMetaAdsSetup(true);
-    } catch (err) {
-      console.error('[AdStrategy][Frontend][Flow] Error:', err);
-      flowErrored = true;
-      setAnalysisError('Es ist ein unerwarteter Fehler aufgetreten.');
-    } finally {
-      setIsAnalyzing(false);
-      setIsSaving(false);
-      setIsStrategyFlowLoading(false);
 
-      if (!flowErrored && !analysisError) {
-        setShowStrategyFinder(true);
-        setShowMetaAdsSetup(true);
-      }
+    } catch (err) {
+      console.error("[FullFlow] error", err);
+      setAnalysisError(err.message);
+    } finally {
+      setIsStrategyFlowLoading(false);
     }
   };
 
@@ -1220,42 +1113,12 @@ const AdStrategy = ({ loadStrategies }) => {
         </div>
       </motion.main>
       {isStrategyFlowLoading && (
-        <AnimatePresence>
-          <motion.div
-            className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-          >
-            <motion.div
-              className="bg-card border border-border rounded-2xl px-8 py-6 shadow-2xl max-w-md w-full mx-4"
-              initial={{ opacity: 0, y: 20, scale: 0.95 }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
-              exit={{ opacity: 0, y: -10, scale: 0.95 }}
-            >
-              <div className="flex flex-col items-center text-center space-y-4">
-                <div className="w-12 h-12 rounded-full border-2 border-[#C80000]/30 border-t-[#C80000] animate-spin" />
-
-                <div>
-                  <h2 className="text-lg font-semibold text-foreground">
-                    KI erstellt deine Werbestrategie
-                  </h2>
-                  <p className="text-sm text-muted-foreground mt-1">
-                    Marktanalyse, Fragebogen-Auswertung und Meta Ads Setup werden vorbereitet.
-                  </p>
-                </div>
-
-                <div className="w-full h-2 rounded-full bg-muted overflow-hidden">
-                  <div className="h-2 rounded-full bg-gradient-to-r from-[#C80000] to-[#A00000] animate-[loaderstripe_1.4s_ease-in-out_infinite]" />
-                </div>
-
-                <p className="text-xs text-muted-foreground">
-                  Dies kann je nach Komplexität deiner Kampagne ein paar Sekunden dauern.
-                </p>
-              </div>
-            </motion.div>
-          </motion.div>
-        </AnimatePresence>
+        <motion.div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm">
+          <div className="text-center text-white space-y-4">
+            <div className="w-16 h-16 border-4 border-white/20 border-t-white rounded-full animate-spin"></div>
+            <p className="text-lg font-semibold">KI analysiert & erstellt Setup…</p>
+          </div>
+        </motion.div>
       )}
       {/* COMPREHENSIVE: Enhanced Interactive Strategy Finder Modal with 7-Step Questionnaire */}
       {showStrategyFinder && (
