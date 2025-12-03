@@ -1045,39 +1045,56 @@ Erstelle eine praxisnahe Meta Ads Manager Anleitung für 2025 mit konkreten Schr
 
 // ENHANCED: Get saved ad variants with strategy AND Meta Ads setup
   static async getSavedAdVariants(userId) {
+    if (!userId) {
+      return { data: [], error: new Error('Missing userId for getSavedAdVariants') };
+    }
+
     try {
       const { data, error } = await supabase
-        ?.from('ad_variants')
+        ?.from('saved_ad_variants')
         ?.select(`
+        id,
+        user_id,
+        saved_at,
+        is_favorite,
+        performance_data,
+        generated_ad:generated_ads (
           id,
-          saved_at,
-          is_favorite,
-          performance_data,
-          generated_ad:generated_ads(
-            *,
-            product:products(*)
-          ),
-          ad_strategy:ad_strategies(
+          headline,
+          primary_text,
+          hook,
+          cta,
+          conversion_score,
+          estimated_ctr,
+          product:products (
             id,
-            ad_variant_id,
-            user_id,
-            selected_strategy,
-            selected_strategy_data,
-            ai_analysis,
-            matching_score,
-            confidence_level,
-            status,
-            created_at,
-            meta_ads_setup:meta_ads_setups(
-              id,
-              campaign_config,
-              adsets_config,
-              ads_config,
-              recommendations,
-              created_at
-            )
+            product_name,
+            industry,
+            tonality,
+            target_audience
           )
-        `)
+        ),
+        ad_strategy:ad_strategies (
+          id,
+          saved_ad_variant_id,
+          blueprint_key,
+          answers,
+          selected_strategy,
+          matching_score,
+          confidence_level,
+          ai_analysis,
+          status,
+          created_at,
+          meta_ads_setup:meta_ads_setups (
+            id,
+            campaign_config,
+            adsets_config,
+            ads_config,
+            recommendations,
+            created_at
+          )
+        )
+      `)
         ?.eq('user_id', userId)
         ?.order('saved_at', { ascending: false });
 
@@ -1086,16 +1103,10 @@ Erstelle eine praxisnahe Meta Ads Manager Anleitung für 2025 mit konkreten Schr
         return { data: null, error };
       }
 
-      const normalized = (data || []).map((row) => ({
-        ...row,
-        ad_strategy: Array.isArray(row.ad_strategy) ? row.ad_strategy : [],
-        generated_ad: row.generated_ad || null,
-      }));
-
-      return { data: normalized, error: null };
-    } catch (error) {
-      console.error('[AdStrategyService][getSavedAdVariants] Unexpected error:', error);
-      return { data: null, error };
+      return { data, error: null };
+    } catch (err) {
+      console.error('[AdStrategyService][getSavedAdVariants] Unexpected error:', err);
+      return { data: null, error: err };
     }
   }
 
