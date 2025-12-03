@@ -1,5 +1,5 @@
 import React from 'react';
-import { BrowserRouter, Routes as RouterRoutes, Route } from 'react-router-dom';
+import { BrowserRouter, Routes as RouterRoutes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './contexts/AuthContext';
 import ScrollToTop from './components/ScrollToTop';
 import ErrorBoundary from './components/ErrorBoundary';
@@ -80,14 +80,7 @@ const Routes = () => {
                 </ProtectedRoute>
               }
             />
-            <Route
-              path="/ai-analysis-panel"
-              element={
-                <ProtectedRoute>
-                  <AiAnalysisPanel />
-                </ProtectedRoute>
-              }
-            />
+            <Route path="/ai-analysis-panel" element={<Navigate to="/ai-analysis" replace />} />
             <Route
               path="/ad-strategy"
               element={
