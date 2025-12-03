@@ -49,7 +49,16 @@ exports.handler = async (event) => {
     }
 
     const selectedStrategy = strategyRecommendation.strategy;
-    const matchingScore = strategyRecommendation.score ?? null;
+
+    // Score sauber auf Integer mappen (DB-Spalte ist integer)
+    let matchingScore = null;
+    if (strategyRecommendation.score !== undefined && strategyRecommendation.score !== null) {
+      const numericScore = parseFloat(strategyRecommendation.score);
+      if (Number.isFinite(numericScore)) {
+        matchingScore = Math.round(numericScore); // 9.8 -> 10
+      }
+    }
+
     const confidenceLevel = strategyRecommendation.confidence ?? null;
 
     const { data: insertedStrategy, error: strategyError } = await supabase
