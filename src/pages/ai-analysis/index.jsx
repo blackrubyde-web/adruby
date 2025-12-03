@@ -40,6 +40,43 @@ const AIAnalysisPanel = () => {
   // Use AuthContext for proper authentication handling
   const { user, loading: authLoading } = useAuth();
 
+  // Facebook-Connection direkt aus Supabase-User ableiten
+  useEffect(() => {
+    if (!authLoading && user) {
+      try {
+        const identities = user.identities || user.user_metadata?.identities || [];
+        const fbIdentity =
+          Array.isArray(identities)
+            ? identities.find((id) => id.provider === 'facebook')
+            : null;
+
+        if (fbIdentity) {
+          setFacebookConnection({
+            is_active: true,
+            full_name:
+              user.user_metadata?.full_name ||
+              fbIdentity.identity_data?.name ||
+              'Facebook User',
+            profile_picture:
+              fbIdentity.identity_data?.picture ||
+              user.user_metadata?.avatar_url ||
+              null,
+            provider: 'facebook',
+          });
+        } else {
+          setFacebookConnection(null);
+        }
+      } catch (e) {
+        console.error('[AIAnalysis] Failed to map facebook identity', e);
+        setFacebookConnection(null);
+      }
+    }
+
+    if (!authLoading && !user) {
+      setFacebookConnection(null);
+    }
+  }, [authLoading, user]);
+
   useEffect(() => {
     const savedLanguage = localStorage.getItem('language') || 'de';
     setCurrentLanguage(savedLanguage);
@@ -65,7 +102,6 @@ const AIAnalysisPanel = () => {
     
     // Only load data after auth state is determined
     if (!authLoading) {
-      loadFacebookConnection();
       loadCampaignData();
     }
 
@@ -120,26 +156,6 @@ const AIAnalysisPanel = () => {
       subscription?.subscription?.unsubscribe?.();
     };
   }, []);
-
-  const loadFacebookConnection = async () => {
-    try {
-      const result = await facebookAdsService?.getFacebookConnection();
-      if (result?.success && result?.data) {
-        const data = result?.data;
-        const normalizedConnection = {
-          ...data,
-          profilePicture: data?.profilePicture || data?.profile_picture,
-          profile_picture: data?.profile_picture || data?.profilePicture,
-          fullName: data?.fullName || data?.full_name,
-          full_name: data?.full_name || data?.fullName,
-          is_active: data?.is_active ?? data?.isActive ?? true
-        };
-        setFacebookConnection(normalizedConnection);
-      }
-    } catch (error) {
-      console.error('Error loading Facebook connection:', error);
-    }
-  };
 
   const loadCampaignData = async () => {
     try {
@@ -1012,8 +1028,6 @@ const AIAnalysisPanel = () => {
               <MetaConnectionModal
                 isOpen={connectionModalOpen}
                 onClose={() => setConnectionModalOpen(false)}
-                onConnect={handleConnectFacebook}
-                isConnecting={isConnecting}
               />
 
               <AnimatePresence>

@@ -15,6 +15,7 @@ const FacebookDataSync = ({ onSyncComplete, facebookConnection }) => {
   });
   const [lastSyncTime, setLastSyncTime] = useState(null);
   const [error, setError] = useState('');
+  const isConnected = !!facebookConnection && facebookConnection?.is_active !== false;
 
   useEffect(() => {
     // Check for last sync time from localStorage
@@ -25,8 +26,8 @@ const FacebookDataSync = ({ onSyncComplete, facebookConnection }) => {
   }, []);
 
   const handleSyncData = async () => {
-    if (!facebookConnection) {
-      setError('Keine Facebook-Verbindung gefunden. Bitte verbinden Sie zuerst Ihr Konto.');
+    if (!isConnected) {
+      setError('Keine aktive Facebook-Verbindung gefunden. Bitte verbinde zuerst dein Facebook-Konto über den Login-Button.');
       return;
     }
 
@@ -40,7 +41,7 @@ const FacebookDataSync = ({ onSyncComplete, facebookConnection }) => {
       setSyncProgress(20);
       
       // Simulate API calls with actual service methods
-      const campaignsResult = await facebookAdsService?.fetchCampaigns();
+      const campaignsResult = await facebookAdsService?.fetchCampaigns(facebookConnection?.user_id);
       if (!campaignsResult?.success) {
         throw new Error('Fehler beim Abrufen der Kampagnen');
       }
@@ -176,7 +177,7 @@ const FacebookDataSync = ({ onSyncComplete, facebookConnection }) => {
 
           <Button
             onClick={handleSyncData}
-            disabled={syncStatus === 'syncing' || !facebookConnection}
+            disabled={syncStatus === 'syncing' || !isConnected}
             className="bg-primary hover:bg-primary/90 text-primary-foreground"
             iconName={getSyncStatusIcon()}
             iconPosition="left"
@@ -199,15 +200,15 @@ const FacebookDataSync = ({ onSyncComplete, facebookConnection }) => {
           {/* Connection Status */}
           <div className="flex items-center justify-between text-sm">
             <span className="text-muted-foreground">Verbindungsstatus:</span>
-            <div className="flex items-center space-x-2">
-              <div className={`w-2 h-2 rounded-full ${
-                facebookConnection?.is_active ? 'bg-green-500' : 'bg-red-500'
-              }`} />
-              <span className="font-medium text-foreground">
-                {facebookConnection?.is_active ? 'Verbunden' : 'Nicht verbunden'}
-              </span>
-            </div>
+          <div className="flex items-center space-x-2">
+            <div className={`w-2 h-2 rounded-full ${
+              isConnected ? 'bg-green-500' : 'bg-red-500'
+            }`} />
+            <span className="font-medium text-foreground">
+              {isConnected ? 'Verbunden (Facebook OAuth)' : 'Nicht verbunden'}
+            </span>
           </div>
+        </div>
 
           {/* Progress Bar */}
           <AnimatePresence>

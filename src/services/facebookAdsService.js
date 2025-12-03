@@ -38,25 +38,23 @@ const facebookAdsService = {
   /**
    * Hole aktuelle Facebook-Verbindungsdaten für den eingeloggten User
    */
-  async getFacebookConnection() {
-    return apiRequest('facebook-get-connection', {
+  async getFacebookConnection(userId) {
+    if (!userId) return { success: false, error: 'Missing userId' };
+
+    const query = `facebook-get-connection?userId=${encodeURIComponent(userId)}`;
+    return apiRequest(query, {
       method: 'GET',
     });
   },
 
   /**
    * Speichere / aktualisiere eine Facebook-Verbindung für den User
-   * connectionData:
-   *  - userId
-   *  - facebookId (z.B. ad account id oder user id)
-   *  - accessToken (wird später aus Supabase/Meta geholt)
-   *  - profilePicture
-   *  - fullName
+   * payload: { userId, adAccountId?, pageId?, meta? }
    */
-  async connectFacebook(connectionData) {
+  async connectFacebook(payload) {
     return apiRequest('facebook-connect', {
       method: 'POST',
-      body: JSON.stringify(connectionData),
+      body: JSON.stringify(payload),
     });
   },
 
