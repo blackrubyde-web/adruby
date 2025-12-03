@@ -95,8 +95,9 @@ const FacebookDataSync = ({ onSyncComplete, facebookConnection }) => {
       setLastSyncTime(now);
       localStorage.setItem('fb_last_sync', now?.toISOString());
 
-      // Notify parent component
-      onSyncComplete?.(campaignsResult?.data);
+      // Notify parent component – immer ein Array nach oben geben
+      const safeData = Array.isArray(campaignsResult?.data) ? campaignsResult.data : [];
+      onSyncComplete?.(safeData);
 
       // Reset to idle after success message
       setTimeout(() => {

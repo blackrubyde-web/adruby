@@ -11,7 +11,8 @@ const MetricsChart = ({ campaignData, isDarkMode }) => {
 
   // Transform campaign data for charts
   const chartData = useMemo(() => {
-    if (!campaignData || campaignData?.length === 0) return [];
+    const safeCampaignData = Array.isArray(campaignData) ? campaignData : [];
+    if (safeCampaignData.length === 0) return [];
 
     // Create time series data (simulated for demo)
     const last7Days = Array.from({ length: 7 }, (_, i) => {
@@ -22,17 +23,21 @@ const MetricsChart = ({ campaignData, isDarkMode }) => {
 
     return last7Days?.map((date, index) => {
       // Simulate daily metrics based on campaign data
-      const dailySpend = campaignData?.reduce((sum, campaign) => 
-        sum + (parseFloat(campaign?.spend || 0) / 7), 0
+      const dailySpend = safeCampaignData.reduce(
+        (sum, campaign) => sum + (parseFloat(campaign?.spend || 0) / 7),
+        0
       );
-      const dailyImpressions = campaignData?.reduce((sum, campaign) =>
-        sum + Math.floor((parseInt(campaign?.impressions || 0) / 7)), 0
+      const dailyImpressions = safeCampaignData.reduce(
+        (sum, campaign) => sum + Math.floor((parseInt(campaign?.impressions || 0, 10) / 7)),
+        0
       );
-      const dailyClicks = campaignData?.reduce((sum, campaign) =>
-        sum + Math.floor((parseInt(campaign?.clicks || 0) / 7)), 0
+      const dailyClicks = safeCampaignData.reduce(
+        (sum, campaign) => sum + Math.floor((parseInt(campaign?.clicks || 0, 10) / 7)),
+        0
       );
-      const dailyConversions = campaignData?.reduce((sum, campaign) =>
-        sum + Math.floor((parseInt(campaign?.conversions || 0) / 7)), 0
+      const dailyConversions = safeCampaignData.reduce(
+        (sum, campaign) => sum + Math.floor((parseInt(campaign?.conversions || 0, 10) / 7)),
+        0
       );
 
       const ctr = dailyImpressions > 0 ? (dailyClicks / dailyImpressions) * 100 : 0;
@@ -136,7 +141,7 @@ const MetricsChart = ({ campaignData, isDarkMode }) => {
     return null;
   };
 
-  if (!campaignData || campaignData?.length === 0) {
+  if (!Array.isArray(campaignData) || campaignData.length === 0) {
     return (
       <div className="bg-card border border-border rounded-lg p-6">
         <div className="text-center">
