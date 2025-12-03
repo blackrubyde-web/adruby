@@ -58,6 +58,11 @@ exports.handler = async (event) => {
   });
 
   if (!adVariantId || !userId || !answers) {
+    console.error("[FullFlow] Missing required fields", {
+      adVariantId,
+      userId,
+      hasAnswers: !!answers,
+    });
     return {
       statusCode: 400,
       body: JSON.stringify({ error: "Missing required fields" }),
@@ -123,7 +128,8 @@ exports.handler = async (event) => {
           return {
             statusCode: 500,
             body: JSON.stringify({
-              error: "Failed to load existing strategy after duplicate key",
+              error:
+                "Failed to load existing strategy after duplicate key",
             }),
           };
         }
@@ -160,7 +166,11 @@ Erstelle ein vollständiges Kampagnen-Setup basierend auf:
     2
   )}
 - Fragebogen-Antworten: ${JSON.stringify(answers || {}, null, 2)}
-- Generierte Ad (Creatives & Copy): ${JSON.stringify(generatedAd || {}, null, 2)}
+- Generierte Ad (Creatives & Copy): ${JSON.stringify(
+    generatedAd || {},
+    null,
+    2
+  )}
 
 Ziel:
 - Ein klar strukturiertes Meta Ads Setup, das direkt ins Ads Manager Setup übertragen werden kann.
@@ -173,42 +183,56 @@ Gib ein JSON mit folgender Struktur zurück:
   "ads_config": [ ... ],
   "recommendations": { ... }
 }
+
+WICHTIG:
+- Antworte **ausschließlich** mit einem gültigen JSON-Objekt.
+- Kein Markdown, kein Fließtext, keine Kommentare – nur reines JSON.
 `;
 
   let openAIResult = null;
 
   try {
-    const response = await openai.responses.create({
+    const completion = await openai.chat.completions.create({
       model: process.env.META_SETUP_MODEL || "gpt-4.1-mini",
-      input: [
+      messages: [
         {
           role: "system",
           content:
-            "Du bist ein Meta Ads Performance Experte für Facebook & Instagram.",
+            "Du bist ein Meta Ads Performance Experte für Facebook & Instagram. Du antwortest strikt im JSON-Format, wenn der Nutzer es verlangt.",
         },
         {
           role: "user",
           content: prompt,
         },
       ],
-      max_output_tokens: 2000,
-      text: {
-        // Keine Schema-Validierung mehr, einfach JSON
-        format: "json"
-      },
+      // Erzwinge JSON-Ausgabe
+      response_format: { type: "json_object" },
+      temperature: 0.3,
+      max_tokens: 2000,
     });
 
-    const raw =
-      response?.output?.[0]?.content?.[0]?.text ||
-      response?.output?.[0]?.content?.[0]?.json;
+    const rawContent =
+      completion?.choices?.[0]?.message?.content || null;
 
-    if (!raw) {
-      console.error("[FullFlow][OpenAI] Empty response content");
-      throw new Error("Empty OpenAI response");
+    if (!rawContent) {
+      console.error("[FullFlow][OpenAI] Empty completion content", {
+        completion,
+      });
+      throw new Error("Empty OpenAI completion content");
     }
 
-    openAIResult =
-      typeof raw === "string" ? JSON.parse(raw) : JSON.parse(JSON.stringify(raw));
+    // JSON sicher parsen
+    try {
+      openAIResult = JSON.parse(rawContent);
+    } catch (parseErr) {
+      console.error("[FullFlow][OpenAI] Failed to parse JSON", {
+        rawContent: rawContent.slice(0, 500), // trunc für Log
+        error: parseErr,
+      });
+      throw new Error(
+        "OpenAI returned non-JSON output or invalid JSON structure"
+      );
+    }
 
     console.log("[FullFlow][OpenAI] Parsed Meta Setup:", {
       hasCampaign: !!openAIResult.campaign_config,
@@ -229,6 +253,23 @@ Gib ein JSON mit folgender Struktur zurück:
       body: JSON.stringify({
         error: "OpenAI failed",
         details: err.message || String(err),
+      }),
+    };
+  }
+
+  // Defensive: falls OpenAI irgendwas Unerwartetes zurückgibt
+  if (
+    !openAIResult ||
+    typeof openAIResult !== "object" ||
+    Array.isArray(openAIResult)
+  ) {
+    console.error("[FullFlow] OpenAI result has invalid shape", {
+      openAIResult,
+    });
+    return {
+      statusCode: 500,
+      body: JSON.stringify({
+        error: "Meta Ads Setup has invalid structure",
       }),
     };
   }
@@ -258,10 +299,15 @@ Gib ein JSON mit folgender Struktur zurück:
 
     metaData = data;
   } catch (err) {
-    console.error("[FullFlow] Unexpected error while saving Meta Setup", err);
+    console.error(
+      "[FullFlow] Unexpected error while saving Meta Setup",
+      err
+    );
     return {
       statusCode: 500,
-      body: JSON.stringify({ error: "Failed to save Meta Setup (exception)" }),
+      body: JSON.stringify({
+        error: "Failed to save Meta Setup (exception)",
+      }),
     };
   }
 
