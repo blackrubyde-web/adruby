@@ -1063,14 +1063,14 @@ Erstelle eine praxisnahe Meta Ads Manager Anleitung für 2025 mit konkreten Schr
           meta_ads_setup:meta_ads_setups (*)
         )
       `)
-        .eq('user_id', userId)
-        .order('created_at', { ascending: false });
+        .eq('user_id', userId);
 
       if (error) {
         console.error('[AdStrategyService][getSavedAdVariants] Supabase error:', error);
         return { data: null, error };
       }
 
+      console.log('[AdStrategyService][getSavedAdVariants] Loaded variants:', data?.length || 0);
       return { data, error: null };
     } catch (err) {
       console.error('[AdStrategyService][getSavedAdVariants] Unexpected error:', err);
