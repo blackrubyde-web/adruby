@@ -1,5 +1,3 @@
-// netlify/functions/ad-strategy-generate-meta-setup.js
-
 const { getSupabaseClient } = require('./_shared/supabaseClient');
 
 exports.handler = async (event) => {
@@ -37,6 +35,7 @@ exports.handler = async (event) => {
       };
     }
 
+    // 1) Passende Strategie für diesen adVariant holen
     const { data: strategyRow, error: strategyError } = await supabase
       .from('ad_strategies')
       .select('*')
@@ -53,7 +52,7 @@ exports.handler = async (event) => {
     });
 
     if (strategyError) {
-      console.error('[MetaAdsSetup] Supabase error:', strategyError);
+      console.error('[MetaAdsSetup] Supabase error (strategy):', strategyError);
       return {
         statusCode: 500,
         body: JSON.stringify({
@@ -73,10 +72,46 @@ exports.handler = async (event) => {
       };
     }
 
-    // Placeholder: return the strategy row as setup source. Extend with real generation if needed.
+    // 2) Prüfen, ob es bereits ein Meta Setup für diese Strategie gibt
+    const { data: existingSetup, error: setupError } = await supabase
+      .from('ad_meta_setup')
+      .select('*')
+      .eq('ad_strategy_id', strategyRow.id)
+      .maybeSingle();
+
+    if (setupError && setupError.code !== 'PGRST116') {
+      console.error('[MetaAdsSetup] Supabase error (meta_setup):', setupError);
+      return {
+        statusCode: 500,
+        body: JSON.stringify({
+          error: 'Failed to load Meta Ads setup',
+          details: setupError.message || setupError,
+        }),
+      };
+    }
+
+    if (!existingSetup) {
+      console.warn('[MetaAdsSetup] No Meta Ads setup found for strategy – you may want to trigger AI generation separately.', {
+        ad_strategy_id: strategyRow.id,
+      });
+
+      return {
+        statusCode: 404,
+        body: JSON.stringify({
+          error: 'Noch kein Meta Ads Setup für diese Strategie vorhanden.',
+          ad_strategy_id: strategyRow.id,
+        }),
+      };
+    }
+
+    console.log('[MetaAdsSetup] Returning existing Meta Ads setup:', {
+      id: existingSetup.id,
+      ad_strategy_id: existingSetup.ad_strategy_id,
+    });
+
     return {
       statusCode: 200,
-      body: JSON.stringify({ setup: strategyRow }),
+      body: JSON.stringify({ setup: existingSetup }),
     };
   } catch (err) {
     console.error('[MetaAdsSetup] Handler error:', err);

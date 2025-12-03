@@ -412,47 +412,6 @@ Wähle die BESTE Strategie aus und erkläre detailliert warum.
     }
   }
 
-  // NEW: Get saved ad variants for user (for Strategies page)
-  static async getSavedAdVariants(userId) {
-    try {
-      const { data, error } = await supabase
-        ?.from('saved_ad_variants')
-        ?.select(`
-          id,
-          saved_at,
-          is_favorite,
-          performance_data,
-          generated_ad:generated_ads(
-            *,
-            product:products(*)
-          ),
-          ad_strategy:ad_strategies(
-            id,
-            ad_variant_id,
-            user_id,
-            selected_strategy,
-            selected_strategy_data,
-            ai_analysis,
-            matching_score,
-            confidence_level,
-            status,
-            created_at
-          )
-        `)
-        ?.eq('user_id', userId)
-        ?.order('saved_at', { ascending: false });
-
-      if (error) {
-        console.error('[AdStrategyService][getSavedAdVariants] Supabase error:', error);
-        return { data: null, error };
-      }
-      return { data, error: null };
-    } catch (error) {
-      console.error('[AdStrategyService][getSavedAdVariants] Unexpected error:', error);
-      return { data: null, error };
-    }
-  }
-
   // NEW: Update saved ad variant
   static async updateSavedAdVariant(variantId, updates) {
     try {
@@ -1178,7 +1137,10 @@ Erstelle eine praxisnahe Meta Ads Manager Anleitung für 2025 mit konkreten Schr
           saved_at,
           is_favorite,
           performance_data,
-          generated_ad:generated_ads(*),
+          generated_ad:generated_ads(
+            *,
+            product:products(*)
+          ),
           ad_strategy:ad_strategies(
             id,
             ad_variant_id,
@@ -1200,7 +1162,13 @@ Erstelle eine praxisnahe Meta Ads Manager Anleitung für 2025 mit konkreten Schr
         return { data: null, error };
       }
 
-      return { data, error: null };
+      const normalized = (data || []).map((row) => ({
+        ...row,
+        ad_strategy: Array.isArray(row.ad_strategy) ? row.ad_strategy : [],
+        generated_ad: row.generated_ad || null,
+      }));
+
+      return { data: normalized, error: null };
     } catch (error) {
       console.error('[AdStrategyService][getSavedAdVariants] Unexpected error:', error);
       return { data: null, error };

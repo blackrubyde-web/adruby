@@ -34,7 +34,6 @@ const AdStrategy = ({ loadStrategies }) => {
   const [showSavedAds, setShowSavedAds] = useState(true); // DEFAULT: Always show saved ads first
   const [loadingSaved, setLoadingSaved] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
-  const [strategies, setStrategies] = useState([]);
   const [isStrategyFlowLoading, setIsStrategyFlowLoading] = useState(false);
 
   // COMPREHENSIVE: Enhanced strategy finder states for 7-step questionnaire
@@ -113,42 +112,6 @@ const AdStrategy = ({ loadStrategies }) => {
       setError('Fehler beim Laden der gespeicherten Anzeigen');
     } finally {
       setLoadingSaved(false);
-    }
-  };
-
-  const loadStrategiesFromBackend = async (adVariantIdOverride) => {
-    const userId = user?.id || user?.user?.id || null;
-    if (!userId) {
-      console.warn('[AdStrategy][Frontend] Missing userId – skip ad-strategies-get');
-      return;
-    }
-
-    try {
-      const adVariantId = adVariantIdOverride || selectedAdForStrategy?.id || null;
-      const params = new URLSearchParams({ userId });
-
-      if (adVariantId) {
-        params.set('adVariantId', adVariantId);
-      }
-
-      const url = `/.netlify/functions/ad-strategies-get?${params.toString()}`;
-      console.log('[AdStrategy][Frontend][AdStrategiesGet] Request URL:', url);
-
-      const res = await fetch(url);
-      if (!res.ok) {
-        console.error('[AdStrategy][Frontend][AdStrategiesGet] Failed:', res.status);
-        setError('Strategien konnten nicht geladen werden.');
-        return;
-      }
-
-      const json = await res.json();
-      const list = json?.strategies || [];
-
-      console.log('[AdStrategy][Frontend][AdStrategiesGet] Loaded strategies:', list.length);
-      setStrategies(list);
-    } catch (err) {
-      console.error('[AdStrategy][Frontend][AdStrategiesGet] Error:', err);
-      setError('Ein unerwarteter Fehler ist bei der Strategie-Ladung aufgetreten.');
     }
   };
 
@@ -295,7 +258,6 @@ const AdStrategy = ({ loadStrategies }) => {
 
       setIsSaving(true);
       setError(null);
-      setStrategies((prev) => [...prev]);
 
       const saveRes = await fetch('/.netlify/functions/ad-strategy-save', {
         method: 'POST',
@@ -318,8 +280,6 @@ const AdStrategy = ({ loadStrategies }) => {
       if (typeof loadStrategies === 'function') {
         await loadStrategies();
       }
-
-      await loadStrategiesFromBackend(adVariantId);
 
       setStrategyResult(prev => ({
         ...(prev || strategyFromApi),
@@ -862,12 +822,18 @@ const AdStrategy = ({ loadStrategies }) => {
                       {/* Product Info */}
                       <div className="mb-4 p-3 bg-muted/30 rounded-lg">
                         <p className="text-sm font-medium text-foreground mb-1">
-                          {variant?.generated_ad?.product?.product_name}
+                          {variant?.generated_ad?.product?.product_name ||
+                            variant?.generated_ad?.headline ||
+                            'Produkt / Kampagne'}
                         </p>
                         <div className="flex items-center space-x-4 text-xs text-muted-foreground">
-                          <span className="capitalize">{variant?.generated_ad?.product?.industry}</span>
+                          <span className="capitalize">
+                            {variant?.generated_ad?.product?.industry || 'n/a'}
+                          </span>
                           <span>•</span>
-                          <span className="capitalize">{variant?.generated_ad?.product?.tonality}</span>
+                          <span className="capitalize">
+                            {variant?.generated_ad?.product?.tonality || 'n/a'}
+                          </span>
                         </div>
                       </div>
 
