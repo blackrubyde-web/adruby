@@ -353,7 +353,7 @@ Halte dich strikt an das JSON-Schema.
           content: [
             {
               type: "input_text",
-              text: "Erstelle eine vollständige Werbestrategie + Meta Ads Setup basierend auf diesen Daten.",
+              text: "Erstelle eine vollständige Werbestrategie + Meta Ads Setup basierend auf diesen Daten. Antworte ausschließlich im JSON-Format nach Schema.",
             },
             {
               type: "input_json",
@@ -362,13 +362,20 @@ Halte dich strikt an das JSON-Schema.
           ],
         },
       ],
-      response_format: {
-        type: "json_schema",
-        json_schema: fullFlowSchema,
+      text: {
+        format: {
+          type: "json_schema",
+          json_schema: {
+            name: fullFlowSchema.name,
+            strict: fullFlowSchema.strict,
+            schema: fullFlowSchema.schema,
+          },
+        },
       },
     });
 
-    aiResult = response.output[0]?.content?.[0]?.json;
+    // Responses API: JSON sitzt im output[..].content[..].json
+    aiResult = response.output?.[0]?.content?.[0]?.json || null;
 
     console.log("[FullFlow] OpenAI full strategy generated", {
       hasStrategy: !!aiResult?.strategyResult?.strategy,
