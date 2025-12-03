@@ -1,45 +1,62 @@
 const { getSupabaseClient } = require('./_shared/supabaseClient');
 
 exports.handler = async (event, context) => {
-  console.log('[FacebookConnection] GET connection');
+  console.log('[FacebookGetConnection] Incoming request:', {
+    method: event.httpMethod,
+    query: event.queryStringParameters,
+  });
+
+  if (event.httpMethod !== 'GET') {
+    return {
+      statusCode: 405,
+      body: JSON.stringify({ error: 'Method not allowed' }),
+    };
+  }
+
+  const userId = event.queryStringParameters?.userId;
+  if (!userId) {
+    return {
+      statusCode: 400,
+      body: JSON.stringify({ error: 'Missing userId' }),
+    };
+  }
+
+  let supabase;
+  try {
+    supabase = getSupabaseClient();
+  } catch (err) {
+    console.error('[FacebookGetConnection] Supabase init failed:', err);
+    return {
+      statusCode: 500,
+      body: JSON.stringify({ error: 'Supabase init failed', details: String(err) }),
+    };
+  }
 
   try {
-    const supabase = getSupabaseClient();
-
-    // Simplified user resolution (can be replaced with Netlify Identity / Supabase auth)
-    const userId = event.headers['x-user-id'];
-
-    if (!userId) {
-      return {
-        statusCode: 200,
-        body: JSON.stringify({ connection: null }),
-      };
-    }
-
     const { data, error } = await supabase
-      .from('meta_facebook_connections')
+      .from('facebook_connections')
       .select('*')
       .eq('user_id', userId)
-      .eq('is_active', true)
+      .eq('provider', 'facebook')
       .maybeSingle();
 
     if (error) {
-      console.error('[FacebookConnection] select error', error);
+      console.error('[FacebookGetConnection] Query error:', error);
       return {
         statusCode: 500,
-        body: JSON.stringify({ error: 'DB error loading connection' }),
+        body: JSON.stringify({ error: 'Failed to load connection', details: error.message }),
       };
     }
 
     return {
       statusCode: 200,
-      body: JSON.stringify(data || null),
+      body: JSON.stringify({ success: true, connection: data }),
     };
   } catch (err) {
-    console.error('[FacebookConnection] exception', err);
+    console.error('[FacebookGetConnection] Unexpected error:', err);
     return {
       statusCode: 500,
-      body: JSON.stringify({ error: err.message || String(err) }),
+      body: JSON.stringify({ error: 'Unexpected error', details: String(err) }),
     };
   }
 };
