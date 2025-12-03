@@ -771,17 +771,25 @@ Wähle die BESTE Strategie aus und erkläre detailliert warum.
     try {
       const { data, error } = await supabase
         ?.from('ad_strategies')
-        ?.select(`
-          *,
-          selected_strategy:strategies(*),
-          ad_variant:saved_ad_variants(
-            *,
-            generated_ad:generated_ads(
-              *,
-              product:products(*)
+        ?.select(
+          `
+            id,
+            ad_variant_id,
+            selected_strategy,
+            matching_score,
+            confidence_level,
+            ai_analysis,
+            created_at,
+            meta_ads_setup:meta_ads_setups(
+              id,
+              campaign_config,
+              adsets_config,
+              ads_config,
+              recommendations,
+              created_at
             )
-          )
-        `)
+          `
+        )
         ?.eq('ad_variant_id', adVariantId)
         ?.order('created_at', { ascending: false })
         ?.limit(1);
@@ -1039,7 +1047,7 @@ Erstelle eine praxisnahe Meta Ads Manager Anleitung für 2025 mit konkreten Schr
   static async getSavedAdVariants(userId) {
     try {
       const { data, error } = await supabase
-        ?.from('saved_ad_variants')
+        ?.from('ad_variants')
         ?.select(`
           id,
           saved_at,
@@ -1059,7 +1067,15 @@ Erstelle eine praxisnahe Meta Ads Manager Anleitung für 2025 mit konkreten Schr
             matching_score,
             confidence_level,
             status,
-            created_at
+            created_at,
+            meta_ads_setup:meta_ads_setups(
+              id,
+              campaign_config,
+              adsets_config,
+              ads_config,
+              recommendations,
+              created_at
+            )
           )
         `)
         ?.eq('user_id', userId)
@@ -1112,28 +1128,93 @@ Erstelle eine praxisnahe Meta Ads Manager Anleitung für 2025 mit konkreten Schr
     }
   }
 
-  static async saveAdStrategy(adVariantId, userId, answers, strategyRecommendation) {
+  static async saveAdStrategy(adVariantId, userId, answers, strategyRecommendation, metaAdsSetup) {
+    if (!adVariantId || !userId) {
+      return { data: null, error: new Error('Missing adVariantId or userId for saveAdStrategy') };
+    }
+    if (!strategyRecommendation || !strategyRecommendation.strategy) {
+      return { data: null, error: new Error('Missing strategyRecommendation.strategy for saveAdStrategy') };
+    }
+
     try {
-      const res = await runFullStrategyFlow({
+      const payload = {
         adVariantId,
         userId,
-        answers,
+        answers: answers || {},
         strategyRecommendation,
+        metaAdsSetup: metaAdsSetup || null,
+      };
+
+      const response = await fetch('/.netlify/functions/ad-strategy-save', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
       });
-      return { data: res, error: null };
+
+      if (!response.ok) {
+        let errorPayload = null;
+        try {
+          errorPayload = await response.json();
+        } catch (_) {
+          errorPayload = await response.text();
+        }
+        console.error('[AdStrategyService][saveAdStrategy] HTTP error', {
+          status: response.status,
+          payload: errorPayload,
+        });
+        return { data: null, error: new Error('Failed to save strategy') };
+      }
+
+      const data = await response.json();
+      return { data, error: null };
     } catch (error) {
       console.error('[AdStrategyService][saveAdStrategy] Flow failed:', error);
       return { data: null, error };
     }
   }
-}
 
-export async function runFullStrategyFlow(payload) {
-  return fetch("/.netlify/functions/ad-strategy-full-flow", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(payload)
-  }).then(r => r.json());
+  // NEW: Full strategy + meta setup flow via Netlify Function
+  static async runFullStrategyFlow({ adVariantId, userId, answers }) {
+    try {
+      if (!adVariantId || !userId) {
+        throw new Error('adVariantId und userId sind erforderlich, um den Full-Flow zu starten.');
+      }
+
+      const response = await fetch('/.netlify/functions/ad-strategy-full-preview', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          adVariantId,
+          userId,
+          answers,
+        }),
+      });
+
+      if (!response.ok) {
+        let errorPayload = null;
+        try {
+          errorPayload = await response.json();
+        } catch (_) {
+          errorPayload = await response.text();
+        }
+        console.error('[AdStrategyService][runFullStrategyFlow] HTTP error', {
+          status: response.status,
+          payload: errorPayload,
+        });
+        return {
+          data: null,
+          error: new Error('Full-Flow Anfrage fehlgeschlagen.'),
+        };
+      }
+
+      const data = await response.json();
+      return { data, error: null };
+    } catch (error) {
+      console.error('[AdStrategyService][runFullStrategyFlow] Unexpected error:', error);
+      return { data: null, error };
+    }
+  }
 }
 
 export default AdStrategyService;
+export const runFullStrategyFlow = AdStrategyService.runFullStrategyFlow;
