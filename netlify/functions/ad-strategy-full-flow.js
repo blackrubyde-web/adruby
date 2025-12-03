@@ -205,7 +205,6 @@ WICHTIG:
           content: prompt,
         },
       ],
-      // Erzwinge JSON-Ausgabe
       response_format: { type: "json_object" },
       temperature: 0.3,
       max_tokens: 2000,
@@ -221,12 +220,11 @@ WICHTIG:
       throw new Error("Empty OpenAI completion content");
     }
 
-    // JSON sicher parsen
     try {
       openAIResult = JSON.parse(rawContent);
     } catch (parseErr) {
       console.error("[FullFlow][OpenAI] Failed to parse JSON", {
-        rawContent: rawContent.slice(0, 500), // trunc für Log
+        rawContent: rawContent.slice(0, 500),
         error: parseErr,
       });
       throw new Error(
@@ -257,7 +255,6 @@ WICHTIG:
     };
   }
 
-  // Defensive: falls OpenAI irgendwas Unerwartetes zurückgibt
   if (
     !openAIResult ||
     typeof openAIResult !== "object" ||
@@ -275,13 +272,19 @@ WICHTIG:
   }
 
   // --- 3) Meta Ads Setup in DB speichern -----------------------------------
-  console.log("[FullFlow] 3/3 Saving Meta Ads Setup…");
+  console.log("[FullFlow] 3/3 Saving Meta Ads Setup…", {
+    userId,
+    adVariantId,
+    strategyId: savedStrategy.id,
+  });
 
   let metaData;
   try {
     const { data, error } = await supabase
       .from("ad_meta_setup")
       .insert({
+        user_id: userId,              // <- WICHTIG: NOT NULL Spalte
+        ad_variant_id: adVariantId,   // <- Konsistent zur Strategie
         ad_strategy_id: savedStrategy.id,
         setup_data: openAIResult,
         created_at: new Date().toISOString(),
@@ -293,7 +296,10 @@ WICHTIG:
       console.error("[FullFlow] metaError", error);
       return {
         statusCode: 500,
-        body: JSON.stringify({ error: "Failed to save Meta Setup" }),
+        body: JSON.stringify({
+          error: "Failed to save Meta Setup",
+          details: error.message || error,
+        }),
       };
     }
 
@@ -307,6 +313,7 @@ WICHTIG:
       statusCode: 500,
       body: JSON.stringify({
         error: "Failed to save Meta Setup (exception)",
+        details: err.message || String(err),
       }),
     };
   }
