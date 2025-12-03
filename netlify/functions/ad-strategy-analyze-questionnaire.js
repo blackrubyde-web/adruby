@@ -337,7 +337,6 @@ Erstelle eine empfohlene Strategie für diese Kampagne mit folgenden Anforderung
       },
     },
     reasoning_effort: "high",
-    temperature: 0.4,
   });
 
   const raw = completion?.choices?.[0]?.message?.content || "{}";
