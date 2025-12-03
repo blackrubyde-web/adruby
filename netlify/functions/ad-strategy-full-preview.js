@@ -416,7 +416,6 @@ Halte dich strikt an das JSON-Schema.
       },
     });
 
-    // 🔍 Debug-Logging der rohen Output-Struktur
     const firstOutput = response.output?.[0] || null;
     const contents = firstOutput?.content || [];
 
@@ -432,34 +431,64 @@ Halte dich strikt an das JSON-Schema.
 
     let parsedJson = null;
 
-    // 🧠 1. Versuch: direktes JSON-Feld (falls zukünftige Versionen das nutzen)
+    // 1. Versuch: echtes JSON-Feld (future-proof)
     for (const item of contents) {
       if (item && typeof item === "object" && item.json) {
         parsedJson = item.json;
+        console.log("[FullFlow] Parsed JSON from content.json");
         break;
       }
     }
 
-    // 🧠 2. Versuch: JSON aus output_text.text.value rausparsen
+    // 2. Versuch: JSON aus output_text.text herausziehen (verschiedene SDK-Formate)
     if (!parsedJson) {
       for (const item of contents) {
-        if (
-          item &&
-          item.type === "output_text" &&
-          item.text &&
-          typeof item.text.value === "string"
-        ) {
-          const raw = item.text.value.trim();
-          try {
-            parsedJson = JSON.parse(raw);
-            console.log("[FullFlow] Parsed JSON from output_text.value");
-            break;
-          } catch (err) {
-            console.warn("[FullFlow] Failed to parse JSON from output_text", {
-              snippet: raw.slice(0, 120),
-              error: err.message,
-            });
+        if (!item || item.type !== "output_text" || !item.text) continue;
+
+        // Debug zum Text-Format
+        console.log("[FullFlow] Inspecting output_text item", {
+          textType: typeof item.text,
+          textKeys:
+            item.text && typeof item.text === "object"
+              ? Object.keys(item.text)
+              : null,
+          isArray: Array.isArray(item.text),
+        });
+
+        let raw = null;
+
+        // Fall 1: text ist direkt ein String
+        if (typeof item.text === "string") {
+          raw = item.text;
+        }
+        // Fall 2: text.value (Responses-API neues Format)
+        else if (typeof item.text.value === "string") {
+          raw = item.text.value;
+        }
+        // Fall 3: text ist Array von Objekten mit .text oder .value
+        else if (Array.isArray(item.text) && item.text.length > 0) {
+          if (typeof item.text[0] === "string") {
+            raw = item.text[0];
+          } else if (typeof item.text[0]?.text === "string") {
+            raw = item.text[0].text;
+          } else if (typeof item.text[0]?.value === "string") {
+            raw = item.text[0].value;
           }
+        }
+
+        if (!raw) continue;
+
+        raw = raw.trim();
+
+        try {
+          parsedJson = JSON.parse(raw);
+          console.log("[FullFlow] Parsed JSON from output_text");
+          break;
+        } catch (err) {
+          console.warn("[FullFlow] Failed to parse JSON from output_text", {
+            snippet: raw.slice(0, 200),
+            error: err.message,
+          });
         }
       }
     }
