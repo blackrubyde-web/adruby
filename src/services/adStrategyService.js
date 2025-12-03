@@ -1043,7 +1043,7 @@ Erstelle eine praxisnahe Meta Ads Manager Anleitung für 2025 mit konkreten Schr
     }
   }
 
-// ENHANCED: Get saved ad variants with strategy AND Meta Ads setup
+  // ENHANCED: Get saved ad variants with strategy AND Meta Ads setup
   static async getSavedAdVariants(userId) {
     if (!userId) {
       return { data: [], error: new Error('Missing userId for getSavedAdVariants') };
@@ -1051,52 +1051,20 @@ Erstelle eine praxisnahe Meta Ads Manager Anleitung für 2025 mit konkreten Schr
 
     try {
       const { data, error } = await supabase
-        ?.from('saved_ad_variants')
-        ?.select(`
-        id,
-        user_id,
-        saved_at,
-        is_favorite,
-        performance_data,
+        .from('saved_ad_variants')
+        .select(`
+        *,
         generated_ad:generated_ads (
-          id,
-          headline,
-          primary_text,
-          hook,
-          cta,
-          conversion_score,
-          estimated_ctr,
-          product:products (
-            id,
-            product_name,
-            industry,
-            tonality,
-            target_audience
-          )
+          *,
+          product:products (*)
         ),
         ad_strategy:ad_strategies (
-          id,
-          saved_ad_variant_id,
-          blueprint_key,
-          answers,
-          selected_strategy,
-          matching_score,
-          confidence_level,
-          ai_analysis,
-          status,
-          created_at,
-          meta_ads_setup:meta_ads_setups (
-            id,
-            campaign_config,
-            adsets_config,
-            ads_config,
-            recommendations,
-            created_at
-          )
+          *,
+          meta_ads_setup:meta_ads_setups (*)
         )
       `)
-        ?.eq('user_id', userId)
-        ?.order('saved_at', { ascending: false });
+        .eq('user_id', userId)
+        .order('created_at', { ascending: false });
 
       if (error) {
         console.error('[AdStrategyService][getSavedAdVariants] Supabase error:', error);

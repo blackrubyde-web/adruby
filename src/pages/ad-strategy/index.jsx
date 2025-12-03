@@ -759,7 +759,9 @@ const AdStrategy = ({ loadStrategies }) => {
                 </div>
               ) : savedAds?.length > 0 ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {savedAds?.map((variant) => (
+                  {savedAds?.map((variant) => {
+                    const savedDate = variant?.saved_at || variant?.created_at || variant?.inserted_at || null;
+                    return (
                     <motion.div
                       key={variant?.id}
                       className="bg-card border border-border rounded-lg p-6 hover:shadow-lg transition-shadow"
@@ -773,7 +775,9 @@ const AdStrategy = ({ loadStrategies }) => {
                             {variant?.generated_ad?.headline || variant?.variant_name}
                           </h3>
                           <p className="text-xs text-muted-foreground">
-                            Gespeichert: {new Date(variant?.saved_at)?.toLocaleDateString('de-DE')}
+                            {savedDate
+                              ? `Gespeichert: ${new Date(savedDate).toLocaleDateString('de-DE')}`
+                              : 'Gespeichert: Datum nicht verfügbar'}
                           </p>
                         </div>
                         {variant?.is_favorite && (
@@ -953,7 +957,8 @@ const AdStrategy = ({ loadStrategies }) => {
                         </div>
                       </div>
                     </motion.div>
-                  ))}
+                    );
+                  })}
                 </div>
               ) : (
                 <div className="text-center py-12">
