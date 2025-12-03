@@ -204,48 +204,46 @@ Gib ein JSON mit folgender Struktur zurück:
         },
       ],
       max_output_tokens: 2000,
-      // neues Schema: response_format -> text.format
+      // ACHTUNG: Responses-API → text.format mit name, strict, schema
       text: {
         format: {
           type: "json_schema",
-          json_schema: {
-            name: "meta_ads_setup",
-            strict: true,
-            schema: {
-              type: "object",
-              properties: {
-                campaign_config: {
+          name: "meta_ads_setup", // <- war vorher der fehlende Parameter
+          strict: true,
+          schema: {
+            type: "object",
+            properties: {
+              campaign_config: {
+                type: "object",
+                description: "Einstellungen auf Kampagnen-Ebene.",
+                additionalProperties: true,
+              },
+              adsets_config: {
+                type: "array",
+                description: "Liste aller Adset-Konfigurationen.",
+                items: {
                   type: "object",
-                  description: "Einstellungen auf Kampagnen-Ebene.",
-                  additionalProperties: true,
-                },
-                adsets_config: {
-                  type: "array",
-                  description: "Liste aller Adset-Konfigurationen.",
-                  items: {
-                    type: "object",
-                    additionalProperties: true,
-                  },
-                },
-                ads_config: {
-                  type: "array",
-                  description:
-                    "Liste aller Ad-Konfigurationen / Creatives.",
-                  items: {
-                    type: "object",
-                    additionalProperties: true,
-                  },
-                },
-                recommendations: {
-                  type: "object",
-                  description:
-                    "Zusätzliche Empfehlungen, Skalierungs- & Testing-Plan.",
                   additionalProperties: true,
                 },
               },
-              required: ["campaign_config", "adsets_config", "ads_config"],
-              additionalProperties: true,
+              ads_config: {
+                type: "array",
+                description:
+                  "Liste aller Ad-Konfigurationen / Creatives.",
+                items: {
+                  type: "object",
+                  additionalProperties: true,
+                },
+              },
+              recommendations: {
+                type: "object",
+                description:
+                  "Zusätzliche Empfehlungen, Skalierungs- & Testing-Plan.",
+                additionalProperties: true,
+              },
             },
+            required: ["campaign_config", "adsets_config", "ads_config"],
+            additionalProperties: true,
           },
         },
       },
