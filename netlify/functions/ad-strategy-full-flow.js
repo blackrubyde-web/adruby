@@ -3,7 +3,7 @@
  * Questionnaire → Save → Meta Ads Setup (OpenAI)
  */
 
-const { getSupabaseClient } = require("./_shared/sabaseClient");
+const { getSupabaseClient } = require("./_shared/supabaseClient");
 const OpenAI = require("openai");
 
 // --- OpenAI Client ----------------------------------------------------------
