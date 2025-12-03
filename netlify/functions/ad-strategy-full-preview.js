@@ -378,10 +378,10 @@ Halte dich strikt an das JSON-Schema.
           ],
         },
       ],
-      response_format: {
-        type: "json_schema",
-        json_schema: {
-          name: fullFlowSchema.name,
+      text: {
+        format: {
+          type: "json_schema",
+          name: fullFlowSchema.name || "full_strategy_and_meta_setup",
           strict: fullFlowSchema.strict,
           schema: fullFlowSchema.schema,
         },
