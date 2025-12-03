@@ -378,14 +378,12 @@ Halte dich strikt an das JSON-Schema.
           ],
         },
       ],
-      text: {
-        format: {
-          type: "json_schema",
-          name: fullFlowSchema.name || "full_strategy_and_meta_setup",
-          json_schema: {
-            strict: fullFlowSchema.strict,
-            schema: fullFlowSchema.schema,
-          },
+      response_format: {
+        type: "json_schema",
+        json_schema: {
+          name: fullFlowSchema.name,
+          strict: fullFlowSchema.strict,
+          schema: fullFlowSchema.schema,
         },
       },
     });
