@@ -353,11 +353,13 @@ Halte dich strikt an das JSON-Schema.
           content: [
             {
               type: "input_text",
-              text: "Erstelle eine vollständige Werbestrategie + Meta Ads Setup basierend auf diesen Daten. Antworte ausschließlich im JSON-Format nach Schema.",
+              text: "Erstelle eine vollständige Werbestrategie + Meta Ads Setup basierend auf diesen Daten. Antworte ausschließlich als JSON nach Schema.",
             },
             {
-              type: "input_json",
-              json: userPrompt,
+              type: "input_text",
+              text: `Hier sind alle relevanten Daten im JSON-Format:\n${JSON.stringify(
+                userPrompt
+              )}`,
             },
           ],
         },
