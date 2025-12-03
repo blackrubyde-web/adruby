@@ -168,22 +168,10 @@ Ziel:
 Gib ein JSON mit folgender Struktur zurück:
 
 {
-  "campaign_config": {
-    // Kampagnentyp, Gebotsstrategie, Conversion-Event, Naming-Konvention etc.
-  },
-  "adsets_config": [
-    {
-      // Zielgruppe, Placements, Budget, Bidding etc.
-    }
-  ],
-  "ads_config": [
-    {
-      // Creatives, Hooks, Copy-Varianten, Formate etc.
-    }
-  ],
-  "recommendations": {
-    // Skalierungsplan, Testing-Plan, Monitoring-Empfehlungen etc.
-  }
+  "campaign_config": { ... },
+  "adsets_config": [ ... ],
+  "ads_config": [ ... ],
+  "recommendations": { ... }
 }
 `;
 
@@ -204,11 +192,11 @@ Gib ein JSON mit folgender Struktur zurück:
         },
       ],
       max_output_tokens: 2000,
-      // ACHTUNG: Responses-API → text.format mit name, strict, schema
+      // Responses API structured output
       text: {
         format: {
           type: "json_schema",
-          name: "meta_ads_setup", // <- war vorher der fehlende Parameter
+          name: "meta_ads_setup",
           strict: true,
           schema: {
             type: "object",
@@ -228,8 +216,7 @@ Gib ein JSON mit folgender Struktur zurück:
               },
               ads_config: {
                 type: "array",
-                description:
-                  "Liste aller Ad-Konfigurationen / Creatives.",
+                description: "Liste aller Ad-Konfigurationen / Creatives.",
                 items: {
                   type: "object",
                   additionalProperties: true,
@@ -242,8 +229,15 @@ Gib ein JSON mit folgender Struktur zurück:
                 additionalProperties: true,
               },
             },
-            required: ["campaign_config", "adsets_config", "ads_config"],
-            additionalProperties: true,
+            // WICHTIG: strict:true verlangt additionalProperties:false auf Root
+            additionalProperties: false,
+            // WICHTIG: required muss alle Keys aus properties enthalten
+            required: [
+              "campaign_config",
+              "adsets_config",
+              "ads_config",
+              "recommendations",
+            ],
           },
         },
       },
