@@ -1,4 +1,4 @@
-// netlify/functions/_shared/openaiClient.js
+const OpenAI = require('openai');
 
 let cachedClient = null;
 
@@ -7,10 +7,10 @@ function getOpenAIClient() {
 
   const apiKey = process.env.OPENAI_API_KEY;
   if (!apiKey) {
-    throw new Error("OPENAI_API_KEY is not set");
+    console.error('[OpenAI] Missing OPENAI_API_KEY env var');
+    throw new Error('OPENAI_API_KEY not set');
   }
 
-  const OpenAI = require("openai");
   cachedClient = new OpenAI({ apiKey });
   return cachedClient;
 }

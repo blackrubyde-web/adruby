@@ -31,6 +31,7 @@ import AdRubyRegistration from './pages/ad-ruby-registration';
 import PaymentVerificationPage from './pages/payment-verification';
 import PaymentSuccess from './pages/payment-success';
 import AdminDashboard from './pages/admin-dashboard';
+import AIAnalysisPanel from './pages/ai-analysis';
 
 const Routes = () => {
   return (
@@ -68,6 +69,14 @@ const Routes = () => {
               element={
                 <ProtectedRoute>
                   <AppBuilderInterface />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/ai-analysis"
+              element={
+                <ProtectedRoute>
+                  <AIAnalysisPanel />
                 </ProtectedRoute>
               }
             />
