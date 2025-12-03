@@ -200,47 +200,149 @@ Gib ein JSON mit folgender Struktur zurück:
           schema: {
             type: "object",
             description: "Vollständiges Meta Ads Setup.",
-            // Root-Objekt: KEINE zusätzlichen Properties erlaubt
+            // Root-Objekt: KEINE zusätzlichen Properties
             additionalProperties: false,
             properties: {
               campaign_config: {
                 type: "object",
                 description: "Einstellungen auf Kampagnen-Ebene.",
-                // Kampagnen-Konfiguration flexibel halten
-                additionalProperties: true,
+                additionalProperties: false,
+                properties: {
+                  objective: { type: "string" },
+                  buying_type: { type: "string" },
+                  campaign_name: { type: "string" },
+                  budget_type: { type: "string" }, // z.B. "daily" oder "lifetime"
+                  daily_budget: { type: "number" },
+                  lifetime_budget: { type: "number" },
+                  bid_strategy: { type: "string" },
+                  special_ad_categories: {
+                    type: "array",
+                    items: { type: "string" },
+                  },
+                },
+                required: ["objective", "campaign_name"],
               },
+
               adsets_config: {
                 type: "array",
                 description: "Liste aller Adset-Konfigurationen.",
                 items: {
                   type: "object",
-                  // Adset-Objekte flexibel halten
-                  additionalProperties: true,
+                  additionalProperties: false,
+                  properties: {
+                    adset_name: { type: "string" },
+                    optimization_goal: { type: "string" },
+                    billing_event: { type: "string" },
+                    daily_budget: { type: "number" },
+                    start_time: { type: "string" },
+                    end_time: { type: "string" },
+                    audience: {
+                      type: "object",
+                      additionalProperties: false,
+                      properties: {
+                        locations: {
+                          type: "array",
+                          items: { type: "string" },
+                        },
+                        age_min: { type: "number" },
+                        age_max: { type: "number" },
+                        genders: {
+                          type: "array",
+                          items: { type: "string" },
+                        },
+                        interests: {
+                          type: "array",
+                          items: { type: "string" },
+                        },
+                        custom_audiences: {
+                          type: "array",
+                          items: { type: "string" },
+                        },
+                        lookalike_sources: {
+                          type: "array",
+                          items: { type: "string" },
+                        },
+                      },
+                      required: ["locations"],
+                    },
+                    placements: {
+                      type: "object",
+                      additionalProperties: false,
+                      properties: {
+                        type: { type: "string" }, // z.B. "automatic" oder "manual"
+                        include: {
+                          type: "array",
+                          items: { type: "string" },
+                        },
+                        exclude: {
+                          type: "array",
+                          items: { type: "string" },
+                        },
+                      },
+                    },
+                  },
+                  required: ["adset_name", "optimization_goal", "audience"],
                 },
               },
+
               ads_config: {
                 type: "array",
                 description: "Liste aller Ad-Konfigurationen / Creatives.",
                 items: {
                   type: "object",
-                  // Ad-Objekte flexibel halten
-                  additionalProperties: true,
+                  additionalProperties: false,
+                  properties: {
+                    ad_name: { type: "string" },
+                    format: { type: "string" }, // z.B. "single_image", "carousel", "video"
+                    primary_text: { type: "string" },
+                    headline: { type: "string" },
+                    description: { type: "string" },
+                    call_to_action: { type: "string" },
+                    destination_url: { type: "string" },
+                    image_urls: {
+                      type: "array",
+                      items: { type: "string" },
+                    },
+                    video_urls: {
+                      type: "array",
+                      items: { type: "string" },
+                    },
+                    hooks: {
+                      type: "array",
+                      items: { type: "string" },
+                    },
+                    angles: {
+                      type: "array",
+                      items: { type: "string" },
+                    },
+                  },
+                  required: ["ad_name", "format", "primary_text", "headline"],
                 },
               },
+
               recommendations: {
                 type: "object",
                 description:
                   "Zusätzliche Empfehlungen, Skalierungs- & Testing-Plan.",
-                // Empfehlungen flexibel halten
-                additionalProperties: true,
+                additionalProperties: false,
+                properties: {
+                  testing_plan: {
+                    type: "array",
+                    items: { type: "string" },
+                  },
+                  scaling_strategy: {
+                    type: "array",
+                    items: { type: "string" },
+                  },
+                  optimization_tips: {
+                    type: "array",
+                    items: { type: "string" },
+                  },
+                  notes: { type: "string" },
+                },
               },
             },
-            required: [
-              "campaign_config",
-              "adsets_config",
-              "ads_config",
-              "recommendations",
-            ],
+            required: ["campaign_config", "adsets_config", "ads_config", "recommendations"],
           },
         },
       },
