@@ -106,7 +106,13 @@ exports.handler = async (event) => {
   }
 
   if (!blueprint) {
-    console.warn("[FullFlow] No specific blueprint found, falling back to generic.");
+    console.error("[FullFlow] No matching blueprint found", { industry, goal });
+    return {
+      statusCode: 404,
+      body: JSON.stringify({
+        error: "Kein passender Strategy-Blueprint gefunden. Lege zuerst einen Blueprint für diese Branche/Ziel an.",
+      }),
+    };
   }
 
   console.log("[FullFlow] Loaded blueprint", {
@@ -367,8 +373,8 @@ Halte dich strikt an das JSON-Schema.
       text: {
         format: {
           type: "json_schema",
+          name: fullFlowSchema.name || "full_strategy_and_meta_setup",
           json_schema: {
-            name: fullFlowSchema.name,
             strict: fullFlowSchema.strict,
             schema: fullFlowSchema.schema,
           },
