@@ -241,38 +241,6 @@ const AdStrategy = ({ loadStrategies }) => {
       setIsStrategyFlowLoading(false);
     }
   };
-      const body = {
-        adVariantId: selectedAdForStrategy?.id,
-        userId: user?.id || user?.user?.id,
-        answers,
-        strategyRecommendation,
-        generatedAd: selectedAdForStrategy?.generated_ad
-      };
-
-      const res = await fetch("/.netlify/functions/ad-strategy-full-flow", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body)
-      });
-
-      if (!res.ok) throw new Error(`FullFlow failed: ${res.status}`);
-
-      const json = await res.json();
-
-      setStrategyResult(json.strategy.ai_analysis);
-      setMetaAdsSetupData(json.meta.setup_data);
-
-      // ONE overlay only
-      setShowStrategyFinder(true);
-      setShowMetaAdsSetup(true);
-
-    } catch (err) {
-      console.error("[FullFlow] error", err);
-      setAnalysisError(err.message);
-    } finally {
-      setIsStrategyFlowLoading(false);
-    }
-  };
 
   // Go to previous question
   const handlePreviousQuestion = () => {
