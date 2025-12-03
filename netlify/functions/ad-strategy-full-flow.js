@@ -3,7 +3,7 @@
  * Questionnaire → Save → Meta Ads Setup (OpenAI)
  */
 
-const { getSupabaseClient } = require("./_shared/supabaseClient");
+const { getSupabaseClient } = require("./_shared/sabaseClient");
 const OpenAI = require("openai");
 
 // --- OpenAI Client ----------------------------------------------------------
@@ -192,14 +192,16 @@ Gib ein JSON mit folgender Struktur zurück:
         },
       ],
       max_output_tokens: 2000,
-      // Responses API structured output
+      // Responses API structured output (ohne strict, damit flexible Objekte erlaubt sind)
       text: {
         format: {
           type: "json_schema",
           name: "meta_ads_setup",
-          strict: true,
           schema: {
             type: "object",
+            description: "Vollständiges Meta Ads Setup.",
+            // Root darf zusätzliche Felder enthalten (z. B. Debug-Infos der KI)
+            additionalProperties: true,
             properties: {
               campaign_config: {
                 type: "object",
@@ -229,9 +231,6 @@ Gib ein JSON mit folgender Struktur zurück:
                 additionalProperties: true,
               },
             },
-            // WICHTIG: strict:true verlangt additionalProperties:false auf Root
-            additionalProperties: false,
-            // WICHTIG: required muss alle Keys aus properties enthalten
             required: [
               "campaign_config",
               "adsets_config",
