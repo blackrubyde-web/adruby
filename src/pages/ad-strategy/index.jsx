@@ -251,12 +251,12 @@ const AdStrategy = ({ loadStrategies }) => {
 
       console.log('[AdStrategy][Frontend] Sending questionnaire payload', questionnairePayload);
 
-    const questionnaireRes = await fetch('/.netlify/functions/ad-strategy-analyze-questionnaire', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(questionnairePayload),
+      const questionnaireRes = await fetch('/.netlify/functions/ad-strategy-analyze-questionnaire', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(questionnairePayload),
       });
 
       if (!questionnaireRes.ok) {
@@ -269,7 +269,7 @@ const AdStrategy = ({ loadStrategies }) => {
       const questionnaireData = await questionnaireRes.json();
       console.log('[AdStrategy][Frontend][Questionnaire] Result:', questionnaireData);
 
-      const strategyFromApi = questionnaireData?.strategyRecommendation;
+      const strategyFromApi = questionnaireData?.strategyRecommendation || questionnaireData;
 
       if (!strategyFromApi?.strategy) {
         console.error('[AdStrategy][Frontend][Questionnaire] No strategy in response');
@@ -365,7 +365,9 @@ const AdStrategy = ({ loadStrategies }) => {
 
   // OPTIMIZED: Enhanced save strategy with immediate UI updates
   const handleSaveStrategy = async () => {
-    if (!strategyRecommendation?.strategy || !selectedAdForStrategy) {
+    const effectiveRecommendation = strategyRecommendation || strategyResult;
+
+    if (!effectiveRecommendation?.strategy || !selectedAdForStrategy) {
       setError('Keine Strategieempfehlung zum Speichern verfügbar');
       return;
     }
@@ -375,13 +377,13 @@ const AdStrategy = ({ loadStrategies }) => {
       const optimisticStrategyData = {
         id: `temp_${Date.now()}`, // Temporary ID
         ad_variant_id: selectedAdForStrategy?.id,
-        selected_strategy: strategyRecommendation?.strategy,
+        selected_strategy: effectiveRecommendation?.strategy,
         selected_strategy_data: {
-          title: strategyRecommendation?.strategy?.title,
-          description: strategyRecommendation?.strategy?.description
+          title: effectiveRecommendation?.strategy?.title,
+          description: effectiveRecommendation?.strategy?.description
         },
-        matching_score: strategyRecommendation?.score,
-        confidence_level: strategyRecommendation?.confidence,
+        matching_score: effectiveRecommendation?.score,
+        confidence_level: effectiveRecommendation?.confidence,
         created_at: new Date()?.toISOString()
       };
 
@@ -408,9 +410,9 @@ const AdStrategy = ({ loadStrategies }) => {
       try {
         const { error: saveError } = await AdStrategyService?.saveAdStrategy(
           selectedAdForStrategy?.id,
-          user?.id,
+          user?.id || user?.user?.id,
           answers,
-          strategyRecommendation
+          effectiveRecommendation
         );
         
         if (saveError) {

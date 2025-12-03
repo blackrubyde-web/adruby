@@ -418,39 +418,37 @@ Wähle die BESTE Strategie aus und erkläre detailliert warum.
       const { data, error } = await supabase
         ?.from('saved_ad_variants')
         ?.select(`
-          *,
+          id,
+          saved_at,
+          is_favorite,
+          performance_data,
           generated_ad:generated_ads(
             *,
-            product:products(
-              id,
-              product_name,
-              product_description,
-              industry,
-              target_audience,
-              main_benefits,
-              usp,
-              tonality
-            ),
-            strategy:strategies(
-              id,
-              title,
-              goal_type,
-              description,
-              performance_score
-            )
+            product:products(*)
           ),
           ad_strategy:ad_strategies(
-            *,
-            selected_strategy:strategies(*)
+            id,
+            ad_variant_id,
+            user_id,
+            selected_strategy,
+            selected_strategy_data,
+            ai_analysis,
+            matching_score,
+            confidence_level,
+            status,
+            created_at
           )
         `)
         ?.eq('user_id', userId)
         ?.order('saved_at', { ascending: false });
 
-      if (error) throw error;
+      if (error) {
+        console.error('[AdStrategyService][getSavedAdVariants] Supabase error:', error);
+        return { data: null, error };
+      }
       return { data, error: null };
     } catch (error) {
-      console.error('Error fetching saved ad variants:', error);
+      console.error('[AdStrategyService][getSavedAdVariants] Unexpected error:', error);
       return { data: null, error };
     }
   }
@@ -843,43 +841,26 @@ Wähle die BESTE Strategie aus und erkläre detailliert warum.
   // Save comprehensive ad strategy via Netlify Function
   static async saveAdStrategy(adVariantId, userId, answers, strategyRecommendation) {
     try {
-      const payload = {
-        adVariantId,
-        userId,
-        answers,
-        strategyRecommendation,
-      };
-
-      console.log('[AdStrategyService][saveAdStrategy] Request payload:', payload);
-
       const res = await fetch('/.netlify/functions/ad-strategy-save', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(payload),
+        body: JSON.stringify({ adVariantId, userId, answers, strategyRecommendation }),
       });
 
-      console.log('[AdStrategyService][saveAdStrategy] Response status:', res.status);
-
-      const text = await res.text();
-      let json = null;
-      try {
-        json = text ? JSON.parse(text) : null;
-      } catch (e) {
-        console.warn('[AdStrategyService][saveAdStrategy] Failed to parse JSON response, raw text:', text);
-      }
-
-      console.log('[AdStrategyService][saveAdStrategy] Parsed response:', json);
-
       if (!res.ok) {
-        const message =
-          (json && (json.error || json.message)) ||
-          `Failed to save strategy (HTTP ${res.status})`;
-        return { data: null, error: new Error(message) };
+        console.error('[AdStrategyService][saveAdStrategy] Failed', res.status);
+        return { data: null, error: new Error('Failed to save strategy') };
       }
 
-      return { data: json, error: null };
+      const data = await res.json();
+      console.log('[AdStrategyService][saveAdStrategy] Saved', {
+        id: data?.id,
+        ad_variant_id: data?.ad_variant_id,
+      });
+
+      return { data, error: null };
     } catch (err) {
       console.error('[AdStrategyService][saveAdStrategy] Request failed:', err);
       return { data: null, error: err };
@@ -1165,19 +1146,20 @@ Erstelle eine praxisnahe Meta Ads Manager Anleitung für 2025 mit konkreten Schr
       });
 
       if (!res.ok) {
-        const errorBody = await res.json().catch(() => ({}));
-        console.error('[AdStrategyService][MetaAdsSetup] Failed:', res.status, errorBody);
-        return {
-          data: null,
-          error: new Error(errorBody?.error || 'Meta Ads Setup request failed'),
-        };
+        const text = await res.text();
+        console.error('[AdStrategyService][MetaAdsSetup] Failed', res.status, text);
+        return { data: null, error: new Error('Failed to generate Meta Ads setup') };
       }
 
       const json = await res.json();
-      console.log('[AdStrategyService][MetaAdsSetup] Success:', json);
+      const setup = json?.setup || json;
+      console.log('[AdStrategyService][MetaAdsSetup] Generated', {
+        id: setup?.id,
+        ad_variant_id: setup?.ad_variant_id,
+      });
 
       return {
-        data: json?.setup || json,
+        data: setup,
         error: null,
       };
     } catch (error) {
@@ -1189,21 +1171,38 @@ Erstelle eine praxisnahe Meta Ads Manager Anleitung für 2025 mit konkreten Schr
 // ENHANCED: Get saved ad variants with strategy AND Meta Ads setup
   static async getSavedAdVariants(userId) {
     try {
-      const { data, error } = await supabase?.from('saved_ad_variants')?.select(`
-          *,
-          generated_ad:generated_ads(*,
-            product:products(*),
-            strategy:strategies(*)
-          ),
-          ad_strategy:ad_strategies(*,
-            selected_strategy:strategies(*),
-            meta_ads_setup:ad_meta_setup(*)
+      const { data, error } = await supabase
+        ?.from('saved_ad_variants')
+        ?.select(`
+          id,
+          saved_at,
+          is_favorite,
+          performance_data,
+          generated_ad:generated_ads(*),
+          ad_strategy:ad_strategies(
+            id,
+            ad_variant_id,
+            user_id,
+            selected_strategy,
+            selected_strategy_data,
+            ai_analysis,
+            matching_score,
+            confidence_level,
+            status,
+            created_at
           )
-        `)?.eq('user_id', userId)?.order('saved_at', { ascending: false });
+        `)
+        ?.eq('user_id', userId)
+        ?.order('saved_at', { ascending: false });
 
-      return { data, error };
+      if (error) {
+        console.error('[AdStrategyService][getSavedAdVariants] Supabase error:', error);
+        return { data: null, error };
+      }
+
+      return { data, error: null };
     } catch (error) {
-      console.error('Error fetching saved ad variants:', error);
+      console.error('[AdStrategyService][getSavedAdVariants] Unexpected error:', error);
       return { data: null, error };
     }
   }
