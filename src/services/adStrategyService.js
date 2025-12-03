@@ -183,37 +183,6 @@ Wähle die BESTE Strategie aus und erkläre detailliert warum.
     }
   }
 
-  /**
-   * Analyze the 7-step questionnaire via Netlify Function
-   * @param {Object} answers
-   * @param {Array} strategies
-   * @returns {Promise<{ data: any, error: any }>}
-   */
-  static async analyzeQuestionnaire(answers, strategies = []) {
-    try {
-      const res = await fetch('/.netlify/functions/ad-strategy-analyze-questionnaire', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ answers, strategies })
-      });
-
-      console.log('[AdStrategyService][analyzeQuestionnaire] Response status:', res?.status);
-
-      if (!res?.ok) {
-        const text = await res?.text?.();
-        console.error('[AdStrategyService][analyzeQuestionnaire] Error response:', res?.status, text);
-        return { data: null, error: new Error('Failed to analyze questionnaire') };
-      }
-
-      const json = await res?.json?.();
-      console.log('[AdStrategyService][analyzeQuestionnaire] Parsed JSON:', json);
-      return { data: json, error: null };
-    } catch (err) {
-      console.error('[AdStrategyService][analyzeQuestionnaire] Request failed:', err);
-      return { data: null, error: err };
-    }
-  }
-
   // Apply strategy to ad
   static async applyStrategyToAd(adId, strategyId) {
     try {
@@ -797,35 +766,6 @@ Wähle die BESTE Strategie aus und erkläre detailliert warum.
     }
   }
 
-  // Save comprehensive ad strategy via Netlify Function
-  static async saveAdStrategy(adVariantId, userId, answers, strategyRecommendation) {
-    try {
-      const res = await fetch('/.netlify/functions/ad-strategy-save', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ adVariantId, userId, answers, strategyRecommendation }),
-      });
-
-      if (!res.ok) {
-        console.error('[AdStrategyService][saveAdStrategy] Failed', res.status);
-        return { data: null, error: new Error('Failed to save strategy') };
-      }
-
-      const data = await res.json();
-      console.log('[AdStrategyService][saveAdStrategy] Saved', {
-        id: data?.id,
-        ad_variant_id: data?.ad_variant_id,
-      });
-
-      return { data, error: null };
-    } catch (err) {
-      console.error('[AdStrategyService][saveAdStrategy] Request failed:', err);
-      return { data: null, error: err };
-    }
-  }
-
   // NEW: Get ad strategy for specific ad variant
   static async getAdStrategy(adVariantId) {
     try {
@@ -1095,38 +1035,6 @@ Erstelle eine praxisnahe Meta Ads Manager Anleitung für 2025 mit konkreten Schr
     }
   }
 
-  // NEW: Generate Meta Ads Setup for existing strategy with ad data
-  static async generateMetaAdsSetupForStrategy(adVariantId) {
-    try {
-      const res = await fetch('/.netlify/functions/ad-strategy-generate-meta-setup', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ adVariantId }),
-      });
-
-      if (!res.ok) {
-        const text = await res.text();
-        console.error('[AdStrategyService][MetaAdsSetup] Failed', res.status, text);
-        return { data: null, error: new Error('Failed to generate Meta Ads setup') };
-      }
-
-      const json = await res.json();
-      const setup = json?.setup || json;
-      console.log('[AdStrategyService][MetaAdsSetup] Generated', {
-        id: setup?.id,
-        ad_variant_id: setup?.ad_variant_id,
-      });
-
-      return {
-        data: setup,
-        error: null,
-      };
-    } catch (error) {
-      console.error('[AdStrategyService][MetaAdsSetup] Error:', error);
-      return { data: null, error };
-    }
-  }
-
 // ENHANCED: Get saved ad variants with strategy AND Meta Ads setup
   static async getSavedAdVariants(userId) {
     try {
@@ -1204,29 +1112,28 @@ Erstelle eine praxisnahe Meta Ads Manager Anleitung für 2025 mit konkreten Schr
     }
   }
 
-  // Legacy compatibility methods (keep existing functionality working)
-  static async saveStrategyAssignment(adVariantId, userId, strategyId, answers, score) {
+  static async saveAdStrategy(adVariantId, userId, answers, strategyRecommendation) {
     try {
-      // Create recommendation object to match new format
-      const recommendation = {
-        strategy: { id: strategyId },
-        score: score || 0,
-        confidence: 'mittel',
-        reasoning: 'Legacy strategy assignment',
-        key_alignments: [],
-        implementation_recommendations: [],
-        alternatives: []
-      };
-
-      return await this.saveAdStrategy(adVariantId, userId, answers, recommendation);
+      const res = await runFullStrategyFlow({
+        adVariantId,
+        userId,
+        answers,
+        strategyRecommendation,
+      });
+      return { data: res, error: null };
     } catch (error) {
+      console.error('[AdStrategyService][saveAdStrategy] Flow failed:', error);
       return { data: null, error };
     }
   }
+}
 
-  static async getStrategyAssignment(adVariantId) {
-    return await this.getAdStrategy(adVariantId);
-  }
+export async function runFullStrategyFlow(payload) {
+  return fetch("/.netlify/functions/ad-strategy-full-flow", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload)
+  }).then(r => r.json());
 }
 
 export default AdStrategyService;
