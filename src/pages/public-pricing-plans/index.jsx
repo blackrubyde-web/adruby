@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Check, Star, Linkedin, Twitter, Instagram, Shield, CreditCard, Headphones, ArrowRight } from 'lucide-react';
@@ -38,109 +38,87 @@ const PublicPricingPlans = () => {
   };
 
   const pricingPlans = [
-  {
-    name: 'Starter',
-    monthlyPrice: 19.99,
-    annualPrice: 15.99,
-    popular: false,
-    features: [
-    '50 KI-Ad-Generierungen / Monat',
-    'Zugriff auf Facebook Ads Library Analyse',
-    'Basis-Support',
-    'Standard-Templates',
-    'Performance-Tracking',
-    'E-Mail Support'],
-
-    buttonText: 'Jetzt starten',
-    description: 'Perfekt für kleine Unternehmen und Einzelunternehmer'
-  },
-  {
-    name: 'Pro',
-    monthlyPrice: 39.99,
-    annualPrice: 31.99,
-    popular: true,
-    features: [
-    '200 KI-Ad-Generierungen / Monat',
-    'Voller Zugriff auf Ad-Analyse + KI-Ad-Builder',
-    'Priorisierter Support',
-    'Teamfunktion (mehrere User)',
-    'Premium Templates',
-    'Erweiterte Analytics',
-    'API-Zugriff',
-    'White-Label Option'],
-
-    buttonText: 'Pro buchen',
-    description: 'Ideal für Marketing-Teams und Agenturen'
-  }];
-
-
-  const testimonials = [
-  {
-    name: "Alexander Müller",
-    company: "Digital Marketing Pro",
-    image: "https://images.unsplash.com/photo-1692610310099-97dd0b6f0d73",
-    alt: "Professional man with brown hair in business suit smiling confidently",
-    quote: "Der Pro-Plan hat sich bereits im ersten Monat amortisiert. Unser ROAS ist um 280% gestiegen.",
-    rating: 5
-  },
-  {
-    name: "Sophia Wagner",
-    company: "E-Commerce Solutions",
-    image: "https://images.unsplash.com/photo-1683203438694-b428d712b8da",
-    alt: "Professional woman with blonde hair smiling at camera in business attire",
-    quote: "Das Preis-Leistungs-Verhältnis ist unschlagbar. Wir sparen 20+ Stunden pro Woche.",
-    rating: 5
-  },
-  {
-    name: "Markus Fischer",
-    company: "Growth Marketing GmbH",
-    image: "https://images.unsplash.com/photo-1686434538659-bb72333a1054",
-    alt: "Professional man with dark hair wearing glasses and business suit smiling",
-    quote: "Von Anfang an überzeugt. Die KI-Analyse ist präziser als jede manuelle Recherche.",
-    rating: 5
-  }];
-
-
-  const faqData = [
-  {
-    question: "Kann ich meinen Plan jederzeit ändern?",
-    answer: "Ja, du kannst jederzeit zwischen den Plänen wechseln. Bei einem Upgrade zahlst du nur die Differenz für den verbleibenden Zeitraum."
-  },
-  {
-    question: "Was passiert, wenn ich mehr als mein monatliches Limit benötige?",
-    answer: "Du erhältst eine Benachrichtigung, wenn du 80% deines Limits erreicht hast. Du kannst dann entweder upgraden oder zusätzliche Credits kaufen."
-  },
-  {
-    question: "Gibt es wirklich eine 14-tägige Geld-zurück-Garantie?",
-    answer: "Absolut! Wenn du nicht zufrieden bist, erstatten wir dir den vollen Betrag innerhalb von 14 Tagen nach der Anmeldung."
-  },
-  {
-    question: "Welche Zahlungsmethoden akzeptiert ihr?",
-    answer: "Wir akzeptieren alle gängigen Kreditkarten, PayPal, SEPA-Lastschrift und Überweisung. Alle Zahlungen sind SSL-verschlüsselt."
-  },
-  {
-    question: "Kann ich den Service vor dem Kauf testen?",
-    answer: "Ja! Jeder neue Nutzer erhält 10 kostenlose KI-Ad-Generierungen zum Testen aller Funktionen."
-  }];
-
+    {
+      name: 'AdRuby Pro',
+      monthlyPrice: 30,
+      annualPrice: 25,
+      popular: true,
+      features: [
+        'Von Idee zu laufender Meta Kampagne in Minuten',
+        'Unbegrenzte Strategien für deine Produkte und Offers',
+        'Hooks, Copy und Creative-Ideen auf Knopfdruck',
+        'Meta Setup Empfehlungen & Testing-Frameworks',
+        '7 Tage kostenlos testen, danach monatlich kündbar'
+      ],
+      buttonText: 'Jetzt 7 Tage kostenlos testen',
+      description: 'Dein Meta Ads OS: Strategie, Creatives, Setup'
+    }
+  ];
 
   const comparisonFeatures = [
-  { feature: 'KI-Ad-Generierungen', starter: '50/Monat', pro: '200/Monat' },
-  { feature: 'Facebook Ads Library', starter: '✓', pro: '✓' },
-  { feature: 'Performance Analytics', starter: 'Basis', pro: 'Erweitert' },
-  { feature: 'Support', starter: 'E-Mail', pro: 'Priorisiert' },
-  { feature: 'Team-Mitglieder', starter: '1', pro: 'Unbegrenzt' },
-  { feature: 'API-Zugriff', starter: '✗', pro: '✓' },
-  { feature: 'White-Label', starter: '✗', pro: '✓' }];
+    { feature: 'Strategie-Generator', starter: '—', pro: 'Voller Zugriff' },
+    { feature: 'Meta Setup Empfehlungen', starter: '—', pro: 'Ja' },
+    { feature: 'Hooks & Ad Copy', starter: 'Begrenzt', pro: 'Unlimitiert' },
+    { feature: 'Testing-Frameworks', starter: '—', pro: 'Ja, ROAS/CPA-basiert' },
+    { feature: 'Credits', starter: 'Add-on', pro: 'Inklusive Basis + Add-on möglich' },
+    { feature: 'Support', starter: 'Standard', pro: 'Priorisiert' }
+  ];
 
+  const testimonials = [
+    {
+      name: 'Lena Fischer',
+      company: 'D2C Brand',
+      image: 'https://images.unsplash.com/photo-1692610310099-97dd0b6f0d73',
+      alt: 'Marketing Managerin',
+      quote: 'Wir erstellen Strategien und Ads in Minuten statt Tagen. ROAS stabilisiert sich schneller als mit Agentur-Hopping.',
+      rating: 5
+    },
+    {
+      name: 'Marc Hoffmann',
+      company: 'Performance Agentur',
+      image: 'https://images.unsplash.com/photo-1683203438694-b428d712b8da',
+      alt: 'Agentur Lead',
+      quote: 'AdRuby ist unser Meta-Framework: Copy, Hooks, Setups – weniger Abstimmungen, mehr Tests pro Woche.',
+      rating: 5
+    },
+    {
+      name: 'Sarah König',
+      company: 'Coaching & Kurse',
+      image: 'https://images.unsplash.com/photo-1686434538659-bb72333a1054',
+      alt: 'Coach',
+      quote: 'Funnel-Plan, Retargeting, Creatives – alles klar strukturiert. Preis ist ein No-Brainer gegen jeden schwachen Kampagnenmonat.',
+      rating: 5
+    }
+  ];
 
-  const toggleFaq = (index) => {
-    setOpenFaq(openFaq === index ? null : index);
-  };
+  const faqData = [
+    {
+      question: 'Wie funktioniert die 7-Tage-Testphase?',
+      answer: 'Du startest AdRuby Pro, testest 7 Tage ohne Risiko und kannst jederzeit kündigen. Wenn es passt, läuft der Monat für 30 € weiter.'
+    },
+    {
+      question: 'Kann ich jederzeit kündigen?',
+      answer: 'Ja, monatlich kündbar. Du behältst deine Strategien im Account und kannst jederzeit zurückkommen.'
+    },
+    {
+      question: 'Was passiert mit meinen Strategien, wenn ich kündige?',
+      answer: 'Sie bleiben gespeichert. Reaktivieren und weiter nutzen ist jederzeit möglich.'
+    },
+    {
+      question: 'Wie funktionieren Credits genau?',
+      answer: 'Credits nutzt du für zusätzliche Analysen/Generierungen, wenn du viele Varianten parallel brauchst. Basis-Features bleiben im Abo.'
+    },
+    {
+      question: 'Für wen lohnt sich AdRuby finanziell wirklich?',
+      answer: 'Für jede:n, der Meta Ads ernsthaft fährt: 30 € sind weniger als ein schwacher Kampagnenmonat oder ein Agentur-Retainer.'
+    },
+    {
+      question: 'Welche Zahlungsmethoden werden unterstützt?',
+      answer: 'Kreditkarte und gängige Zahlungsmethoden über unseren Zahlungsanbieter. Sicher und schnell.'
+    }
+  ];
 
-  const getCurrentPrice = (plan) => {
-    return billingPeriod === 'monthly' ? plan.monthlyPrice : plan.annualPrice;
-  };
+  const getCurrentPrice = (plan) => (billingPeriod === 'monthly' ? plan.monthlyPrice : plan.annualPrice);
 
   const getSavings = (plan) => {
     if (billingPeriod === 'annual') {
@@ -149,6 +127,66 @@ const PublicPricingPlans = () => {
     }
     return 0;
   };
+
+  const toggleFaq = (index) => {
+    setOpenFaq(openFaq === index ? null : index);
+  };
+
+  useEffect(() => {
+    const seo = {
+      title: 'AdRuby Preise – KI-basiertes Meta Ads OS ab 30 € / Monat',
+      description:
+        'AdRuby bietet dir ein KI-basiertes Meta Ads OS ab ca. 30 € pro Monat. 7 Tage kostenlos testen, monatlich kündbar, inklusive Strategie-Generator, Ad Copy & Meta Setups.',
+      url: 'https://adruby.de/preise',
+      image: '/assets/images/Screenshot_2025-10-21_000636-removebg-preview-1762544374259.png'
+    };
+
+    const upsertMeta = (key, value, attr = 'name') => {
+      if (!value) return;
+      let tag = document.querySelector(`meta[${attr}="${key}"]`);
+      if (!tag) {
+        tag = document.createElement('meta');
+        tag.setAttribute(attr, key);
+        document.head.appendChild(tag);
+      }
+      tag.setAttribute('content', value);
+    };
+
+    document.title = seo.title;
+    upsertMeta('description', seo.description);
+    upsertMeta('og:title', seo.title, 'property');
+    upsertMeta('og:description', seo.description, 'property');
+    upsertMeta('og:type', 'website', 'property');
+    upsertMeta('og:url', seo.url, 'property');
+    upsertMeta('og:image', seo.image, 'property');
+
+    const scriptId = 'adruby-pricing-ldjson';
+    let scriptTag = document.getElementById(scriptId);
+    if (!scriptTag) {
+      scriptTag = document.createElement('script');
+      scriptTag.type = 'application/ld+json';
+      scriptTag.id = scriptId;
+      document.head.appendChild(scriptTag);
+    }
+    const ldJson = {
+      '@context': 'https://schema.org',
+      '@type': 'Product',
+      name: 'AdRuby Pro',
+      description: 'KI-basiertes Meta Ads OS für E-Commerce, Agenturen und Coaches.',
+      brand: {
+        '@type': 'Brand',
+        name: 'AdRuby'
+      },
+      offers: {
+        '@type': 'Offer',
+        priceCurrency: 'EUR',
+        price: '30',
+        availability: 'https://schema.org/InStock',
+        url: seo.url
+      }
+    };
+    scriptTag.textContent = JSON.stringify(ldJson);
+  }, []);
 
   return (
     <>
@@ -164,13 +202,11 @@ const PublicPricingPlans = () => {
 
           <div className="max-w-5xl mx-auto text-center space-y-4">
             <motion.h1 variants={itemVariants} className="text-[clamp(2.4rem,6vw,3.6rem)] font-bold text-black">
-              Wähle deinen 
-              <span className="text-[#E50914]"> BlackRuby</span> Plan
+              Preise für AdRuby – Meta Ads Power ohne Agenturpreise
             </motion.h1>
             
             <motion.p variants={itemVariants} className="text-[clamp(1.05rem,3vw,1.3rem)] text-gray-700 max-w-3xl mx-auto leading-relaxed">
-              Starte mit professionellen KI-generierten Ads und skaliere dein Marketing auf das nächste Level. 
-              14 Tage Geld-zurück-Garantie.
+              AdRuby kostet weniger als ein schwacher Kampagnenmonat – und gibt dir Strategien, Creatives und Setups, die deinen ROAS und CPA nach vorn bringen. 7 Tage kostenlos testen, danach monatlich kündbar.
             </motion.p>
 
             {/* Billing Toggle */}
@@ -282,7 +318,7 @@ const PublicPricingPlans = () => {
 
           <div className="max-w-5xl mx-auto">
             <motion.h2 variants={itemVariants} className="text-[clamp(2rem,4vw,2.6rem)] font-bold text-center text-black mb-8 sm:mb-12">
-              Detaillierter Vergleich
+              AdRuby Pro im Überblick
             </motion.h2>
             
             <motion.div variants={itemVariants} className="bg-white rounded-xl shadow-lg overflow-hidden">
@@ -324,9 +360,9 @@ const PublicPricingPlans = () => {
                 <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mb-4">
                   <Shield className="text-green-600" size={32} />
                 </div>
-                <h3 className="text-xl font-semibold mb-2">14-Tage Garantie</h3>
+                <h3 className="text-xl font-semibold mb-2">7-Tage Test</h3>
                 <p className="text-gray-600">
-                  Nicht zufrieden? Geld zurück, ohne Wenn und Aber.
+                  Starte ohne Risiko. Kündige jederzeit, wenn es nicht passt.
                 </p>
               </motion.div>
 
@@ -336,7 +372,7 @@ const PublicPricingPlans = () => {
                 </div>
                 <h3 className="text-xl font-semibold mb-2">Sichere Zahlung</h3>
                 <p className="text-gray-600">
-                  SSL-verschlüsselt, DSGVO-konform, alle Zahlungsarten.
+                  SSL-verschlüsselt über unseren Zahlungsanbieter.
                 </p>
               </motion.div>
 
@@ -344,9 +380,9 @@ const PublicPricingPlans = () => {
                 <div className="w-16 h-16 bg-purple-100 rounded-full flex items-center justify-center mb-4">
                   <Headphones className="text-purple-600" size={32} />
                 </div>
-                <h3 className="text-xl font-semibold mb-2">Deutscher Support</h3>
+                <h3 className="text-xl font-semibold mb-2">Support, der versteht</h3>
                 <p className="text-gray-600">
-                  Kompetente Hilfe auf Deutsch, wenn du sie brauchst.
+                  Hilfe von Leuten, die Meta Ads täglich fahren.
                 </p>
               </motion.div>
             </div>
@@ -363,7 +399,7 @@ const PublicPricingPlans = () => {
 
           <div className="max-w-6xl mx-auto px-4">
             <motion.h2 variants={itemVariants} className="text-3xl font-bold text-center text-black mb-12">
-              Das sagen unsere Kunden über den Wert
+              Was Nutzer:innen an AdRuby schätzen
             </motion.h2>
             
             <div className="grid lg:grid-cols-3 gap-8">
@@ -410,7 +446,7 @@ const PublicPricingPlans = () => {
 
           <div className="max-w-4xl mx-auto px-4">
             <motion.h2 variants={itemVariants} className="text-3xl font-bold text-center text-black mb-12">
-              Häufig gestellte Fragen
+              Häufige Fragen zu Preisen & Testphase
             </motion.h2>
             
             <motion.div variants={itemVariants} className="space-y-4">
@@ -454,11 +490,11 @@ const PublicPricingPlans = () => {
 
           <div className="max-w-4xl mx-auto px-4 text-center">
             <motion.h2 variants={itemVariants} className="text-4xl lg:text-5xl font-bold mb-6">
-              Starte heute – deine ersten 10 Ads sind kostenlos
+              Bereit, deine Meta Ads profitabel zu skalieren?
             </motion.h2>
             
             <motion.p variants={itemVariants} className="text-xl mb-8 opacity-90">
-              Teste BlackRuby risikofrei und entdecke, wie KI-generierte Ads dein Marketing revolutionieren.
+              AdRuby Pro kostet weniger als ein Agentur-Call – und liefert dir Strategien, Ads und Setups, die ROAS und CPA bewegen.
             </motion.p>
             
             <motion.div variants={itemVariants} className="flex flex-col sm:flex-row gap-4 justify-center">
@@ -466,14 +502,14 @@ const PublicPricingPlans = () => {
                 onClick={handleFreeTrial}
                 className="bg-white text-[#E50914] px-8 py-4 rounded-lg font-bold text-lg hover:bg-gray-100 transition-colors duration-300 shadow-lg">
 
-                Jetzt kostenlos ausprobieren
+                Jetzt 7 Tage kostenlos testen
               </button>
               
               <button
                 onClick={() => handleStartPlan('Pro')}
                 className="bg-transparent border-2 border-white text-white px-8 py-4 rounded-lg font-bold text-lg hover:bg-white hover:text-[#E50914] transition-colors duration-300">
 
-                Direkt zum Pro-Plan
+                Demo-Video ansehen
               </button>
             </motion.div>
 

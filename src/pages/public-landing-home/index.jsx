@@ -1,19 +1,68 @@
-import React from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { PlayCircle, Star, ArrowRight, CheckCircle, Brain, BarChart3, TrendingUp, Target, Zap, Award } from 'lucide-react';
+import { PlayCircle, Star, CheckCircle, Brain, BarChart3, Target, Zap, Award } from 'lucide-react';
 import Header from './components/Header';
 
 const PublicLandingHome = () => {
-  const navigate = useNavigate();
-
-  const handleStartFreeTrial = () => {
-    navigate('/ad-ruby-registration');
+  const handleWatchDemo = () => {
+    // Placeholder action for the demo video CTA
+    console.log('Demo-Video ansehen');
   };
 
-  const handleGoogleLogin = () => {
-    navigate('/ad-ruby-registration');
-  };
+  useEffect(() => {
+    const seo = {
+      title: 'AdRuby – KI-basiertes Meta Ads OS für E-Commerce, Agenturen & Coaches',
+      description:
+        'AdRuby kombiniert KI, Strategien und Meta Ads Setups. Schreibe, teste und skaliere profitabel Facebook & Instagram Ads – wie eine Top-Agentur, ohne Agenturpreise.',
+      url: 'https://adruby.ai/',
+      image: '/assets/images/Screenshot_2025-10-21_000636-removebg-preview-1762544374259.png'
+    };
+
+    const upsertMeta = (key, value, attr = 'name') => {
+      if (!value) return;
+      let tag = document.querySelector(`meta[${attr}="${key}"]`);
+      if (!tag) {
+        tag = document.createElement('meta');
+        tag.setAttribute(attr, key);
+        document.head.appendChild(tag);
+      }
+      tag.setAttribute('content', value);
+    };
+
+    document.title = seo.title;
+    upsertMeta('description', seo.description);
+    upsertMeta('og:title', seo.title, 'property');
+    upsertMeta('og:description', seo.description, 'property');
+    upsertMeta('og:type', 'website', 'property');
+    upsertMeta('og:url', seo.url, 'property');
+    upsertMeta('og:image', seo.image, 'property');
+
+    const scriptId = 'adruby-structured-data';
+    let scriptTag = document.getElementById(scriptId);
+    if (!scriptTag) {
+      scriptTag = document.createElement('script');
+      scriptTag.type = 'application/ld+json';
+      scriptTag.id = scriptId;
+      document.head.appendChild(scriptTag);
+    }
+    const ldJson = {
+      '@context': 'https://schema.org',
+      '@type': 'SoftwareApplication',
+      name: 'AdRuby',
+      applicationCategory: 'Advertising, Marketing, Meta Ads',
+      operatingSystem: 'Web',
+      description: seo.description,
+      offers: {
+        '@type': 'Offer',
+        priceCurrency: 'EUR',
+        price: '30',
+        availability: 'https://schema.org/InStock'
+      },
+      url: seo.url
+    };
+    scriptTag.textContent = JSON.stringify(ldJson);
+  }, []);
 
   const containerVariants = {
     hidden: { opacity: 0 },
@@ -39,44 +88,186 @@ const PublicLandingHome = () => {
   };
 
   // Mock user avatars for social proof
-  const userAvatars = Array.from({ length: 8 }, (_, i) => ({
+  const userAvatars = Array.from({ length: 6 }, (_, i) => ({
     id: i,
     name: `User ${i + 1}`,
-    avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=user${i + 1}&backgroundColor=red,blue,green&clothing=blazer,hoodie,sweater`
+    avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=adruby${i + 1}&backgroundColor=red,blue,green&clothing=blazer,hoodie,sweater`
   }));
 
   // Partner/Brand logos (placeholder)
   const partnerBrands = [
-    "Mercedes-Benz", "Adidas", "BMW", "Zalando", "Otto", "MediaMarkt"
+    'Mercedes-Benz',
+    'Adidas',
+    'BMW',
+    'Zalando',
+    'Otto',
+    'MediaMarkt'
   ];
 
-  const features = [
-    {
-      icon: Brain,
-      title: "KI Ad Builder",
-      description: "Erstelle performante Anzeigen in Sekunden mit fortschrittlicher KI-Technologie."
-    },
-    {
-      icon: BarChart3,
-      title: "Campaign Insights",
-      description: "Detaillierte Analysen und Optimierungsvorschläge für maximale Performance."
-    },
+  const benefits = [
     {
       icon: Target,
-      title: "Strategy Generator",
-      description: "Automatische Strategieerstellung basierend auf erfolgreichen Mustern."
+      title: 'Strategie statt Zufalls-Ads',
+      description:
+        'AdRuby denkt in Funnel-Logik, Zielgruppen und Budgets – nicht in Zufalls-Kampagnen. Du bekommst exportierbare Meta Strategien, die ROAS und CPA klar im Blick haben.'
     },
     {
       icon: Zap,
-      title: "Creative Examples",
-      description: "Zugriff auf Millionen erfolgreicher Ad-Creatives zur Inspiration."
+      title: 'Creatives & Copy in Minuten',
+      description:
+        'Du gibst Produkt, Zielgruppe und Ziel ein – AdRuby generiert Hooks, Ad-Copy und Creative-Ideen mit Markt-Insights, damit du mehr Tests mit weniger Stress fährst.'
+    },
+    {
+      icon: Brain,
+      title: 'Meta Setup auf Autopilot',
+      description:
+        'Strukturierte Kampagnen-Setups, Budgetempfehlungen und Creative-Testing-Pläne – du setzt schneller um und stoppst, was ROAS killt.'
+    },
+    {
+      icon: BarChart3,
+      title: 'Aus Daten lernen, nicht raten',
+      description:
+        'AdRuby nutzt Wettbewerbs-Ads, deine Ergebnisse und Antworten, um Empfehlungen pro Test zu verbessern – weniger Raten, mehr Scaling.'
+    }
+  ];
+
+  const icpSegments = [
+    {
+      title: 'E-Commerce & D2C Brands',
+      description:
+        'Du investierst ernsthaft in Meta Ads, willst profitabel skalieren und schneller neue Creatives testen.',
+      link: '/meta-ads-tool-ecommerce',
+      bullets: [
+        'Scaling-Frameworks für D2C Funnels mit klaren Budgets',
+        'Produkt-Hooks, UGC-Ideen und Ad-Copy, die ROAS treiben',
+        'ROAS/CPA Alerts und Budget-Cluster nach Intent'
+      ]
+    },
+    {
+      title: 'Performance-Agenturen & Media Buyer',
+      description:
+        'Du willst mehr Kunden gleichzeitig betreuen, ohne in Copy- und Creative-Arbeit zu ersticken.',
+      link: '/meta-ads-tool-agenturen',
+      bullets: [
+        'Strategie-Templates pro Kunde speicherbar und wiederverwendbar',
+        'Schnelle Creative-Briefs & Copy-Blöcke für mehr Tests pro Woche',
+        'Meta-Setups, die Onboarding und Freigaben verkürzen'
+      ]
+    },
+    {
+      title: 'Coaches, Kurse & Info-Produkte',
+      description:
+        'Du hast ein gutes Angebot, aber deine Ads brechen, sobald du skalierst.',
+      link: '/meta-ads-tool-coaches',
+      bullets: [
+        'Storytelling-Hooks für High-Ticket-Angebote mit Proof',
+        'Retargeting-Strecken für Webinare und Evergreen-Funnel',
+        'Testpläne für kalte Zielgruppen, damit Skalierung hält'
+      ]
+    }
+  ];
+
+  const steps = [
+    {
+      title: '1. Ad & Produkt anlegen',
+      description:
+        'Du gibst Produkt, Ziel, Budget-Level und Zielgruppe ein oder importierst bestehende Ads. Fokus: ROAS/CPA-Ziel festlegen.'
+    },
+    {
+      title: '2. Fragen beantworten',
+      description:
+        'AdRuby stellt dir ein kurzes, smartes Fragen-Set zu Funnel, Risiko-Level und KPIs – damit das Setup zu deinem Scaling-Plan passt.'
+    },
+    {
+      title: '3. Strategie, Ads & Meta Setup erhalten',
+      description:
+        'Du bekommst eine komplette Strategie, Ad-Varianten und ein Setup zum Export – direkt im Meta Ads Manager umsetzbar.'
+    }
+  ];
+
+  const testimonials = [
+    {
+      quote:
+        'AdRuby liefert uns in Minuten ein komplettes Kampagnen-Setup. Wir testen 5x mehr Creatives pro Monat, ROAS steigt und Budget-Entscheidungen sind datenbasiert.',
+      author: 'Sarah Weber',
+      role: 'Marketing Director',
+      company: 'E-Commerce Boutique',
+      metric: '+35 % ROAS in 6 Wochen'
+    },
+    {
+      quote:
+        'Wir betreuen mehr Kunden parallel, ohne Qualität zu verlieren. Strategien, Copy und Setups liegen ready-to-use vor und sparen uns stundenlange Abstimmungen. Mehr Tests, weniger Burn.',
+      author: 'Marcus Klein',
+      role: 'Geschäftsführer',
+      company: 'Performance-Agentur',
+      metric: '5x mehr Creatives getestet'
+    },
+    {
+      quote:
+        'Von 2% auf 8% Conversion-Rate in vier Wochen. AdRuby zwingt uns, sauber zu testen, liefert Hooks und Zielgruppen auf Knopfdruck und hält den CPA unten.',
+      author: 'Lisa Hoffmann',
+      role: 'Founder',
+      company: 'Coaching & Education',
+      metric: '+300 % Conversions'
+    }
+  ];
+
+  const featureDetails = [
+    'KI-Strategie-Generator',
+    'Ad-Creative & Copy Generator',
+    'Meta Ads Setup Empfehlungen',
+    'Kampagnen- & Test-Pläne',
+    'Wettbewerbs-Analyse (Ads Inspiration)',
+    'Speicherbare Strategien & Varianten'
+  ];
+
+  const faqs = [
+    {
+      question: 'Ist AdRuby nur ein weiterer AI-Textgenerator?',
+      answer:
+        'Nein. AdRuby ist ein Meta Ads OS: Wettbewerbsdaten, deine Inputs und Ergebnisse werden zu Strategien, Creatives und Setups verbunden – keine losen Textschnipsel.'
+    },
+    {
+      question: 'Brauche ich trotzdem noch eine Agentur?',
+      answer:
+        'Wenn du Kapazität hast, ersetzt AdRuby viel Agenturarbeit. Mit Agentur liefert AdRuby Briefings, Tests und Setups, die Abstimmungen radikal verkürzen.'
+    },
+    {
+      question: 'Funktioniert das für meine Branche?',
+      answer:
+        'Ja. Fragen und Vorlagen passen sich an Produkt, Budget-Level und Risiko an – egal ob E-Com, Services oder Info-Produkte.'
+    },
+    {
+      question: 'Wie lange dauert es, bis ich Ergebnisse sehe?',
+      answer:
+        'Du erhältst in Minuten ein umsetzbares Setup. Erste Learnings kommen nach den ersten Tests – mit klaren ROAS/CPA-Signalen.'
+    },
+    {
+      question: 'Kann ich AdRuby erstmal testen?',
+      answer:
+        'Ja. Starte mit dem kostenlosen Testzugang – kein Risiko, jederzeit kündbar.'
+    },
+    {
+      question: 'Unterstützt AdRuby Teamarbeit?',
+      answer:
+        'Du kannst Strategien speichern, teilen und iterieren – inklusive einheitlicher Briefings für Creatives und Media Buyer.'
+    },
+    {
+      question: 'Wie passt AdRuby in meinen bestehenden Workflow?',
+      answer:
+        'AdRuby liefert Strategien, Ad-Varianten und Setups, die du direkt im Meta Ads Manager umsetzt. Dein Workflow bleibt, nur schneller und klarer.'
+    },
+    {
+      question: 'Welche Daten nutzt AdRuby?',
+      answer:
+        'Wir kombinieren deine Antworten, historische Performance und öffentliche Wettbewerbs-Ads, um Empfehlungen pro Testlauf zu verbessern.'
     }
   ];
 
   return (
     <>
       <Header />
-      <div className="min-h-screen bg-[#FAFAFA] text-[#000000] overflow-hidden">
+      <div className="min-h-screen bg-[#FAFAFA] text-[#0b0b0b]">
         <motion.div
           className="bg-[#C80000] text-white py-3 px-4 text-center text-sm font-medium relative"
           initial={{ y: -100 }}
@@ -90,443 +281,410 @@ const PublicLandingHome = () => {
         </motion.div>
 
         <main className="relative">
+          {/* HERO */}
           <motion.section
-            className="pt-14 pb-16 px-4 sm:px-6 lg:px-10 bg-[#FAFAFA]"
+            id="hero"
+            aria-label="Hero"
+            className="py-12 md:py-16 px-4 md:px-8 lg:px-16 bg-[#FAFAFA] scroll-mt-24"
             variants={containerVariants}
             initial="hidden"
             animate="visible"
           >
-            <div className="max-w-7xl mx-auto">
-              <div className="grid gap-12 lg:grid-cols-2 items-center">
-                
-                {/* Left Content */}
-                <div className="text-left space-y-6">
-                  
-                  {/* Main Headline */}
-                  <motion.h1 
-                    variants={itemVariants}
-                    className="text-[clamp(2.4rem,6vw,3.8rem)] font-bold leading-[1.1] tracking-tight text-[#000000]"
-                  >
-                    #1 meistgenutzte KI für{' '}
-                    <span className="text-[#C80000]">Werbeanzeigen</span>
-                  </motion.h1>
-                  
-                  {/* Subheadline */}
+            <div className="max-w-6xl mx-auto">
+              <div className="grid gap-10 md:gap-12 lg:grid-cols-2 items-center">
+                <div className="space-y-6">
                   <motion.p
                     variants={itemVariants}
-                    className="text-[clamp(1.05rem,3vw,1.35rem)] text-[#333333] leading-relaxed font-normal max-w-2xl"
+                    className="text-xs font-semibold uppercase tracking-[0.2em] text-[#C80000]"
                   >
-                    Generiere Ad-Banner, Texte, Fotoshootings und Videos, die deine Konkurrenz übertreffen.
+                    KI-basiertes Meta Ads OS für E-Commerce, Agenturen & Coaches
                   </motion.p>
-                  
-                  {/* CTA Buttons */}
+
+                  <motion.h1
+                    variants={itemVariants}
+                    className="text-3xl md:text-4xl lg:text-5xl font-bold leading-tight tracking-tight text-[#0b0b0b]"
+                  >
+                    Skaliere deine Meta Ads wie eine Top-Agentur – mit KI und klarer Strategie
+                  </motion.h1>
+
+                  <motion.p
+                    variants={itemVariants}
+                    className="text-base md:text-lg text-[#2c2c2c] leading-relaxed max-w-2xl space-y-3"
+                  >
+                    <span className="block">
+                      AdRuby ist dein Meta Ads Betriebssystem: Wettbewerbs-Insights, Creative-Testing, Copy und Meta Setup in einem Flow.
+                    </span>
+                    <span className="block">
+                      Du bekommst ROAS-orientierte Strategien, exportierbare Ads und Scaling-Playbooks in Minuten statt Tagen.
+                    </span>
+                  </motion.p>
+
                   <motion.div
                     variants={itemVariants}
-                    className="flex flex-col sm:flex-row gap-4"
+                    className="flex flex-col sm:flex-row gap-3 sm:gap-4 w-full"
                   >
-                    <motion.button
-                      onClick={handleGoogleLogin}
-                      className="w-full sm:w-auto bg-white border border-[#e0e0e0] text-[#000000] px-6 py-3 rounded-lg font-medium hover:bg-[#f9f9f9] transition-all duration-200 flex items-center justify-center gap-3 shadow-sm"
-                      whileHover={{ y: -1 }}
-                      whileTap={{ scale: 0.98 }}
-                    >
-                      <svg className="w-5 h-5" viewBox="0 0 24 24">
-                        <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
-                        <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
-                        <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
-                        <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
-                      </svg>
-                      Kostenlos mit Google starten
-                    </motion.button>
-                    
-                    <motion.button
-                      onClick={handleStartFreeTrial}
-                      className="w-full sm:w-auto bg-[#C80000] text-white px-6 py-3 rounded-lg font-medium hover:bg-[#a50000] transition-all duration-200"
-                      whileHover={{ y: -1 }}
-                      whileTap={{ scale: 0.98 }}
-                    >
-                      Jetzt kostenlos testen
-                    </motion.button>
+                    <motion.div whileHover={{ y: -1 }} whileTap={{ scale: 0.98 }} className="w-full sm:w-auto">
+                      <Link
+                        to="/ad-ruby-registration"
+                        className="w-full inline-flex items-center justify-center bg-[#C80000] text-white px-6 py-3 rounded-lg font-semibold hover:bg-[#a50000] transition-all duration-200 min-h-[44px]"
+                      >
+                        AdRuby kostenlos testen
+                      </Link>
+                    </motion.div>
+                    <motion.div whileHover={{ y: -1 }} whileTap={{ scale: 0.98 }} className="w-full sm:w-auto">
+                      <button
+                        type="button"
+                        onClick={handleWatchDemo}
+                        className="w-full sm:w-auto border border-[#d4d4d4] text-[#0b0b0b] px-6 py-3 rounded-lg font-semibold hover:bg-white transition-all duration-200 flex items-center justify-center gap-2 min-h-[44px]"
+                      >
+                        <PlayCircle size={20} />
+                        Demo-Video ansehen
+                      </button>
+                    </motion.div>
                   </motion.div>
 
-                  {/* Social Proof */}
+                  <motion.p
+                    variants={itemVariants}
+                    className="text-sm text-[#4a4a4a]"
+                  >
+                    Kein Risiko · Jederzeit kündbar · Für ROAS-getriebene Meta Ads Profis
+                  </motion.p>
+
                   <motion.div
                     variants={itemVariants}
-                    className="flex flex-col sm:flex-row items-start sm:items-center gap-4"
+                    className="flex flex-col gap-4"
                   >
-                    <div className="flex -space-x-2">
-                      {userAvatars?.slice(0, 6)?.map((user) => (
-                        <div
-                          key={user?.id}
-                          className="w-8 h-8 rounded-full border-2 border-white bg-gray-200 overflow-hidden"
-                        >
-                          <img 
-                            src={user?.avatar} 
-                            alt={`${user?.name} avatar`}
-                            className="w-full h-full object-cover"
-                          />
-                        </div>
-                      ))}
-                      <div className="w-8 h-8 rounded-full border-2 border-white bg-[#C80000] flex items-center justify-center text-xs text-white font-medium">
-                        +
+                    <div className="flex items-center gap-3">
+                      <div className="flex -space-x-2">
+                        {userAvatars.map((user) => (
+                          <div
+                            key={user.id}
+                            className="w-9 h-9 rounded-full border-2 border-white bg-gray-200 overflow-hidden"
+                          >
+                            <img
+                              src={user.avatar}
+                              alt={`Avatar von ${user.name}`}
+                              className="w-full h-full object-cover"
+                            />
+                          </div>
+                        ))}
+                      </div>
+                      <div className="text-sm text-[#4a4a4a]">
+                        Vertraut von Performance-Marketer:innen, E-Com Brands und Media Buyern
                       </div>
                     </div>
-                    <div className="text-sm text-[#666] leading-relaxed">
-                      <span className="font-semibold text-[#000000]">Über +3.000.000 Nutzer</span> weltweit vertrauen uns
-                    </div>
-                  </motion.div>
 
-                  {/* Partner Logos Section */}
-                  <motion.div
-                    variants={itemVariants}
-                    className="text-left"
-                  >
-                    <p className="text-sm text-[#666] mb-4 font-medium">
-                      Über 1 Milliarde Ad Creatives erstellt für Top-Marken:
-                    </p>
-                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-4">
-                      {partnerBrands?.map((brand, index) => (
-                        <div 
-                          key={index}
-                          className="px-4 py-2 bg-white rounded-lg border border-[#e0e0e0] text-sm text-[#666] font-medium shadow-sm"
-                        >
-                          {brand}
-                        </div>
-                      ))}
+                    <div>
+                      <p className="text-xs uppercase tracking-[0.15em] text-[#6b6b6b] mb-3">
+                        Marken, die AdRuby-Inspirationen nutzen
+                      </p>
+                      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-3">
+                        {partnerBrands.map((brand) => (
+                          <div
+                            key={brand}
+                            className="px-4 py-2 bg-white rounded-lg border border-[#ededed] text-sm text-[#3a3a3a] font-medium shadow-sm"
+                          >
+                            {brand}
+                          </div>
+                        ))}
+                      </div>
                     </div>
                   </motion.div>
                 </div>
 
-                {/* Right Content - Dashboard Preview */}
-                <div className="relative">
-                  <motion.div
-                    variants={itemVariants}
-                    className="relative"
-                  >
-                    <motion.div
-                      className="hidden md:block absolute -left-8 top-8 w-48 space-y-4 z-10"
-                      initial={{ x: -100, opacity: 0 }}
-                      animate={{ x: 0, opacity: 1 }}
-                      transition={{ duration: 0.8, delay: 0.6 }}
-                    >
-                      <div className="bg-[#1877F2] rounded-lg p-4 text-white text-sm shadow-lg">
-                        <div className="flex items-center gap-2 mb-3">
-                          <div className="w-6 h-6 bg-white rounded-full flex items-center justify-center">
-                            <span className="text-[#1877F2] font-bold text-xs">f</span>
-                          </div>
-                          <span className="font-medium">AdRuby</span>
-                        </div>
-                        <div className="bg-white/20 rounded h-20 mb-2 flex items-center justify-center">
-                          <span className="text-xs opacity-80">Ad Creative</span>
-                        </div>
-                        <p className="text-xs opacity-90">🚀 KI-generierte Ads mit 340% höherer CTR</p>
-                        <button className="mt-2 bg-white text-[#1877F2] px-3 py-1 rounded-md text-xs font-medium">
-                          Mehr erfahren
-                        </button>
-                      </div>
-
-                      <div className="bg-gradient-to-br from-[#833AB4] via-[#FD1D1D] to-[#FCB045] rounded-lg p-4 text-white text-sm shadow-lg">
-                        <div className="bg-white/20 rounded h-16 mb-2 flex items-center justify-center">
-                          <span className="text-xs opacity-80">Instagram Story</span>
-                        </div>
-                        <p className="text-xs opacity-90">✨ Performance-optimiert</p>
-                      </div>
-                    </motion.div>
-
-                    <div className="bg-white rounded-2xl border border-[#e0e0e0] shadow-xl p-6 sm:p-8 relative md:ml-8">
-                      
-                      {/* Dashboard Header */}
-                      <div className="flex items-center justify-between mb-8">
-                        <div className="flex items-center gap-3">
-                          <img 
-                            src="/assets/images/Screenshot_2025-10-21_000636-removebg-preview-1762544374259.png" 
-                            alt="AdRuby Dashboard Logo"
-                            className="w-6 h-6 object-contain"
-                          />
-                          <span className="font-semibold text-[#000000]">AdRuby Dashboard</span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <div className="w-2 h-2 bg-[#ff5f56] rounded-full"></div>
-                          <div className="w-2 h-2 bg-[#ffbd2e] rounded-full"></div>
-                          <div className="w-2 h-2 bg-[#27ca3f] rounded-full"></div>
-                        </div>
-                      </div>
-                      
-                      {/* Performance Metrics */}
-                      <div className="space-y-6">
-                        {/* KPIs Grid */}
-                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                          <div className="text-center p-4 bg-[#fafafa] rounded-lg">
-                            <div className="text-2xl font-bold text-[#C80000] mb-1">+340%</div>
-                            <div className="text-xs text-[#666]">CTR Steigerung</div>
-                          </div>
-                          <div className="text-center p-4 bg-[#fafafa] rounded-lg">
-                            <div className="text-2xl font-bold text-[#C80000] mb-1">4.2x</div>
-                            <div className="text-xs text-[#666]">ROAS</div>
-                          </div>
-                          <div className="text-center p-4 bg-[#fafafa] rounded-lg">
-                            <div className="text-2xl font-bold text-[#C80000] mb-1">-60%</div>
-                            <div className="text-xs text-[#666]">CPC Reduktion</div>
-                          </div>
-                        </div>
-                        
-                        {/* Chart Visualization */}
-                        <div className="space-y-3">
-                          <div className="flex justify-between items-center">
-                            <span className="text-sm font-medium text-[#000000]">Campaign Performance</span>
-                            <span className="text-xs text-[#666]">Letzte 30 Tage</span>
-                          </div>
-                          
-                          <div className="grid grid-cols-7 gap-1 h-20 items-end">
-                            {[35, 60, 45, 85, 70, 95, 80]?.map((height, index) => (
-                              <motion.div
-                                key={index}
-                                className="bg-[#C80000] rounded-sm"
-                                style={{ height: `${height}%` }}
-                                initial={{ height: 0 }}
-                                animate={{ height: `${height}%` }}
-                                transition={{ duration: 0.6, delay: 1 + index * 0.1 }}
-                              />
-                            ))}
-                          </div>
-                        </div>
-
-                        {/* Live Statistics */}
-                        <div className="flex items-center justify-between py-3 px-4 bg-green-50 rounded-lg">
-                          <div className="flex items-center gap-2">
-                            <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-                            <span className="text-sm text-green-700 font-medium">Live: +12 Conversions</span>
-                          </div>
-                          <span className="text-xs text-green-600">vor 2min</span>
-                        </div>
-                      </div>
-                    </div>
-                  </motion.div>
-                </div>
-              </div>
-            </div>
-          </motion.section>
-
-          {/* Features Section */}
-          <motion.section
-            className="py-24 px-4 bg-white"
-            variants={containerVariants}
-            initial="hidden"
-            whileInView="visible"
-            viewport={{ once: true, amount: 0.3 }}
-          >
-            <div className="max-w-6xl mx-auto">
-              
-              <motion.div variants={itemVariants} className="text-center mb-16">
-                <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold mb-6 text-[#000000]">
-                  KI-gestützte Ad-Erstellung für{' '}
-                  <span className="text-[#C80000]">maximale Performance</span>
-                </h2>
-                <p className="text-lg text-[#666] max-w-3xl mx-auto">
-                  Nutze fortschrittliche KI-Technologie, um Werbeanzeigen zu erstellen, 
-                  die deine Konkurrenz übertreffen und messbare Ergebnisse liefern.
-                </p>
-              </motion.div>
-
-              <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
-                {features?.map((feature, index) => (
-                  <motion.div
-                    key={index}
-                    variants={itemVariants}
-                    className="text-center p-6 rounded-xl bg-[#fafafa] hover:shadow-lg transition-all duration-300"
-                  >
-                    <div className="w-12 h-12 bg-[#C80000] rounded-lg flex items-center justify-center mb-6 mx-auto">
-                      <feature.icon className="text-white" size={24} />
-                    </div>
-                    
-                    <h3 className="text-xl font-bold mb-4 text-[#000000]">
-                      {feature?.title}
-                    </h3>
-                    
-                    <p className="text-[#666] leading-relaxed text-sm">
-                      {feature?.description}
-                    </p>
-                  </motion.div>
-                ))}
-              </div>
-            </div>
-          </motion.section>
-
-          {/* Animated Demo Preview */}
-          <motion.section
-            className="py-24 px-4 bg-[#fafafa]"
-            variants={containerVariants}
-            initial="hidden"
-            whileInView="visible"
-            viewport={{ once: true, amount: 0.3 }}
-          >
-            <div className="max-w-5xl mx-auto text-center">
-              
-              <motion.div variants={itemVariants} className="mb-12">
-                <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold mb-6 text-[#000000]">
-                  Sieh AdRuby in Aktion
-                </h2>
-                <p className="text-lg text-[#666] mb-8">
-                  Von der Idee zur performanten Anzeige in unter 60 Sekunden
-                </p>
-              </motion.div>
-
-              <motion.div 
-                variants={itemVariants}
-                className="bg-white rounded-2xl p-8 border border-[#e0e0e0] shadow-lg relative overflow-hidden"
-              >
-                {/* Animated Process Steps */}
-                <div className="grid md:grid-cols-3 gap-8 relative">
-                  
-                  {/* Step 1 */}
-                  <div className="text-center">
-                    <motion.div
-                      className="w-16 h-16 bg-[#C80000] rounded-full flex items-center justify-center mb-4 mx-auto"
-                      initial={{ scale: 0 }}
-                      animate={{ scale: 1 }}
-                      transition={{ duration: 0.5, delay: 0.2 }}
-                    >
-                      <Brain className="text-white" size={24} />
-                    </motion.div>
-                    <h3 className="font-bold text-[#000000] mb-2">1. KI Analyse</h3>
-                    <p className="text-sm text-[#666]">Marktdaten werden analysiert</p>
-                  </div>
-
-                  {/* Arrow */}
-                  <div className="hidden md:flex items-center justify-center">
-                    <ArrowRight className="text-[#C80000]" size={24} />
-                  </div>
-
-                  {/* Step 2 */}
-                  <div className="text-center">
-                    <motion.div
-                      className="w-16 h-16 bg-[#C80000] rounded-full flex items-center justify-center mb-4 mx-auto"
-                      initial={{ scale: 0 }}
-                      animate={{ scale: 1 }}
-                      transition={{ duration: 0.5, delay: 0.4 }}
-                    >
-                      <Zap className="text-white" size={24} />
-                    </motion.div>
-                    <h3 className="font-bold text-[#000000] mb-2">2. Ad Generation</h3>
-                    <p className="text-sm text-[#666]">Optimierte Anzeigen erstellt</p>
-                  </div>
-
-                  {/* Arrow */}
-                  <div className="hidden md:flex items-center justify-center">
-                    <ArrowRight className="text-[#C80000]" size={24} />
-                  </div>
-
-                  {/* Step 3 */}
-                  <div className="text-center">
-                    <motion.div
-                      className="w-16 h-16 bg-[#C80000] rounded-full flex items-center justify-center mb-4 mx-auto"
-                      initial={{ scale: 0 }}
-                      animate={{ scale: 1 }}
-                      transition={{ duration: 0.5, delay: 0.6 }}
-                    >
-                      <TrendingUp className="text-white" size={24} />
-                    </motion.div>
-                    <h3 className="font-bold text-[#000000] mb-2">3. Performance</h3>
-                    <p className="text-sm text-[#666]">Maximale ROI erreicht</p>
-                  </div>
-                </div>
-
-                {/* Play Button Overlay */}
                 <motion.div
-                  className="absolute inset-0 bg-black/5 flex items-center justify-center cursor-pointer hover:bg-black/10 transition-colors"
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                  onClick={() => console.log('Demo video')}
+                  variants={itemVariants}
+                  className="relative w-full"
                 >
-                  <div className="w-20 h-20 bg-[#C80000] rounded-full flex items-center justify-center shadow-lg">
-                    <PlayCircle className="text-white ml-1" size={32} />
-                  </div>
-                </motion.div>
-              </motion.div>
-            </div>
-          </motion.section>
-
-          {/* Testimonials Carousel */}
-          <motion.section
-            className="py-24 px-4 bg-white"
-            variants={containerVariants}
-            initial="hidden"
-            whileInView="visible"
-            viewport={{ once: true, amount: 0.3 }}
-          >
-            <div className="max-w-6xl mx-auto">
-              
-              <motion.div variants={itemVariants} className="text-center mb-16">
-                <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold mb-6 text-[#000000]">
-                  Was unsere Kunden sagen
-                </h2>
-                <p className="text-lg text-[#666]">
-                  Über 3 Millionen Marketer vertrauen auf AdRuby
-                </p>
-              </motion.div>
-
-              <div className="grid lg:grid-cols-3 gap-8">
-                {[
-                  {
-                    quote: "AdRuby hat unsere CTR um 340% gesteigert und spart uns täglich Stunden an manueller Arbeit. Die KI versteht unsere Zielgruppe besser als wir selbst.",
-                    author: "Sarah Weber",
-                    role: "Marketing Director",
-                    company: "E-Commerce Boutique",
-                    avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=sarah&backgroundColor=red&clothing=blazer",
-                    rating: 5,
-                    metric: "+340% CTR"
-                  },
-                  {
-                    quote: "Die automatische Strategieerstellung hat unser Marketing revolutioniert. Wir erreichen jetzt Zielgruppen, die wir vorher nie erreicht hätten.",
-                    author: "Marcus Klein", 
-                    role: "Geschäftsführer",
-                    company: "Digital Marketing Agentur",
-                    avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=marcus&backgroundColor=blue&clothing=hoodie",
-                    rating: 5,
-                    metric: "15h/Woche gespart"
-                  },
-                  {
-                    quote: "Von 2% auf 8% Conversion-Rate in nur 4 Wochen. AdRuby hat unsere Erwartungen bei weitem übertroffen und zahlt sich täglich aus.",
-                    author: "Lisa Hoffmann",
-                    role: "Marketing Managerin",
-                    company: "Fitness Studio Kette", 
-                    avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=lisa&backgroundColor=green&clothing=sweater",
-                    rating: 5,
-                    metric: "+300% Conversions"
-                  }
-                ]?.map((testimonial, index) => (
-                  <motion.div
-                    key={index}
-                    variants={itemVariants}
-                    className="bg-[#fafafa] rounded-xl p-8 border border-[#e0e0e0] hover:shadow-lg transition-all duration-300"
-                  >
-                    {/* Stars */}
-                    <div className="flex items-center gap-1 mb-6">
-                      {[...Array(testimonial?.rating)]?.map((_, i) => (
-                        <Star key={i} className="text-[#C80000] fill-current" size={14} />
-                      ))}
-                    </div>
-                    
-                    <p className="text-[#333] mb-8 leading-relaxed">
-                      "{testimonial?.quote}"
-                    </p>
-                    
-                    <div className="flex items-center justify-between">
+                  <div className="bg-white rounded-2xl border border-[#e0e0e0] shadow-2xl p-6 sm:p-8 max-w-xl mx-auto md:ml-8">
+                    <div className="flex items-center justify-between mb-6">
                       <div className="flex items-center gap-3">
-                        <img 
-                          src={testimonial?.avatar} 
-                          alt={`${testimonial?.author} avatar`}
-                          className="w-10 h-10 rounded-full"
+                        <img
+                          src="/assets/images/Screenshot_2025-10-21_000636-removebg-preview-1762544374259.png"
+                          alt="AdRuby Dashboard Icon"
+                          className="w-7 h-7 object-contain"
                         />
                         <div>
-                          <p className="font-bold text-[#000000]">{testimonial?.author}</p>
-                          <p className="text-sm text-[#666]">{testimonial?.role}</p>
-                          <p className="text-xs text-[#999]">{testimonial?.company}</p>
+                          <p className="text-sm text-[#6b6b6b]">AdRuby OS</p>
+                          <p className="font-semibold text-[#0b0b0b]">Meta Ads Blueprint</p>
                         </div>
                       </div>
-                      <div className="text-right">
-                        <div className="text-sm font-bold text-[#C80000]">{testimonial?.metric}</div>
+                      <div className="flex items-center gap-2">
+                        <div className="w-2 h-2 bg-[#27ca3f] rounded-full" />
+                        <span className="text-xs text-[#4a4a4a]">Live Sync</span>
                       </div>
+                    </div>
+
+                    <div className="grid sm:grid-cols-2 gap-4 mb-4">
+                      <div className="bg-[#0f172a] text-white rounded-xl p-4 space-y-3 shadow-md">
+                        <div className="flex items-center justify-between">
+                          <h3 className="font-semibold text-sm">Strategie</h3>
+                          <span className="text-xs bg-white/10 px-2 py-1 rounded">Full-Funnel</span>
+                        </div>
+                        <div className="space-y-2 text-sm text-white/80">
+                          <div className="flex items-start gap-2">
+                            <CheckCircle size={14} className="text-[#22c55e] mt-0.5" />
+                            <span>Budget-Cluster nach Intent und Funnel-Stufe</span>
+                          </div>
+                          <div className="flex items-start gap-2">
+                            <CheckCircle size={14} className="text-[#22c55e] mt-0.5" />
+                            <span>Funnel: Prospecting → Warm → Hot, mit klaren KPIs (ROAS/CPA)</span>
+                          </div>
+                          <div className="flex items-start gap-2">
+                            <CheckCircle size={14} className="text-[#22c55e] mt-0.5" />
+                            <span>Testing Plan: 5 Hooks/Woche, auswertbar nach ROAS</span>
+                          </div>
+                        </div>
+                      </div>
+                      <div className="bg-[#f8fafc] rounded-xl p-4 border border-[#e5e7eb] space-y-3 shadow-sm">
+                        <div className="flex items-center justify-between">
+                          <h3 className="font-semibold text-sm text-[#0b0b0b]">Ad Varianten</h3>
+                          <span className="text-xs text-[#C80000] bg-[#fee2e2] px-2 py-1 rounded">Ready</span>
+                        </div>
+                        <div className="space-y-2 text-sm text-[#2c2c2c]">
+                          <div className="rounded-lg bg-white border border-[#ededed] p-3">
+                            <p className="font-semibold">Hook: „Stop Scrolling. Scale Profitably.“</p>
+                            <p className="text-xs text-[#666] mt-1">Primary: UGC + Social Proof + klarer ROAS-CTA</p>
+                          </div>
+                          <div className="rounded-lg bg-white border border-[#ededed] p-3">
+                            <p className="font-semibold">Copy: Performance-Playbook</p>
+                            <p className="text-xs text-[#666] mt-1">CTA: „Meta Setup übernehmen“ – zero guesswork</p>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                      <div className="col-span-2 bg-[#fff8f5] border border-[#f3dada] rounded-xl p-4 shadow-sm">
+                        <div className="flex items-center justify-between mb-3">
+                          <h3 className="font-semibold text-sm text-[#7a1a1a]">Meta Setup</h3>
+                          <span className="text-xs text-[#7a1a1a]">Exportierbar</span>
+                        </div>
+                        <div className="grid grid-cols-3 gap-2 text-sm text-[#5a5a5a]">
+                          <div className="bg-white rounded-lg p-3 shadow-sm border border-[#f1e5e5]">
+                            <p className="font-semibold text-[#0b0b0b]">Kampagne</p>
+                            <p className="text-xs mt-1">Conversions</p>
+                          </div>
+                          <div className="bg-white rounded-lg p-3 shadow-sm border border-[#f1e5e5]">
+                            <p className="font-semibold text-[#0b0b0b]">Ad Sets</p>
+                            <p className="text-xs mt-1">4 Zielgruppen</p>
+                          </div>
+                          <div className="bg-white rounded-lg p-3 shadow-sm border border-[#f1e5e5]">
+                            <p className="font-semibold text-[#0b0b0b]">Ads</p>
+                            <p className="text-xs mt-1">6 Varianten</p>
+                          </div>
+                        </div>
+                      </div>
+                      <div className="bg-[#ecfdf3] border border-[#d1fadf] rounded-xl p-4 shadow-sm flex flex-col justify-between">
+                        <div>
+                          <p className="text-xs text-[#16a34a] mb-2">Live KPIs</p>
+                          <p className="text-2xl font-bold text-[#0b0b0b]">4.2x ROAS</p>
+                          <p className="text-sm text-[#4a4a4a]">CPA -18% vs. letzte Woche</p>
+                        </div>
+                        <div className="flex items-center justify-between text-xs text-[#4a4a4a] mt-3">
+                          <span>Letztes Update</span>
+                          <span className="font-semibold text-[#0b0b0b]">vor 2 Min</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <motion.div
+                    initial={{ x: -40, opacity: 0 }}
+                    animate={{ x: 0, opacity: 1 }}
+                    transition={{ duration: 0.8, delay: 0.5 }}
+                    className="hidden lg:block absolute -left-16 top-10 bg-white rounded-xl border border-[#ededed] shadow-xl p-4 w-52 space-y-3"
+                  >
+                    <p className="text-xs uppercase tracking-[0.15em] text-[#7a1a1a]">Scaling Signals</p>
+                    <div className="flex items-center justify-between text-sm">
+                      <span>CTR</span>
+                      <span className="font-semibold text-[#C80000]">+340%</span>
+                    </div>
+                    <div className="flex items-center justify-between text-sm">
+                      <span>CPC</span>
+                      <span className="font-semibold text-[#C80000]">-60%</span>
+                    </div>
+                    <div className="flex items-center justify-between text-sm">
+                      <span>Spend</span>
+                      <span className="font-semibold text-[#0b0b0b]">+18%</span>
+                    </div>
+                    <button className="w-full mt-2 text-xs font-semibold text-white bg-[#C80000] rounded-md py-2 hover:bg-[#a50000] transition-all">
+                      Scaling starten
+                    </button>
+                  </motion.div>
+                </motion.div>
+              </div>
+            </div>
+          </motion.section>
+
+          {/* VALUE PROPOSITION / BENEFITS */}
+          <motion.section
+            id="benefits"
+            aria-label="Value Proposition"
+            className="py-12 md:py-16 px-4 md:px-8 lg:px-16 bg-white scroll-mt-24"
+            variants={containerVariants}
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true, amount: 0.25 }}
+          >
+            <div className="max-w-6xl mx-auto">
+              <motion.div variants={itemVariants} className="text-center mb-12">
+                <h2 className="text-3xl md:text-4xl font-bold mb-4 text-[#0b0b0b]">
+                  Warum AdRuby dein Meta Ads Game verändert
+                </h2>
+                <p className="text-lg text-[#4a4a4a] max-w-3xl mx-auto">
+                  Ein Meta Ads System, das Strategie, Creatives, Copy und Setup bündelt – damit du schneller testest, profitabler skalierst und ROAS statt Zufall bekommst.
+                </p>
+              </motion.div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                {benefits.map((benefit, index) => (
+                  <motion.div
+                    key={benefit.title}
+                    variants={itemVariants}
+                    className="p-5 md:p-6 rounded-xl border border-[#ededed] bg-[#fafafa] hover:-translate-y-1 hover:shadow-lg transition-all duration-200"
+                  >
+                    <div className="w-10 h-10 rounded-lg bg-[#C80000]/10 text-[#C80000] flex items-center justify-center mb-4">
+                      <benefit.icon size={20} />
+                    </div>
+                  <h3 className="text-xl font-semibold mb-2 text-[#0b0b0b]">{benefit.title}</h3>
+                    <p className="text-sm text-[#4a4a4a] leading-relaxed">{benefit.description}</p>
+                  </motion.div>
+                ))}
+              </div>
+            </div>
+          </motion.section>
+
+          {/* ICP / FÜR WEN */}
+          <motion.section
+            id="for-whom"
+            aria-label="Zielgruppen"
+            className="py-12 md:py-16 px-4 md:px-8 lg:px-16 bg-[#fafafa] scroll-mt-24"
+            variants={containerVariants}
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true, amount: 0.25 }}
+          >
+            <div className="max-w-6xl mx-auto">
+                <motion.div variants={itemVariants} className="text-center mb-12">
+                  <h2 className="text-3xl md:text-4xl font-bold mb-4 text-[#0b0b0b]">
+                    Für wen ist AdRuby gebaut?
+                  </h2>
+                  <p className="text-lg text-[#4a4a4a] max-w-3xl mx-auto">
+                  AdRuby ist gebaut für Teams, die Meta Ads ernst meinen: klare Workflows pro ICP, weniger Rätselraten, mehr ROAS.
+                  </p>
+                </motion.div>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                {icpSegments.map((segment) => (
+                  <motion.div
+                    key={segment.title}
+                    variants={itemVariants}
+                    className="p-6 rounded-xl border border-[#e5e5e5] bg-white shadow-sm hover:shadow-md transition-all duration-200"
+                  >
+                    <h3 className="text-xl font-semibold mb-2 text-[#0b0b0b]">{segment.title}</h3>
+                    <p className="text-sm text-[#4a4a4a] mb-4 leading-relaxed">{segment.description}</p>
+                    <ul className="space-y-2 text-sm text-[#2c2c2c]">
+                      {segment.bullets.map((bullet) => (
+                        <li key={bullet} className="flex items-start gap-2">
+                          <CheckCircle size={16} className="text-[#C80000] mt-0.5" />
+                          <span>{bullet}</span>
+                        </li>
+                      ))}
+                    </ul>
+                    <Link
+                      to={segment.link}
+                      className="inline-flex items-center gap-2 text-[#C80000] font-semibold text-sm mt-4 px-3 py-2 rounded-md underline md:no-underline"
+                      aria-label={`${segment.title} - Mehr erfahren`}
+                    >
+                      Mehr erfahren
+                      <span aria-hidden="true">→</span>
+                    </Link>
+                  </motion.div>
+                ))}
+              </div>
+            </div>
+          </motion.section>
+
+          {/* HOW IT WORKS */}
+          <motion.section
+            id="how-it-works"
+            aria-label="So funktioniert AdRuby"
+            className="py-12 md:py-16 px-4 md:px-8 lg:px-16 bg-white scroll-mt-24"
+            variants={containerVariants}
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true, amount: 0.25 }}
+          >
+            <div className="max-w-6xl mx-auto">
+              <motion.div variants={itemVariants} className="text-center mb-10">
+                <h2 className="text-3xl md:text-4xl font-bold mb-3 text-[#0b0b0b]">So funktioniert AdRuby</h2>
+                <p className="text-lg text-[#4a4a4a]">In drei Schritten von Idee zu ROAS-orientiertem Meta Setup.</p>
+              </motion.div>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                {steps.map((step, index) => (
+                  <motion.div
+                    key={step.title}
+                    variants={itemVariants}
+                    className="p-6 rounded-xl border border-[#ededed] bg-[#fafafa] relative overflow-hidden"
+                  >
+                    <span className="absolute top-4 right-4 w-10 h-10 rounded-full bg-[#C80000]/10 text-[#C80000] flex items-center justify-center font-semibold">
+                      {index + 1}
+                    </span>
+                    <h3 className="text-xl font-semibold mb-2 text-[#0b0b0b]">{step.title}</h3>
+                    <p className="text-sm text-[#4a4a4a] leading-relaxed">{step.description}</p>
+                  </motion.div>
+                ))}
+              </div>
+
+              <motion.p
+                variants={itemVariants}
+                className="text-center text-sm text-[#4a4a4a] mt-8"
+              >
+                Alles in unter 10 Minuten – statt Stunden in Sheets, Notizen und random Kampagnen.
+              </motion.p>
+            </div>
+          </motion.section>
+
+          {/* SOCIAL PROOF */}
+          <motion.section
+            id="social-proof"
+            aria-label="Social Proof"
+            className="py-12 md:py-16 px-4 md:px-8 lg:px-16 bg-[#0f0f10] text-white scroll-mt-24"
+            variants={containerVariants}
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true, amount: 0.25 }}
+          >
+            <div className="max-w-6xl mx-auto">
+              <motion.div variants={itemVariants} className="text-center mb-12">
+                <h2 className="text-3xl md:text-4xl font-bold mb-4">Was AdRuby-Kund:innen sagen</h2>
+                <p className="text-lg text-white/70">
+                  Case Studies aus E-Commerce, Agenturen und Education – Fokus: ROAS, CPA, Creative-Speed.
+                </p>
+              </motion.div>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                {testimonials.map((testimonial) => (
+                  <motion.div
+                    key={testimonial.author}
+                    variants={itemVariants}
+                    className="p-6 rounded-xl bg-white text-[#0b0b0b] shadow-lg"
+                  >
+                    <div className="flex items-center gap-1 mb-4">
+                      {[...Array(5)].map((_, i) => (
+                        <Star key={i} size={14} className="text-[#C80000] fill-current" />
+                      ))}
+                    </div>
+                    <p className="text-sm text-[#2c2c2c] leading-relaxed mb-6">“{testimonial.quote}”</p>
+                    <div className="flex items-center justify-between text-sm">
+                      <div>
+                        <p className="font-semibold text-[#0b0b0b]">{testimonial.author}</p>
+                        <p className="text-[#4a4a4a]">{testimonial.role}</p>
+                        <p className="text-[#6b6b6b] text-xs">{testimonial.company}</p>
+                      </div>
+                      <span className="text-[#C80000] font-semibold text-right">{testimonial.metric}</span>
                     </div>
                   </motion.div>
                 ))}
@@ -534,121 +692,158 @@ const PublicLandingHome = () => {
             </div>
           </motion.section>
 
-          {/* Pricing Section */}
+          {/* FEATURE DETAILS */}
           <motion.section
-            className="py-24 px-4 bg-[#fafafa]"
+            id="features"
+            aria-label="Feature Details"
+            className="py-12 md:py-16 px-4 md:px-8 lg:px-16 bg-white scroll-mt-24"
             variants={containerVariants}
             initial="hidden"
             whileInView="visible"
-            viewport={{ once: true, amount: 0.3 }}
+            viewport={{ once: true, amount: 0.25 }}
           >
-            <div className="max-w-4xl mx-auto text-center">
-              
-              <motion.div variants={itemVariants} className="mb-16">
-                <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold mb-6 text-[#000000]">
-                  Einfache, transparente Preise
+            <div className="max-w-6xl mx-auto">
+              <motion.div variants={itemVariants} className="text-center mb-12">
+                <h2 className="text-3xl md:text-4xl font-bold mb-4 text-[#0b0b0b]">
+                  Alles, was du für profitable Meta Ads brauchst – in einem Tool
                 </h2>
-                <p className="text-lg text-[#666] mb-8">
-                  Starte kostenlos und upgrade jederzeit. Kein Risiko, maximaler Erfolg.
+                <p className="text-lg text-[#4a4a4a] max-w-3xl mx-auto">
+                  Vom ersten Hook bis zum fertigen Meta Setup: AdRuby liefert dir konsistente Outputs, die du sofort nutzen kannst.
                 </p>
               </motion.div>
 
-              <motion.div 
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                {featureDetails.map((feature) => (
+                  <motion.div
+                    key={feature}
+                    variants={itemVariants}
+                    className="p-5 md:p-6 rounded-xl border border-[#ededed] bg-[#fafafa] hover:-translate-y-1 hover:shadow-lg transition-all duration-200"
+                  >
+                    <h3 className="text-lg font-semibold text-[#0b0b0b] mb-2">{feature}</h3>
+                    <p className="text-sm text-[#4a4a4a]">
+                      AdRuby liefert klare ROAS/CPA-Empfehlungen, Saves und Exporte – weniger Zeit im Ads Manager, mehr Zeit für Tests.
+                    </p>
+                  </motion.div>
+                ))}
+              </div>
+            </div>
+          </motion.section>
+
+          {/* FAQ */}
+          <motion.section
+            id="faq"
+            aria-label="FAQ"
+            className="py-12 md:py-16 px-4 md:px-8 lg:px-16 bg-[#fafafa] scroll-mt-24"
+            variants={containerVariants}
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true, amount: 0.25 }}
+          >
+            <div className="max-w-6xl mx-auto">
+              <motion.div variants={itemVariants} className="text-center mb-10">
+                <h2 className="text-3xl md:text-4xl font-bold mb-4 text-[#0b0b0b]">Häufige Fragen zu AdRuby</h2>
+                <p className="text-lg text-[#4a4a4a]">Klare Antworten auf die wichtigsten Meta Ads Einwände.</p>
+              </motion.div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {faqs.map((faq) => (
+                  <motion.div
+                    key={faq.question}
+                    variants={itemVariants}
+                    className="p-5 md:p-6 rounded-xl border border-[#e5e5e5] bg-white shadow-sm space-y-2"
+                  >
+                    <h3 className="font-semibold text-[#0b0b0b] mb-2">{faq.question}</h3>
+                    <p className="text-sm text-[#4a4a4a] leading-relaxed">{faq.answer}</p>
+                  </motion.div>
+                ))}
+              </div>
+            </div>
+          </motion.section>
+
+          {/* Frequently Searched */}
+          <motion.section
+            id="popular-searches"
+            aria-label="Häufig gesucht"
+            className="py-12 md:py-14 px-4 md:px-8 lg:px-16 bg-white scroll-mt-24"
+            variants={containerVariants}
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true, amount: 0.25 }}
+          >
+            <div className="max-w-5xl mx-auto">
+              <motion.div variants={itemVariants} className="text-center mb-6">
+                <h2 className="text-2xl md:text-3xl font-bold text-[#0b0b0b]">Häufig gesucht</h2>
+              </motion.div>
+              <motion.div
                 variants={itemVariants}
-                className="bg-white rounded-2xl p-8 border border-[#e0e0e0] shadow-lg relative"
+                className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-center text-sm font-semibold"
               >
-                <div className="absolute top-0 left-1/2 transform -translate-x-1/2 -translate-y-1/2">
-                  <span className="bg-[#C80000] text-white px-4 py-1 rounded-full text-sm font-medium">
-                    Beliebtester Plan
-                  </span>
-                </div>
-                
-                <div className="text-center mb-8">
-                  <h3 className="text-2xl font-bold text-[#000000] mb-4">Professional</h3>
-                  <div className="mb-4">
-                    <span className="text-4xl font-bold text-[#000000]">29€</span>
-                    <span className="text-lg text-[#666]">/Monat</span>
-                  </div>
-                  <p className="text-[#666] mb-6">1000 Credits pro Monat inklusive</p>
-                  
+                <Link
+                  to="/facebook-ads-agentur-alternative"
+                  className="text-[#C80000] hover:underline px-3 py-2 rounded-md"
+                >
+                  Alternative zur Facebook Ads Agentur
+                </Link>
+                <Link
+                  to="/adcreative-ai-alternative"
+                  className="text-[#C80000] hover:underline px-3 py-2 rounded-md"
+                >
+                  AdCreative.ai Alternative
+                </Link>
+                <Link
+                  to="/madgicx-alternative"
+                  className="text-[#C80000] hover:underline px-3 py-2 rounded-md"
+                >
+                  Madgicx Alternative
+                </Link>
+              </motion.div>
+            </div>
+          </motion.section>
+
+          {/* FINAL CTA */}
+          <motion.section
+            id="final-cta"
+            aria-label="Final Call to Action"
+            className="py-14 md:py-16 px-4 md:px-8 lg:px-16 bg-[#C80000] text-white scroll-mt-24"
+            variants={containerVariants}
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true, amount: 0.25 }}
+          >
+            <div className="max-w-5xl mx-auto text-center space-y-6">
+              <motion.h2
+                variants={itemVariants}
+                className="text-3xl md:text-4xl font-bold leading-tight"
+              >
+                Bereit, deine Meta Ads profitabel zu skalieren?
+              </motion.h2>
+              <motion.p
+                variants={itemVariants}
+                className="text-lg text-white/90 max-w-3xl mx-auto"
+              >
+                Starte mit klaren Strategien, fertigen Anzeigen und einem Meta Setup, das in Minuten steht.
+                Weniger Rätselraten, mehr ROAS, weniger verbranntes Budget.
+              </motion.p>
+                <motion.div
+                  variants={itemVariants}
+                  className="flex flex-col sm:flex-row gap-3 justify-center"
+                >
+                  <motion.div whileHover={{ y: -1 }} whileTap={{ scale: 0.98 }} className="w-full sm:w-auto">
+                    <Link
+                      to="/ad-ruby-registration"
+                      className="inline-flex items-center justify-center bg-white text-[#C80000] px-8 py-3 rounded-lg font-semibold hover:bg-gray-50 transition-all duration-200 w-full sm:w-auto min-h-[44px]"
+                    >
+                  AdRuby kostenlos testen
+                    </Link>
+                  </motion.div>
                   <motion.button
-                    onClick={handleStartFreeTrial}
-                    className="w-full bg-[#C80000] text-white px-8 py-4 rounded-lg font-bold hover:bg-[#a50000] transition-all duration-200 mb-6"
+                    onClick={handleWatchDemo}
+                    className="w-full sm:w-auto border border-white/40 text-white px-8 py-3 rounded-lg font-semibold hover:bg-white/10 transition-all duration-200 min-h-[44px]"
                     whileHover={{ y: -1 }}
                     whileTap={{ scale: 0.98 }}
                   >
-                    14 Tage kostenlos testen
+                    Kurzberatung buchen
                   </motion.button>
-
-                  <p className="text-sm text-[#666]">
-                    Keine Kreditkarte erforderlich • Jederzeit kündbar
-                  </p>
-                </div>
-
-                <div className="grid md:grid-cols-2 gap-6 text-left">
-                  {[
-                    "Unbegrenzte Ad-Generierung",
-                    "KI-Strategieberatung", 
-                    "Performance Analytics",
-                    "Prioritäts-Support",
-                    "A/B Testing Tools",
-                    "Team Collaboration"
-                  ]?.map((feature, index) => (
-                    <div key={index} className="flex items-center gap-3">
-                      <CheckCircle className="text-[#C80000] w-5 h-5 flex-shrink-0" />
-                      <span className="text-[#333]">{feature}</span>
-                    </div>
-                  ))}
-                </div>
-              </motion.div>
-            </div>
-          </motion.section>
-
-          {/* Final CTA Section */}
-          <motion.section
-            className="py-24 px-4 bg-[#C80000] text-white"
-            variants={containerVariants}
-            initial="hidden"
-            whileInView="visible"
-            viewport={{ once: true, amount: 0.3 }}
-          >
-            <div className="max-w-4xl mx-auto text-center">
-              
-              <motion.h2 
-                variants={itemVariants} 
-                className="text-3xl md:text-4xl lg:text-5xl font-bold mb-8 leading-[1.1]"
-              >
-                Erstelle deine erste KI-Anzeige{' '}
-                <span className="text-white/80">in unter 60 Sekunden</span>
-              </motion.h2>
-              
-              <motion.p
-                variants={itemVariants}
-                className="text-lg text-white/80 mb-12 max-w-2xl mx-auto"
-              >
-                Schließe dich über 3 Millionen Marketern an, die bereits auf AdRuby vertrauen. 
-                Starte heute kostenlos und erlebe den Unterschied.
-              </motion.p>
-              
-              <motion.div variants={itemVariants} className="flex flex-col sm:flex-row gap-4 justify-center">
-                <motion.button
-                  onClick={handleStartFreeTrial}
-                  className="bg-white text-[#C80000] px-10 py-4 rounded-lg font-bold hover:bg-gray-50 transition-all duration-200"
-                  whileHover={{ y: -1 }}
-                  whileTap={{ scale: 0.98 }}
-                >
-                  Kostenlos starten
-                </motion.button>
-                
-                <motion.button
-                  onClick={() => console.log('Demo requested')}
-                  className="border border-white/30 text-white px-10 py-4 rounded-lg font-medium hover:bg-white/10 transition-all duration-200 flex items-center justify-center gap-2"
-                  whileHover={{ y: -1 }}
-                  whileTap={{ scale: 0.98 }}
-                >
-                  <PlayCircle size={20} />
-                  Demo ansehen
-                </motion.button>
               </motion.div>
             </div>
           </motion.section>
@@ -657,29 +852,27 @@ const PublicLandingHome = () => {
         {/* Footer */}
         <footer className="bg-[#000000] text-white py-16">
           <div className="max-w-6xl mx-auto px-4">
-            
             <div className="grid lg:grid-cols-4 gap-12 mb-12">
-              {/* Brand */}
               <div className="lg:col-span-2">
                 <div className="flex items-center space-x-3 mb-4">
-                  <img 
-                    src="/assets/images/Screenshot_2025-10-21_000636-removebg-preview-1762544374259.png" 
-                    alt="AdRuby Logo"
+                  <img
+                    src="/assets/images/Screenshot_2025-10-21_000636-removebg-preview-1762544374259.png"
+                    alt="AdRuby Markenlogo"
+                    loading="lazy"
                     className="w-8 h-8 object-contain"
                   />
                   <span className="text-xl font-bold">AdRuby</span>
                 </div>
                 <p className="text-gray-400 max-w-md text-sm leading-relaxed">
-                  KI-powered Ad Intelligence für Marketers & Agencies. 
-                  Erstelle performante Werbeanzeigen, die deine Konkurrenz übertreffen.
+                  KI-powered Meta Ads OS für Marketer:innen & Agencies. Strategien, Creatives, Copy und Setup
+                  in einem Workflow.
                 </p>
               </div>
 
-              {/* Product */}
               <div>
                 <h4 className="font-bold mb-4">Produkt</h4>
                 <div className="space-y-3">
-                  {['KI Ad Builder', 'Campaign Insights', 'Analytics', 'A/B Testing', 'API Access']?.map((item) => (
+                  {['KI-Strategie', 'Ad Generator', 'Meta Setup', 'Analytics', 'API Access'].map((item) => (
                     <a key={item} href="#" className="block text-gray-400 hover:text-white transition-colors text-sm">
                       {item}
                     </a>
@@ -687,11 +880,10 @@ const PublicLandingHome = () => {
                 </div>
               </div>
 
-              {/* Company */}
               <div>
                 <h4 className="font-bold mb-4">Unternehmen</h4>
                 <div className="space-y-3">
-                  {['Über uns', 'Blog', 'Karriere', 'Presse', 'Kontakt']?.map((item) => (
+                  {['Über uns', 'Blog', 'Karriere', 'Presse', 'Kontakt'].map((item) => (
                     <a key={item} href="#" className="block text-gray-400 hover:text-white transition-colors text-sm">
                       {item}
                     </a>
@@ -700,7 +892,6 @@ const PublicLandingHome = () => {
               </div>
             </div>
 
-            {/* Bottom */}
             <div className="flex flex-col lg:flex-row justify-between items-center pt-8 border-t border-gray-800">
               <div className="flex items-center gap-8 mb-6 lg:mb-0">
                 <span className="text-sm text-gray-400">© 2025 AdRuby. Alle Rechte vorbehalten.</span>
@@ -710,21 +901,21 @@ const PublicLandingHome = () => {
                   <a href="#" className="hover:text-white transition-colors">AGB</a>
                 </div>
               </div>
-              
+
               <div className="flex items-center gap-4">
                 <a href="#" className="text-gray-400 hover:text-white transition-colors">
                   <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-                    <path d="M24 4.557c-.883.392-1.832.656-2.828.775 1.017-.609 1.798-1.574 2.165-2.724-.951.564-2.005.974-3.127 1.195-.897-.957-2.178-1.555-3.594-1.555-3.179 0-5.515 2.966-4.797 6.045-4.091-.205-7.719-2.165-10.148-5.144-1.29 2.213-.669 5.108 1.523 6.574-.806-.026-1.566-.247-2.229-.616-.054 2.281 1.581 4.415 3.949 4.89-.693.188-1.452.232-2.224.084.626 1.956 2.444 3.379 4.6 3.419-2.07 1.623-4.678 2.348-7.29 2.04 2.179 1.397 4.768 2.212 7.548 2.212 9.142 0 14.307-7.721 13.995-14.646.962-.695 1.797-1.562 2.457-2.549z"/>
+                    <path d="M24 4.557c-.883.392-1.832.656-2.828.775 1.017-.609 1.798-1.574 2.165-2.724-.951.564-2.005.974-3.127 1.195-.897-.957-2.178-1.555-3.594-1.555-3.179 0-5.515 2.966-4.797 6.045-4.091-.205-7.719-2.165-10.148-5.144-1.29 2.213-.669 5.108 1.523 6.574-.806-.026-1.566-.247-2.229-.616-.054 2.281 1.581 4.415 3.949 4.89-.693.188-1.452.232-2.224.084.626 1.956 2.444 3.379 4.6 3.419-2.07 1.623-4.678 2.348-7.29 2.04 2.179 1.397 4.768 2.212 7.548 2.212 9.142 0 14.307-7.721 13.995-14.646.962-.695 1.797-1.562 2.457-2.549z" />
                   </svg>
                 </a>
                 <a href="#" className="text-gray-400 hover:text-white transition-colors">
                   <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-                    <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/>
+                    <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z" />
                   </svg>
                 </a>
                 <a href="#" className="text-gray-400 hover:text-white transition-colors">
                   <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-                    <path d="M12.017 0C5.396 0 .029 5.367.029 11.987c0 5.079 3.158 9.417 7.618 11.174-.105-.949-.199-2.403.042-3.441.219-.937 1.406-5.957 1.406-5.957s-.359-.719-.359-1.782c0-1.668.967-2.914 2.171-2.914 1.023 0 1.518.769 1.518 1.69 0 1.029-.655 2.568-.994 3.995-.283 1.194.599 2.169 1.777 2.169 2.133 0 3.772-2.249 3.772-5.495 0-2.873-2.064-4.882-5.012-4.882-3.414 0-5.418 2.561-5.418 5.207 0 1.031.397 2.138.893 2.738a.36.36 0 01.083.345l-.333 1.36c-.053.22-.174.267-.402.161-1.499-.698-2.436-2.888-2.436-4.649 0-3.785 2.75-7.262 7.929-7.262 4.163 0 7.398 2.967 7.398 6.931 0 4.136-2.607 7.464-6.227 7.464-1.216 0-2.357-.631-2.75-1.378l-.748 2.853c-.271 1.043-1.002 2.35-1.492 3.146C9.57 23.812 10.763 24.009 12.017 24c6.624 0 11.99-5.367 11.99-11.013C24.007 5.367 18.641.001 12.017.001z"/>
+                    <path d="M12.017 0C5.396 0 .029 5.367.029 11.987c0 5.079 3.158 9.417 7.618 11.174-.105-.949-.199-2.403.042-3.441.219-.937 1.406-5.957 1.406-5.957s-.359-.719-.359-1.782c0-1.668.967-2.914 2.171-2.914 1.023 0 1.518.769 1.518 1.69 0 1.029-.655 2.568-.994 3.995-.283 1.194.599 2.169 1.777 2.169 2.133 0 3.772-2.249 3.772-5.495 0-2.873-2.064-4.882-5.012-4.882-3.414 0-5.418 2.561-5.418 5.207 0 1.031.397 2.138.893 2.738a.36.36 0 01.083.345l-.333 1.36c-.053.22-.174.267-.402.161-1.499-.698-2.436-2.888-2.436-4.649 0-3.785 2.75-7.262 7.929-7.262 4.163 0 7.398 2.967 7.398 6.931 0 4.136-2.607 7.464-6.227 7.464-1.216 0-2.357-.631-2.75-1.378l-.748 2.853c-.271 1.043-1.002 2.35-1.492 3.146C9.57 23.812 10.763 24.009 12.017 24c6.624 0 11.99-5.367 11.99-11.013C24.007 5.367 18.641.001 12.017.001z" />
                   </svg>
                 </a>
               </div>
