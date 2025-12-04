@@ -1,448 +1,292 @@
-import React from 'react';
-import { Link } from 'react-router-dom';
-import Header from '../public-landing-home/components/Header';
-
-const comparisonRows = [
-  {
-    label: 'Fokus',
-    adcreative: 'Creatives generieren',
-    adruby: 'Strategie + Funnel + Setup + Creatives'
-  },
-  {
-    label: 'Meta Ads Spezialisierung',
-    adcreative: 'Allgemeine Ad-Generierung',
-    adruby: 'Meta Ads OS mit Budget-, Funnel- und Audience-Logik'
-  },
-  {
-    label: 'Funnel- & Testing-Frameworks',
-    adcreative: 'Basis-Ideen',
-    adruby: 'Strukturierter Testing-Plan mit ROAS/CPA-Zielen'
-  },
-  {
-    label: 'Integration ins Setup',
-    adcreative: 'Export von Assets',
-    adruby: 'Exportierbare Meta Setups (Kampagne, AdSets, Ads)'
-  },
-  {
-    label: 'Strategische Tiefe',
-    adcreative: 'Primär Creative-Output',
-    adruby: 'Strategie, Copy, Creatives + laufende Iterationen'
-  }
-];
-
-const testimonials = [
-  {
-    quote: 'Wir wollten mehr als nur Bilder. AdRuby liefert Strategien, Setups und Copy – wir testen doppelt so schnell.',
-    author: 'Lena Fischer',
-    role: 'Head of Growth, D2C Brand'
-  },
-  {
-    quote: 'Klarer Funnel-Plan, Hooks und AdSets in Minuten. Wir behalten die Kontrolle und sparen Agenturkosten.',
-    author: 'Marc Hoffmann',
-    role: 'Marketing Lead, SaaS'
-  },
-  {
-    quote: 'Meta-spezifische Empfehlungen, die sofort umsetzbar sind. Weniger Rätselraten, mehr ROAS.',
-    author: 'Sarah König',
-    role: 'Performance Managerin, E-Com'
-  }
-];
-
-const features = [
-  {
-    title: 'Komplette Meta Ads Strategien',
-    desc: 'Funnel-Logik, Audience-Clustering und Budget-Empfehlungen statt nur einzelne Ads.'
-  },
-  {
-    title: 'Meta Ads Setup Empfehlungen',
-    desc: 'Exportierbare Kampagnen-, AdSet- und Ad-Layouts mit klaren Naming- und Testing-Strukturen.'
-  },
-  {
-    title: 'Fragebogen-basiertes Strategie-Tuning',
-    desc: 'AdRuby passt Empfehlungen an dein Risiko-Level, Budget und Ziel-KPIs an.'
-  },
-  {
-    title: 'Speicherbare Strategien für jede Kampagne',
-    desc: 'Bewährte Strategien sichern und wiederverwenden, inklusive Hooks und Copy-Blöcke.'
-  }
-];
-
-const useCases = [
-  {
-    title: 'Du willst skalieren, nicht nur Creatives austauschen.',
-    bullets: [
-      'Funnel-Plan pro Ziel, nicht nur neue Bilder',
-      'Testing-Sequenzen für Prospecting und Retargeting',
-      'ROAS/CPA-Alerts und klare Next Steps'
-    ]
-  },
-  {
-    title: 'Du brauchst ein wiederholbares Framework für deine Meta Ads.',
-    bullets: [
-      'Standardisierte Setups, die du kopieren kannst',
-      'Hooks/Copy nach Zielgruppe und Intent',
-      'Weniger Rätselraten bei Budget- und Audience-Splits'
-    ]
-  },
-  {
-    title: 'Strategien, die zu Funnel, Zielgruppe und Budget passen.',
-    bullets: [
-      'Fragen zu Risiko-Level und KPIs steuern die Empfehlungen',
-      'Creatives und Copy orientieren sich an deinem Offer',
-      'Skalierungs- und Testpläne kommen integriert'
-    ]
-  }
-];
-
-const faqItems = [
-  {
-    q: 'Kann ich AdRuby zusätzlich zu AdCreative.ai nutzen?',
-    a: 'Ja. Du kannst Creatives von dort nutzen und Strategie, Copy und Setup aus AdRuby ziehen – oder komplett auf AdRuby setzen.'
-  },
-  {
-    q: 'Unterstützt AdRuby auch andere Kanäle?',
-    a: 'AdRuby ist auf Meta Ads spezialisiert, liefert aber strategische Inputs, die du auch auf andere Kanäle übertragen kannst.'
-  },
-  {
-    q: 'Für welche Budgets lohnt sich AdRuby?',
-    a: 'Ab niedrigen vierstelligen Monatsbudgets sinnvoll, je höher das Budget, desto mehr zahlt sich die strukturierte Strategie aus.'
-  },
-  {
-    q: 'Brauche ich Meta Ads Erfahrung?',
-    a: 'Grundverständnis hilft. AdRuby führt dich durch Fragen und liefert ein Setup, das sofort umsetzbar ist.'
-  },
-  {
-    q: 'Wie schnell bekomme ich Ergebnisse?',
-    a: 'Du hast in Minuten einen umsetzbaren Plan. Ergebnisse kommen, sobald deine Tests live gehen und Daten sammeln.'
-  }
-];
+import React from "react";
 
 const AdCreativeAiAlternative = () => {
   return (
-    <>
-      <Header />
-      <main className="bg-[#fafafa] text-[#0b0b0b]">
-        <section
-          id="hero"
-          className="px-4 md:px-8 lg:px-16 py-12 md:py-16 scroll-mt-24"
-        >
-          <div className="max-w-6xl mx-auto space-y-6">
-            <div className="flex flex-wrap items-center justify-between gap-3">
-              <Link to="/" className="text-sm font-semibold text-[#C80000] hover:underline">
-                Zur Startseite
-              </Link>
-              <nav aria-label="Breadcrumb">
-                <ol className="flex items-center space-x-1 text-sm text-[#4a4a4a]">
-                  <li className="flex items-center space-x-1">
-                    <Link to="/" className="hover:underline text-[#0b0b0b]">
-                      Startseite
-                    </Link>
-                    <span className="text-[#7a7a7a]">›</span>
-                  </li>
-                  <li className="text-[#0b0b0b] font-semibold">AdCreative.ai Alternative</li>
-                </ol>
-              </nav>
-            </div>
-            <div className="grid gap-10 md:gap-12 lg:grid-cols-2 items-center">
-              <div className="space-y-6">
-              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#C80000]">
-                Faire Gegenüberstellung
-              </p>
-              <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold leading-tight">
-                AdCreative.ai Alternative für ernsthafte Meta Ads Strategien
-              </h1>
-              <p className="text-base md:text-lg text-[#2c2c2c] leading-relaxed space-y-2">
-                <span className="block">
-                  Du willst mehr als nur automatisch generierte Creatives?
-                </span>
-                <span className="block">
-                  AdRuby kombiniert KI-Creatives mit kompletter Meta Ads Strategie, Funnel-Logik und Setup-Empfehlungen.
-                </span>
-                <span className="block text-sm text-[#4a4a4a]">
-                  Diese Seite vergleicht fair, wo AdCreative.ai gut ist – und wo AdRuby weitergeht.
-                </span>
-              </p>
-              <div className="flex flex-col sm:flex-row gap-3 w-full">
-                <Link
-                  to="/ad-ruby-registration"
-                  className="w-full sm:w-auto inline-flex items-center justify-center bg-[#C80000] text-white px-6 py-3 rounded-lg font-semibold hover:bg-[#a50000] transition-colors min-h-[44px]"
-                >
-                  AdRuby kostenlos testen
-                </Link>
-                <button
-                  type="button"
-                  className="w-full sm:w-auto inline-flex items-center justify-center border border-[#d4d4d4] text-[#0b0b0b] px-6 py-3 rounded-lg font-semibold hover:bg-white transition-colors min-h-[44px]"
-                >
-                  Strategie-Beispiel ansehen
-                </button>
-              </div>
-            </div>
-              <div className="w-full">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="bg-white border border-[#e5e5e5] rounded-xl p-5 shadow-sm">
-                  <h3 className="text-lg font-semibold mb-2 text-[#0b0b0b]">AdCreative.ai</h3>
-                  <ul className="space-y-2 text-sm text-[#4a4a4a]">
-                    <li>Fokus: Creative-Generierung</li>
-                    <li>Bildvarianten & Basis-Adtexte</li>
-                    <li>Kein tiefes Funnel- oder Setup-Playbook</li>
-                  </ul>
-                </div>
-                <div className="bg-[#0f172a] text-white rounded-xl p-5 shadow-md border border-[#1f2937]">
-                  <h3 className="text-lg font-semibold mb-2">AdRuby</h3>
-                  <ul className="space-y-2 text-sm text-white/80">
-                    <li>Fokus: Strategie + Creatives + Setup</li>
-                    <li>Meta-spezifische Testing- & Funnel-Frameworks</li>
-                    <li>Exportierbare Kampagnen-Layouts</li>
-                  </ul>
-                </div>
-              </div>
-            </div>
-          </div>
-        </section>
+    <main className="min-h-screen bg-black text-slate-50">
+      <section className="px-4 py-16 md:px-8 lg:px-16 max-w-5xl mx-auto">
+        <p className="text-xs font-semibold uppercase tracking-[0.2em] text-emerald-400/80 mb-3">
+          Ad Creative Tool
+        </p>
+        <h1 className="text-3xl md:text-4xl lg:text-5xl font-semibold tracking-tight mb-4">
+          AdCreative.ai Alternative für klare, steuerbare Meta Ads Creatives
+        </h1>
+        <p className="text-base md:text-lg text-slate-200/90 max-w-2xl">
+          AdCreative.ai kann viele Varianten generieren – aber oft fehlt der
+          strategische Kontext. AdRuby verbindet Strategie, Funnel-Logik und
+          Creatives zu einem System, das du wirklich skalieren kannst.
+        </p>
 
-        <section
-          id="short-comparison"
-          className="px-4 md:px-8 lg:px-16 py-12 md:py-16 bg-white scroll-mt-24"
-        >
-          <div className="max-w-6xl mx-auto space-y-6">
-            <div className="space-y-3 text-center">
-              <h2 className="text-3xl md:text-4xl font-bold">Wofür AdCreative.ai gut ist – und wo AdRuby weitergeht</h2>
-              <p className="text-base md:text-lg text-[#4a4a4a] leading-relaxed">
-                AdCreative.ai ist stark, wenn du schnelle Creative-Ideen brauchst.
-              </p>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
-              <div className="space-y-2 text-sm md:text-base text-[#2c2c2c]">
-                <p className="font-semibold">Pluspunkte AdCreative.ai:</p>
-                <ul className="space-y-2">
-                  <li className="flex items-start gap-2">
-                    <span className="mt-1 h-2 w-2 rounded-full bg-[#C80000]" />
-                    <span>Schnelle Generierung von Anzeigenbildern</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <span className="mt-1 h-2 w-2 rounded-full bg-[#C80000]" />
-                    <span>Basic Ad-Varianten</span>
-                  </li>
-                </ul>
+        <div className="mt-8 flex flex-wrap items-center gap-3">
+          <button className="inline-flex items-center justify-center rounded-full bg-gradient-to-r from-emerald-500 to-cyan-400 px-6 py-2.5 text-sm font-semibold text-slate-950 shadow-lg shadow-emerald-500/40 hover:from-emerald-400 hover:to-cyan-300 transition">
+            AdRuby kostenlos testen
+          </button>
+          <button className="inline-flex items-center justify-center rounded-full border border-slate-600/80 px-5 py-2.5 text-sm font-medium text-slate-100 hover:border-slate-300/90 hover:text-white transition">
+            Beispiel-Ad & Strategie ansehen
+          </button>
+        </div>
+
+        <p className="mt-4 text-xs text-slate-400">
+          7 Tage kostenlos testen · Monatlich kündbar · Keine versteckten
+          Gebühren
+        </p>
+      </section>
+
+      <section className="px-4 pb-12 md:px-8 lg:px-16 max-w-5xl mx-auto">
+        <div className="grid gap-8 md:grid-cols-2">
+          <div className="space-y-4">
+            <h2 className="text-xl md:text-2xl font-semibold">
+              Wo AdCreative.ai stark ist – und wo es oft hapert
+            </h2>
+            <p className="text-sm text-slate-200/90">
+              Viele Marketer lieben AdCreative.ai für die Menge an Creatives.
+              Doch Volumen allein skaliert keine Kampagnen.
+            </p>
+            <div className="space-y-3 text-sm text-slate-200/90">
+              <div className="rounded-xl border border-slate-700/80 bg-slate-900/40 p-3">
+                <p className="font-medium mb-1">Variante statt Strategie</p>
+                <p className="text-xs text-slate-300/90">
+                  Viele Varianten, aber oft ohne klares Ora, Funnel-Logik oder
+                  saubere Testing-Strategie dahinter.
+                </p>
               </div>
-              <div className="space-y-2 text-sm md:text-base text-[#2c2c2c]">
-                <p className="font-semibold">Aber wenn du mehr willst:</p>
-                <p className="text-[#4a4a4a]">
-                  Wenn du komplette Meta Ads Strategien, Testing-Pläne und Setup-Logik brauchst, stößt du dort an Grenzen.
+              <div className="rounded-xl border border-slate-700/80 bg-slate-900/40 p-3">
+                <p className="font-medium mb-1">Generischer Output</p>
+                <p className="text-xs text-slate-300/90">
+                  Creatives wirken häufig generisch – ohne tiefes Verständnis
+                  für dein Angebot, deine Positionierung und deinen Funnel.
+                </p>
+              </div>
+              <div className="rounded-xl border border-slate-700/80 bg-slate-900/40 p-3">
+                <p className="font-medium mb-1">
+                  Kein echter Link zu deinen Kampagnen
+                </p>
+                <p className="text-xs text-slate-300/90">
+                  Oft fehlen klare Empfehlungen, wie Creatives konkret im
+                  Meta Ads Setup eingesetzt werden sollen.
                 </p>
               </div>
             </div>
           </div>
-          <div className="text-center text-sm text-[#C80000] font-semibold">
-            <Link to="/meta-ads-tool-agenturen" className="hover:underline">
-              Mehr zu AdRuby für Performance-Agenturen
-            </Link>
-          </div>
-        </section>
 
-        <section
-          id="comparison-table"
-          className="px-4 md:px-8 lg:px-16 py-12 md:py-16 bg-[#fafafa] scroll-mt-24"
-        >
-          <div className="max-w-6xl mx-auto space-y-8">
-            <div className="space-y-3 text-center">
-              <h2 className="text-3xl md:text-4xl font-bold">AdCreative.ai vs AdRuby im Vergleich</h2>
-              <p className="text-base md:text-lg text-[#4a4a4a] leading-relaxed">
-                Fairer Vergleich: Creative-Tool vs Meta Ads OS mit Strategie-Fokus.
-              </p>
-            </div>
-            <div className="overflow-hidden rounded-xl border border-[#e5e5e5] bg-white shadow-sm">
-              <div className="grid grid-cols-3 bg-[#f3f4f6] text-sm font-semibold text-[#0b0b0b]">
-                <div className="px-4 py-3 text-left">Kriterium</div>
-                <div className="px-4 py-3 text-left">AdCreative.ai</div>
-                <div className="px-4 py-3 text-left bg-white">AdRuby</div>
+          <div className="space-y-4">
+            <h2 className="text-xl md:text-2xl font-semibold">
+              AdRuby: Strategie + Creatives + Setup
+            </h2>
+            <p className="text-sm text-slate-200/90">
+              AdRuby denkt Creatives nicht isoliert, sondern als Teil einer
+              vollständigen Meta Ads Strategie – inklusive Setup und
+              Skalierung.
+            </p>
+            <div className="overflow-hidden rounded-2xl border border-emerald-500/40 bg-gradient-to-br from-emerald-950/80 via-slate-950 to-black p-4 text-xs text-slate-50 shadow-lg shadow-emerald-900/40">
+              <div className="flex items.center justify-between mb-3">
+                <span className="text-[11px] uppercase tracking-[0.15em] text-emerald-300/80">
+                  Vergleich
+                </span>
+                <span className="rounded-full bg-black/40 px-3 py-1 text-[11px] text-slate-100">
+                  AdCreative.ai vs. AdRuby
+                </span>
               </div>
-              <div className="divide-y divide-[#e5e7eb] text-sm text-[#2c2c2c]">
-                {comparisonRows.map((row) => (
-                  <div key={row.label} className="grid grid-cols-3">
-                    <div className="px-4 py-3 font-semibold text-[#0b0b0b]">{row.label}</div>
-                    <div className="px-4 py-3">{row.adcreative}</div>
-                    <div className="px-4 py-3 bg-[#fafafa]">{row.adruby}</div>
+              <div className="space-y-2">
+                {[
+                  {
+                    label: "Output",
+                    left: "Viele Varianten pro Motiv",
+                    right: "Strategisch geführte Creatives je Funnelphase"
+                  },
+                  {
+                    label: "Kontext",
+                    left: "Creatives ohne Setup-Kontext",
+                    right: "Verknüpfung mit Strategie + Kampagnenstruktur"
+                  },
+                  {
+                    label: "Testing",
+                    left: "Einfach viel testen",
+                    right: "Strukturiertes Testing-Framework"
+                  },
+                  {
+                    label: "Verwendung",
+                    left: "Export & manuelles Zuordnen",
+                    right: "Direkte Zuordnung zu deinen Ad-Strategien"
+                  }
+                ].map((row) => (
+                  <div
+                    key={row.label}
+                    className="grid grid-cols-3 gap-2 items-start"
+                  >
+                    <div className="text-[11px] text-slate-300/90">
+                      {row.label}
+                    </div>
+                    <div className="text-[11px] text-slate-400/90">
+                      {row.left}
+                    </div>
+                    <div className="text-[11px] text-slate-100 font-medium">
+                      {row.right}
+                    </div>
                   </div>
                 ))}
               </div>
             </div>
           </div>
-        </section>
+        </div>
+      </section>
 
-        <section
-          id="adruby-features"
-          className="px-4 md:px-8 lg:px-16 py-12 md:py-16 bg-white scroll-mt-24"
-        >
-          <div className="max-w-6xl mx-auto space-y-8">
-            <div className="space-y-3 text-center">
-              <h2 className="text-3xl md:text-4xl font-bold">Was du mit AdRuby on top bekommst</h2>
-              <p className="text-base md:text-lg text-[#4a4a4a] leading-relaxed">
-                Strategie, Setup und Creatives – alles in einem Meta Ads OS.
-              </p>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-              {features.map((feat) => (
-                <div key={feat.title} className="p-6 rounded-xl border border-[#e5e5e5] bg-[#fafafa] shadow-sm">
-                  <h3 className="text-lg font-semibold text-[#0b0b0b] mb-2">{feat.title}</h3>
-                  <p className="text-sm text-[#4a4a4a] leading-relaxed">{feat.desc}</p>
-                </div>
-              ))}
-            </div>
-          </div>
-        </section>
-
-        <section
-          id="use-cases"
-          className="px-4 md:px-8 lg:px-16 py-12 md:py-16 bg-[#fafafa] scroll-mt-24"
-        >
-          <div className="max-w-6xl mx-auto space-y-8">
-            <div className="space-y-3 text-center">
-              <h2 className="text-3xl md:text-4xl font-bold">Wann AdRuby die bessere Wahl ist</h2>
-              <p className="text-base md:text-lg text-[#4a4a4a] leading-relaxed">
-                Für Teams, die mehr Kontrolle, Strategie und Skalierung brauchen.
-              </p>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              {useCases.map((useCase) => (
-                <div key={useCase.title} className="p-6 rounded-xl border border-[#e5e5e5] bg-white shadow-sm">
-                  <h3 className="text-lg font-semibold text-[#0b0b0b] mb-3">{useCase.title}</h3>
-                  <ul className="space-y-2 text-sm text-[#4a4a4a]">
-                    {useCase.bullets.map((bullet) => (
-                      <li key={bullet} className="flex items-start gap-2">
-                        <span className="mt-1 h-2 w-2 rounded-full bg-[#C80000]" />
-                        <span>{bullet}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              ))}
-            </div>
-          </div>
-        </section>
-
-        <section
-          id="testimonials"
-          className="px-4 md:px-8 lg:px-16 py-12 md:py-16 bg-white scroll-mt-24"
-        >
-          <div className="max-w-6xl mx-auto space-y-8">
-            <div className="space-y-3 text-center">
-              <h2 className="text-3xl md:text-4xl font-bold">Was Nutzer:innen an AdRuby schätzen</h2>
-              <p className="text-base md:text-lg text-[#4a4a4a] leading-relaxed">
-                Struktur, Klarheit und Geschwindigkeit beim Testen.
-              </p>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              {testimonials.map((t) => (
-                <div key={t.author} className="p-6 rounded-xl border border-[#e5e5e5] bg-[#fafafa] shadow-sm">
-                  <p className="text-sm text-[#2c2c2c] leading-relaxed mb-4">“{t.quote}”</p>
-                  <p className="text-sm font-semibold text-[#0b0b0b]">{t.author}</p>
-                  <p className="text-xs text-[#6b6b6b]">{t.role}</p>
-                </div>
-              ))}
-            </div>
-          </div>
-        </section>
-
-        <section
-          id="faq"
-          className="px-4 md:px-8 lg:px-16 py-12 md:py-16 bg-[#fafafa] scroll-mt-24"
-        >
-          <div className="max-w-6xl mx-auto space-y-8">
-            <div className="space-y-3 text-center">
-              <h2 className="text-3xl md:text-4xl font-bold">FAQ zur AdCreative.ai Alternative</h2>
-              <p className="text-base md:text-lg text-[#4a4a4a] leading-relaxed">
-                Wichtigste Fragen für den Umstieg.
-              </p>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {faqItems.map((faq) => (
-                <div key={faq.q} className="p-5 md:p-6 rounded-xl border border-[#e5e5e5] bg-white shadow-sm space-y-2">
-                  <h3 className="font-semibold text-[#0b0b0b]">{faq.q}</h3>
-                  <p className="text-sm text-[#4a4a4a] leading-relaxed">{faq.a}</p>
-                </div>
-              ))}
-            </div>
-          </div>
-        </section>
-
-        <section
-          id="final-cta"
-          className="px-4 md:px-8 lg:px-16 py-14 md:py-16 bg-[#C80000] text-white scroll-mt-24"
-        >
-          <div className="max-w-5xl mx-auto text-center space-y-6">
-            <h2 className="text-3xl md:text-4xl font-bold leading-tight">
-              AdCreative.ai ist dir zu flach? Probier AdRuby.
-            </h2>
-            <p className="text-base md:text-lg text-white/90">
-              Meta Ads Strategie, Setup und Creatives in einem Tool – ohne Agentur-Overhead.
+      <section className="px-4 py-12 md:px-8 lg:px-16 max-w-5xl mx-auto">
+        <h2 className="text-xl md:text-2xl font-semibold mb-4">
+          Wie AdRuby dir bei Creatives wirklich hilft
+        </h2>
+        <p className="text-sm text-slate-200/90 mb-4">
+          Statt dir einfach nur Varianten auszugeben, hilft AdRuby dir dabei,
+          Creatives als System zu verstehen und gezielt zu testen.
+        </p>
+        <div className="grid gap-4 md:grid-cols-2">
+          <div className="rounded-xl border border-slate-700/80 bg-slate-950/60 p-4">
+            <p className="font-medium mb-1 text-sm">
+              Klarer Creative-Briefing-Input
             </p>
-            <div className="flex flex-col sm:flex-row gap-3 justify-center">
-              <Link
-                to="/ad-ruby-registration"
-                className="w-full sm:w-auto inline-flex items-center justify-center bg-white text-[#C80000] px-8 py-3 rounded-lg font-semibold hover:bg-gray-50 transition-colors min-h-[44px]"
-              >
-                AdRuby kostenlos testen
-              </Link>
-              <button
-                type="button"
-                className="w-full sm:w-auto inline-flex items-center justify-center border border-white/40 text-white px-8 py-3 rounded-lg font-semibold hover:bg-white/10 transition-colors min-h-[44px]"
-              >
-                Strategie-Beispiel ansehen
+            <p className="text-xs text-slate-300/90">
+              Du definierst Produkt, Ziel, Zielgruppe und Funnel-Phase – AdRuby
+              baut darauf auf und respektiert deinen Kontext.
+            </p>
+          </div>
+          <div className="rounded-xl border border-slate-700/80 bg-slate-950/60 p-4">
+            <p className="font-medium mb-1 text-sm">
+              Hooks, Angles & Ad Copy
+            </p>
+            <p className="text-xs text-slate-300/90">
+              Strategisch aufgebaute Hooks, Angles und Copy-Lines, die auf
+              deinen Funnel und deine Positionierung einzahlen.
+            </p>
+          </div>
+          <div className="rounded-xl border border-slate-700/80 bg-slate-950/60 p-4">
+            <p className="font-medium mb-1 text-sm">
+              Vorschläge für Visuals & UGC
+            </p>
+            <p className="text-xs text-slate-300/90">
+              Konkrete Ideen, welche Art von Bild- oder Video-Material du
+              testen solltest (Produkt-Shots, UGC, Before/After etc.).
+            </p>
+          </div>
+          <div className="rounded-xl border border-slate-700/80 bg-slate-950/60 p-4">
+            <p className="font-medium mb-1 text-sm">
+              Creative-Testing-Plan
+            </p>
+            <p className="text-xs text-slate-300/90">
+              Vorschläge, wie viele Variationen du pro Anzeigengruppe fährst,
+              in welcher Reihenfolge und mit welchen KPIs du bewertest.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <section className="px-4 py-12 md:px-8 lg:px-16 max-w-5xl mx.auto border-t border-slate-800/80">
+        <h2 className="text-xl md:text-2xl font-semibold mb-4">
+          Beispiel: Eine Ad aus AdRuby im Vergleich
+        </h2>
+        <div className="grid gap-6 md:grid-cols-2">
+          <div className="rounded-2xl border border-slate-800/80 bg-slate-950/60 p-4 text-xs">
+            <p className="text-[11px] uppercase tracking-[0.15em] text-slate-400 mb-2">
+              Typische generische Ad
+            </p>
+            <div className="space-y-2">
+              <div className="h-24 rounded-lg bg-slate-800/80" />
+              <p className="font-semibold text-slate-100">
+                "Mehr Umsatz mit deinen Ads!"
+              </p>
+              <p className="text-slate-300/90">
+                "Starte jetzt mit unserem Tool und verbessere deine Performance."
+              </p>
+              <button className="mt-2 inline-flex items-center rounded-full border border-slate-600/80 px-4 py-1.5 text-[11px] text-slate-100">
+                Mehr erfahren
               </button>
             </div>
           </div>
-        </section>
 
-        <footer className="bg-[#000000] text-white py-14">
-          <div className="max-w-6xl mx-auto px-4 md:px-8">
-            <div className="grid lg:grid-cols-4 gap-12 mb-12">
-              <div className="lg:col-span-2">
-                <div className="flex items-center space-x-3 mb-4">
-                  <img
-                    src="/assets/images/Screenshot_2025-10-21_000636-removebg-preview-1762544374259.png"
-                    alt="AdRuby Markenlogo"
-                    className="w-8 h-8 object-contain"
-                  />
-                  <span className="text-xl font-bold">AdRuby</span>
-                </div>
-                <p className="text-gray-400 max-w-md text-sm leading-relaxed">
-                  KI-basiertes Meta Ads OS für Marketer:innen & Brands. Strategien, Creatives, Copy und Setup in einem Workflow.
-                </p>
-              </div>
-              <div>
-                <h4 className="font-bold mb-4">Produkt</h4>
-                <div className="space-y-3">
-                  {['KI-Strategie', 'Ad Generator', 'Meta Setup', 'Analytics', 'API Access'].map((item) => (
-                    <a key={item} href="#" className="block text-gray-400 hover:text-white transition-colors text-sm">
-                      {item}
-                    </a>
-                  ))}
-                </div>
-              </div>
-              <div>
-                <h4 className="font-bold mb-4">Unternehmen</h4>
-                <div className="space-y-3">
-                  {['Über uns', 'Blog', 'Karriere', 'Presse', 'Kontakt'].map((item) => (
-                    <a key={item} href="#" className="block text-gray-400 hover:text-white transition-colors text-sm">
-                      {item}
-                    </a>
-                  ))}
-                </div>
-              </div>
-            </div>
-            <div className="flex flex-col lg:flex-row justify-between items-center pt-8 border-t border-gray-800 text-sm text-gray-400 gap-4">
-              <span>© 2025 AdRuby. Alle Rechte vorbehalten.</span>
-              <div className="flex items-center gap-6">
-                <a href="#" className="hover:text-white transition-colors">Impressum</a>
-                <a href="#" className="hover:text-white transition-colors">Datenschutz</a>
-                <a href="#" className="hover:text-white transition-colors">AGB</a>
-              </div>
+          <div className="rounded-2xl border border-emerald-500/40 bg-slate-950/90 p-4 text-xs shadow-lg shadow-emerald-900/40">
+            <p className="text-[11px] uppercase tracking-[0.15em] text-emerald-300 mb-2">
+              Strategie-geführte Ad aus AdRuby
+            </p>
+            <div className="space-y-2">
+              <div className="h-24 rounded-lg bg-gradient-to-br from-emerald-500/30 via-cyan-500/20 to-slate-900" />
+              <p className="font-semibold text-slate-50">
+                "Du boostest dein Ad-Spend, aber nicht deinen ROAS?"
+              </p>
+              <p className="text-slate-200/90">
+                AdRuby baut dir komplette Meta Ads Strategien – inklusive
+                Hook-Ideen, Creatives und Skalierungsplan. Weniger Raten,
+                mehr System.
+              </p>
+              <button className="mt-2 inline-flex items-center rounded-full bg-emerald-400 px-4 py-1.5 text-[11px] font-semibold text-slate-950 hover:bg-emerald-300 transition">
+                AdRuby testen
+              </button>
             </div>
           </div>
-        </footer>
-      </main>
-    </>
+        </div>
+      </section>
+
+      <section className="px-4 py-12 md:px-8 lg:px-16 max-w-5xl mx-auto">
+        <h2 className="text-xl md:text-2xl font-semibold mb-4">
+          FAQ zur AdCreative.ai Alternative
+        </h2>
+        <div className="space-y-4 text-sm text-slate-200/90">
+          <div>
+            <p className="font-medium">
+              Ersetzt AdRuby AdCreative.ai komplett?
+            </p>
+            <p className="text-xs text-slate-300/90 mt-1">
+              Wenn du Creatives im Kontext deiner Meta Ads Strategie sehen
+              willst, ja. AdRuby liefert dir Strategie + Creative-Ideen +
+              Setup-Empfehlungen. Du kannst aber auch beides parallel nutzen.
+            </p>
+          </div>
+          <div>
+            <p className="font-medium">
+              Wie viel Zeit spare ich mit AdRuby wirklich?
+            </p>
+            <p className="text-xs text-slate-300/90 mt-1">
+              Kunden berichten, dass sie statt Stunden nur noch Minuten
+              brauchen, um von Creative-Briefing zu testbaren Ads zu kommen –
+              inklusive Strategie-Backbone.
+            </p>
+          </div>
+          <div>
+            <p className="font-medium">
+              Funktioniert AdRuby nur für E-Commerce?
+            </p>
+            <p className="text-xs text-slate-300/90 mt-1">
+              Nein. AdRuby ist auf Meta Ads spezialisiert, nicht auf eine
+              einzelne Branche. E-Com, Info-Produkte, Coaches, SaaS – wichtig
+              ist, dass du ernsthaft testen und skalieren willst.
+            </p>
+          </div>
+          <div>
+            <p className="font-medium">
+              Was ist, wenn ich noch wenig Creatives habe?
+            </p>
+            <p className="text-xs text-slate-300/90 mt-1">
+              Gerade dann hilft AdRuby: Du bekommst klare Vorschläge, welche
+              Creatives du zuerst bauen solltest und welche Hooks und Angles
+              du priorisieren kannst.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <section className="px-4 pb-16 md:px-8 lg:px-16 max-w-5xl mx-auto">
+        <div className="rounded-2xl border border-emerald-500/40 bg-gradient-to-r from-emerald-900/70 via-black to-black px-6 py-8 md:px-8 md:py-10 text-center shadow-lg shadow-emerald-900/40">
+          <h2 className="text-xl md:text-2xl font-semibold mb-3">
+            Creatives mit System statt Zufall
+          </h2>
+          <p className="text-sm text-slate-200/90 mb-6 max-w-2xl mx-auto">
+            Wenn du genug von generischem Creative-Output hast, der nicht zur
+            Strategie passt, ist AdRuby dein nächster Schritt: KI-gestützte
+            Strategien, Creatives und Setups aus einem Guss.
+          </p>
+          <button className="inline-flex items-center justify-center rounded-full bg-gradient-to-r from-emerald-500 to-cyan-400 px-8 py-3 text-sm font-semibold text-slate-950 shadow-lg shadow-emerald-500/40 hover:from-emerald-400 hover:to-cyan-300 transition">
+            AdRuby jetzt 7 Tage kostenlos testen
+          </button>
+        </div>
+      </section>
+    </main>
   );
 };
 
