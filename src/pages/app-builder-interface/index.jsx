@@ -677,10 +677,10 @@ const HighConversionAdBuilder = () => {
                           <button
                             key={p}
                             onClick={() => setAdPressure(p)}
-                            className={`w-1/2 sm:w-auto flex-1 sm:flex-none px-4 py-2 rounded-xl font-semibold text-sm text-center transition ${
+                            className={`w-1/2 sm:w-auto flex-1 sm:flex-none px-4 py-2 rounded-xl font-semibold text-sm text-center transition border ${
                               adPressure === p
-                                ? "bg-[#C80000]/20 border border-[#C80000] text-[#C80000]"
-                                : "bg-zinc-800 text-white"
+                                ? "bg-red-100 text-red-700 border-red-300 dark:bg-red-900/40 dark:text-red-300 dark:border-red-600"
+                                : "bg-zinc-100 text-zinc-800 border-zinc-200 dark:bg-zinc-800 dark:text-zinc-100 dark:border-zinc-700"
                             }`}
                           >
                             {p}
@@ -881,7 +881,7 @@ const HighConversionAdBuilder = () => {
                                 : "Keine Auswahl"}
                             </span>
                           </div>
-                          <div className="p-4 rounded-xl bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10">
+                          <div className="p-4 rounded-xl bg-white text-zinc-900 dark:bg-zinc-900/80 dark:text-zinc-100 border border-slate-200 dark:border-zinc-800 shadow-[0_20px_80px_rgba(0,0,0,0.35)]">
                             <h3 className="text-xl font-semibold">
                               {selectedAd?.headline ||
                                 "Noch keine Anzeige gewählt"}
@@ -892,7 +892,7 @@ const HighConversionAdBuilder = () => {
                               {selectedAd?.primary_text ||
                                 "Sobald eine Variante ausgewählt ist, erscheint sie hier."}
                             </p>
-                            <div className="mt-3 inline-flex px-3 py-2 rounded-lg bg-[#C80000]/15 border border-[#C80000]/40 text-[11px] font-semibold text-[#C80000] dark:text-white">
+                            <div className="mt-3 inline-flex px-3 py-2 rounded-lg bg-red-50 text-red-700 border border-red-200 text-[11px] font-semibold dark:bg-red-900/30 dark:text-red-200 dark:border-red-700">
                               CTA: {selectedAd?.cta_text || formData?.cta_text || "Jetzt kaufen"}
                             </div>
                           </div>

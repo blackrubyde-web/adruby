@@ -32,6 +32,12 @@ import PaymentVerificationPage from './pages/payment-verification';
 import PaymentSuccess from './pages/payment-success';
 import AdminDashboard from './pages/admin-dashboard';
 import AIAnalysisPanel from './pages/ai-analysis';
+import FacebookAdsAgenturAlternative from './pages/seo/FacebookAdsAgenturAlternative';
+import AdCreativeAiAlternative from './pages/seo/AdCreativeAiAlternative';
+import MadgicxAlternative from './pages/seo/MadgicxAlternative';
+import MetaAdsToolEcommerce from './pages/seo/MetaAdsToolEcommerce';
+import MetaAdsToolAgenturen from './pages/seo/MetaAdsToolAgenturen';
+import MetaAdsToolCoaches from './pages/seo/MetaAdsToolCoaches';
 
 const Routes = () => {
   return (
@@ -55,6 +61,12 @@ const Routes = () => {
             <Route path="/ad-ruby-ad-strategies" element={<AdRubyAdStrategies />} />
             <Route path="/ad-ruby-ai-analysis" element={<AdRubyAiAnalysis />} />
             <Route path="/ad-ruby-creative-insights" element={<AdRubyCreativeInsights />} />
+            <Route path="/facebook-ads-agentur-alternative" element={<FacebookAdsAgenturAlternative />} />
+            <Route path="/adcreative-ai-alternative" element={<AdCreativeAiAlternative />} />
+            <Route path="/madgicx-alternative" element={<MadgicxAlternative />} />
+            <Route path="/meta-ads-tool-ecommerce" element={<MetaAdsToolEcommerce />} />
+            <Route path="/meta-ads-tool-agenturen" element={<MetaAdsToolAgenturen />} />
+            <Route path="/meta-ads-tool-coaches" element={<MetaAdsToolCoaches />} />
 
             <Route
               path="/overview-dashboard"
