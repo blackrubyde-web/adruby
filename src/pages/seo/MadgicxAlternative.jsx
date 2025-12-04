@@ -1,369 +1,241 @@
-import React from 'react';
-import { Link } from 'react-router-dom';
-import Header from '../public-landing-home/components/Header';
-
-const comparisonRows = [
-  {
-    label: 'Komplexität / Learning Curve',
-    madgicx: 'Viele Features, steile Lernkurve',
-    adruby: 'Fokussiert auf Meta Ads Strategie, klarer Einstieg'
-  },
-  {
-    label: 'Fokus',
-    madgicx: 'Multi-Channel + viele AI-Funktionen',
-    adruby: 'Meta Ads OS: Strategie, Creatives, Setup, Testing'
-  },
-  {
-    label: 'Strategic Guidance',
-    madgicx: 'Tools müssen gedeutet werden',
-    adruby: 'Frameworks & Fragebögen liefern konkrete Pläne'
-  },
-  {
-    label: 'Geeignet für',
-    madgicx: 'Erfahrene Teams mit Zeit für Tiefe',
-    adruby: 'Solo-Media Buyer, kleine Teams, E-Com Brands'
-  }
-];
-
-const features = [
-  {
-    title: 'KI-gestützter Strategie-Generator',
-    desc: 'Meta-spezifische Strategien in Minuten, angepasst an Ziel, Budget und Risiko.'
-  },
-  {
-    title: 'Fertige Ad Copy & Hooks',
-    desc: 'Hooks, Copy und UGC-Ideen abgestimmt auf Funnel und Zielgruppe.'
-  },
-  {
-    title: 'Meta Setup Empfehlungen',
-    desc: 'Exportierbare Kampagnen-, AdSet- und Ad-Strukturen mit klaren Testing-Plänen.'
-  },
-  {
-    title: 'Speicherbare Strategien pro Kampagne',
-    desc: 'Bewährte Playbooks sichern, wiederverwenden und iterieren – pro Brand oder Kampagne.'
-  }
-];
-
-const switchReasons = [
-  'Zu viel Zeit im Tool, zu wenig Zeit in Werbewirkung.',
-  'Team kommt mit der Komplexität nicht klar.',
-  'Fokus liegt auf Meta Ads – kein Multi-Channel nötig.',
-  'Du willst klare Strategien statt Feature-Overload.'
-];
-
-const faqItems = [
-  {
-    q: 'Kann ich AdRuby testen, bevor ich Madgicx kündige?',
-    a: 'Ja. Du kannst AdRuby parallel nutzen und prüfen, ob du deine Ziele schneller erreichst.'
-  },
-  {
-    q: 'Ist AdRuby nur für Meta Ads?',
-    a: 'Ja, AdRuby ist spezialisiert auf Meta Ads – mit Fokus auf Strategie, Creatives und Setup.'
-  },
-  {
-    q: 'Brauche ich viel Einarbeitungszeit?',
-    a: 'Nein. Der geführte Fragen-Flow liefert in Minuten ein Setup, das du direkt nutzen kannst.'
-  },
-  {
-    q: 'Für wen lohnt sich AdRuby preislich?',
-    a: 'Für Solo-Buyer, kleine Teams und E-Com Brands, die Meta Ads ernst nehmen und klare ROAS/CPA-Ziele verfolgen.'
-  },
-  {
-    q: 'Kann ich meine bestehenden Kampagnen integrieren?',
-    a: 'Du kannst Ziele, Audiences und Budgets übernehmen und AdRuby liefert dir dazu passende Strategien und Setups.'
-  }
-];
+import React from "react";
 
 const MadgicxAlternative = () => {
   return (
-    <>
-      <Header />
-      <main className="bg-[#fafafa] text-[#0b0b0b]">
-        <section
-          id="hero"
-          className="px-4 md:px-8 lg:px-16 py-12 md:py-16 scroll-mt-24"
-        >
-          <div className="max-w-6xl mx-auto space-y-6">
-            <div className="flex flex-wrap items-center justify-between gap-3">
-              <Link to="/" className="text-sm font-semibold text-[#C80000] hover:underline">
-                Zur Startseite
-              </Link>
-              <nav aria-label="Breadcrumb">
-                <ol className="flex items-center space-x-1 text-sm text-[#4a4a4a]">
-                  <li className="flex items-center space-x-1">
-                    <Link to="/" className="hover:underline text-[#0b0b0b]">
-                      Startseite
-                    </Link>
-                    <span className="text-[#7a7a7a]">›</span>
-                  </li>
-                  <li className="text-[#0b0b0b] font-semibold">Madgicx Alternative</li>
-                </ol>
-              </nav>
-            </div>
-            <div className="grid gap-10 md:gap-12 lg:grid-cols-2 items-center">
-              <div className="space-y-6">
-              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#C80000]">
-                Fokussiert auf Meta Ads
-              </p>
-              <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold leading-tight">
-                Madgicx Alternative für klare, fokussierte Meta Ads Strategien
-              </h1>
-              <p className="text-base md:text-lg text-[#2c2c2c] leading-relaxed space-y-2">
-                <span className="block">
-                  Madgicx ist mächtig, aber oft komplex und überladen.
-                </span>
-                <span className="block">
-                  AdRuby konzentriert sich auf das, was deine Meta Ads wirklich skalierbar macht: Strategie, Creatives, Setup und Testing – ohne Overkill.
-                </span>
-              </p>
-              <div className="flex flex-col sm:flex-row gap-3 w-full">
-                <Link
-                  to="/ad-ruby-registration"
-                  className="w-full sm:w-auto inline-flex items-center justify-center bg-[#C80000] text-white px-6 py-3 rounded-lg font-semibold hover:bg-[#a50000] transition-colors min-h-[44px]"
-                >
-                  AdRuby kostenlos testen
-                </Link>
-                <button
-                  type="button"
-                  className="w-full sm:w-auto inline-flex items-center justify-center border border-[#d4d4d4] text-[#0b0b0b] px-6 py-3 rounded-lg font-semibold hover:bg-white transition-colors min-h-[44px]"
-                >
-                  Strategie-Beispiel ansehen
-                </button>
+    <main className="min-h-screen bg-black text-slate-50">
+      <section className="px-4 py-16 md:px-8 lg:px-16 max-w-5xl mx-auto">
+        <p className="text-xs font-semibold uppercase tracking-[0.2em] text-rose-400/80 mb-3">
+          Meta Ads Tool
+        </p>
+        <h1 className="text-3xl md:text-4xl lg:text-5xl font-semibold tracking-tight mb-4">
+          Madgicx Alternative für klare, fokussierte Meta Ads Strategien
+        </h1>
+        <p className="text-base md:text-lg text-slate-200/90 max-w-2xl">
+          Madgicx ist mächtig – aber oft komplex und überladen. AdRuby
+          konzentriert sich auf das, was deine Meta Ads wirklich skalierbar
+          macht: Strategie, Creatives, Setup und Testing – ohne Feature-Overkill.
+        </p>
+
+        <div className="mt-8 flex flex-wrap items-center gap-3">
+          <button className="inline-flex items-center justify-center rounded-full bg-gradient-to-r from-rose-600 to-red-500 px-6 py-2.5 text-sm font-semibold text-white shadow-lg shadow-red-500/40 hover:from-rose-500 hover:to-red-400 transition">
+            AdRuby kostenlos testen
+          </button>
+          <button className="inline-flex items-center justify-center rounded-full border border-slate-600/80 px-5 py-2.5 text-sm font-medium text-slate-100 hover:border-slate-300/90 hover:text-white transition">
+            Strategie-Beispiel ansehen
+          </button>
+        </div>
+
+        <p className="mt-4 text-xs text-slate-400">
+          7 Tage kostenlos testen · Monatlich kündbar · Keine versteckten
+          Gebühren
+        </p>
+      </section>
+
+      <section className="px-4 pb-12 md:px-8 lg:px-16 max-w-5xl mx-auto">
+        <div className="grid gap-8 md:grid-cols-2">
+          <div className="space-y-4">
+            <h2 className="text-xl md:text-2xl font-semibold">
+              Madgicx ist stark – aber oft zu viel des Guten
+            </h2>
+            <p className="text-sm text-slate-200/90">
+              Viele Performance-Marketer lieben Madgicx für seine Tiefe – aber
+              genau das führt oft zu Problemen im Alltag.
+            </p>
+            <div className="space-y-3 text-sm text-slate-200/90">
+              <div className="rounded-xl border border-slate-700/80 bg-slate-900/40 p-3">
+                <p className="font-medium mb-1">Komplexes Interface</p>
+                <p className="text-xs text-slate-300/90">
+                  Unzählige Einstellungen, Dashboards und Optionen. Gut für
+                  Power-User, aber schwer im Team zu standardisieren.
+                </p>
               </div>
-            </div>
-              <div className="w-full">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="bg-white border border-[#e5e5e5] rounded-xl p-5 shadow-sm">
-                  <h3 className="text-lg font-semibold mb-2 text-[#0b0b0b]">Madgicx</h3>
-                  <ul className="space-y-2 text-sm text-[#4a4a4a]">
-                    <li>Breites Feature-Set, viele Optionen</li>
-                    <li>Multi-Channel, komplexe Oberflächen</li>
-                    <li>Erfordert Einarbeitung und Zeit</li>
-                  </ul>
-                </div>
-                <div className="bg-[#0f172a] text-white rounded-xl p-5 shadow-md border border-[#1f2937]">
-                  <h3 className="text-lg font-semibold mb-2">AdRuby</h3>
-                  <ul className="space-y-2 text-sm text-white/80">
-                    <li>Fokus: Meta Ads Strategie & Setup</li>
-                    <li>Geführte Fragen, klare Outputs</li>
-                    <li>Schnelle Iterationen & weniger Overhead</li>
-                  </ul>
-                </div>
+              <div className="rounded-xl border border-slate-700/80 bg-slate-900/40 p-3">
+                <p className="font-medium mb-1">Steile Lernkurve</p>
+                <p className="text-xs text-slate-300/90">
+                  Neue Teammitglieder brauchen lange, bis sie wirklich sicher mit
+                  dem Tool arbeiten können.
+                </p>
+              </div>
+              <div className="rounded-xl border border-slate-700/80 bg-slate-900/40 p-3">
+                <p className="font-medium mb-1">Feature-Overkill</p>
+                <p className="text-xs text-slate-300/90">
+                  Viele Funktionen bleiben ungenutzt – du zahlst für Komplexität,
+                  die du im Alltag nicht brauchst.
+                </p>
               </div>
             </div>
           </div>
-        </section>
 
-        <section
-          id="madgicx-strong"
-          className="px-4 md:px-8 lg:px-16 py-12 md:py-16 bg-white scroll-mt-24"
-        >
-          <div className="max-w-6xl mx-auto space-y-8">
-            <div className="space-y-3 text-center">
-              <h2 className="text-3xl md:text-4xl font-bold">Madgicx ist stark – aber oft zu viel des Guten</h2>
-              <p className="text-base md:text-lg text-[#4a4a4a] leading-relaxed">
-                Viele Performance Buyer lieben die Power, scheitern aber an der Komplexität.
-              </p>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="p-6 rounded-xl border border-[#e5e5e5] bg-[#fafafa] shadow-sm">
-                <h3 className="text-lg font-semibold text-[#0b0b0b] mb-3">Stärken</h3>
-                <ul className="space-y-2 text-sm text-[#4a4a4a]">
-                  <li>Umfangreiche Automationen</li>
-                  <li>Multi-Channel Features</li>
-                  <li>Viele Optimierungshebel</li>
-                </ul>
+          <div className="space-y-4">
+            <h2 className="text-xl md:text-2xl font-semibold">
+              AdRuby: Fokus statt Overkill
+            </h2>
+            <p className="text-sm text-slate-200/90">
+              AdRuby ist dein fokussiertes Meta Ads OS: Klarer Aufbau, konkrete
+              Strategien, umsetzbare Empfehlungen – alles auf Meta Ads
+              zugeschnitten.
+            </p>
+            <div className="overflow-hidden rounded-2xl border border-rose-600/40 bg-gradient-to-br from-rose-950/80 via-slate-950 to-black p-4 text-xs text-slate-50 shadow-lg shadow-rose-900/40">
+              <div className="flex items-center justify-between mb-3">
+                <span className="text-[11px] uppercase tracking-[0.15em] text-rose-300/80">
+                  Vergleich
+                </span>
+                <span className="rounded-full bg-black/40 px-3 py-1 text-[11px] text-slate-100">
+                  Madgicx vs. AdRuby
+                </span>
               </div>
-              <div className="p-6 rounded-xl border border-[#e5e5e5] bg-[#fafafa] shadow-sm">
-                <h3 className="text-lg font-semibold text-[#0b0b0b] mb-3">Typische Probleme</h3>
-                <ul className="space-y-2 text-sm text-[#4a4a4a]">
-                  <li>Überkomplexität, steile Lernkurve</li>
-                  <li>Feature-Overload, wenig Fokus auf Strategie</li>
-                  <li>Viel Zeit im Tool, weniger Zeit im Testing</li>
-                </ul>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        <section
-          id="comparison"
-          className="px-4 md:px-8 lg:px-16 py-12 md:py-16 bg-[#fafafa] scroll-mt-24"
-        >
-          <div className="max-w-6xl mx-auto space-y-8">
-            <div className="space-y-3 text-center">
-              <h2 className="text-3xl md:text-4xl font-bold">AdRuby vs Madgicx im Überblick</h2>
-              <p className="text-base md:text-lg text-[#4a4a4a] leading-relaxed">
-                Fokus statt Overkill: Meta Ads OS mit klarer Guidance.
-              </p>
-            </div>
-            <div className="overflow-hidden rounded-xl border border-[#e5e5e5] bg-white shadow-sm">
-              <div className="grid grid-cols-3 bg-[#f3f4f6] text-sm font-semibold text-[#0b0b0b]">
-                <div className="px-4 py-3 text-left">Kriterium</div>
-                <div className="px-4 py-3 text-left">Madgicx</div>
-                <div className="px-4 py-3 text-left bg-white">AdRuby</div>
-              </div>
-              <div className="divide-y divide-[#e5e7eb] text-sm text-[#2c2c2c]">
-                {comparisonRows.map((row) => (
-                  <div key={row.label} className="grid grid-cols-3">
-                    <div className="px-4 py-3 font-semibold text-[#0b0b0b]">{row.label}</div>
-                    <div className="px-4 py-3">{row.madgicx}</div>
-                    <div className="px-4 py-3 bg-[#fafafa]">{row.adruby}</div>
+              <div className="space-y-2">
+                {[
+                  {
+                    label: "Komplexität",
+                    left: "Sehr hoch, viele Module",
+                    right: "Fokussiert auf Meta Ads Strategie"
+                  },
+                  {
+                    label: "Fokus",
+                    left: "Multi-Channel & Deep-Features",
+                    right: "Meta Ads Strategien, Creatives & Setups"
+                  },
+                  {
+                    label: "Einstieg",
+                    left: "Erfordert Einarbeitung & Schulung",
+                    right: "Schnell startklar, klare Schritte"
+                  },
+                  {
+                    label: "Team-Nutzung",
+                    left: "Gut für Power-Nutzer",
+                    right: "Ideal für kleine Teams & Inhaber:innen"
+                  }
+                ].map((row) => (
+                  <div
+                    key={row.label}
+                    className="grid grid-cols-3 gap-2 items-start"
+                  >
+                    <div className="text-[11px] text-slate-300/90">
+                      {row.label}
+                    </div>
+                    <div className="text-[11px] text-slate-400/90">
+                      {row.left}
+                    </div>
+                    <div className="text-[11px] text-slate-100 font-medium">
+                      {row.right}
+                    </div>
                   </div>
                 ))}
               </div>
             </div>
           </div>
-        </section>
+        </div>
+      </section>
 
-        <section
-          id="features"
-          className="px-4 md:px-8 lg:px-16 py-12 md:py-16 bg-white scroll-mt-24"
-        >
-          <div className="max-w-6xl mx-auto space-y-8">
-            <div className="space-y-3 text-center">
-              <h2 className="text-3xl md:text-4xl font-bold">Was du mit AdRuby bekommst</h2>
-              <p className="text-base md:text-lg text-[#4a4a4a] leading-relaxed">
-                Meta Ads Outputs, die du sofort umsetzen und skalieren kannst.
-              </p>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-              {features.map((feat) => (
-                <div key={feat.title} className="p-6 rounded-xl border border-[#e5e5e5] bg-[#fafafa] shadow-sm">
-                  <h3 className="text-lg font-semibold text-[#0b0b0b] mb-2">{feat.title}</h3>
-                  <p className="text-sm text-[#4a4a4a] leading-relaxed">{feat.desc}</p>
-                </div>
-              ))}
-            </div>
-          </div>
-        </section>
-
-        <section
-          id="switch-reasons"
-          className="px-4 md:px-8 lg:px-16 py-12 md:py-16 bg-[#fafafa] scroll-mt-24"
-        >
-          <div className="max-w-6xl mx-auto space-y-6">
-            <div className="space-y-3 text-center">
-              <h2 className="text-3xl md:text-4xl font-bold">Wann sich ein Wechsel lohnt</h2>
-              <p className="text-base md:text-lg text-[#4a4a4a] leading-relaxed">
-                Für Media Buyer, die Einfachheit und Klarheit wollen.
-              </p>
-            </div>
-            <ul className="space-y-3 text-sm md:text-base text-[#2c2c2c]">
-              {switchReasons.map((reason) => (
-                <li key={reason} className="flex items-start gap-2">
-                  <span className="mt-1 h-2 w-2 rounded-full bg-[#C80000]" />
-                  <span>{reason}</span>
-                </li>
-              ))}
-            </ul>
-            <div className="text-center text-sm text-[#C80000] font-semibold">
-              <Link to="/meta-ads-tool-agenturen" className="hover:underline">
-                Mehr zu AdRuby für Performance-Agenturen
-              </Link>
-            </div>
-          </div>
-        </section>
-
-        <section
-          id="faq"
-          className="px-4 md:px-8 lg:px-16 py-12 md:py-16 bg-white scroll-mt-24"
-        >
-          <div className="max-w-6xl mx-auto space-y-8">
-            <div className="space-y-3 text-center">
-              <h2 className="text-3xl md:text-4xl font-bold">FAQ zur Madgicx Alternative</h2>
-              <p className="text-base md:text-lg text-[#4a4a4a] leading-relaxed">
-                Antworten für den Umstieg.
-              </p>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {faqItems.map((faq) => (
-                <div key={faq.q} className="p-5 md:p-6 rounded-xl border border-[#e5e5e5] bg-[#fafafa] shadow-sm space-y-2">
-                  <h3 className="font-semibold text-[#0b0b0b]">{faq.q}</h3>
-                  <p className="text-sm text-[#4a4a4a] leading-relaxed">{faq.a}</p>
-                </div>
-              ))}
-            </div>
-          </div>
-        </section>
-
-        <section
-          id="final-cta"
-          className="px-4 md:px-8 lg:px-16 py-14 md:py-16 bg-[#C80000] text-white scroll-mt-24"
-        >
-          <div className="max-w-5xl mx-auto text-center space-y-6">
-            <h2 className="text-3xl md:text-4xl font-bold leading-tight">
-              Klarheit statt Overkill: AdRuby für deine Meta Ads
-            </h2>
-            <p className="text-base md:text-lg text-white/90">
-              Strategie, Creatives und Setup in einem Tool – fokussiert auf Meta Ads Performance.
+      <section className="px-4 py-12 md:px-8 lg:px-16 max-w-5xl mx-auto">
+        <h2 className="text-xl md:text-2xl font-semibold mb-4">
+          Core Features von AdRuby für Ex-Madgicx-Nutzer:innen
+        </h2>
+        <p className="text-sm text-slate-200/90 mb-4">
+          Wenn du Madgicx bereits genutzt hast, kennst du die Power – aber
+          wahrscheinlich auch die Komplexität. AdRuby nimmt den Druck raus.
+        </p>
+        <div className="grid gap-4 md:grid-cols-2">
+          <div className="rounded-xl border border-slate-700/80 bg-slate-950/60 p-4">
+            <p className="font-medium mb-1 text-sm">
+              KI-gestützter Strategie-Generator
             </p>
-            <div className="flex flex-col sm:flex-row gap-3 justify-center">
-              <Link
-                to="/ad-ruby-registration"
-                className="w-full sm:w-auto inline-flex items-center justify-center bg-white text-[#C80000] px-8 py-3 rounded-lg font-semibold hover:bg-gray-50 transition-colors min-h-[44px]"
-              >
-                AdRuby kostenlos testen
-              </Link>
-              <button
-                type="button"
-                className="w-full sm:w-auto inline-flex items-center justify-center border border-white/40 text-white px-8 py-3 rounded-lg font-semibold hover:bg-white/10 transition-colors min-h-[44px]"
-              >
-                Strategie-Beispiel ansehen
-              </button>
-            </div>
+            <p className="text-xs text-slate-300/90">
+              Auf Basis deiner Ziele, Budgets und Zielgruppen erzeugt AdRuby
+              vollständige Meta Ads Strategien, die du direkt umsetzen kannst.
+            </p>
           </div>
-        </section>
+          <div className="rounded-xl border border-slate-700/80 bg-slate-950/60 p-4">
+            <p className="font-medium mb-1 text-sm">
+              Ad Copy, Hooks & Creative-Ideen
+            </p>
+            <p className="text-xs text-slate-300/90">
+              Du bekommst Headline-Varianten, Hooks und Copy-Ideen, die direkt
+              auf deine Zielgruppe und dein Angebot zugeschnitten sind.
+            </p>
+          </div>
+          <div className="rounded-xl border border-slate-700/80 bg-slate-950/60 p-4">
+            <p className="font-medium mb-1 text-sm">
+              Meta Setup Empfehlungen
+            </p>
+            <p className="text-xs text-slate-300/90">
+              Strukturvorschläge für Kampagnen, Anzeigengruppen und Ads – inklusive
+              Testing-Struktur und Skalierungsplan.
+            </p>
+          </div>
+          <div className="rounded-xl border border-slate-700/80 bg-slate-950/60 p-4">
+            <p className="font-medium mb-1 text-sm">
+              Strategien pro Kampagne speichern
+            </p>
+            <p className="text-xs text-slate-300/90">
+              Jede Strategie lässt sich deinem Ad-Setup zuordnen, damit du später
+              genau siehst, welche Strategie zu welcher Performance geführt hat.
+            </p>
+          </div>
+        </div>
+      </section>
 
-        <footer className="bg-[#000000] text-white py-14">
-          <div className="max-w-6xl mx-auto px-4 md:px-8">
-            <div className="grid lg:grid-cols-4 gap-12 mb-12">
-              <div className="lg:col-span-2">
-                <div className="flex items-center space-x-3 mb-4">
-                  <img
-                    src="/assets/images/Screenshot_2025-10-21_000636-removebg-preview-1762544374259.png"
-                    alt="AdRuby Markenlogo"
-                    className="w-8 h-8 object-contain"
-                  />
-                  <span className="text-xl font-bold">AdRuby</span>
-                </div>
-                <p className="text-gray-400 max-w-md text-sm leading-relaxed">
-                  KI-basiertes Meta Ads OS für Marketer:innen & Brands. Strategien, Creatives, Copy und Setup in einem Workflow.
-                </p>
-              </div>
-              <div>
-                <h4 className="font-bold mb-4">Produkt</h4>
-                <div className="space-y-3">
-                  {['KI-Strategie', 'Ad Generator', 'Meta Setup', 'Analytics', 'API Access'].map((item) => (
-                    <a key={item} href="#" className="block text-gray-400 hover:text-white transition-colors text-sm">
-                      {item}
-                    </a>
-                  ))}
-                </div>
-              </div>
-              <div>
-                <h4 className="font-bold mb-4">Unternehmen</h4>
-                <div className="space-y-3">
-                  {['Über uns', 'Blog', 'Karriere', 'Presse', 'Kontakt'].map((item) => (
-                    <a key={item} href="#" className="block text-gray-400 hover:text-white transition-colors text-sm">
-                      {item}
-                    </a>
-                  ))}
-                </div>
-              </div>
-            </div>
-            <div className="flex flex-col lg:flex-row justify-between items-center pt-8 border-t border-gray-800 text-sm text-gray-400 gap-4">
-              <span>© 2025 AdRuby. Alle Rechte vorbehalten.</span>
-              <div className="flex items-center gap-6">
-                <a href="#" className="hover:text-white transition-colors">Impressum</a>
-                <a href="#" className="hover:text-white transition-colors">Datenschutz</a>
-                <a href="#" className="hover:text-white transition-colors">AGB</a>
-              </div>
-            </div>
+      <section className="px-4 py-12 md:px-8 lg:px-16 max-w-5xl mx-auto border-t border-slate-800/80">
+        <h2 className="text-xl md:text-2xl font-semibold mb-4">
+          FAQ zur Madgicx Alternative
+        </h2>
+        <div className="space-y-4 text-sm text-slate-200/90">
+          <div>
+            <p className="font-medium">
+              Kann AdRuby Madgicx komplett ersetzen?
+            </p>
+            <p className="text-xs text-slate-300/90 mt-1">
+              Wenn dein Fokus hauptsächlich auf Meta Ads liegt, ja. AdRuby deckt
+              Strategie, Creatives und Setups ab – ohne Multi-Channel-Overkill.
+            </p>
           </div>
-        </footer>
-      </main>
-    </>
+          <div>
+            <p className="font-medium">
+              Brauche ich viel Vorerfahrung, um AdRuby zu nutzen?
+            </p>
+            <p className="text-xs text-slate-300/90 mt-1">
+              Nein. AdRuby führt dich Schritt für Schritt durch Fragen zu Ziel,
+              Budget und Funnel – und erzeugt darauf basierend Strategien, die du
+              direkt umsetzen kannst.
+            </p>
+          </div>
+          <div>
+            <p className="font-medium">
+              Kann ich AdRuby parallel zu Madgicx verwenden?
+            </p>
+            <p className="text-xs text-slate-300/90 mt-1">
+              Ja. Viele nutzen AdRuby als Strategie- und Creative-Engine und
+              setzen das Setup anschließend in ihrem gewohnten Tool um.
+            </p>
+          </div>
+          <div>
+            <p className="font-medium">
+              Für welche Budgets lohnt sich AdRuby?
+            </p>
+            <p className="text-xs text-slate-300/90 mt-1">
+              Typischerweise ab ca. 30–50 € Tagesbudget aufwärts – überall dort,
+              wo Testing und Skalierung einen echten Unterschied machen.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <section className="px-4 pb-16 md:px-8 lg:px-16 max-w-5xl mx-auto">
+        <div className="rounded-2xl border border-rose-600/40 bg-gradient-to-r from-rose-900/70 via-black to-black px-6 py-8 md:px-8 md:py-10 text-center shadow-lg shadow-rose-900/40">
+          <h2 className="text-xl md:text-2xl font-semibold mb-3">
+            Madgicx ist dir zu komplex? Probier AdRuby.
+          </h2>
+          <p className="text-sm text-slate-200/90 mb-6 max-w-2xl mx-auto">
+            Reduziere Komplexität, gewinne Klarheit in deinen Meta Ads Strategien
+            und teste mehr, ohne dein Team zu überfordern.
+          </p>
+          <button className="inline-flex items-center justify-center rounded-full bg-gradient-to-r from-rose-600 to-red-500 px-8 py-3 text-sm font-semibold text-white shadow-lg shadow-red-500/40 hover:from-rose-500 hover:to-red-400 transition">
+            AdRuby jetzt 7 Tage kostenlos testen
+          </button>
+        </div>
+      </section>
+    </main>
   );
 };
 
