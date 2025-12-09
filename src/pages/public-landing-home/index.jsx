@@ -94,16 +94,6 @@ const PublicLandingHome = () => {
     avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=adruby${i + 1}&backgroundColor=red,blue,green&clothing=blazer,hoodie,sweater`
   }));
 
-  // Partner/Brand logos (placeholder)
-  const partnerBrands = [
-    'Mercedes-Benz',
-    'Adidas',
-    'BMW',
-    'Zalando',
-    'Otto',
-    'MediaMarkt'
-  ];
-
   const benefits = [
     {
       icon: Target,
@@ -371,22 +361,6 @@ const PublicLandingHome = () => {
                       </div>
                       <div className="text-sm text-[#4a4a4a]">
                         Vertraut von Performance-Marketer:innen, E-Com Brands und Media Buyern
-                      </div>
-                    </div>
-
-                    <div>
-                      <p className="text-xs uppercase tracking-[0.15em] text-[#6b6b6b] mb-3">
-                        Marken, die AdRuby-Inspirationen nutzen
-                      </p>
-                      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-3">
-                        {partnerBrands.map((brand) => (
-                          <div
-                            key={brand}
-                            className="px-4 py-2 bg-white rounded-lg border border-[#ededed] text-sm text-[#3a3a3a] font-medium shadow-sm"
-                          >
-                            {brand}
-                          </div>
-                        ))}
                       </div>
                     </div>
                   </motion.div>
