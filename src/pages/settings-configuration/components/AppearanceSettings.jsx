@@ -78,29 +78,6 @@ const AppearanceSettings = () => {
           </div>
         </div>
 
-        {/* Color Scheme Preview */}
-        <div>
-          <h4 className="text-sm font-medium text-foreground mb-3">Farbschema-Vorschau</h4>
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-            <div className="flex flex-col items-center space-y-2">
-              <div className="w-12 h-12 bg-primary rounded-lg shadow-sm"></div>
-              <span className="text-xs text-muted-foreground">Primär</span>
-            </div>
-            <div className="flex flex-col items-center space-y-2">
-              <div className="w-12 h-12 bg-secondary rounded-lg shadow-sm"></div>
-              <span className="text-xs text-muted-foreground">Sekundär</span>
-            </div>
-            <div className="flex flex-col items-center space-y-2">
-              <div className="w-12 h-12 bg-accent rounded-lg shadow-sm"></div>
-              <span className="text-xs text-muted-foreground">Akzent</span>
-            </div>
-            <div className="flex flex-col items-center space-y-2">
-              <div className="w-12 h-12 bg-muted rounded-lg shadow-sm"></div>
-              <span className="text-xs text-muted-foreground">Gedämpft</span>
-            </div>
-          </div>
-        </div>
-
         {/* Reset Button */}
         <div className="pt-4 border-t border-border">
           <Button
