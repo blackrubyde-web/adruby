@@ -109,174 +109,166 @@ const InputForm = ({
           <p className="text-sm text-muted-foreground">Geben Sie Ihre Produktdaten für die KI-Analyse ein</p>
         </div>
       </div>
-      <div className="space-y-6">
-        {/* Produktname */}
-        <div>
-          <label className="block text-sm font-medium text-foreground mb-2">
-            Produktname *
-          </label>
-          <Input
-            type="text"
-            value={formData?.product_name || ''}
-            onChange={(e) => handleInputChange('product_name', e?.target?.value)}
-            placeholder="z.B. FitMax Pro Supplement"
-            disabled={isDisabled}
-            className="w-full"
-          />
-        </div>
-
-        {/* Produktbeschreibung */}
-        <div>
-          <label className="block text-sm font-medium text-foreground mb-2">
-            Produktbeschreibung *
-          </label>
-          <textarea
-            value={formData?.product_description || ''}
-            onChange={(e) => handleInputChange('product_description', e?.target?.value)}
-            placeholder="Detaillierte Beschreibung Ihres Produkts..."
-            disabled={isDisabled}
-            rows={4}
-            className="w-full px-3 py-2 border border-input rounded-md bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent disabled:opacity-50"
-          />
-        </div>
-
-        {/* Branche */}
-        <div>
-          <AppSelect
-            label="Branche"
-            name="industry"
-            value={formData?.industry || 'e_commerce'}
-            onChange={(e) => handleInputChange('industry', e.target.value)}
-            disabled={isDisabled}
-          >
-            {industryOptions?.map((opt) => (
-              <option key={opt.value} value={opt.value}>
-                {opt.label}
-              </option>
-            ))}
-          </AppSelect>
-        </div>
-
-        {/* Zielgruppe */}
-        <div>
-          <label className="block text-sm font-medium text-foreground mb-2">
-            Zielgruppe *
-          </label>
-          <Input
-            type="text"
-            value={formData?.target_audience || ''}
-            onChange={(e) => handleInputChange('target_audience', e?.target?.value)}
-            placeholder="z.B. Fitness-Enthusiasten, 25-45 Jahre"
-            disabled={isDisabled}
-            className="w-full"
-          />
-        </div>
-
-        {/* Hauptnutzen */}
-        <div>
-          <label className="block text-sm font-medium text-foreground mb-2">
-            Hauptnutzen *
-          </label>
-          <textarea
-            value={formData?.main_benefits || ''}
-            onChange={(e) => handleInputChange('main_benefits', e?.target?.value)}
-            placeholder="Die wichtigsten Vorteile Ihres Produkts..."
-            disabled={isDisabled}
-            rows={3}
-            className="w-full px-3 py-2 border border-input rounded-md bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent disabled:opacity-50"
-          />
-        </div>
-
-        {/* Schmerzpunkte */}
-        <div>
-          <label className="block text-sm font-medium text-foreground mb-2">
-            Schmerzpunkte *
-          </label>
-          <textarea
-            value={formData?.pain_points || ''}
-            onChange={(e) => handleInputChange('pain_points', e?.target?.value)}
-            placeholder="Welche Probleme löst Ihr Produkt..."
-            disabled={isDisabled}
-            rows={3}
-            className="w-full px-3 py-2 border border-input rounded-md bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent disabled:opacity-50"
-          />
-        </div>
-
-        {/* USP */}
-        <div>
-          <label className="block text-sm font-medium text-foreground mb-2">
-            USP (Unique Selling Proposition) *
-          </label>
-          <Input
-            type="text"
-            value={formData?.usp || ''}
-            onChange={(e) => handleInputChange('usp', e?.target?.value)}
-            placeholder="Was macht Ihr Produkt einzigartig..."
-            disabled={isDisabled}
-            className="w-full"
-          />
-        </div>
-
-        {/* Preis/Angebot */}
-        <div>
-          <label className="block text-sm font-medium text-foreground mb-2">
-            Preis/Angebot
-          </label>
-          <Input
-            type="text"
-            value={formData?.price_offer || ''}
-            onChange={(e) => handleInputChange('price_offer', e?.target?.value)}
-            placeholder="z.B. 49,99 EUR (statt 79,99 EUR)"
-            disabled={isDisabled}
-            className="w-full"
-          />
-        </div>
-
-        {/* Tonalität */}
-        <div>
-          <AppSelect
-            label="Tonalität"
-            name="tonality"
-            value={formData?.tonality || 'professional'}
-            onChange={(e) => handleInputChange('tonality', e.target.value)}
-            disabled={isDisabled}
-          >
-            {tonalityOptions?.map((opt) => (
-              <option key={opt.value} value={opt.value}>
-                {opt.label}
-              </option>
-            ))}
-          </AppSelect>
-        </div>
-
-        {/* CTA-Text */}
-        <div>
-          <label className="block text-sm font-medium text-foreground mb-2">
-            CTA-Text
-          </label>
-          <Input
-            type="text"
-            value={formData?.cta_text || ''}
-            onChange={(e) => handleInputChange('cta_text', e?.target?.value)}
-            placeholder="z.B. Jetzt kaufen, Mehr erfahren"
-            disabled={isDisabled}
-            className="w-full"
-          />
-        </div>
-
-        {/* Kampagnenparameter & Research */}
-        <div className="border-t border-border pt-6 mt-2 space-y-4">
-          <div className="flex items-center space-x-3">
-            <div className="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center">
-              <Icon name="Target" size={18} className="text-primary" />
+      <div className="space-y-8">
+        <div className="space-y-4">
+          <div className="space-y-1">
+            <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Produkt</p>
+            <h3 className="text-base font-semibold text-foreground">Produkt & Messaging</h3>
+            <p className="text-sm text-muted-foreground">Stammdaten und Kernbotschaften für die KI.</p>
+          </div>
+          <div className="grid gap-4 md:grid-cols-2">
+            <div className="md:col-span-2">
+              <label className="block text-sm font-medium text-foreground mb-2">
+                Produktname *
+              </label>
+              <Input
+                type="text"
+                value={formData?.product_name || ''}
+                onChange={(e) => handleInputChange('product_name', e?.target?.value)}
+                placeholder="z.B. FitMax Pro Supplement"
+                disabled={isDisabled}
+                className="w-full"
+              />
+            </div>
+            <div className="md:col-span-2">
+              <label className="block text-sm font-medium text-foreground mb-2">
+                Produktbeschreibung *
+              </label>
+              <textarea
+                value={formData?.product_description || ''}
+                onChange={(e) => handleInputChange('product_description', e?.target?.value)}
+                placeholder="Detaillierte Beschreibung Ihres Produkts..."
+                disabled={isDisabled}
+                rows={4}
+                className="w-full px-3 py-2 border border-input rounded-md bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent disabled:opacity-50"
+              />
             </div>
             <div>
-              <h3 className="text-base font-semibold text-foreground">Kampagnenparameter & Research</h3>
-              <p className="text-sm text-muted-foreground">Definiere Ziel, Markt und Research-Einstellungen</p>
+              <AppSelect
+                label="Branche"
+                name="industry"
+                value={formData?.industry || 'e_commerce'}
+                onChange={(e) => handleInputChange('industry', e.target.value)}
+                disabled={isDisabled}
+              >
+                {industryOptions?.map((opt) => (
+                  <option key={opt.value} value={opt.value}>
+                    {opt.label}
+                  </option>
+                ))}
+              </AppSelect>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-foreground mb-2">
+                Zielgruppe *
+              </label>
+              <Input
+                type="text"
+                value={formData?.target_audience || ''}
+                onChange={(e) => handleInputChange('target_audience', e?.target?.value)}
+                placeholder="z.B. Fitness-Enthusiasten, 25-45 Jahre"
+                disabled={isDisabled}
+                className="w-full"
+              />
+            </div>
+            <div className="md:col-span-2">
+              <label className="block text-sm font-medium text-foreground mb-2">
+                Hauptnutzen *
+              </label>
+              <textarea
+                value={formData?.main_benefits || ''}
+                onChange={(e) => handleInputChange('main_benefits', e?.target?.value)}
+                placeholder="Die wichtigsten Vorteile Ihres Produkts..."
+                disabled={isDisabled}
+                rows={3}
+                className="w-full px-3 py-2 border border-input rounded-md bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent disabled:opacity-50"
+              />
+            </div>
+            <div className="md:col-span-2">
+              <label className="block text-sm font-medium text-foreground mb-2">
+                Schmerzpunkte *
+              </label>
+              <textarea
+                value={formData?.pain_points || ''}
+                onChange={(e) => handleInputChange('pain_points', e?.target?.value)}
+                placeholder="Welche Probleme löst Ihr Produkt..."
+                disabled={isDisabled}
+                rows={3}
+                className="w-full px-3 py-2 border border-input rounded-md bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent disabled:opacity-50"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-foreground mb-2">
+                USP (Unique Selling Proposition) *
+              </label>
+              <Input
+                type="text"
+                value={formData?.usp || ''}
+                onChange={(e) => handleInputChange('usp', e?.target?.value)}
+                placeholder="Was macht Ihr Produkt einzigartig..."
+                disabled={isDisabled}
+                className="w-full"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-foreground mb-2">
+                Preis/Angebot
+              </label>
+              <Input
+                type="text"
+                value={formData?.price_offer || ''}
+                onChange={(e) => handleInputChange('price_offer', e?.target?.value)}
+                placeholder="z.B. 49,99 EUR (statt 79,99 EUR)"
+                disabled={isDisabled}
+                className="w-full"
+              />
             </div>
           </div>
+        </div>
 
-          <div className="space-y-4">
+        <div className="space-y-4 border-t border-border pt-6">
+          <div className="space-y-1">
+            <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Tone & CTA</p>
+            <h3 className="text-base font-semibold text-foreground">Tonalität & Call-to-Action</h3>
+            <p className="text-sm text-muted-foreground">Stimme Tonfall und Button-Text auf die Anzeige ab.</p>
+          </div>
+          <div className="grid gap-4 md:grid-cols-2">
+            <AppSelect
+              label="Tonalität"
+              name="tonality"
+              value={formData?.tonality || 'professional'}
+              onChange={(e) => handleInputChange('tonality', e.target.value)}
+              disabled={isDisabled}
+            >
+              {tonalityOptions?.map((opt) => (
+                <option key={opt.value} value={opt.value}>
+                  {opt.label}
+                </option>
+              ))}
+            </AppSelect>
+            <div>
+              <label className="block text-sm font-medium text-foreground mb-2">
+                CTA-Text
+              </label>
+              <Input
+                type="text"
+                value={formData?.cta_text || ''}
+                onChange={(e) => handleInputChange('cta_text', e?.target?.value)}
+                placeholder="z.B. Jetzt kaufen, Mehr erfahren"
+                disabled={isDisabled}
+                className="w-full"
+              />
+            </div>
+          </div>
+        </div>
+
+        <div className="space-y-4 border-t border-border pt-6">
+          <div className="space-y-1">
+            <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Kampagne</p>
+            <h3 className="text-base font-semibold text-foreground">Kampagnenparameter & Research</h3>
+            <p className="text-sm text-muted-foreground">Ziel, Markt, Sprache und Recherche-Umfang festlegen.</p>
+          </div>
+          <div className="grid gap-4 md:grid-cols-2">
             <AppSelect
               label="Ziel der Anzeige *"
               name="ad_goal"
@@ -319,7 +311,54 @@ const InputForm = ({
               ))}
             </AppSelect>
 
-            <div className="space-y-2">
+            <AppSelect
+              label="Research-Land"
+              name="research_country"
+              value={formData?.research_country || 'DE'}
+              onChange={(e) => handleInputChange('research_country', e.target.value)}
+              disabled={isDisabled}
+            >
+              {researchCountryOptions?.map((opt) => (
+                <option key={opt.value} value={opt.value}>
+                  {opt.label}
+                </option>
+              ))}
+            </AppSelect>
+
+            <AppSelect
+              label="Zeitraum"
+              name="research_period"
+              value={formData?.research_period ?? ''}
+              onChange={(e) => handleInputChange('research_period', e.target.value)}
+              disabled={isDisabled}
+            >
+              {researchPeriodOptions?.map((opt) => (
+                <option key={opt.value} value={opt.value}>
+                  {opt.label}
+                </option>
+              ))}
+            </AppSelect>
+
+            <div>
+              <label className="block text-sm font-medium text-foreground mb-2">
+                Max. Ads
+              </label>
+              <Input
+                type="number"
+                min={10}
+                max={100}
+                value={formData?.research_max_results ?? 30}
+                onChange={(e) => {
+                  const val = Number(e?.target?.value);
+                  handleInputChange('research_max_results', val);
+                }}
+                disabled={isDisabled}
+                className="w-full"
+              />
+              <p className="text-xs text-muted-foreground mt-1">Zwischen 10 und 100, Standard: 30</p>
+            </div>
+
+            <div className="md:col-span-2 space-y-2">
               <label className="block text-sm font-medium text-foreground">
                 Research-Keyword (Brand, Produkt oder Nische)
               </label>
@@ -335,64 +374,17 @@ const InputForm = ({
                 Wenn leer, wird automatisch der Produktname als Keyword verwendet.
               </p>
             </div>
-
-            <AppSelect
-              label="Research-Land"
-              name="research_country"
-              value={formData?.research_country || 'DE'}
-              onChange={(e) => handleInputChange('research_country', e.target.value)}
-              disabled={isDisabled}
-            >
-              {researchCountryOptions?.map((opt) => (
-                <option key={opt.value} value={opt.value}>
-                  {opt.label}
-                </option>
-              ))}
-            </AppSelect>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <AppSelect
-                label="Zeitraum"
-                name="research_period"
-                value={formData?.research_period ?? ''}
-                onChange={(e) => handleInputChange('research_period', e.target.value)}
-                disabled={isDisabled}
-              >
-                {researchPeriodOptions?.map((opt) => (
-                  <option key={opt.value} value={opt.value}>
-                    {opt.label}
-                  </option>
-                ))}
-              </AppSelect>
-
-              <div>
-                <label className="block text-sm font-medium text-foreground mb-2">
-                  Max. Ads
-                </label>
-                <Input
-                  type="number"
-                  min={10}
-                  max={100}
-                  value={formData?.research_max_results ?? 30}
-                  onChange={(e) => {
-                    const val = Number(e?.target?.value);
-                    handleInputChange('research_max_results', val);
-                  }}
-                  disabled={isDisabled}
-                  className="w-full"
-                />
-                <p className="text-xs text-muted-foreground mt-1">Zwischen 10 und 100, Standard: 30</p>
-              </div>
-            </div>
           </div>
         </div>
 
-        {/* Fokus-Checkboxen */}
-        <div>
-          <label className="block text-sm font-medium text-foreground mb-4">
-            Fokus-Bereiche
-          </label>
-          <div className="space-y-3">
+        <div className="space-y-3 border-t border-border pt-6">
+          <div className="flex items-center justify-between">
+            <label className="text-sm font-medium text-foreground">
+              Fokus-Bereiche
+            </label>
+            <span className="text-xs text-muted-foreground">Optional</span>
+          </div>
+          <div className="grid gap-3 sm:grid-cols-2 md:grid-cols-3">
             <Checkbox
               id="focus_emotion"
               checked={formData?.focus_emotion || false}
@@ -419,8 +411,7 @@ const InputForm = ({
           </div>
         </div>
 
-        {/* Ad-Erstellung starten Button */}
-        <div className="pt-2">
+        <div className="pt-2 space-y-2">
           <Button
             onClick={startHandler}
             disabled={isRunning}
@@ -429,11 +420,9 @@ const InputForm = ({
           >
             {isRunning ? "Ads werden erstellt..." : "Ad-Erstellung starten"}
           </Button>
-        </div>
-
-        {/* Required Fields Note */}
-        <div className="text-xs text-muted-foreground">
-          * Pflichtfelder
+          <div className="text-xs text-muted-foreground">
+            * Pflichtfelder
+          </div>
         </div>
       </div>
     </motion.div>
