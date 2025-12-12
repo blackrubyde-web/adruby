@@ -1,6 +1,7 @@
 import React, { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
+import Icon from '../../components/AppIcon';
 import { useAuth } from '../../contexts/AuthContext';
 import StatisticsCard from './components/StatisticsCard';
 import PerformanceChart from './components/PerformanceChart';
@@ -55,6 +56,41 @@ const OverviewDashboard = () => {
       icon: "TrendingUp",
       description: "Durchschnittlicher ROAS"
     }
+  ];
+
+  const quickActions = [
+    {
+      title: "Neue Kampagne",
+      subtitle: "Kampagne erstellen",
+      icon: "Plus",
+      iconBg: "bg-primary/10",
+      iconColor: "text-primary",
+      onClick: () => navigate('/campaigns-management'),
+    },
+    {
+      title: "Berichte",
+      subtitle: "Performance analysieren",
+      icon: "BarChart3",
+      iconBg: "bg-success/10",
+      iconColor: "text-success",
+      onClick: () => navigate('/ai-analysis'),
+    },
+    {
+      title: "Zielgruppen",
+      subtitle: "Segmente verwalten",
+      icon: "Target",
+      iconBg: "bg-warning/10",
+      iconColor: "text-warning",
+      onClick: () => navigate('/ad-strategy'),
+    },
+    {
+      title: "Einstellungen",
+      subtitle: "Konto konfigurieren",
+      icon: "Settings",
+      iconBg: "bg-muted/20",
+      iconColor: "text-foreground",
+      onClick: () => navigate('/settings-configuration'),
+    },
   ];
 
   const containerVariants = {
@@ -135,71 +171,26 @@ const OverviewDashboard = () => {
           <div className="bg-card border border-border rounded-lg p-6 shadow-minimal">
             <h2 className="text-lg font-semibold text-foreground mb-4">Schnellaktionen</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-              <motion.div
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                className="p-4 bg-accent rounded-lg border border-border cursor-pointer hover:bg-primary/5 transition-colors"
-              >
-                <div className="flex items-center space-x-3">
-                  <div className="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center">
-                    <motion.div whileHover={{ rotate: 360 }} transition={{ duration: 0.5 }}>
-                      <span className="text-primary text-lg">+</span>
-                    </motion.div>
+              {quickActions.map((action) => (
+                <motion.button
+                  key={action.title}
+                  type="button"
+                  onClick={action.onClick}
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  className="p-4 bg-accent rounded-lg border border-border text-left hover:bg-primary/5 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                >
+                  <div className="flex items-center space-x-3">
+                    <div className={`w-10 h-10 ${action.iconBg} rounded-lg flex items-center justify-center`}>
+                      <Icon name={action.icon} size={18} className={action.iconColor} />
+                    </div>
+                    <div>
+                      <p className="font-medium text-foreground">{action.title}</p>
+                      <p className="text-sm text-muted-foreground">{action.subtitle}</p>
+                    </div>
                   </div>
-                  <div>
-                    <p className="font-medium text-foreground">Neue Kampagne</p>
-                    <p className="text-sm text-muted-foreground">Kampagne erstellen</p>
-                  </div>
-                </div>
-              </motion.div>
-
-              <motion.div
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                className="p-4 bg-accent rounded-lg border border-border cursor-pointer hover:bg-primary/5 transition-colors"
-              >
-                <div className="flex items-center space-x-3">
-                  <div className="w-10 h-10 bg-success/10 rounded-lg flex items-center justify-center">
-                    <span className="text-success text-lg">📊</span>
-                  </div>
-                  <div>
-                    <p className="font-medium text-foreground">Berichte</p>
-                    <p className="text-sm text-muted-foreground">Performance analysieren</p>
-                  </div>
-                </div>
-              </motion.div>
-
-              <motion.div
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                className="p-4 bg-accent rounded-lg border border-border cursor-pointer hover:bg-primary/5 transition-colors"
-              >
-                <div className="flex items-center space-x-3">
-                  <div className="w-10 h-10 bg-warning/10 rounded-lg flex items-center justify-center">
-                    <span className="text-warning text-lg">🎯</span>
-                  </div>
-                  <div>
-                    <p className="font-medium text-foreground">Zielgruppen</p>
-                    <p className="text-sm text-muted-foreground">Segmente verwalten</p>
-                  </div>
-                </div>
-              </motion.div>
-
-              <motion.div
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                className="p-4 bg-accent rounded-lg border border-border cursor-pointer hover:bg-primary/5 transition-colors"
-              >
-                <div className="flex items-center space-x-3">
-                  <div className="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center">
-                    <span className="text-primary text-lg">⚙️</span>
-                  </div>
-                  <div>
-                    <p className="font-medium text-foreground">Einstellungen</p>
-                    <p className="text-sm text-muted-foreground">Konto konfigurieren</p>
-                  </div>
-                </div>
-              </motion.div>
+                </motion.button>
+              ))}
             </div>
           </div>
         </motion.div>
