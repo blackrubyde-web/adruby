@@ -54,32 +54,26 @@ const PerformanceChart = () => {
           <p className="text-sm text-muted-foreground">Kampagnen-Metriken der letzten 13 Tage</p>
         </div>
         <div className="flex items-center space-x-4">
-          <div className="flex items-center space-x-2">
+          <div
+            className="flex items-center space-x-2 cursor-help"
+            title="CTR (Click-Through-Rate): Anteil der Klicks pro Impression in Prozent."
+          >
             <div className="w-3 h-3 bg-primary rounded-full" />
-            <span
-              className="text-sm text-muted-foreground"
-              title="CTR (Click-Through-Rate): Anteil der Klicks pro Impression in Prozent."
-            >
-              CTR
-            </span>
+            <span className="text-sm text-muted-foreground">CTR</span>
           </div>
-          <div className="flex items-center space-x-2">
+          <div
+            className="flex items-center space-x-2 cursor-help"
+            title="Conversions: Anzahl der Nutzer, die die gewünschte Aktion (z.B. Kauf oder Lead) ausgeführt haben."
+          >
             <div className="w-3 h-3 bg-success rounded-full" />
-            <span
-              className="text-sm text-muted-foreground"
-              title="Conversions: Anzahl der Nutzer, die die gewünschte Aktion (z.B. Kauf oder Lead) ausgeführt haben."
-            >
-              Conversions
-            </span>
+            <span className="text-sm text-muted-foreground">Conversions</span>
           </div>
-          <div className="flex items-center space-x-2">
+          <div
+            className="flex items-center space-x-2 cursor-help"
+            title="ROAS (Return on Ad Spend): Umsatz geteilt durch Werbekosten."
+          >
             <div className="w-3 h-3 bg-warning rounded-full" />
-            <span
-              className="text-sm text-muted-foreground"
-              title="ROAS (Return on Ad Spend): Umsatz geteilt durch Werbekosten."
-            >
-              ROAS
-            </span>
+            <span className="text-sm text-muted-foreground">ROAS</span>
           </div>
         </div>
       </div>
