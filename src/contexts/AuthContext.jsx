@@ -677,10 +677,19 @@ export function AuthProvider({ children }) {
       if (error) throw error;
 
       if (isMountedRef.current) {
+        hasLoadedUserRef.current = { userId: null, loaded: false };
         setUser(null);
         setIsAdmin(false);
         setOnboardingStatus(initialOnboardingState);
         setUserProfile(null);
+        setSubscriptionStatus(null);
+        setSubscriptionMeta({
+          stripeCustomerId: null,
+          stripeSubscriptionId: null,
+          trialEndsAt: null
+        });
+        setLoading(false);
+        setIsAuthReady(true);
       }
 
       return { error: null };
