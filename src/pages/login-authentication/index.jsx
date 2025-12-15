@@ -62,6 +62,30 @@ const LoginAuthentication = () => {
     };
 
     const pollSession = async () => {
+      const params = new URLSearchParams(location.search);
+      const code = params.get('code');
+
+      // Wenn ein OAuth-Code vorhanden ist, direkt eintauschen und weiterleiten
+      if (code) {
+        try {
+          const { data, error } = await supabase.auth.exchangeCodeForSession(code);
+          if (error) {
+            throw error;
+          }
+          if (data?.session?.user) {
+            await finish(data.session.user);
+            return;
+          }
+        } catch (err) {
+          console.error('[LoginCallback] code exchange failed', err);
+          navigate('/login', {
+            replace: true,
+            state: { error: 'Login fehlgeschlagen (Code-Exchange).' }
+          });
+          return;
+        }
+      }
+
       try {
         const { data, error } = await supabase.auth.getSession();
         if (data?.session?.user) {
