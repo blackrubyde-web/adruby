@@ -1,19 +1,33 @@
 import React, { useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { supabase } from '../../lib/supabaseClient';
-import RedirectScreen from '../../components/RedirectScreen';
 import usePreferredTheme from '../../hooks/usePreferredTheme';
-import { useAuth } from '../../contexts/AuthContext';
+
+const DISALLOWED_REDIRECTS = new Set(['/login', '/login-authentication', '/signup']);
+const normalizeRedirect = (raw) => {
+  if (!raw) return null;
+  try {
+    const decoded = decodeURIComponent(raw);
+    if (!decoded.startsWith('/')) return null;
+    if (DISALLOWED_REDIRECTS.has(decoded)) return null;
+    return decoded;
+  } catch {
+    return null;
+  }
+};
 
 const LoginAuthentication = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const theme = usePreferredTheme();
   const isDark = theme === 'dark';
-  const { user, isAuthReady } = useAuth();
 
   useEffect(() => {
+    let cancelled = false;
+    let intervalId;
+
     const finish = async (sessionUser) => {
+      if (cancelled || !sessionUser?.id) return;
       try {
         const { data: profile, error: profileError } = await supabase
           .from('user_profiles')
@@ -27,25 +41,28 @@ const LoginAuthentication = () => {
 
         const isAdmin = profile?.role === 'admin';
         const params = new URLSearchParams(location.search);
-        const redirectParam = params.get('redirect');
+        const redirectParam = normalizeRedirect(params.get('redirect'));
         const isPaid = Boolean(profile?.payment_verified || profile?.onboarding_completed);
         const finalRedirect =
           redirectParam ||
           (isPaid ? (isAdmin ? '/admin-dashboard' : '/overview-dashboard') : '/payment-verification');
 
-        navigate(finalRedirect, { replace: true });
+        if (!cancelled) {
+          navigate(finalRedirect, { replace: true });
+        }
       } catch (err) {
         console.error('[LoginCallback] error', err);
-        navigate('/login', {
-          replace: true,
-          state: { error: 'Login fehlgeschlagen' }
-        });
+        if (!cancelled) {
+          navigate('/login', {
+            replace: true,
+            state: { error: 'Login fehlgeschlagen' }
+          });
+        }
       }
     };
 
-    const run = async () => {
+    const pollSession = async () => {
       try {
-        // Sofort prüfen
         const { data, error } = await supabase.auth.getSession();
         if (data?.session?.user) {
           await finish(data.session.user);
@@ -55,26 +72,24 @@ const LoginAuthentication = () => {
           console.error('[LoginCallback] getSession error', error);
         }
 
-        // Poll für den OAuth-Flow (Adblock/Third-Party-Cookie-Probleme)
         let attempts = 0;
         const maxAttempts = 12; // ~6s bei 500ms
 
-        const interval = setInterval(async () => {
+        intervalId = setInterval(async () => {
+          if (cancelled) return;
           attempts += 1;
           const { data: polled } = await supabase.auth.getSession();
           if (polled?.session?.user) {
-            clearInterval(interval);
+            clearInterval(intervalId);
             await finish(polled.session.user);
           } else if (attempts >= maxAttempts) {
-            clearInterval(interval);
+            clearInterval(intervalId);
             navigate('/login', {
               replace: true,
-              state: { error: 'Login fehlgeschlagen oder blockiert (Cookies/Adblock prüfen)' }
+              state: { error: 'Login fehlgeschlagen oder blockiert (Cookies/Adblock pruefen)' }
             });
           }
         }, 500);
-
-        return () => clearInterval(interval);
       } catch (err) {
         console.error('[LoginCallback] fatal error', err);
         navigate('/login', {
@@ -84,15 +99,13 @@ const LoginAuthentication = () => {
       }
     };
 
-    run();
-  }, [location.search, navigate]);
+    pollSession();
 
-  useEffect(() => {
-    // Falls AuthContext bereits User kennt (z.B. zurück aus OAuth), sofort weiter
-    if (isAuthReady && user?.id) {
-      navigate('/overview-dashboard', { replace: true });
-    }
-  }, [isAuthReady, user, navigate]);
+    return () => {
+      cancelled = true;
+      if (intervalId) clearInterval(intervalId);
+    };
+  }, [location.search, navigate]);
 
   const bgClass = isDark ? 'bg-slate-950 text-slate-50' : 'bg-white text-slate-900';
   const gradient = isDark
@@ -114,7 +127,7 @@ const LoginAuthentication = () => {
         <div className="flex items-center justify-center mb-4">
           <div className="h-12 w-12 rounded-full border-2 border-rose-400 border-t-transparent animate-spin" />
         </div>
-        <h1 className="text-lg font-semibold">Login wird verarbeitet…</h1>
+        <h1 className="text-lg font-semibold">Login wird verarbeitet...</h1>
         <p className={`text-sm ${subtitleClass}`}>Du wirst gleich weitergeleitet.</p>
       </div>
     </div>
