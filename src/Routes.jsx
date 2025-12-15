@@ -30,6 +30,7 @@ import AffiliatePage from './pages/affiliate';
 import AdRubyRegistration from './pages/ad-ruby-registration';
 import PaymentVerificationPage from './pages/payment-verification';
 import PaymentSuccess from './pages/payment-success';
+import PaymentCancelled from './pages/payment-cancelled';
 import AdminDashboard from './pages/admin-dashboard';
 import AIAnalysisPanel from './pages/ai-analysis';
 import FacebookAdsAgenturAlternative from './pages/seo/FacebookAdsAgenturAlternative';
@@ -38,6 +39,7 @@ import MadgicxAlternative from './pages/seo/MadgicxAlternative';
 import MetaAdsToolEcommerce from './pages/seo/MetaAdsToolEcommerce';
 import MetaAdsToolAgenturen from './pages/seo/MetaAdsToolAgenturen';
 import MetaAdsToolCoaches from './pages/seo/MetaAdsToolCoaches';
+import CommandPalette from './components/CommandPalette';
 
 const Routes = () => {
   return (
@@ -45,6 +47,7 @@ const Routes = () => {
       <ErrorBoundary>
         <AuthProvider>
           <ScrollToTop />
+          <CommandPalette />
           <RouterRoutes>
             <Route path="/" element={<PublicLandingHome />} />
             <Route path="/services" element={<PublicServiceOverview />} />
@@ -55,6 +58,7 @@ const Routes = () => {
             <Route path="/signup" element={<AdRubyRegistration />} />
             <Route path="/payment-verification" element={<PaymentVerificationPage />} />
             <Route path="/payment-success" element={<PaymentSuccess />} />
+            <Route path="/payment-cancelled" element={<PaymentCancelled />} />
             <Route path="/ad-ruby-registration" element={<AdRubyRegistration />} />
 
             <Route path="/ad-ruby-ad-builder" element={<AdRubyAdBuilder />} />

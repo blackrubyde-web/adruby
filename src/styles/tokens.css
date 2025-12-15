@@ -1,0 +1,54 @@
+:root {
+  /* Spacing scale (8px grid) */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-7: 32px;
+  --space-8: 40px;
+  --space-9: 48px;
+
+  /* Radii */
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-full: 999px;
+
+  /* Shadows */
+  --shadow-ghost: 0 1px 3px rgba(0, 0, 0, 0.08);
+  --shadow-elevated: 0 12px 30px rgba(0, 0, 0, 0.18);
+  --shadow-glow: 0 12px 40px rgba(244, 45, 99, 0.25);
+
+  /* Typography (clamp scales) */
+  --text-xs: clamp(11px, 1.5vw, 12px);
+  --text-sm: clamp(13px, 1.6vw, 14px);
+  --text-base: clamp(14px, 1.8vw, 16px);
+  --text-lg: clamp(16px, 2vw, 18px);
+  --text-xl: clamp(20px, 2.5vw, 22px);
+  --text-2xl: clamp(24px, 3vw, 28px);
+  --text-3xl: clamp(30px, 4vw, 36px);
+  --text-4xl: clamp(36px, 5vw, 44px);
+}
+
+.card-ghost {
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-ghost);
+}
+
+.card-glass {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-elevated);
+  backdrop-filter: blur(14px);
+}
+
+.card-elevated {
+  background: rgba(255, 255, 255, 0.06);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-glow);
+}

@@ -1,9 +1,51 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { PlayCircle, ArrowRight, CheckCircle, Brain, Target, BarChart3, TrendingUp, Users, DollarSign, Eye } from 'lucide-react';
+import {
+  PlayCircle,
+  ArrowRight,
+  CheckCircle,
+  Brain,
+  Target,
+  BarChart3,
+  TrendingUp,
+  Users,
+  DollarSign,
+  Eye,
+  Sparkles,
+  Loader2,
+  ShieldCheck,
+  BookmarkPlus
+} from 'lucide-react';
 import Header from '../public-landing-home/components/Header';
 import { useAuth } from '../../contexts/AuthContext';
+
+const playbooks = [
+  {
+    title: 'E-Commerce Scale',
+    subtitle: 'Performance Marketing',
+    budget: '€2.500/Monat',
+    audience: 'Shopping-affine Millennials',
+    kpi: '+340% ROAS',
+    color: 'from-blue-500 to-indigo-500'
+  },
+  {
+    title: 'Lead Gen High Intent',
+    subtitle: 'Coaches & B2B Services',
+    budget: '€900/Monat',
+    audience: 'Entscheider 30-50',
+    kpi: '€42 CPL',
+    color: 'from-emerald-500 to-teal-500'
+  },
+  {
+    title: 'UGC/Retention Push',
+    subtitle: 'Subscription / SaaS',
+    budget: '€1.800/Monat',
+    audience: 'Bestandskunden / Lookalikes',
+    kpi: '+2.3% CTR',
+    color: 'from-purple-500 to-fuchsia-500'
+  }
+];
 
 const AdRubyAdStrategies = () => {
   const navigate = useNavigate();
@@ -46,72 +88,6 @@ const AdRubyAdStrategies = () => {
     }
   };
 
-  const strategyFeatures = [
-    {
-      icon: Target,
-      title: "Budgetvorschläge",
-      description: "Optimale Budget-Allokation basierend auf Zielgruppe, Wettbewerb und saisonalen Trends."
-    },
-    {
-      icon: Users,
-      title: "Zielgruppenempfehlungen", 
-      description: "Präzise Audience-Definitionen mit demografischen und psychografischen Insights."
-    },
-    {
-      icon: TrendingUp,
-      title: "Skalierungsansätze",
-      description: "Datengesteuerte Strategien für nachhaltiges Kampagnen-Wachstum und Performance-Optimierung."
-    }
-  ];
-
-  const benefits = [
-    {
-      icon: Brain,
-      title: "KI-Strategie-Planer spart Agenturen Stunden",
-      description: "Automatisierte Strategieerstellung reduziert manuelle Planungszeit von Tagen auf Minuten.",
-      metric: "85% Zeitersparnis"
-    },
-    {
-      icon: BarChart3,
-      title: "Erhöht ROAS & Kampagnenkonsistenz",
-      description: "Bewährte Strategiemuster führen zu konsistent höheren Returns und reduzierten Streuverlusten.",
-      metric: "+240% ROAS"
-    },
-    {
-      icon: DollarSign,
-      title: "Ideal für E-Commerce & Coaches",
-      description: "Speziell optimierte Strategien für Performance-Marketing und digitale Produktverkäufe.",
-      metric: "90% Erfolgsrate"
-    }
-  ];
-
-  const strategyExamples = [
-    {
-      title: "E-Commerce Skalierung",
-      type: "Performance Marketing",
-      budget: "€2.500/Monat",
-      audience: "Shopping-affine Millennials",
-      kpi: "+340% ROAS",
-      color: "from-blue-500 to-blue-600"
-    },
-    {
-      title: "Coach/Beratung Akquise", 
-      type: "Lead Generation",
-      budget: "€800/Monat",
-      audience: "Unternehmer 30-50 Jahre",
-      kpi: "€45 Cost per Lead",
-      color: "from-green-500 to-green-600"
-    },
-    {
-      title: "B2B Software Launch",
-      type: "Brand Awareness",
-      budget: "€5.000/Monat", 
-      audience: "IT-Entscheider",
-      kpi: "2.8% CTR",
-      color: "from-purple-500 to-purple-600"
-    }
-  ];
-
   const loadStrategies = useCallback(async () => {
     if (!userId) return;
     setIsLoading(true);
@@ -120,14 +96,9 @@ const AdRubyAdStrategies = () => {
     try {
       const query = new URLSearchParams({ userId });
       if (adVariantId) query.set('adVariantId', adVariantId);
-      console.log(
-        "[Frontend][AdStrategiesGet] Request URL:",
-        `/.netlify/functions/ad-strategies-get?${query.toString()}`
-      );
 
-      const res = await fetch(`/.netlify/functions/ad-strategies-get?${query.toString()}`);
+      const res = await fetch(`/api/ad-strategies-get?${query.toString()}`);
       if (!res.ok) {
-        console.error('[Frontend][AdStrategiesGet] Failed:', res.status);
         setError('Strategien konnten nicht geladen werden.');
         return;
       }
@@ -136,9 +107,7 @@ const AdRubyAdStrategies = () => {
       const list = data?.strategies || [];
       setStrategies(list);
       if (list.length > 0) setSelectedStrategy(list[0]);
-      console.log('[Frontend][AdStrategiesGet] Loaded:', list.length);
     } catch (err) {
-      console.error('[Frontend][AdStrategiesGet] Error:', err);
       setError('Ein unerwarteter Fehler ist aufgetreten.');
     } finally {
       setIsLoading(false);
@@ -149,248 +118,270 @@ const AdRubyAdStrategies = () => {
     loadStrategies();
   }, [loadStrategies]);
 
+  const highlights = useMemo(
+    () => [
+      { icon: Target, label: 'Budgetvorschläge', value: 'Smart Allocation' },
+      { icon: Users, label: 'Audience Presets', value: 'High Intent' },
+      { icon: TrendingUp, label: 'Skalierung', value: 'Roadmap' }
+    ],
+    []
+  );
+
   return (
     <>
       <Header />
-      <div className="min-h-screen bg-[#FAFAFA] text-[#000000]">
-        
-        {/* Breadcrumb Navigation */}
-        <motion.div
-          className="pt-20 pb-4 px-4 bg-white border-b border-[#e0e0e0]"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 0.6 }}
-        >
-          <div className="max-w-6xl mx-auto">
-            <nav className="text-sm text-[#666]">
-              <span onClick={() => navigate('/')} className="cursor-pointer hover:text-[#C80000] transition-colors">Home</span>
-              <span className="mx-2">/</span>
-              <span onClick={() => navigate('/services')} className="cursor-pointer hover:text-[#C80000] transition-colors">Features</span>
-              <span className="mx-2">/</span>
-              <span className="text-[#C80000] font-medium">Ad Strategien</span>
-            </nav>
-          </div>
-        </motion.div>
-
-        {/* Hero Section */}
+      <div className="min-h-screen bg-background text-foreground">
+        {/* Hero */}
         <motion.section
-          className="pt-16 pb-20 px-4 bg-gradient-to-br from-[#FAFAFA] via-white to-[#FAFAFA]"
+          className="relative pt-20 pb-16 px-4 sm:px-6 lg:px-10 hero-grid overflow-hidden"
           variants={containerVariants}
           initial="hidden"
           animate="visible"
         >
-          <div className="max-w-6xl mx-auto">
-            <div className="grid lg:grid-cols-2 gap-16 items-center">
-              
-              {/* Left Content */}
-              <div className="text-left">
-                <motion.h1 
-                  variants={itemVariants}
-                  className="text-4xl md:text-5xl lg:text-6xl font-bold leading-[1.1] mb-6 text-[#000000]"
-                >
-                  Deine perfekte{' '}
-                  <span className="text-[#C80000]">Ad-Strategie</span>{' '}
-                  – automatisch analysiert & generiert
-                </motion.h1>
+          <div className="absolute inset-0 pointer-events-none bg-[radial-gradient(circle_at_20%_10%,rgba(244,45,99,0.12),transparent_35%)]" />
+          <div className="max-w-6xl mx-auto relative z-10">
+            <div className="flex items-center gap-3 mb-4">
+              <span className="px-3 py-1 rounded-full bg-white/5 border border-white/10 text-xs uppercase tracking-[0.08em] text-white/80">
+                Strategie Copilot
+              </span>
+              <div className="flex items-center gap-2 text-sm text-white/70">
+                <span className="w-2 h-2 rounded-full bg-green-400 animate-pulse" />
+                Live
+              </div>
+            </div>
 
+            <div className="grid lg:grid-cols-2 gap-10 items-start">
+              <div className="space-y-6">
+                <motion.h1
+                  variants={itemVariants}
+                  className="text-[clamp(2.4rem,6vw,3.8rem)] font-semibold leading-[1.05] text-white"
+                >
+                  Erhalte eine <span className="text-primary">fertige Meta-Strategie</span> in Minuten – inkl.
+                  Budget, Audience & Skalierungsplan.
+                </motion.h1>
                 <motion.p
                   variants={itemVariants}
-                  className="text-lg md:text-xl text-[#333333] leading-relaxed mb-8 max-w-lg"
+                  className="text-lg text-white/80 leading-relaxed max-w-2xl"
                 >
-                  AdRuby erstellt komplette Kampagnenstrategien auf Basis realer Daten. 
-                  Von Budgetoptimierung bis Zielgruppenanalyse – alles automatisch.
+                  Beantworte wenige Fragen, wähle ein Playbook und lass die KI deine Budgetverteilung,
+                  Zielgruppen-Empfehlungen und Skalierungs-Roadmap erzeugen. Mit Policy-Hinweisen und mobile-ready.
                 </motion.p>
 
-                <motion.div
-                  variants={itemVariants}
-                  className="flex flex-col sm:flex-row gap-4 mb-12"
-                >
+                <motion.div variants={itemVariants} className="flex flex-col sm:flex-row gap-4">
                   <motion.button
                     onClick={handleStartFreeTrial}
-                    className="bg-[#C80000] text-white px-8 py-4 rounded-lg font-medium hover:bg-[#a50000] transition-all duration-200 flex items-center justify-center gap-2"
+                  className="w-full sm:w-auto bg-primary text-white px-6 py-3 min-h-[44px] rounded-xl font-semibold hover:bg-[#c32252] transition-smooth flex items-center justify-center gap-2 shadow-lg"
                     whileHover={{ y: -1 }}
                     whileTap={{ scale: 0.98 }}
                   >
                     <Brain className="w-5 h-5" />
-                    Teste die KI-Strategieanalyse kostenlos
+                    Kostenlose Strategieanalyse starten
                   </motion.button>
-                  
                   <motion.button
-                    className="border border-[#C80000] text-[#C80000] px-8 py-4 rounded-lg font-medium hover:bg-[#C80000] hover:text-white transition-all duration-200 flex items-center justify-center gap-2"
+                    className="w-full sm:w-auto border border-white/20 text-white px-6 py-3 min-h-[44px] rounded-xl font-semibold hover:bg-white/10 transition-smooth flex items-center justify-center gap-2"
                     whileHover={{ y: -1 }}
                     whileTap={{ scale: 0.98 }}
                   >
                     <PlayCircle className="w-5 h-5" />
-                    Strategie-Demo ansehen
+                    Demo ansehen
                   </motion.button>
                 </motion.div>
 
-                {/* Strategy Highlights */}
                 <motion.div
                   variants={itemVariants}
-                  className="grid grid-cols-3 gap-4 p-6 bg-white rounded-xl border border-[#e0e0e0] shadow-sm"
+                  className="grid grid-cols-3 gap-4 p-4 sm:p-5 glass-panel rounded-2xl"
                 >
-                  {strategyFeatures?.map((feature, index) => (
-                    <div key={index} className="text-center">
-                      <feature.icon className="w-6 h-6 text-[#C80000] mx-auto mb-2" />
-                      <div className="text-xs font-medium text-[#000000] mb-1">{feature?.title}</div>
-                      <div className="text-xs text-[#666] leading-tight">{feature?.description?.substring(0, 40)}...</div>
+                  {highlights.map((h) => (
+                    <div key={h.label} className="text-center">
+                      <h.icon className="w-6 h-6 text-primary mx-auto mb-1" />
+                      <div className="text-xs text-white/60 uppercase tracking-[0.1em]">{h.label}</div>
+                      <div className="text-sm font-semibold text-white">{h.value}</div>
                     </div>
                   ))}
                 </motion.div>
               </div>
 
-              {/* Right Content - Strategy Dashboard Preview */}
-              <div className="relative">
-                <motion.div
-                  variants={itemVariants}
-                  className="relative"
-                >
-                  {/* Main Strategy Dashboard */}
-                  <div className="bg-white rounded-2xl border border-[#e0e0e0] shadow-2xl p-8 relative overflow-hidden">
-                    
-                    {/* Dashboard Header */}
-                    <div className="flex items-center justify-between mb-6">
-                      <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 bg-[#C80000] rounded-lg flex items-center justify-center">
-                          <Target className="text-white" size={16} />
-                        </div>
-                        <span className="font-semibold text-[#000000]">Strategy Generator</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <div className="w-2 h-2 bg-[#ff5f56] rounded-full"></div>
-                        <div className="w-2 h-2 bg-[#ffbd2e] rounded-full"></div>
-                        <div className="w-2 h-2 bg-[#27ca3f] rounded-full"></div>
-                      </div>
+              <motion.div
+                variants={itemVariants}
+                className="glass-panel rounded-2xl p-6 shadow-2xl"
+              >
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center gap-2">
+                    <div className="w-9 h-9 bg-primary rounded-lg flex items-center justify-center">
+                      <Target className="text-white" size={16} />
                     </div>
-                    
-                    {/* Strategy Analysis Display */}
-                    <div className="space-y-4 mb-6">
-                      
-                      {/* Market Analysis */}
-                      <div className="bg-[#f8f9fa] rounded-lg p-4 border border-[#e0e0e0]">
-                        <div className="flex items-center gap-2 mb-3">
-                          <Eye className="text-[#C80000]" size={16} />
-                          <span className="text-sm font-medium text-[#000000]">Marktanalyse</span>
-                        </div>
-                        
-                        <div className="grid grid-cols-2 gap-4">
-                          <div>
-                            <div className="text-xs text-[#666] mb-1">Wettbewerbsintensität</div>
-                            <div className="flex items-center gap-2">
-                              <div className="flex-1 bg-[#e0e0e0] rounded-full h-2">
-                                <div className="bg-[#C80000] h-2 rounded-full" style={{ width: '75%' }}></div>
-                              </div>
-                              <span className="text-xs font-medium">Hoch</span>
-                            </div>
-                          </div>
-                          <div>
-                            <div className="text-xs text-[#666] mb-1">Empfohlenes Budget</div>
-                            <div className="text-sm font-bold text-[#C80000]">€2.500/Monat</div>
-                          </div>
-                        </div>
-                      </div>
-                      
-                      {/* Audience Insights */}
-                      <div className="bg-gradient-to-r from-[#C80000]/5 to-[#C80000]/10 rounded-lg p-4">
-                        <div className="flex items-center gap-2 mb-3">
-                          <Users className="text-[#C80000]" size={16} />
-                          <span className="text-sm font-medium text-[#C80000]">Optimale Zielgruppe</span>
-                        </div>
-                        
-                        <div className="space-y-2">
-                          <div className="flex justify-between items-center">
-                            <span className="text-xs text-[#666]">Alter: 25-45 Jahre</span>
-                            <span className="text-xs font-medium text-[#000000]">87% Match</span>
-                          </div>
-                          <div className="flex justify-between items-center">
-                            <span className="text-xs text-[#666]">Interesse: Fitness, Gesundheit</span>
-                            <span className="text-xs font-medium text-[#000000]">92% Match</span>
-                          </div>
-                          <div className="flex justify-between items-center">
-                            <span className="text-xs text-[#666]">Kaufverhalten: Online-Shopper</span>
-                            <span className="text-xs font-medium text-[#000000]">84% Match</span>
-                          </div>
-                        </div>
-                      </div>
+                    <div>
+                      <p className="text-sm text-white/60">Preview</p>
+                      <p className="text-base font-semibold text-white">Strategy Generator</p>
                     </div>
-                    
-                    {/* Performance Prediction */}
-                    <div className="bg-white border border-[#C80000]/20 rounded-lg p-4">
-                      <div className="flex items-center gap-2 mb-3">
-                        <TrendingUp className="text-[#C80000]" size={16} />
-                        <span className="text-sm font-medium text-[#000000]">Performance-Prognose</span>
+                  </div>
+                  <span className="px-3 py-1 rounded-full bg-white/5 text-xs text-white/70">
+                    Policy Safe
+                  </span>
+                </div>
+
+                <div className="space-y-4">
+                  <div className="bg-white/5 border border-white/10 rounded-lg p-4">
+                    <div className="flex items-center gap-2 mb-3">
+                      <Eye size={16} className="text-primary" />
+                      <span className="text-sm font-semibold text-white">Marktanalyse</span>
+                    </div>
+                    <div className="grid grid-cols-2 gap-4 text-white/80 text-sm">
+                      <div>
+                        <p className="text-xs text-white/60 mb-1">Wettbewerb</p>
+                        <div className="flex items-center gap-2">
+                          <div className="flex-1 bg-white/10 rounded-full h-2">
+                            <div className="bg-primary h-2 rounded-full" style={{ width: '72%' }} />
+                          </div>
+                          <span className="text-xs">Hoch</span>
+                        </div>
                       </div>
-                      
-                      <div className="grid grid-cols-3 gap-3 text-center">
-                        <div>
-                          <div className="text-lg font-bold text-[#C80000]">+240%</div>
-                          <div className="text-xs text-[#666]">ROAS</div>
-                        </div>
-                        <div>
-                          <div className="text-lg font-bold text-[#C80000]">3.2%</div>
-                          <div className="text-xs text-[#666]">CTR</div>
-                        </div>
-                        <div>
-                          <div className="text-lg font-bold text-[#C80000]">€18</div>
-                          <div className="text-xs text-[#666]">CPM</div>
-                        </div>
+                      <div>
+                        <p className="text-xs text-white/60 mb-1">Empf. Budget</p>
+                        <span className="text-sm font-semibold text-white">€2.500/Monat</span>
                       </div>
                     </div>
                   </div>
 
-                  {/* Floating Strategy Cards */}
-                  <motion.div
-                    className="absolute -top-4 -right-4 bg-[#C80000] text-white p-3 rounded-xl shadow-lg"
-                    animate={{ rotate: [0, 5, -5, 0] }}
-                    transition={{ duration: 4, repeat: Infinity }}
-                  >
-                    <Brain size={16} />
-                    <div className="text-xs mt-1">KI-Analyse</div>
-                  </motion.div>
+                  <div className="bg-gradient-to-r from-primary/10 to-primary/5 rounded-lg p-4">
+                    <div className="flex items-center gap-2 mb-2">
+                      <Users size={16} className="text-primary" />
+                      <span className="text-sm font-semibold text-primary">Audience Match</span>
+                    </div>
+                    <div className="space-y-1 text-xs text-white/70">
+                      <div className="flex justify-between">
+                        <span>Alter 25-45</span>
+                        <span className="text-white">87% Match</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span>Interessen: Fitness, Health</span>
+                        <span className="text-white">92% Match</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span>Kaufverhalten: Online-Shopper</span>
+                        <span className="text-white">84% Match</span>
+                      </div>
+                    </div>
+                  </div>
 
-                  <motion.div
-                    className="absolute -bottom-6 -left-6 bg-white border border-[#e0e0e0] p-3 rounded-xl shadow-lg"
-                    animate={{ y: [0, -8, 0] }}
-                    transition={{ duration: 3, repeat: Infinity }}
-                  >
-                    <div className="text-xs text-[#666] mb-1">Neue Strategie</div>
-                    <div className="text-sm font-bold text-[#C80000]">E-Commerce Boost</div>
-                  </motion.div>
-                </motion.div>
-              </div>
+                  <div className="bg-white/5 border border-white/10 rounded-lg p-4">
+                    <div className="flex items-center gap-2 mb-2">
+                      <TrendingUp size={16} className="text-primary" />
+                      <span className="text-sm font-semibold text-white">Performance-Prognose</span>
+                    </div>
+                    <div className="grid grid-cols-3 gap-3 text-center text-white">
+                      <div>
+                        <div className="text-lg font-bold text-primary">+240%</div>
+                        <div className="text-xs text-white/70">ROAS</div>
+                      </div>
+                      <div>
+                        <div className="text-lg font-bold text-primary">3.2%</div>
+                        <div className="text-xs text-white/70">CTR</div>
+                      </div>
+                      <div>
+                        <div className="text-lg font-bold text-primary">€18</div>
+                        <div className="text-xs text-white/70">CPM</div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="mt-4 flex items-center justify-between text-xs text-white/60">
+                  <span className="flex items-center gap-1">
+                    <ShieldCheck size={14} className="text-primary" />
+                    Policy-Hinweise aktiv
+                  </span>
+                  <span className="flex items-center gap-1">
+                    <Sparkles size={14} className="text-primary" />
+                    Auto-Generate
+                  </span>
+                </div>
+              </motion.div>
             </div>
           </div>
         </motion.section>
 
-        {/* Stored Strategies List & Detail */}
+        {/* Playbooks */}
+        <section className="py-10 px-4 sm:px-6 lg:px-10">
+          <div className="max-w-6xl mx-auto space-y-4">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div>
+                <p className="text-sm text-white/60 uppercase tracking-[0.12em]">Playbooks</p>
+                <h2 className="text-2xl font-semibold text-white">Starte mit einem Blueprint</h2>
+              </div>
+              <div className="flex gap-2">
+                <button className="px-3 py-2 rounded-lg border border-white/15 text-white text-xs bg-white/5 hover:bg-white/10 transition-smooth">
+                  Alle ansehen
+                </button>
+                <button className="px-3 py-2 rounded-lg border border-primary/40 text-primary text-xs bg-primary/10 hover:bg-primary/20 transition-smooth">
+                  Fragen starten
+                </button>
+              </div>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {playbooks.map((pb) => (
+                <div
+                  key={pb.title}
+                  className="glass-panel rounded-xl p-4 hover:-translate-y-1 transition-spatial"
+                >
+                  <div className={`rounded-lg p-4 mb-3 text-white bg-gradient-to-r ${pb.color}`}>
+                    <p className="text-xs opacity-80">{pb.subtitle}</p>
+                    <h3 className="text-lg font-semibold">{pb.title}</h3>
+                  </div>
+                  <div className="text-sm text-white/80 space-y-1 mb-3">
+                    <p>Budget: {pb.budget}</p>
+                    <p>Audience: {pb.audience}</p>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-semibold text-primary">{pb.kpi}</span>
+                    <button className="text-xs px-3 py-2 rounded-lg bg-white/10 text-white border border-white/15 hover:bg-white/15 transition-smooth">
+                      Übernehmen
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* Stored Strategies */}
         <motion.section
-          className="py-12 px-4 bg-white border-t border-[#e0e0e0]"
+          className="py-12 px-4 sm:px-6 lg:px-10"
           variants={containerVariants}
           initial="hidden"
           whileInView="visible"
           viewport={{ once: true, amount: 0.2 }}
         >
-          <div className="max-w-6xl mx-auto">
-            <motion.h2
-              variants={itemVariants}
-              className="text-2xl md:text-3xl font-bold text-[#000000] mb-4"
-            >
-              Deine gespeicherten Strategien
-            </motion.h2>
-            <motion.p
-              variants={itemVariants}
-              className="text-sm text-[#555] mb-6"
-            >
-              Lade gespeicherte Werbestrategien anhand deines Accounts und optional nach Ad-Variante.
-            </motion.p>
+          <div className="max-w-6xl mx-auto glass-panel rounded-2xl p-6 shadow-2xl">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 mb-4">
+              <div>
+                <p className="text-sm text-white/60 uppercase tracking-[0.12em]">Deine Strategien</p>
+                <h3 className="text-xl font-semibold text-white">Gespeicherte Strategien & Details</h3>
+              </div>
+              <div className="flex gap-2">
+                <button className="px-3 py-2 rounded-lg bg-primary text-white text-xs flex items-center gap-2">
+                  <Sparkles size={14} />
+                  Neue Strategie
+                </button>
+                <button className="px-3 py-2 rounded-lg bg-white/10 text-white text-xs flex items-center gap-2 border border-white/15">
+                  <BookmarkPlus size={14} />
+                  Als Briefing übernehmen
+                </button>
+              </div>
+            </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-              <div className="bg-white rounded-xl border border-[#e0e0e0] p-4 lg:col-span-1">
-                <h3 className="text-sm font-semibold mb-3 text-[#000]">Gespeicherte Strategien</h3>
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+              <div className="rounded-xl glass-panel p-4 lg:col-span-1">
+                <h4 className="text-sm font-semibold mb-3 text-white">Gespeicherte Strategien</h4>
 
-                {isLoading && <p className="text-xs text-[#666]">Lade Strategien...</p>}
-                {error && <p className="text-xs text-red-500">{error}</p>}
+                {isLoading && (
+                  <div className="space-y-2">
+                    {[1, 2, 3].map((i) => (
+                      <div key={i} className="h-10 rounded-lg bg-white/10 animate-pulse" />
+                    ))}
+                  </div>
+                )}
+                {error && <p className="text-xs text-red-400">{error}</p>}
 
                 <ul className="space-y-2 max-h-[360px] overflow-auto">
                   {strategies.map((s) => (
@@ -400,14 +391,14 @@ const AdRubyAdStrategies = () => {
                         onClick={() => setSelectedStrategy(s)}
                         className={`w-full text-left text-xs px-3 py-2 rounded-lg border ${
                           selectedStrategy?.id === s.id
-                            ? 'border-[#C80000] bg-[#C80000]/5'
-                            : 'border-gray-200 hover:bg-gray-50'
+                            ? 'border-primary bg-primary/10 text-white'
+                            : 'border-white/10 bg-white/5 text-white/80 hover:border-white/30'
                         }`}
                       >
-                        <div className="font-semibold truncate text-[#000]">
+                        <div className="font-semibold truncate">
                           {s.selected_strategy || 'Unbenannte Strategie'}
                         </div>
-                        <div className="text-[10px] text-[#666] mt-1">
+                        <div className="text-[10px] text-white/50 mt-1">
                           {s.created_at ? new Date(s.created_at).toLocaleString() : '—'}
                         </div>
                       </button>
@@ -415,38 +406,44 @@ const AdRubyAdStrategies = () => {
                   ))}
 
                   {!isLoading && strategies.length === 0 && !error && (
-                    <p className="text-xs text-[#666]">
+                    <p className="text-xs text-white/60">
                       Noch keine Strategien gespeichert. Starte zuerst den Fragebogen.
                     </p>
                   )}
                 </ul>
               </div>
 
-              <div className="bg-white rounded-xl border border-[#e0e0e0] p-6 lg:col-span-2">
-                {selectedStrategy ? (
+              <div className="rounded-xl glass-panel p-6 lg:col-span-2">
+                {isLoading ? (
+                  <div className="space-y-3">
+                    <div className="h-5 w-2/5 bg-white/10 rounded animate-pulse" />
+                    <div className="h-3 w-1/4 bg-white/10 rounded animate-pulse" />
+                    <div className="h-24 bg-white/10 rounded animate-pulse" />
+                  </div>
+                ) : selectedStrategy ? (
                   <>
-                    <h3 className="text-lg font-bold mb-2 text-[#000]">
+                    <h4 className="text-lg font-bold mb-2 text-white">
                       {selectedStrategy.selected_strategy || 'Strategie'}
-                    </h3>
-                    <p className="text-xs text-[#666] mb-4">
+                    </h4>
+                    <p className="text-xs text-white/60 mb-4">
                       Erstellt am{' '}
                       {selectedStrategy.created_at
                         ? new Date(selectedStrategy.created_at).toLocaleString()
                         : '—'}
                     </p>
 
-                    <div className="space-y-4 text-sm">
+                    <div className="space-y-4 text-sm text-white/80">
                       <div>
-                        <h4 className="text-sm font-semibold mb-1 text-[#000]">Diagnose & Analyse</h4>
-                        <pre className="text-xs bg-[#fafafa] border border-[#e0e0e0] rounded-lg p-3 overflow-auto text-[#111]">
+                        <h5 className="text-sm font-semibold mb-1 text-white">Diagnose & Analyse</h5>
+                        <pre className="text-xs bg-white/5 border border-white/10 rounded-lg p-3 overflow-auto text-white/80">
                           {JSON.stringify(selectedStrategy.ai_analysis?.diagnosis || {}, null, 2)}
                         </pre>
                       </div>
 
                       {Array.isArray(selectedStrategy.ai_analysis?.implementation_recommendations) && (
                         <div>
-                          <h4 className="text-sm font-semibold mb-1 text-[#000]">Umsetzungsempfehlungen</h4>
-                          <ul className="list-disc pl-4 text-xs space-y-1 text-[#111]">
+                          <h5 className="text-sm font-semibold mb-1 text-white">Umsetzungsempfehlungen</h5>
+                          <ul className="list-disc pl-4 text-xs space-y-1">
                             {selectedStrategy.ai_analysis.implementation_recommendations.map((rec, idx) => (
                               <li key={idx}>{rec}</li>
                             ))}
@@ -456,12 +453,10 @@ const AdRubyAdStrategies = () => {
 
                       {Array.isArray(selectedStrategy.ai_analysis?.deep_dive_sections) && (
                         <div>
-                          <h4 className="text-sm font-semibold mb-1 text-[#000]">Deep-Dive Kapitel</h4>
-                          <ul className="list-disc pl-4 text-xs space-y-1 text-[#111]">
+                          <h5 className="text-sm font-semibold mb-1 text-white">Deep-Dive Kapitel</h5>
+                          <ul className="list-disc pl-4 text-xs space-y-1">
                             {selectedStrategy.ai_analysis.deep_dive_sections.map((sec) => (
-                              <li key={sec.section_id || sec.title}>
-                                {sec.title || sec.anchor || 'Abschnitt'}
-                              </li>
+                              <li key={sec.section_id || sec.title}>{sec.title || sec.anchor || 'Abschnitt'}</li>
                             ))}
                           </ul>
                         </div>
@@ -469,280 +464,95 @@ const AdRubyAdStrategies = () => {
                     </div>
                   </>
                 ) : (
-                  <p className="text-xs text-[#666]">
-                    Wähle links eine gespeicherte Strategie aus, um die Details zu sehen.
-                  </p>
+                  <p className="text-xs text-white/60">Wähle links eine gespeicherte Strategie aus.</p>
                 )}
               </div>
             </div>
           </div>
         </motion.section>
 
-        {/* Strategy Examples Section */}
+        {/* Examples */}
         <motion.section
-          className="py-20 px-4 bg-white"
+          className="py-10 px-4 sm:px-6 lg:px-10"
           variants={containerVariants}
           initial="hidden"
           whileInView="visible"
           viewport={{ once: true, amount: 0.3 }}
         >
-          <div className="max-w-6xl mx-auto">
-            
-            <motion.div variants={itemVariants} className="text-center mb-16">
-              <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold mb-6 text-[#000000]">
-                Bewährte{' '}
-                <span className="text-[#C80000]">Strategiemodelle</span>{' '}
-                für jede Branche
+          <div className="max-w-6xl mx-auto space-y-8">
+            <motion.div variants={itemVariants} className="text-center">
+              <h2 className="text-3xl md:text-4xl font-bold text-white mb-3">
+                Bewährte Strategiemodelle für jede Branche
               </h2>
-              <p className="text-lg text-[#666] max-w-3xl mx-auto">
-                Unsere KI analysiert erfolgreiche Kampagnen und erstellt maßgeschneiderte 
-                Strategien für verschiedene Geschäftsmodelle und Zielgruppen.
+              <p className="text-white/70 max-w-3xl mx-auto">
+                Unsere KI analysiert erfolgreiche Kampagnen und liefert maẞgeschneiderte Strategien – bereit zum
+                Kopieren.
               </p>
             </motion.div>
 
-            <div className="grid lg:grid-cols-3 gap-8 mb-16">
-              {strategyExamples?.map((example, index) => (
+            <div className="grid lg:grid-cols-3 gap-6">
+              {playbooks.map((example) => (
                 <motion.div
-                  key={index}
+                  key={example.title}
                   variants={itemVariants}
-                  className="bg-white rounded-2xl border border-[#e0e0e0] overflow-hidden hover:shadow-xl transition-all duration-300"
+                  className="glass-panel rounded-2xl p-0 overflow-hidden"
                 >
-                  <div className={`bg-gradient-to-r ${example?.color} p-6 text-white`}>
-                    <h3 className="text-xl font-bold mb-2">{example?.title}</h3>
-                    <div className="text-sm opacity-90">{example?.type}</div>
+                  <div className={`bg-gradient-to-r ${example.color} p-6 text-white`}>
+                    <h3 className="text-xl font-bold mb-1">{example.title}</h3>
+                    <div className="text-sm opacity-90">{example.subtitle}</div>
                   </div>
-                  
-                  <div className="p-6 space-y-4">
+                  <div className="p-6 space-y-3 text-white/80 text-sm">
                     <div className="flex justify-between items-center">
-                      <span className="text-sm text-[#666]">Budget</span>
-                      <span className="font-semibold text-[#000000]">{example?.budget}</span>
+                      <span>Budget</span>
+                      <span className="font-semibold text-white">{example.budget}</span>
                     </div>
-                    
                     <div className="flex justify-between items-center">
-                      <span className="text-sm text-[#666]">Zielgruppe</span>
-                      <span className="font-semibold text-[#000000] text-right text-sm">{example?.audience}</span>
+                      <span>Zielgruppe</span>
+                      <span className="font-semibold text-white text-right text-sm">{example.audience}</span>
                     </div>
-                    
-                    <div className="flex justify-between items-center pt-4 border-t border-[#e0e0e0]">
-                      <span className="text-sm text-[#666]">Erwartetes Ergebnis</span>
-                      <span className="font-bold text-[#C80000]">{example?.kpi}</span>
+                    <div className="flex justify-between items-center pt-3 border-t border-white/10">
+                      <span>Erwartetes Ergebnis</span>
+                      <span className="font-bold text-primary">{example.kpi}</span>
                     </div>
                   </div>
                 </motion.div>
               ))}
             </div>
-
-            {/* Interactive Strategy Builder Preview */}
-            <motion.div
-              variants={itemVariants}
-              className="bg-gradient-to-r from-[#C80000]/5 to-[#C80000]/10 rounded-2xl p-8 border border-[#C80000]/20"
-            >
-              <div className="text-center mb-8">
-                <h3 className="text-2xl font-bold text-[#000000] mb-3">
-                  Interaktiver Strategie-Generator
-                </h3>
-                <p className="text-[#666]">
-                  Beantworte 3 einfache Fragen und erhalte eine maßgeschneiderte Kampagnenstrategie
-                </p>
-              </div>
-              
-              <div className="grid md:grid-cols-3 gap-6">
-                <div className="bg-white rounded-xl p-6 text-center">
-                  <DollarSign className="w-12 h-12 text-[#C80000] mx-auto mb-4" />
-                  <h4 className="font-bold text-[#000000] mb-2">Budget-Optimierung</h4>
-                  <p className="text-sm text-[#666]">Automatische Verteilung auf die profitabelsten Kanäle</p>
-                </div>
-                
-                <div className="bg-white rounded-xl p-6 text-center">
-                  <Users className="w-12 h-12 text-[#C80000] mx-auto mb-4" />
-                  <h4 className="font-bold text-[#000000] mb-2">Zielgruppen-Analyse</h4>
-                  <p className="text-sm text-[#666]">Präzise Audience-Definition mit Lookalike-Empfehlungen</p>
-                </div>
-                
-                <div className="bg-white rounded-xl p-6 text-center">
-                  <TrendingUp className="w-12 h-12 text-[#C80000] mx-auto mb-4" />
-                  <h4 className="font-bold text-[#000000] mb-2">Skalierungs-Roadmap</h4>
-                  <p className="text-sm text-[#666]">Schritt-für-Schritt Plan für nachhaltiges Wachstum</p>
-                </div>
-              </div>
-            </motion.div>
           </div>
         </motion.section>
 
-        {/* Benefits Section */}
+        {/* CTA */}
         <motion.section
-          className="py-20 px-4 bg-[#fafafa]"
+          className="py-16 px-4 sm:px-6 lg:px-10 bg-gradient-to-br from-primary to-[#a50000] text-white"
           variants={containerVariants}
           initial="hidden"
           whileInView="visible"
           viewport={{ once: true, amount: 0.3 }}
         >
-          <div className="max-w-6xl mx-auto">
-            
-            <motion.div variants={itemVariants} className="text-center mb-16">
-              <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold mb-6 text-[#000000]">
-                Strategische Vorteile{' '}
-                <span className="text-[#C80000]">für dein Business</span>
-              </h2>
-              <p className="text-lg text-[#666] max-w-3xl mx-auto">
-                AdRuby transformiert komplexe Datenanalysen in klare, umsetzbare Strategien, 
-                die deine Marketing-ROI maximieren.
-              </p>
-            </motion.div>
-
-            <div className="grid lg:grid-cols-3 gap-8">
-              {benefits?.map((benefit, index) => (
-                <motion.div
-                  key={index}
-                  variants={itemVariants}
-                  className="bg-white rounded-2xl p-8 border border-[#e0e0e0] hover:shadow-xl transition-all duration-300"
-                >
-                  <div className="flex items-center justify-between mb-6">
-                    <div className="w-16 h-16 bg-[#C80000]/10 rounded-2xl flex items-center justify-center">
-                      <benefit.icon className="text-[#C80000]" size={32} />
-                    </div>
-                    <div className="text-right">
-                      <div className="text-2xl font-bold text-[#C80000]">{benefit?.metric}</div>
-                      <div className="text-xs text-[#666]">Durchschnitt</div>
-                    </div>
-                  </div>
-                  
-                  <h3 className="text-xl font-bold mb-4 text-[#000000]">
-                    {benefit?.title}
-                  </h3>
-                  
-                  <p className="text-[#666] leading-relaxed">
-                    {benefit?.description}
-                  </p>
-                </motion.div>
-              ))}
+          <div className="max-w-4xl mx-auto text-center space-y-6">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 border border-white/20 text-xs uppercase tracking-[0.12em] text-white/80">
+              <Sparkles size={14} />
+              Strategy Copilot
             </div>
-
-            {/* Case Study Teaser */}
-            <motion.div
-              variants={itemVariants}
-              className="mt-16 bg-white rounded-2xl p-8 border border-[#e0e0e0] shadow-lg"
-            >
-              <div className="grid lg:grid-cols-2 gap-8 items-center">
-                <div>
-                  <h3 className="text-2xl font-bold text-[#000000] mb-4">
-                    Case Study: E-Commerce Unternehmen steigert ROAS um 340%
-                  </h3>
-                  <p className="text-[#666] mb-6 leading-relaxed">
-                    Durch AdRubys KI-Strategieanalyse konnte ein Online-Shop für Sportbekleidung 
-                    seine Werbeausgaben um 40% reduzieren und gleichzeitig den Umsatz verdreifachen.
-                  </p>
-                  
-                  <div className="grid grid-cols-3 gap-4 mb-6">
-                    <div className="text-center p-3 bg-[#fafafa] rounded-lg">
-                      <div className="text-xl font-bold text-[#C80000]">+340%</div>
-                      <div className="text-xs text-[#666]">ROAS Steigerung</div>
-                    </div>
-                    <div className="text-center p-3 bg-[#fafafa] rounded-lg">
-                      <div className="text-xl font-bold text-[#C80000]">-40%</div>
-                      <div className="text-xs text-[#666]">Werbekosten</div>
-                    </div>
-                    <div className="text-center p-3 bg-[#fafafa] rounded-lg">
-                      <div className="text-xl font-bold text-[#C80000]">21 Tage</div>
-                      <div className="text-xs text-[#666]">bis Erfolg</div>
-                    </div>
-                  </div>
-                  
-                  <button className="text-[#C80000] font-medium hover:underline flex items-center gap-2">
-                    Vollständige Case Study lesen
-                    <ArrowRight size={16} />
-                  </button>
-                </div>
-                
-                <div className="relative">
-                  <div className="bg-gradient-to-br from-[#C80000]/10 to-[#C80000]/20 rounded-xl p-6">
-                    <div className="space-y-4">
-                      <div className="flex justify-between items-center">
-                        <span className="text-sm text-[#666]">Kampagnenlaufzeit</span>
-                        <span className="font-semibold">6 Monate</span>
-                      </div>
-                      <div className="flex justify-between items-center">
-                        <span className="text-sm text-[#666]">Gesamtbudget</span>
-                        <span className="font-semibold">€45.000</span>
-                      </div>
-                      <div className="flex justify-between items-center">
-                        <span className="text-sm text-[#666]">Generierter Umsatz</span>
-                        <span className="font-bold text-[#C80000]">€198.000</span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </motion.div>
-          </div>
-        </motion.section>
-
-        {/* Call-to-Action Section */}
-        <motion.section
-          className="py-20 px-4 bg-gradient-to-br from-[#C80000] to-[#a50000] text-white"
-          variants={containerVariants}
-          initial="hidden"
-          whileInView="visible"
-          viewport={{ once: true, amount: 0.3 }}
-        >
-          <div className="max-w-4xl mx-auto text-center">
-            
-            <motion.h2 
-              variants={itemVariants} 
-              className="text-3xl md:text-4xl lg:text-5xl font-bold mb-8 leading-[1.1]"
-            >
-              Teste die{' '}
-              <span className="text-white/90">KI-Strategieanalyse</span>{' '}
-              kostenlos
-            </motion.h2>
-            
-            <motion.p
-              variants={itemVariants}
-              className="text-lg text-white/80 mb-12 max-w-2xl mx-auto"
-            >
-              Erhalte eine vollständige Kampagnenstrategie für dein Business – 
-              inklusive Budgetempfehlungen, Zielgruppen-Insights und Performance-Prognosen.
-            </motion.p>
-            
-            <motion.div variants={itemVariants} className="flex flex-col sm:flex-row gap-4 justify-center mb-12">
-              <motion.button
+            <h3 className="text-3xl sm:text-4xl font-semibold leading-tight">
+              Teste die KI-Strategieanalyse kostenlos
+            </h3>
+            <p className="text-white/80 max-w-2xl mx-auto">
+              Vollständige Kampagnenstrategie inkl. Budgetempfehlungen, Zielgruppen-Insights, Performance-Prognosen
+              und Compliance-Hinweisen – in Minuten.
+            </p>
+            <div className="flex flex-col sm:flex-row justify-center gap-3">
+              <button
                 onClick={handleStartFreeTrial}
-                className="bg-white text-[#C80000] px-10 py-4 rounded-lg font-bold hover:bg-gray-50 transition-all duration-200 flex items-center justify-center gap-3"
-                whileHover={{ y: -1, scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
+                className="bg-white text-primary px-8 py-3 min-h-[44px] rounded-xl font-semibold hover:bg-gray-100 transition-smooth"
               >
-                <Brain className="w-5 h-5" />
-                Kostenlose Strategieanalyse starten
-              </motion.button>
-              
-              <motion.button
-                className="border border-white/30 text-white px-10 py-4 rounded-lg font-medium hover:bg-white/10 transition-all duration-200 flex items-center justify-center gap-2"
-                whileHover={{ y: -1 }}
-                whileTap={{ scale: 0.98 }}
-              >
-                <PlayCircle size={20} />
-                Strategie-Demo ansehen
-              </motion.button>
-            </motion.div>
-
-            {/* Trust Indicators */}
-            <motion.div
-              variants={itemVariants}
-              className="flex flex-col md:flex-row items-center justify-center gap-8 text-white/70 text-sm"
-            >
-              <div className="flex items-center gap-2">
-                <CheckCircle size={16} />
-                <span>Vollständige Strategieanalyse</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <CheckCircle size={16} />
-                <span>Sofortige Ergebnisse</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <CheckCircle size={16} />
-                <span>Keine Verpflichtungen</span>
-              </div>
-            </motion.div>
+                Kostenlos starten
+              </button>
+              <button className="border border-white/30 text-white px-8 py-3 min-h-[44px] rounded-xl font-semibold hover:bg-white/10 transition-smooth flex items-center gap-2 justify-center">
+                <PlayCircle size={18} />
+                Demo ansehen
+              </button>
+            </div>
           </div>
         </motion.section>
       </div>

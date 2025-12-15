@@ -1,6 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import RedirectScreen from '../../components/RedirectScreen';
+import { apiClient } from '../../utils/apiClient';
+import { emitToast } from '../../utils/toastBus';
 
 const PaymentVerificationPage = () => {
   const navigate = useNavigate();
@@ -8,6 +10,8 @@ const PaymentVerificationPage = () => {
   const [error, setError] = useState(null);
 
   useEffect(() => {
+    let cancelled = false;
+
     const verify = async () => {
       const params = new URLSearchParams(location.search);
       const sessionId = params.get('session_id');
@@ -18,32 +22,36 @@ const PaymentVerificationPage = () => {
       }
 
       try {
-        const res = await fetch('/.netlify/functions/verify-checkout-session', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ sessionId })
-        });
-
-        if (!res.ok) {
-          const text = await res.text();
-          throw new Error(text || 'Verifizierung fehlgeschlagen.');
-        }
+        const data = await apiClient.post('/api/verify-checkout-session', { sessionId });
 
         setTimeout(() => {
           navigate('/overview-dashboard', { replace: true });
         }, 1500);
       } catch (err) {
-        setError(err?.message || 'Verifizierung fehlgeschlagen.');
+        const message = err?.message || 'Verifizierung fehlgeschlagen.';
+        emitToast({
+          type: 'error',
+          title: 'Verifizierung fehlgeschlagen',
+          description: message
+        });
+        if (!cancelled) {
+          setError(message);
+        } else if (import.meta?.env?.DEV) {
+          console.warn('[PaymentVerification] update aborted after unmount');
+        }
       }
     };
 
     verify();
+    return () => {
+      cancelled = true;
+    };
   }, [location.search, navigate]);
 
   if (error) {
     return (
       <RedirectScreen
-        title="Zahlung konnte nicht bestätigt werden"
+        title="Zahlung konnte nicht bestaetigt werden"
         subtitle="Bitte versuche es erneut oder kontaktiere den Support."
         details={error}
         showHomeButton
@@ -54,8 +62,8 @@ const PaymentVerificationPage = () => {
 
   return (
     <RedirectScreen
-      title="Zahlung wird bestätigt…"
-      subtitle="Wir prüfen deine Transaktion und richten dein Konto ein."
+      title="Zahlung wird bestaetigt..."
+      subtitle="Wir pruefen deine Transaktion und richten dein Konto ein."
       details="Du wirst gleich weitergeleitet."
     />
   );

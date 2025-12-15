@@ -1129,7 +1129,7 @@ Erstelle eine praxisnahe Meta Ads Manager Anleitung für 2025 mit konkreten Schr
         metaAdsSetup: metaAdsSetup || null,
       };
 
-      const response = await fetch('/.netlify/functions/ad-strategy-save', {
+      const response = await fetch('/api/ad-strategy-save', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
@@ -1164,7 +1164,7 @@ Erstelle eine praxisnahe Meta Ads Manager Anleitung für 2025 mit konkreten Schr
         throw new Error('adVariantId und userId sind erforderlich, um den Full-Flow zu starten.');
       }
 
-      const response = await fetch('/.netlify/functions/ad-strategy-full-preview', {
+      const response = await fetch('/api/ad-strategy-full-preview', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

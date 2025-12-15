@@ -253,7 +253,7 @@ const HighConversionAdBuilder = () => {
         maxAds,
       });
 
-      const res = await fetch("/.netlify/functions/ad-research-start", {
+      const res = await fetch("/api/ad-research-start", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -317,7 +317,7 @@ const HighConversionAdBuilder = () => {
     try {
       const limit = Number(formData.research_max_results) || 30;
 
-      const res = await fetch("/.netlify/functions/ad-research-analyze", {
+      const res = await fetch("/api/ad-research-analyze", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

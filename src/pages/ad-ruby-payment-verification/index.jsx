@@ -4,6 +4,8 @@ import RedirectScreen from '../../components/RedirectScreen';
 import { useAuth } from '../../contexts/AuthContext';
 import PaymentBenefits from './components/PaymentBenefits';
 import PaymentVerificationForm from './components/PaymentVerificationForm';
+import { apiClient } from '../../utils/apiClient';
+import { emitToast } from '../../utils/toastBus';
 
 const PaymentVerificationPage = () => {
   const navigate = useNavigate();
@@ -14,6 +16,7 @@ const PaymentVerificationPage = () => {
   const [error, setError] = useState(null);
 
   useEffect(() => {
+    let cancelled = false;
     const params = new URLSearchParams(location.search);
     const sessionId = params.get('session_id');
 
@@ -25,7 +28,7 @@ const PaymentVerificationPage = () => {
     }
 
     if (!sessionId) {
-      console.log('[PaymentVerification] no session_id – show checkout form');
+      console.log('[PaymentVerification] no session_id - show checkout form');
       setMode('needs_payment');
       return;
     }
@@ -34,16 +37,7 @@ const PaymentVerificationPage = () => {
       try {
         setMode('verifying_session');
 
-        const res = await fetch('/.netlify/functions/verify-checkout-session', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ sessionId })
-        });
-
-        if (!res.ok) {
-          const text = await res.text();
-          throw new Error(text || 'Verifizierung fehlgeschlagen.');
-        }
+        const data = await apiClient.post('/api/verify-checkout-session', { sessionId });
 
         console.log('[PaymentVerification] session verified, redirecting to dashboard');
 
@@ -52,18 +46,32 @@ const PaymentVerificationPage = () => {
         }, 1500);
       } catch (err) {
         console.error('[PaymentVerification] error', err);
-        setError(err?.message || 'Verifizierung fehlgeschlagen.');
-        setMode('error');
+        const message = err?.message || 'Verifizierung fehlgeschlagen.';
+        emitToast({
+          type: 'error',
+          title: 'Verifizierung fehlgeschlagen',
+          description: message
+        });
+        if (!cancelled) {
+          setError(message);
+          setMode('error');
+        } else if (import.meta?.env?.DEV) {
+          console.warn('[PaymentVerification] aborted update after unmount');
+        }
       }
     };
 
     verify();
+
+    return () => {
+      cancelled = true;
+    };
   }, [location.search, navigate, user, isAuthReady]);
 
   if (!isAuthReady) {
     return (
       <RedirectScreen
-        title="Anmeldung wird geprüft…"
+        title="Anmeldung wird geprueft..."
         subtitle="Bitte einen Moment Geduld."
         details="Wir stellen sicher, dass dein Konto korrekt geladen ist."
         showHomeButton={false}
@@ -75,7 +83,7 @@ const PaymentVerificationPage = () => {
   if (mode === 'error' && error) {
     return (
       <RedirectScreen
-        title="Zahlung konnte nicht bestätigt werden"
+        title="Zahlung konnte nicht bestaetigt werden"
         subtitle="Bitte versuche es erneut oder kontaktiere den Support."
         details={error}
         showHomeButton
@@ -110,8 +118,8 @@ const PaymentVerificationPage = () => {
 
   return (
     <RedirectScreen
-      title="Zahlung wird bestätigt…"
-      subtitle="Wir prüfen deine Transaktion und richten dein Konto ein."
+      title="Zahlung wird bestaetigt..."
+      subtitle="Wir pruefen deine Transaktion und richten dein Konto ein."
       details="Du wirst gleich weitergeleitet."
       showHomeButton={false}
       showLogoutButton={false}

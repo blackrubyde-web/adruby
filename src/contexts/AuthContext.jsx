@@ -1,6 +1,15 @@
-import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import React, {
+  createContext,
+  useContext,
+  useState,
+  useEffect,
+  useCallback,
+  useRef
+} from 'react';
 import { supabase } from '../lib/supabaseClient.js';
 import { trialService } from '../services/trialService';
+import { apiClient } from '../utils/apiClient';
+import { logger } from '../utils/logger';
 
 const AuthContext = createContext({});
 const AFFILIATE_REF_STORAGE_KEY = 'adruby_affiliate_ref_code';
@@ -35,11 +44,22 @@ export function AuthProvider({ children }) {
   };
   const [onboardingStatus, setOnboardingStatus] = useState(initialOnboardingState);
 
+  const loadUserStateLock = useRef(null);
+  const lastSessionTokenRef = useRef(null);
+  const isMountedRef = useRef(true);
+
+  useEffect(
+    () => () => {
+      isMountedRef.current = false;
+    },
+    []
+  );
+
   const isOnboardingComplete = (status = onboardingStatus) =>
     Boolean(
       status?.onboardingCompleted ||
-      status?.paymentVerified ||
-      status?.trialStatus === 'active'
+        status?.paymentVerified ||
+        status?.trialStatus === 'active'
     );
 
   const isTrialActive = (trialEndsAt) => {
@@ -47,7 +67,7 @@ export function AuthProvider({ children }) {
     try {
       return new Date(trialEndsAt).getTime() > Date.now();
     } catch (err) {
-      console.warn('[AuthTrace] invalid trialEndsAt date', { trialEndsAt });
+      logger.warn('[AuthTrace] invalid trialEndsAt date', { trialEndsAt, err });
       return false;
     }
   };
@@ -64,149 +84,161 @@ export function AuthProvider({ children }) {
   };
 
   const ensureUserProfileExists = async () => {
-    console.time('[AuthPerf] ensureUserProfileExists');
+    logger.time('[AuthPerf] ensureUserProfileExists');
     try {
       await supabase.rpc('ensure_user_profile_exists');
     } catch (error) {
-      console.error('[Auth] ensureUserProfileExists error:', error);
+      logger.error('[Auth] ensureUserProfileExists error:', error);
     } finally {
-      console.timeEnd('[AuthPerf] ensureUserProfileExists');
+      logger.timeEnd('[AuthPerf] ensureUserProfileExists');
     }
   };
 
   const refreshOnboardingStatus = async (sessionUser = user) => {
-  console.time('[AuthPerf] refreshOnboardingStatus');
+    logger.time('[AuthPerf] refreshOnboardingStatus');
 
-  if (!sessionUser?.id) {
-    setOnboardingStatus(initialOnboardingState);
-    console.timeEnd('[AuthPerf] refreshOnboardingStatus');
-    return;
-  }
-
-  try {
-    const status = await trialService.checkTrialStatus(sessionUser.id);
-
-    const nextStatus = {
-      trialStatus: status?.trialStatus,
-      onboardingCompleted: status?.onboardingCompleted,
-      paymentVerified: status?.paymentVerified,
-      trialExpiresAt: status?.trialExpiresAt
-    };
-
-    setOnboardingStatus(nextStatus);
-
-    console.log('[AuthTrace] onboardingStatus updated', {
-      userId: sessionUser.id,
-      onboardingStatus: nextStatus,
-      ts: new Date().toISOString()
-    });
-  } catch (error) {
-    console.error('[Auth] onboarding status error:', error);
-    setOnboardingStatus(initialOnboardingState);
-  } finally {
-    console.timeEnd('[AuthPerf] refreshOnboardingStatus');
-  }
-};
-
-
-  const refreshSubscriptionStatus = async (sessionUser = user) => {
-  console.time('[AuthPerf] refreshSubscriptionStatus');
-
-  if (!sessionUser?.id) {
-    setSubscriptionStatus(null);
-    setSubscriptionMeta({
-      stripeCustomerId: null,
-      stripeSubscriptionId: null,
-      trialEndsAt: null
-    });
-    console.timeEnd('[AuthPerf] refreshSubscriptionStatus');
-    return;
-  }
-
-  try {
-    const { data, error } = await supabase
-      .from('user_profiles')
-      .select(`
-        stripe_customer_id,
-        trial_status,
-        trial_expires_at,
-        payment_verified,
-        onboarding_completed
-      `)
-      .eq('id', sessionUser.id)
-      .single();
-
-    if (error) {
-      console.error('[AuthTrace] subscription status load error', error, {
-        userId: sessionUser.id
-      });
-
-      setSubscriptionStatus(null);
-      setSubscriptionMeta({
-        stripeCustomerId: null,
-        stripeSubscriptionId: null,
-        trialEndsAt: null
-      });
-      console.timeEnd('[AuthPerf] refreshSubscriptionStatus');
+    if (!sessionUser?.id) {
+      if (isMountedRef.current) setOnboardingStatus(initialOnboardingState);
+      logger.timeEnd('[AuthPerf] refreshOnboardingStatus');
       return;
     }
 
-    const trialEndsAt = data?.trial_expires_at || null;
-    const trialActive =
-      data?.trial_status === 'active' && trialEndsAt
-        ? new Date(trialEndsAt).getTime() > Date.now()
-        : false;
+    try {
+      const status = await trialService.checkTrialStatus(sessionUser.id);
 
-    let derivedStatus = null;
-    if (data?.payment_verified || data?.onboarding_completed) {
-      derivedStatus = 'active';
-    } else if (trialActive) {
-      derivedStatus = 'trialing';
+      const nextStatus = {
+        trialStatus: status?.trialStatus,
+        onboardingCompleted: status?.onboardingCompleted,
+        paymentVerified: status?.paymentVerified,
+        trialExpiresAt: status?.trialExpiresAt
+      };
+
+      if (isMountedRef.current) {
+        setOnboardingStatus(nextStatus);
+      }
+
+      logger.log('[AuthTrace] onboardingStatus updated', {
+        userId: sessionUser.id,
+        onboardingStatus: nextStatus,
+        ts: new Date().toISOString()
+      });
+    } catch (error) {
+      logger.error('[Auth] onboarding status error:', error);
+      if (isMountedRef.current) {
+        setOnboardingStatus(initialOnboardingState);
+      }
+    } finally {
+      logger.timeEnd('[AuthPerf] refreshOnboardingStatus');
+    }
+  };
+
+  const refreshSubscriptionStatus = async (sessionUser = user) => {
+    logger.time('[AuthPerf] refreshSubscriptionStatus');
+
+    if (!sessionUser?.id) {
+      if (isMountedRef.current) {
+        setSubscriptionStatus(null);
+        setSubscriptionMeta({
+          stripeCustomerId: null,
+          stripeSubscriptionId: null,
+          trialEndsAt: null
+        });
+      }
+      logger.timeEnd('[AuthPerf] refreshSubscriptionStatus');
+      return;
     }
 
-    const nextMeta = {
-      stripeCustomerId: data?.stripe_customer_id || null,
-      stripeSubscriptionId: null,
-      trialEndsAt
-    };
+    try {
+      const { data, error } = await supabase
+        .from('user_profiles')
+        .select(`
+          stripe_customer_id,
+          trial_status,
+          trial_expires_at,
+          payment_verified,
+          onboarding_completed
+        `)
+        .eq('id', sessionUser.id)
+        .single();
 
-    setSubscriptionStatus(derivedStatus);
-    setSubscriptionMeta(nextMeta);
+      if (error) {
+        logger.error('[AuthTrace] subscription status load error', error, {
+          userId: sessionUser.id
+        });
 
-    console.log('[AuthTrace] subscriptionStatus updated', {
-      userId: sessionUser.id,
-      subscriptionStatus: derivedStatus,
-      subscriptionMeta: nextMeta,
-      raw: {
-        trial_status: data?.trial_status,
-        trial_expires_at: data?.trial_expires_at,
-        payment_verified: data?.payment_verified,
-        onboarding_completed: data?.onboarding_completed
-      },
-      ts: new Date().toISOString()
-    });
-  } catch (error) {
-    console.error('[AuthTrace] subscription status exception:', error, {
-      userId: sessionUser?.id,
-      ts: new Date().toISOString()
-    });
-    setSubscriptionStatus(null);
-    setSubscriptionMeta({
-      stripeCustomerId: null,
-      stripeSubscriptionId: null,
-      trialEndsAt: null
-    });
-  } finally {
-    console.timeEnd('[AuthPerf] refreshSubscriptionStatus');
-  }
-};
+        if (isMountedRef.current) {
+          setSubscriptionStatus(null);
+          setSubscriptionMeta({
+            stripeCustomerId: null,
+            stripeSubscriptionId: null,
+            trialEndsAt: null
+          });
+        }
+        logger.timeEnd('[AuthPerf] refreshSubscriptionStatus');
+        return;
+      }
 
+      const trialEndsAt = data?.trial_expires_at || null;
+      const trialActive =
+        data?.trial_status === 'active' && trialEndsAt
+          ? new Date(trialEndsAt).getTime() > Date.now()
+          : false;
+
+      let derivedStatus = null;
+      if (data?.payment_verified || data?.onboarding_completed) {
+        derivedStatus = 'active';
+      } else if (trialActive) {
+        derivedStatus = 'trialing';
+      }
+
+      const nextMeta = {
+        stripeCustomerId: data?.stripe_customer_id || null,
+        stripeSubscriptionId: null,
+        trialEndsAt
+      };
+
+      if (isMountedRef.current) {
+        setSubscriptionStatus(derivedStatus);
+        setSubscriptionMeta(nextMeta);
+      }
+
+      logger.log('[AuthTrace] subscriptionStatus updated', {
+        userId: sessionUser.id,
+        subscriptionStatus: derivedStatus,
+        subscriptionMeta: nextMeta,
+        raw: {
+          trial_status: data?.trial_status,
+          trial_expires_at: data?.trial_expires_at,
+          payment_verified: data?.payment_verified,
+          onboarding_completed: data?.onboarding_completed
+        },
+        ts: new Date().toISOString()
+      });
+    } catch (error) {
+      logger.error('[AuthTrace] subscription status exception:', error, {
+        userId: sessionUser?.id,
+        ts: new Date().toISOString()
+      });
+      if (isMountedRef.current) {
+        setSubscriptionStatus(null);
+        setSubscriptionMeta({
+          stripeCustomerId: null,
+          stripeSubscriptionId: null,
+          trialEndsAt: null
+        });
+      }
+    } finally {
+      logger.timeEnd('[AuthPerf] refreshSubscriptionStatus');
+    }
+  };
 
   const refreshUserProfile = async (sessionUser = user) => {
-    console.time('[AuthPerf] refreshUserProfile');
+    logger.time('[AuthPerf] refreshUserProfile');
     if (!sessionUser?.id) {
-      setUserProfile(null);
-      console.timeEnd('[AuthPerf] refreshUserProfile');
+      if (isMountedRef.current) {
+        setUserProfile(null);
+      }
+      logger.timeEnd('[AuthPerf] refreshUserProfile');
       return null;
     }
 
@@ -238,23 +270,23 @@ export function AuthProvider({ children }) {
         .single();
 
       if (error) {
-        console.error('[AuthTrace] refreshUserProfile error', error, {
+        logger.error('[AuthTrace] refreshUserProfile error', error, {
           userId: sessionUser.id
         });
-        setUserProfile(null);
-        console.timeEnd('[AuthPerf] refreshUserProfile');
+        if (isMountedRef.current) setUserProfile(null);
+        logger.timeEnd('[AuthPerf] refreshUserProfile');
         return null;
       }
 
-      setUserProfile(data);
-      console.timeEnd('[AuthPerf] refreshUserProfile');
+      if (isMountedRef.current) setUserProfile(data);
+      logger.timeEnd('[AuthPerf] refreshUserProfile');
       return data;
     } catch (err) {
-      console.error('[AuthTrace] refreshUserProfile exception', err, {
+      logger.error('[AuthTrace] refreshUserProfile exception', err, {
         userId: sessionUser?.id
       });
-      setUserProfile(null);
-      console.timeEnd('[AuthPerf] refreshUserProfile');
+      if (isMountedRef.current) setUserProfile(null);
+      logger.timeEnd('[AuthPerf] refreshUserProfile');
       return null;
     }
   };
@@ -266,10 +298,10 @@ export function AuthProvider({ children }) {
       const refCode = params.get('ref');
       if (refCode) {
         localStorage.setItem(AFFILIATE_REF_STORAGE_KEY, refCode);
-        console.log('[Affiliate] Stored ref code from URL', { refCode });
+        logger.log('[Affiliate] Stored ref code from URL', { refCode });
       }
     } catch (err) {
-      console.warn('[Affiliate] Failed to persist ref from URL', err);
+      logger.warn('[Affiliate] Failed to persist ref from URL', err);
     }
   };
 
@@ -288,12 +320,12 @@ export function AuthProvider({ children }) {
         .single();
 
       if (profileError) {
-        console.error('[Affiliate] Failed to fetch profile before attach', profileError);
+        logger.error('[Affiliate] Failed to fetch profile before attach', profileError);
         return;
       }
 
       if (profile?.referred_by_affiliate_id) {
-        console.log('[Affiliate] User already has referral, skipping attach', {
+        logger.log('[Affiliate] User already has referral, skipping attach', {
           userId: sessionUser.id
         });
         localStorage.removeItem(AFFILIATE_REF_STORAGE_KEY);
@@ -308,7 +340,7 @@ export function AuthProvider({ children }) {
         .single();
 
       if (affiliateError || !affiliate?.id) {
-        console.warn('[Affiliate] Ref code not valid', {
+        logger.warn('[Affiliate] Ref code not valid', {
           storedRef,
           error: affiliateError?.message || affiliateError
         });
@@ -316,7 +348,7 @@ export function AuthProvider({ children }) {
       }
 
       if (affiliate.id === sessionUser.id) {
-        console.warn('[Affiliate] Self-referral detected, skipping', { userId: sessionUser.id });
+        logger.warn('[Affiliate] Self-referral detected, skipping', { userId: sessionUser.id });
         localStorage.removeItem(AFFILIATE_REF_STORAGE_KEY);
         return;
       }
@@ -334,7 +366,7 @@ export function AuthProvider({ children }) {
         );
 
       if (referralError) {
-        console.error('[Affiliate] Failed to upsert referral', referralError);
+        logger.error('[Affiliate] Failed to upsert referral', referralError);
         return;
       }
 
@@ -344,69 +376,111 @@ export function AuthProvider({ children }) {
         .eq('id', sessionUser.id);
 
       if (profileUpdateError) {
-        console.error('[Affiliate] Failed to set referred_by_affiliate_id', profileUpdateError);
+        logger.error('[Affiliate] Failed to set referred_by_affiliate_id', profileUpdateError);
         return;
       }
 
-      console.log('[Affiliate] Referral attached to user', {
+      logger.log('[Affiliate] Referral attached to user', {
         userId: sessionUser.id,
         affiliateId: affiliate.id
       });
       localStorage.removeItem(AFFILIATE_REF_STORAGE_KEY);
       await refreshUserProfile(sessionUser);
     } catch (err) {
-      console.error('[Affiliate] attachAffiliateReferralIfNeeded crashed', err);
+      logger.error('[Affiliate] attachAffiliateReferralIfNeeded crashed', err);
     }
   };
 
-  const loadUserState = useCallback(async (sessionUser) => {
-    console.time('[AuthPerf] loadUserState');
-    console.log('[AuthTrace] loadUserState called', {
-      userId: sessionUser?.id,
-      hasUser: !!sessionUser,
-      ts: new Date().toISOString()
-    });
-
-    if (!sessionUser?.id) {
-      setIsAdmin(false);
-      setUserProfile(null);
-      setOnboardingStatus(initialOnboardingState);
-      setSubscriptionStatus(null);
-      setSubscriptionMeta({
-        stripeCustomerId: null,
-        stripeSubscriptionId: null,
-        trialEndsAt: null
+  const loadUserState = useCallback(
+    async (sessionUser) => {
+      logger.time('[AuthPerf] loadUserState');
+      logger.log('[AuthTrace] loadUserState called', {
+        userId: sessionUser?.id,
+        hasUser: !!sessionUser,
+        ts: new Date().toISOString()
       });
-      setIsAuthReady(true);
-      setLoading(false);
-      console.timeEnd('[AuthPerf] loadUserState');
-      return;
-    }
 
-    setLoading(true);
-    try {
-      await ensureUserProfileExists();
-      const profile = await refreshUserProfile(sessionUser);
-      setIsAdmin(profile?.role === 'admin');
-      await refreshOnboardingStatus(sessionUser);
-      await refreshSubscriptionStatus(sessionUser);
-      await attachAffiliateReferralIfNeeded(sessionUser);
-    } catch (err) {
-      console.error('[AuthTrace] loadUserState failed', err);
-    } finally {
-      setLoading(false);
-      setIsAuthReady(true);
-      console.timeEnd('[AuthPerf] loadUserState');
-    }
-  }, []);
+      const currentUserId = sessionUser?.id || null;
+
+      if (!currentUserId) {
+        if (isMountedRef.current) {
+          setIsAdmin(false);
+          setUserProfile(null);
+          setOnboardingStatus(initialOnboardingState);
+          setSubscriptionStatus(null);
+          setSubscriptionMeta({
+            stripeCustomerId: null,
+            stripeSubscriptionId: null,
+            trialEndsAt: null
+          });
+          setIsAuthReady(true);
+          setLoading(false);
+        }
+        logger.timeEnd('[AuthPerf] loadUserState');
+        return;
+      }
+
+      if (
+        loadUserStateLock.current?.userId === currentUserId &&
+        loadUserStateLock.current?.promise
+      ) {
+        logger.log('[AuthTrace] dedup loadUserState for same user', { userId: currentUserId });
+        return loadUserStateLock.current.promise;
+      }
+
+      const run = async () => {
+        if (isMountedRef.current) setLoading(true);
+        try {
+          await ensureUserProfileExists();
+          const profile = await refreshUserProfile(sessionUser);
+          if (isMountedRef.current) setIsAdmin(profile?.role === 'admin');
+
+          await Promise.all([
+            refreshOnboardingStatus(sessionUser),
+            refreshSubscriptionStatus(sessionUser),
+            attachAffiliateReferralIfNeeded(sessionUser)
+          ]);
+        } catch (err) {
+          logger.error('[AuthTrace] loadUserState failed', err);
+        } finally {
+          if (isMountedRef.current) {
+            setLoading(false);
+            setIsAuthReady(true);
+          }
+          logger.timeEnd('[AuthPerf] loadUserState');
+        }
+      };
+
+      const promise = run();
+      loadUserStateLock.current = { userId: currentUserId, promise };
+      promise.finally(() => {
+        if (loadUserStateLock.current?.promise === promise) {
+          loadUserStateLock.current = null;
+        }
+      });
+      return promise;
+    },
+    [refreshOnboardingStatus, refreshSubscriptionStatus, refreshUserProfile]
+  );
 
   const handleSessionChange = useCallback(
     async (nextSession, source = 'unknown') => {
       const sessionUser = nextSession?.user ?? null;
-      setSession(nextSession ?? null);
-      setUser(sessionUser);
+      const token = nextSession?.access_token || null;
 
-      console.log('[AuthTrace] handleSessionChange', {
+      if (lastSessionTokenRef.current === token && token) {
+        logger.log('[AuthTrace] skip duplicate auth event', { source, tokenKnown: !!token });
+        return;
+      }
+
+      lastSessionTokenRef.current = token;
+
+      if (isMountedRef.current) {
+        setSession(nextSession ?? null);
+        setUser(sessionUser);
+      }
+
+      logger.log('[AuthTrace] handleSessionChange', {
         source,
         path: typeof window !== 'undefined' ? window?.location?.pathname : 'unknown',
         userId: sessionUser?.id,
@@ -416,13 +490,13 @@ export function AuthProvider({ children }) {
 
       if (sessionUser?.id) {
         await loadUserState(sessionUser);
-        console.log('[AuthTrace] state after handleSessionChange', {
+        logger.log('[AuthTrace] state after handleSessionChange', {
           hasUser: !!sessionUser,
           isAdmin: sessionUser?.role === 'admin',
           loading,
           isAuthReady
         });
-      } else {
+      } else if (isMountedRef.current) {
         setIsAdmin(false);
         setOnboardingStatus(initialOnboardingState);
         setSubscriptionStatus(null);
@@ -434,7 +508,7 @@ export function AuthProvider({ children }) {
         setUserProfile(null);
         setIsAuthReady(true);
         setLoading(false);
-        console.log('[AuthTrace] state after handleSessionChange', {
+        logger.log('[AuthTrace] state after handleSessionChange', {
           hasUser: false,
           isAdmin: false,
           loading,
@@ -442,11 +516,12 @@ export function AuthProvider({ children }) {
         });
       }
     },
-    [loadUserState]
+    [isAuthReady, loadUserState, loading]
   );
 
   useEffect(() => {
-    console.log('[AuthTrace] init useEffect run', {
+    let cancelled = false;
+    logger.log('[AuthTrace] init useEffect run', {
       path: typeof window !== 'undefined' ? window.location.pathname : 'unknown',
       ts: new Date().toISOString()
     });
@@ -459,59 +534,68 @@ export function AuthProvider({ children }) {
 
         const { data, error } = await supabase.auth.getSession();
         if (error) {
-          console.error('[AuthTrace] getSession error', error);
+          logger.error('[AuthTrace] getSession error', error);
         }
 
-        await handleSessionChange(data?.session, 'initial');
+        if (!cancelled) {
+          await handleSessionChange(data?.session, 'initial');
+        }
 
         if (typeof window !== 'undefined') {
           const params = new URLSearchParams(window.location.search);
           const code = params.get('code');
           if (code && !data?.session) {
-            console.log('[AuthTrace] exchanging OAuth code for session', {
+            logger.log('[AuthTrace] exchanging OAuth code for session', {
               path: window.location.pathname,
               ts: new Date().toISOString()
             });
             const { data: exchangeData, error: exchangeError } =
               await supabase.auth.exchangeCodeForSession(code);
             if (exchangeError) {
-              console.error('[AuthTrace] code exchange failed', exchangeError);
-            } else {
+              logger.error('[AuthTrace] code exchange failed', exchangeError);
+            } else if (!cancelled) {
               await handleSessionChange(exchangeData?.session, 'code-exchange');
             }
             window.history.replaceState({}, document.title, window.location.pathname);
           }
         }
       } catch (err) {
-        console.error('[AuthTrace] init error', err, {
+        logger.error('[AuthTrace] init error', err, {
           path: typeof window !== 'undefined' ? window.location.pathname : 'unknown',
           ts: new Date().toISOString()
         });
       } finally {
-        setIsAuthReady(true);
+        if (!cancelled && isMountedRef.current) {
+          setIsAuthReady(true);
+        } else if (import.meta?.env?.DEV) {
+          logger.warn('[AuthTrace] init skipped setting ready due to unmount');
+        }
       }
     };
 
     init();
 
     const { data: authListener } = supabase.auth.onAuthStateChange((event, nextSession) => {
-      console.log('[AuthTrace] onAuthStateChange fired', {
+      logger.log('[AuthTrace] onAuthStateChange fired', {
         event,
         hasSession: !!nextSession,
         userId: nextSession?.user?.id,
         ts: new Date().toISOString()
       });
       (async () => {
-        await handleSessionChange(nextSession, 'authStateChange');
-        setIsAuthReady(true);
+        if (!cancelled) {
+          await handleSessionChange(nextSession, 'authStateChange');
+          if (isMountedRef.current) setIsAuthReady(true);
+        }
       })();
     });
 
     return () => {
-      console.log('[AuthTrace] cleanup authListener');
+      cancelled = true;
+      logger.log('[AuthTrace] cleanup authListener');
       authListener?.subscription?.unsubscribe();
     };
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [handleSessionChange]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const signUp = async (email, password, userData = {}) => {
     try {
@@ -530,7 +614,7 @@ export function AuthProvider({ children }) {
       if (error) throw error;
       return { data, error: null };
     } catch (error) {
-      console.error('[AuthTrace] Signup error:', error, { ts: new Date().toISOString() });
+      logger.error('[AuthTrace] Signup error:', error, { ts: new Date().toISOString() });
       return { data: null, error };
     }
   };
@@ -549,7 +633,7 @@ export function AuthProvider({ children }) {
 
       return { data, error: null };
     } catch (error) {
-      console.error('[AuthTrace] Signin error:', error, { ts: new Date().toISOString() });
+      logger.error('[AuthTrace] Signin error:', error, { ts: new Date().toISOString() });
       return { data: null, error };
     }
   };
@@ -559,19 +643,21 @@ export function AuthProvider({ children }) {
       const { error } = await supabase.auth.signOut();
       if (error) throw error;
 
-      setUser(null);
-      setIsAdmin(false);
-      setOnboardingStatus(initialOnboardingState);
-      setUserProfile(null);
+      if (isMountedRef.current) {
+        setUser(null);
+        setIsAdmin(false);
+        setOnboardingStatus(initialOnboardingState);
+        setUserProfile(null);
+      }
 
       return { error: null };
     } catch (error) {
-      console.error('Signout error:', error);
+      logger.error('Signout error:', error);
       return { error };
     }
   };
 
-  const signInWithGoogle = async () => {
+  const signInWithGoogle = async (redirectPath) => {
     try {
       const googleClientId = import.meta.env?.VITE_GOOGLE_CLIENT_ID;
       if (!googleClientId) {
@@ -579,10 +665,36 @@ export function AuthProvider({ children }) {
       }
 
       const origin = typeof window !== 'undefined' ? window?.location?.origin : 'http://adruby.de';
-      const redirectTo = import.meta.env?.VITE_GOOGLE_REDIRECT_URL || `${origin}/payment-verification`;
-      console.log('[AuthTrace] signInWithGoogle redirectTo:', redirectTo, {
+      const desiredRedirect =
+        redirectPath ||
+        (typeof window !== 'undefined'
+          ? new URLSearchParams(window.location.search).get('redirect') || '/overview-dashboard'
+          : '/overview-dashboard');
+
+      const defaultRedirectTo = `${origin}/login-authentication?redirect=${encodeURIComponent(
+        desiredRedirect
+      )}`;
+
+      let redirectTo = defaultRedirectTo;
+      const envRedirect = import.meta.env?.VITE_GOOGLE_REDIRECT_URL;
+
+      if (envRedirect) {
+        try {
+          const url = new URL(envRedirect);
+          if (!url.searchParams.get('redirect') && desiredRedirect) {
+            url.searchParams.set('redirect', desiredRedirect);
+          }
+          redirectTo = url.toString();
+        } catch (err) {
+          logger.warn('[AuthTrace] Invalid VITE_GOOGLE_REDIRECT_URL, falling back to default', err);
+          redirectTo = defaultRedirectTo;
+        }
+      }
+
+      logger.log('[AuthTrace] signInWithGoogle redirectTo:', redirectTo, {
         ts: new Date().toISOString(),
-        path: typeof window !== 'undefined' ? window.location.pathname : 'unknown'
+        path: typeof window !== 'undefined' ? window.location.pathname : 'unknown',
+        desiredRedirect
       });
 
       const { data, error } = await supabase.auth.signInWithOAuth({
@@ -598,24 +710,24 @@ export function AuthProvider({ children }) {
       });
 
       if (error) {
-        console.error('[AuthTrace] Google OAuth error details:', error, { ts: new Date().toISOString() });
+        logger.error('[AuthTrace] Google OAuth error details:', error, { ts: new Date().toISOString() });
         throw error;
       }
-      console.log('[AuthTrace] signInWithGoogle response:', data, { ts: new Date().toISOString() });
+      logger.log('[AuthTrace] signInWithGoogle response:', data, { ts: new Date().toISOString() });
 
       return { data, error: null };
     } catch (error) {
-      console.error('[AuthTrace] Google OAuth error:', error, { ts: new Date().toISOString() });
+      logger.error('[AuthTrace] Google OAuth error:', error, { ts: new Date().toISOString() });
 
       let errorMessage = 'Google-Anmeldung fehlgeschlagen.';
       if (error?.message?.includes('OAuth') || error?.message?.includes('konfiguriert')) {
         errorMessage = 'Google OAuth ist nicht konfiguriert. Bitte wenden Sie sich an den Support.';
       } else if (error?.message?.includes('network') || error?.message?.includes('Network')) {
-        errorMessage = 'Internetverbindung prüfen und erneut versuchen.';
+        errorMessage = 'Internetverbindung pr\u00fcfen und erneut versuchen.';
       } else if (error?.message?.includes('popup') || error?.message?.includes('blocked')) {
         errorMessage = 'Popup wurde blockiert. Bitte Popup-Blocker deaktivieren.';
       } else if (error?.message?.includes('Invalid') || error?.message?.includes('invalid')) {
-        errorMessage = 'Ungültige Google-Konfiguration. Bitte wenden Sie sich an den Support.';
+        errorMessage = 'Ung\u00fcltige Google-Konfiguration. Bitte wenden Sie sich an den Support.';
       } else if (error?.message) {
         errorMessage = error?.message;
       }
@@ -637,7 +749,7 @@ export function AuthProvider({ children }) {
       if (error) throw error;
       return data;
     } catch (error) {
-      console.error('Error fetching user profile:', error);
+      logger.error('Error fetching user profile:', error);
       throw error;
     }
   };
@@ -657,7 +769,7 @@ export function AuthProvider({ children }) {
       await refreshUserProfile(user);
       return data;
     } catch (error) {
-      console.error('Error updating profile:', error);
+      logger.error('Error updating profile:', error);
       throw error;
     }
   };
@@ -677,7 +789,7 @@ export function AuthProvider({ children }) {
       const exportData = {
         exportDate: new Date().toISOString(),
         userProfile: data,
-        notice: 'Dies sind alle Ihre in unserem System gespeicherten Daten gemäß DSGVO Art. 15.'
+        notice: 'Dies sind alle Ihre in unserem System gespeicherten Daten gem\u00e4\u00df DSGVO Art. 15.'
       };
 
       const blob = new Blob([JSON.stringify(exportData, null, 2)], {
@@ -695,7 +807,7 @@ export function AuthProvider({ children }) {
 
       return true;
     } catch (error) {
-      console.error('Error exporting user data:', error);
+      logger.error('Error exporting user data:', error);
       throw error;
     }
   };
@@ -704,22 +816,37 @@ export function AuthProvider({ children }) {
     if (!user) throw new Error('User not authenticated');
 
     try {
-      const { error: functionError } = await supabase.rpc('delete_user_gdpr_data', {
-        target_user_id: user.id
-      });
+      const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+      if (sessionError || !sessionData?.session?.access_token) {
+        throw sessionError || new Error('Session missing or expired');
+      }
 
-      if (functionError) throw functionError;
+      const token = sessionData.session.access_token;
 
-      const { error: deleteError } = await supabase.auth.admin.deleteUser(user.id);
-      if (deleteError) throw deleteError;
+      const payload = await apiClient.post(
+        '/api/delete-account',
+        {},
+        {
+          headers: {
+            Authorization: `Bearer ${token}`
+          }
+        }
+      );
 
-      setUser(null);
-      setIsAdmin(false);
-      setUserProfile(null);
+      if (!payload?.ok) {
+        throw new Error(payload?.error || 'Account deletion failed');
+      }
+
+      await supabase.auth.signOut();
+      if (isMountedRef.current) {
+        setUser(null);
+        setIsAdmin(false);
+        setUserProfile(null);
+      }
 
       return true;
     } catch (error) {
-      console.error('Error deleting account:', error);
+      logger.error('Error deleting account:', error);
       throw error;
     }
   };

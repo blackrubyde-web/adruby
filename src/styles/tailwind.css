@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Space+Grotesk:wght@400;500;600;700&display=swap');
 @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400&display=swap');
 @tailwind base;
 @tailwind components;
@@ -7,57 +7,57 @@
 @layer base {
   :root {
     /* Core Colors */
-    --color-background: #FFFFFF; /* white */
-    --color-foreground: #111111; /* gray-900 */
-    --color-border: #E5E5E5; /* gray-200 */
-    --color-input: #FFFFFF; /* white */
-    --color-ring: #E50914; /* red-600 */
+    --color-background: #0b0d12;
+    --color-foreground: #f5f7fb;
+    --color-border: rgba(255, 255, 255, 0.08);
+    --color-input: rgba(255, 255, 255, 0.04);
+    --color-ring: #e43b56;
     
     /* Card Colors */
-    --color-card: #FFFFFF; /* white */
-    --color-card-foreground: #111111; /* gray-900 */
-    --color-popover: #FFFFFF; /* white */
-    --color-popover-foreground: #111111; /* gray-900 */
+    --color-card: rgba(255, 255, 255, 0.03);
+    --color-card-foreground: #f5f7fb;
+    --color-popover: #0f1116;
+    --color-popover-foreground: #f5f7fb;
     
     /* Muted Colors */
-    --color-muted: #FAFAFA; /* gray-50 */
-    --color-muted-foreground: #666666; /* gray-500 */
+    --color-muted: rgba(255, 255, 255, 0.04);
+    --color-muted-foreground: #9aa3b5;
     
     /* Primary Colors */
-    --color-primary: #E50914; /* red-600 */
-    --color-primary-foreground: #FFFFFF; /* white */
+    --color-primary: #f42d63;
+    --color-primary-foreground: #ffffff;
     
     /* Secondary Colors */
-    --color-secondary: #F5F5F5; /* gray-100 */
-    --color-secondary-foreground: #111111; /* gray-900 */
+    --color-secondary: #121522;
+    --color-secondary-foreground: #f5f7fb;
     
     /* Destructive Colors */
-    --color-destructive: #EF4444; /* red-500 */
-    --color-destructive-foreground: #FFFFFF; /* white */
+    --color-destructive: #ef4444;
+    --color-destructive-foreground: #ffffff;
     
     /* Accent Colors */
-    --color-accent: #FAFAFA; /* gray-50 */
-    --color-accent-foreground: #111111; /* gray-900 */
+    --color-accent: rgba(255, 255, 255, 0.08);
+    --color-accent-foreground: #f5f7fb;
     
     /* Success Colors */
-    --color-success: #22C55E; /* green-500 */
-    --color-success-foreground: #FFFFFF; /* white */
+    --color-success: #31d0aa;
+    --color-success-foreground: #04110c;
     
     /* Warning Colors */
-    --color-warning: #F59E0B; /* amber-500 */
-    --color-warning-foreground: #FFFFFF; /* white */
+    --color-warning: #f3b340;
+    --color-warning-foreground: #1b1205;
     
     /* Error Colors */
-    --color-error: #EF4444; /* red-500 */
-    --color-error-foreground: #FFFFFF; /* white */
+    --color-error: #ef4444;
+    --color-error-foreground: #ffffff;
     
     /* Additional Theme Colors */
-    --color-surface: #FAFAFA; /* gray-50 */
-    --color-text-secondary: #666666; /* gray-500 */
-    --color-hover: #B0060F; /* red-700 */
+    --color-surface: rgba(255, 255, 255, 0.02);
+    --color-text-secondary: #9aa3b5;
+    --color-hover: #c32252;
     
     /* Border Radius */
-    --radius: 0.5rem;
+    --radius: 0.75rem;
   }
 
   .dark {
@@ -109,13 +109,14 @@
   
   body {
     @apply bg-background text-foreground;
-    font-family: 'Inter', sans-serif;
+    font-family: 'Space Grotesk', 'Inter', sans-serif;
     font-feature-settings: "cv02", "cv03", "cv04", "cv11";
   }
   
   h1, h2, h3, h4, h5, h6 {
-    font-family: 'Inter', sans-serif;
+    font-family: 'Space Grotesk', 'Inter', sans-serif;
     font-weight: 600;
+    letter-spacing: -0.02em;
   }
   
   .font-mono {
@@ -142,6 +143,18 @@
   
   .border-functional {
     border: 1px solid var(--color-border);
+  }
+
+  .glass-panel {
+    background: var(--color-card);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    box-shadow: 0 16px 40px rgba(0, 0, 0, 0.3);
+    backdrop-filter: blur(14px);
+  }
+
+  .hero-grid {
+    background-image: radial-gradient(circle at 20% 20%, rgba(244, 45, 99, 0.15), transparent 25%),
+                      radial-gradient(circle at 80% 0%, rgba(80, 120, 255, 0.2), transparent 30%);
   }
 }
 

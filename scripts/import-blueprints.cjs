@@ -3,6 +3,12 @@ const fs = require('fs');
 const path = require('path');
 const { createClient } = require('@supabase/supabase-js');
 
+// Load local .env so npm scripts have access to Supabase secrets outside of CI
+const envPath = path.join(__dirname, '..', '.env');
+if (fs.existsSync(envPath)) {
+  require('dotenv').config({ path: envPath });
+}
+
 // Diese ENV VARS kommen aus Netlify (UI -> Site settings -> Environment)
 const SUPABASE_URL = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;

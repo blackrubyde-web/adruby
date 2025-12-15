@@ -190,7 +190,7 @@ export class AdBuilderService {
 
       // Prefer serverless/backend analysis if available
       try {
-        const res = await fetch("/.netlify/functions/ad-builder-analyze-market", {
+        const res = await fetch("/api/ad-builder-analyze-market", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(payload),
@@ -356,7 +356,7 @@ Format: {"common_hooks": [], "common_ctas": [], "emotional_triggers": [], "visua
       // Prefer serverless/backend generation if available
       try {
         console.log("[AdBuilderService] Sending researchContext to backend", !!researchContext);
-        const res = await fetch("/.netlify/functions/ad-builder-generate-ads", {
+        const res = await fetch("/api/ad-builder-generate-ads", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(payload),

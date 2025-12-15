@@ -1,5 +1,6 @@
 import React from "react";
 import Icon from "./AppIcon";
+import { emitToast } from "../utils/toastBus";
 
 class ErrorBoundary extends React.Component {
   constructor(props) {
@@ -14,7 +15,15 @@ class ErrorBoundary extends React.Component {
   componentDidCatch(error, errorInfo) {
     error.__ErrorBoundary = true;
     window.__COMPONENT_ERROR__?.(error, errorInfo);
-    // console.log("Error caught by ErrorBoundary:", error, errorInfo);
+    if (import.meta?.env?.DEV) {
+      // eslint-disable-next-line no-console
+      console.error("Error caught by ErrorBoundary:", error, errorInfo);
+    }
+    emitToast({
+      type: 'error',
+      title: 'Unerwarteter Fehler',
+      description: 'Etwas ist schiefgelaufen. Bitte versuche es erneut.'
+    });
   }
 
   render() {

@@ -4,11 +4,12 @@ import { supabase } from '../lib/supabaseClient';
 import usePreferredTheme from '../hooks/usePreferredTheme';
 
 const RedirectScreen = ({
-  title = 'Bitte warten…',
+  title = 'Bitte warten...',
   subtitle = '',
   details = '',
   showHomeButton = true,
-  showLogoutButton = false
+  showLogoutButton = false,
+  showReloadButton = false
 }) => {
   const navigate = useNavigate();
   const theme = usePreferredTheme();
@@ -24,6 +25,12 @@ const RedirectScreen = ({
   const subtleText = isDark ? 'text-slate-400' : 'text-slate-500';
 
   const handleHome = () => navigate('/', { replace: true });
+
+  const handleReload = () => {
+    if (typeof window !== 'undefined') {
+      window.location.reload();
+    }
+  };
 
   const handleLogout = async () => {
     try {
@@ -50,14 +57,22 @@ const RedirectScreen = ({
         {subtitle && <p className={`text-sm text-center mt-1 ${subtleText}`}>{subtitle}</p>}
         {details && <p className={`text-xs text-center mt-2 leading-relaxed ${subtleText}`}>{details}</p>}
 
-        {(showHomeButton || showLogoutButton) && (
-          <div className="mt-6 flex items-center justify-center gap-3">
+        {(showHomeButton || showLogoutButton || showReloadButton) && (
+          <div className="mt-6 flex items-center justify-center gap-3 flex-wrap">
             {showHomeButton && (
               <button
                 onClick={handleHome}
                 className="px-4 py-2 rounded-lg border border-slate-300 bg-white text-slate-800 hover:bg-slate-50 transition text-sm font-medium"
               >
                 Zur Startseite
+              </button>
+            )}
+            {showReloadButton && (
+              <button
+                onClick={handleReload}
+                className="px-4 py-2 rounded-lg border border-slate-300 bg-white text-slate-800 hover:bg-slate-50 transition text-sm font-medium"
+              >
+                Neu laden
               </button>
             )}
             {showLogoutButton && (

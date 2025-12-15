@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../../contexts/AuthContext";
 import Icon from "../AppIcon";
@@ -23,6 +23,7 @@ const Sidebar = ({
   const location = useLocation();
   const navigate = useNavigate();
   const { user } = useAuth();
+  const mountedRef = useRef(true);
 
   const collapsed = !!isNavCollapsed;
 
@@ -33,6 +34,13 @@ const Sidebar = ({
   const [creditsLoading, setCreditsLoading] = useState(true);
 
   useEffect(() => {
+    mountedRef.current = true;
+    return () => {
+      mountedRef.current = false;
+    };
+  }, []);
+
+  useEffect(() => {
     const currentPath = location?.pathname;
     const activeNav = navItems?.find((item) => item?.path === currentPath);
     if (activeNav) {
@@ -41,36 +49,43 @@ const Sidebar = ({
   }, [location?.pathname]);
 
   useEffect(() => {
+    let cancelled = false;
     if (!user?.id) {
-      setDisplayName("Guest");
-      setLoadingName(false);
-      setCreditStatus(null);
-      setCreditsLoading(false);
+      if (mountedRef.current) {
+        setDisplayName("Guest");
+        setLoadingName(false);
+        setCreditStatus(null);
+        setCreditsLoading(false);
+      }
       return;
     }
 
     const fetchData = async () => {
       try {
-        setLoadingName(true);
+        if (mountedRef.current) setLoadingName(true);
         const name = user?.email?.split("@")?.[0] || "User";
-        setDisplayName(name);
+        if (mountedRef.current && !cancelled) setDisplayName(name);
       } catch {
-        setDisplayName("User");
+        if (mountedRef.current && !cancelled) setDisplayName("User");
       } finally {
-        setLoadingName(false);
+        if (mountedRef.current && !cancelled) setLoadingName(false);
       }
 
       try {
         const credits = await creditService?.getUserCreditStatus(user?.id);
-        setCreditStatus(credits);
+        if (mountedRef.current && !cancelled) setCreditStatus(credits);
       } catch {
-        setCreditStatus(null);
+        if (mountedRef.current && !cancelled) setCreditStatus(null);
       } finally {
-        setCreditsLoading(false);
+        if (mountedRef.current && !cancelled) setCreditsLoading(false);
       }
     };
 
     fetchData();
+
+    return () => {
+      cancelled = true;
+    };
   }, [user?.id]);
 
   const handleNavigation = (path) => {
