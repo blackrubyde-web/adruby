@@ -484,7 +484,7 @@ export function AuthProvider({ children }) {
   );
 
   const handleSessionChange = useCallback(
-    async (nextSession, source = 'unknown', eventType = null) => {
+    async (nextSession, source = 'unknown', eventType = null, forceReload = false) => {
       const sessionUser = nextSession?.user ?? null;
       const token = nextSession?.access_token || null;
 
@@ -504,14 +504,16 @@ export function AuthProvider({ children }) {
 
       if (sessionUser?.id) {
         // Reset the loaded-flag when user changes
-        if (hasLoadedUserRef.current.userId !== sessionUser.id) {
+        const userChanged = hasLoadedUserRef.current.userId !== sessionUser.id;
+        const shouldForce = forceReload || userChanged;
+        if (userChanged) {
           hasLoadedUserRef.current = { userId: sessionUser.id, loaded: false };
         }
 
         const sameUser = hasLoadedUserRef.current.userId === sessionUser.id;
         const sameToken = lastSessionTokenRef.current === token;
 
-        if (sameUser && sameToken && hasLoadedUserRef.current.loaded) {
+        if (!shouldForce && sameUser && sameToken && hasLoadedUserRef.current.loaded) {
           logger.log('[AuthTrace] skip loadUserState (already loaded for user/token)', {
             source,
             eventType,
@@ -607,7 +609,7 @@ export function AuthProvider({ children }) {
         }
 
         if (!cancelled) {
-          await handleSessionChange(data?.session, 'initial');
+          await handleSessionChange(data?.session, 'initial', null, true);
         }
 
         if (typeof window !== 'undefined') {
