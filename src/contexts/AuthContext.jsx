@@ -49,6 +49,21 @@ export function AuthProvider({ children }) {
   const hasLoadedUserRef = useRef({ userId: null, loaded: false });
   const isMountedRef = useRef(true);
 
+  const DISALLOWED_REDIRECTS = useRef(
+    new Set(['/login', '/login-authentication', '/signup'])
+  );
+  const safeRedirect = (raw) => {
+    if (!raw) return null;
+    try {
+      const decoded = decodeURIComponent(raw);
+      if (!decoded.startsWith('/')) return null;
+      if (DISALLOWED_REDIRECTS.current.has(decoded)) return null;
+      return decoded;
+    } catch {
+      return null;
+    }
+  };
+
   useEffect(
     () => () => {
       isMountedRef.current = false;
@@ -551,6 +566,33 @@ export function AuthProvider({ children }) {
       ts: new Date().toISOString()
     });
 
+    const finalizeRedirect = async (sessionUser, params) => {
+      try {
+        if (!sessionUser?.id) return;
+        const redirectParam = safeRedirect(params.get('redirect'));
+        const { data: profile, error } = await supabase
+          .from('user_profiles')
+          .select('role,payment_verified,onboarding_completed')
+          .eq('id', sessionUser.id)
+          .single();
+
+        if (error) {
+          logger.error('[AuthTrace] finalizeRedirect profile load error', error);
+        }
+
+        const isAdmin = profile?.role === 'admin';
+        const isPaid = Boolean(profile?.payment_verified || profile?.onboarding_completed);
+        const target =
+          redirectParam || (isAdmin ? '/admin-dashboard' : isPaid ? '/overview-dashboard' : '/payment-verification');
+
+        if (typeof window !== 'undefined') {
+          window.location.replace(target);
+        }
+      } catch (err) {
+        logger.error('[AuthTrace] finalizeRedirect error', err);
+      }
+    };
+
     const init = async () => {
       try {
         if (typeof window !== 'undefined') {
@@ -569,6 +611,12 @@ export function AuthProvider({ children }) {
         if (typeof window !== 'undefined') {
           const params = new URLSearchParams(window.location.search);
           const code = params.get('code');
+
+           if (code && data?.session?.user) {
+             await finalizeRedirect(data.session.user, params);
+             return;
+           }
+
           if (code && !data?.session) {
             logger.log('[AuthTrace] exchanging OAuth code for session', {
               path: window.location.pathname,
@@ -580,12 +628,7 @@ export function AuthProvider({ children }) {
               logger.error('[AuthTrace] code exchange failed', exchangeError);
             } else if (!cancelled) {
               await handleSessionChange(exchangeData?.session, 'code-exchange');
-              const redirectParam = params.get('redirect');
-              const redirectTo =
-                redirectParam && redirectParam.startsWith('/')
-                  ? redirectParam
-                  : '/overview-dashboard';
-              window.location.replace(redirectTo);
+              await finalizeRedirect(exchangeData?.session?.user, params);
               return;
             }
             window.history.replaceState({}, document.title, window.location.pathname);

@@ -1,14 +1,29 @@
 import React, { useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { PlayCircle, Star, CheckCircle, Brain, BarChart3, Target, Zap, Award } from 'lucide-react';
 import Header from './components/Header';
+import { useAuth } from '../../contexts/AuthContext';
 
 const PublicLandingHome = () => {
+  const navigate = useNavigate();
+  const { user, isAuthReady, isSubscribed, isAdmin } = useAuth();
+
   const handleWatchDemo = () => {
     // Placeholder action for the demo video CTA
     console.log('Demo-Video ansehen');
   };
+
+  useEffect(() => {
+    if (isAuthReady && user?.id) {
+      const target = isAdmin
+        ? '/admin-dashboard'
+        : isSubscribed()
+          ? '/overview-dashboard'
+          : '/payment-verification';
+      navigate(target, { replace: true });
+    }
+  }, [isAuthReady, user?.id, isSubscribed, isAdmin, navigate]);
 
   useEffect(() => {
     const seo = {
