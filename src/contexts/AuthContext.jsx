@@ -46,6 +46,7 @@ export function AuthProvider({ children }) {
 
   const loadUserStateLock = useRef(null);
   const lastSessionTokenRef = useRef(null);
+  const lastLoadTsRef = useRef(0);
   const isMountedRef = useRef(true);
 
   useEffect(
@@ -472,8 +473,6 @@ export function AuthProvider({ children }) {
       const sessionUser = nextSession?.user ?? null;
       const token = nextSession?.access_token || null;
 
-      lastSessionTokenRef.current = token;
-
       if (isMountedRef.current) {
         setSession(nextSession ?? null);
         setUser(sessionUser);
@@ -488,6 +487,16 @@ export function AuthProvider({ children }) {
       });
 
       if (sessionUser?.id) {
+        const now = Date.now();
+        if (lastSessionTokenRef.current === token && now - lastLoadTsRef.current < 3000) {
+          logger.log('[AuthTrace] skip duplicate auth event (same token, throttled)', {
+            source,
+            userId: sessionUser.id
+          });
+          return;
+        }
+        lastSessionTokenRef.current = token;
+        lastLoadTsRef.current = now;
         await loadUserState(sessionUser);
         logger.log('[AuthTrace] state after handleSessionChange', {
           hasUser: !!sessionUser,
@@ -496,6 +505,8 @@ export function AuthProvider({ children }) {
           isAuthReady
         });
       } else if (isMountedRef.current) {
+        lastSessionTokenRef.current = token;
+        lastLoadTsRef.current = Date.now();
         setIsAdmin(false);
         setOnboardingStatus(initialOnboardingState);
         setSubscriptionStatus(null);
