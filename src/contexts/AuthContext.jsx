@@ -580,6 +580,13 @@ export function AuthProvider({ children }) {
               logger.error('[AuthTrace] code exchange failed', exchangeError);
             } else if (!cancelled) {
               await handleSessionChange(exchangeData?.session, 'code-exchange');
+              const redirectParam = params.get('redirect');
+              const redirectTo =
+                redirectParam && redirectParam.startsWith('/')
+                  ? redirectParam
+                  : '/overview-dashboard';
+              window.location.replace(redirectTo);
+              return;
             }
             window.history.replaceState({}, document.title, window.location.pathname);
           }
