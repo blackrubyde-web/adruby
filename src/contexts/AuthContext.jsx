@@ -46,7 +46,7 @@ export function AuthProvider({ children }) {
 
   const loadUserStateLock = useRef(null);
   const lastSessionTokenRef = useRef(null);
-  const lastLoadTsRef = useRef(0);
+  const hasLoadedUserRef = useRef({ userId: null, loaded: false });
   const isMountedRef = useRef(true);
 
   useEffect(
@@ -469,7 +469,7 @@ export function AuthProvider({ children }) {
   );
 
   const handleSessionChange = useCallback(
-    async (nextSession, source = 'unknown') => {
+    async (nextSession, source = 'unknown', eventType = null) => {
       const sessionUser = nextSession?.user ?? null;
       const token = nextSession?.access_token || null;
 
@@ -483,21 +483,29 @@ export function AuthProvider({ children }) {
         path: typeof window !== 'undefined' ? window?.location?.pathname : 'unknown',
         userId: sessionUser?.id,
         email: sessionUser?.email,
+        eventType,
         ts: new Date().toISOString()
       });
 
       if (sessionUser?.id) {
-        const now = Date.now();
-        if (lastSessionTokenRef.current === token && now - lastLoadTsRef.current < 3000) {
-          logger.log('[AuthTrace] skip duplicate auth event (same token, throttled)', {
+        // Reset the loaded-flag when user changes
+        if (hasLoadedUserRef.current.userId !== sessionUser.id) {
+          hasLoadedUserRef.current = { userId: sessionUser.id, loaded: false };
+        }
+
+        // Skip if we already loaded data for this user in this session
+        if (hasLoadedUserRef.current.loaded) {
+          logger.log('[AuthTrace] skip loadUserState (already loaded for user)', {
             source,
+            eventType,
             userId: sessionUser.id
           });
-          return;
+        } else {
+          lastSessionTokenRef.current = token;
+          await loadUserState(sessionUser);
+          hasLoadedUserRef.current = { userId: sessionUser.id, loaded: true };
         }
-        lastSessionTokenRef.current = token;
-        lastLoadTsRef.current = now;
-        await loadUserState(sessionUser);
+
         logger.log('[AuthTrace] state after handleSessionChange', {
           hasUser: !!sessionUser,
           isAdmin: sessionUser?.role === 'admin',
@@ -506,7 +514,7 @@ export function AuthProvider({ children }) {
         });
       } else if (isMountedRef.current) {
         lastSessionTokenRef.current = token;
-        lastLoadTsRef.current = Date.now();
+        hasLoadedUserRef.current = { userId: null, loaded: false };
         setIsAdmin(false);
         setOnboardingStatus(initialOnboardingState);
         setSubscriptionStatus(null);
@@ -601,7 +609,7 @@ export function AuthProvider({ children }) {
       });
       (async () => {
         if (!cancelled) {
-          await handleSessionChange(nextSession, 'authStateChange');
+          await handleSessionChange(nextSession, 'authStateChange', event);
           if (isMountedRef.current) setIsAuthReady(true);
         }
       })();
