@@ -55,12 +55,13 @@ export function AuthProvider({ children }) {
     []
   );
 
-  const isOnboardingComplete = (status = onboardingStatus) =>
-    Boolean(
-      status?.onboardingCompleted ||
-        status?.paymentVerified ||
-        status?.trialStatus === 'active'
-    );
+  const isOnboardingComplete = (status = onboardingStatus) => {
+    const trialActive = status?.trialStatus === 'active';
+    const paid = Boolean(status?.paymentVerified);
+    const completed = Boolean(status?.onboardingCompleted);
+    // Onboarding gilt nur als fertig, wenn bezahlt ODER (Onboarding erledigt und Trial aktiv).
+    return Boolean(paid || (completed && trialActive));
+  };
 
   const isTrialActive = (trialEndsAt) => {
     if (!trialEndsAt) return false;
@@ -184,8 +185,11 @@ export function AuthProvider({ children }) {
           ? new Date(trialEndsAt).getTime() > Date.now()
           : false;
 
+      const paid = Boolean(data?.payment_verified);
+      const completed = Boolean(data?.onboarding_completed);
+
       let derivedStatus = null;
-      if (data?.payment_verified || data?.onboarding_completed) {
+      if (paid || (completed && trialActive)) {
         derivedStatus = 'active';
       } else if (trialActive) {
         derivedStatus = 'trialing';
