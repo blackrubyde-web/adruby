@@ -612,10 +612,11 @@ export function AuthProvider({ children }) {
           const params = new URLSearchParams(window.location.search);
           const code = params.get('code');
 
-           if (code && data?.session?.user) {
-             await finalizeRedirect(data.session.user, params);
-             return;
-           }
+          if (code && data?.session) {
+            await handleSessionChange(data.session, 'code-present');
+            await finalizeRedirect(data.session.user, params);
+            return;
+          }
 
           if (code && !data?.session) {
             logger.log('[AuthTrace] exchanging OAuth code for session', {
