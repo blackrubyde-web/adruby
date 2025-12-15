@@ -484,7 +484,7 @@ export function AuthProvider({ children }) {
   );
 
   const handleSessionChange = useCallback(
-    async (nextSession, source = 'unknown', eventType = null) => {
+    async (nextSession, source = 'unknown', eventType = null, forceLoad = false) => {
       const sessionUser = nextSession?.user ?? null;
       const token = nextSession?.access_token || null;
 
@@ -508,8 +508,8 @@ export function AuthProvider({ children }) {
           hasLoadedUserRef.current = { userId: sessionUser.id, loaded: false };
         }
 
-        // Skip if we already loaded data for this user in this session
-        if (hasLoadedUserRef.current.loaded) {
+        // Skip if wir bereits geladen haben, es sei denn forceLoad
+        if (hasLoadedUserRef.current.loaded && !forceLoad) {
           logger.log('[AuthTrace] skip loadUserState (already loaded for user)', {
             source,
             eventType,
@@ -605,7 +605,11 @@ export function AuthProvider({ children }) {
         }
 
         if (!cancelled) {
-          await handleSessionChange(data?.session, 'initial');
+          // immer frisches Laden erzwingen, wenn Session vorhanden
+          if (data?.session?.user) {
+            hasLoadedUserRef.current = { userId: null, loaded: false };
+          }
+          await handleSessionChange(data?.session, 'initial', null, true);
         }
 
         if (typeof window !== 'undefined') {
@@ -613,7 +617,7 @@ export function AuthProvider({ children }) {
           const code = params.get('code');
 
           if (code && data?.session) {
-            await handleSessionChange(data.session, 'code-present');
+            await handleSessionChange(data.session, 'code-present', null, true);
             await finalizeRedirect(data.session.user, params);
             return;
           }
@@ -628,13 +632,14 @@ export function AuthProvider({ children }) {
             if (exchangeError) {
               logger.error('[AuthTrace] code exchange failed', exchangeError);
             } else if (!cancelled) {
-              await handleSessionChange(exchangeData?.session, 'code-exchange');
+              await handleSessionChange(exchangeData?.session, 'code-exchange', null, true);
               await finalizeRedirect(exchangeData?.session?.user, params);
               return;
             }
             window.history.replaceState({}, document.title, window.location.pathname);
           }
         }
+
       } catch (err) {
         logger.error('[AuthTrace] init error', err, {
           path: typeof window !== 'undefined' ? window.location.pathname : 'unknown',
