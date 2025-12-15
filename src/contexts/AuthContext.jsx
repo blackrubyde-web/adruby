@@ -468,11 +468,6 @@ export function AuthProvider({ children }) {
       const sessionUser = nextSession?.user ?? null;
       const token = nextSession?.access_token || null;
 
-      if (lastSessionTokenRef.current === token && token) {
-        logger.log('[AuthTrace] skip duplicate auth event', { source, tokenKnown: !!token });
-        return;
-      }
-
       lastSessionTokenRef.current = token;
 
       if (isMountedRef.current) {
@@ -516,11 +511,18 @@ export function AuthProvider({ children }) {
         });
       }
     },
-    [isAuthReady, loadUserState, loading]
+    [loadUserState]
   );
 
   useEffect(() => {
     let cancelled = false;
+    const readyTimeout = setTimeout(() => {
+      if (!isAuthReady && isMountedRef.current) {
+        logger.warn('[AuthTrace] init timeout -> set isAuthReady true fallback');
+        setIsAuthReady(true);
+        setLoading(false);
+      }
+    }, 6000);
     logger.log('[AuthTrace] init useEffect run', {
       path: typeof window !== 'undefined' ? window.location.pathname : 'unknown',
       ts: new Date().toISOString()
@@ -592,6 +594,7 @@ export function AuthProvider({ children }) {
 
     return () => {
       cancelled = true;
+      clearTimeout(readyTimeout);
       logger.log('[AuthTrace] cleanup authListener');
       authListener?.subscription?.unsubscribe();
     };
