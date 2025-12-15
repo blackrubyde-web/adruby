@@ -2,12 +2,14 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { supabase } from '../../lib/supabaseClient';
 import usePreferredTheme from '../../hooks/usePreferredTheme';
+import { useAuth } from '../../contexts/AuthContext';
 
 const LoginPage = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const params = new URLSearchParams(location.search);
   const redirect = params.get('redirect') || '/overview-dashboard';
+  const { user, isAuthReady } = useAuth();
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -19,7 +21,10 @@ const LoginPage = () => {
 
   useEffect(() => {
     console.log('[LoginPage] mounted', { redirect });
-  }, [redirect]);
+    if (isAuthReady && user) {
+      navigate(redirect, { replace: true });
+    }
+  }, [redirect, isAuthReady, user, navigate]);
 
   const handleEmailPasswordLogin = async (e) => {
     e.preventDefault();

@@ -3,74 +3,83 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { supabase } from '../../lib/supabaseClient';
 import RedirectScreen from '../../components/RedirectScreen';
 import usePreferredTheme from '../../hooks/usePreferredTheme';
+import { useAuth } from '../../contexts/AuthContext';
 
 const LoginAuthentication = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const theme = usePreferredTheme();
   const isDark = theme === 'dark';
+  const { user, isAuthReady } = useAuth();
 
   useEffect(() => {
-  console.log('[LoginCallback] start', { search: location.search });
+    const finish = async (sessionUser) => {
+      try {
+        const { data: profile, error: profileError } = await supabase
+          .from('user_profiles')
+          .select('role')
+          .eq('id', sessionUser.id)
+          .single();
 
-  const run = async () => {
-    try {
-      const { data, error } = await supabase.auth.getSession();
+        if (profileError) {
+          console.error('[LoginCallback] failed to load profile for redirect', profileError);
+        }
 
-      if (error || !data?.session) {
-        console.error('[LoginCallback] getSession error', error);
+        const isAdmin = profile?.role === 'admin';
+        const params = new URLSearchParams(location.search);
+        const redirectParam = params.get('redirect');
+        const finalRedirect =
+          redirectParam || (isAdmin ? '/admin-dashboard' : '/overview-dashboard');
+
+        navigate(finalRedirect, { replace: true });
+      } catch (err) {
+        console.error('[LoginCallback] error', err);
         navigate('/login', {
           replace: true,
           state: { error: 'Login fehlgeschlagen' }
         });
+      }
+    };
+
+    const run = async () => {
+      const { data, error } = await supabase.auth.getSession();
+
+      if (data?.session?.user) {
+        await finish(data.session.user);
         return;
       }
 
-      const sessionUser = data.session.user;
-
-      // Rolle aus user_profiles holen
-      const { data: profile, error: profileError } = await supabase
-        .from('user_profiles')
-        .select('role')
-        .eq('id', sessionUser.id)
-        .single();
-
-      if (profileError) {
-        console.error('[LoginCallback] failed to load profile for redirect', profileError);
+      if (error) {
+        console.error('[LoginCallback] getSession error', error);
       }
 
-      const isAdmin = profile?.role === 'admin';
-
-      const params = new URLSearchParams(location.search);
-      const redirectParam = params.get('redirect');
-
-      // Redirect-Logik:
-      // 1) Wenn expliziter redirect vorhanden → der hat Vorrang
-      // 2) Sonst: Admin → /admin-dashboard
-      // 3) Sonst: /overview-dashboard
-      const finalRedirect =
-        redirectParam || (isAdmin ? '/admin-dashboard' : '/overview-dashboard');
-
-      console.log('[LoginCallback] session found, redirecting', {
-        userId: sessionUser.id,
-        email: sessionUser.email,
-        role: profile?.role,
-        finalRedirect
+      const { data: authListener } = supabase.auth.onAuthStateChange((event, session) => {
+        if (session?.user) {
+          finish(session.user);
+        }
       });
 
-      navigate(finalRedirect, { replace: true });
-    } catch (err) {
-      console.error('[LoginCallback] error', err);
-      navigate('/login', {
-        replace: true,
-        state: { error: 'Login fehlgeschlagen' }
-      });
+      const timer = setTimeout(() => {
+        navigate('/login', {
+          replace: true,
+          state: { error: 'Login fehlgeschlagen oder abgebrochen' }
+        });
+      }, 8000);
+
+      return () => {
+        clearTimeout(timer);
+        authListener?.subscription?.unsubscribe();
+      };
+    };
+
+    run();
+  }, [location.search, navigate]);
+
+  useEffect(() => {
+    if (isAuthReady && user?.id) {
+      navigate('/overview-dashboard', { replace: true });
     }
-  };
-
-  run();
-}, [location.search, navigate]);
-
+  }, [isAuthReady, user, navigate]);
 
   const bgClass = isDark ? 'bg-slate-950 text-slate-50' : 'bg-white text-slate-900';
   const gradient = isDark
@@ -100,31 +109,3 @@ const LoginAuthentication = () => {
 };
 
 export default LoginAuthentication;
-
-/*
-[Flow-Analyse]
-- Dashboard-Redirect: Sowohl Email/Passwort-Login als auch Google-Login leiten nach erfolgreicher Session immer auf den redirect-Param (Standard: /overview-dashboard), ohne Prüfungen auf Payment/Onboarding.
-- Payment-Verification: Wird nirgends automatisch angesteuert; nur wer explizit auf /payment-verification navigiert, landet dort.
-- Unbezahlte Nutzer: ProtectedRoute/AdminRoute prüfen keinen Zahlungsstatus, daher kann ein User mit fehlender/kaptter Zahlung direkt im Dashboard landen.
-- /payment-verification ohne session_id: führt sofort zu navigate('/', { replace: true }) – kein endloser Loader.
-- Entscheidungslogik Dashboard vs. Payment/Onboarding sitzt aktuell allein in den Redirects (Login -> /login-authentication -> redirect) und nicht in Guards; Payment-Status wird dabei ignoriert.
-- Potenzielle Bugs: fehlendes Payment-Gate in ProtectedRoute/AdminRoute; redirect-Flow überspringt jegliche Payment-/Onboarding-Checks.
-
-[Payment/Subskriptions-Felder – Kurzfassung]
-- Tabelle: public.user_profiles
-- Relevante Felder aus Migrationen:
-  * trial_status (inactive | pending_verification | active | expired)
-  * trial_started_at, trial_expires_at (Ende der Testphase)
-  * payment_verified (BOOLEAN)
-  * onboarding_completed (BOOLEAN)
-  * verification_method (stripe_card | paypal | null)
-  * stripe_customer_id (TEXT)
-  * stripe_subscription_id (TEXT)
-  * subscription_status (TEXT, Migration 20250101090000, wird aktuell nicht genutzt)
-  * trial_ends_at (TIMESTAMPTZ, Migration 20250101090000, im Code nicht genutzt)
-- Ableitung im AuthContext:
-  * subscriptionStatus = 'active' wenn payment_verified ODER onboarding_completed
-  * subscriptionStatus = 'trialing' wenn trial_status == 'active' UND trial_expires_at in Zukunft
-  * isSubscribed() gibt true zurück, wenn subscriptionStatus 'active' ODER ('trialing' und nicht abgelaufen)
-- Aktuelle Entscheidung „User hat aktive Zahlung“ basiert faktisch auf payment_verified/onboarding_completed oder aktiver Trial; subscription_status-Feld aus der Migration bleibt ungenutzt.
-*/
