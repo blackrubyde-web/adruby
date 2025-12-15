@@ -6,6 +6,7 @@ import PaymentBenefits from './components/PaymentBenefits';
 import PaymentVerificationForm from './components/PaymentVerificationForm';
 import { apiClient } from '../../utils/apiClient';
 import { emitToast } from '../../utils/toastBus';
+import { supabase } from '../../lib/supabaseClient';
 
 const PaymentVerificationPage = () => {
   const navigate = useNavigate();
@@ -27,15 +28,33 @@ const PaymentVerificationPage = () => {
       return;
     }
 
-    if (!sessionId) {
-      console.log('[PaymentVerification] no session_id - show checkout form');
-      setMode('needs_payment');
-      return;
-    }
+    const checkDbFlag = async () => {
+      try {
+        const { data, error: dbError } = await supabase
+          .from('user_profiles')
+          .select('payment_verified,onboarding_completed')
+          .eq('id', user.id)
+          .single();
+        if (dbError) return false;
+        return Boolean(data?.payment_verified || data?.onboarding_completed);
+      } catch {
+        return false;
+      }
+    };
 
     const verify = async () => {
       try {
         setMode('verifying_session');
+
+        if (!sessionId) {
+          const ok = await checkDbFlag();
+          if (ok) {
+            navigate('/overview-dashboard', { replace: true });
+          } else {
+            setMode('needs_payment');
+          }
+          return;
+        }
 
         const data = await apiClient.post('/api/verify-checkout-session', { sessionId });
 
@@ -43,7 +62,7 @@ const PaymentVerificationPage = () => {
 
         setTimeout(() => {
           navigate('/overview-dashboard', { replace: true });
-        }, 1500);
+        }, 800);
       } catch (err) {
         console.error('[PaymentVerification] error', err);
         const message = err?.message || 'Verifizierung fehlgeschlagen.';
@@ -52,6 +71,11 @@ const PaymentVerificationPage = () => {
           title: 'Verifizierung fehlgeschlagen',
           description: message
         });
+        const ok = await checkDbFlag();
+        if (ok) {
+          if (!cancelled) navigate('/overview-dashboard', { replace: true });
+          return;
+        }
         if (!cancelled) {
           setError(message);
           setMode('error');
