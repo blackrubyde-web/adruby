@@ -17,7 +17,7 @@ const LoginAuthentication = () => {
       try {
         const { data: profile, error: profileError } = await supabase
           .from('user_profiles')
-          .select('role')
+          .select('role,payment_verified,onboarding_completed')
           .eq('id', sessionUser.id)
           .single();
 
@@ -28,8 +28,10 @@ const LoginAuthentication = () => {
         const isAdmin = profile?.role === 'admin';
         const params = new URLSearchParams(location.search);
         const redirectParam = params.get('redirect');
+        const isPaid = Boolean(profile?.payment_verified || profile?.onboarding_completed);
         const finalRedirect =
-          redirectParam || (isAdmin ? '/admin-dashboard' : '/overview-dashboard');
+          redirectParam ||
+          (isPaid ? (isAdmin ? '/admin-dashboard' : '/overview-dashboard') : '/payment-verification');
 
         navigate(finalRedirect, { replace: true });
       } catch (err) {
