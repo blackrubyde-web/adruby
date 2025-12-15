@@ -42,40 +42,51 @@ const LoginAuthentication = () => {
     };
 
     const run = async () => {
-      const { data, error } = await supabase.auth.getSession();
-
-      if (data?.session?.user) {
-        await finish(data.session.user);
-        return;
-      }
-
-      if (error) {
-        console.error('[LoginCallback] getSession error', error);
-      }
-
-      const { data: authListener } = supabase.auth.onAuthStateChange((event, session) => {
-        if (session?.user) {
-          finish(session.user);
+      try {
+        // Sofort prüfen
+        const { data, error } = await supabase.auth.getSession();
+        if (data?.session?.user) {
+          await finish(data.session.user);
+          return;
         }
-      });
+        if (error) {
+          console.error('[LoginCallback] getSession error', error);
+        }
 
-      const timer = setTimeout(() => {
+        // Poll für den OAuth-Flow (Adblock/Third-Party-Cookie-Probleme)
+        let attempts = 0;
+        const maxAttempts = 12; // ~6s bei 500ms
+
+        const interval = setInterval(async () => {
+          attempts += 1;
+          const { data: polled } = await supabase.auth.getSession();
+          if (polled?.session?.user) {
+            clearInterval(interval);
+            await finish(polled.session.user);
+          } else if (attempts >= maxAttempts) {
+            clearInterval(interval);
+            navigate('/login', {
+              replace: true,
+              state: { error: 'Login fehlgeschlagen oder blockiert (Cookies/Adblock prüfen)' }
+            });
+          }
+        }, 500);
+
+        return () => clearInterval(interval);
+      } catch (err) {
+        console.error('[LoginCallback] fatal error', err);
         navigate('/login', {
           replace: true,
-          state: { error: 'Login fehlgeschlagen oder abgebrochen' }
+          state: { error: 'Login fehlgeschlagen' }
         });
-      }, 8000);
-
-      return () => {
-        clearTimeout(timer);
-        authListener?.subscription?.unsubscribe();
-      };
+      }
     };
 
     run();
   }, [location.search, navigate]);
 
   useEffect(() => {
+    // Falls AuthContext bereits User kennt (z.B. zurück aus OAuth), sofort weiter
     if (isAuthReady && user?.id) {
       navigate('/overview-dashboard', { replace: true });
     }
