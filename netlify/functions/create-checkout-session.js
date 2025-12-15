@@ -1,26 +1,19 @@
 // netlify/functions/create-checkout-session.js
 
 import { stripe, supabaseAdmin, SUBSCRIPTION_TABLE } from './_shared/clients.js';
-
-const corsHeaders = () => ({
-  'Content-Type': 'application/json',
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'Content-Type',
-  'Access-Control-Allow-Methods': 'POST, OPTIONS'
-});
+import { ok, badRequest, serverError, methodNotAllowed, withCors } from './utils/response.js';
+import { initTelemetry, captureException } from './utils/telemetry.js';
 
 export async function handler(event) {
   if (event.httpMethod === 'OPTIONS') {
-    return { statusCode: 200, headers: corsHeaders() };
+    return withCors({ statusCode: 200 });
   }
 
   if (event.httpMethod !== 'POST') {
-    return {
-      statusCode: 405,
-      headers: corsHeaders(),
-      body: JSON.stringify({ error: 'Method not allowed' })
-    };
+    return methodNotAllowed('POST,OPTIONS');
   }
+
+  initTelemetry();
 
   const requiredEnv = [
     'STRIPE_SECRET_KEY',
@@ -33,11 +26,7 @@ export async function handler(event) {
   const missingEnv = requiredEnv.filter(k => !process.env[k]);
   if (missingEnv.length) {
     console.error('[Checkout] Missing ENV vars', missingEnv);
-    return {
-      statusCode: 500,
-      headers: corsHeaders(),
-      body: JSON.stringify({ error: 'Server misconfiguration (ENV missing)' })
-    };
+    return serverError('Server misconfiguration (ENV missing)');
   }
 
   try {
@@ -46,11 +35,7 @@ export async function handler(event) {
       body = event.body ? JSON.parse(event.body) : {};
     } catch (err) {
       console.error('[Checkout] Invalid JSON body', err);
-      return {
-        statusCode: 400,
-        headers: corsHeaders(),
-        body: JSON.stringify({ error: 'Invalid JSON body' })
-      };
+      return badRequest('Invalid JSON body');
     }
 
     const userId = body.userId || body.user_id;
@@ -61,11 +46,7 @@ export async function handler(event) {
         hasUserId: !!userId,
         hasEmail: !!userEmail
       });
-      return {
-        statusCode: 400,
-        headers: corsHeaders(),
-        body: JSON.stringify({ error: 'Missing userId or email' })
-      };
+      return badRequest('Missing userId or email');
     }
 
     console.log('[Checkout] Start', { userId, userEmail });
@@ -176,23 +157,14 @@ export async function handler(event) {
       url: session.url
     });
 
-    return {
-      statusCode: 200,
-      headers: corsHeaders(),
-      body: JSON.stringify({ url: session.url })
-    };
+    return ok({ url: session.url });
   } catch (err) {
     // HIER landen jetzt alle Stripe-/Runtime-Fehler
     console.error('[Checkout] Unexpected error', {
       message: err.message,
       raw: err
     });
-    return {
-      statusCode: 500,
-      headers: corsHeaders(),
-      body: JSON.stringify({
-        error: err.message || 'Unexpected server error in checkout'
-      })
-    };
+    captureException(err, { function: 'create-checkout-session' });
+    return serverError(err.message || 'Unexpected server error in checkout');
   }
 }

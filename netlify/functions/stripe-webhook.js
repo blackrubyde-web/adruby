@@ -1,13 +1,8 @@
 // netlify/functions/stripe-webhook.js
 
 import { stripe, supabaseAdmin, SUBSCRIPTION_TABLE } from './_shared/clients.js';
-
-const corsHeaders = () => ({
-  'Content-Type': 'application/json',
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'Content-Type,Stripe-Signature',
-  'Access-Control-Allow-Methods': 'POST, OPTIONS'
-});
+import { withCors, serverError } from './utils/response.js';
+import { initTelemetry, captureException } from './utils/telemetry.js';
 
 const AFFILIATE_PAYOUT_PER_INVOICE = 5.0;
 
@@ -427,12 +422,14 @@ async function handleSubscriptionCancellation(subscription) {
 
 export async function handler(event) {
   if (event.httpMethod === 'OPTIONS') {
-    return { statusCode: 200, headers: corsHeaders() };
+    return withCors({ statusCode: 200 });
   }
 
   if (event.httpMethod !== 'POST') {
-    return { statusCode: 405, headers: corsHeaders() };
+    return withCors({ statusCode: 405 });
   }
+
+  initTelemetry();
 
   const sig =
     event.headers['stripe-signature'] ||
@@ -442,11 +439,7 @@ export async function handler(event) {
 
   if (!secret) {
     console.error('[Webhook] Missing STRIPE_WEBHOOK_SECRET');
-    return {
-      statusCode: 500,
-      headers: corsHeaders(),
-      body: JSON.stringify({ error: 'Missing STRIPE_WEBHOOK_SECRET' })
-    };
+    return serverError('Missing STRIPE_WEBHOOK_SECRET');
   }
 
   let stripeEvent;
@@ -463,7 +456,8 @@ export async function handler(event) {
     );
   } catch (err) {
     console.error('[Webhook] Signature verification failed', err.message);
-    return { statusCode: 400, headers: corsHeaders() };
+    captureException(err, { function: 'stripe-webhook', stage: 'signature' });
+    return withCors({ statusCode: 400 });
   }
 
   const type = stripeEvent.type;
@@ -542,11 +536,12 @@ export async function handler(event) {
       type,
       error: err.message || err
     });
+    captureException(err, { function: 'stripe-webhook', type });
   }
 
   return {
     statusCode: 200,
-    headers: corsHeaders(),
+    headers: withCors().headers,
     body: JSON.stringify({ received: true })
   };
 }

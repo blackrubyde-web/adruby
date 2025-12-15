@@ -1,9 +1,10 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useEffect, useRef, useState } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import Icon from '../AppIcon';
 import Button from './Button';
 import CreditDisplay from './CreditDisplay';
+import useTheme from '../../hooks/useTheme';
 
 const Header = ({
   onMenuToggle,
@@ -12,15 +13,14 @@ const Header = ({
   onNavCollapseToggle
 }) => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { user, signOut } = useAuth();
+  const { theme, toggleTheme, isDark } = useTheme();
   const [showNotifications, setShowNotifications] = useState(false);
   const [showProfile, setShowProfile] = useState(false);
-  const [isDarkMode, setIsDarkMode] = useState(false);
 
-  const handleThemeToggle = () => {
-    setIsDarkMode(!isDarkMode);
-    document.documentElement?.classList?.toggle('dark');
-  };
+  const notificationsRef = useRef(null);
+  const profileRef = useRef(null);
 
   const handleProfileMenuClick = (action) => {
     setShowProfile(false);
@@ -79,6 +79,42 @@ const Header = ({
     ? "lg:left-[72px] lg:w-[calc(100%-72px)]"
     : "lg:left-60 lg:w-[calc(100%-240px)]";
 
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (
+        showNotifications &&
+        notificationsRef.current &&
+        !notificationsRef.current.contains(event.target)
+      ) {
+        setShowNotifications(false);
+      }
+
+      if (showProfile && profileRef.current && !profileRef.current.contains(event.target)) {
+        setShowProfile(false);
+      }
+    };
+
+    const handleKeyDown = (event) => {
+      if (event.key === 'Escape') {
+        setShowNotifications(false);
+        setShowProfile(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    document.addEventListener('keydown', handleKeyDown);
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [showNotifications, showProfile]);
+
+  useEffect(() => {
+    setShowNotifications(false);
+    setShowProfile(false);
+  }, [location.pathname, location.search]);
+
   return (
     <header
       className={`fixed top-0 h-16 transition-all duration-300 bg-background border-b border-border z-30 left-0 w-full ${layoutClasses} ${className}`}
@@ -115,14 +151,14 @@ const Header = ({
           <Button
             variant="ghost"
             size="icon"
-            onClick={handleThemeToggle}
+            onClick={toggleTheme}
             className="h-10 w-10 transition-smooth"
           >
-            <Icon name={isDarkMode ? "Sun" : "Moon"} size={18} />
+            <Icon name={isDark ? "Sun" : "Moon"} size={18} />
           </Button>
 
           {/* Notifications */}
-          <div className="relative">
+          <div className="relative" ref={notificationsRef}>
             <Button
               variant="ghost"
               size="icon"
@@ -177,7 +213,7 @@ const Header = ({
           </div>
 
           {/* Profile Menu */}
-          <div className="relative">
+          <div className="relative" ref={profileRef}>
             <Button
               variant="ghost"
               onClick={() => setShowProfile(!showProfile)}
@@ -232,16 +268,6 @@ const Header = ({
           </div>
         </div>
       </div>
-      {/* Click outside handlers */}
-      {(showNotifications || showProfile) && (
-        <div
-          className="fixed inset-0 z-40"
-          onClick={() => {
-            setShowNotifications(false);
-            setShowProfile(false);
-          }}
-        />
-      )}
     </header>
   );
 };

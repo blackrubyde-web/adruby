@@ -20,12 +20,13 @@ const PaymentSuccess = () => {
   }, [user, sessionId, isSubscribed]);
 
   useEffect(() => {
-    if (!isAuthReady || loading) return;
+    let cancelled = false;
+    if (!isAuthReady || loading) return undefined;
 
     if (!user) {
       console.warn('[PaymentSuccess] no user session found, redirecting to signup');
       navigate('/ad-ruby-registration', { replace: true });
-      return;
+      return undefined;
     }
 
     const timer = setTimeout(() => navigate('/overview-dashboard', { replace: true }), 2500);
@@ -38,7 +39,13 @@ const PaymentSuccess = () => {
       }
     })();
 
-    return () => clearTimeout(timer);
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+      if (cancelled && import.meta?.env?.DEV) {
+        console.warn('[PaymentSuccess] cleanup after unmount');
+      }
+    };
   }, [isAuthReady, loading, user, refreshSubscriptionStatus, navigate]);
 
   return (

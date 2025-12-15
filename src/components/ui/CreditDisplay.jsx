@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { creditService } from '../../services/creditService';
 import Icon from '../AppIcon';
@@ -11,31 +11,67 @@ const CreditDisplay = ({ className = '', showTooltip = true }) => {
   const [creditStatus, setCreditStatus] = useState(null);
   const [loading, setLoading] = useState(true);
   const [showTooltipState, setShowTooltipState] = useState(false);
+  const debounceRef = useRef(null);
+  const mountedRef = useRef(true);
 
   useEffect(() => {
+    mountedRef.current = true;
+
+    let cancelled = false;
+
     const loadCreditStatus = async () => {
+      const started = Date.now();
       if (!user?.id) {
-        setLoading(false);
+        if (mountedRef.current) setLoading(false);
         return;
       }
 
       try {
         const status = await creditService.getUserCreditStatus(user.id);
+        if (!mountedRef.current || cancelled) {
+          if (import.meta?.env?.DEV) {
+            console.warn('[CreditDisplay] aborted update after unmount');
+          }
+          return;
+        }
         setCreditStatus(status);
       } catch (error) {
         console.error('Error loading credit status:', error);
       } finally {
-        setLoading(false);
+        if (mountedRef.current && !cancelled) {
+          const elapsed = Date.now() - started;
+          const waitFor = elapsed < 200 ? 200 - elapsed : 0;
+          setTimeout(() => {
+            if (mountedRef.current && !cancelled) {
+              setLoading(false);
+            }
+          }, waitFor);
+        }
       }
     };
 
     loadCreditStatus();
 
     // Set up real-time subscription for credit updates
-    window.addEventListener('credit-updated', loadCreditStatus);
+    const debouncedListener = () => {
+      if (debounceRef.current) {
+        clearTimeout(debounceRef.current);
+      }
+      debounceRef.current = setTimeout(() => {
+        if (!mountedRef.current) return;
+        loadCreditStatus();
+      }, 400);
+    };
+
+    window.addEventListener('credit-updated', debouncedListener);
     
     return () => {
-      window.removeEventListener('credit-updated', loadCreditStatus);
+      cancelled = true;
+      mountedRef.current = false;
+      if (debounceRef.current) {
+        clearTimeout(debounceRef.current);
+      }
+      window.removeEventListener('credit-updated', debouncedListener);
     };
   }, [user?.id]);
 

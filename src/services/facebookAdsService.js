@@ -1,4 +1,4 @@
-const API_BASE = '/.netlify/functions';
+const API_BASE = '/api';
 
 async function apiRequest(functionName, options = {}) {
   try {
