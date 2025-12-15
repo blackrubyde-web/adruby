@@ -484,7 +484,7 @@ export function AuthProvider({ children }) {
   );
 
   const handleSessionChange = useCallback(
-    async (nextSession, source = 'unknown', eventType = null, forceLoad = false) => {
+    async (nextSession, source = 'unknown', eventType = null) => {
       const sessionUser = nextSession?.user ?? null;
       const token = nextSession?.access_token || null;
 
@@ -508,9 +508,11 @@ export function AuthProvider({ children }) {
           hasLoadedUserRef.current = { userId: sessionUser.id, loaded: false };
         }
 
-        // Skip if wir bereits geladen haben, es sei denn forceLoad
-        if (hasLoadedUserRef.current.loaded && !forceLoad) {
-          logger.log('[AuthTrace] skip loadUserState (already loaded for user)', {
+        const sameUser = hasLoadedUserRef.current.userId === sessionUser.id;
+        const sameToken = lastSessionTokenRef.current === token;
+
+        if (sameUser && sameToken && hasLoadedUserRef.current.loaded) {
+          logger.log('[AuthTrace] skip loadUserState (already loaded for user/token)', {
             source,
             eventType,
             userId: sessionUser.id
@@ -528,7 +530,7 @@ export function AuthProvider({ children }) {
           isAuthReady
         });
       } else if (isMountedRef.current) {
-        lastSessionTokenRef.current = token;
+        lastSessionTokenRef.current = null;
         hasLoadedUserRef.current = { userId: null, loaded: false };
         setIsAdmin(false);
         setOnboardingStatus(initialOnboardingState);
@@ -605,11 +607,7 @@ export function AuthProvider({ children }) {
         }
 
         if (!cancelled) {
-          // immer frisches Laden erzwingen, wenn Session vorhanden
-          if (data?.session?.user) {
-            hasLoadedUserRef.current = { userId: null, loaded: false };
-          }
-          await handleSessionChange(data?.session, 'initial', null, true);
+          await handleSessionChange(data?.session, 'initial');
         }
 
         if (typeof window !== 'undefined') {
@@ -617,7 +615,7 @@ export function AuthProvider({ children }) {
           const code = params.get('code');
 
           if (code && data?.session) {
-            await handleSessionChange(data.session, 'code-present', null, true);
+            await handleSessionChange(data.session, 'code-present');
             await finalizeRedirect(data.session.user, params);
             return;
           }
@@ -632,7 +630,7 @@ export function AuthProvider({ children }) {
             if (exchangeError) {
               logger.error('[AuthTrace] code exchange failed', exchangeError);
             } else if (!cancelled) {
-              await handleSessionChange(exchangeData?.session, 'code-exchange', null, true);
+              await handleSessionChange(exchangeData?.session, 'code-exchange');
               await finalizeRedirect(exchangeData?.session?.user, params);
               return;
             }
