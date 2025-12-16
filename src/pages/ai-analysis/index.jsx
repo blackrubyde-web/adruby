@@ -1,13 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import Header from '../../components/ui/Header';
-import Sidebar from '../../components/ui/Sidebar';
 import Tooltip from '../../components/ui/Tooltip';
 import Icon from '../../components/AppIcon';
 import Button from '../../components/ui/Button';
 import facebookAdsService from '../../services/facebookAdsService';
 import { useAuth } from '../../contexts/AuthContext';
 import { supabase } from '../../lib/supabaseClient';
+import DashboardLayout from '../../layouts/DashboardLayout';
+import PageShell from '../../components/ui/PageShell';
 
 // Import new components
 import MetaConnectionModal from './components/MetaConnectionModal';
@@ -16,8 +16,6 @@ import MetricsChart from './components/MetricsChart';
 import FacebookDataSync from './components/FacebookDataSync';
 
 const AIAnalysisPanel = () => {
-  const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [isNavCollapsed, setIsNavCollapsed] = useState(true);
   const [currentLanguage, setCurrentLanguage] = useState('de');
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [facebookConnection, setFacebookConnection] = useState(null);
@@ -182,14 +180,6 @@ const AIAnalysisPanel = () => {
       console.error('Error loading campaign data:', error);
       setCampaignData([]);
     }
-  };
-
-  const handleSidebarToggle = () => {
-    setSidebarOpen(!sidebarOpen);
-  };
-
-  const handleSidebarClose = () => {
-    setSidebarOpen(false);
   };
 
   // Facebook OAuth via Supabase (auth redirect)
@@ -441,28 +431,24 @@ const AIAnalysisPanel = () => {
 
   if (authLoading) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="flex items-center space-x-3">
-          <Icon name="Loader2" className="animate-spin text-primary" size={24} />
-          <span className="text-foreground">Lädt...</span>
-        </div>
-      </div>
+      <DashboardLayout>
+        <PageShell title="AI Analysis" subtitle="KI-gestützte Kampagnen-Insights">
+          <div className="min-h-[40vh] flex items-center justify-center">
+            <div className="flex items-center space-x-3">
+              <Icon name="Loader2" className="animate-spin text-primary" size={24} />
+              <span className="text-foreground">Lädt...</span>
+            </div>
+          </div>
+        </PageShell>
+      </DashboardLayout>
     );
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      <Sidebar 
-        isOpen={sidebarOpen} 
-        onClose={handleSidebarClose}
-        isNavCollapsed={isNavCollapsed}
-        setIsNavCollapsed={setIsNavCollapsed}
-      />
-      <Header onMenuToggle={handleSidebarToggle} isNavCollapsed={isNavCollapsed} />
-        
-      <main className={`pt-16 transition-all duration-300 ${isNavCollapsed ? "lg:ml-[72px]" : "lg:ml-60"}`}>
-        <motion.main 
-          className="p-6"
+    <DashboardLayout>
+      <PageShell title="AI Analysis" subtitle="KI-gestützte Kampagnen-Insights" rightActions={null}>
+        <motion.main
+          className="p-0"
           variants={pageVariants}
           initial="initial"
           animate="animate"
@@ -1166,8 +1152,8 @@ const AIAnalysisPanel = () => {
             </motion.div>
           </div>
         </motion.main>
-      </main>
-    </div>
+      </PageShell>
+    </DashboardLayout>
   );
 };
 
