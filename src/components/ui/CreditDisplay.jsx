@@ -93,14 +93,12 @@ const CreditDisplay = ({ className = '', showTooltip = true }) => {
     return null;
   }
 
-  const colorClasses = creditService.getCreditColorClasses(creditStatus.credits);
-
   return (
     <div className={`relative ${className}`}>
       <div
         className={`
-          flex items-center space-x-2 px-3 py-2 rounded-lg border cursor-pointer transition-all duration-200
-          hover:shadow-sm ${colorClasses.bg} ${colorClasses.border}
+          flex items-center space-x-2 px-3 py-2 h-10 rounded-lg border border-border bg-card cursor-pointer transition-all duration-200
+          hover:bg-accent
         `}
         onClick={handleCreditClick}
         onMouseEnter={() => showTooltip && setShowTooltipState(true)}
@@ -110,15 +108,15 @@ const CreditDisplay = ({ className = '', showTooltip = true }) => {
         <Icon 
           name="Coins" 
           size={18} 
-          className={colorClasses.icon}
+          className="text-muted-foreground"
         />
 
         {/* Credits Display */}
         <div className="flex items-center space-x-1">
-          <span className={`font-semibold text-sm ${colorClasses.text}`}>
+          <span className="font-semibold text-sm text-muted-foreground">
             Credits:
           </span>
-          <span className={`font-bold text-sm ${colorClasses.text}`}>
+          <span className="font-bold text-sm text-foreground">
             {creditService.formatCredits(creditStatus.credits)}
           </span>
         </div>
@@ -128,7 +126,7 @@ const CreditDisplay = ({ className = '', showTooltip = true }) => {
           <Icon 
             name="AlertTriangle" 
             size={16} 
-            className="text-red-500 animate-pulse"
+            className="text-destructive animate-pulse"
           />
         )}
 
@@ -136,7 +134,7 @@ const CreditDisplay = ({ className = '', showTooltip = true }) => {
         <Icon 
           name="ChevronRight" 
           size={14} 
-          className={`${colorClasses.text} opacity-60`}
+          className="text-muted-foreground opacity-60"
         />
       </div>
 
