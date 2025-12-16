@@ -29,6 +29,18 @@ const OverviewPage: React.FC = () => {
     document.title = 'Overview Dashboard';
   }, []);
 
+  useEffect(() => {
+    if (authLoading || !isAuthReady) return;
+    if (!user) {
+      navigate('/ad-ruby-registration');
+      return;
+    }
+    const hasActiveSub = typeof isSubscribed === 'function' ? isSubscribed() : true;
+    if (!hasActiveSub) {
+      navigate('/payment-verification');
+    }
+  }, [authLoading, isAuthReady, user, isSubscribed, subscriptionStatus, navigate]);
+
   const campaignColumns: Column<CampaignRow>[] = useMemo(
     () => [
       { Header: 'Kampagne', accessor: 'name' },
@@ -117,7 +129,7 @@ const OverviewPage: React.FC = () => {
             label="Conversion Rate"
             value={kpis ? `${kpis.conversion_rate.value.toFixed(2)}%` : '–'}
             delta={kpis?.conversion_rate.delta ?? 0}
-            helpText="Beobachte Filter-Änderungen."
+            helpText="Beobachte Filter-Aenderungen."
           />
           <MetricCard
             label="ROAS"
@@ -199,7 +211,7 @@ const OverviewPage: React.FC = () => {
 
         {loading && (
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
-            <Loader2 className="animate-spin" size={16} /> Lädt Mock-Daten...
+            <Loader2 className="animate-spin" size={16} /> Laedt Mock-Daten...
           </div>
         )}
         {error && <div className="text-sm text-rose-500">Fehler beim Laden: {error.message}</div>}
@@ -209,14 +221,3 @@ const OverviewPage: React.FC = () => {
 };
 
 export default OverviewPage;
-  useEffect(() => {
-    if (authLoading || !isAuthReady) return;
-    if (!user) {
-      navigate('/ad-ruby-registration');
-      return;
-    }
-    const hasActiveSub = typeof isSubscribed === 'function' ? isSubscribed() : true;
-    if (!hasActiveSub) {
-      navigate('/payment-verification');
-    }
-  }, [authLoading, isAuthReady, user, isSubscribed, subscriptionStatus, navigate]);
