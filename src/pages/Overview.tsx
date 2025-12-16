@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Column } from 'react-table';
-import { Loader2, Download } from 'lucide-react';
+import { Loader2, Download, Sparkles, Activity, Clock3, Flame } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import DashboardLayout from '../layouts/DashboardLayout';
 import Header from '../components/Header';
@@ -97,26 +97,108 @@ const OverviewPage: React.FC = () => {
   const handleExportLine = () => exportNodeToPng(lineRef.current, 'timeseries.png');
   const handleExportBar = () => exportNodeToPng(barRef.current, 'conversions.png');
 
+  const highlightStats = [
+    { label: 'Realtime Health', value: '99.9%', icon: <Sparkles size={14} />, tone: 'emerald' },
+    { label: 'Avg. Response', value: '142ms', icon: <Clock3 size={14} />, tone: 'sky' },
+    {
+      label: 'Spend / Conv.',
+      value: data?.topCampaigns?.[0]?.spend
+        ? `${(data.topCampaigns[0].spend / (data.topCampaigns[0].conversions || 1)).toFixed(1)} €`
+        : '–',
+      icon: <Activity size={14} />,
+      tone: 'violet'
+    },
+    { label: 'Lift vs. last week', value: kpis ? `${kpis.ctr.delta.toFixed(2)}% CTR` : '–', icon: <Flame size={14} />, tone: 'rose' }
+  ];
+  const toneClasses: Record<string, string> = {
+    emerald: 'bg-emerald-500/20 text-emerald-100',
+    sky: 'bg-sky-500/20 text-sky-100',
+    violet: 'bg-violet-500/20 text-violet-100',
+    rose: 'bg-rose-500/20 text-rose-100'
+  };
+
   return (
     <DashboardLayout>
-      <div className="space-y-6 p-6">
+      <div className="space-y-6 p-6 max-w-7xl mx-auto">
         <Header
           title="Dashboard Overview"
           subtitle="Interaktive Analytics mit Live-Updates (Mock)"
           credits="1.240"
           onSearch={() => undefined}
         >
-          <div className="flex flex-wrap items-center gap-3">
-            <DateRangePicker value={range} onChange={setRange} />
-            <button
-              type="button"
-              onClick={refresh}
-              className="h-10 rounded-lg border border-border bg-background px-3 text-sm font-medium text-foreground hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500"
-            >
-              Neu laden
-            </button>
+          <div className="flex flex-col gap-3">
+            <div className="flex flex-wrap items-center gap-2">
+              {[
+                { label: 'Letzte 7 Tage', preset: '7d' as const },
+                { label: 'Letzte 30 Tage', preset: '30d' as const },
+                { label: 'Letzte 90 Tage', preset: '90d' as const }
+              ].map((p) => (
+                <button
+                  key={p.preset}
+                  type="button"
+                  onClick={() => setRange(buildPresetRange(p.preset, range.timezone))}
+                  className={`rounded-full border px-3 py-1.5 text-sm transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500 ${
+                    range.preset === p.preset
+                      ? 'border-rose-500 bg-rose-500 text-white shadow-[0_10px_30px_-20px_rgba(244,63,94,0.7)]'
+                      : 'border-white/10 bg-white/5 text-white hover:border-rose-400/70'
+                  }`}
+                >
+                  {p.label}
+                </button>
+              ))}
+              <button
+                type="button"
+                onClick={() => setRange({ ...range, preset: 'custom' })}
+                className={`rounded-full border px-3 py-1.5 text-sm transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500 ${
+                  range.preset === 'custom'
+                    ? 'border-rose-500 bg-rose-500 text-white shadow-[0_10px_30px_-20px_rgba(244,63,94,0.7)]'
+                    : 'border-white/10 bg-white/5 text-white hover:border-rose-400/70'
+                }`}
+              >
+                Benutzerdefiniert
+              </button>
+              <div className="ml-auto flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={refresh}
+                  className="rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-sm text-white hover:border-rose-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500"
+                >
+                  Neu laden
+                </button>
+              </div>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-3">
+              <div className="col-span-1 md:col-span-2">
+                <DateRangePicker value={range} onChange={setRange} />
+              </div>
+            </div>
           </div>
         </Header>
+
+        <div className="relative overflow-hidden rounded-3xl border border-white/10 bg-gradient-to-r from-slate-950 via-slate-900 to-slate-950 p-5 shadow-[0_24px_60px_-38px_rgba(0,0,0,0.85)]">
+          <div className="pointer-events-none absolute inset-0">
+            <div className="absolute left-10 top-6 h-32 w-32 rounded-full bg-rose-500/15 blur-3xl" />
+            <div className="absolute right-6 bottom-6 h-32 w-32 rounded-full bg-indigo-500/10 blur-3xl" />
+          </div>
+          <div className="relative grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            {highlightStats.map((stat) => (
+              <div
+                key={stat.label}
+                className="flex items-center justify-between rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-white shadow-inner"
+              >
+                <div>
+                  <p className="text-[11px] uppercase tracking-wide text-white/70">{stat.label}</p>
+                  <p className="text-lg font-semibold">{stat.value}</p>
+                </div>
+                <span
+                  className={`flex h-10 w-10 items-center justify-center rounded-xl ${toneClasses[stat.tone] || 'bg-white/10 text-white'}`}
+                >
+                  {stat.icon}
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           <MetricCard
