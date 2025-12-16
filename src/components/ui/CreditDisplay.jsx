@@ -1,9 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { creditService } from '../../services/creditService';
 import Icon from '../AppIcon';
-
-import { useNavigate } from 'react-router-dom';
 
 const CreditDisplay = ({ className = '', showTooltip = true }) => {
   const { user } = useAuth();
@@ -16,7 +15,6 @@ const CreditDisplay = ({ className = '', showTooltip = true }) => {
 
   useEffect(() => {
     mountedRef.current = true;
-
     let cancelled = false;
 
     const loadCreditStatus = async () => {
@@ -25,15 +23,9 @@ const CreditDisplay = ({ className = '', showTooltip = true }) => {
         if (mountedRef.current) setLoading(false);
         return;
       }
-
       try {
         const status = await creditService.getUserCreditStatus(user.id);
-        if (!mountedRef.current || cancelled) {
-          if (import.meta?.env?.DEV) {
-            console.warn('[CreditDisplay] aborted update after unmount');
-          }
-          return;
-        }
+        if (!mountedRef.current || cancelled) return;
         setCreditStatus(status);
       } catch (error) {
         console.error('Error loading credit status:', error);
@@ -42,9 +34,7 @@ const CreditDisplay = ({ className = '', showTooltip = true }) => {
           const elapsed = Date.now() - started;
           const waitFor = elapsed < 200 ? 200 - elapsed : 0;
           setTimeout(() => {
-            if (mountedRef.current && !cancelled) {
-              setLoading(false);
-            }
+            if (mountedRef.current && !cancelled) setLoading(false);
           }, waitFor);
         }
       }
@@ -52,11 +42,8 @@ const CreditDisplay = ({ className = '', showTooltip = true }) => {
 
     loadCreditStatus();
 
-    // Set up real-time subscription for credit updates
     const debouncedListener = () => {
-      if (debounceRef.current) {
-        clearTimeout(debounceRef.current);
-      }
+      if (debounceRef.current) clearTimeout(debounceRef.current);
       debounceRef.current = setTimeout(() => {
         if (!mountedRef.current) return;
         loadCreditStatus();
@@ -64,20 +51,16 @@ const CreditDisplay = ({ className = '', showTooltip = true }) => {
     };
 
     window.addEventListener('credit-updated', debouncedListener);
-    
+
     return () => {
       cancelled = true;
       mountedRef.current = false;
-      if (debounceRef.current) {
-        clearTimeout(debounceRef.current);
-      }
+      if (debounceRef.current) clearTimeout(debounceRef.current);
       window.removeEventListener('credit-updated', debouncedListener);
     };
   }, [user?.id]);
 
-  const handleCreditClick = () => {
-    navigate('/credits');
-  };
+  const handleCreditClick = () => navigate('/credits');
 
   if (loading) {
     return (
@@ -89,57 +72,25 @@ const CreditDisplay = ({ className = '', showTooltip = true }) => {
     );
   }
 
-  if (!creditStatus || !user) {
-    return null;
-  }
+  if (!creditStatus || !user) return null;
 
   return (
     <div className={`relative ${className}`}>
       <div
-        className={`
-          flex items-center space-x-2 px-3 py-2 h-10 rounded-lg border border-border bg-card cursor-pointer transition-all duration-200
-          hover:bg-accent
-        `}
+        className="flex items-center space-x-2 px-3 py-2 h-10 rounded-lg border border-border bg-card cursor-pointer transition-all duration-200 hover:bg-accent"
         onClick={handleCreditClick}
         onMouseEnter={() => showTooltip && setShowTooltipState(true)}
         onMouseLeave={() => setShowTooltipState(false)}
       >
-        {/* Credit Icon */}
-        <Icon 
-          name="Coins" 
-          size={18} 
-          className="text-muted-foreground"
-        />
-
-        {/* Credits Display */}
+        <Icon name="Coins" size={18} className="text-muted-foreground" />
         <div className="flex items-center space-x-1">
-          <span className="font-semibold text-sm text-muted-foreground">
-            Credits:
-          </span>
-          <span className="font-bold text-sm text-foreground">
-            {creditService.formatCredits(creditStatus.credits)}
-          </span>
+          <span className="font-semibold text-sm text-muted-foreground">Credits:</span>
+          <span className="font-bold text-sm text-foreground">{creditService.formatCredits(creditStatus.credits)}</span>
         </div>
-
-        {/* Warning Icon for Low Credits */}
-        {creditStatus.credits <= 50 && (
-          <Icon 
-            name="AlertTriangle" 
-            size={16} 
-            className="text-destructive animate-pulse"
-          />
-        )}
-
-        {/* Chevron */}
-        <Icon 
-          name="ChevronRight" 
-          size={14} 
-          className="text-muted-foreground opacity-60"
-        />
+        {creditStatus.credits <= 50 && <Icon name="AlertTriangle" size={16} className="text-destructive animate-pulse" />}
+        <Icon name="ChevronRight" size={14} className="text-muted-foreground opacity-60" />
       </div>
 
-      {/* Tooltip */}
-      {showTooltipState && showTooltip && (
       {showTooltipState && showTooltip && (
         <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 z-50">
           <div className="relative rounded-lg border border-border bg-popover px-3 py-2 text-xs text-foreground shadow-lg max-w-xs">
@@ -155,9 +106,7 @@ const CreditDisplay = ({ className = '', showTooltip = true }) => {
                 <span>Kompletter Ablauf:</span>
                 <span className="text-foreground">20 Credits</span>
               </div>
-              <p className="text-xs text-muted-foreground mt-2">
-                Klicken Sie für mehr Details und zum Aufladen.
-              </p>
+              <p className="text-xs text-muted-foreground mt-2">Klicken Sie fÃ¼r mehr Details und zum Aufladen.</p>
             </div>
             <div className="absolute top-full left-1/2 transform -translate-x-1/2 border-4 border-transparent border-t-border"></div>
           </div>
