@@ -1,5 +1,5 @@
-import React, { useMemo, useReducer, useState } from 'react';
-import { Sparkles, Zap, Brain, TrendingUp, Clock, ArrowUpRight } from 'lucide-react';
+import React, { useMemo, useReducer, useRef, useState } from 'react';
+import { Sparkles, Zap, Brain, TrendingUp, Clock } from 'lucide-react';
 import DashboardLayout from '../../layouts/DashboardLayout';
 import PageShell from '../../components/ui/PageShell';
 import Button from '../../components/ui/Button';
@@ -11,6 +11,7 @@ import StepMarketScan from './steps/StepMarketScan';
 import StepCreativeDNA from './steps/StepCreativeDNA';
 import StepResults from './steps/StepResults';
 import { adBuilderReducer, initialAdBuilderState } from './state/adBuilderMachine';
+import { runAdBuilderFlow } from './utils/runAdBuilderFlow';
 
 const sampleAds = [
   {
@@ -72,6 +73,8 @@ const ProgressSteps = ({ phase }) => {
 
 const AdRubyAdBuilder = () => {
   const [state, dispatch] = useReducer(adBuilderReducer, initialAdBuilderState);
+  const runRef = useRef(null);
+  const [isLocked, setIsLocked] = useState(false);
   const [searchUrl, setSearchUrl] = useState('');
   const [product, setProduct] = useState('');
   const [goal, setGoal] = useState('');
@@ -86,39 +89,39 @@ const AdRubyAdBuilder = () => {
     dispatch({ type: 'AI_SUCCESS', payload: sampleAds });
   };
 
-  const handleStart = async () => {
-    dispatch({ type: 'START' });
-    try {
-      const scrapeRes = await fetch('/api/ad-research-start', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          searchUrl,
-          maxAds: 30
-        })
-      });
-      if (!scrapeRes.ok) throw new Error(`Scraping failed with status ${scrapeRes.status}`);
-      const scrapeData = await scrapeRes.json();
-      const items = Array.isArray(scrapeData.items) ? scrapeData.items : [];
-      if (!items.length) throw new Error('Es konnten keine Ads aus der Facebook Ads Library geladen werden. Bitte URL oder Filter anpassen.');
-      dispatch({ type: 'SCRAPE_SUCCESS', payload: items });
-
-      const aiRes = await fetch('/api/ai-ad-analysis', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          userBriefing: { product, goal, market, language },
-          scrapedAds: items
-        })
-      });
-      if (!aiRes.ok) throw new Error(`AI analysis failed with status ${aiRes.status}`);
-      const aiData = await aiRes.json();
-      const finalAds = Array.isArray(aiData.ads) ? aiData.ads : Array.isArray(aiData.results) ? aiData.results : [];
-      if (!finalAds.length) throw new Error('Die KI konnte aus den Daten keine Ads generieren. Bitte Eingaben prüfen.');
-      dispatch({ type: 'AI_SUCCESS', payload: finalAds });
-    } catch (err) {
-      dispatch({ type: 'SCRAPE_ERROR', payload: err.message || 'Unbekannter Fehler' });
+  const handleStart = () => {
+    if (isLocked) return;
+    if (runRef.current) {
+      runRef.current.abort();
+      runRef.current = null;
     }
+    setIsLocked(true);
+    dispatch({ type: 'START' });
+
+    runRef.current = runAdBuilderFlow({
+      inputs: { searchUrl, product, goal, market, language },
+      onPhase: (phase) => {
+        if (phase === 'scraping') dispatch({ type: 'START' });
+      },
+      onScrapeItems: (items) => {
+        dispatch({ type: 'SCRAPE_SUCCESS', payload: items });
+      },
+      onResults: (ads) => {
+        dispatch({ type: 'AI_SUCCESS', payload: ads });
+        setIsLocked(false);
+      },
+      onError: (message) => {
+        dispatch({ type: 'SCRAPE_ERROR', payload: message });
+        setIsLocked(false);
+      },
+    });
+  };
+
+  const handleCancel = () => {
+    runRef.current?.abort?.();
+    runRef.current = null;
+    setIsLocked(false);
+    dispatch({ type: 'RESET' });
   };
 
   const BuilderHeader = () => (
@@ -132,7 +135,12 @@ const AdRubyAdBuilder = () => {
         <Button variant="secondary" onClick={handleUseSampleData} iconName="Sparkles">
           Sample laden
         </Button>
-        <Button variant="default" onClick={handleStart} iconName="Zap" disabled={state.phase === 'scraping' || state.phase === 'analyzing'}>
+        {(state.phase === 'scraping' || state.phase === 'analyzing') && (
+          <Button variant="secondary" onClick={handleCancel} iconName="X">
+            Abbrechen
+          </Button>
+        )}
+        <Button variant="default" onClick={handleStart} iconName="Zap" disabled={isLocked || state.phase === 'scraping' || state.phase === 'analyzing'}>
           {state.phase === 'scraping' || state.phase === 'analyzing' ? 'Läuft...' : 'Ads generieren'}
         </Button>
       </div>
