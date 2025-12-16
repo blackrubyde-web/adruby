@@ -49,6 +49,8 @@ export function AuthProvider({ children }) {
   const lastLoadedRef = useRef({ userId: null, token: null });
   const currentLoadIdRef = useRef(null);
   const isMountedRef = useRef(true);
+  const loadingRef = useRef(loading);
+  const isAuthReadyRef = useRef(isAuthReady);
 
   const DISALLOWED_REDIRECTS = useRef(new Set(['/login', '/login-authentication', '/signup']));
   const safeRedirect = (raw) => {
@@ -69,6 +71,14 @@ export function AuthProvider({ children }) {
     },
     []
   );
+
+  useEffect(() => {
+    loadingRef.current = loading;
+  }, [loading]);
+
+  useEffect(() => {
+    isAuthReadyRef.current = isAuthReady;
+  }, [isAuthReady]);
 
   const isOnboardingComplete = (status = onboardingStatus) => {
     const trialActive = status?.trialStatus === 'active';
@@ -106,7 +116,7 @@ export function AuthProvider({ children }) {
   }, []);
 
   const refreshOnboardingStatus = useCallback(
-    async (sessionUser = user) => {
+    async (sessionUser) => {
       logger.time('[AuthPerf] refreshOnboardingStatus');
 
       if (!sessionUser?.id) {
@@ -139,11 +149,11 @@ export function AuthProvider({ children }) {
         logger.timeEnd('[AuthPerf] refreshOnboardingStatus');
       }
     },
-    [user]
+    []
   );
 
   const refreshSubscriptionStatus = useCallback(
-    async (sessionUser = user) => {
+    async (sessionUser) => {
       logger.time('[AuthPerf] refreshSubscriptionStatus');
 
       if (!sessionUser?.id) {
@@ -241,11 +251,11 @@ export function AuthProvider({ children }) {
         logger.timeEnd('[AuthPerf] refreshSubscriptionStatus');
       }
     },
-    [user]
+    []
   );
 
   const refreshUserProfile = useCallback(
-    async (sessionUser = user) => {
+    async (sessionUser) => {
       logger.time('[AuthPerf] refreshUserProfile');
 
       if (!sessionUser?.id) {
@@ -300,10 +310,10 @@ export function AuthProvider({ children }) {
         return null;
       }
     },
-    [user]
+    []
   );
 
-  const persistAffiliateRefFromUrl = () => {
+  const persistAffiliateRefFromUrl = useCallback(() => {
     if (typeof window === 'undefined') return;
     try {
       const params = new URLSearchParams(window.location.search);
@@ -315,10 +325,10 @@ export function AuthProvider({ children }) {
     } catch (err) {
       logger.warn('[Affiliate] Failed to persist ref from URL', err);
     }
-  };
+  }, []);
 
   const attachAffiliateReferralIfNeeded = useCallback(
-    async (sessionUser = user) => {
+    async (sessionUser) => {
       if (typeof window === 'undefined') return;
       if (!sessionUser?.id) return;
 
@@ -402,7 +412,7 @@ export function AuthProvider({ children }) {
         logger.error('[Affiliate] attachAffiliateReferralIfNeeded crashed', err);
       }
     },
-    [user, refreshUserProfile]
+    [refreshUserProfile]
   );
 
   const resetAuthState = useCallback(() => {
@@ -521,6 +531,8 @@ export function AuthProvider({ children }) {
         path: typeof window !== 'undefined' ? window?.location?.pathname : 'unknown',
         userId: sessionUser?.id,
         email: sessionUser?.email,
+        loading: loadingRef.current,
+        isAuthReady: isAuthReadyRef.current,
         ts: new Date().toISOString()
       });
 
@@ -528,8 +540,8 @@ export function AuthProvider({ children }) {
         resetAuthState();
         logger.log('[AuthTrace] state after handleSessionChange', {
           hasUser: false,
-          loading,
-          isAuthReady
+          loading: loadingRef.current,
+          isAuthReady: isAuthReadyRef.current
         });
         return;
       }
@@ -556,11 +568,11 @@ export function AuthProvider({ children }) {
       logger.log('[AuthTrace] state after handleSessionChange', {
         hasUser: true,
         userId: sessionUser.id,
-        loading,
-        isAuthReady
+        loading: loadingRef.current,
+        isAuthReady: isAuthReadyRef.current
       });
     },
-    [loadUserState, resetAuthState, loading, isAuthReady]
+    [loadUserState, resetAuthState]
   );
 
   const fetchProfileForRedirect = useCallback(async (userId) => {
@@ -714,7 +726,8 @@ export function AuthProvider({ children }) {
       logger.log('[AuthTrace] cleanup authListener');
       authListener?.subscription?.unsubscribe();
     };
-  }, [handleSessionChange, ensureUserProfileExists, fetchProfileForRedirect]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [handleSessionChange, ensureUserProfileExists, fetchProfileForRedirect, persistAffiliateRefFromUrl]);
 
   const signUp = async (email, password, userData = {}) => {
     try {
