@@ -1,107 +1,54 @@
-# React
+# Overview Dashboard (React + TypeScript + Vite)
 
-A modern React-based project utilizing the latest frontend technologies and tools for building responsive web applications.
+Interaktives Analytics-Dashboard mit animierten Recharts, react-table, Date/Timezone-Auswahl, Mock-API und Live-Update-Simulation. Alle Fetch/WS-Stellen sind markiert und können schnell gegen echte Endpunkte getauscht werden.
 
-## 🚀 Features
+## Setup
+- `npm install`
+- `npm run dev` (lokal)
+- `npm test` (Jest + RTL, jsdom)
 
-- **React 18** - React version with improved rendering and concurrent features
-- **Vite** - Lightning-fast build tool and development server
-- **Redux Toolkit** - State management with simplified Redux setup
-- **TailwindCSS** - Utility-first CSS framework with extensive customization
-- **React Router v6** - Declarative routing for React applications
-- **Data Visualization** - Integrated D3.js and Recharts for powerful data visualization
-- **Form Management** - React Hook Form for efficient form handling
-- **Animation** - Framer Motion for smooth UI animations
-- **Testing** - Jest and React Testing Library setup
+## Wichtige Dateien
+- `src/pages/Overview.tsx` – Hauptseite (Grid, KPIs, Charts, Tabelle, Exporte)
+- `src/components/*` – Header, DateRangePicker, Charts, MetricCard, DataTable
+- `src/hooks/useMockApi.ts` – Mock-Fetch + Mock-WebSocket **// TODO: INTEGRATE REAL API**
+- `src/api/types.ts` – TypeScript Contracts
+- `src/api/schema.json` – JSON-Schema für REST/WS
+- `src/utils/dateUtils.ts` – Presets, Zeitzonen, Formatierung
+- `src/utils/export.ts` – CSV/PNG Export
+- `tests/overview.test.tsx` – Beispieltest (KPI-Render)
 
-## 📋 Prerequisites
+## Daten-Contract (Kurzfassung)
+Siehe `src/api/schema.json`.
+- REST: `GET /api/overview/metrics?start=ISO&end=ISO&tz=Europe/Berlin`
+  - `kpis`: `{ ctr|conversion_rate|roas: { value:number, delta:number } }`
+  - `timeSeries[]`: `{ timestamp, ctr, conversions, roas, impressions, cost }`
+  - `topCampaigns[]`: `{ id, name, spend, revenue, ctr, conversions }`
+  - `sessionsByDevice[]`: `{ device, sessions }`
+- WebSocket Events:
+  - `updateTimeseries` (payload wie einzelner `timeSeries`-Datensatz)
+  - `metricsUpdate` (Partial `kpis`)
+  - `tableUpdate` (Partial `topCampaigns`-Row)
 
-- Node.js (v14.x or higher)
-- npm or yarn
+## Echte Endpunkte anbinden
+1) REST:
+   - In `src/hooks/useMockApi.ts` den Block `// TODO: INTEGRATE REAL API` durch echten `fetch` ersetzen (auth header etc.).
+   - Verwende `OverviewFilters` (start/end/tz) für Query-Params.
+2) WebSocket:
+   - Im selben File MockWebSocket durch echten WS-Client ersetzen.
+   - Events `updateTimeseries | metricsUpdate | tableUpdate` dispatchen.
+3) Daten in Komponenten:
+   - `Overview.tsx` bezieht alles aus `useMockApi(range)`. Keine weiteren Änderungen nötig, solange die Response dem Schema folgt.
 
-## 🛠️ Installation
+## Live-Updates & Animation
+- Recharts mit Legend-Toggle, Tooltip, Brush/Zoom, Auto-Scale.
+- Mock-WebSocket pusht regelmäßige Updates (siehe `useMockApi`).
 
-1. Install dependencies:
-   ```bash
-   npm install
-   # or
-   yarn install
-   ```
-   
-2. Start the development server:
-   ```bash
-   npm start
-   # or
-   yarn start
-   ```
+## Export
+- Charts: `exportNodeToPng` (html-to-image), Buttons in `Overview.tsx`.
+- Tabellen: `exportTableToCsv` (papaparse), Button in `DataTable`.
 
-## 📁 Project Structure
+## Tests
+- `npm test` nutzt Jest + ts-jest + RTL (`tests/overview.test.tsx`).
 
-```
-react_app/
-├── public/             # Static assets
-├── src/
-│   ├── components/     # Reusable UI components
-│   ├── pages/          # Page components
-│   ├── styles/         # Global styles and Tailwind configuration
-│   ├── App.jsx         # Main application component
-│   ├── Routes.jsx      # Application routes
-│   └── index.jsx       # Application entry point
-├── .env                # Environment variables
-├── index.html          # HTML template
-├── package.json        # Project dependencies and scripts
-├── tailwind.config.js  # Tailwind CSS configuration
-└── vite.config.js      # Vite configuration
-```
-
-## 🧩 Adding Routes
-
-To add new routes to the application, update the `Routes.jsx` file:
-
-```jsx
-import { useRoutes } from "react-router-dom";
-import HomePage from "pages/HomePage";
-import AboutPage from "pages/AboutPage";
-
-const ProjectRoutes = () => {
-  let element = useRoutes([
-    { path: "/", element: <HomePage /> },
-    { path: "/about", element: <AboutPage /> },
-    // Add more routes as needed
-  ]);
-
-  return element;
-};
-```
-
-## 🎨 Styling
-
-This project uses Tailwind CSS for styling. The configuration includes:
-
-- Forms plugin for form styling
-- Typography plugin for text styling
-- Aspect ratio plugin for responsive elements
-- Container queries for component-specific responsive design
-- Fluid typography for responsive text
-- Animation utilities
-
-## 📱 Responsive Design
-
-The app is built with responsive design using Tailwind CSS breakpoints.
-
-
-## 📦 Deployment
-
-Build the application for production:
-
-```bash
-npm run build
-```
-
-## 🙏 Acknowledgments
-
-- Built with [Rocket.new](https://rocket.new)
-- Powered by React and Vite
-- Styled with Tailwind CSS
-
-Built with ❤️ on Rocket.new
+## Theming & Accessibility
+- Tailwind-Klassen, Darkmode-kompatibel, Fokus-Styles auf interaktiven Controls.

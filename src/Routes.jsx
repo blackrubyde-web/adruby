@@ -11,7 +11,7 @@ import PublicServiceOverview from './pages/public-service-overview';
 import PublicPricingPlans from './pages/public-pricing-plans';
 import LoginPage from './pages/login';
 import LoginAuthentication from './pages/login-authentication';
-import OverviewDashboard from './pages/overview-dashboard';
+import OverviewDashboard from './pages/Overview';
 import AppBuilderInterface from './pages/app-builder-interface';
 import AiAnalysisPanel from './pages/ai-analysis-panel';
 import AdStrategy from './pages/ad-strategy';

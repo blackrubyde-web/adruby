@@ -1,0 +1,34 @@
+{
+  "overview": {
+    "endpoint": "/api/overview/metrics?start=ISO&end=ISO&tz=Europe/Berlin",
+    "response": {
+      "kpis": {
+        "ctr": { "value": 0.038, "delta": 0.004 },
+        "conversion_rate": { "value": 0.042, "delta": 0.007 },
+        "roas": { "value": 4.5, "delta": 0.3 }
+      },
+      "timeSeries": [
+        {
+          "timestamp": "2025-12-01T00:00:00Z",
+          "ctr": 0.038,
+          "conversions": 120,
+          "roas": 4.5,
+          "impressions": 120000,
+          "cost": 3500
+        }
+      ],
+      "topCampaigns": [
+        { "id": "c1", "name": "Campaign X", "spend": 1200, "revenue": 5200, "ctr": 0.041, "conversions": 72 }
+      ],
+      "sessionsByDevice": [
+        { "device": "mobile", "sessions": 12450 },
+        { "device": "desktop", "sessions": 8450 }
+      ]
+    },
+    "websocketEvents": {
+      "updateTimeseries": { "timestamp": "2025-12-02T12:00:00Z", "ctr": 0.039, "conversions": 12, "roas": 4.6, "impressions": 1200, "cost": 40 },
+      "metricsUpdate": { "ctr": { "value": 0.039, "delta": 0.005 }, "conversion_rate": { "value": 0.043, "delta": 0.008 }, "roas": { "value": 4.6, "delta": 0.4 } },
+      "tableUpdate": { "id": "c1", "name": "Campaign X", "spend": 1220, "revenue": 5250, "ctr": 0.042, "conversions": 75 }
+    }
+  }
+}

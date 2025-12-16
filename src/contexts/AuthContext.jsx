@@ -13,6 +13,7 @@ import { logger } from '../utils/logger';
 
 const AuthContext = createContext({});
 const AFFILIATE_REF_STORAGE_KEY = 'adruby_affiliate_ref_code';
+const REDIRECT_DELAY_MS = 3000;
 
 export const useAuth = () => {
   const context = useContext(AuthContext);
@@ -626,7 +627,11 @@ export function AuthProvider({ children }) {
           redirectParam ||
           (admin ? '/admin-dashboard' : paid ? '/overview-dashboard' : '/payment-verification');
 
+        if (cancelled) return;
+
         if (typeof window !== 'undefined') {
+          await new Promise((resolve) => setTimeout(resolve, REDIRECT_DELAY_MS));
+          if (cancelled) return;
           window.location.replace(target);
         }
       } catch (err) {
