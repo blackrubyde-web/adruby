@@ -19,6 +19,8 @@ import FacebookDataSync from './components/FacebookDataSync';
 import ChartCard from '../../components/ui/ChartCard';
 import Badge from '../../components/ui/Badge';
 import { statusBadgeClasses } from '../../components/ui/statusStyles';
+import { Table, TableHeader, TableRow, TableCell, TableEmpty } from '../../components/ui/Table';
+import Drawer from '../../components/ui/Drawer';
 
 const AIAnalysisPanel = () => {
   const [currentLanguage, setCurrentLanguage] = useState('de');
@@ -667,109 +669,118 @@ const AIAnalysisPanel = () => {
                           </div>
                         )}
                       </div>
-
                       <div className="overflow-x-auto">
-                        <table className="w-full border-separate border-spacing-y-1 bg-background">
-                          <thead className="bg-secondary">
-                            <tr>
-                              <th className="text-left py-4 px-6 font-semibold text-muted-foreground uppercase text-xs tracking-wide">
-                                Kampagne / AdSet / Ad
-                              </th>
-                              <th className="text-left py-4 px-4 font-semibold text-muted-foreground uppercase text-xs tracking-wide">
-                                CTR (%)
-                              </th>
-                              <th className="text-left py-4 px-4 font-semibold text-muted-foreground uppercase text-xs tracking-wide">
-                                CPM (€)
-                              </th>
-                              <th className="text-left py-4 px-4 font-semibold text-muted-foreground uppercase text-xs tracking-wide">
-                                CPA (€)
-                              </th>
-                              <th className="text-left py-4 px-4 font-semibold text-muted-foreground uppercase text-xs tracking-wide">
-                                ROAS
-                              </th>
-                              <th className="text-left py-4 px-4 font-semibold text-muted-foreground uppercase text-xs tracking-wide">
-                                Spend (€)
-                              </th>
-                              <th className="text-left py-4 px-4 font-semibold text-muted-foreground uppercase text-xs tracking-wide">
-                                Frequency
-                              </th>
-                              <th className="text-left py-4 px-4 font-semibold text-muted-foreground uppercase text-xs tracking-wide">
-                                Status
-                              </th>
-                              <th className="text-left py-4 px-4 font-semibold text-muted-foreground uppercase text-xs tracking-wide">
-                                Analyse
-                              </th>
-                            </tr>
-                          </thead>
+                        <Table className="bg-background">
+                          <TableHeader className="bg-secondary">
+                            <th className="text-left py-4 px-6 font-semibold text-muted-foreground uppercase text-xs tracking-wide">
+                              Kampagne / AdSet / Ad
+                            </th>
+                            <th className="text-left py-4 px-4 font-semibold text-muted-foreground uppercase text-xs tracking-wide">
+                              CTR (%)
+                            </th>
+                            <th className="text-left py-4 px-4 font-semibold text-muted-foreground uppercase text-xs tracking-wide">
+                              CPM (?)
+                            </th>
+                            <th className="text-left py-4 px-4 font-semibold text-muted-foreground uppercase text-xs tracking-wide">
+                              CPA (?)
+                            </th>
+                            <th className="text-left py-4 px-4 font-semibold text-muted-foreground uppercase text-xs tracking-wide">
+                              ROAS
+                            </th>
+                            <th className="text-left py-4 px-4 font-semibold text-muted-foreground uppercase text-xs tracking-wide">
+                              Spend (?)
+                            </th>
+                            <th className="text-left py-4 px-4 font-semibold text-muted-foreground uppercase text-xs tracking-wide">
+                              Frequency
+                            </th>
+                            <th className="text-left py-4 px-4 font-semibold text-muted-foreground uppercase text-xs tracking-wide">
+                              Status
+                            </th>
+                            <th className="text-left py-4 px-4 font-semibold text-muted-foreground uppercase text-xs tracking-wide">
+                              Analyse
+                            </th>
+                          </TableHeader>
                           <tbody>
                             {campaignData?.length > 0 ? campaignData?.map((campaign) => (
                               <React.Fragment key={campaign?.id}>
-                                <tr className="bg-card border border-border hover:bg-accent transition-all duration-300">
-                                  <td className="py-4 px-6">
+                                <TableRow
+                                  as={motion.tr}
+                                  className="bg-card transition-all duration-300"
+                                  initial={{ opacity: 0, y: 6 }}
+                                  animate={{ opacity: 1, y: 0 }}
+                                  exit={{ opacity: 0, y: -6 }}
+                                  transition={{ duration: 0.2 }}
+                                >
+                                  <TableCell className="py-4 px-6">
                                     <div className="flex items-center space-x-3">
                                       <button
                                         onClick={() => toggleCampaignExpansion(campaign?.id)}
                                         className="text-muted-foreground hover:text-foreground transition-all hover:scale-110"
                                       >
-                                        <Icon 
-                                          name={expandedCampaigns?.has(campaign?.id) ? "ChevronDown" : "ChevronRight"} 
-                                          size={16} 
+                                        <Icon
+                                          name={expandedCampaigns?.has(campaign?.id) ? "ChevronDown" : "ChevronRight"}
+                                          size={16}
                                         />
                                       </button>
-                                      <div className="w-8 h-8 bg-blue-500/20 dark:bg-blue-900/40 rounded-lg flex items-center justify-center">
-                                        <Icon name="Megaphone" size={16} className="text-blue-600 dark:text-blue-400" />
+                                      <div className="w-8 h-8 bg-accent/40 rounded-lg flex items-center justify-center">
+                                        <Icon name="Megaphone" size={16} className="text-foreground" />
                                       </div>
                                       <div>
                                         <p className="font-semibold text-foreground">
                                           {campaign?.name}
                                           {!user && (
-                                            <span className="ml-2 text-xs bg-blue-500/20 dark:bg-blue-900/40 text-blue-600 dark:text-blue-400 px-2 py-1 rounded">
+                                            <span className="ml-2 text-xs bg-accent/40 text-foreground px-2 py-1 rounded">
                                               Demo
                                             </span>
                                           )}
                                         </p>
                                         <p className="text-sm text-muted-foreground">
-                                          Kampagne • {campaign?.meta_ad_sets?.length || 0} AdSets
+                                          Kampagne ? {campaign?.meta_ad_sets?.length || 0} AdSets
                                         </p>
                                       </div>
+                                      <div className="flex items-center space-x-2 ml-auto">
+                                        <Badge variant={statusVariantMap[campaign?.status] || 'neutral'}>
+                                          {campaign?.status?.charAt(0)?.toUpperCase() + campaign?.status?.slice(1)}
+                                        </Badge>
+                                      </div>
                                     </div>
-                                  </td>
-                                  <td className="py-4 px-4">
+                                  </TableCell>
+                                  <TableCell className="py-4 px-4">
                                     <span className={`font-semibold ${getKPIValueColor('ctr', campaign?.ctr)}`}>
                                       {renderKPIWithEvaluation(campaign?.ctr, '%', 'ctr', campaign?.id, 'campaign')}
                                     </span>
-                                  </td>
-                                  <td className="py-4 px-4">
+                                  </TableCell>
+                                  <TableCell className="py-4 px-4">
                                     <span className={`font-semibold ${getKPIValueColor('cpm', campaign?.cpm)}`}>
-                                      {renderKPIWithEvaluation(campaign?.cpm, '€', 'cpm', campaign?.id, 'campaign')}
+                                      {renderKPIWithEvaluation(campaign?.cpm, '?', 'cpm', campaign?.id, 'campaign')}
                                     </span>
-                                  </td>
-                                  <td className="py-4 px-4">
+                                  </TableCell>
+                                  <TableCell className="py-4 px-4">
                                     {renderKPIWithEvaluation(
                                       campaign?.conversions > 0 ? (parseFloat(campaign?.spend) / campaign?.conversions)?.toFixed(2) : campaign?.spend,
-                                      '€', 
-                                      'cpa', 
-                                      campaign?.id, 
+                                      '?',
+                                      'cpa',
+                                      campaign?.id,
                                       'campaign'
                                     )}
-                                  </td>
-                                  <td className="py-4 px-4">
+                                  </TableCell>
+                                  <TableCell className="py-4 px-4">
                                     <span className={`font-semibold ${getKPIValueColor('roas', campaign?.roas)}`}>
                                       {renderKPIWithEvaluation(campaign?.roas, '', 'roas', campaign?.id, 'campaign')}
                                     </span>
-                                  </td>
-                                  <td className="py-4 px-4">
-                                    {renderKPIWithEvaluation(campaign?.spend, '€', 'spend', campaign?.id, 'campaign')}
-                                  </td>
-                                  <td className="py-4 px-4">
+                                  </TableCell>
+                                  <TableCell className="py-4 px-4">
+                                    {renderKPIWithEvaluation(campaign?.spend, '?', 'spend', campaign?.id, 'campaign')}
+                                  </TableCell>
+                                  <TableCell className="py-4 px-4">
                                     {renderKPIWithEvaluation(campaign?.frequency || '1.2', '', 'frequency', campaign?.id, 'campaign')}
-                                  </td>
-                                  <td className="py-4 px-4">
+                                  </TableCell>
+                                  <TableCell className="py-4 px-4">
                                     <Badge variant={statusVariantMap[campaign?.status] || 'neutral'}>
                                       {campaign?.status?.charAt(0)?.toUpperCase() + campaign?.status?.slice(1)}
                                     </Badge>
-                                  </td>
-                                  <td className="py-4 px-4">
+                                  </TableCell>
+                                  <TableCell className="py-4 px-4">
                                     <Button
                                       onClick={() => handleStartAnalysis(campaign, 'campaign')}
                                       disabled={isAnalyzing}
@@ -780,19 +791,20 @@ const AIAnalysisPanel = () => {
                                     >
                                       Analyse starten
                                     </Button>
-                                  </td>
-                                </tr>
+                                  </TableCell>
+                                </TableRow>
 
                                 <AnimatePresence>
                                   {expandedCampaigns?.has(campaign?.id) && (
-                                    <motion.tr
+                                    <TableRow
+                                      as={motion.tr}
                                       initial={{ opacity: 0, height: 0 }}
                                       animate={{ opacity: 1, height: 'auto' }}
                                       exit={{ opacity: 0, height: 0 }}
                                       transition={{ duration: 0.3, ease: "easeInOut" }}
                                       className="bg-muted/50"
                                     >
-                                      <td colSpan="9" className="p-0">
+                                      <TableCell colSpan={9} className="p-0">
                                         <div className="overflow-hidden">
                                           {campaign?.meta_ad_sets?.map((adset) => (
                                             <React.Fragment key={adset?.id}>
@@ -803,20 +815,20 @@ const AIAnalysisPanel = () => {
                                                       onClick={() => toggleAdSetExpansion(adset?.id)}
                                                       className="text-muted-foreground hover:text-foreground transition-all hover:scale-110"
                                                     >
-                                                      <Icon 
-                                                        name={expandedAdSets?.has(adset?.id) ? "ChevronDown" : "ChevronRight"} 
-                                                        size={16} 
+                                                      <Icon
+                                                        name={expandedAdSets?.has(adset?.id) ? "ChevronDown" : "ChevronRight"}
+                                                        size={16}
                                                       />
                                                     </button>
-                                                    <div className="w-6 h-6 bg-green-500/20 dark:bg-green-900/40 rounded flex items-center justify-center">
-                                                      <Icon name="Target" size={12} className="text-green-600 dark:text-green-400" />
+                                                    <div className="w-6 h-6 bg-accent/40 rounded flex items-center justify-center">
+                                                      <Icon name="Target" size={12} className="text-foreground" />
                                                     </div>
                                                     <div>
                                                       <p className="font-medium text-foreground">
                                                         {adset?.name}
                                                       </p>
                                                       <p className="text-xs text-muted-foreground">
-                                                        AdSet • {adset?.meta_ads?.length || 0} Ads
+                                                        AdSet ? {adset?.meta_ads?.length || 0} Ads
                                                       </p>
                                                     </div>
                                                   </div>
@@ -824,16 +836,16 @@ const AIAnalysisPanel = () => {
                                                     {renderKPIWithEvaluation(adset?.ctr, '%', 'ctr', adset?.id, 'adset')}
                                                   </div>
                                                   <div className={`font-semibold ${getKPIValueColor('cpm', adset?.cpm)}`}>
-                                                    {renderKPIWithEvaluation(adset?.cpm, '€', 'cpm', adset?.id, 'adset')}
+                                                    {renderKPIWithEvaluation(adset?.cpm, '?', 'cpm', adset?.id, 'adset')}
                                                   </div>
                                                   <div>{renderKPIWithEvaluation(
                                                     adset?.conversions > 0 ? (parseFloat(adset?.spend) / adset?.conversions)?.toFixed(2) : adset?.spend,
-                                                    '€', 'cpa', adset?.id, 'adset'
+                                                    '?', 'cpa', adset?.id, 'adset'
                                                   )}</div>
                                                   <div className={`font-semibold ${getKPIValueColor('roas', adset?.roas)}`}>
                                                     {renderKPIWithEvaluation(adset?.roas, '', 'roas', adset?.id, 'adset')}
                                                   </div>
-                                                  <div>{renderKPIWithEvaluation(adset?.spend, '€', 'spend', adset?.id, 'adset')}</div>
+                                                  <div>{renderKPIWithEvaluation(adset?.spend, '?', 'spend', adset?.id, 'adset')}</div>
                                                   <div>{renderKPIWithEvaluation(adset?.frequency || '1.8', '', 'frequency', adset?.id, 'adset')}</div>
                                                   <div>
                                                     <Badge variant={statusVariantMap[adset?.status] || 'neutral'}>
@@ -867,15 +879,15 @@ const AIAnalysisPanel = () => {
                                                   >
                                                     <div className="grid grid-cols-9 gap-4 py-3 px-6 pl-24 text-sm">
                                                       <div className="flex items-center space-x-3">
-                                                        <div className="w-5 h-5 bg-purple-500/20 dark:bg-purple-900/40 rounded flex items-center justify-center">
-                                                          <Icon name="Image" size={10} className="text-purple-600 dark:text-purple-300" />
+                                                        <div className="w-5 h-5 bg-accent/30 rounded flex items-center justify-center">
+                                                          <Icon name="Image" size={10} className="text-foreground" />
                                                         </div>
                                                         <div>
                                                           <p className="font-medium text-foreground text-sm">
                                                             {ad?.name}
                                                           </p>
                                                           <p className="text-xs text-muted-foreground">
-                                                            Ad • {ad?.creative_type}
+                                                            Ad ? {ad?.creative_type}
                                                           </p>
                                                         </div>
                                                       </div>
@@ -883,28 +895,28 @@ const AIAnalysisPanel = () => {
                                                         {renderKPIWithEvaluation(ad?.ctr, '%', 'ctr', ad?.id, 'ad')}
                                                       </div>
                                                       <div className={`font-semibold ${getKPIValueColor('cpm', ad?.cpm)}`}>
-                                                        {renderKPIWithEvaluation(ad?.cpm, '€', 'cpm', ad?.id, 'ad')}
+                                                        {renderKPIWithEvaluation(ad?.cpm, '?', 'cpm', ad?.id, 'ad')}
                                                       </div>
                                                       <div>{renderKPIWithEvaluation(
                                                         ad?.conversions > 0 ? (parseFloat(ad?.spend) / ad?.conversions)?.toFixed(2) : ad?.spend,
-                                                        '€', 'cpa', ad?.id, 'ad'
+                                                        '?', 'cpa', ad?.id, 'ad'
                                                       )}</div>
                                                       <div className={`font-semibold ${getKPIValueColor('roas', ad?.roas)}`}>
                                                         {renderKPIWithEvaluation(ad?.roas, '', 'roas', ad?.id, 'ad')}
                                                       </div>
-                                                      <div>{renderKPIWithEvaluation(ad?.spend, '€', 'spend', ad?.id, 'ad')}</div>
+                                                      <div>{renderKPIWithEvaluation(ad?.spend, '?', 'spend', ad?.id, 'ad')}</div>
                                                       <div>{renderKPIWithEvaluation(ad?.frequency || '2.1', '', 'frequency', ad?.id, 'ad')}</div>
                                                       <div>
                                                         <Badge variant={statusVariantMap[ad?.status] || 'neutral'}>
                                                           {ad?.status?.charAt(0)?.toUpperCase() + ad?.status?.slice(1)}
                                                         </Badge>
                                                       </div>
-                                                  <div className="flex items-center space-x-2">
-                                                    {ad?.ai_analysis_score > 0 && (
-                                                      <span className={getRecommendationColor(ad?.ai_analysis_score)}>
-                                                        {getRecommendationText(ad?.ai_analysis_score)}
-                                                      </span>
-                                                    )}
+                                                      <div className="flex items-center space-x-2">
+                                                        {ad?.ai_analysis_score > 0 && (
+                                                          <span className={getRecommendationColor(ad?.ai_analysis_score)}>
+                                                            {getRecommendationText(ad?.ai_analysis_score)}
+                                                          </span>
+                                                        )}
                                                         <Button
                                                           onClick={() => handleStartAnalysis(ad, 'ad')}
                                                           disabled={isAnalyzing}
@@ -923,29 +935,23 @@ const AIAnalysisPanel = () => {
                                             </React.Fragment>
                                           ))}
                                         </div>
-                                      </td>
-                                    </motion.tr>
+                                      </TableCell>
+                                    </TableRow>
                                   )}
                                 </AnimatePresence>
                               </React.Fragment>
                             )) : (
-                              <tr>
-                                <td colSpan="9" className="py-12 text-center">
-                                  <div className="max-w-xl mx-auto">
-                                    <EmptyState
-                                      title={user ? 'Keine Kampagnendaten verfügbar' : 'Demo-Kampagnendaten werden geladen...'}
-                                      description={
-                                        user
-                                          ? 'Synchronisieren Sie Ihre Facebook Ads oder verwenden Sie die Demo-Daten'
-                                          : 'Melden Sie sich an, um echte Kampagnendaten zu laden'
-                                      }
-                                    />
-                                  </div>
-                                </td>
-                              </tr>
+                              <TableEmpty
+                                title={user ? 'Keine Kampagnendaten verf?gbar' : 'Demo-Kampagnendaten werden geladen...'}
+                                description={
+                                  user
+                                    ? 'Synchronisieren Sie Ihre Facebook Ads oder verwenden Sie die Demo-Daten'
+                                    : 'Melden Sie sich an, um echte Kampagnendaten zu laden'
+                                }
+                              />
                             )}
                           </tbody>
-                        </table>
+                        </Table>
                       </div>
                     </div>
                   </motion.div>
@@ -994,166 +1000,142 @@ const AIAnalysisPanel = () => {
                 onClose={() => setConnectionModalOpen(false)}
               />
 
-              <AnimatePresence>
-                {analysisDrawerOpen && selectedAnalysis && (
-                  <motion.div 
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    exit={{ opacity: 0 }}
-                    className="fixed inset-0 bg-black/60 z-50 flex items-end sm:items-center justify-center p-4"
-                    onClick={() => setAnalysisDrawerOpen(false)}
-                  >
-                    <motion.div
-                      initial={{ x: '100%', opacity: 0 }}
-                      animate={{ x: 0, opacity: 1 }}
-                      exit={{ x: '100%', opacity: 0 }}
-                      transition={{ type: "spring", damping: 25, stiffness: 500 }}
-                      className="bg-popover backdrop-blur-sm rounded-lg border border-border p-6 max-w-4xl w-full max-h-[80vh] overflow-y-auto shadow-lg"
-                      onClick={(e) => e?.stopPropagation()}
-                    >
-                      <div className="flex justify-between items-start mb-6">
-                        <div>
-                          <h3 className="text-xl font-semibold text-popover-foreground">
-                            Strategie-basierte KI-Analyse
-                          </h3>
-                          <p className="text-muted-foreground mt-1 leading-relaxed">
-                            {selectedAnalysis?.item?.name} • {selectedAnalysis?.type}
-                          </p>
-                        </div>
-                        <button
-                          onClick={() => setAnalysisDrawerOpen(false)}
-                          className="text-muted-foreground hover:text-foreground transition-colors hover:scale-110"
-                        >
-                          <Icon name="X" size={20} />
-                        </button>
-                      </div>
+              <MetaConnectionModal
+                isOpen={connectionModalOpen}
+                onClose={() => setConnectionModalOpen(false)}
+              />
 
-                      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                        {selectedAnalysis?.analysis?.kpi_evaluations && (
-                          <div className="space-y-4">
-                            <h4 className="font-semibold text-foreground text-lg">
-                              KPI Bewertung
-                            </h4>
-                            
-                            <div className="space-y-3">
-                              {Object.entries(selectedAnalysis?.analysis?.kpi_evaluations)?.map(([kpi, evaluation]) => (
-                                <div key={kpi} className="flex items-center justify-between border-b border-border pb-2">
-                                  <div className="flex items-center space-x-3">
-                                    <Icon 
-                                      name={evaluation?.icon} 
-                                      size={20} 
-                                      style={{ color: evaluation?.color }}
-                                    />
-                                    <div>
-                                      <span className="font-medium text-foreground uppercase">
-                                        {kpi}
-                                      </span>
-                                      <p className="text-xs text-muted-foreground">
-                                        {evaluation?.value}{kpi === 'ctr' ? '%' : kpi === 'roas' ? '' : '€'}
-                                      </p>
-                                    </div>
-                                  </div>
-                                  
-                                  <div className="text-right max-w-xs">
-                                    <p className="text-sm font-medium text-foreground">
-                                      {evaluation?.recommendation}
-                                    </p>
-                                    <span className={`inline-flex px-2 py-1 rounded text-xs font-medium mt-1 ${
-                                      evaluation?.priority === 'high' ? 'bg-red-500/20 text-red-600 dark:bg-red-900/40 dark:text-red-400' :
-                                      evaluation?.priority === 'medium'? 'bg-yellow-500/20 text-yellow-600 dark:bg-yellow-900/40 dark:text-yellow-400' : 'bg-green-500/20 text-green-600 dark:bg-green-900/40 dark:text-green-400'
-                                    }`}>
-                                      {evaluation?.priority === 'high' ? 'Hoch' : 
-                                       evaluation?.priority === 'medium' ? 'Mittel' : 'Niedrig'}
-                                    </span>
-                                  </div>
-                                </div>
-                              ))}
-                            </div>
-                          </div>
-                        )}
+              <Drawer
+                open={analysisDrawerOpen && Boolean(selectedAnalysis)}
+                onClose={() => setAnalysisDrawerOpen(false)}
+                title="Strategie-basierte KI-Analyse"
+                subtitle={`${selectedAnalysis?.item?.name || ''} ? ${selectedAnalysis?.type || ''}`}
+                side="right"
+                width="max-w-4xl"
+              >
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  {selectedAnalysis?.analysis?.kpi_evaluations && (
+                    <div className="space-y-4">
+                      <h4 className="font-semibold text-foreground text-lg">
+                        KPI Bewertung
+                      </h4>
 
-                        <div className="space-y-4">
-                          <div className="bg-muted rounded-lg p-4 border border-border">
-                            <div className="flex items-center justify-between">
-                              <span className="text-foreground font-medium">
-                                Performance Score
-                              </span>
-                              <div className="flex items-center space-x-2">
-                                <span className="text-2xl font-bold text-foreground">
-                                  {selectedAnalysis?.analysis?.overall_score || 0}
+                      <div className="space-y-3">
+                        {Object.entries(selectedAnalysis?.analysis?.kpi_evaluations)?.map(([kpi, evaluation]) => (
+                          <div key={kpi} className="flex items-center justify-between border-b border-border pb-2">
+                            <div className="flex items-center space-x-3">
+                              <Icon
+                                name={evaluation?.icon}
+                                size={20}
+                                style={{ color: evaluation?.color }}
+                              />
+                              <div>
+                                <span className="font-medium text-foreground uppercase">
+                                  {kpi}
                                 </span>
-                                <span className="text-muted-foreground">/100</span>
+                                <p className="text-xs text-muted-foreground">
+                                  {evaluation?.value}{kpi === 'ctr' ? '%' : kpi === 'roas' ? '' : '?'}
+                                </p>
                               </div>
                             </div>
-                            <div className="w-full bg-secondary rounded-full h-2 mt-2">
-                              <div 
-                                className="bg-primary h-2 rounded-full transition-all duration-500"
-                                style={{ width: `${selectedAnalysis?.analysis?.overall_score || 0}%` }}
-                              />
+
+                            <div className="text-right max-w-xs">
+                              <p className="text-sm font-medium text-foreground">
+                                {evaluation?.recommendation}
+                              </p>
+                              <span className={`inline-flex px-2 py-1 rounded text-xs font-medium mt-1 ${
+                                evaluation?.priority === 'high' ? 'bg-accent/30 text-foreground' :
+                                evaluation?.priority === 'medium'? 'bg-secondary/60 text-foreground' : 'bg-card/60 text-muted-foreground'
+                              }`}>
+                                {evaluation?.priority === 'high' ? 'Hoch' :
+                                 evaluation?.priority === 'medium' ? 'Mittel' : 'Niedrig'}
+                              </span>
                             </div>
                           </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
 
-                          {selectedAnalysis?.analysis?.key_insights && (
-                            <div>
-                              <h4 className="font-semibold text-foreground mb-3">
-                                Wichtige Erkenntnisse
-                              </h4>
-                              <ul className="space-y-2">
-                                {selectedAnalysis?.analysis?.key_insights?.map((insight, index) => (
-                                  <li key={index} className="flex items-start space-x-2">
-                                    <Icon name="CheckCircle" size={16} className="text-green-600 dark:text-green-400 mt-0.5 flex-shrink-0" />
-                                    <span className="text-foreground leading-relaxed text-sm">{insight}</span>
-                                  </li>
-                                ))}
-                              </ul>
-                            </div>
+                  <div className="space-y-4">
+                    <div className="bg-muted rounded-lg p-4 border border-border">
+                      <div className="flex items-center justify-between">
+                        <span className="text-foreground font-medium">
+                          Performance Score
+                        </span>
+                        <div className="flex items-center space-x-2">
+                          <span className="text-2xl font-bold text-foreground">
+                            {selectedAnalysis?.analysis?.overall_score || 0}
+                          </span>
+                          <span className="text-muted-foreground">/100</span>
+                        </div>
+                      </div>
+                      <div className="w-full bg-secondary rounded-full h-2 mt-2">
+                        <div
+                          className="bg-primary h-2 rounded-full transition-all duration-500"
+                          style={{ width: `${selectedAnalysis?.analysis?.overall_score || 0}%` }}
+                        />
+                      </div>
+                    </div>
+
+                    {selectedAnalysis?.analysis?.key_insights && (
+                      <div>
+                        <h4 className="font-semibold text-foreground mb-3">
+                          Wichtige Erkenntnisse
+                        </h4>
+                        <ul className="space-y-2">
+                          {selectedAnalysis?.analysis?.key_insights?.map((insight, index) => (
+                            <li key={index} className="flex items-start space-x-2">
+                              <Icon name="CheckCircle" size={16} className="text-foreground/80 mt-0.5 flex-shrink-0" />
+                              <span className="text-foreground leading-relaxed text-sm">{insight}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {selectedAnalysis?.analysis?.recommendations && (
+                  <div className="mt-6">
+                    <h4 className="font-semibold text-foreground mb-4">
+                      Empfohlene Aktionen (aus Strategie abgeleitet)
+                    </h4>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {selectedAnalysis?.analysis?.recommendations?.map((rec, index) => (
+                        <div key={index} className="bg-muted rounded-lg p-4 border border-border">
+                          <div className="flex items-start justify-between mb-2">
+                            <p className="font-medium text-foreground text-sm">
+                              {rec?.action}
+                            </p>
+                            <span className={`inline-flex px-2 py-1 rounded text-xs font-medium ${
+                              rec?.priority === 'high' ? 'bg-accent/30 text-foreground' :
+                              rec?.priority === 'medium'? 'bg-secondary/60 text-foreground' : 'bg-card/60 text-muted-foreground'
+                            }`}>
+                              {rec?.priority === 'high' ? 'Hoch' :
+                               rec?.priority === 'medium' ? 'Mittel' : 'Niedrig'}
+                            </span>
+                          </div>
+                          <p className="text-muted-foreground text-xs leading-relaxed">
+                            <strong>Begruendung:</strong> {rec?.impact}
+                          </p>
+                          {rec?.timeline && (
+                            <p className="text-muted-foreground text-xs mt-1 leading-relaxed">
+                              <strong>Zeitrahmen:</strong> {rec?.timeline}
+                            </p>
                           )}
                         </div>
-                      </div>
-
-                      {selectedAnalysis?.analysis?.recommendations && (
-                        <div className="mt-6">
-                          <h4 className="font-semibold text-foreground mb-4">
-                            Empfohlene Aktionen (aus Strategie abgeleitet)
-                          </h4>
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            {selectedAnalysis?.analysis?.recommendations?.map((rec, index) => (
-                              <div key={index} className="bg-muted rounded-lg p-4 border border-border">
-                                <div className="flex items-start justify-between mb-2">
-                                  <p className="font-medium text-foreground text-sm">
-                                    {rec?.action}
-                                  </p>
-                                  <span className={`inline-flex px-2 py-1 rounded text-xs font-medium ${
-                                    rec?.priority === 'high' ? 'bg-red-500/20 text-red-600 dark:bg-red-900/40 dark:text-red-400' :
-                                    rec?.priority === 'medium'? 'bg-yellow-500/20 text-yellow-600 dark:bg-yellow-900/40 dark:text-yellow-400' : 'bg-green-500/20 text-green-600 dark:bg-green-900/40 dark:text-green-400'
-                                  }`}>
-                                    {rec?.priority === 'high' ? 'Hoch' : 
-                                     rec?.priority === 'medium' ? 'Mittel' : 'Niedrig'}
-                                  </span>
-                                </div>
-                                <p className="text-muted-foreground text-xs leading-relaxed">
-                                  <strong>Begründung:</strong> {rec?.impact}
-                                </p>
-                                {rec?.timeline && (
-                                  <p className="text-muted-foreground text-xs mt-1 leading-relaxed">
-                                    <strong>Zeitrahmen:</strong> {rec?.timeline}
-                                  </p>
-                                )}
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-
-                      <div className="pt-6 border-t border-border">
-                        <Button className="w-full bg-primary hover:bg-primary/90 text-primary-foreground rounded-xl hover:shadow-lg transition-all duration-300">
-                          Empfehlungen in Supabase speichern
-                        </Button>
-                      </div>
-                    </motion.div>
-                  </motion.div>
+                      ))}
+                    </div>
+                  </div>
                 )}
-              </AnimatePresence>
+
+                <div className="pt-6 border-t border-border">
+                  <Button className="w-full bg-primary hover:bg-primary/90 text-primary-foreground rounded-xl hover:shadow-lg transition-all duration-300">
+                    Empfehlungen in Supabase speichern
+                  </Button>
+                </div>
+              </Drawer>
             </motion.div>
           </div>
         </motion.main>
