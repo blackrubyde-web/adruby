@@ -118,12 +118,12 @@ const PaymentVerificationPage = () => {
 
   if (mode === 'needs_payment') {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-white flex items-center justify-center px-4">
+      <div className="min-h-screen bg-background flex items-center justify-center px-4">
         <div className="max-w-4xl w-full grid grid-cols-1 md:grid-cols-2 gap-8">
           <div className="hidden md:block">
             <PaymentBenefits />
           </div>
-          <div className="bg-white rounded-2xl shadow-lg p-6 md:p-8">
+          <div className="bg-card rounded-2xl shadow-lg border border-border p-6 md:p-8">
             <PaymentVerificationForm
               user={user}
               isAuthReady={isAuthReady}

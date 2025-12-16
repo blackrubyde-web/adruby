@@ -49,35 +49,35 @@ const PaymentSuccess = () => {
   }, [isAuthReady, loading, user, refreshSubscriptionStatus, navigate]);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-white flex items-center justify-center px-4">
+    <div className="min-h-screen bg-background flex items-center justify-center px-4">
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
-        className="bg-white shadow-lg rounded-2xl p-8 w-full max-w-lg border border-gray-100 text-center space-y-4"
+        className="bg-card shadow-lg rounded-2xl p-8 w-full max-w-lg border border-border text-center space-y-4"
       >
         <div className="flex justify-center">
           <div className="w-14 h-14 rounded-full bg-green-100 flex items-center justify-center">
             <span className="text-green-600 text-2xl">✓</span>
           </div>
         </div>
-        <h1 className="text-2xl font-bold text-[#111111]">Danke! Deine Testphase wurde gestartet.</h1>
-        <p className="text-gray-600">
+        <h1 className="text-2xl font-bold text-foreground">Danke! Deine Testphase wurde gestartet.</h1>
+        <p className="text-muted-foreground">
           Wir leiten dich gleich zum Dashboard weiter. Falls der Status noch nicht sichtbar ist, wird er nach dem Stripe-Webhook aktualisiert.
         </p>
         {sessionId && (
-          <p className="text-xs text-gray-400">
+          <p className="text-xs text-muted-foreground">
             Checkout Session: {sessionId}
           </p>
         )}
         <div className="space-y-2">
           <button
             onClick={() => navigate('/overview-dashboard', { replace: true })}
-            className="w-full bg-[#C80000] hover:bg-[#A00000] text-white py-3 rounded-lg font-semibold transition"
+            className="w-full bg-primary hover:bg-primary/90 text-primary-foreground py-3 rounded-lg font-semibold transition"
           >
             Jetzt zum Dashboard
           </button>
-          <p className="text-xs text-gray-500">
+          <p className="text-xs text-muted-foreground">
             Hinweis: Der endgültige Abo-Status wird durch den Stripe-Webhook bestätigt.
           </p>
         </div>
