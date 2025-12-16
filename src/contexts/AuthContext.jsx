@@ -45,8 +45,8 @@ export function AuthProvider({ children }) {
   const [onboardingStatus, setOnboardingStatus] = useState(initialOnboardingState);
 
   const loadUserStateLock = useRef(null);
-  const lastSessionTokenRef = useRef(null);
-  const hasLoadedUserRef = useRef({ userId: null, loaded: false });
+  const lastLoadedRef = useRef({ userId: null, token: null });
+  const currentLoadIdRef = useRef(null);
   const isMountedRef = useRef(true);
 
   const DISALLOWED_REDIRECTS = useRef(
@@ -412,7 +412,7 @@ export function AuthProvider({ children }) {
   };
 
   const loadUserState = useCallback(
-    async (sessionUser) => {
+    async (sessionUser, loadId = null) => {
       logger.time('[AuthPerf] loadUserState');
       logger.log('[AuthTrace] loadUserState called', {
         userId: sessionUser?.id,
@@ -453,7 +453,9 @@ export function AuthProvider({ children }) {
         try {
           await ensureUserProfileExists();
           const profile = await refreshUserProfile(sessionUser);
-          if (isMountedRef.current) setIsAdmin(profile?.role === 'admin');
+          if (isMountedRef.current && currentLoadIdRef.current === loadId) {
+            setIsAdmin(profile?.role === 'admin');
+          }
 
           await Promise.all([
             refreshOnboardingStatus(sessionUser),
@@ -463,7 +465,7 @@ export function AuthProvider({ children }) {
         } catch (err) {
           logger.error('[AuthTrace] loadUserState failed', err);
         } finally {
-          if (isMountedRef.current) {
+          if (isMountedRef.current && currentLoadIdRef.current === loadId) {
             setLoading(false);
             setIsAuthReady(true);
           }
@@ -472,7 +474,7 @@ export function AuthProvider({ children }) {
       };
 
       const promise = run();
-      loadUserStateLock.current = { userId: currentUserId, promise };
+      loadUserStateLock.current = { userId: currentUserId, promise, loadId };
       promise.finally(() => {
         if (loadUserStateLock.current?.promise === promise) {
           loadUserStateLock.current = null;
@@ -480,7 +482,7 @@ export function AuthProvider({ children }) {
       });
       return promise;
     },
-    [refreshOnboardingStatus, refreshSubscriptionStatus, refreshUserProfile]
+    [ensureUserProfileExists, refreshOnboardingStatus, refreshSubscriptionStatus, refreshUserProfile, attachAffiliateReferralIfNeeded]
   );
 
   const handleSessionChange = useCallback(
@@ -503,26 +505,21 @@ export function AuthProvider({ children }) {
       });
 
       if (sessionUser?.id) {
-        // Reset the loaded-flag when user changes
-        const userChanged = hasLoadedUserRef.current.userId !== sessionUser.id;
-        const shouldForce = forceReload || userChanged;
-        if (userChanged) {
-          hasLoadedUserRef.current = { userId: sessionUser.id, loaded: false };
-        }
+        const userChanged = lastLoadedRef.current.userId !== sessionUser.id;
+        const tokenChanged = lastLoadedRef.current.token !== token;
+        const shouldForce = forceReload || userChanged || tokenChanged;
 
-        const sameUser = hasLoadedUserRef.current.userId === sessionUser.id;
-        const sameToken = lastSessionTokenRef.current === token;
-
-        if (!shouldForce && sameUser && sameToken && hasLoadedUserRef.current.loaded) {
+        if (!shouldForce && lastLoadedRef.current.userId === sessionUser.id) {
           logger.log('[AuthTrace] skip loadUserState (already loaded for user/token)', {
             source,
             eventType,
             userId: sessionUser.id
           });
         } else {
-          lastSessionTokenRef.current = token;
-          await loadUserState(sessionUser);
-          hasLoadedUserRef.current = { userId: sessionUser.id, loaded: true };
+          const loadId = Symbol('loadUserState');
+          currentLoadIdRef.current = loadId;
+          lastLoadedRef.current = { userId: sessionUser.id, token };
+          await loadUserState(sessionUser, loadId);
         }
 
         logger.log('[AuthTrace] state after handleSessionChange', {
@@ -532,8 +529,8 @@ export function AuthProvider({ children }) {
           isAuthReady
         });
       } else if (isMountedRef.current) {
-        lastSessionTokenRef.current = null;
-        hasLoadedUserRef.current = { userId: null, loaded: false };
+        lastLoadedRef.current = { userId: null, token: null };
+        currentLoadIdRef.current = null;
         setIsAdmin(false);
         setOnboardingStatus(initialOnboardingState);
         setSubscriptionStatus(null);
@@ -617,7 +614,7 @@ export function AuthProvider({ children }) {
           const code = params.get('code');
 
           if (code && data?.session) {
-            await handleSessionChange(data.session, 'code-present');
+            await handleSessionChange(data.session, 'code-present', null, true);
             await finalizeRedirect(data.session.user, params);
             return;
           }
@@ -632,7 +629,7 @@ export function AuthProvider({ children }) {
             if (exchangeError) {
               logger.error('[AuthTrace] code exchange failed', exchangeError);
             } else if (!cancelled) {
-              await handleSessionChange(exchangeData?.session, 'code-exchange');
+              await handleSessionChange(exchangeData?.session, 'code-exchange', null, true);
               await finalizeRedirect(exchangeData?.session?.user, params);
               return;
             }
