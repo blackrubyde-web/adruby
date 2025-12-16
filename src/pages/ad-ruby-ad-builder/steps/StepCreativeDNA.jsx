@@ -1,6 +1,7 @@
 import React from 'react';
 import { UI } from '../../../components/ui/uiPrimitives';
 import { Sparkles } from 'lucide-react';
+import HintCallout from '../components/HintCallout';
 
 const tones = [
   { key: 'balanced', label: 'Balanced' },
@@ -31,9 +32,9 @@ const StepCreativeDNA = ({ tone, onChangeTone }) => {
           </button>
         ))}
       </div>
-      <p className="mt-3 text-sm text-muted-foreground">
-        UGC + Problem/Solution performt oft stabil bei kalten Audiences.
-      </p>
+      <div className="mt-3">
+        <HintCallout text="UGC + Problem/Solution performt oft stabil bei kalten Audiences." />
+      </div>
     </div>
   );
 };

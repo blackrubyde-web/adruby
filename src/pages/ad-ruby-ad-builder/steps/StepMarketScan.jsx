@@ -1,9 +1,21 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { UI } from '../../../components/ui/uiPrimitives';
 import { Sparkles, Clock } from 'lucide-react';
 
 const StepMarketScan = ({ phase, scrapedAds = [] }) => {
   const isAnalyzing = phase === 'analyzing';
+  const [eta, setEta] = useState(15);
+
+  useEffect(() => {
+    setEta(15);
+    const timer = setInterval(() => {
+      setEta((prev) => (prev > 0 ? prev - 1 : 0));
+    }, 1000);
+    return () => clearInterval(timer);
+  }, [phase]);
+
+  const lastHook = (scrapedAds[0]?.headline || scrapedAds[0]?.primaryText || '').slice(0, 60);
+
   return (
     <div className={`${UI.card} p-4 border border-border/60`}>
       <div className="flex items-center justify-between mb-3">
@@ -13,7 +25,7 @@ const StepMarketScan = ({ phase, scrapedAds = [] }) => {
         </div>
         <div className="flex items-center gap-2 text-sm text-muted-foreground">
           <Clock size={14} />
-          <span>ca. 15s</span>
+          <span>ETA ~{eta}s</span>
         </div>
       </div>
       <div className="rounded-xl border border-border bg-card/60 p-3 flex items-center justify-between">
@@ -26,8 +38,8 @@ const StepMarketScan = ({ phase, scrapedAds = [] }) => {
             <p className={UI.meta}>{scrapedAds.length || 0} Items</p>
           </div>
         </div>
-        <span className="text-xs text-muted-foreground">
-          Letzter Hook: {(scrapedAds[0]?.headline || scrapedAds[0]?.primaryText || '…').slice(0, 38)}
+        <span className="text-xs text-muted-foreground line-clamp-1">
+          Letzter Hook: {lastHook || '…'}
         </span>
       </div>
       <div className="mt-3 grid grid-cols-3 gap-2">
