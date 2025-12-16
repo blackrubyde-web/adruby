@@ -76,7 +76,8 @@
     "build": "vite build",
     "serve": "vite preview",
     "test": "jest",
-    "test:e2e": "playwright test"
+    "test:e2e": "playwright test",
+    "ui:check": "node scripts/ui-hardcode-check.cjs"
   },
   "eslintConfig": {
     "extends": [
