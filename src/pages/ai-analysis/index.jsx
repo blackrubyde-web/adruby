@@ -16,6 +16,8 @@ import MetaConnectionModal from './components/MetaConnectionModal';
 import CampaignPerformanceCards from './components/CampaignPerformanceCards';
 import MetricsChart from './components/MetricsChart';
 import FacebookDataSync from './components/FacebookDataSync';
+import Badge from '../../components/ui/Badge';
+import { statusBadgeClasses } from '../../components/ui/statusStyles';
 
 const AIAnalysisPanel = () => {
   const [currentLanguage, setCurrentLanguage] = useState('de');
@@ -322,22 +324,18 @@ const AIAnalysisPanel = () => {
     }
   };
 
-  const getStatusBadgeColor = (status) => {
-    switch (status) {
-      case 'active': return 'bg-green-500/20 text-green-600 dark:bg-green-900/40 dark:text-green-400 border-green-500/30 dark:border-green-800/50';
-      case 'paused': return 'bg-yellow-500/20 text-yellow-600 dark:bg-yellow-900/40 dark:text-yellow-400 border-yellow-500/30 dark:border-yellow-800/50';
-      case 'completed': return 'bg-blue-500/20 text-blue-600 dark:bg-blue-900/40 dark:text-blue-400 border-blue-500/30 dark:border-blue-800/50';
-      case 'draft': return 'bg-muted text-muted-foreground border-border';
-      case 'learning': return 'bg-purple-500/20 text-purple-600 dark:bg-purple-900/40 dark:text-purple-300 border-purple-500/30 dark:border-purple-800/50';
-      case 'disapproved': return 'bg-red-500/20 text-red-600 dark:bg-red-900/40 dark:text-red-400 border-red-500/30 dark:border-red-800/50';
-      default: return 'bg-muted text-muted-foreground border-border';
-    }
+  const statusVariantMap = {
+    active: 'success',
+    paused: 'warning',
+    completed: 'info',
+    draft: 'neutral',
+    learning: 'info',
+    disapproved: 'danger',
   };
 
   const getRecommendationColor = (score) => {
-    if (score >= 80) return 'bg-green-500/20 text-green-600 dark:bg-green-900/40 dark:text-green-400 border-green-500/30 dark:border-green-800/50';
-    if (score >= 60) return 'bg-yellow-500/20 text-yellow-600 dark:bg-yellow-900/40 dark:text-yellow-400 border-yellow-500/30 dark:border-yellow-800/50';
-    return 'bg-red-500/20 text-red-600 dark:bg-red-900/40 dark:text-red-400 border-red-500/30 dark:border-red-800/50';
+    const variant = score >= 80 ? 'success' : score >= 60 ? 'warning' : 'danger';
+    return statusBadgeClasses(variant);
   };
 
   const getRecommendationText = (score) => {
@@ -758,9 +756,9 @@ const AIAnalysisPanel = () => {
                                     {renderKPIWithEvaluation(campaign?.frequency || '1.2', '', 'frequency', campaign?.id, 'campaign')}
                                   </td>
                                   <td className="py-4 px-4">
-                                    <span className={`inline-flex px-3 py-1 rounded-full text-sm font-medium border ${getStatusBadgeColor(campaign?.status)}`}>
+                                    <Badge variant={statusVariantMap[campaign?.status] || 'neutral'}>
                                       {campaign?.status?.charAt(0)?.toUpperCase() + campaign?.status?.slice(1)}
-                                    </span>
+                                    </Badge>
                                   </td>
                                   <td className="py-4 px-4">
                                     <Button
@@ -829,9 +827,9 @@ const AIAnalysisPanel = () => {
                                                   <div>{renderKPIWithEvaluation(adset?.spend, '€', 'spend', adset?.id, 'adset')}</div>
                                                   <div>{renderKPIWithEvaluation(adset?.frequency || '1.8', '', 'frequency', adset?.id, 'adset')}</div>
                                                   <div>
-                                                    <span className={`inline-flex px-2 py-1 rounded text-xs font-medium border ${getStatusBadgeColor(adset?.status)}`}>
+                                                    <Badge variant={statusVariantMap[adset?.status] || 'neutral'}>
                                                       {adset?.status?.charAt(0)?.toUpperCase() + adset?.status?.slice(1)}
-                                                    </span>
+                                                    </Badge>
                                                   </div>
                                                   <div>
                                                     <Button
@@ -888,16 +886,16 @@ const AIAnalysisPanel = () => {
                                                       <div>{renderKPIWithEvaluation(ad?.spend, '€', 'spend', ad?.id, 'ad')}</div>
                                                       <div>{renderKPIWithEvaluation(ad?.frequency || '2.1', '', 'frequency', ad?.id, 'ad')}</div>
                                                       <div>
-                                                        <span className={`inline-flex px-2 py-1 rounded text-xs font-medium border ${getStatusBadgeColor(ad?.status)}`}>
+                                                        <Badge variant={statusVariantMap[ad?.status] || 'neutral'}>
                                                           {ad?.status?.charAt(0)?.toUpperCase() + ad?.status?.slice(1)}
-                                                        </span>
+                                                        </Badge>
                                                       </div>
-                                                      <div className="flex items-center space-x-2">
-                                                        {ad?.ai_analysis_score > 0 && (
-                                                          <span className={`inline-flex px-2 py-1 rounded-full text-xs font-medium ${getRecommendationColor(ad?.ai_analysis_score)}`}>
-                                                            {getRecommendationText(ad?.ai_analysis_score)}
-                                                          </span>
-                                                        )}
+                                                  <div className="flex items-center space-x-2">
+                                                    {ad?.ai_analysis_score > 0 && (
+                                                      <span className={getRecommendationColor(ad?.ai_analysis_score)}>
+                                                        {getRecommendationText(ad?.ai_analysis_score)}
+                                                      </span>
+                                                    )}
                                                         <Button
                                                           onClick={() => handleStartAnalysis(ad, 'ad')}
                                                           disabled={isAnalyzing}
