@@ -10,6 +10,8 @@ import DashboardLayout from "../../layouts/DashboardLayout";
 import PageShell from "../../components/ui/PageShell";
 import { UI, cxCard } from "../../components/ui/uiPrimitives";
 import { fmtCompact } from "../../utils/format";
+import EmptyState from "../../components/ui/EmptyState";
+import Skeleton from "../../components/ui/Skeleton";
 
 const CreditsPage = () => {
   const { user } = useAuth();
@@ -108,7 +110,9 @@ const CreditsPage = () => {
             </div>
           ))
         ) : (
-          <p className="px-4 py-3 text-sm text-muted-foreground">Keine Einträge vorhanden.</p>
+          <div className="px-4 py-3">
+            <EmptyState title="Keine Einträge" description="Es gibt noch keine Historie in diesem Bereich." />
+          </div>
         )}
       </div>
     </div>
@@ -129,6 +133,13 @@ const CreditsPage = () => {
             </div>
           }
         >
+          {loading ? (
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <Skeleton className="h-28 rounded-2xl bg-card" />
+              <Skeleton className="h-28 rounded-2xl bg-card" />
+              <Skeleton className="h-28 rounded-2xl bg-card" />
+            </div>
+          ) : (
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <StatCard
               label="Verfügbare Credits"
@@ -150,6 +161,7 @@ const CreditsPage = () => {
               icon={<Icon name="CreditCard" size={18} />}
             />
           </div>
+          )}
 
           <div className={cxCard}>
             <div className="flex items-center border-b border-border">
