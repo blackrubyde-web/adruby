@@ -1,4 +1,4 @@
-﻿import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import { Column } from 'react-table';
 
@@ -183,7 +183,7 @@ const safeNumber = (value: number | null | undefined, fallback = '') => {
 
 
 
-const formatCompact = (value: number | null | undefined, fallback = 'ÃÂ¢ÃÂÃÂ') => {
+const formatCompact = (value: number | null | undefined, fallback = '�?¢�?�?�?�?') => {
 
 
 
@@ -207,7 +207,7 @@ const formatCompact = (value: number | null | undefined, fallback = 'ÃÂ¢Ã�
 
 
 
-const formatCurrency = (value: number | null | undefined, fallback = 'ÃÂ¢ÃÂÃÂ') => {
+const formatCurrency = (value: number | null | undefined, fallback = '�?¢�?�?�?�?') => {
 
 
 
@@ -231,7 +231,7 @@ const formatCurrency = (value: number | null | undefined, fallback = 'ÃÂ¢Ã
 
 
 
-const formatPct = (value: number | null | undefined, fallback = 'ÃÂ¢ÃÂÃÂ') => {
+const formatPct = (value: number | null | undefined, fallback = '�?¢�?�?�?�?') => {
 
 
 
@@ -519,19 +519,19 @@ const KpiSkeleton = () => (
 
 
 
-  <div className="rounded-2xl border border-white/10 bg-white/5 p-5 animate-pulse space-y-3">
+  <div className="rounded-2xl border border-border/60 bg-card p-5 animate-pulse space-y-3">
 
 
 
-    <div className="h-3 w-24 rounded bg-white/10" />
+    <div className="h-3 w-24 rounded bg-card" />
 
 
 
-    <div className="h-7 w-20 rounded bg-white/15" />
+    <div className="h-7 w-20 rounded bg-card" />
 
 
 
-    <div className="h-3 w-32 rounded bg-white/8" />
+    <div className="h-3 w-32 rounded bg-card" />
 
 
 
@@ -551,7 +551,7 @@ const ChartSkeleton = () => (
 
 
 
-  <div className="h-[320px] rounded-xl border border-white/10 bg-gradient-to-b from-white/5 to-transparent animate-pulse" />
+  <div className="h-[320px] rounded-xl border border-border/60 bg-gradient-to-b from-white/5 to-transparent animate-pulse" />
 
 
 
@@ -575,7 +575,7 @@ const TableSkeleton = () => (
 
 
 
-      <div key={idx} className="h-10 rounded border border-white/10 bg-white/5 animate-pulse" />
+      <div key={idx} className="h-10 rounded border border-border/60 bg-card animate-pulse" />
 
 
 
@@ -771,7 +771,7 @@ const CommandPalette = ({
 
 
 
-            className="w-full max-w-xl rounded-2xl border border-white/10 bg-[#0c0f1a] p-4 shadow-2xl"
+            className="w-full max-w-xl rounded-2xl border border-border/60 bg-[#0c0f1a] p-4 shadow-2xl"
 
 
 
@@ -779,11 +779,11 @@ const CommandPalette = ({
 
 
 
-            <div className="flex items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-3 py-2">
+            <div className="flex items-center gap-2 rounded-xl border border-border/60 bg-card px-3 py-2">
 
 
 
-              <Command size={16} className="text-white/70" />
+              <Command size={16} className="text-foreground" />
 
 
 
@@ -1635,7 +1635,7 @@ const OverviewPage: React.FC = () => {
 
 
 
-                    : 'bg-white/10 text-white/70'
+                    : 'bg-card text-foreground'
 
 
 
@@ -1647,7 +1647,7 @@ const OverviewPage: React.FC = () => {
 
 
 
-            {value || 'ÃÂ¢ÃÂÃÂ'}
+            {value || '�?¢�?�?�?�?'}
 
 
 
@@ -1675,7 +1675,7 @@ const OverviewPage: React.FC = () => {
 
 
 
-        Cell: ({ value }) => (Array.isArray(value) ? value.join(', ') : value || 'ÃÂ¢ÃÂÃÂ')
+        Cell: ({ value }) => (Array.isArray(value) ? value.join(', ') : value || '�?¢�?�?�?�?')
 
 
 
@@ -2403,13 +2403,13 @@ const OverviewPage: React.FC = () => {
 
                 label: 'Spend / Conv.',
 
-                value: data?.kpis?.spend ? formatCurrency(data.kpis.spend) : '�',
+                value: data?.kpis?.spend ? formatCurrency(data.kpis.spend) : '?',
 
                 icon: <Activity size={14} />
 
               },
 
-              { label: 'Lift vs. last week', value: kpis ? formatPct(kpis.ctr ?? 0) : '�', icon: <Flame size={14} /> },
+              { label: 'Lift vs. last week', value: kpis ? formatPct(kpis.ctr ?? 0) : '?', icon: <Flame size={14} /> },
 
             ].map((stat) => (
 
@@ -2501,7 +2501,7 @@ const OverviewPage: React.FC = () => {
 
 
 
-                value={kpis ? `${kpis.adsGenerated}` : 'ÃÂ¢ÃÂÃÂ'}
+                value={kpis ? `${kpis.adsGenerated}` : '�?¢�?�?�?�?'}
 
 
 
@@ -2513,7 +2513,7 @@ const OverviewPage: React.FC = () => {
 
 
 
-                hint="im gewÃÂÃÂ¤hlten Zeitraum"
+                hint="im gew�?�?�?¤hlten Zeitraum"
 
 
 
@@ -2533,7 +2533,7 @@ const OverviewPage: React.FC = () => {
 
 
 
-                value={kpis ? `${kpis.strategiesCreated}` : 'ÃÂ¢ÃÂÃÂ'}
+                value={kpis ? `${kpis.strategiesCreated}` : '�?¢�?�?�?�?'}
 
 
 
@@ -2565,7 +2565,7 @@ const OverviewPage: React.FC = () => {
 
 
 
-                value={kpis ? `${kpis.analysesRun}` : 'ÃÂ¢ÃÂÃÂ'}
+                value={kpis ? `${kpis.analysesRun}` : '�?¢�?�?�?�?'}
 
 
 
@@ -2597,7 +2597,7 @@ const OverviewPage: React.FC = () => {
 
 
 
-                value={kpis ? `${kpis.creditsUsed}` : 'ÃÂ¢ÃÂÃÂ'}
+                value={kpis ? `${kpis.creditsUsed}` : '�?¢�?�?�?�?'}
 
 
 
@@ -2641,7 +2641,7 @@ const OverviewPage: React.FC = () => {
 
 
 
-                hint="SchÃÂÃÂ¤tzung"
+                hint="Sch�?�?�?¤tzung"
 
 
 
@@ -2677,7 +2677,7 @@ const OverviewPage: React.FC = () => {
 
 
 
-                onClick={() => openDrawer('Iteration Velocity', <p>Ads pro Tag im gewÃÂÃÂ¤hlten Zeitraum.</p>)}
+                onClick={() => openDrawer('Iteration Velocity', <p>Ads pro Tag im gew�?�?�?¤hlten Zeitraum.</p>)}
 
 
 
@@ -2809,7 +2809,7 @@ const OverviewPage: React.FC = () => {
 
 
 
-                      activeMetric === m.key ? 'bg-emerald-500 text-white' : 'bg-white/10 text-white/70 hover:bg-white/20'
+                      activeMetric === m.key ? 'bg-emerald-500 text-white' : 'bg-card text-foreground hover:bg-card'
 
 
 
@@ -2845,7 +2845,7 @@ const OverviewPage: React.FC = () => {
 
 
 
-                  className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs text-white hover:border-emerald-300"
+                  className="rounded-full border border-border/60 bg-card px-3 py-1 text-xs text-white hover:border-emerald-300"
 
 
 
@@ -2917,7 +2917,7 @@ const OverviewPage: React.FC = () => {
 
 
 
-              <h3 className="text-xs uppercase tracking-wide text-white/60">Top Hooks</h3>
+              <h3 className="text-xs uppercase tracking-wide text-foreground">Top Hooks</h3>
 
 
 
@@ -2997,7 +2997,7 @@ const OverviewPage: React.FC = () => {
 
 
 
-                <p className="text-sm text-white/50">No hooks found in this range.</p>
+                <p className="text-sm text-foreground">No hooks found in this range.</p>
 
 
 
@@ -3013,7 +3013,7 @@ const OverviewPage: React.FC = () => {
 
 
 
-              <h3 className="text-xs uppercase tracking-wide text-white/60">Winning Angles</h3>
+              <h3 className="text-xs uppercase tracking-wide text-foreground">Winning Angles</h3>
 
 
 
@@ -3029,7 +3029,7 @@ const OverviewPage: React.FC = () => {
 
 
 
-                <p className="text-sm text-white/50">No angles yet.</p>
+                <p className="text-sm text-foreground">No angles yet.</p>
 
 
 
@@ -3045,7 +3045,7 @@ const OverviewPage: React.FC = () => {
 
 
 
-              <h3 className="text-xs uppercase tracking-wide text-white/60">Fatigue Alerts</h3>
+              <h3 className="text-xs uppercase tracking-wide text-foreground">Fatigue Alerts</h3>
 
 
 
@@ -3061,7 +3061,7 @@ const OverviewPage: React.FC = () => {
 
 
 
-                <p className="text-sm text-white/50">No fatigue detected.</p>
+                <p className="text-sm text-foreground">No fatigue detected.</p>
 
 
 
@@ -3157,7 +3157,7 @@ const OverviewPage: React.FC = () => {
 
 
 
-                    className="flex w-full items-center justify-between rounded-xl border border-white/10 bg-black/20 px-3 py-3 hover:border-white/20"
+                    className="flex w-full items-center justify-between rounded-xl border border-border/60 bg-black/20 px-3 py-3 hover:border-border/60"
 
 
 
@@ -3173,7 +3173,7 @@ const OverviewPage: React.FC = () => {
 
 
 
-                      <p className="text-xs text-white/50">{item.type}</p>
+                      <p className="text-xs text-foreground">{item.type}</p>
 
 
 
@@ -3181,7 +3181,7 @@ const OverviewPage: React.FC = () => {
 
 
 
-                    <p className="text-xs text-white/50">{item.created_at}</p>
+                    <p className="text-xs text-foreground">{item.created_at}</p>
 
 
 
@@ -3201,7 +3201,7 @@ const OverviewPage: React.FC = () => {
 
 
 
-              <p className="text-sm text-white/50">Keine AktivitÃÂÃÂ¤ten im Zeitraum.</p>
+              <p className="text-sm text-foreground">Keine Aktivit�?�?�?¤ten im Zeitraum.</p>
 
 
 
@@ -3233,7 +3233,7 @@ const OverviewPage: React.FC = () => {
 
 
 
-                className="flex items-center justify-between rounded-xl border border-white/10 bg-emerald-500/20 px-3 py-3 text-white hover:border-emerald-300"
+                className="flex items-center justify-between rounded-xl border border-border/60 bg-emerald-500/20 px-3 py-3 text-white hover:border-emerald-300"
 
 
 
@@ -3261,7 +3261,7 @@ const OverviewPage: React.FC = () => {
 
 
 
-                className="flex items-center justify-between rounded-xl border border-white/10 bg-white/10 px-3 py-3 text-white hover:border-white/30"
+                className="flex items-center justify-between rounded-xl border border-border/60 bg-card px-3 py-3 text-white hover:border-border/60"
 
 
 
@@ -3289,7 +3289,7 @@ const OverviewPage: React.FC = () => {
 
 
 
-                className="flex items-center justify-between rounded-xl border border-white/10 bg-white/10 px-3 py-3 text-white hover:border-white/30"
+                className="flex items-center justify-between rounded-xl border border-border/60 bg-card px-3 py-3 text-white hover:border-border/60"
 
 
 
@@ -3373,7 +3373,7 @@ const OverviewPage: React.FC = () => {
 
 
 
-                      activeTableTab === tab ? 'bg-emerald-500 text-white' : 'bg-white/10 text-white/70 hover:bg-white/20'
+                      activeTableTab === tab ? 'bg-emerald-500 text-white' : 'bg-card text-foreground hover:bg-card'
 
 
 
@@ -3425,7 +3425,7 @@ const OverviewPage: React.FC = () => {
 
 
 
-                      chipFilters.includes(chip.key) ? 'border-emerald-400 bg-emerald-500/20' : 'border-white/10 bg-white/5'
+                      chipFilters.includes(chip.key) ? 'border-emerald-400 bg-emerald-500/20' : 'border-border/60 bg-card'
 
 
 
@@ -3461,7 +3461,7 @@ const OverviewPage: React.FC = () => {
 
 
 
-                  className="rounded-lg border border-white/10 bg-white/5 px-2 py-1 text-xs text-white"
+                  className="rounded-lg border border-border/60 bg-card px-2 py-1 text-xs text-white"
 
 
 
@@ -3505,11 +3505,11 @@ const OverviewPage: React.FC = () => {
 
 
 
-              <div className="mt-3 rounded-xl border border-white/10 bg-white/5 px-3 py-3 text-sm text-white/60">
+              <div className="mt-3 rounded-xl border border-border/60 bg-card px-3 py-3 text-sm text-foreground">
 
 
 
-                No assets in this view ÃÂ¢ÃÂÃÂ generate your first Ad Variant oder Strategy.
+                No assets in this view �?¢�?�?�?�? generate your first Ad Variant oder Strategy.
 
 
 
@@ -3537,11 +3537,11 @@ const OverviewPage: React.FC = () => {
 
 
 
-          <div className="rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white/80">
+          <div className="rounded-xl border border-border/60 bg-card px-4 py-3 text-sm text-foreground">
 
 
 
-            <RefreshCw className="mr-2 inline animate-spin" size={16} /> LÃÂÃÂ¤dt...
+            <RefreshCw className="mr-2 inline animate-spin" size={16} /> L�?�?�?¤dt...
 
 
 
