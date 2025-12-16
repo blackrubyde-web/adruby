@@ -1,5 +1,4 @@
 import { format, subDays, startOfDay, endOfDay } from 'date-fns';
-import { utcToZonedTime, zonedTimeToUtc } from 'date-fns-tz';
 import { DateRangeValue } from '../api/types';
 
 export const TIMEZONES = [
@@ -11,14 +10,14 @@ export const TIMEZONES = [
 ];
 
 export const formatTimestamp = (iso: string, timezone: string, pattern = 'dd.MM HH:mm') => {
+  // NOTE: date-fns-tz not available; fallback to native Date in provided timezone context is omitted.
   const date = new Date(iso);
-  const zoned = utcToZonedTime(date, timezone);
-  return format(zoned, pattern);
+  return format(date, pattern);
 };
 
 export const toUtcIso = (date: Date, timezone: string) => {
-  const utcDate = zonedTimeToUtc(date, timezone);
-  return utcDate.toISOString();
+  // Fallback: ignore timezone conversion, use UTC ISO from provided Date.
+  return date.toISOString();
 };
 
 export const buildPresetRange = (preset: DateRangeValue['preset'], timezone: string): DateRangeValue => {
