@@ -12,6 +12,7 @@ import { UI, cxCard } from "../../components/ui/uiPrimitives";
 import { fmtCompact } from "../../utils/format";
 import EmptyState from "../../components/ui/EmptyState";
 import Skeleton from "../../components/ui/Skeleton";
+import ListHeader from "../../components/ui/ListHeader";
 
 const CreditsPage = () => {
   const { user } = useAuth();
@@ -24,6 +25,7 @@ const CreditsPage = () => {
   const [showPayment, setShowPayment] = useState(false);
   const [paymentData, setPaymentData] = useState(null);
   const [activeTab, setActiveTab] = useState("packages");
+  const [error, setError] = useState("");
 
   useEffect(() => {
     const loadData = async () => {
@@ -46,6 +48,7 @@ const CreditsPage = () => {
         setPaymentHistory(payments);
       } catch (error) {
         console.error("Fehler beim Laden der Credits:", error);
+        setError("Credits konnten nicht geladen werden.");
       } finally {
         setLoading(false);
       }
@@ -62,6 +65,7 @@ const CreditsPage = () => {
       setPaymentData(selectedPackage);
     } catch (error) {
       console.error("Fehler beim Kauf:", error);
+      setError("Kauf fehlgeschlagen. Bitte versuche es erneut.");
     }
   };
 
@@ -73,6 +77,7 @@ const CreditsPage = () => {
       setCreditStatus(status);
     } catch (error) {
       console.error("Fehler beim Refresh:", error);
+      setError("Aktualisierung fehlgeschlagen.");
     } finally {
       setLoading(false);
     }
@@ -111,7 +116,7 @@ const CreditsPage = () => {
           ))
         ) : (
           <div className="px-4 py-3">
-            <EmptyState title="Keine Einträge" description="Es gibt noch keine Historie in diesem Bereich." />
+            <EmptyState title="Keine EintrÃ¤ge" description="Es gibt noch keine Historie in diesem Bereich." />
           </div>
         )}
       </div>
@@ -123,7 +128,7 @@ const CreditsPage = () => {
       <StripeProvider>
         <PageShell
           title="Credits"
-          subtitle="Verwalte dein Guthaben, Käufe und Historie."
+          subtitle="Verwalte dein Guthaben, KÃ¤ufe und Historie."
           rightActions={
             <div className="flex items-center gap-2">
               <Button onClick={handlePurchase} disabled={!selectedPackage && !creditPackages?.length}>
@@ -142,7 +147,7 @@ const CreditsPage = () => {
           ) : (
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <StatCard
-              label="Verfügbare Credits"
+              label="VerfÃ¼gbare Credits"
               value={creditStatus ? creditService.formatCredits(creditStatus?.credits) : "--"}
               icon={<Icon name="Coins" size={18} />}
             />
@@ -206,6 +211,11 @@ const CreditsPage = () => {
 
             {activeTab === "history" && (
               <div className="p-4 space-y-6">
+                <ListHeader
+                  title="Historie"
+                  subtitle="Kreditsalden und Zahlungen"
+                  count={(creditHistory?.length || 0) + (paymentHistory?.length || 0)}
+                />
                 <HistoryList
                   title="Kredithistorie"
                   items={creditHistory?.map((item) => ({

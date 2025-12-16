@@ -120,6 +120,7 @@ import { useAuth } from '../contexts/AuthContext';
 
 import { cxCard, cxCardHeader, cxCardTitle, cxButtonPrimary, cxButtonSecondary, cxButtonQuiet, cxPill, cxPillActive } from '../components/ui/uiPrimitives';
 import ChartCard from '../components/ui/ChartCard';
+import SegmentedControl from '../components/ui/SegmentedControl';
 import Delta from '../components/ui/Delta';
 import PageShell from '../components/ui/PageShell';
 
@@ -5540,7 +5541,7 @@ const OverviewPage: React.FC = () => {
             isLoading={loading}
             isEmpty={!filteredPerformanceSeries?.length}
             emptyTitle="Keine Daten"
-            emptyDescription="Für diesen Zeitraum liegen keine Performance-Daten vor."
+            emptyDescription="FÃ¼r diesen Zeitraum liegen keine Performance-Daten vor."
           >
             <div ref={lineRef}>
               <LineChartAnimated data={filteredPerformanceSeries} timezone={range.timezone} series={metricToChartSeries} />
