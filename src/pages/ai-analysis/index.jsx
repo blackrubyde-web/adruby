@@ -17,10 +17,12 @@ import CampaignPerformanceCards from './components/CampaignPerformanceCards';
 import MetricsChart from './components/MetricsChart';
 import FacebookDataSync from './components/FacebookDataSync';
 import ChartCard from '../../components/ui/ChartCard';
+import SegmentedControl from '../../components/ui/SegmentedControl';
 import Badge from '../../components/ui/Badge';
 import { statusBadgeClasses } from '../../components/ui/statusStyles';
 import { Table, TableHeader, TableRow, TableCell, TableEmpty } from '../../components/ui/Table';
 import Drawer from '../../components/ui/Drawer';
+import ActionMenu from '../../components/ui/ActionMenu';
 
 const AIAnalysisPanel = () => {
   const [currentLanguage, setCurrentLanguage] = useState('de');
@@ -125,7 +127,7 @@ const AIAnalysisPanel = () => {
 
           if (provider === 'facebook') {
             try {
-              console.log('[Facebook OAuth] Signed in with Facebook, storing connection…');
+              console.log('[Facebook OAuth] Signed in with Facebook, storing connectionÃ¢â‚¬Â¦');
 
               const facebookIdentity =
                 session.user.identities?.find((i) => i.provider === 'facebook');
@@ -165,7 +167,7 @@ const AIAnalysisPanel = () => {
   const loadCampaignData = async () => {
     try {
       if (!user) {
-        console.warn('[AIAnalysis] Kein User – lade keine Kampagnendaten.');
+        console.warn('[AIAnalysis] Kein User Ã¢â‚¬â€œ lade keine Kampagnendaten.');
         return;
       }
 
@@ -254,9 +256,9 @@ const AIAnalysisPanel = () => {
     setAnalysisProgress(0);
     
     try {
-      // TODO: Hier später echte Strategie / Produkt / Ad / Answers mappen
+      // TODO: Hier spÃƒÂ¤ter echte Strategie / Produkt / Ad / Answers mappen
       const options = {
-        strategy: null, // z.B. verknüpfte AdRuby-Strategie
+        strategy: null, // z.B. verknÃƒÂ¼pfte AdRuby-Strategie
         product: null,  // Produktdaten aus deinem AdBuilder
         ad: null,       // Ad-Variante / Creative-Infos
         answers: null,  // Antworten aus dem Strategie-Fragebogen
@@ -342,9 +344,9 @@ const AIAnalysisPanel = () => {
   };
 
   const getRecommendationText = (score) => {
-    if (score >= 80) return '🚀 Skalieren';
-    if (score >= 60) return '🧪 Optimieren';
-    return '❌ Stoppen';
+    if (score >= 80) return 'Ã°Å¸Å¡â‚¬ Skalieren';
+    if (score >= 60) return 'Ã°Å¸Â§Âª Optimieren';
+    return 'Ã¢ÂÅ’ Stoppen';
   };
 
   const pageVariants = {
@@ -435,11 +437,11 @@ const AIAnalysisPanel = () => {
   if (authLoading) {
     return (
       <DashboardLayout>
-        <PageShell title="AI Analysis" subtitle="KI-gestützte Kampagnen-Insights">
+        <PageShell title="AI Analysis" subtitle="KI-gestÃƒÂ¼tzte Kampagnen-Insights">
           <div className="min-h-[40vh] flex items-center justify-center">
             <div className="space-y-3 text-center">
               <Skeleton className="h-10 w-10 rounded-full mx-auto" />
-              <p className="text-muted-foreground">Lädt...</p>
+              <p className="text-muted-foreground">LÃƒÂ¤dt...</p>
             </div>
           </div>
         </PageShell>
@@ -449,7 +451,7 @@ const AIAnalysisPanel = () => {
 
   return (
     <DashboardLayout>
-      <PageShell title="AI Analysis" subtitle="KI-gestützte Kampagnen-Insights" rightActions={null}>
+      <PageShell title="AI Analysis" subtitle="KI-gestÃƒÂ¼tzte Kampagnen-Insights" rightActions={null}>
         <motion.main
           className="p-0"
           variants={pageVariants}
@@ -467,7 +469,7 @@ const AIAnalysisPanel = () => {
                 AI Analyse Panel
               </h1>
               <p className="text-muted-foreground leading-relaxed">
-                Vollständige Facebook/Meta Marketing API Integration mit Echtzeit-Datenanalyse
+                VollstÃƒÂ¤ndige Facebook/Meta Marketing API Integration mit Echtzeit-Datenanalyse
               </p>
               {!user && (
                 <div className="mt-4 p-4 bg-muted border border-border rounded-lg backdrop-blur-sm">
@@ -499,7 +501,7 @@ const AIAnalysisPanel = () => {
                     </h2>
                     <p className="text-muted-foreground leading-relaxed">
                       {user 
-                        ? 'Vollständige Integration mit OAuth 2.0, Echtzeit-Sync und erweiterte Analyse-Features'
+                        ? 'VollstÃƒÂ¤ndige Integration mit OAuth 2.0, Echtzeit-Sync und erweiterte Analyse-Features'
                         : 'Melden Sie sich an, um Ihr Facebook Ads Konto zu verbinden'
                       }
                     </p>
@@ -518,7 +520,7 @@ const AIAnalysisPanel = () => {
                               {facebookConnection?.full_name || facebookConnection?.fullName}
                             </p>
                             <p className="text-sm text-muted-foreground">
-                              Verbunden • API v19.0
+                              Verbunden Ã¢â‚¬Â¢ API v19.0
                             </p>
                           </div>
                         </div>
@@ -564,7 +566,7 @@ const AIAnalysisPanel = () => {
                   <div className="bg-card border border-border rounded-lg p-1">
                     <div className="flex space-x-1">
                       {[
-                        { id: 'overview', label: 'Übersicht', icon: 'BarChart3' },
+                        { id: 'overview', label: 'ÃƒÅ“bersicht', icon: 'BarChart3' },
                         { id: 'campaigns', label: 'Kampagnen', icon: 'Megaphone' },
                         { id: 'insights', label: 'Insights', icon: 'Brain' }
                       ]?.map((tab) => (
@@ -637,7 +639,7 @@ const AIAnalysisPanel = () => {
                               Interaktive Kampagnen-Analyse
                             </h2>
                             <p className="text-muted-foreground leading-relaxed">
-                              KI-Bewertung mit roten/grünen Symbolen und Handlungsempfehlungen per Tooltip
+                              KI-Bewertung mit roten/grÃƒÂ¼nen Symbolen und Handlungsempfehlungen per Tooltip
                             </p>
                           </div>
                           <div className="mt-4 lg:mt-0 flex gap-3">
@@ -987,7 +989,7 @@ const AIAnalysisPanel = () => {
                         <div className="p-4 border border-border rounded-lg">
                           <Icon name="Zap" size={32} className="text-yellow-600 dark:text-yellow-400 mx-auto mb-2" />
                           <h4 className="font-semibold text-foreground mb-1">Automatisierung</h4>
-                          <p className="text-sm text-muted-foreground">KI-gesteuerte Optimierungsvorschläge</p>
+                          <p className="text-sm text-muted-foreground">KI-gesteuerte OptimierungsvorschlÃƒÂ¤ge</p>
                         </div>
                       </div>
                     </div>
