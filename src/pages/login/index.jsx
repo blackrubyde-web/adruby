@@ -91,17 +91,12 @@ const LoginPage = () => {
     }
   };
 
-  const bgClass = isDark ? 'bg-slate-950 text-slate-50' : 'bg-white text-slate-900';
-  const gradient = isDark
-    ? 'bg-[radial-gradient(circle_at_top,rgba(248,113,113,0.18),transparent_60%)]'
-    : 'bg-gradient-to-br from-white via-slate-50 to-slate-100';
-  const cardClasses = isDark
-    ? 'bg-slate-900/90 border border-slate-700 text-slate-50'
-    : 'bg-white border border-slate-200 text-slate-900';
-  const inputClasses = isDark
-    ? 'w-full rounded-lg border border-slate-700 bg-slate-800 text-slate-50 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-rose-500'
-    : 'w-full rounded-lg border border-slate-300 bg-white text-slate-900 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-rose-500';
-  const mutedText = isDark ? 'text-slate-300' : 'text-slate-600';
+  const bgClass = 'bg-background text-foreground';
+  const gradient = 'bg-background';
+  const cardClasses = 'bg-card border border-border text-foreground';
+  const inputClasses =
+    'w-full rounded-lg border border-border bg-card text-foreground px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary';
+  const mutedText = 'text-muted-foreground';
   const errorText = isDark ? 'text-red-400' : 'text-red-500';
 
   return (
@@ -142,7 +137,7 @@ const LoginPage = () => {
           <button
             type="submit"
             disabled={loading}
-            className="w-full bg-rose-600 text-white py-3 rounded-lg font-semibold hover:bg-rose-700 transition-smooth disabled:opacity-70"
+            className="w-full bg-primary text-primary-foreground py-3 rounded-lg font-semibold hover:bg-primary/90 transition-smooth disabled:opacity-70"
           >
             {loading ? 'Wird angemeldet…' : 'Anmelden'}
           </button>
@@ -151,7 +146,7 @@ const LoginPage = () => {
         <div className="mt-6">
           <button
             onClick={handleGoogleLogin}
-            className="w-full border border-slate-300 text-slate-900 py-3 rounded-lg font-semibold hover:bg-slate-50 transition-smooth flex items-center justify-center gap-2"
+            className="w-full border border-border text-foreground py-3 rounded-lg font-semibold hover:bg-card/80 transition-smooth flex items-center justify-center gap-2"
           >
             Mit Google anmelden
           </button>
