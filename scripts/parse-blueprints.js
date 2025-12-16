@@ -27,8 +27,8 @@ const OUT_DIR = path.resolve(__dirname, "..", "strategy_blueprints_json");
 
 const apiKey = process.env.OPENAI_API_KEY;
 if (!apiKey) {
-  console.error("[ParseBlueprints] Missing OPENAI_API_KEY");
-  process.exit(1);
+  console.warn("[ParseBlueprints] Missing OPENAI_API_KEY - skipping parse.");
+  process.exit(0);
 }
 
 const openai = new OpenAI({ apiKey });
