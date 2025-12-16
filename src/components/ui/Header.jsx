@@ -10,12 +10,11 @@ const Header = ({
   onMenuToggle,
   className = '',
   isNavCollapsed = false,
-  onNavCollapseToggle
 }) => {
   const navigate = useNavigate();
   const location = useLocation();
   const { user, signOut } = useAuth();
-  const { theme, toggleTheme, isDark } = useTheme();
+  const { toggleTheme, isDark } = useTheme();
   const [showNotifications, setShowNotifications] = useState(false);
   const [showProfile, setShowProfile] = useState(false);
 
@@ -40,13 +39,10 @@ const Header = ({
 
   const handleLogout = async () => {
     try {
-      // Sign out the user first
       await signOut();
-      // Then redirect to home page
       navigate('/');
     } catch (error) {
       console.error('Logout error:', error);
-      // Still redirect to home page even if logout fails
       navigate('/');
     }
   };
@@ -119,51 +115,45 @@ const Header = ({
     <header
       className={`fixed top-0 h-16 transition-all duration-300 bg-background border-b border-border z-30 left-0 w-full ${layoutClasses} ${className}`}
     >
-      <div className="flex items-center justify-between h-full px-4 lg:px-6">
-        {/* Mobile Menu Toggle */}
-        <div className="lg:hidden">
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={onMenuToggle}
-            className="h-10 w-10"
-          >
-            <Icon name="Menu" size={20} />
-          </Button>
+      <div className="flex items-center justify-between h-full px-4 lg:px-6 gap-3">
+        <div className="flex items-center gap-2">
+          <div className="lg:hidden">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={onMenuToggle}
+              className="h-10 w-10"
+              aria-label="Menü öffnen"
+            >
+              <Icon name="Menu" size={20} />
+            </Button>
+          </div>
+          <div className="hidden lg:flex items-center gap-2 text-sm">
+            <Icon name="LayoutDashboard" size={18} className="text-muted-foreground" />
+            <span className="font-semibold text-foreground">Overview</span>
+          </div>
         </div>
 
-        {/* Desktop Spacer */}
-        <div className="hidden lg:flex flex-1 items-center gap-3">
-          <img 
-            src="/assets/images/Screenshot_2025-10-21_000636-removebg-preview-1762544374259.png" 
-            alt="AdRuby Logo"
-            className="w-8 h-8 object-contain"
-          />
-          <span className="text-lg font-semibold text-foreground">AdRuby</span>
-        </div>
+        <div className="flex items-center gap-2 sm:gap-3">
+          <CreditDisplay className="hidden sm:flex" />
 
-        {/* Right Side Actions */}
-        <div className="flex items-center space-x-2">
-          {/* Credit Display */}
-          <CreditDisplay className="hidden sm:block" />
-
-          {/* Theme Toggle */}
           <Button
             variant="ghost"
             size="icon"
             onClick={toggleTheme}
             className="h-10 w-10 transition-smooth"
+            aria-label="Theme wechseln"
           >
             <Icon name={isDark ? "Sun" : "Moon"} size={18} />
           </Button>
 
-          {/* Notifications */}
           <div className="relative" ref={notificationsRef}>
             <Button
               variant="ghost"
               size="icon"
               onClick={() => setShowNotifications(!showNotifications)}
               className="h-10 w-10 relative transition-smooth"
+              aria-label="Benachrichtigungen"
             >
               <Icon name="Bell" size={18} />
               <span className="absolute -top-1 -right-1 h-5 w-5 bg-primary text-primary-foreground text-xs rounded-full flex items-center justify-center">
@@ -171,7 +161,6 @@ const Header = ({
               </span>
             </Button>
 
-            {/* Notifications Dropdown */}
             {showNotifications && (
               <div className="absolute right-0 top-12 w-80 bg-popover border border-border rounded-lg shadow-lg z-50">
                 <div className="p-4 border-b border-border">
@@ -184,10 +173,15 @@ const Header = ({
                       className="p-4 border-b border-border last:border-b-0 hover:bg-accent transition-smooth cursor-pointer"
                     >
                       <div className="flex items-start space-x-3">
-                        <div className={`w-2 h-2 rounded-full mt-2 ${
-                          notification?.type === 'success' ? 'bg-success' :
-                          notification?.type === 'warning'? 'bg-warning' : 'bg-primary'
-                        }`} />
+                        <div
+                          className={`w-2 h-2 rounded-full mt-2 ${
+                            notification?.type === "success"
+                              ? "bg-success"
+                              : notification?.type === "warning"
+                              ? "bg-warning"
+                              : "bg-primary"
+                          }`}
+                        />
                         <div className="flex-1 min-w-0">
                           <p className="text-sm font-medium text-foreground">
                             {notification?.title}
@@ -212,55 +206,55 @@ const Header = ({
             )}
           </div>
 
-          {/* Profile Menu */}
           <div className="relative" ref={profileRef}>
             <Button
               variant="ghost"
               onClick={() => setShowProfile(!showProfile)}
-              className="h-10 px-3 flex items-center space-x-2 transition-smooth"
+              className="h-10 px-3 flex items-center gap-2 transition-smooth"
+              aria-label="Profilmenü öffnen"
             >
               <div className="w-8 h-8 bg-primary rounded-full flex items-center justify-center">
                 <span className="text-primary-foreground text-sm font-medium">
-                  {user?.user_metadata?.full_name?.charAt(0)?.toUpperCase() || 
-                   user?.email?.charAt(0)?.toUpperCase() || 'U'}
+                  {user?.user_metadata?.full_name?.charAt(0)?.toUpperCase() ||
+                    user?.email?.charAt(0)?.toUpperCase() ||
+                    "U"}
                 </span>
               </div>
               <Icon name="ChevronDown" size={16} className="text-muted-foreground" />
             </Button>
 
-            {/* Profile Dropdown */}
             {showProfile && (
               <div className="absolute right-0 top-12 w-56 bg-popover border border-border rounded-lg shadow-lg z-50">
                 <div className="p-4 border-b border-border">
                   <p className="font-medium text-sm">
-                    {user?.user_metadata?.full_name || 'Marketing Manager'}
+                    {user?.user_metadata?.full_name || "Marketing Manager"}
                   </p>
                   <p className="text-sm text-muted-foreground">
-                    {user?.email || 'manager@adruby.com'}
+                    {user?.email || "manager@adruby.com"}
                   </p>
                 </div>
                 <div className="py-2">
-                  <button 
-                    onClick={() => handleProfileMenuClick('profile')}
-                    className="w-full px-4 py-2 text-left text-sm hover:bg-accent transition-smooth flex items-center space-x-2"
+                  <button
+                    onClick={() => handleProfileMenuClick("profile")}
+                    className="w-full px-4 py-2 text-left text-sm hover:bg-accent transition-smooth flex items-center gap-2"
                   >
                     <Icon name="User" size={16} />
-                    <span>🧍 Profil / Settings</span>
+                    <span>Profil / Settings</span>
                   </button>
-                  <button 
-                    onClick={() => handleProfileMenuClick('support')}
-                    className="w-full px-4 py-2 text-left text-sm hover:bg-accent transition-smooth flex items-center space-x-2"
+                  <button
+                    onClick={() => handleProfileMenuClick("support")}
+                    className="w-full px-4 py-2 text-left text-sm hover:bg-accent transition-smooth flex items-center gap-2"
                   >
                     <Icon name="HelpCircle" size={16} />
-                    <span>💬 Hilfe & Support</span>
+                    <span>Hilfe & Support</span>
                   </button>
                   <div className="border-t border-border my-2" />
-                  <button 
-                    onClick={() => handleProfileMenuClick('logout')}
-                    className="w-full px-4 py-2 text-left text-sm hover:bg-accent transition-smooth flex items-center space-x-2 text-destructive"
+                  <button
+                    onClick={() => handleProfileMenuClick("logout")}
+                    className="w-full px-4 py-2 text-left text-sm hover:bg-accent transition-smooth flex items-center gap-2 text-destructive"
                   >
                     <Icon name="LogOut" size={16} />
-                    <span>🚪 Logout</span>
+                    <span>Logout</span>
                   </button>
                 </div>
               </div>
