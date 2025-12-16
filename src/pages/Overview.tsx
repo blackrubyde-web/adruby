@@ -884,11 +884,6 @@ const OverviewPage: React.FC = () => {
         )}
       </div>
       <CommandPalette open={isPaletteOpen} onClose={() => setPaletteOpen(false)} onCommand={handleCommand} />
-      <RightDrawer open={Boolean(drawerContent)} onClose={() => setDrawerContent(null)} title={drawerContent?.title || ''} body={drawerContent?.body || null} />
-    </DashboardLayout>
-  );
-};
-      <CommandPalette open={isPaletteOpen} onClose={() => setPaletteOpen(false)} onCommand={handleCommand} />
       <RightDrawer open={Boolean(drawerContent)} onClose={closeDrawer} title={drawerContent?.title || ''} body={drawerContent?.body || null} />
     </DashboardLayout>
   );
