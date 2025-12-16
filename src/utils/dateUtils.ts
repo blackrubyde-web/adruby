@@ -12,6 +12,9 @@ export const TIMEZONES = [
 export const formatTimestamp = (iso: string, timezone: string, pattern = 'dd.MM HH:mm') => {
   // NOTE: date-fns-tz not available; fallback to native Date in provided timezone context is omitted.
   const date = new Date(iso);
+  if (Number.isNaN(date.getTime())) {
+    return '--';
+  }
   return format(date, pattern);
 };
 

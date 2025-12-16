@@ -259,9 +259,14 @@ const OverviewPage: React.FC = () => {
     if (stored) {
       try {
         const parsed = JSON.parse(stored);
+        const start = new Date(parsed.start);
+        const end = new Date(parsed.end);
+        if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) {
+          return buildPresetRange('30d', 'Europe/Berlin');
+        }
         return {
-          start: new Date(parsed.start),
-          end: new Date(parsed.end),
+          start,
+          end,
           preset: parsed.preset || '30d',
           timezone: parsed.timezone || 'Europe/Berlin'
         } as DateRangeValue;
@@ -415,8 +420,9 @@ const OverviewPage: React.FC = () => {
       .filter((row) => (searchTerm ? row.name?.toLowerCase().includes(searchTerm.toLowerCase()) : true))
       .filter((row) => {
         if (chipFilters.includes('last24h')) {
-          const created = new Date(row.created_at).getTime();
-          return Date.now() - created <= 24 * 60 * 60 * 1000;
+          const created = new Date(row.created_at);
+          if (Number.isNaN(created.getTime())) return false;
+          return Date.now() - created.getTime() <= 24 * 60 * 60 * 1000;
         }
         return true;
       })
