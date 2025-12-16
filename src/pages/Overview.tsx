@@ -200,7 +200,7 @@ const OverviewPage: React.FC = () => {
             <div className="flex items-center justify-between">
               <h2 className="text-sm font-semibold text-foreground">Kampagnen (Top)</h2>
             </div>
-            <DataTable<CampaignRow>
+            <DataTable
               data={data?.topCampaigns ?? []}
               columns={campaignColumns}
               summary={campaignSummary}
