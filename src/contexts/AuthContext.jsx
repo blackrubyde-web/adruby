@@ -44,14 +44,13 @@ export function AuthProvider({ children }) {
   };
   const [onboardingStatus, setOnboardingStatus] = useState(initialOnboardingState);
 
-  const loadUserStateLock = useRef(null);
+  // Locks / anti-race
+  const loadUserStateLock = useRef(null); // { userId, loadId, promise }
   const lastLoadedRef = useRef({ userId: null, token: null });
   const currentLoadIdRef = useRef(null);
   const isMountedRef = useRef(true);
 
-  const DISALLOWED_REDIRECTS = useRef(
-    new Set(['/login', '/login-authentication', '/signup'])
-  );
+  const DISALLOWED_REDIRECTS = useRef(new Set(['/login', '/login-authentication', '/signup']));
   const safeRedirect = (raw) => {
     if (!raw) return null;
     try {
@@ -75,7 +74,6 @@ export function AuthProvider({ children }) {
     const trialActive = status?.trialStatus === 'active';
     const paid = Boolean(status?.paymentVerified);
     const completed = Boolean(status?.onboardingCompleted);
-    // Onboarding gilt nur als fertig, wenn bezahlt ODER (Onboarding erledigt und Trial aktiv).
     return Boolean(paid || (completed && trialActive));
   };
 
@@ -90,17 +88,13 @@ export function AuthProvider({ children }) {
   };
 
   const isSubscribed = () => {
-    if (isOnboardingComplete(onboardingStatus)) {
-      return true;
-    }
+    if (isOnboardingComplete(onboardingStatus)) return true;
     if (subscriptionStatus === 'active') return true;
-    if (subscriptionStatus === 'trialing' && isTrialActive(subscriptionMeta?.trialEndsAt)) {
-      return true;
-    }
+    if (subscriptionStatus === 'trialing' && isTrialActive(subscriptionMeta?.trialEndsAt)) return true;
     return false;
   };
 
-  const ensureUserProfileExists = async () => {
+  const ensureUserProfileExists = useCallback(async () => {
     logger.time('[AuthPerf] ensureUserProfileExists');
     try {
       await supabase.rpc('ensure_user_profile_exists');
@@ -109,80 +103,50 @@ export function AuthProvider({ children }) {
     } finally {
       logger.timeEnd('[AuthPerf] ensureUserProfileExists');
     }
-  };
+  }, []);
 
-  const refreshOnboardingStatus = async (sessionUser = user) => {
-    logger.time('[AuthPerf] refreshOnboardingStatus');
+  const refreshOnboardingStatus = useCallback(
+    async (sessionUser = user) => {
+      logger.time('[AuthPerf] refreshOnboardingStatus');
 
-    if (!sessionUser?.id) {
-      if (isMountedRef.current) setOnboardingStatus(initialOnboardingState);
-      logger.timeEnd('[AuthPerf] refreshOnboardingStatus');
-      return;
-    }
-
-    try {
-      const status = await trialService.checkTrialStatus(sessionUser.id);
-
-      const nextStatus = {
-        trialStatus: status?.trialStatus,
-        onboardingCompleted: status?.onboardingCompleted,
-        paymentVerified: status?.paymentVerified,
-        trialExpiresAt: status?.trialExpiresAt
-      };
-
-      if (isMountedRef.current) {
-        setOnboardingStatus(nextStatus);
+      if (!sessionUser?.id) {
+        if (isMountedRef.current) setOnboardingStatus(initialOnboardingState);
+        logger.timeEnd('[AuthPerf] refreshOnboardingStatus');
+        return;
       }
 
-      logger.log('[AuthTrace] onboardingStatus updated', {
-        userId: sessionUser.id,
-        onboardingStatus: nextStatus,
-        ts: new Date().toISOString()
-      });
-    } catch (error) {
-      logger.error('[Auth] onboarding status error:', error);
-      if (isMountedRef.current) {
-        setOnboardingStatus(initialOnboardingState);
-      }
-    } finally {
-      logger.timeEnd('[AuthPerf] refreshOnboardingStatus');
-    }
-  };
+      try {
+        const status = await trialService.checkTrialStatus(sessionUser.id);
 
-  const refreshSubscriptionStatus = async (sessionUser = user) => {
-    logger.time('[AuthPerf] refreshSubscriptionStatus');
+        const nextStatus = {
+          trialStatus: status?.trialStatus,
+          onboardingCompleted: status?.onboardingCompleted,
+          paymentVerified: status?.paymentVerified,
+          trialExpiresAt: status?.trialExpiresAt
+        };
 
-    if (!sessionUser?.id) {
-      if (isMountedRef.current) {
-        setSubscriptionStatus(null);
-        setSubscriptionMeta({
-          stripeCustomerId: null,
-          stripeSubscriptionId: null,
-          trialEndsAt: null
+        if (isMountedRef.current) setOnboardingStatus(nextStatus);
+
+        logger.log('[AuthTrace] onboardingStatus updated', {
+          userId: sessionUser.id,
+          onboardingStatus: nextStatus,
+          ts: new Date().toISOString()
         });
+      } catch (error) {
+        logger.error('[Auth] onboarding status error:', error);
+        if (isMountedRef.current) setOnboardingStatus(initialOnboardingState);
+      } finally {
+        logger.timeEnd('[AuthPerf] refreshOnboardingStatus');
       }
-      logger.timeEnd('[AuthPerf] refreshSubscriptionStatus');
-      return;
-    }
+    },
+    [user]
+  );
 
-    try {
-      const { data, error } = await supabase
-        .from('user_profiles')
-        .select(`
-          stripe_customer_id,
-          trial_status,
-          trial_expires_at,
-          payment_verified,
-          onboarding_completed
-        `)
-        .eq('id', sessionUser.id)
-        .single();
+  const refreshSubscriptionStatus = useCallback(
+    async (sessionUser = user) => {
+      logger.time('[AuthPerf] refreshSubscriptionStatus');
 
-      if (error) {
-        logger.error('[AuthTrace] subscription status load error', error, {
-          userId: sessionUser.id
-        });
-
+      if (!sessionUser?.id) {
         if (isMountedRef.current) {
           setSubscriptionStatus(null);
           setSubscriptionMeta({
@@ -195,121 +159,149 @@ export function AuthProvider({ children }) {
         return;
       }
 
-      const trialEndsAt = data?.trial_expires_at || null;
-      const trialActive =
-        data?.trial_status === 'active' && trialEndsAt
-          ? new Date(trialEndsAt).getTime() > Date.now()
-          : false;
+      try {
+        const { data, error } = await supabase
+          .from('user_profiles')
+          .select(
+            `
+            stripe_customer_id,
+            trial_status,
+            trial_expires_at,
+            payment_verified,
+            onboarding_completed
+          `
+          )
+          .eq('id', sessionUser.id)
+          .single();
 
-      const paid = Boolean(data?.payment_verified);
-      const completed = Boolean(data?.onboarding_completed);
+        if (error) {
+          logger.error('[AuthTrace] subscription status load error', error, { userId: sessionUser.id });
+          if (isMountedRef.current) {
+            setSubscriptionStatus(null);
+            setSubscriptionMeta({
+              stripeCustomerId: null,
+              stripeSubscriptionId: null,
+              trialEndsAt: null
+            });
+          }
+          logger.timeEnd('[AuthPerf] refreshSubscriptionStatus');
+          return;
+        }
 
-      let derivedStatus = null;
-      if (paid || (completed && trialActive)) {
-        derivedStatus = 'active';
-      } else if (trialActive) {
-        derivedStatus = 'trialing';
-      }
+        const trialEndsAt = data?.trial_expires_at || null;
+        const trialActive =
+          data?.trial_status === 'active' && trialEndsAt
+            ? new Date(trialEndsAt).getTime() > Date.now()
+            : false;
 
-      const nextMeta = {
-        stripeCustomerId: data?.stripe_customer_id || null,
-        stripeSubscriptionId: null,
-        trialEndsAt
-      };
+        const paid = Boolean(data?.payment_verified);
+        const completed = Boolean(data?.onboarding_completed);
 
-      if (isMountedRef.current) {
-        setSubscriptionStatus(derivedStatus);
-        setSubscriptionMeta(nextMeta);
-      }
+        let derivedStatus = null;
+        if (paid || (completed && trialActive)) derivedStatus = 'active';
+        else if (trialActive) derivedStatus = 'trialing';
 
-      logger.log('[AuthTrace] subscriptionStatus updated', {
-        userId: sessionUser.id,
-        subscriptionStatus: derivedStatus,
-        subscriptionMeta: nextMeta,
-        raw: {
-          trial_status: data?.trial_status,
-          trial_expires_at: data?.trial_expires_at,
-          payment_verified: data?.payment_verified,
-          onboarding_completed: data?.onboarding_completed
-        },
-        ts: new Date().toISOString()
-      });
-    } catch (error) {
-      logger.error('[AuthTrace] subscription status exception:', error, {
-        userId: sessionUser?.id,
-        ts: new Date().toISOString()
-      });
-      if (isMountedRef.current) {
-        setSubscriptionStatus(null);
-        setSubscriptionMeta({
-          stripeCustomerId: null,
+        const nextMeta = {
+          stripeCustomerId: data?.stripe_customer_id || null,
           stripeSubscriptionId: null,
-          trialEndsAt: null
+          trialEndsAt
+        };
+
+        if (isMountedRef.current) {
+          setSubscriptionStatus(derivedStatus);
+          setSubscriptionMeta(nextMeta);
+        }
+
+        logger.log('[AuthTrace] subscriptionStatus updated', {
+          userId: sessionUser.id,
+          subscriptionStatus: derivedStatus,
+          subscriptionMeta: nextMeta,
+          raw: {
+            trial_status: data?.trial_status,
+            trial_expires_at: data?.trial_expires_at,
+            payment_verified: data?.payment_verified,
+            onboarding_completed: data?.onboarding_completed
+          },
+          ts: new Date().toISOString()
         });
-      }
-    } finally {
-      logger.timeEnd('[AuthPerf] refreshSubscriptionStatus');
-    }
-  };
-
-  const refreshUserProfile = async (sessionUser = user) => {
-    logger.time('[AuthPerf] refreshUserProfile');
-    if (!sessionUser?.id) {
-      if (isMountedRef.current) {
-        setUserProfile(null);
-      }
-      logger.timeEnd('[AuthPerf] refreshUserProfile');
-      return null;
-    }
-
-    try {
-      const { data, error } = await supabase
-        .from('user_profiles')
-        .select(`
-          id,
-          email,
-          role,
-          first_name,
-          last_name,
-          company_name,
-          stripe_customer_id,
-          trial_status,
-          trial_expires_at,
-          payment_verified,
-          onboarding_completed,
-          affiliate_enabled,
-          affiliate_code,
-          referred_by_affiliate_id,
-          affiliate_balance,
-          affiliate_lifetime_earnings,
-          bank_account_holder,
-          bank_iban,
-          bank_bic
-        `)
-        .eq('id', sessionUser.id)
-        .single();
-
-      if (error) {
-        logger.error('[AuthTrace] refreshUserProfile error', error, {
-          userId: sessionUser.id
+      } catch (error) {
+        logger.error('[AuthTrace] subscription status exception:', error, {
+          userId: sessionUser?.id,
+          ts: new Date().toISOString()
         });
+        if (isMountedRef.current) {
+          setSubscriptionStatus(null);
+          setSubscriptionMeta({
+            stripeCustomerId: null,
+            stripeSubscriptionId: null,
+            trialEndsAt: null
+          });
+        }
+      } finally {
+        logger.timeEnd('[AuthPerf] refreshSubscriptionStatus');
+      }
+    },
+    [user]
+  );
+
+  const refreshUserProfile = useCallback(
+    async (sessionUser = user) => {
+      logger.time('[AuthPerf] refreshUserProfile');
+
+      if (!sessionUser?.id) {
         if (isMountedRef.current) setUserProfile(null);
         logger.timeEnd('[AuthPerf] refreshUserProfile');
         return null;
       }
 
-      if (isMountedRef.current) setUserProfile(data);
-      logger.timeEnd('[AuthPerf] refreshUserProfile');
-      return data;
-    } catch (err) {
-      logger.error('[AuthTrace] refreshUserProfile exception', err, {
-        userId: sessionUser?.id
-      });
-      if (isMountedRef.current) setUserProfile(null);
-      logger.timeEnd('[AuthPerf] refreshUserProfile');
-      return null;
-    }
-  };
+      try {
+        const { data, error } = await supabase
+          .from('user_profiles')
+          .select(
+            `
+            id,
+            email,
+            role,
+            first_name,
+            last_name,
+            company_name,
+            stripe_customer_id,
+            trial_status,
+            trial_expires_at,
+            payment_verified,
+            onboarding_completed,
+            affiliate_enabled,
+            affiliate_code,
+            referred_by_affiliate_id,
+            affiliate_balance,
+            affiliate_lifetime_earnings,
+            bank_account_holder,
+            bank_iban,
+            bank_bic
+          `
+          )
+          .eq('id', sessionUser.id)
+          .single();
+
+        if (error) {
+          logger.error('[AuthTrace] refreshUserProfile error', error, { userId: sessionUser.id });
+          if (isMountedRef.current) setUserProfile(null);
+          logger.timeEnd('[AuthPerf] refreshUserProfile');
+          return null;
+        }
+
+        if (isMountedRef.current) setUserProfile(data);
+        logger.timeEnd('[AuthPerf] refreshUserProfile');
+        return data;
+      } catch (err) {
+        logger.error('[AuthTrace] refreshUserProfile exception', err, { userId: sessionUser?.id });
+        if (isMountedRef.current) setUserProfile(null);
+        logger.timeEnd('[AuthPerf] refreshUserProfile');
+        return null;
+      }
+    },
+    [user]
+  );
 
   const persistAffiliateRefFromUrl = () => {
     if (typeof window === 'undefined') return;
@@ -325,57 +317,56 @@ export function AuthProvider({ children }) {
     }
   };
 
-  const attachAffiliateReferralIfNeeded = async (sessionUser = user) => {
-    if (typeof window === 'undefined') return;
-    if (!sessionUser?.id) return;
+  const attachAffiliateReferralIfNeeded = useCallback(
+    async (sessionUser = user) => {
+      if (typeof window === 'undefined') return;
+      if (!sessionUser?.id) return;
 
-    const storedRef = localStorage.getItem(AFFILIATE_REF_STORAGE_KEY);
-    if (!storedRef) return;
+      const storedRef = localStorage.getItem(AFFILIATE_REF_STORAGE_KEY);
+      if (!storedRef) return;
 
-    try {
-      const { data: profile, error: profileError } = await supabase
-        .from('user_profiles')
-        .select('id, referred_by_affiliate_id')
-        .eq('id', sessionUser.id)
-        .single();
+      try {
+        const { data: profile, error: profileError } = await supabase
+          .from('user_profiles')
+          .select('id, referred_by_affiliate_id')
+          .eq('id', sessionUser.id)
+          .single();
 
-      if (profileError) {
-        logger.error('[Affiliate] Failed to fetch profile before attach', profileError);
-        return;
-      }
+        if (profileError) {
+          logger.error('[Affiliate] Failed to fetch profile before attach', profileError);
+          return;
+        }
 
-      if (profile?.referred_by_affiliate_id) {
-        logger.log('[Affiliate] User already has referral, skipping attach', {
-          userId: sessionUser.id
-        });
-        localStorage.removeItem(AFFILIATE_REF_STORAGE_KEY);
-        return;
-      }
+        if (profile?.referred_by_affiliate_id) {
+          logger.log('[Affiliate] User already has referral, skipping attach', {
+            userId: sessionUser.id
+          });
+          localStorage.removeItem(AFFILIATE_REF_STORAGE_KEY);
+          return;
+        }
 
-      const { data: affiliate, error: affiliateError } = await supabase
-        .from('user_profiles')
-        .select('id, affiliate_code')
-        .eq('affiliate_code', storedRef)
-        .eq('affiliate_enabled', true)
-        .single();
+        const { data: affiliate, error: affiliateError } = await supabase
+          .from('user_profiles')
+          .select('id, affiliate_code')
+          .eq('affiliate_code', storedRef)
+          .eq('affiliate_enabled', true)
+          .single();
 
-      if (affiliateError || !affiliate?.id) {
-        logger.warn('[Affiliate] Ref code not valid', {
-          storedRef,
-          error: affiliateError?.message || affiliateError
-        });
-        return;
-      }
+        if (affiliateError || !affiliate?.id) {
+          logger.warn('[Affiliate] Ref code not valid', {
+            storedRef,
+            error: affiliateError?.message || affiliateError
+          });
+          return;
+        }
 
-      if (affiliate.id === sessionUser.id) {
-        logger.warn('[Affiliate] Self-referral detected, skipping', { userId: sessionUser.id });
-        localStorage.removeItem(AFFILIATE_REF_STORAGE_KEY);
-        return;
-      }
+        if (affiliate.id === sessionUser.id) {
+          logger.warn('[Affiliate] Self-referral detected, skipping', { userId: sessionUser.id });
+          localStorage.removeItem(AFFILIATE_REF_STORAGE_KEY);
+          return;
+        }
 
-      const { error: referralError } = await supabase
-        .from('affiliate_referrals')
-        .upsert(
+        const { error: referralError } = await supabase.from('affiliate_referrals').upsert(
           {
             affiliate_id: affiliate.id,
             referred_user_id: sessionUser.id,
@@ -385,31 +376,54 @@ export function AuthProvider({ children }) {
           { onConflict: 'affiliate_id,referred_user_id' }
         );
 
-      if (referralError) {
-        logger.error('[Affiliate] Failed to upsert referral', referralError);
-        return;
+        if (referralError) {
+          logger.error('[Affiliate] Failed to upsert referral', referralError);
+          return;
+        }
+
+        const { error: profileUpdateError } = await supabase
+          .from('user_profiles')
+          .update({ referred_by_affiliate_id: affiliate.id })
+          .eq('id', sessionUser.id);
+
+        if (profileUpdateError) {
+          logger.error('[Affiliate] Failed to set referred_by_affiliate_id', profileUpdateError);
+          return;
+        }
+
+        logger.log('[Affiliate] Referral attached to user', {
+          userId: sessionUser.id,
+          affiliateId: affiliate.id
+        });
+        localStorage.removeItem(AFFILIATE_REF_STORAGE_KEY);
+
+        await refreshUserProfile(sessionUser);
+      } catch (err) {
+        logger.error('[Affiliate] attachAffiliateReferralIfNeeded crashed', err);
       }
+    },
+    [user, refreshUserProfile]
+  );
 
-      const { error: profileUpdateError } = await supabase
-        .from('user_profiles')
-        .update({ referred_by_affiliate_id: affiliate.id })
-        .eq('id', sessionUser.id);
+  const resetAuthState = useCallback(() => {
+    if (!isMountedRef.current) return;
 
-      if (profileUpdateError) {
-        logger.error('[Affiliate] Failed to set referred_by_affiliate_id', profileUpdateError);
-        return;
-      }
+    lastLoadedRef.current = { userId: null, token: null };
+    currentLoadIdRef.current = null;
+    loadUserStateLock.current = null;
 
-      logger.log('[Affiliate] Referral attached to user', {
-        userId: sessionUser.id,
-        affiliateId: affiliate.id
-      });
-      localStorage.removeItem(AFFILIATE_REF_STORAGE_KEY);
-      await refreshUserProfile(sessionUser);
-    } catch (err) {
-      logger.error('[Affiliate] attachAffiliateReferralIfNeeded crashed', err);
-    }
-  };
+    setIsAdmin(false);
+    setUserProfile(null);
+    setOnboardingStatus(initialOnboardingState);
+    setSubscriptionStatus(null);
+    setSubscriptionMeta({
+      stripeCustomerId: null,
+      stripeSubscriptionId: null,
+      trialEndsAt: null
+    });
+    setLoading(false);
+    setIsAuthReady(true);
+  }, []);
 
   const loadUserState = useCallback(
     async (sessionUser, loadId = null) => {
@@ -423,45 +437,43 @@ export function AuthProvider({ children }) {
       const currentUserId = sessionUser?.id || null;
 
       if (!currentUserId) {
-        if (isMountedRef.current) {
-          setIsAdmin(false);
-          setUserProfile(null);
-          setOnboardingStatus(initialOnboardingState);
-          setSubscriptionStatus(null);
-          setSubscriptionMeta({
-            stripeCustomerId: null,
-            stripeSubscriptionId: null,
-            trialEndsAt: null
-          });
-          setIsAuthReady(true);
-          setLoading(false);
-        }
+        resetAuthState();
         logger.timeEnd('[AuthPerf] loadUserState');
         return;
       }
 
+      // Dedup ONLY if same user + same loadId (otherwise a newer request must run)
       if (
         loadUserStateLock.current?.userId === currentUserId &&
-        loadUserStateLock.current?.promise
+        loadUserStateLock.current?.promise &&
+        loadUserStateLock.current?.loadId === loadId
       ) {
-        logger.log('[AuthTrace] dedup loadUserState for same user', { userId: currentUserId });
+        logger.log('[AuthTrace] dedup loadUserState for same user/loadId', { userId: currentUserId });
         return loadUserStateLock.current.promise;
       }
 
       const run = async () => {
-        if (isMountedRef.current) setLoading(true);
+        if (isMountedRef.current && currentLoadIdRef.current === loadId) setLoading(true);
+
         try {
           await ensureUserProfileExists();
+
           const profile = await refreshUserProfile(sessionUser);
           if (isMountedRef.current && currentLoadIdRef.current === loadId) {
             setIsAdmin(profile?.role === 'admin');
           }
 
-          await Promise.all([
+          const results = await Promise.allSettled([
             refreshOnboardingStatus(sessionUser),
             refreshSubscriptionStatus(sessionUser),
             attachAffiliateReferralIfNeeded(sessionUser)
           ]);
+
+          results.forEach((r, idx) => {
+            if (r.status === 'rejected') {
+              logger.error('[AuthTrace] loadUserState task failed', { idx, reason: r.reason });
+            }
+          });
         } catch (err) {
           logger.error('[AuthTrace] loadUserState failed', err);
         } finally {
@@ -480,9 +492,17 @@ export function AuthProvider({ children }) {
           loadUserStateLock.current = null;
         }
       });
+
       return promise;
     },
-    [ensureUserProfileExists, refreshOnboardingStatus, refreshSubscriptionStatus, refreshUserProfile, attachAffiliateReferralIfNeeded]
+    [
+      ensureUserProfileExists,
+      refreshUserProfile,
+      refreshOnboardingStatus,
+      refreshSubscriptionStatus,
+      attachAffiliateReferralIfNeeded,
+      resetAuthState
+    ]
   );
 
   const handleSessionChange = useCallback(
@@ -497,64 +517,73 @@ export function AuthProvider({ children }) {
 
       logger.log('[AuthTrace] handleSessionChange', {
         source,
+        eventType,
         path: typeof window !== 'undefined' ? window?.location?.pathname : 'unknown',
         userId: sessionUser?.id,
         email: sessionUser?.email,
-        eventType,
         ts: new Date().toISOString()
       });
 
-      if (sessionUser?.id) {
-        const userChanged = lastLoadedRef.current.userId !== sessionUser.id;
-        const tokenChanged = lastLoadedRef.current.token !== token;
-        const shouldForce = forceReload || userChanged || tokenChanged;
-
-        if (!shouldForce && lastLoadedRef.current.userId === sessionUser.id) {
-          logger.log('[AuthTrace] skip loadUserState (already loaded for user/token)', {
-            source,
-            eventType,
-            userId: sessionUser.id
-          });
-        } else {
-          const loadId = Symbol('loadUserState');
-          currentLoadIdRef.current = loadId;
-          lastLoadedRef.current = { userId: sessionUser.id, token };
-          await loadUserState(sessionUser, loadId);
-        }
-
-        logger.log('[AuthTrace] state after handleSessionChange', {
-          hasUser: !!sessionUser,
-          isAdmin: sessionUser?.role === 'admin',
-          loading,
-          isAuthReady
-        });
-      } else if (isMountedRef.current) {
-        lastLoadedRef.current = { userId: null, token: null };
-        currentLoadIdRef.current = null;
-        setIsAdmin(false);
-        setOnboardingStatus(initialOnboardingState);
-        setSubscriptionStatus(null);
-        setSubscriptionMeta({
-          stripeCustomerId: null,
-          stripeSubscriptionId: null,
-          trialEndsAt: null
-        });
-        setUserProfile(null);
-        setIsAuthReady(true);
-        setLoading(false);
+      if (!sessionUser?.id) {
+        resetAuthState();
         logger.log('[AuthTrace] state after handleSessionChange', {
           hasUser: false,
-          isAdmin: false,
           loading,
           isAuthReady
         });
+        return;
       }
+
+      const userChanged = lastLoadedRef.current.userId !== sessionUser.id;
+      const tokenChanged = lastLoadedRef.current.token !== token;
+      const shouldLoad = forceReload || userChanged || tokenChanged;
+
+      if (!shouldLoad && lastLoadedRef.current.userId === sessionUser.id) {
+        logger.log('[AuthTrace] skip loadUserState (already loaded for user/token)', {
+          source,
+          eventType,
+          userId: sessionUser.id
+        });
+        return;
+      }
+
+      const loadId = Symbol('loadUserState');
+      currentLoadIdRef.current = loadId;
+      lastLoadedRef.current = { userId: sessionUser.id, token };
+
+      await loadUserState(sessionUser, loadId);
+
+      logger.log('[AuthTrace] state after handleSessionChange', {
+        hasUser: true,
+        userId: sessionUser.id,
+        loading,
+        isAuthReady
+      });
     },
-    [loadUserState]
+    [loadUserState, resetAuthState, loading, isAuthReady]
   );
+
+  const fetchProfileForRedirect = useCallback(async (userId) => {
+    // small retry helps right after OAuth (profile row may be created a moment later)
+    const attempts = 2;
+    for (let i = 0; i <= attempts; i++) {
+      const { data, error } = await supabase
+        .from('user_profiles')
+        .select('role,payment_verified,onboarding_completed')
+        .eq('id', userId)
+        .single();
+
+      if (!error && data) return { data, error: null };
+      logger.warn('[AuthTrace] finalizeRedirect profile fetch failed', { i, error });
+      // tiny delay
+      await new Promise((r) => setTimeout(r, 250));
+    }
+    return { data: null, error: new Error('profile fetch failed after retries') };
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
+
     const readyTimeout = setTimeout(() => {
       if (!isAuthReady && isMountedRef.current) {
         logger.warn('[AuthTrace] init timeout -> set isAuthReady true fallback');
@@ -562,6 +591,7 @@ export function AuthProvider({ children }) {
         setLoading(false);
       }
     }, 6000);
+
     logger.log('[AuthTrace] init useEffect run', {
       path: typeof window !== 'undefined' ? window.location.pathname : 'unknown',
       ts: new Date().toISOString()
@@ -570,21 +600,19 @@ export function AuthProvider({ children }) {
     const finalizeRedirect = async (sessionUser, params) => {
       try {
         if (!sessionUser?.id) return;
+
+        // ensure profile exists before deciding target
+        await ensureUserProfileExists();
+
         const redirectParam = safeRedirect(params.get('redirect'));
-        const { data: profile, error } = await supabase
-          .from('user_profiles')
-          .select('role,payment_verified,onboarding_completed')
-          .eq('id', sessionUser.id)
-          .single();
+        const { data: profile } = await fetchProfileForRedirect(sessionUser.id);
 
-        if (error) {
-          logger.error('[AuthTrace] finalizeRedirect profile load error', error);
-        }
+        const admin = profile?.role === 'admin';
+        const paid = Boolean(profile?.payment_verified || profile?.onboarding_completed);
 
-        const isAdmin = profile?.role === 'admin';
-        const isPaid = Boolean(profile?.payment_verified || profile?.onboarding_completed);
         const target =
-          redirectParam || (isAdmin ? '/admin-dashboard' : isPaid ? '/overview-dashboard' : '/payment-verification');
+          redirectParam ||
+          (admin ? '/admin-dashboard' : paid ? '/overview-dashboard' : '/payment-verification');
 
         if (typeof window !== 'undefined') {
           window.location.replace(target);
@@ -600,43 +628,57 @@ export function AuthProvider({ children }) {
           persistAffiliateRefFromUrl();
         }
 
-        const { data, error } = await supabase.auth.getSession();
-        if (error) {
-          logger.error('[AuthTrace] getSession error', error);
-        }
+        // If OAuth code exists in URL, handle that path deterministically (avoid double-loads)
+        const params = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null;
+        const code = params?.get('code') || null;
 
-        if (!cancelled) {
-          await handleSessionChange(data?.session, 'initial', null, true);
-        }
+        if (typeof window !== 'undefined' && code) {
+          logger.log('[AuthTrace] OAuth code detected in URL', {
+            path: window.location.pathname,
+            ts: new Date().toISOString()
+          });
 
-        if (typeof window !== 'undefined') {
-          const params = new URLSearchParams(window.location.search);
-          const code = params.get('code');
+          const { data: sessionData } = await supabase.auth.getSession();
 
-          if (code && data?.session) {
-            await handleSessionChange(data.session, 'code-present', null, true);
-            await finalizeRedirect(data.session.user, params);
-            return;
-          }
+          let finalSession = sessionData?.session || null;
 
-          if (code && !data?.session) {
+          if (!finalSession) {
             logger.log('[AuthTrace] exchanging OAuth code for session', {
               path: window.location.pathname,
               ts: new Date().toISOString()
             });
+
             const { data: exchangeData, error: exchangeError } =
               await supabase.auth.exchangeCodeForSession(code);
+
             if (exchangeError) {
               logger.error('[AuthTrace] code exchange failed', exchangeError);
-            } else if (!cancelled) {
-              await handleSessionChange(exchangeData?.session, 'code-exchange', null, true);
-              await finalizeRedirect(exchangeData?.session?.user, params);
-              return;
+            } else {
+              finalSession = exchangeData?.session || null;
             }
-            window.history.replaceState({}, document.title, window.location.pathname);
           }
+
+          // remove code from URL no matter what (prevents repeated handling)
+          window.history.replaceState({}, document.title, window.location.pathname);
+
+          if (!cancelled) {
+            await handleSessionChange(finalSession, 'oauth-code', null, true);
+          }
+
+          if (finalSession?.user) {
+            await finalizeRedirect(finalSession.user, params);
+          }
+
+          return;
         }
 
+        // Normal boot (no OAuth code)
+        const { data, error } = await supabase.auth.getSession();
+        if (error) logger.error('[AuthTrace] getSession error', error);
+
+        if (!cancelled) {
+          await handleSessionChange(data?.session, 'initial', null, true);
+        }
       } catch (err) {
         logger.error('[AuthTrace] init error', err, {
           path: typeof window !== 'undefined' ? window.location.pathname : 'unknown',
@@ -645,8 +687,6 @@ export function AuthProvider({ children }) {
       } finally {
         if (!cancelled && isMountedRef.current) {
           setIsAuthReady(true);
-        } else if (import.meta?.env?.DEV) {
-          logger.warn('[AuthTrace] init skipped setting ready due to unmount');
         }
       }
     };
@@ -660,11 +700,11 @@ export function AuthProvider({ children }) {
         userId: nextSession?.user?.id,
         ts: new Date().toISOString()
       });
+
       (async () => {
-        if (!cancelled) {
-          await handleSessionChange(nextSession, 'authStateChange', event);
-          if (isMountedRef.current) setIsAuthReady(true);
-        }
+        if (cancelled) return;
+        await handleSessionChange(nextSession, 'authStateChange', event, false);
+        if (isMountedRef.current) setIsAuthReady(true);
       })();
     });
 
@@ -674,7 +714,7 @@ export function AuthProvider({ children }) {
       logger.log('[AuthTrace] cleanup authListener');
       authListener?.subscription?.unsubscribe();
     };
-  }, [handleSessionChange]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [handleSessionChange, ensureUserProfileExists, fetchProfileForRedirect, isAuthReady]);
 
   const signUp = async (email, password, userData = {}) => {
     try {
@@ -700,16 +740,11 @@ export function AuthProvider({ children }) {
 
   const signIn = async (email, password) => {
     try {
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email,
-        password
-      });
-
+      const { data, error } = await supabase.auth.signInWithPassword({ email, password });
       if (error) throw error;
       if (data?.session) {
         await handleSessionChange(data.session, 'signin');
       }
-
       return { data, error: null };
     } catch (error) {
       logger.error('[AuthTrace] Signin error:', error, { ts: new Date().toISOString() });
@@ -723,19 +758,9 @@ export function AuthProvider({ children }) {
       if (error) throw error;
 
       if (isMountedRef.current) {
-        hasLoadedUserRef.current = { userId: null, loaded: false };
         setUser(null);
-        setIsAdmin(false);
-        setOnboardingStatus(initialOnboardingState);
-        setUserProfile(null);
-        setSubscriptionStatus(null);
-        setSubscriptionMeta({
-          stripeCustomerId: null,
-          stripeSubscriptionId: null,
-          trialEndsAt: null
-        });
-        setLoading(false);
-        setIsAuthReady(true);
+        setSession(null);
+        resetAuthState();
       }
 
       return { error: null };
@@ -752,7 +777,9 @@ export function AuthProvider({ children }) {
         throw new Error('Google OAuth ist nicht konfiguriert. Bitte wenden Sie sich an den Support.');
       }
 
-      const origin = typeof window !== 'undefined' ? window?.location?.origin : 'http://adruby.de';
+      const origin =
+        typeof window !== 'undefined' ? window?.location?.origin : 'http://adruby.de';
+
       const desiredRedirect =
         redirectPath ||
         (typeof window !== 'undefined'
@@ -789,20 +816,19 @@ export function AuthProvider({ children }) {
         provider: 'google',
         options: {
           redirectTo,
-          queryParams: {
-            access_type: 'offline',
-            prompt: 'consent'
-          },
+          queryParams: { access_type: 'offline', prompt: 'consent' },
           scopes: 'openid email profile'
         }
       });
 
       if (error) {
-        logger.error('[AuthTrace] Google OAuth error details:', error, { ts: new Date().toISOString() });
+        logger.error('[AuthTrace] Google OAuth error details:', error, {
+          ts: new Date().toISOString()
+        });
         throw error;
       }
-      logger.log('[AuthTrace] signInWithGoogle response:', data, { ts: new Date().toISOString() });
 
+      logger.log('[AuthTrace] signInWithGoogle response:', data, { ts: new Date().toISOString() });
       return { data, error: null };
     } catch (error) {
       logger.error('[AuthTrace] Google OAuth error:', error, { ts: new Date().toISOString() });
@@ -811,11 +837,11 @@ export function AuthProvider({ children }) {
       if (error?.message?.includes('OAuth') || error?.message?.includes('konfiguriert')) {
         errorMessage = 'Google OAuth ist nicht konfiguriert. Bitte wenden Sie sich an den Support.';
       } else if (error?.message?.includes('network') || error?.message?.includes('Network')) {
-        errorMessage = 'Internetverbindung pr\u00fcfen und erneut versuchen.';
+        errorMessage = 'Internetverbindung prüfen und erneut versuchen.';
       } else if (error?.message?.includes('popup') || error?.message?.includes('blocked')) {
         errorMessage = 'Popup wurde blockiert. Bitte Popup-Blocker deaktivieren.';
       } else if (error?.message?.includes('Invalid') || error?.message?.includes('invalid')) {
-        errorMessage = 'Ung\u00fcltige Google-Konfiguration. Bitte wenden Sie sich an den Support.';
+        errorMessage = 'Ungültige Google-Konfiguration. Bitte wenden Sie sich an den Support.';
       } else if (error?.message) {
         errorMessage = error?.message;
       }
@@ -828,12 +854,7 @@ export function AuthProvider({ children }) {
     if (!user) return null;
 
     try {
-      const { data, error } = await supabase
-        .from('user_profiles')
-        .select('*')
-        .eq('id', user.id)
-        .single();
-
+      const { data, error } = await supabase.from('user_profiles').select('*').eq('id', user.id).single();
       if (error) throw error;
       return data;
     } catch (error) {
@@ -866,23 +887,16 @@ export function AuthProvider({ children }) {
     if (!user) throw new Error('User not authenticated');
 
     try {
-      const { data, error } = await supabase
-        .from('user_profiles')
-        .select('*')
-        .eq('id', user.id)
-        .single();
-
+      const { data, error } = await supabase.from('user_profiles').select('*').eq('id', user.id).single();
       if (error) throw error;
 
       const exportData = {
         exportDate: new Date().toISOString(),
         userProfile: data,
-        notice: 'Dies sind alle Ihre in unserem System gespeicherten Daten gem\u00e4\u00df DSGVO Art. 15.'
+        notice: 'Dies sind alle Ihre in unserem System gespeicherten Daten gemäß DSGVO Art. 15.'
       };
 
-      const blob = new Blob([JSON.stringify(exportData, null, 2)], {
-        type: 'application/json'
-      });
+      const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
 
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
@@ -914,22 +928,16 @@ export function AuthProvider({ children }) {
       const payload = await apiClient.post(
         '/api/delete-account',
         {},
-        {
-          headers: {
-            Authorization: `Bearer ${token}`
-          }
-        }
+        { headers: { Authorization: `Bearer ${token}` } }
       );
 
-      if (!payload?.ok) {
-        throw new Error(payload?.error || 'Account deletion failed');
-      }
+      if (!payload?.ok) throw new Error(payload?.error || 'Account deletion failed');
 
       await supabase.auth.signOut();
       if (isMountedRef.current) {
         setUser(null);
-        setIsAdmin(false);
-        setUserProfile(null);
+        setSession(null);
+        resetAuthState();
       }
 
       return true;
