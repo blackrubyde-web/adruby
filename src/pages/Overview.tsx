@@ -139,6 +139,14 @@ const metricsList = [
 
 
 
+const CX = {
+  section: '{CX.section}',
+  emptyNote: 'mt-3 {CX.emptyNote}',
+  loadingNote: '{CX.loadingNote}',
+  selectSmall: '{CX.selectSmall}',
+  filterChip: '{CX.filterChip}',
+  filterChipActive: 'rounded-full border border-emerald-400 bg-emerald-500/20 px-3 py-1 text-xs text-foreground'
+};
 
 
 
@@ -183,7 +191,7 @@ const safeNumber = (value: number | null | undefined, fallback = '') => {
 
 
 
-const formatCompact = (value: number | null | undefined, fallback = 'Ã?Â¢Ã?Â?Ã?Â?') => {
+const formatCompact = (value: number | null | undefined, fallback = '??¢????????') => {
 
 
 
@@ -207,7 +215,7 @@ const formatCompact = (value: number | null | undefined, fallback = 'Ã?Â¢Ã?Â?Ã?Â
 
 
 
-const formatCurrency = (value: number | null | undefined, fallback = 'Ã?Â¢Ã?Â?Ã?Â?') => {
+const formatCurrency = (value: number | null | undefined, fallback = '??¢????????') => {
 
 
 
@@ -231,7 +239,7 @@ const formatCurrency = (value: number | null | undefined, fallback = 'Ã?Â¢Ã?Â?Ã?
 
 
 
-const formatPct = (value: number | null | undefined, fallback = 'Ã?Â¢Ã?Â?Ã?Â?') => {
+const formatPct = (value: number | null | undefined, fallback = '??¢????????') => {
 
 
 
@@ -1647,7 +1655,7 @@ const OverviewPage: React.FC = () => {
 
 
 
-            {value || 'Ã?Â¢Ã?Â?Ã?Â?'}
+            {value || '??¢????????'}
 
 
 
@@ -1675,7 +1683,7 @@ const OverviewPage: React.FC = () => {
 
 
 
-        Cell: ({ value }) => (Array.isArray(value) ? value.join(', ') : value || 'Ã?Â¢Ã?Â?Ã?Â?')
+        Cell: ({ value }) => (Array.isArray(value) ? value.join(', ') : value || '??¢????????')
 
 
 
@@ -2089,7 +2097,7 @@ const OverviewPage: React.FC = () => {
 
 
 
-      <div className="space-y-6 max-w-7xl mx-auto text-foreground">
+      <div className="{CX.section}">
 
         <CardShell className="p-0">
 
@@ -2501,7 +2509,7 @@ const OverviewPage: React.FC = () => {
 
 
 
-                value={kpis ? `${kpis.adsGenerated}` : 'Ã?Â¢Ã?Â?Ã?Â?'}
+                value={kpis ? `${kpis.adsGenerated}` : '??¢????????'}
 
 
 
@@ -2513,7 +2521,7 @@ const OverviewPage: React.FC = () => {
 
 
 
-                hint="im gewÃ?Â?Ã?Â¤hlten Zeitraum"
+                hint="im gew??????¤hlten Zeitraum"
 
 
 
@@ -2533,7 +2541,7 @@ const OverviewPage: React.FC = () => {
 
 
 
-                value={kpis ? `${kpis.strategiesCreated}` : 'Ã?Â¢Ã?Â?Ã?Â?'}
+                value={kpis ? `${kpis.strategiesCreated}` : '??¢????????'}
 
 
 
@@ -2565,7 +2573,7 @@ const OverviewPage: React.FC = () => {
 
 
 
-                value={kpis ? `${kpis.analysesRun}` : 'Ã?Â¢Ã?Â?Ã?Â?'}
+                value={kpis ? `${kpis.analysesRun}` : '??¢????????'}
 
 
 
@@ -2597,7 +2605,7 @@ const OverviewPage: React.FC = () => {
 
 
 
-                value={kpis ? `${kpis.creditsUsed}` : 'Ã?Â¢Ã?Â?Ã?Â?'}
+                value={kpis ? `${kpis.creditsUsed}` : '??¢????????'}
 
 
 
@@ -2641,7 +2649,7 @@ const OverviewPage: React.FC = () => {
 
 
 
-                hint="SchÃ?Â?Ã?Â¤tzung"
+                hint="Sch??????¤tzung"
 
 
 
@@ -2677,7 +2685,7 @@ const OverviewPage: React.FC = () => {
 
 
 
-                onClick={() => openDrawer('Iteration Velocity', <p>Ads pro Tag im gewÃ?Â?Ã?Â¤hlten Zeitraum.</p>)}
+                onClick={() => openDrawer('Iteration Velocity', <p>Ads pro Tag im gew??????¤hlten Zeitraum.</p>)}
 
 
 
@@ -3201,7 +3209,7 @@ const OverviewPage: React.FC = () => {
 
 
 
-              <p className="text-sm text-foreground">Keine AktivitÃ?Â?Ã?Â¤ten im Zeitraum.</p>
+              <p className="text-sm text-foreground">Keine Aktivit??????¤ten im Zeitraum.</p>
 
 
 
@@ -3509,7 +3517,7 @@ const OverviewPage: React.FC = () => {
 
 
 
-                No assets in this view Ã?Â¢Ã?Â?Ã?Â? generate your first Ad Variant oder Strategy.
+                No assets in this view ??¢???????? generate your first Ad Variant oder Strategy.
 
 
 
@@ -3541,7 +3549,7 @@ const OverviewPage: React.FC = () => {
 
 
 
-            <RefreshCw className="mr-2 inline animate-spin" size={16} /> LÃ?Â?Ã?Â¤dt...
+            <RefreshCw className="mr-2 inline animate-spin" size={16} /> L??????¤dt...
 
 
 
