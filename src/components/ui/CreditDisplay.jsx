@@ -140,26 +140,26 @@ const CreditDisplay = ({ className = '', showTooltip = true }) => {
 
       {/* Tooltip */}
       {showTooltipState && showTooltip && (
+      {showTooltipState && showTooltip && (
         <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 z-50">
-          <div className="bg-gray-900 text-white text-xs rounded-lg px-3 py-2 shadow-lg max-w-xs">
+          <div className="relative rounded-lg border border-border bg-popover px-3 py-2 text-xs text-foreground shadow-lg max-w-xs">
             <div className="space-y-1">
-              <p className="font-medium">Credit-Verbrauch pro Aktion:</p>
-              <div className="grid grid-cols-2 gap-1 text-xs">
+              <p className="font-medium text-foreground">Credit-Verbrauch pro Aktion:</p>
+              <div className="grid grid-cols-2 gap-1 text-xs text-muted-foreground">
                 <span>Ad Builder:</span>
-                <span className="text-yellow-300">8 Credits</span>
+                <span className="text-foreground">8 Credits</span>
                 <span>AI Analysis:</span>
-                <span className="text-yellow-300">6 Credits</span>
+                <span className="text-foreground">6 Credits</span>
                 <span>Ad Strategy:</span>
-                <span className="text-yellow-300">6 Credits</span>
+                <span className="text-foreground">6 Credits</span>
                 <span>Kompletter Ablauf:</span>
-                <span className="text-yellow-300">20 Credits</span>
+                <span className="text-foreground">20 Credits</span>
               </div>
-              <p className="text-xs opacity-75 mt-2">
-                Klicken Sie fÃ¼r mehr Details und zum Aufladen.
+              <p className="text-xs text-muted-foreground mt-2">
+                Klicken Sie für mehr Details und zum Aufladen.
               </p>
             </div>
-            {/* Tooltip arrow */}
-            <div className="absolute top-full left-1/2 transform -translate-x-1/2 border-4 border-transparent border-t-gray-900"></div>
+            <div className="absolute top-full left-1/2 transform -translate-x-1/2 border-4 border-transparent border-t-border"></div>
           </div>
         </div>
       )}
