@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+ï»¿import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import { Column } from 'react-table';
 
@@ -59,6 +59,7 @@ import { exportNodeToPng } from '../utils/export';
 import { useAuth } from '../contexts/AuthContext';
 
 import { cxCard, cxCardHeader, cxCardTitle, cxButtonPrimary, cxButtonSecondary, cxButtonQuiet, cxPill, cxPillActive } from '../components/ui/uiPrimitives';
+import PageShell from '../components/ui/PageShell';
 
 
 
@@ -2084,9 +2085,11 @@ const OverviewPage: React.FC = () => {
 
     <DashboardLayout>
 
+      <PageShell title="Overview" subtitle="Meta Performance + Creative Engine" rightActions={null}>
 
 
-      <div className="space-y-6 p-6 max-w-7xl mx-auto text-foreground">
+
+      <div className="space-y-6 max-w-7xl mx-auto text-foreground">
 
 
 
@@ -2400,13 +2403,13 @@ const OverviewPage: React.FC = () => {
 
                 label: 'Spend / Conv.',
 
-                value: data?.kpis?.spend ? formatCurrency(data.kpis.spend) : '—',
+                value: data?.kpis?.spend ? formatCurrency(data.kpis.spend) : 'ï¿½',
 
                 icon: <Activity size={14} />
 
               },
 
-              { label: 'Lift vs. last week', value: kpis ? formatPct(kpis.ctr ?? 0) : '—', icon: <Flame size={14} /> },
+              { label: 'Lift vs. last week', value: kpis ? formatPct(kpis.ctr ?? 0) : 'ï¿½', icon: <Flame size={14} /> },
 
             ].map((stat) => (
 
@@ -3554,6 +3557,10 @@ const OverviewPage: React.FC = () => {
 
 
 
+      </PageShell>
+
+
+
       <CommandPalette open={isPaletteOpen} onClose={() => setPaletteOpen(false)} onCommand={handleCommand} />
 
 
@@ -3579,4 +3586,3 @@ const OverviewPage: React.FC = () => {
 
 
 export default OverviewPage;
-
