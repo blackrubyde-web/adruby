@@ -8,6 +8,8 @@ import { useAuth } from '../../contexts/AuthContext';
 import { supabase } from '../../lib/supabaseClient';
 import DashboardLayout from '../../layouts/DashboardLayout';
 import PageShell from '../../components/ui/PageShell';
+import EmptyState from '../../components/ui/EmptyState';
+import Skeleton from '../../components/ui/Skeleton';
 
 // Import new components
 import MetaConnectionModal from './components/MetaConnectionModal';
@@ -434,9 +436,9 @@ const AIAnalysisPanel = () => {
       <DashboardLayout>
         <PageShell title="AI Analysis" subtitle="KI-gestützte Kampagnen-Insights">
           <div className="min-h-[40vh] flex items-center justify-center">
-            <div className="flex items-center space-x-3">
-              <Icon name="Loader2" className="animate-spin text-primary" size={24} />
-              <span className="text-foreground">Lädt...</span>
+            <div className="space-y-3 text-center">
+              <Skeleton className="h-10 w-10 rounded-full mx-auto" />
+              <p className="text-muted-foreground">Lädt...</p>
             </div>
           </div>
         </PageShell>
@@ -922,19 +924,15 @@ const AIAnalysisPanel = () => {
                             )) : (
                               <tr>
                                 <td colSpan="9" className="py-12 text-center">
-                                  <div className="flex flex-col items-center space-y-3">
-                                    <Icon name="Database" size={48} className="text-muted-foreground" />
-                                    <div>
-                                      <p className="text-foreground font-medium">
-                                        {user ? 'Keine Kampagnendaten verfügbar' : 'Demo-Kampagnendaten werden geladen...'}
-                                      </p>
-                                      <p className="text-muted-foreground text-sm">
-                                        {user 
+                                  <div className="max-w-xl mx-auto">
+                                    <EmptyState
+                                      title={user ? 'Keine Kampagnendaten verfügbar' : 'Demo-Kampagnendaten werden geladen...'}
+                                      description={
+                                        user
                                           ? 'Synchronisieren Sie Ihre Facebook Ads oder verwenden Sie die Demo-Daten'
                                           : 'Melden Sie sich an, um echte Kampagnendaten zu laden'
-                                        }
-                                      </p>
-                                    </div>
+                                      }
+                                    />
                                   </div>
                                 </td>
                               </tr>
