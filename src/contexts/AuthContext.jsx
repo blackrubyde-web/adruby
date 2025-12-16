@@ -714,7 +714,7 @@ export function AuthProvider({ children }) {
       logger.log('[AuthTrace] cleanup authListener');
       authListener?.subscription?.unsubscribe();
     };
-  }, [handleSessionChange, ensureUserProfileExists, fetchProfileForRedirect, isAuthReady]);
+  }, [handleSessionChange, ensureUserProfileExists, fetchProfileForRedirect]);
 
   const signUp = async (email, password, userData = {}) => {
     try {
