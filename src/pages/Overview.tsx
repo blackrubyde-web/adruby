@@ -2091,9 +2091,9 @@ const OverviewPage: React.FC = () => {
 
       <div className="space-y-6 max-w-7xl mx-auto text-foreground">
 
+        <CardShell className="p-0">
 
-
-        <div className="flex flex-wrap items-center justify-between gap-4">
+        <div className="flex flex-wrap items-center justify-between gap-4 p-5">
 
 
 

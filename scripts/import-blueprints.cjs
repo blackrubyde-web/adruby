@@ -13,9 +13,10 @@ if (fs.existsSync(envPath)) {
 const SUPABASE_URL = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
+// Fail-soft when env vars are missing (e.g. local/CI without secrets)
 if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
-  console.error('[Blueprint Import] Missing SUPABASE env vars');
-  process.exit(1);
+  console.warn('[Blueprint Import] Missing SUPABASE env vars - skipping import.');
+  process.exit(0);
 }
 
 const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
