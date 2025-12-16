@@ -8,14 +8,14 @@ const MetaAdsToolAgenturen = () => {
       heading: 'Deine aktuellen Probleme als Agentur',
       description: 'Viel Zeit für Strategiedokumente, Copy und Briefings – wenig Zeit für Skalierung.',
       content: (
-        <ul className="space-y-2 text-sm md:text-base text-[#2c2c2c] max-w-3xl mx-auto">
+        <ul className="space-y-2 text-sm md:text-base text-muted-foreground max-w-3xl mx-auto">
           {[
             'Strategie-Docs dauern, jede Branche braucht andere Templates.',
             'Creative-Briefs und Copy-Blöcke kosten Kapazität.',
             'Wenig Zeit für Testing und Skalierung, weil Abstimmungen bremsen.'
           ].map((item) => (
             <li key={item} className="flex items-start gap-2">
-              <span className="mt-1 h-2 w-2 rounded-full bg-[#C80000]" />
+              <span className="mt-1 h-2 w-2 rounded-full bg-accent" />
               <span>{item}</span>
             </li>
           ))}
@@ -46,9 +46,9 @@ const MetaAdsToolAgenturen = () => {
               desc: 'Strategie-Overlay als klare Story für Kunden-Calls und Freigaben.'
             }
           ].map((card) => (
-            <div key={card.title} className="p-6 rounded-xl border border-[#e5e5e5] bg-[#fafafa] shadow-sm">
-              <h3 className="text-lg font-semibold text-[#0b0b0b] mb-2">{card.title}</h3>
-              <p className="text-sm text-[#4a4a4a] leading-relaxed">{card.desc}</p>
+            <div key={card.title} className="p-6 rounded-xl border border-border bg-card shadow-sm">
+              <h3 className="text-lg font-semibold text-foreground mb-2">{card.title}</h3>
+              <p className="text-sm text-muted-foreground leading-relaxed">{card.desc}</p>
             </div>
           ))}
         </div>
@@ -59,14 +59,14 @@ const MetaAdsToolAgenturen = () => {
       heading: 'Nutzen für dich und deine Kunden',
       description: 'Bessere Ergebnisse, klarere Kommunikation, weniger manuelle Last.',
       content: (
-        <ul className="space-y-3 text-sm md:text-base text-[#2c2c2c] max-w-3xl mx-auto">
+        <ul className="space-y-3 text-sm md:text-base text-muted-foreground max-w-3xl mx-auto">
           {[
             'Bessere Ergebnisse durch schnellere Tests und klaren Funnel-Fit.',
             'Transparente Strategie-Overlays für Kunden-Updates.',
             'Mehr Mandanten betreuen, ohne mehr Hiring.'
           ].map((item) => (
             <li key={item} className="flex items-start gap-2">
-              <span className="mt-1 h-2 w-2 rounded-full bg-[#C80000]" />
+              <span className="mt-1 h-2 w-2 rounded-full bg-accent" />
               <span>{item}</span>
             </li>
           ))}
@@ -96,9 +96,9 @@ const MetaAdsToolAgenturen = () => {
               a: 'Nutze AdRuby als Strategie- und Creative-Briefing-Layer, Umsetzung bleibt in deinem Workflow.'
             }
           ].map((faq) => (
-            <div key={faq.q} className="p-5 md:p-6 rounded-xl border border-[#e5e5e5] bg-white shadow-sm space-y-2">
-              <h3 className="font-semibold text-[#0b0b0b]">{faq.q}</h3>
-              <p className="text-sm text-[#4a4a4a] leading-relaxed">{faq.a}</p>
+            <div key={faq.q} className="p-5 md:p-6 rounded-xl border border-border bg-white shadow-sm space-y-2">
+              <h3 className="font-semibold text-foreground">{faq.q}</h3>
+              <p className="text-sm text-muted-foreground leading-relaxed">{faq.a}</p>
             </div>
           ))}
         </div>

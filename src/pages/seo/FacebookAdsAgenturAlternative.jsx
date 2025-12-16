@@ -61,37 +61,37 @@ const FacebookAdsAgenturAlternative = () => {
   return (
     <>
       <Header />
-      <main className="bg-[#fafafa] text-[#0b0b0b]">
+      <main className="bg-background text-foreground">
         <section
           id="hero"
           className="px-4 md:px-8 lg:px-16 py-12 md:py-16 scroll-mt-24"
         >
           <div className="max-w-6xl mx-auto space-y-6">
             <div className="flex flex-wrap items-center justify-between gap-3">
-              <Link to="/" className="text-sm font-semibold text-[#C80000] hover:underline">
+              <Link to="/" className="text-sm font-semibold text-primary hover:underline">
                 Zur Startseite
               </Link>
               <nav aria-label="Breadcrumb">
-                <ol className="flex items-center space-x-1 text-sm text-[#4a4a4a]">
+                <ol className="flex items-center space-x-1 text-sm text-muted-foreground">
                   <li className="flex items-center space-x-1">
-                    <Link to="/" className="hover:underline text-[#0b0b0b]">
+                    <Link to="/" className="hover:underline text-foreground">
                       Startseite
                     </Link>
-                    <span className="text-[#7a7a7a]">›</span>
+                    <span className="text-muted-foreground">›</span>
                   </li>
-                  <li className="text-[#0b0b0b] font-semibold">Facebook Ads Agentur Alternative</li>
+                  <li className="text-foreground font-semibold">Facebook Ads Agentur Alternative</li>
                 </ol>
               </nav>
             </div>
             <div className="grid gap-10 md:gap-12 lg:grid-cols-2 items-center">
               <div className="space-y-6">
-                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#C80000]">
+                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-primary">
                   Meta Ads ohne Agentur-Overhead
                 </p>
                 <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold leading-tight">
                   Die beste Alternative zur Facebook Ads Agentur
                 </h1>
-                <p className="text-base md:text-lg text-[#2c2c2c] leading-relaxed space-y-3">
+                <p className="text-base md:text-lg text-muted-foreground leading-relaxed space-y-3">
                   <span className="block">
                     Genervt von Fees, Intransparenz und langen Abstimmungsschleifen?
                   </span>
@@ -99,14 +99,14 @@ const FacebookAdsAgenturAlternative = () => {
                     Mit AdRuby steuerst du deine Meta Ads wie eine Top-Agentur – mit KI, klarer Strategie und einem System, das du selbst kontrollierst.
                   </span>
                 </p>
-                <ul className="space-y-2 text-sm md:text-base text-[#2c2c2c]">
+                <ul className="space-y-2 text-sm md:text-base text-muted-foreground">
                   {[
                     'Keine Lust mehr auf 10 Meetings, bevor eine neue Ad live geht?',
                     'Du willst genau wissen, warum eine Kampagne läuft – oder eben nicht?',
                     'Du willst Budget in Ergebnisse investieren statt in Retainer?'
                   ].map((item) => (
                     <li key={item} className="flex items-start gap-2">
-                      <span className="mt-1 h-2 w-2 rounded-full bg-[#C80000]" />
+                      <span className="mt-1 h-2 w-2 rounded-full bg-primary" />
                       <span>{item}</span>
                     </li>
                   ))}
@@ -114,13 +114,13 @@ const FacebookAdsAgenturAlternative = () => {
                 <div className="flex flex-col sm:flex-row gap-3 w-full">
                   <Link
                     to="/ad-ruby-registration"
-                    className="w-full sm:w-auto inline-flex items-center justify-center bg-[#C80000] text-white px-6 py-3 rounded-lg font-semibold hover:bg-[#a50000] transition-colors min-h-[44px]"
+                    className="w-full sm:w-auto inline-flex items-center justify-center bg-primary text-primary-foreground px-6 py-3 rounded-lg font-semibold hover:bg-primary/90 transition-colors min-h-[44px]"
                   >
                     AdRuby kostenlos testen
                   </Link>
                   <button
                     type="button"
-                    className="w-full sm:w-auto inline-flex items-center justify-center border border-[#d4d4d4] text-[#0b0b0b] px-6 py-3 rounded-lg font-semibold hover:bg-white transition-colors min-h-[44px]"
+                    className="w-full sm:w-auto inline-flex items-center justify-center border border-border text-foreground px-6 py-3 rounded-lg font-semibold hover:bg-card transition-colors min-h-[44px]"
                   >
                     Demo-Video ansehen
                   </button>
@@ -128,18 +128,18 @@ const FacebookAdsAgenturAlternative = () => {
               </div>
               <div className="w-full">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div className="bg-white border border-[#e5e5e5] rounded-xl p-5 shadow-sm">
-                    <h3 className="text-lg font-semibold mb-3 text-[#0b0b0b]">Agentur-Setup</h3>
-                    <ul className="space-y-2 text-sm text-[#4a4a4a]">
+                  <div className="bg-white border border-border rounded-xl p-5 shadow-sm">
+                    <h3 className="text-lg font-semibold mb-3 text-foreground">Agentur-Setup</h3>
+                    <ul className="space-y-2 text-sm text-muted-foreground">
                       <li>Retainer + Setup-Fee</li>
                       <li>Wenige Creative-Iterationen pro Monat</li>
                       <li>Langsame Freigaben</li>
                       <li>Limitierte Transparenz bei ROAS/CPA</li>
                     </ul>
                   </div>
-                  <div className="bg-[#0f172a] text-white rounded-xl p-5 shadow-md border border-[#1f2937]">
+                  <div className="bg-card text-primary-foreground rounded-xl p-5 shadow-md border border-border">
                     <h3 className="text-lg font-semibold mb-3">AdRuby-Setup</h3>
-                    <ul className="space-y-2 text-sm text-white/80">
+                    <ul className="space-y-2 text-sm text-primary-foreground/80">
                       <li>Planpreis, unbegrenzte Strategien & Ads</li>
                       <li>KI-Hooks, Copy & UGC-Ideen on-demand</li>
                       <li>Exportierbare Meta Setups in Minuten</li>
@@ -159,7 +159,7 @@ const FacebookAdsAgenturAlternative = () => {
           <div className="max-w-6xl mx-auto space-y-8">
             <div className="space-y-3 text-center">
               <h2 className="text-3xl md:text-4xl font-bold">Warum viele Meta Ads Agenturen nicht (mehr) passen</h2>
-              <p className="text-base md:text-lg text-[#4a4a4a] leading-relaxed">
+              <p className="text-base md:text-lg text-muted-foreground leading-relaxed">
                 Typische Pain Points, wenn du Performance und Tempo brauchst.
               </p>
             </div>
@@ -182,9 +182,9 @@ const FacebookAdsAgenturAlternative = () => {
                   desc: 'Du wartest auf Freigaben, während Budget verbrennt.'
                 }
               ].map((card) => (
-                <div key={card.title} className="p-5 rounded-xl border border-[#e5e5e5] bg-[#fafafa] shadow-sm">
-                  <h3 className="text-lg font-semibold mb-2 text-[#0b0b0b]">{card.title}</h3>
-                  <p className="text-sm text-[#4a4a4a] leading-relaxed">{card.desc}</p>
+                <div key={card.title} className="p-5 rounded-xl border border-border bg-background shadow-sm">
+                  <h3 className="text-lg font-semibold mb-2 text-foreground">{card.title}</h3>
+                  <p className="text-sm text-muted-foreground leading-relaxed">{card.desc}</p>
                 </div>
               ))}
             </div>
@@ -193,16 +193,16 @@ const FacebookAdsAgenturAlternative = () => {
 
         <section
           id="needs"
-          className="px-4 md:px-8 lg:px-16 py-12 md:py-16 bg-[#fafafa] scroll-mt-24"
+          className="px-4 md:px-8 lg:px-16 py-12 md:py-16 bg-background scroll-mt-24"
         >
           <div className="max-w-5xl mx-auto space-y-6">
             <div className="space-y-3 text-center">
               <h2 className="text-3xl md:text-4xl font-bold">Was du stattdessen brauchst</h2>
-              <p className="text-base md:text-lg text-[#4a4a4a] leading-relaxed">
+              <p className="text-base md:text-lg text-muted-foreground leading-relaxed">
                 Kontrolle, Tempo und eine klare Meta Ads Engine.
               </p>
             </div>
-            <ul className="space-y-3 text-sm md:text-base text-[#2c2c2c]">
+            <ul className="space-y-3 text-sm md:text-base text-muted-foreground">
               {[
                 'Klare, wiederholbare Meta Ads Strategie',
                 'Schnelle Erstellung von Creatives und Copy',
@@ -210,12 +210,12 @@ const FacebookAdsAgenturAlternative = () => {
                 'Volle Transparenz über Budget, Funnel und Performance'
               ].map((item) => (
                 <li key={item} className="flex items-start gap-2">
-                  <span className="mt-1 h-2 w-2 rounded-full bg-[#C80000]" />
+                  <span className="mt-1 h-2 w-2 rounded-full bg-primary" />
                   <span>{item}</span>
                 </li>
               ))}
             </ul>
-            <p className="text-sm md:text-base text-[#4a4a4a]">
+            <p className="text-sm md:text-base text-muted-foreground">
               Genau hier setzt AdRuby an.
             </p>
           </div>
@@ -228,47 +228,47 @@ const FacebookAdsAgenturAlternative = () => {
           <div className="max-w-6xl mx-auto space-y-8">
             <div className="space-y-3 text-center">
               <h2 className="text-3xl md:text-4xl font-bold">AdRuby – dein Meta Ads OS statt externer Agentur</h2>
-              <p className="text-base md:text-lg text-[#4a4a4a] leading-relaxed">
+              <p className="text-base md:text-lg text-muted-foreground leading-relaxed">
                 Strategien, Creatives, Copy und Setups, die du sofort umsetzen kannst.
               </p>
             </div>
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-              <div className="space-y-4 bg-[#fafafa] border border-[#e5e5e5] rounded-xl p-6 shadow-sm">
-                <h3 className="text-xl font-semibold text-[#0b0b0b]">Warum AdRuby für Selbststeuerer</h3>
-                <ul className="space-y-3 text-sm md:text-base text-[#2c2c2c]">
+              <div className="space-y-4 bg-background border border-border rounded-xl p-6 shadow-sm">
+                <h3 className="text-xl font-semibold text-foreground">Warum AdRuby für Selbststeuerer</h3>
+                <ul className="space-y-3 text-sm md:text-base text-muted-foreground">
                   <li className="flex items-start gap-2">
-                    <span className="mt-1 h-2 w-2 rounded-full bg-[#C80000]" />
+                    <span className="mt-1 h-2 w-2 rounded-full bg-primary" />
                     <span>Fertige Strategien & Setups, die ROAS und CPA im Blick haben.</span>
                   </li>
                   <li className="flex items-start gap-2">
-                    <span className="mt-1 h-2 w-2 rounded-full bg-[#C80000]" />
+                    <span className="mt-1 h-2 w-2 rounded-full bg-primary" />
                     <span>Unbegrenzte Creative- und Copy-Varianten, testbar in Minuten.</span>
                   </li>
                   <li className="flex items-start gap-2">
-                    <span className="mt-1 h-2 w-2 rounded-full bg-[#C80000]" />
+                    <span className="mt-1 h-2 w-2 rounded-full bg-primary" />
                     <span>Vollständige Transparenz: du weißt, warum etwas funktioniert.</span>
                   </li>
                   <li className="flex items-start gap-2">
-                    <span className="mt-1 h-2 w-2 rounded-full bg-[#C80000]" />
+                    <span className="mt-1 h-2 w-2 rounded-full bg-primary" />
                     <span>Planpreis statt Retainer, keine Wartezeit auf Freigaben.</span>
                   </li>
                 </ul>
               </div>
-              <div className="overflow-hidden rounded-xl border border-[#e5e5e5] bg-white shadow-sm">
-                <div className="grid grid-cols-2 bg-[#f3f4f6] text-sm font-semibold text-[#0b0b0b]">
+              <div className="overflow-hidden rounded-xl border border-border bg-white shadow-sm">
+                <div className="grid grid-cols-2 bg-card text-sm font-semibold text-foreground">
                   <div className="px-4 py-3">Agentur</div>
                   <div className="px-4 py-3 bg-white">AdRuby</div>
                 </div>
-                <div className="divide-y divide-[#e5e7eb] text-sm text-[#2c2c2c]">
+                <div className="divide-y divide-border/60 text-sm text-muted-foreground">
                   {comparisonRows.map((row) => (
                     <div key={row.label} className="grid grid-cols-2">
                       <div className="px-4 py-3">
-                        <p className="font-semibold text-[#0b0b0b]">{row.label}</p>
-                        <p className="text-xs md:text-sm text-[#4a4a4a]">{row.agency}</p>
+                        <p className="font-semibold text-foreground">{row.label}</p>
+                        <p className="text-xs md:text-sm text-muted-foreground">{row.agency}</p>
                       </div>
-                      <div className="px-4 py-3 bg-[#fafafa]">
-                        <p className="font-semibold text-[#0b0b0b]">{row.label}</p>
-                        <p className="text-xs md:text-sm text-[#4a4a4a]">{row.adruby}</p>
+                      <div className="px-4 py-3 bg-background">
+                        <p className="font-semibold text-foreground">{row.label}</p>
+                        <p className="text-xs md:text-sm text-muted-foreground">{row.adruby}</p>
                       </div>
                     </div>
                   ))}
@@ -280,12 +280,12 @@ const FacebookAdsAgenturAlternative = () => {
 
         <section
           id="how-it-works"
-          className="px-4 md:px-8 lg:px-16 py-12 md:py-16 bg-[#fafafa] scroll-mt-24"
+          className="px-4 md:px-8 lg:px-16 py-12 md:py-16 bg-background scroll-mt-24"
         >
           <div className="max-w-6xl mx-auto space-y-8">
             <div className="space-y-3 text-center">
               <h2 className="text-3xl md:text-4xl font-bold">So ersetzt oder ergänzt AdRuby deine Agentur</h2>
-              <p className="text-base md:text-lg text-[#4a4a4a] leading-relaxed">
+              <p className="text-base md:text-lg text-muted-foreground leading-relaxed">
                 In drei Schritten von Input zu umsetzbarem Meta Setup.
               </p>
             </div>
@@ -304,16 +304,16 @@ const FacebookAdsAgenturAlternative = () => {
                   desc: 'Export ins Meta Ads Manager Setup, Tests fahren, AdRuby liefert laufend neue Ideen.'
                 }
               ].map((step, idx) => (
-                <div key={step.title} className="p-6 rounded-xl border border-[#e5e5e5] bg-white shadow-sm">
-                  <span className="inline-flex items-center justify-center w-9 h-9 rounded-full bg-[#C80000]/10 text-[#C80000] font-semibold mb-3">
+                <div key={step.title} className="p-6 rounded-xl border border-border bg-white shadow-sm">
+                  <span className="inline-flex items-center justify-center w-9 h-9 rounded-full bg-primary/10 text-primary font-semibold mb-3">
                     {idx + 1}
                   </span>
-                  <h3 className="text-lg font-semibold mb-2 text-[#0b0b0b]">{step.title}</h3>
-                  <p className="text-sm text-[#4a4a4a] leading-relaxed">{step.desc}</p>
+                  <h3 className="text-lg font-semibold mb-2 text-foreground">{step.title}</h3>
+                  <p className="text-sm text-muted-foreground leading-relaxed">{step.desc}</p>
                 </div>
               ))}
             </div>
-            <p className="text-sm md:text-base text-center text-[#4a4a4a]">
+            <p className="text-sm md:text-base text-center text-muted-foreground">
               Du kannst AdRuby auch mit deiner Agentur nutzen – als Strategie- und Creative-Maschine.
             </p>
           </div>
@@ -326,7 +326,7 @@ const FacebookAdsAgenturAlternative = () => {
           <div className="max-w-6xl mx-auto space-y-8">
             <div className="space-y-3 text-center">
               <h2 className="text-3xl md:text-4xl font-bold">Wer AdRuby statt Agentur nutzt</h2>
-              <p className="text-base md:text-lg text-[#4a4a4a] leading-relaxed">
+              <p className="text-base md:text-lg text-muted-foreground leading-relaxed">
                 Beispiele, wie Teams Kontrolle zurückholen und ROAS sichern.
               </p>
             </div>
@@ -348,14 +348,14 @@ const FacebookAdsAgenturAlternative = () => {
                   metric: '+45% mehr qualifizierte Leads'
                 }
               ].map((card) => (
-                <div key={card.title} className="p-6 rounded-xl border border-[#e5e5e5] bg-[#fafafa] shadow-sm">
-                  <h3 className="text-lg font-semibold text-[#0b0b0b] mb-2">{card.title}</h3>
-                  <p className="text-sm text-[#4a4a4a] leading-relaxed mb-3">{card.story}</p>
-                  <p className="text-sm font-semibold text-[#C80000]">{card.metric}</p>
+                <div key={card.title} className="p-6 rounded-xl border border-border bg-background shadow-sm">
+                  <h3 className="text-lg font-semibold text-foreground mb-2">{card.title}</h3>
+                  <p className="text-sm text-muted-foreground leading-relaxed mb-3">{card.story}</p>
+                  <p className="text-sm font-semibold text-primary">{card.metric}</p>
                 </div>
                 ))}
               </div>
-            <div className="text-center text-sm text-[#C80000] font-semibold">
+            <div className="text-center text-sm text-primary font-semibold">
               <Link to="/meta-ads-tool-ecommerce" className="hover:underline">
                 Mehr zu AdRuby für E-Commerce & D2C Brands
               </Link>
@@ -365,20 +365,20 @@ const FacebookAdsAgenturAlternative = () => {
 
         <section
           id="faq"
-          className="px-4 md:px-8 lg:px-16 py-12 md:py-16 bg-[#fafafa] scroll-mt-24"
+          className="px-4 md:px-8 lg:px-16 py-12 md:py-16 bg-background scroll-mt-24"
         >
           <div className="max-w-6xl mx-auto space-y-8">
             <div className="space-y-3 text-center">
               <h2 className="text-3xl md:text-4xl font-bold">Häufige Fragen zur AdRuby-Agentur-Alternative</h2>
-              <p className="text-base md:text-lg text-[#4a4a4a] leading-relaxed">
+              <p className="text-base md:text-lg text-muted-foreground leading-relaxed">
                 Klare Antworten für Entscheider:innen.
               </p>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {agencyFaqs.map((faq) => (
-                <div key={faq.q} className="p-5 md:p-6 rounded-xl border border-[#e5e5e5] bg-white shadow-sm space-y-2">
-                  <h3 className="font-semibold text-[#0b0b0b]">{faq.q}</h3>
-                  <p className="text-sm text-[#4a4a4a] leading-relaxed">{faq.a}</p>
+                <div key={faq.q} className="p-5 md:p-6 rounded-xl border border-border bg-white shadow-sm space-y-2">
+                  <h3 className="font-semibold text-foreground">{faq.q}</h3>
+                  <p className="text-sm text-muted-foreground leading-relaxed">{faq.a}</p>
                 </div>
               ))}
             </div>
@@ -387,25 +387,25 @@ const FacebookAdsAgenturAlternative = () => {
 
         <section
           id="final-cta"
-          className="px-4 md:px-8 lg:px-16 py-14 md:py-16 bg-[#C80000] text-white scroll-mt-24"
+          className="px-4 md:px-8 lg:px-16 py-14 md:py-16 bg-primary text-primary-foreground scroll-mt-24"
         >
           <div className="max-w-5xl mx-auto text-center space-y-6">
             <h2 className="text-3xl md:text-4xl font-bold leading-tight">
               Bereit für mehr Kontrolle über deine Meta Ads?
             </h2>
-            <p className="text-base md:text-lg text-white/90">
+            <p className="text-base md:text-lg text-primary-foreground/90">
               Ersetze oder ergänze deine Agentur mit AdRuby – Strategie, Creatives und Setup in einem Tool.
             </p>
             <div className="flex flex-col sm:flex-row gap-3 justify-center">
               <Link
                 to="/ad-ruby-registration"
-                className="w-full sm:w-auto inline-flex items-center justify-center bg-white text-[#C80000] px-8 py-3 rounded-lg font-semibold hover:bg-gray-50 transition-colors min-h-[44px]"
+                className="w-full sm:w-auto inline-flex items-center justify-center bg-white text-primary px-8 py-3 rounded-lg font-semibold hover:bg-gray-50 transition-colors min-h-[44px]"
               >
                 AdRuby kostenlos testen
               </Link>
               <button
                 type="button"
-                className="w-full sm:w-auto inline-flex items-center justify-center border border-white/40 text-white px-8 py-3 rounded-lg font-semibold hover:bg-white/10 transition-colors min-h-[44px]"
+                className="w-full sm:w-auto inline-flex items-center justify-center border border-white/40 text-primary-foreground px-8 py-3 rounded-lg font-semibold hover:bg-card/10 transition-colors min-h-[44px]"
               >
                 Kurzberatung buchen
               </button>
@@ -413,7 +413,7 @@ const FacebookAdsAgenturAlternative = () => {
           </div>
         </section>
 
-        <footer className="bg-[#000000] text-white py-14">
+        <footer className="bg-background text-primary-foreground py-14">
           <div className="max-w-6xl mx-auto px-4 md:px-8">
             <div className="grid lg:grid-cols-4 gap-12 mb-12">
               <div className="lg:col-span-2">
@@ -425,7 +425,7 @@ const FacebookAdsAgenturAlternative = () => {
                   />
                   <span className="text-xl font-bold">AdRuby</span>
                 </div>
-                <p className="text-gray-400 max-w-md text-sm leading-relaxed">
+                <p className="text-muted-foreground max-w-md text-sm leading-relaxed">
                   KI-basiertes Meta Ads OS für Marketer:innen & Brands. Strategien, Creatives, Copy und Setup in einem Workflow.
                 </p>
               </div>
@@ -433,7 +433,7 @@ const FacebookAdsAgenturAlternative = () => {
                 <h4 className="font-bold mb-4">Produkt</h4>
                 <div className="space-y-3">
                   {['KI-Strategie', 'Ad Generator', 'Meta Setup', 'Analytics', 'API Access'].map((item) => (
-                    <a key={item} href="#" className="block text-gray-400 hover:text-white transition-colors text-sm">
+                    <a key={item} href="#" className="block text-muted-foreground hover:text-foreground transition-colors text-sm">
                       {item}
                     </a>
                   ))}
@@ -443,19 +443,19 @@ const FacebookAdsAgenturAlternative = () => {
                 <h4 className="font-bold mb-4">Unternehmen</h4>
                 <div className="space-y-3">
                   {['Über uns', 'Blog', 'Karriere', 'Presse', 'Kontakt'].map((item) => (
-                    <a key={item} href="#" className="block text-gray-400 hover:text-white transition-colors text-sm">
+                    <a key={item} href="#" className="block text-muted-foreground hover:text-foreground transition-colors text-sm">
                       {item}
                     </a>
                   ))}
                 </div>
               </div>
             </div>
-            <div className="flex flex-col lg:flex-row justify-between items-center pt-8 border-t border-gray-800 text-sm text-gray-400 gap-4">
+            <div className="flex flex-col lg:flex-row justify-between items-center pt-8 border-t border-gray-800 text-sm text-muted-foreground gap-4">
               <span>© 2025 AdRuby. Alle Rechte vorbehalten.</span>
               <div className="flex items-center gap-6">
-                <a href="#" className="hover:text-white transition-colors">Impressum</a>
-                <a href="#" className="hover:text-white transition-colors">Datenschutz</a>
-                <a href="#" className="hover:text-white transition-colors">AGB</a>
+                <a href="#" className="hover:text-foreground transition-colors">Impressum</a>
+                <a href="#" className="hover:text-foreground transition-colors">Datenschutz</a>
+                <a href="#" className="hover:text-foreground transition-colors">AGB</a>
               </div>
             </div>
           </div>
