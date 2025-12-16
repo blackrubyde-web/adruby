@@ -8,14 +8,14 @@ const MetaAdsToolCoaches = () => {
       heading: 'Typische Probleme von Coaches mit Meta Ads',
       description: 'Hooks unklar, Angebote schwanken, Funnel inkonsistent.',
       content: (
-        <ul className="space-y-2 text-sm md:text-base text-[#2c2c2c] max-w-3xl mx-auto">
+        <ul className="space-y-2 text-sm md:text-base text-muted-foreground max-w-3xl mx-auto">
           {[
             'Unklar, welche Hooks und Angebote funktionieren.',
             'Lead-Kosten schwanken, Funnel bricht nach dem Opt-in ab.',
             'Keine Struktur, wann du welche Kampagnen fährst (Lead-Magnet, Webinar, Call).'
           ].map((item) => (
             <li key={item} className="flex items-start gap-2">
-              <span className="mt-1 h-2 w-2 rounded-full bg-[#C80000]" />
+              <span className="mt-1 h-2 w-2 rounded-full bg-accent" />
               <span>{item}</span>
             </li>
           ))}
@@ -46,9 +46,9 @@ const MetaAdsToolCoaches = () => {
               desc: 'Exportierbare Kampagnen-, AdSet- und Ad-Strukturen für Meta Ads.'
             }
           ].map((card) => (
-            <div key={card.title} className="p-6 rounded-xl border border-[#e5e5e5] bg-[#fafafa] shadow-sm">
-              <h3 className="text-lg font-semibold text-[#0b0b0b] mb-2">{card.title}</h3>
-              <p className="text-sm text-[#4a4a4a] leading-relaxed">{card.desc}</p>
+            <div key={card.title} className="p-6 rounded-xl border border-border bg-card shadow-sm">
+              <h3 className="text-lg font-semibold text-foreground mb-2">{card.title}</h3>
+              <p className="text-sm text-muted-foreground leading-relaxed">{card.desc}</p>
             </div>
           ))}
         </div>
@@ -59,14 +59,14 @@ const MetaAdsToolCoaches = () => {
       heading: 'Beispiele für Kampagnen',
       description: 'Lead-Magnet, Webinar, Direct-to-Call – AdRuby liefert die passenden Bausteine.',
       content: (
-        <ul className="space-y-3 text-sm md:text-base text-[#2c2c2c] max-w-3xl mx-auto">
+        <ul className="space-y-3 text-sm md:text-base text-muted-foreground max-w-3xl mx-auto">
           {[
             'Lead-Magnet: Hooks, Copy und Retargeting-Sequenzen für den ersten Opt-in.',
             'Webinar: Warm-Up-Ads, Reminder, Post-Webinar-Conversion-Ads.',
             'Direct-to-Call: Qualifizierte Leads mit Proof-basierten Hooks und Zielgruppen.'
           ].map((item) => (
             <li key={item} className="flex items-start gap-2">
-              <span className="mt-1 h-2 w-2 rounded-full bg-[#C80000]" />
+              <span className="mt-1 h-2 w-2 rounded-full bg-accent" />
               <span>{item}</span>
             </li>
           ))}
@@ -96,9 +96,9 @@ const MetaAdsToolCoaches = () => {
               a: 'Ja, AdRuby bietet Storytelling-Hooks und Sequenzen für High-Ticket Funnels.'
             }
           ].map((faq) => (
-            <div key={faq.q} className="p-5 md:p-6 rounded-xl border border-[#e5e5e5] bg-white shadow-sm space-y-2">
-              <h3 className="font-semibold text-[#0b0b0b]">{faq.q}</h3>
-              <p className="text-sm text-[#4a4a4a] leading-relaxed">{faq.a}</p>
+            <div key={faq.q} className="p-5 md:p-6 rounded-xl border border-border bg-white shadow-sm space-y-2">
+              <h3 className="font-semibold text-foreground">{faq.q}</h3>
+              <p className="text-sm text-muted-foreground leading-relaxed">{faq.a}</p>
             </div>
           ))}
         </div>

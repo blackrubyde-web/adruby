@@ -2,18 +2,18 @@ const cx = (...classes) => classes.filter(Boolean).join(' ');
 
 export const UI = {
   page: 'min-h-screen text-foreground',
-  section: 'space-y-6',
+  section: 'space-y-8',
   card: 'rounded-2xl border border-border/60 bg-card/80 backdrop-blur-md shadow-sm',
-  cardHover: 'hover:bg-card/90 hover:border-border transition',
+  cardHover: 'hover:bg-card/90 hover:border-border transition-all duration-200 hover:shadow-md',
   cardHeader: 'flex items-start justify-between gap-3',
   h1: 'text-2xl md:text-3xl font-semibold tracking-tight',
   h2: 'text-lg font-semibold tracking-tight',
   meta: 'text-sm text-muted-foreground',
   label: 'text-xs uppercase tracking-wider text-muted-foreground',
-  btnPrimary: 'inline-flex h-10 items-center justify-center gap-2 rounded-xl bg-primary px-4 text-primary-foreground font-semibold shadow-sm hover:bg-primary/90 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60',
-  btnSecondary: 'inline-flex h-10 items-center justify-center gap-2 rounded-xl border border-border bg-card px-4 text-foreground hover:bg-accent/30 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/60',
-  btnQuiet: 'inline-flex h-10 w-10 items-center justify-center rounded-xl text-foreground hover:bg-accent/30 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/60',
-  pill: 'inline-flex items-center rounded-full border border-border/70 bg-card/80 px-3 py-1.5 text-sm text-muted-foreground hover:bg-accent/30 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/60',
+  btnPrimary: 'inline-flex h-10 items-center justify-center gap-2 rounded-xl bg-primary px-4 text-primary-foreground font-semibold shadow-sm transition-all duration-200 hover:bg-primary/90 hover:shadow-md active:translate-y-[1px] active:opacity-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60 focus-visible:ring-offset-0',
+  btnSecondary: 'inline-flex h-10 items-center justify-center gap-2 rounded-xl border border-border bg-card px-4 text-foreground transition-all duration-200 hover:bg-accent/30 hover:shadow-sm active:translate-y-[1px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/60 focus-visible:ring-offset-0',
+  btnQuiet: 'inline-flex h-10 w-10 items-center justify-center rounded-xl text-foreground transition-all duration-200 hover:bg-accent/30 active:translate-y-[1px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/60 focus-visible:ring-offset-0',
+  pill: 'inline-flex items-center rounded-full border border-border/70 bg-card/80 px-3 py-1.5 text-sm text-muted-foreground transition-all duration-200 hover:bg-accent/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/60 focus-visible:ring-offset-0',
   pillActive: 'inline-flex items-center rounded-full border border-primary bg-primary/20 text-foreground shadow-sm'
 };
 

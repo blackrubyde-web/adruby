@@ -8,14 +8,14 @@ const MetaAdsToolEcommerce = () => {
       heading: 'Die typischen E-Com Meta Ads Probleme',
       description: 'ROAS schwankt, Creatives brennen aus, Skalierung bricht – jeden Monat dieselben Fragen.',
       content: (
-        <ul className="space-y-2 text-sm md:text-base text-[#2c2c2c] max-w-3xl mx-auto">
+        <ul className="space-y-2 text-sm md:text-base text-muted-foreground max-w-3xl mx-auto">
           {[
             'ROAS schwankt, sobald ein Creative ausbrennt.',
             'Neue Creatives dauern zu lange, Tests laufen zu langsam.',
             'Skalierung bricht ab, sobald du Budgets erhöhst.'
           ].map((item) => (
             <li key={item} className="flex items-start gap-2">
-              <span className="mt-1 h-2 w-2 rounded-full bg-[#C80000]" />
+              <span className="mt-1 h-2 w-2 rounded-full bg-accent" />
               <span>{item}</span>
             </li>
           ))}
@@ -46,9 +46,9 @@ const MetaAdsToolEcommerce = () => {
               desc: 'Vom ersten Touchpoint bis zum Kauf – sauber abgedeckte Stufen.'
             }
           ].map((card) => (
-            <div key={card.title} className="p-6 rounded-xl border border-[#e5e5e5] bg-[#fafafa] shadow-sm">
-              <h3 className="text-lg font-semibold text-[#0b0b0b] mb-2">{card.title}</h3>
-              <p className="text-sm text-[#4a4a4a] leading-relaxed">{card.desc}</p>
+            <div key={card.title} className="p-6 rounded-xl border border-border bg-card shadow-sm">
+              <h3 className="text-lg font-semibold text-foreground mb-2">{card.title}</h3>
+              <p className="text-sm text-muted-foreground leading-relaxed">{card.desc}</p>
             </div>
           ))}
         </div>
@@ -59,14 +59,14 @@ const MetaAdsToolEcommerce = () => {
       heading: 'Konkrete Use-Cases',
       description: 'Typische E-Com Szenarien, bei denen AdRuby den Unterschied macht.',
       content: (
-        <ul className="space-y-3 text-sm md:text-base text-[#2c2c2c] max-w-3xl mx-auto">
+        <ul className="space-y-3 text-sm md:text-base text-muted-foreground max-w-3xl mx-auto">
           {[
             'Launch neuer Produkte: Hooks, Copy, Creatives und Setup in Minuten.',
             'Skalierung einer Gewinner-Kampagne: Budget-Clustering und frische Varianten.',
             'Black-Friday-Strategien: Sequenzen für Vorverkauf, Peak und Post-Sale.'
           ].map((item) => (
             <li key={item} className="flex items-start gap-2">
-              <span className="mt-1 h-2 w-2 rounded-full bg-[#C80000]" />
+              <span className="mt-1 h-2 w-2 rounded-full bg-accent" />
               <span>{item}</span>
             </li>
           ))}
@@ -96,9 +96,9 @@ const MetaAdsToolEcommerce = () => {
               a: 'Ja, du nutzt deine Ziele, Audiences und Produkte als Input und bekommst passende Strategien.'
             }
           ].map((faq) => (
-            <div key={faq.q} className="p-5 md:p-6 rounded-xl border border-[#e5e5e5] bg-white shadow-sm space-y-2">
-              <h3 className="font-semibold text-[#0b0b0b]">{faq.q}</h3>
-              <p className="text-sm text-[#4a4a4a] leading-relaxed">{faq.a}</p>
+            <div key={faq.q} className="p-5 md:p-6 rounded-xl border border-border bg-white shadow-sm space-y-2">
+              <h3 className="font-semibold text-foreground">{faq.q}</h3>
+              <p className="text-sm text-muted-foreground leading-relaxed">{faq.a}</p>
             </div>
           ))}
         </div>
