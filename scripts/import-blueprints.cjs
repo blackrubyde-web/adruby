@@ -13,9 +13,12 @@ if (fs.existsSync(envPath)) {
 const SUPABASE_URL = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
-// Fail-soft when env vars are missing (e.g. local/CI without secrets)
-if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
-  console.warn('[Blueprint Import] Missing SUPABASE env vars - skipping import.');
+const isLikelySupabaseKey = (key) =>
+  typeof key === 'string' && key.startsWith('ey') && key.length > 40;
+
+// Fail-soft when env vars are missing or look like placeholders (e.g. local/CI without secrets)
+if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY || !isLikelySupabaseKey(SUPABASE_SERVICE_ROLE_KEY)) {
+  console.warn('[Blueprint Import] Missing or invalid SUPABASE env vars - skipping import.');
   process.exit(0);
 }
 
