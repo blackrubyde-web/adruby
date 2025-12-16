@@ -3,6 +3,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { supabase } from '../../lib/supabaseClient';
 import usePreferredTheme from '../../hooks/usePreferredTheme';
 import { useAuth } from '../../contexts/AuthContext';
+import Input, { Label } from '../../components/ui/Input';
 
 const LoginPage = () => {
   const navigate = useNavigate();
@@ -94,8 +95,6 @@ const LoginPage = () => {
   const bgClass = 'bg-background text-foreground';
   const gradient = 'bg-background';
   const cardClasses = 'bg-card border border-border text-foreground';
-  const inputClasses =
-    'w-full rounded-lg border border-border bg-card text-foreground px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary';
   const mutedText = 'text-muted-foreground';
   const errorText = isDark ? 'text-red-400' : 'text-red-500';
 
@@ -114,9 +113,8 @@ const LoginPage = () => {
 
         <form className="space-y-4" onSubmit={handleEmailPasswordLogin}>
           <div className="space-y-2">
-            <label className="text-sm font-medium">E-Mail</label>
-            <input
-              className={inputClasses}
+            <Label>E-Mail</Label>
+            <Input
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
@@ -124,9 +122,8 @@ const LoginPage = () => {
             />
           </div>
           <div className="space-y-2">
-            <label className="text-sm font-medium">Passwort</label>
-            <input
-              className={inputClasses}
+            <Label>Passwort</Label>
+            <Input
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
