@@ -119,6 +119,7 @@ import { useAuth } from '../contexts/AuthContext';
 
 
 import { cxCard, cxCardHeader, cxCardTitle, cxButtonPrimary, cxButtonSecondary, cxButtonQuiet, cxPill, cxPillActive } from '../components/ui/uiPrimitives';
+import ChartCard from '../components/ui/ChartCard';
 import Delta from '../components/ui/Delta';
 import PageShell from '../components/ui/PageShell';
 
@@ -384,7 +385,7 @@ const safeNumber = (value: number | null | undefined, fallback = '') => {
 
 
 
-const formatCompact = (value: number | null | undefined, fallback = '??ï¿½????????') => {
+const formatCompact = (value: number | null | undefined, fallback = '???????????') => {
 
 
 
@@ -432,7 +433,7 @@ const formatCompact = (value: number | null | undefined, fallback = '??ï¿½??????
 
 
 
-const formatCurrency = (value: number | null | undefined, fallback = '??ï¿½????????') => {
+const formatCurrency = (value: number | null | undefined, fallback = '???????????') => {
 
 
 
@@ -480,7 +481,7 @@ const formatCurrency = (value: number | null | undefined, fallback = '??ï¿½?????
 
 
 
-const formatPct = (value: number | null | undefined, fallback = '??ï¿½????????') => {
+const formatPct = (value: number | null | undefined, fallback = '???????????') => {
 
 
 
@@ -3270,7 +3271,7 @@ const OverviewPage: React.FC = () => {
 
 
 
-            {value || '??ï¿½????????'}
+            {value || '???????????'}
 
 
 
@@ -3326,7 +3327,7 @@ const OverviewPage: React.FC = () => {
 
 
 
-        Cell: ({ value }) => (Array.isArray(value) ? value.join(', ') : value || '??ï¿½????????')
+        Cell: ({ value }) => (Array.isArray(value) ? value.join(', ') : value || '???????????')
 
 
 
@@ -4978,7 +4979,7 @@ const OverviewPage: React.FC = () => {
 
 
 
-                value={kpis ? `${kpis.adsGenerated}` : '??ï¿½????????'}
+                value={kpis ? `${kpis.adsGenerated}` : '???????????'}
 
 
 
@@ -5002,7 +5003,7 @@ const OverviewPage: React.FC = () => {
 
 
 
-                hint="im gew??????ï¿½hlten Zeitraum"
+                hint="im gew???????hlten Zeitraum"
 
 
 
@@ -5042,7 +5043,7 @@ const OverviewPage: React.FC = () => {
 
 
 
-                value={kpis ? `${kpis.strategiesCreated}` : '??ï¿½????????'}
+                value={kpis ? `${kpis.strategiesCreated}` : '???????????'}
 
 
 
@@ -5106,7 +5107,7 @@ const OverviewPage: React.FC = () => {
 
 
 
-                value={kpis ? `${kpis.analysesRun}` : '??ï¿½????????'}
+                value={kpis ? `${kpis.analysesRun}` : '???????????'}
 
 
 
@@ -5170,7 +5171,7 @@ const OverviewPage: React.FC = () => {
 
 
 
-                value={kpis ? `${kpis.creditsUsed}` : '??ï¿½????????'}
+                value={kpis ? `${kpis.creditsUsed}` : '???????????'}
 
 
 
@@ -5258,7 +5259,7 @@ const OverviewPage: React.FC = () => {
 
 
 
-                hint="Sch??????ï¿½tzung"
+                hint="Sch???????tzung"
 
 
 
@@ -5330,7 +5331,7 @@ const OverviewPage: React.FC = () => {
 
 
 
-                onClick={() => openDrawer('Iteration Velocity', <p>Ads pro Tag im gew??????ï¿½hlten Zeitraum.</p>)}
+                onClick={() => openDrawer('Iteration Velocity', <p>Ads pro Tag im gew???????hlten Zeitraum.</p>)}
 
 
 
@@ -5513,272 +5514,38 @@ const OverviewPage: React.FC = () => {
 
 
 
-
-          <CardShell
-
-
-
-
-
-
-
-            className="lg:col-span-2"
-
-
-
-
-
-
-
-            title="Performance"
-
-
-
-
-
-
-
-            actions={
-
-
-
-
-
-
-
+          <ChartCard className="lg:col-span-2" title="Performance"
+            rightActions={
               <div className="flex items-center gap-2">
-
-
-
-
-
-
-
                 {metricsList.map((m) => (
-
-
-
-
-
-
-
                   <button
-
-
-
-
-
-
-
                     key={m.key}
-
-
-
-
-
-
-
                     onClick={() => setActiveMetric(m.key)}
-
-
-
-
-
-
-
                     className={`rounded-full px-3 py-1 text-xs ${
-
-
-
-
-
-
-
-                      activeMetric === m.key ? 'bg-primary text-primary-foreground' : 'bg-card text-foreground hover:bg-card'
-
-
-
-
-
-
-
+                      activeMetric === m.key ? "bg-primary text-primary-foreground" : "bg-card text-foreground hover:bg-card"
                     }`}
-
-
-
-
-
-
-
                   >
-
-
-
-
-
-
-
                     {m.label}
-
-
-
-
-
-
-
                   </button>
-
-
-
-
-
-
-
                 ))}
-
-
-
-
-
-
-
                 <button
-
-
-
-
-
-
-
                   type="button"
-
-
-
-
-
-
-
-                  onClick={() => exportNodeToPng(lineRef.current, 'performance.png')}
-
-
-
-
-
-
-
+                  onClick={() => exportNodeToPng(lineRef.current, "performance.png")}
                   className="rounded-full border border-border/60 bg-card px-3 py-1 text-xs text-foreground hover:border-border"
-
-
-
-
-
-
-
                 >
-
-
-
-
-
-
-
                   <Download size={14} />
-
-
-
-
-
-
-
                 </button>
-
-
-
-
-
-
-
               </div>
-
-
-
-
-
-
-
             }
-
-
-
-
-
-
-
+            isLoading={loading}
+            isEmpty={!filteredPerformanceSeries?.length}
+            emptyTitle="Keine Daten"
+            emptyDescription="Für diesen Zeitraum liegen keine Performance-Daten vor."
           >
-
-
-
-
-
-
-
-            {loading ? (
-
-
-
-
-
-
-
-              <ChartSkeleton />
-
-
-
-
-
-
-
-            ) : (
-
-
-
-
-
-
-
-              <div ref={lineRef}>
-
-
-
-
-
-
-
-                <LineChartAnimated data={filteredPerformanceSeries} timezone={range.timezone} series={metricToChartSeries} />
-
-
-
-
-
-
-
-              </div>
-
-
-
-
-
-
-
-            )}
-
-
-
-
-
-
-
-          </CardShell>
+            <div ref={lineRef}>
+              <LineChartAnimated data={filteredPerformanceSeries} timezone={range.timezone} series={metricToChartSeries} />
+            </div>
+          </ChartCard>
 
 
 
@@ -6378,7 +6145,7 @@ const OverviewPage: React.FC = () => {
 
 
 
-              <p className="text-sm text-foreground">Keine Aktivit??????ï¿½ten im Zeitraum.</p>
+              <p className="text-sm text-foreground">Keine Aktivit???????ten im Zeitraum.</p>
 
 
 
@@ -6994,7 +6761,7 @@ const OverviewPage: React.FC = () => {
 
 
 
-                No assets in this view ??ï¿½???????? generate your first Ad Variant oder Strategy.
+                No assets in this view ??????????? generate your first Ad Variant oder Strategy.
 
 
 
@@ -7058,7 +6825,7 @@ const OverviewPage: React.FC = () => {
 
 
 
-            <RefreshCw className="mr-2 inline animate-spin" size={16} /> L??????ï¿½dt...
+            <RefreshCw className="mr-2 inline animate-spin" size={16} /> L???????dt...
 
 
 
@@ -7147,3 +6914,4 @@ const OverviewPage: React.FC = () => {
 
 
 export default OverviewPage;
+

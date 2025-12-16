@@ -16,6 +16,7 @@ import MetaConnectionModal from './components/MetaConnectionModal';
 import CampaignPerformanceCards from './components/CampaignPerformanceCards';
 import MetricsChart from './components/MetricsChart';
 import FacebookDataSync from './components/FacebookDataSync';
+import ChartCard from '../../components/ui/ChartCard';
 import Badge from '../../components/ui/Badge';
 import { statusBadgeClasses } from '../../components/ui/statusStyles';
 
@@ -598,11 +599,19 @@ const AIAnalysisPanel = () => {
                       kpiEvaluations={kpiEvaluations}
                       isDarkMode={isDarkMode}
                     />
-
-                    <MetricsChart 
-                      campaignData={campaignData}
-                      isDarkMode={isDarkMode}
-                    />
+                    <ChartCard
+                      title="Performance"
+                      subtitle="Aggregierte Kampagnen-KPIs"
+                      isLoading={refreshing}
+                      isEmpty={!campaignData?.length}
+                      emptyTitle="Keine Kampagnendaten"
+                      emptyDescription="Verbinde dein Meta-Konto oder lade Daten neu."
+                    >
+                      <MetricsChart 
+                        campaignData={campaignData}
+                        isDarkMode={isDarkMode}
+                      />
+                    </ChartCard>
 
                     <FacebookDataSync 
                       onSyncComplete={setCampaignData}
