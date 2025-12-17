@@ -4222,6 +4222,11 @@ const OverviewPage: React.FC = () => {
         <div className="space-y-6">
           <div className="grid grid-cols-12 gap-6">
             <aside className="col-span-12 lg:col-span-3 space-y-4">
+              <div className="space-y-1">
+                <p className="text-xs text-muted-foreground">My dashboard</p>
+                <h2 className="text-base font-semibold text-foreground">Key performance</h2>
+                <p className="text-sm text-muted-foreground">Sofortiger Status im Zeitraum.</p>
+              </div>
               <MiniKpiCard label="Credits Used" value={kpis ? `${kpis.creditsUsed}` : '—'} meta="im Zeitraum" icon={<Zap size={14} />} />
               <MiniKpiCard label="System Health" value="99.9%" meta="Uptime" icon={<Sparkles size={14} />} />
               <MiniKpiCard label="Avg Response" value="142ms" meta="P50" icon={<Clock3 size={14} />} />
@@ -4231,33 +4236,40 @@ const OverviewPage: React.FC = () => {
             </aside>
 
             <main className="col-span-12 lg:col-span-9 space-y-6">
-              <FilterBar
-            left={
-              <div className="flex flex-wrap items-center gap-2">
-                {[
-                  { label: 'Letzte 7 Tage', preset: '7d' as const },
-                  { label: 'Letzte 30 Tage', preset: '30d' as const },
-                  { label: 'Letzte 90 Tage', preset: '90d' as const },
-                  { label: 'YTD', preset: 'custom' as const }
-                ].map((p) => (
-                  <DateRangeChip
-                    key={p.preset}
-                    label={p.label}
-                    active={range.preset === p.preset}
-                    onClick={() =>
-                      setRange(
-                        p.preset === 'custom' ? { ...buildPresetRange('90d', range.timezone), preset: 'custom' } : buildPresetRange(p.preset, range.timezone)
-                      )
-                    }
-                  />
-                ))}
+              <div className="space-y-1">
+                <p className="text-xs text-muted-foreground">Sign a new contract</p>
+                <h2 className="text-base font-semibold text-foreground">Contract calculator</h2>
+                <p className="text-sm text-muted-foreground">Ein zentraler Steuerbalken für alle Panels.</p>
               </div>
-            }
-            right={
-              <div className="flex flex-wrap items-end justify-end gap-3">
-                <details className="rounded-xl border border-border/60 bg-card/60 px-3 py-2">
-                  <summary className="cursor-pointer select-none text-sm text-foreground">Benutzerdefiniert</summary>
-                  <div className="mt-3 flex flex-wrap items-end gap-3">
+
+              <div className="rounded-2xl border border-border/60 bg-card/60 p-5">
+                <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+                  <div className="min-w-0">
+                    <p className="text-xs text-muted-foreground">Zeitraum Presets</p>
+                    <div className="mt-2 flex flex-wrap items-center gap-2">
+                      {[
+                        { label: 'Letzte 7 Tage', preset: '7d' as const },
+                        { label: 'Letzte 30 Tage', preset: '30d' as const },
+                        { label: 'Letzte 90 Tage', preset: '90d' as const },
+                        { label: 'YTD', preset: 'custom' as const }
+                      ].map((p) => (
+                        <DateRangeChip
+                          key={p.preset}
+                          label={p.label}
+                          active={range.preset === p.preset}
+                          onClick={() =>
+                            setRange(
+                              p.preset === 'custom'
+                                ? { ...buildPresetRange('90d', range.timezone), preset: 'custom' }
+                                : buildPresetRange(p.preset, range.timezone)
+                            )
+                          }
+                        />
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="flex flex-wrap items-end gap-3">
                     <div className="flex flex-col gap-1">
                       <label className="text-xs text-muted-foreground">Start</label>
                       <input
@@ -4271,6 +4283,7 @@ const OverviewPage: React.FC = () => {
                         className="w-52 rounded-lg border border-border/60 bg-card px-3 py-2 text-sm text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
                       />
                     </div>
+
                     <div className="flex flex-col gap-1">
                       <label className="text-xs text-muted-foreground">Ende</label>
                       <input
@@ -4284,30 +4297,28 @@ const OverviewPage: React.FC = () => {
                         className="w-52 rounded-lg border border-border/60 bg-card px-3 py-2 text-sm text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
                       />
                     </div>
+
+                    <div className="flex flex-col gap-1">
+                      <label className="text-xs text-muted-foreground">Timezone</label>
+                      <select
+                        value={range.timezone}
+                        onChange={(e) => setRange((prev) => ({ ...prev, timezone: e.target.value }))}
+                        className="w-52 rounded-lg border border-border/60 bg-card px-3 py-2 text-sm text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
+                      >
+                        {TIMEZONES.map((tz) => (
+                          <option key={tz} value={tz}>
+                            {tz}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <button type="button" onClick={() => navigate('/ad-ruby-ad-builder')} className={cxButtonPrimary}>
+                      Neue Anzeige
+                    </button>
                   </div>
-                </details>
-
-                <div className="flex flex-col gap-1">
-                  <label className="text-xs text-muted-foreground">Timezone</label>
-                  <select
-                    value={range.timezone}
-                    onChange={(e) => setRange((prev) => ({ ...prev, timezone: e.target.value }))}
-                    className="w-52 rounded-lg border border-border/60 bg-card px-3 py-2 text-sm text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
-                  >
-                    {TIMEZONES.map((tz) => (
-                      <option key={tz} value={tz}>
-                        {tz}
-                      </option>
-                    ))}
-                  </select>
                 </div>
-
-                <button type="button" onClick={() => navigate('/ad-ruby-ad-builder')} className={cxButtonPrimary}>
-                  Neue Anzeige
-                </button>
               </div>
-            }
-          />
 
           {false && (
           <details className="rounded-2xl border border-border/60 bg-card/60 p-4">
@@ -4936,8 +4947,112 @@ const OverviewPage: React.FC = () => {
           )}
         </div>
 
-            </div>
-          </details>
+
+            <CardShell title="Creative Engine" className="lg:col-span-2">
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <h3 className="text-xs uppercase tracking-wide text-foreground">Top Hooks</h3>
+                  {creativeInsights.topHooks?.length ? (
+                    creativeInsights.topHooks.map((hook: any) => (
+                      <InsightPill
+                        key={hook.hook}
+                        label={hook.hook}
+                        value={`Score ${hook.score ?? hook.usageCount}`}
+                        onClick={() =>
+                          openDrawer(
+                            'Hook Details',
+                            <div className="space-y-2">
+                              <p className="text-sm">Hook: {hook.hook}</p>
+                              <p className="text-sm">Usage: {hook.usageCount ?? 'n/a'}</p>
+                              <p className="text-sm">Score: {hook.score ?? 'n/a'}</p>
+                            </div>
+                          )
+                        }
+                      />
+                    ))
+                  ) : (
+                    <p className="text-sm text-foreground">No hooks found in this range.</p>
+                  )}
+                </div>
+
+                <div className="space-y-2">
+                  <h3 className="text-xs uppercase tracking-wide text-foreground">Winning Angles</h3>
+                  {creativeInsights.winningAngles?.length ? (
+                    creativeInsights.winningAngles.map((angle: any) => (
+                      <InsightPill key={angle.angle} label={angle.angle} value={`+${angle.liftPct}%`} />
+                    ))
+                  ) : (
+                    <p className="text-sm text-foreground">No angles yet.</p>
+                  )}
+                </div>
+
+                <div className="space-y-2">
+                  <h3 className="text-xs uppercase tracking-wide text-foreground">Fatigue Alerts</h3>
+                  {creativeInsights.fatigueAlerts?.length ? (
+                    creativeInsights.fatigueAlerts.map((a: any) => (
+                      <InsightPill key={a.creativeName} label={a.creativeName} value={a.reason} />
+                    ))
+                  ) : (
+                    <p className="text-sm text-foreground">No fatigue detected.</p>
+                  )}
+                </div>
+              </div>
+            </CardShell>
+
+
+            <CardShell title="Creative Engine" className="lg:col-span-2">
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <h3 className="text-xs uppercase tracking-wide text-foreground">Top Hooks</h3>
+                  {creativeInsights.topHooks?.length ? (
+                    creativeInsights.topHooks.map((hook: any) => (
+                      <InsightPill
+                        key={hook.hook}
+                        label={hook.hook}
+                        value={`Score ${hook.score ?? hook.usageCount}`}
+                        onClick={() =>
+                          openDrawer(
+                            'Hook Details',
+                            <div className="space-y-2">
+                              <p className="text-sm">Hook: {hook.hook}</p>
+                              <p className="text-sm">Usage: {hook.usageCount ?? 'n/a'}</p>
+                              <p className="text-sm">Score: {hook.score ?? 'n/a'}</p>
+                            </div>
+                          )
+                        }
+                      />
+                    ))
+                  ) : (
+                    <p className="text-sm text-foreground">No hooks found in this range.</p>
+                  )}
+                </div>
+
+                <div className="space-y-2">
+                  <h3 className="text-xs uppercase tracking-wide text-foreground">Winning Angles</h3>
+                  {creativeInsights.winningAngles?.length ? (
+                    creativeInsights.winningAngles.map((angle: any) => (
+                      <InsightPill key={angle.angle} label={angle.angle} value={`+${angle.liftPct}%`} />
+                    ))
+                  ) : (
+                    <p className="text-sm text-foreground">No angles yet.</p>
+                  )}
+                </div>
+
+                <div className="space-y-2">
+                  <h3 className="text-xs uppercase tracking-wide text-foreground">Fatigue Alerts</h3>
+                  {creativeInsights.fatigueAlerts?.length ? (
+                    creativeInsights.fatigueAlerts.map((a: any) => (
+                      <InsightPill key={a.creativeName} label={a.creativeName} value={a.reason} />
+                    ))
+                  ) : (
+                    <p className="text-sm text-foreground">No fatigue detected.</p>
+                  )}
+                </div>
+              </div>
+            </CardShell>
+
+             </div>
+           </details>
           )}
 
         {false && !kpis?.spend && (
@@ -5132,7 +5247,7 @@ const OverviewPage: React.FC = () => {
             <div className="space-y-1">
               <p className="text-xs text-muted-foreground">Insights</p>
               <h2 className="text-base font-semibold text-foreground">Output Mix / Insights</h2>
-              <p className="text-sm text-muted-foreground">Breakdown und Creative Engine Highlights aus dem Zeitraum.</p>
+              <p className="text-sm text-muted-foreground">Breakdown und Output Mix aus dem Zeitraum.</p>
             </div>
 
             <div className="mt-4 space-y-6">
@@ -5167,6 +5282,8 @@ const OverviewPage: React.FC = () => {
                 </div>
               </div>
 
+              {false && (
+                <>
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <div className="rounded-xl border border-border/60 bg-card/60 p-4">
                   <p className="text-xs text-muted-foreground">Time Saved</p>
@@ -5508,8 +5625,10 @@ const OverviewPage: React.FC = () => {
 
 
 
-            </div>
-          </section>
+                </>
+              )}
+             </div>
+           </section>
 
 
 
@@ -5533,7 +5652,10 @@ const OverviewPage: React.FC = () => {
 
 
 
-        <div className="space-y-6">
+        <div className="flex flex-col gap-6">
+          <details className="order-2 rounded-2xl border border-border/60 bg-card/60 p-5">
+            <summary className="cursor-pointer select-none text-sm font-semibold text-foreground">More</summary>
+            <div className="mt-4 grid grid-cols-1 gap-6 lg:grid-cols-2">
 
 
 
@@ -5991,13 +6113,65 @@ const OverviewPage: React.FC = () => {
 
           </CardShell>
 
+          <CardShell title="Creative Engine" className="lg:col-span-2">
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <h3 className="text-xs uppercase tracking-wide text-foreground">Top Hooks</h3>
+                {creativeInsights.topHooks?.length ? (
+                  creativeInsights.topHooks.map((hook: any) => (
+                    <InsightPill
+                      key={hook.hook}
+                      label={hook.hook}
+                      value={`Score ${hook.score ?? hook.usageCount}`}
+                      onClick={() =>
+                        openDrawer(
+                          'Hook Details',
+                          <div className="space-y-2">
+                            <p className="text-sm">Hook: {hook.hook}</p>
+                            <p className="text-sm">Usage: {hook.usageCount ?? 'n/a'}</p>
+                            <p className="text-sm">Score: {hook.score ?? 'n/a'}</p>
+                          </div>
+                        )
+                      }
+                    />
+                  ))
+                ) : (
+                  <p className="text-sm text-foreground">No hooks found in this range.</p>
+                )}
+              </div>
+
+              <div className="space-y-2">
+                <h3 className="text-xs uppercase tracking-wide text-foreground">Winning Angles</h3>
+                {creativeInsights.winningAngles?.length ? (
+                  creativeInsights.winningAngles.map((angle: any) => (
+                    <InsightPill key={angle.angle} label={angle.angle} value={`+${angle.liftPct}%`} />
+                  ))
+                ) : (
+                  <p className="text-sm text-foreground">No angles yet.</p>
+                )}
+              </div>
+
+              <div className="space-y-2">
+                <h3 className="text-xs uppercase tracking-wide text-foreground">Fatigue Alerts</h3>
+                {creativeInsights.fatigueAlerts?.length ? (
+                  creativeInsights.fatigueAlerts.map((a: any) => (
+                    <InsightPill key={a.creativeName} label={a.creativeName} value={a.reason} />
+                  ))
+                ) : (
+                  <p className="text-sm text-foreground">No fatigue detected.</p>
+                )}
+              </div>
+            </div>
+          </CardShell>
 
 
 
 
 
 
-        </div>
+
+            </div>
+          </details>
 
 
 
@@ -6013,7 +6187,7 @@ const OverviewPage: React.FC = () => {
 
 
 
-        <div className="space-y-6">
+          <div className="order-1 space-y-6">
 
 
 
@@ -6048,32 +6222,45 @@ const OverviewPage: React.FC = () => {
 
 
           <div className="rounded-2xl border border-border/60 bg-card/60 p-6">
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
               <div className="space-y-1">
+                <p className="text-xs text-muted-foreground">My contracts</p>
                 <h2 className="text-base font-semibold text-foreground">Latest Activity</h2>
                 <p className="text-sm text-muted-foreground">Neueste Ads, Strategien und Analysen im Zeitraum.</p>
               </div>
-              <button
-                type="button"
-                onClick={() =>
-                  openDrawer(
-                    'Latest Activity',
-                    loading ? (
-                      <TableSkeleton />
-                    ) : (
-                      <DataTable
-                        data={Array.isArray(data?.table?.rows) ? data.table.rows : []}
-                        columns={tableColumns}
-                        summary={undefined}
-                        title="Latest Activity"
-                      />
+              <div className="flex flex-wrap items-end justify-end gap-3">
+                <div className="flex flex-col gap-1">
+                  <label className="text-xs text-muted-foreground">Sort by</label>
+                  <select
+                    defaultValue="created_at_desc"
+                    className="h-9 w-44 rounded-lg border border-border/60 bg-card px-3 text-sm text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
+                  >
+                    <option value="created_at_desc">Date created</option>
+                  </select>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() =>
+                    openDrawer(
+                      'Latest Activity',
+                      loading ? (
+                        <TableSkeleton />
+                      ) : (
+                        <DataTable
+                          data={Array.isArray(data?.table?.rows) ? data.table.rows : []}
+                          columns={tableColumns}
+                          summary={undefined}
+                          title="Latest Activity"
+                        />
+                      )
                     )
-                  )
-                }
-                className={`${cxButtonSecondary} h-9 px-3 text-sm`}
-              >
-                View all
-              </button>
+                  }
+                  className={`${cxButtonSecondary} h-9 px-3 text-sm`}
+                >
+                  View all
+                </button>
+              </div>
             </div>
 
             {loading ? (
@@ -6082,6 +6269,13 @@ const OverviewPage: React.FC = () => {
               </div>
             ) : latestActivityRows.length ? (
               <div className="mt-4 overflow-hidden rounded-xl border border-border/60">
+                <div className="hidden grid-cols-12 gap-4 bg-card/40 px-4 py-2 text-xs text-muted-foreground md:grid">
+                  <div className="col-span-3">Date</div>
+                  <div className="col-span-4">Item</div>
+                  <div className="col-span-3">Progress</div>
+                  <div className="col-span-2 text-right">Action</div>
+                </div>
+
                 <div className="divide-y divide-border/40">
                   {latestActivityRows.map((row: any) => {
                     const name = row?.name ?? row?.title ?? '—';
@@ -6103,20 +6297,51 @@ const OverviewPage: React.FC = () => {
                           : status === 'failed'
                             ? 'bg-secondary/60 text-foreground'
                             : 'bg-card/60 text-foreground';
+                    const progressWidthClass =
+                      status === 'completed'
+                        ? 'w-full'
+                        : status === 'active'
+                          ? 'w-[72%]'
+                          : status === 'failed'
+                            ? 'w-full'
+                            : 'w-[36%]';
+                    const progressLabel =
+                      status === 'completed' ? '100%' : status === 'active' ? '72%' : status === 'failed' ? '—' : '—';
 
                     return (
                       <div
                         key={row?.id ?? `${typeLabel}-${row?.created_at}-${name}`}
-                        className="flex flex-col gap-2 px-4 py-3 sm:flex-row sm:items-center sm:justify-between"
+                        className="grid grid-cols-1 gap-3 px-4 py-3 md:grid-cols-12 md:items-center md:gap-4"
                       >
-                        <div className="min-w-0">
-                          <p className="text-xs text-muted-foreground">{typeLabel}</p>
-                          <p className="truncate text-sm font-semibold text-foreground">{name}</p>
-                          <p className="mt-1 text-xs text-muted-foreground">{dateLabel}</p>
+                        <div className="md:col-span-3">
+                          <p className="text-xs text-muted-foreground">{dateLabel}</p>
                         </div>
-                        <div className="flex items-center justify-between gap-3 sm:justify-end">
+
+                        <div className="min-w-0 md:col-span-4">
+                          <p className="truncate text-sm font-semibold text-foreground">{name}</p>
+                          <p className="text-xs text-muted-foreground">{typeLabel}</p>
+                        </div>
+
+                        <div className="md:col-span-3">
+                          <div className="flex items-center gap-2">
+                            <div className="h-2 flex-1 overflow-hidden rounded-full bg-secondary/40">
+                              <div className={`h-full ${progressWidthClass} bg-accent/40`} />
+                            </div>
+                            <span className="text-xs text-muted-foreground">{progressLabel}</span>
+                          </div>
+
+                          <div className="mt-2 md:hidden">
+                            <span
+                              className={`inline-flex items-center rounded-full border border-border/60 px-2 py-0.5 text-xs ${statusClassName}`}
+                            >
+                              {status}
+                            </span>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center justify-between gap-3 md:col-span-2 md:justify-end">
                           <span
-                            className={`inline-flex items-center rounded-full border border-border/60 px-2 py-0.5 text-xs ${statusClassName}`}
+                            className={`hidden items-center rounded-full border border-border/60 px-2 py-0.5 text-xs md:inline-flex ${statusClassName}`}
                           >
                             {status}
                           </span>
@@ -6157,6 +6382,20 @@ const OverviewPage: React.FC = () => {
                 </div>
               </div>
             )}
+          </div>
+
+          <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+            <div className="rounded-2xl border border-border/60 bg-card/60 p-6">
+              <p className="text-xs text-muted-foreground">Time Saved</p>
+              <p className="mt-2 text-2xl font-semibold text-foreground">{`${Math.round(timeSavedMinutes / 60)}h`}</p>
+              <p className="mt-1 text-sm text-muted-foreground">Schätzung</p>
+            </div>
+
+            <div className="rounded-2xl border border-border/60 bg-card/60 p-6">
+              <p className="text-xs text-muted-foreground">Iteration Velocity</p>
+              <p className="mt-2 text-2xl font-semibold text-foreground">{kpis ? `${iterationVelocity} ads/Tag` : '—'}</p>
+              <p className="mt-1 text-sm text-muted-foreground">{`${daysInRange} Tage`}</p>
+            </div>
           </div>
 
           {false && (
@@ -6522,6 +6761,7 @@ const OverviewPage: React.FC = () => {
 
           </CardShell>
           )}
+        </div>
         </div>
 
 
