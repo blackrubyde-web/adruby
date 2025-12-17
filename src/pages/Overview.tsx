@@ -101,6 +101,8 @@ import DonutChart from '../components/DonutChart';
 import DateRangePicker from '../components/DateRangePicker';
 
 
+import FilterBar from '../components/ui/FilterBar';
+
 
 import { DateRangeValue } from '../api/types';
 
@@ -6364,4 +6366,3 @@ const OverviewPage: React.FC = () => {
 
 
 export default OverviewPage;
-
