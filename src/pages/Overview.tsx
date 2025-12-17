@@ -105,7 +105,7 @@ import { DateRangeValue } from '../api/types';
 
 
 
-import { TIMEZONES, buildPresetRange } from '../utils/dateUtils';
+import { TIMEZONES, buildPresetRange, formatTimestamp } from '../utils/dateUtils';
 
 
 
@@ -385,7 +385,7 @@ const safeNumber = (value: number | null | undefined, fallback = '') => {
 
 
 
-const formatCompact = (value: number | null | undefined, fallback = '???????????') => {
+const formatCompact = (value: number | null | undefined, fallback = '—') => {
 
 
 
@@ -433,7 +433,7 @@ const formatCompact = (value: number | null | undefined, fallback = '???????????
 
 
 
-const formatCurrency = (value: number | null | undefined, fallback = '???????????') => {
+const formatCurrency = (value: number | null | undefined, fallback = '—') => {
 
 
 
@@ -481,7 +481,7 @@ const formatCurrency = (value: number | null | undefined, fallback = '??????????
 
 
 
-const formatPct = (value: number | null | undefined, fallback = '???????????') => {
+const formatPct = (value: number | null | undefined, fallback = '—') => {
 
 
 
@@ -1101,7 +1101,7 @@ const ChartSkeleton = () => (
 
 
 
-  <div className="h-[320px] rounded-xl border border-border/60 bg-gradient-to-b from-white/5 to-transparent animate-pulse" />
+  <div className="h-[320px] rounded-xl border border-border/60 bg-card/40 animate-pulse" />
 
 
 
@@ -3225,7 +3225,7 @@ const OverviewPage: React.FC = () => {
 
 
 
-            className={`rounded-full px-2 py-0.5 text-xs ${
+            className={`inline-flex items-center rounded-full border border-border/60 px-2 py-0.5 text-xs ${
 
 
 
@@ -3241,7 +3241,7 @@ const OverviewPage: React.FC = () => {
 
 
 
-                ? 'bg-secondary/70 text-foreground'
+                ? 'bg-secondary/60 text-foreground'
 
 
 
@@ -3257,7 +3257,7 @@ const OverviewPage: React.FC = () => {
 
 
 
-                  ? 'bg-sky-500/15 text-sky-200'
+                  ? 'bg-accent/40 text-foreground'
 
 
 
@@ -3273,7 +3273,7 @@ const OverviewPage: React.FC = () => {
 
 
 
-                    ? 'bg-accent/50 text-foreground'
+                    ? 'bg-secondary/60 text-foreground'
 
 
 
@@ -3281,7 +3281,7 @@ const OverviewPage: React.FC = () => {
 
 
 
-                    : 'bg-card text-foreground'
+                    : 'bg-card/60 text-foreground'
 
 
 
@@ -3305,7 +3305,7 @@ const OverviewPage: React.FC = () => {
 
 
 
-            {value || '???????????'}
+            {value || '—'}
 
 
 
@@ -3361,7 +3361,7 @@ const OverviewPage: React.FC = () => {
 
 
 
-        Cell: ({ value }) => (Array.isArray(value) ? value.join(', ') : value || '???????????')
+        Cell: ({ value }) => (Array.isArray(value) ? value.join(', ') : value || '—')
 
 
 
@@ -3618,6 +3618,20 @@ const OverviewPage: React.FC = () => {
 
 
   }, [data?.table?.rows, activeTableTab, statusFilter, searchTerm, chipFilters]);
+
+  const latestActivityRows = useMemo(() => {
+    const rows = Array.isArray(data?.table?.rows) ? data.table.rows : [];
+
+    return [...rows]
+      .sort((a, b) => {
+        const aTime = new Date(a?.created_at).getTime();
+        const bTime = new Date(b?.created_at).getTime();
+        const aSafe = Number.isNaN(aTime) ? 0 : aTime;
+        const bSafe = Number.isNaN(bTime) ? 0 : bTime;
+        return bSafe - aSafe;
+      })
+      .slice(0, 8);
+  }, [data?.table?.rows]);
 
 
 
@@ -3898,6 +3912,29 @@ const OverviewPage: React.FC = () => {
 
 
   }, [kpis, daysInRange]);
+
+  const outputMix = useMemo(() => {
+    if (!kpis) {
+      return [
+        { key: 'ads', label: 'Ads', value: null, pct: null },
+        { key: 'strategies', label: 'Strategies', value: null, pct: null },
+        { key: 'analyses', label: 'Analyses', value: null, pct: null }
+      ];
+    }
+
+    const ads = kpis.adsGenerated ?? 0;
+    const strategies = kpis.strategiesCreated ?? 0;
+    const analyses = kpis.analysesRun ?? 0;
+    const total = ads + strategies + analyses;
+
+    const pctOfTotal = (value: number) => (total > 0 ? (value / total) * 100 : 0);
+
+    return [
+      { key: 'ads', label: 'Ads', value: ads, pct: pctOfTotal(ads) },
+      { key: 'strategies', label: 'Strategies', value: strategies, pct: pctOfTotal(strategies) },
+      { key: 'analyses', label: 'Analyses', value: analyses, pct: pctOfTotal(analyses) }
+    ];
+  }, [kpis]);
 
 
 
@@ -4272,6 +4309,7 @@ const OverviewPage: React.FC = () => {
             }
           />
 
+          {false && (
           <details className="rounded-2xl border border-border/60 bg-card/60 p-4">
             <summary className="cursor-pointer select-none text-sm text-foreground">Weitere KPIs</summary>
             <div className="mt-4 space-y-6">
@@ -4316,7 +4354,7 @@ const OverviewPage: React.FC = () => {
 
 
 
-                value: data?.kpis?.spend ? formatCurrency(data.kpis.spend) : '?',
+                value: data?.kpis?.spend ? formatCurrency(data.kpis.spend) : '—',
 
 
 
@@ -4328,7 +4366,7 @@ const OverviewPage: React.FC = () => {
 
 
 
-              { label: 'Lift vs. last week', value: kpis ? formatPct(kpis.ctr ?? 0) : '?', icon: <Flame size={14} /> },
+              { label: 'Lift vs. last week', value: kpis ? formatPct(kpis.ctr ?? 0) : '—', icon: <Flame size={14} /> },
 
 
 
@@ -4512,7 +4550,7 @@ const OverviewPage: React.FC = () => {
 
 
 
-                value={kpis ? `${kpis.adsGenerated}` : '???????????'}
+                value={kpis ? `${kpis.adsGenerated}` : '—'}
 
 
 
@@ -4536,7 +4574,7 @@ const OverviewPage: React.FC = () => {
 
 
 
-                hint="im gew???????hlten Zeitraum"
+                hint="im gewählten Zeitraum"
 
 
 
@@ -4576,7 +4614,7 @@ const OverviewPage: React.FC = () => {
 
 
 
-                value={kpis ? `${kpis.strategiesCreated}` : '???????????'}
+                value={kpis ? `${kpis.strategiesCreated}` : '—'}
 
 
 
@@ -4640,7 +4678,7 @@ const OverviewPage: React.FC = () => {
 
 
 
-                value={kpis ? `${kpis.analysesRun}` : '???????????'}
+                value={kpis ? `${kpis.analysesRun}` : '—'}
 
 
 
@@ -4704,7 +4742,7 @@ const OverviewPage: React.FC = () => {
 
 
 
-                value={kpis ? `${kpis.creditsUsed}` : '???????????'}
+                value={kpis ? `${kpis.creditsUsed}` : '—'}
 
 
 
@@ -4792,7 +4830,7 @@ const OverviewPage: React.FC = () => {
 
 
 
-                hint="Sch???????tzung"
+                hint="Schätzung"
 
 
 
@@ -4864,7 +4902,7 @@ const OverviewPage: React.FC = () => {
 
 
 
-                onClick={() => openDrawer('Iteration Velocity', <p>Ads pro Tag im gew???????hlten Zeitraum.</p>)}
+                onClick={() => openDrawer('Iteration Velocity', <p>Ads pro Tag im gewählten Zeitraum.</p>)}
 
 
 
@@ -4888,34 +4926,21 @@ const OverviewPage: React.FC = () => {
 
 
 
+
+
+
+
+
+
+
           )}
-
-
-
-
-
-
-
         </div>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
             </div>
           </details>
+          )}
 
-        {!kpis?.spend && (
+        {false && !kpis?.spend && (
 
 
 
@@ -5050,7 +5075,12 @@ const OverviewPage: React.FC = () => {
 
 
 
-          <ChartCard className="col-span-12 lg:col-span-7" title="Usage & Output Trend"
+          <section className="col-span-12 xl:col-span-7 rounded-2xl border border-border/60 bg-card/60 p-6">
+            <p className="text-xs text-muted-foreground">Usage</p>
+            <ChartCard
+              className="mt-1 rounded-none border-0 bg-transparent p-0 shadow-none"
+              title="Usage & Output Trend"
+              subtitle="Zeitlicher Verlauf für den gewählten Zeitraum."
             rightActions={
               <div className="flex items-center gap-2">
                 {metricsList.map((m) => (
@@ -5082,6 +5112,7 @@ const OverviewPage: React.FC = () => {
               <LineChartAnimated data={filteredPerformanceSeries} timezone={range.timezone} series={metricToChartSeries} />
             </div>
           </ChartCard>
+          </section>
 
 
 
@@ -5097,7 +5128,59 @@ const OverviewPage: React.FC = () => {
 
 
 
-          <CardShell className="col-span-12 lg:col-span-5" title="Creative Engine">
+          <section className="col-span-12 xl:col-span-5 rounded-2xl border border-border/60 bg-card/60 p-6">
+            <div className="space-y-1">
+              <p className="text-xs text-muted-foreground">Insights</p>
+              <h2 className="text-base font-semibold text-foreground">Output Mix / Insights</h2>
+              <p className="text-sm text-muted-foreground">Breakdown und Creative Engine Highlights aus dem Zeitraum.</p>
+            </div>
+
+            <div className="mt-4 space-y-6">
+              {!kpis?.spend && (
+                <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border/60 bg-card/60 px-4 py-3 text-sm">
+                  <div className="flex items-center gap-2">
+                    <AlertTriangle size={16} className="text-foreground" />
+                    <span className="text-muted-foreground">Connect Meta to unlock live KPIs (Spend/Revenue/ROAS/CPA/CTR).</span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => navigate('/settings-configuration')}
+                    className={`${cxButtonSecondary} h-9 px-3 text-sm`}
+                  >
+                    Connect Meta
+                  </button>
+                </div>
+              )}
+
+              <div className="rounded-xl border border-border/60 bg-card/60 p-4">
+                <p className="text-xs uppercase tracking-wide text-muted-foreground">Output Mix</p>
+                <div className="mt-3 space-y-2">
+                  {outputMix.map((item) => (
+                    <div key={item.key} className="flex items-center justify-between gap-3">
+                      <div className="min-w-0">
+                        <p className="text-sm font-medium text-foreground">{item.label}</p>
+                        <p className="text-xs text-muted-foreground">{formatPct(item.pct)}</p>
+                      </div>
+                      <p className="text-sm font-semibold text-foreground">{formatCompact(item.value)}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <div className="rounded-xl border border-border/60 bg-card/60 p-4">
+                  <p className="text-xs text-muted-foreground">Time Saved</p>
+                  <p className="mt-1 text-lg font-semibold text-foreground">{`${Math.round(timeSavedMinutes / 60)}h`}</p>
+                  <p className="mt-1 text-xs text-muted-foreground">Schätzung</p>
+                </div>
+                <div className="rounded-xl border border-border/60 bg-card/60 p-4">
+                  <p className="text-xs text-muted-foreground">Iteration Velocity</p>
+                  <p className="mt-1 text-lg font-semibold text-foreground">{kpis ? `${iterationVelocity} ads/Tag` : '—'}</p>
+                  <p className="mt-1 text-xs text-muted-foreground">{`${daysInRange} Tage`}</p>
+                </div>
+              </div>
+
+              <p className="text-xs uppercase tracking-wide text-muted-foreground">Creative Engine</p>
 
 
 
@@ -5425,7 +5508,8 @@ const OverviewPage: React.FC = () => {
 
 
 
-          </CardShell>
+            </div>
+          </section>
 
 
 
@@ -5697,7 +5781,7 @@ const OverviewPage: React.FC = () => {
 
 
 
-          </CardShell>
+            </CardShell>
 
 
 
@@ -5937,6 +6021,7 @@ const OverviewPage: React.FC = () => {
 
 
 
+          {false && (
           <CardShell title="Sessions nach Device">
 
 
@@ -5954,6 +6039,7 @@ const OverviewPage: React.FC = () => {
 
 
           </CardShell>
+          )}
 
 
 
@@ -5961,7 +6047,120 @@ const OverviewPage: React.FC = () => {
 
 
 
-          <CardShell title="Latest Activity">
+          <div className="rounded-2xl border border-border/60 bg-card/60 p-6">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+              <div className="space-y-1">
+                <h2 className="text-base font-semibold text-foreground">Latest Activity</h2>
+                <p className="text-sm text-muted-foreground">Neueste Ads, Strategien und Analysen im Zeitraum.</p>
+              </div>
+              <button
+                type="button"
+                onClick={() =>
+                  openDrawer(
+                    'Latest Activity',
+                    loading ? (
+                      <TableSkeleton />
+                    ) : (
+                      <DataTable
+                        data={Array.isArray(data?.table?.rows) ? data.table.rows : []}
+                        columns={tableColumns}
+                        summary={undefined}
+                        title="Latest Activity"
+                      />
+                    )
+                  )
+                }
+                className={`${cxButtonSecondary} h-9 px-3 text-sm`}
+              >
+                View all
+              </button>
+            </div>
+
+            {loading ? (
+              <div className="mt-4">
+                <TableSkeleton />
+              </div>
+            ) : latestActivityRows.length ? (
+              <div className="mt-4 overflow-hidden rounded-xl border border-border/60">
+                <div className="divide-y divide-border/40">
+                  {latestActivityRows.map((row: any) => {
+                    const name = row?.name ?? row?.title ?? '—';
+                    const typeLabel =
+                      row?.type === 'ad'
+                        ? 'Ad'
+                        : row?.type === 'strategy'
+                          ? 'Strategy'
+                          : row?.type === 'analysis'
+                            ? 'Analysis'
+                            : row?.type || '—';
+                    const dateLabel = row?.created_at ? formatTimestamp(row.created_at, range.timezone) : '—';
+                    const status = row?.status || '—';
+                    const statusClassName =
+                      status === 'completed'
+                        ? 'bg-secondary/60 text-foreground'
+                        : status === 'active'
+                          ? 'bg-accent/40 text-foreground'
+                          : status === 'failed'
+                            ? 'bg-secondary/60 text-foreground'
+                            : 'bg-card/60 text-foreground';
+
+                    return (
+                      <div
+                        key={row?.id ?? `${typeLabel}-${row?.created_at}-${name}`}
+                        className="flex flex-col gap-2 px-4 py-3 sm:flex-row sm:items-center sm:justify-between"
+                      >
+                        <div className="min-w-0">
+                          <p className="text-xs text-muted-foreground">{typeLabel}</p>
+                          <p className="truncate text-sm font-semibold text-foreground">{name}</p>
+                          <p className="mt-1 text-xs text-muted-foreground">{dateLabel}</p>
+                        </div>
+                        <div className="flex items-center justify-between gap-3 sm:justify-end">
+                          <span
+                            className={`inline-flex items-center rounded-full border border-border/60 px-2 py-0.5 text-xs ${statusClassName}`}
+                          >
+                            {status}
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() =>
+                              openDrawer(
+                                name,
+                                <div className="space-y-2">
+                                  <p className="text-sm">Type: {typeLabel}</p>
+                                  <p className="text-sm">Status: {status}</p>
+                                  <p className="text-sm">Created: {dateLabel}</p>
+                                </div>
+                              )
+                            }
+                            className={`${cxButtonSecondary} h-8 px-2 text-xs`}
+                          >
+                            Open
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            ) : (
+              <div className="mt-4 rounded-xl border border-border/60 bg-card/60 px-4 py-6">
+                <p className="text-sm font-semibold text-foreground">No recent activity yet</p>
+                <p className="mt-1 text-sm text-muted-foreground">Create your first ad to start tracking output here.</p>
+                <div className="mt-3">
+                  <button
+                    type="button"
+                    onClick={() => navigate('/ad-ruby-ad-builder')}
+                    className={`${cxButtonSecondary} h-9 px-3 text-sm`}
+                  >
+                    Create your first ad
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {false && (
+            <CardShell title="Latest Activity">
 
 
 
@@ -6322,13 +6521,7 @@ const OverviewPage: React.FC = () => {
 
 
           </CardShell>
-
-
-
-
-
-
-
+          )}
         </div>
 
 
