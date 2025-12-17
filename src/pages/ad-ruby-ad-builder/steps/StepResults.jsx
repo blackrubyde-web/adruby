@@ -1,4 +1,4 @@
-﻿import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { UI } from '../../../components/ui/uiPrimitives';
 import { supabase } from '../../../lib/supabaseClient';
 import AdVariantCard from '../components/AdVariantCard';
@@ -16,6 +16,25 @@ const sanitizeVariant = (ad) => ({
   cta: ad?.cta || 'Jetzt kaufen',
   __id: ad?.__id || makeId(),
 });
+
+const punchyOpeners = [
+  'Stop scrolling. ',
+  'Big news: ',
+  'Neu: ',
+  'Schnell erklärt: ',
+  'Kurz & knapp: ',
+  'Pro-Tipp: ',
+  "Don't miss: ",
+  'Heads up: ',
+];
+
+const tonePresets = {
+  serious: (text) => `Faktenbasiert: ${text}`,
+  casual: (text) => `Hey, kurz: ${text}`,
+  aggressive: (text) => `Stop Budget zu verbrennen: ${text}`,
+};
+
+const ctas = ['Jetzt kaufen', 'Mehr erfahren', 'Angebot sichern', 'Jetzt testen'];
 
 const StepResults = ({ ads, userId, briefing = {}, creativeDNA = {} }) => {
   const [variants, setVariants] = useState([]);
@@ -92,33 +111,16 @@ const StepResults = ({ ads, userId, briefing = {}, creativeDNA = {} }) => {
       const firstSentence = text.split(/[\.\!\?]/)[0];
       const target = firstSentence?.length > 0 ? firstSentence : text.slice(0, 120);
       const shortened = target.trim();
-      const suffix = text.length > shortened.length ? 'â€¦' : '';
+      const suffix = text.length > shortened.length ? '…' : '';
       return { primaryText: `${shortened}${suffix}` };
     });
   };
-
-  const punchyOpeners = [
-    'Stop scrolling. ',
-    'Big news: ',
-    'Neu: ',
-    'Schnell erklärt: ',
-    'Kurz & knapp: ',
-    'Pro-Tipp: ',
-    'Don\'t miss: ',
-    'Heads up: ',
-  ];
 
   const applyHookStronger = () => {
     applyTransform((v) => {
       const opener = punchyOpeners[Math.floor(Math.random() * punchyOpeners.length)];
       return { primaryText: `${opener}${v.primaryText || ''}`.trim() };
     });
-  };
-
-  const tonePresets = {
-    serious: (text) => `Faktenbasiert: ${text}`,
-    casual: (text) => `Hey, kurz: ${text}`,
-    aggressive: (text) => `Stop Budget zu verbrennen: ${text}`,
   };
 
   const applyTone = (tone) => {
@@ -129,7 +131,6 @@ const StepResults = ({ ads, userId, briefing = {}, creativeDNA = {} }) => {
     });
   };
 
-  const ctas = ['Jetzt kaufen', 'Mehr erfahren', 'Angebot sichern', 'Jetzt testen'];
   const applyCtaCycle = () => {
     applyTransform((v) => {
       const current = v.cta || ctas[0];
@@ -153,7 +154,7 @@ const StepResults = ({ ads, userId, briefing = {}, creativeDNA = {} }) => {
 
   const handleCopyPack = (variant) => {
     if (!variant) return;
-    const block = `Headline: ${variant.headline || 'â€”'}\nPrimary Text: ${variant.primaryText || 'â€”'}\nDescription: ${variant.description || 'â€”'}\nCTA: ${variant.cta || 'â€”'}`;
+    const block = `Headline: ${variant.headline || '—'}\nPrimary Text: ${variant.primaryText || '—'}\nDescription: ${variant.description || '—'}\nCTA: ${variant.cta || '—'}`;
     navigator?.clipboard?.writeText?.(block);
     setCopied('pack');
     setTimeout(() => setCopied(''), 1500);
@@ -260,7 +261,7 @@ const StepResults = ({ ads, userId, briefing = {}, creativeDNA = {} }) => {
           ?.insert({
             user_id: userId,
             headline,
-            primary_text: primaryText || 'â€”',
+            primary_text: primaryText || '—',
             cta,
             status: 'generated',
             facebook_preview_data: {
@@ -291,11 +292,11 @@ const StepResults = ({ ads, userId, briefing = {}, creativeDNA = {} }) => {
           },
         });
       if (saveVariantError) throw saveVariantError;
- 
+
       setSaveMessage('Gespeichert. Zur Bibliothek wechseln?');
       savedFingerprintsRef.current.add(fingerprint);
     } catch (e) {
-      setSaveError(e?.message || 'Speichern nicht moeglich.');
+      setSaveError(e?.message || 'Speichern nicht möglich.');
     } finally {
       setSaving(false);
     }
@@ -352,8 +353,3 @@ const StepResults = ({ ads, userId, briefing = {}, creativeDNA = {} }) => {
 };
 
 export default StepResults;
-
-
-
-
-

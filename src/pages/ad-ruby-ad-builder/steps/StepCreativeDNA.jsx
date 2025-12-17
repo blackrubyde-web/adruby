@@ -11,8 +11,8 @@ const tones = [
 
 const StepCreativeDNA = ({ tone, onChangeTone }) => {
   return (
-    <div className={`${UI.card} p-4`}>
-      <div className="flex items-center gap-2 mb-3">
+    <div className={`${UI.card} ${UI.cardHover} p-6 space-y-4`}>
+      <div className="flex items-center gap-2">
         <Sparkles size={16} className="text-foreground" />
         <div>
           <p className={UI.meta}>Creative DNA</p>
@@ -25,14 +25,14 @@ const StepCreativeDNA = ({ tone, onChangeTone }) => {
             key={t.key}
             onClick={() => onChangeTone(t.key)}
             className={`rounded-full px-3 py-1 text-sm border ${
-              tone === t.key ? 'bg-accent text-foreground border-border' : 'bg-card text-muted-foreground border-border'
+              tone === t.key ? 'bg-accent text-foreground border-border' : 'bg-card text-muted-foreground border-border hover:bg-accent/40'
             }`}
           >
             {t.label}
           </button>
         ))}
       </div>
-      <div className="mt-3">
+      <div className="pt-2">
         <HintCallout text="UGC + Problem/Solution performt oft stabil bei kalten Audiences." />
       </div>
     </div>

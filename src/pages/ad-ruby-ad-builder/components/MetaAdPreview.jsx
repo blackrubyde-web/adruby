@@ -6,7 +6,10 @@ import Button from '../../../components/ui/Button';
 const MetaAdPreview = ({ ad }) => {
   const hasContent = ad && (ad.headline || ad.primaryText);
   return (
-    <div className={`${UI.card} ${UI.cardHover} p-4 space-y-3`}>
+    <div className={`${UI.card} ${UI.cardHover} p-6 space-y-4`}>
+      <div>
+        <p className={UI.meta}>Live Preview</p>
+      </div>
       <div className="flex items-center gap-2">
         <div className="h-9 w-9 rounded-full bg-accent/80 border border-border" />
         <div className="space-y-0.5">
@@ -17,16 +20,16 @@ const MetaAdPreview = ({ ad }) => {
       {hasContent ? (
         <>
           <div className="space-y-1">
-            <p className="text-base font-semibold text-foreground">{ad?.headline || 'Headline'}</p>
-            <p className="text-sm text-muted-foreground whitespace-pre-line leading-relaxed">
+            <p className="text-base font-semibold text-foreground line-clamp-2">{ad?.headline || 'Headline'}</p>
+            <p className="text-sm text-muted-foreground whitespace-pre-line leading-relaxed line-clamp-4">
               {ad?.primaryText || ad?.text || 'Ad copy folgt...'}
             </p>
             {ad?.description && <p className="text-xs text-muted-foreground">{ad.description}</p>}
           </div>
-          <div className="rounded-xl border border-border bg-card/60 p-3 space-y-2">
+          <div className="rounded-xl border border-border bg-card/60 p-3 space-y-3">
             <div className="h-36 w-full rounded-lg bg-background border border-border/60" />
             {ad?.cta && (
-              <Button size="sm" className="w-fit" variant="default">
+              <Button size="sm" className="w-fit" variant="secondary">
                 {ad.cta}
               </Button>
             )}
