@@ -4221,21 +4221,20 @@ const OverviewPage: React.FC = () => {
             <PageShell title="Overview" subtitle="Meta Performance + Creative Engine" rightActions={null}>
         <div className="space-y-6">
           <div className="grid grid-cols-12 gap-6">
-            <aside className="col-span-12 lg:col-span-3 space-y-4">
+            <div className="col-span-12 space-y-6">
               <div className="space-y-1">
                 <p className="text-xs text-muted-foreground">My dashboard</p>
                 <h2 className="text-base font-semibold text-foreground">Key performance</h2>
                 <p className="text-sm text-muted-foreground">Sofortiger Status im Zeitraum.</p>
               </div>
-              <MiniKpiCard label="Credits Used" value={kpis ? `${kpis.creditsUsed}` : '—'} meta="im Zeitraum" icon={<Zap size={14} />} />
-              <MiniKpiCard label="System Health" value="99.9%" meta="Uptime" icon={<Sparkles size={14} />} />
-              <MiniKpiCard label="Avg Response" value="142ms" meta="P50" icon={<Clock3 size={14} />} />
-              <MiniKpiCard label="Ads Generated" value={kpis ? `${kpis.adsGenerated}` : '—'} meta="im Zeitraum" icon={<Rocket size={14} />} />
-              <MiniKpiCard label="Strategies Created" value={kpis ? `${kpis.strategiesCreated}` : '—'} meta="im Zeitraum" icon={<Lightbulb size={14} />} />
-              <MiniKpiCard label="Analyses Run" value={kpis ? `${kpis.analysesRun}` : '—'} meta="im Zeitraum" icon={<BarChart3 size={14} />} />
-            </aside>
 
-            <main className="col-span-12 lg:col-span-9 space-y-6">
+              <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 xl:grid-cols-4">
+                <MiniKpiCard label="Ads Generated" value={kpis ? `${kpis.adsGenerated}` : '—'} meta="im Zeitraum" icon={<Rocket size={14} />} />
+                <MiniKpiCard label="Strategies Created" value={kpis ? `${kpis.strategiesCreated}` : '—'} meta="im Zeitraum" icon={<Lightbulb size={14} />} />
+                <MiniKpiCard label="Analyses Run" value={kpis ? `${kpis.analysesRun}` : '—'} meta="im Zeitraum" icon={<BarChart3 size={14} />} />
+                <MiniKpiCard label="Credits Used" value={kpis ? `${kpis.creditsUsed}` : '—'} meta="im Zeitraum" icon={<Zap size={14} />} />
+              </div>
+
               <div className="space-y-1">
                 <p className="text-xs text-muted-foreground">Sign a new contract</p>
                 <h2 className="text-base font-semibold text-foreground">Contract calculator</h2>
@@ -4320,7 +4319,7 @@ const OverviewPage: React.FC = () => {
                 </div>
               </div>
 
-          {false && (
+          {/*
           <details className="rounded-2xl border border-border/60 bg-card/60 p-4">
             <summary className="cursor-pointer select-none text-sm text-foreground">Weitere KPIs</summary>
             <div className="mt-4 space-y-6">
@@ -5053,9 +5052,9 @@ const OverviewPage: React.FC = () => {
 
              </div>
            </details>
-          )}
+           */}
 
-        {false && !kpis?.spend && (
+        {/*
 
 
 
@@ -5167,7 +5166,7 @@ const OverviewPage: React.FC = () => {
 
 
 
-        )}
+        */}
 
 
 
@@ -5282,7 +5281,7 @@ const OverviewPage: React.FC = () => {
                 </div>
               </div>
 
-              {false && (
+              {/*
                 <>
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <div className="rounded-xl border border-border/60 bg-card/60 p-4">
@@ -5626,7 +5625,7 @@ const OverviewPage: React.FC = () => {
 
 
                 </>
-              )}
+              */}
              </div>
            </section>
 
@@ -6195,7 +6194,7 @@ const OverviewPage: React.FC = () => {
 
 
 
-          {false && (
+          {/*
           <CardShell title="Sessions nach Device">
 
 
@@ -6213,7 +6212,7 @@ const OverviewPage: React.FC = () => {
 
 
           </CardShell>
-          )}
+          */}
 
 
 
@@ -6398,7 +6397,7 @@ const OverviewPage: React.FC = () => {
             </div>
           </div>
 
-          {false && (
+          {/*
             <CardShell title="Latest Activity">
 
 
@@ -6760,7 +6759,7 @@ const OverviewPage: React.FC = () => {
 
 
           </CardShell>
-          )}
+          */}
         </div>
         </div>
 
@@ -6818,7 +6817,7 @@ const OverviewPage: React.FC = () => {
 
 
 
-            </main>
+            </div>
           </div>
         </div>
 
