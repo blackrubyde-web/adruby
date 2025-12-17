@@ -1,7 +1,17 @@
-import React from 'react';
-import { Sparkles, Wand2, Undo2, Redo2, ArrowDownToLine, FileSpreadsheet, ChevronDown } from 'lucide-react';
+import React, { useState } from 'react';
+import {
+  Sparkles,
+  Wand2,
+  Undo2,
+  Redo2,
+  ArrowDownToLine,
+  FileSpreadsheet,
+  ChevronDown,
+  MoreHorizontal,
+} from 'lucide-react';
 import Button from '../../../components/ui/Button';
 import { UI } from '../../../components/ui/uiPrimitives';
+import ActionMenu from '../../../components/ui/ActionMenu';
 
 const QuickButton = ({ label, icon, onClick }) => (
   <button
@@ -15,7 +25,7 @@ const QuickButton = ({ label, icon, onClick }) => (
 );
 
 const ResultsToolbar = ({
-  onCopy,
+  onCopyPack,
   onCopySheet,
   onDownloadJson,
   onDownloadCsv,
@@ -34,7 +44,7 @@ const ResultsToolbar = ({
   canUndo,
   canRedo,
 }) => {
-  const [open, setOpen] = React.useState(true);
+  const [open, setOpen] = useState(true);
   return (
     <div className={`${UI.card} ${UI.cardHover} p-4 space-y-3`}>
       <div className="flex items-center justify-between gap-2">
@@ -71,18 +81,19 @@ const ResultsToolbar = ({
       </div>
 
       <div className="flex flex-wrap items-center gap-2">
-        <Button variant="secondary" size="sm" iconName="Copy" onClick={onCopy}>
-          Copy Pack
-        </Button>
-        <Button variant="secondary" size="sm" iconName="Copy" onClick={onCopySheet}>
-          Sheet Row
-        </Button>
-        <Button variant="secondary" size="sm" iconName="Download" onClick={onDownloadJson}>
-          JSON
-        </Button>
-        <Button variant="secondary" size="sm" iconName="Download" onClick={onDownloadCsv}>
-          CSV (alle)
-        </Button>
+        <ActionMenu
+          trigger={
+            <Button variant="secondary" size="sm" iconName="MoreHorizontal">
+              Copy / Export
+            </Button>
+          }
+          items={[
+            { label: 'Meta Pack kopieren', onClick: onCopyPack },
+            { label: 'Sheet Row (TSV)', onClick: onCopySheet },
+            { label: 'JSON (Variante)', onClick: onDownloadJson },
+            { label: 'CSV (alle Varianten)', onClick: onDownloadCsv },
+          ]}
+        />
         <Button variant="default" size="sm" iconName="Save" onClick={onSave} disabled={saving}>
           {saving ? 'Speichert...' : 'Speichern'}
         </Button>
