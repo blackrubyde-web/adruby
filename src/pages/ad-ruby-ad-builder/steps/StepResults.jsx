@@ -307,46 +307,50 @@ const StepResults = ({ ads, userId, briefing = {}, creativeDNA = {} }) => {
   }
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-      <div className="space-y-3">
-        <p className={UI.meta}>Varianten</p>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-          {variants.map((ad, idx) => (
-            <AdVariantCard
-              key={ad.__id}
-              ad={ad}
-              index={idx}
-              active={active?.__id === ad.__id}
-              onSelect={() => setActiveId(ad.__id)}
-              onDuplicate={() => handleDuplicate(ad)}
-              onCopy={() => handleCopy(ad)}
-            />
-          ))}
+    <div className="space-y-6">
+      <div className="grid grid-cols-1 lg:grid-cols-[1fr_420px] gap-4 lg:items-start">
+        <div className="space-y-3">
+          <div className="flex items-center justify-between">
+            <p className={UI.meta}>Varianten ({variants.length})</p>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            {variants.map((ad, idx) => (
+              <AdVariantCard
+                key={ad.__id}
+                ad={ad}
+                index={idx}
+                active={active?.__id === ad.__id}
+                onSelect={() => setActiveId(ad.__id)}
+                onDuplicate={() => handleDuplicate(ad)}
+                onCopy={() => handleCopy(ad)}
+              />
+            ))}
+          </div>
         </div>
-      </div>
 
-      <div className="space-y-3">
-        <MetaAdPreview ad={active} />
-        <ResultsToolbar
-          onCopyPack={() => handleCopyPack(active)}
-          onCopySheet={() => handleCopySheet(active)}
-          onDownloadJson={() => handleDownloadJson(active)}
-          onDownloadCsv={handleDownloadCsv}
-          onSave={handleSave}
-          saving={saving}
-          saveMessage={saveMessage}
-          saveError={saveError}
-          copied={copied}
-          onDuplicate={handleDuplicate}
-          onHookShorter={applyHookShorter}
-          onHookStronger={applyHookStronger}
-          onToneChange={applyTone}
-          onCtaChange={applyCtaCycle}
-          onUndo={handleUndo}
-          onRedo={handleRedo}
-          canUndo={canUndo}
-          canRedo={canRedo}
-        />
+        <div className="space-y-3 lg:sticky lg:top-24">
+          <MetaAdPreview ad={active} />
+          <ResultsToolbar
+            onCopyPack={() => handleCopyPack(active)}
+            onCopySheet={() => handleCopySheet(active)}
+            onDownloadJson={() => handleDownloadJson(active)}
+            onDownloadCsv={handleDownloadCsv}
+            onSave={handleSave}
+            saving={saving}
+            saveMessage={saveMessage}
+            saveError={saveError}
+            copied={copied}
+            onDuplicate={handleDuplicate}
+            onHookShorter={applyHookShorter}
+            onHookStronger={applyHookStronger}
+            onToneChange={applyTone}
+            onCtaChange={applyCtaCycle}
+            onUndo={handleUndo}
+            onRedo={handleRedo}
+            canUndo={canUndo}
+            canRedo={canRedo}
+          />
+        </div>
       </div>
     </div>
   );
