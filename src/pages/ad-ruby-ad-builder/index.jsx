@@ -295,7 +295,7 @@ const AdRubyAdBuilder = () => {
           <StepResults
             ads={filteredAds.length ? filteredAds : sampleAds}
             userId={user?.id}
-            briefing={{ product, goal, market, language }}
+            briefing={{ product, goal, market, language, searchUrl }}
             creativeDNA={{ tone: creativeTone }}
           />
         </>

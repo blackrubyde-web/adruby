@@ -6,29 +6,38 @@ import Button from '../../../components/ui/Button';
 const MetaAdPreview = ({ ad }) => {
   const hasContent = ad && (ad.headline || ad.primaryText);
   return (
-    <div className={`${UI.card} p-4 space-y-2`}>
+    <div className={`${UI.card} ${UI.cardHover} p-4 space-y-3`}>
       <div className="flex items-center gap-2">
-        <div className="h-8 w-8 rounded-full bg-accent" />
-        <div>
+        <div className="h-9 w-9 rounded-full bg-accent/80 border border-border" />
+        <div className="space-y-0.5">
           <p className="text-sm font-semibold text-foreground">{ad?.brand || 'Brand'}</p>
-          <p className="text-xs text-muted-foreground">Sponsored</p>
+          <p className="text-[11px] text-muted-foreground">Sponsored</p>
         </div>
       </div>
       {hasContent ? (
         <>
-          <p className="text-sm font-semibold text-foreground">{ad?.headline || 'Headline'}</p>
-          <p className="text-sm text-muted-foreground whitespace-pre-line">
-            {ad?.primaryText || ad?.text || 'Ad copy folgt...'}
-          </p>
-          {ad?.description && <p className="text-xs text-muted-foreground">{ad.description}</p>}
-          {ad?.cta && (
-            <Button size="sm" className="mt-2 w-fit" variant="default">
-              {ad.cta}
-            </Button>
-          )}
+          <div className="space-y-1">
+            <p className="text-base font-semibold text-foreground">{ad?.headline || 'Headline'}</p>
+            <p className="text-sm text-muted-foreground whitespace-pre-line leading-relaxed">
+              {ad?.primaryText || ad?.text || 'Ad copy folgt...'}
+            </p>
+            {ad?.description && <p className="text-xs text-muted-foreground">{ad.description}</p>}
+          </div>
+          <div className="rounded-xl border border-border bg-card/60 p-3 space-y-2">
+            <div className="h-36 w-full rounded-lg bg-background border border-border/60" />
+            {ad?.cta && (
+              <Button size="sm" className="w-fit" variant="default">
+                {ad.cta}
+              </Button>
+            )}
+          </div>
         </>
       ) : (
-        <Skeleton className="h-32 w-full rounded-xl bg-card" />
+        <div className="space-y-2">
+          <Skeleton className="h-4 w-40" />
+          <Skeleton className="h-20 w-full rounded-xl bg-card" />
+          <Skeleton className="h-32 w-full rounded-xl bg-card" />
+        </div>
       )}
     </div>
   );
