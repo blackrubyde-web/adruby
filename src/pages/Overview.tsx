@@ -100,9 +100,8 @@ import DonutChart from '../components/DonutChart';
 
 import DateRangePicker from '../components/DateRangePicker';
 
-
 import FilterBar from '../components/ui/FilterBar';
-
+import DateRangeChip from '../components/ui/DateRangeChip';
 
 import { DateRangeValue } from '../api/types';
 
