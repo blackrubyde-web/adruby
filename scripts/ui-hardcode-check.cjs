@@ -3,8 +3,10 @@ const fs = require('fs');
 const path = require('path');
 
 const ROOT = path.resolve(__dirname, '..');
-const targets = ['src/pages', 'src/components'];
-const forbidden = [
+const TARGETS = ['src/pages', 'src/components'];
+const IGNORE_DIRS = new Set(['node_modules', 'dist', 'build', '.netlify']);
+const FILE_PATTERN = /\.(jsx?|tsx?)$/;
+const FORBIDDEN = [
   /text-white\//,
   /bg-white\//,
   /border-white\//,
@@ -13,44 +15,49 @@ const forbidden = [
   /bg-rose/,
   /bg-red/,
   /#[0-9a-fA-F]{3,8}/,
-  /rgb\\s*\\(/i,
-  /hsl\\s*\\(/i,
+  /rgb\s*\(/i,
+  /hsl\s*\(/i,
 ];
+
+let violations = [];
 
 function walk(dir) {
   const entries = fs.readdirSync(dir, { withFileTypes: true });
   for (const entry of entries) {
+    if (IGNORE_DIRS.has(entry.name)) continue;
     const full = path.join(dir, entry.name);
     if (entry.isDirectory()) {
       walk(full);
-    } else if (entry.isFile() && full.match(/\\.(jsx?|tsx?)$/)) {
+    } else if (entry.isFile() && FILE_PATTERN.test(full)) {
       checkFile(full);
     }
   }
 }
 
-let violations = [];
-
 function checkFile(file) {
-  const content = fs.readFileSync(file, 'utf8');
-  let count = 0;
-  forbidden.forEach((re) => {
-    const matches = content.match(new RegExp(re, 'g'));
-    if (matches) count += matches.length;
+  const lines = fs.readFileSync(file, 'utf8').split(/\r?\n/);
+  lines.forEach((line, idx) => {
+    FORBIDDEN.forEach((re) => {
+      const m = line.match(re);
+      if (m) {
+        violations.push({
+          file: path.relative(ROOT, file),
+          line: idx + 1,
+          token: m[0],
+        });
+      }
+    });
   });
-  if (count > 0) {
-    violations.push({ file: path.relative(ROOT, file), count });
-  }
 }
 
-targets.map((t) => path.join(ROOT, t)).forEach((dir) => {
+TARGETS.map((t) => path.join(ROOT, t)).forEach((dir) => {
   if (fs.existsSync(dir)) walk(dir);
 });
 
 if (violations.length) {
   console.error('UI hardcode check failed:');
   violations.forEach((v) => {
-    console.error(` - ${v.file}: ${v.count} forbidden patterns`);
+    console.error(` - ${v.file}:${v.line} -> ${v.token}`);
   });
   process.exit(1);
 } else {
