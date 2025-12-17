@@ -20,8 +20,8 @@ const MetaAdPreview = ({ ad }) => {
       {hasContent ? (
         <>
           <div className="space-y-1">
-            <p className="text-base font-semibold text-foreground line-clamp-2">{ad?.headline || 'Headline'}</p>
-            <p className="text-sm text-muted-foreground whitespace-pre-line leading-relaxed line-clamp-4">
+            <p className="text-base font-semibold text-foreground line-clamp-2 break-words">{ad?.headline || 'Headline'}</p>
+            <p className="text-sm text-muted-foreground whitespace-pre-line leading-relaxed line-clamp-4 break-words">
               {ad?.primaryText || ad?.text || 'Ad copy folgt...'}
             </p>
             {ad?.description && <p className="text-xs text-muted-foreground">{ad.description}</p>}
