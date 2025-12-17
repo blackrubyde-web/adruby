@@ -98,8 +98,6 @@ import DonutChart from '../components/DonutChart';
 
 
 
-import DateRangePicker from '../components/DateRangePicker';
-
 import FilterBar from '../components/ui/FilterBar';
 import DateRangeChip from '../components/ui/DateRangeChip';
 
@@ -107,7 +105,7 @@ import { DateRangeValue } from '../api/types';
 
 
 
-import { buildPresetRange } from '../utils/dateUtils';
+import { TIMEZONES, buildPresetRange } from '../utils/dateUtils';
 
 
 
@@ -921,6 +919,28 @@ const KpiCard = ({
 
 
 
+const MiniKpiCard: React.FC<{
+  label: string;
+  value: React.ReactNode;
+  meta?: string;
+  icon?: React.ReactNode;
+}> = ({ label, value, meta, icon }) => (
+  <div className="rounded-2xl border border-border/60 bg-card/60 p-4">
+    <div className="flex items-start justify-between gap-3">
+      <div className="min-w-0">
+        <p className="text-xs uppercase tracking-wider text-muted-foreground">{label}</p>
+        <p className="mt-1 text-lg font-semibold text-foreground">{value ?? '—'}</p>
+        {meta ? <p className="mt-1 text-xs text-muted-foreground">{meta}</p> : null}
+      </div>
+      {icon ? (
+        <div className="flex h-9 w-9 items-center justify-center rounded-xl border border-border/60 bg-card text-foreground/80">
+          {icon}
+        </div>
+      ) : null}
+    </div>
+  </div>
+);
+
 const InsightPill = ({ label, value, onClick }: { label: string; value: string; onClick?: () => void }) => (
 
 
@@ -1393,6 +1413,18 @@ const CommandPalette = ({
 
 
 
+  const toDateTimeLocalInput = (date: Date) => {
+    if (!(date instanceof Date) || Number.isNaN(date.getTime())) return '';
+    const pad2 = (value: number) => String(value).padStart(2, '0');
+    return `${date.getFullYear()}-${pad2(date.getMonth() + 1)}-${pad2(date.getDate())}T${pad2(date.getHours())}:${pad2(date.getMinutes())}`;
+  };
+
+  const fromDateTimeLocalInput = (value: string) => {
+    const parsed = new Date(value);
+    if (Number.isNaN(parsed.getTime())) return null;
+    return parsed;
+  };
+
   return (
 
 
@@ -1425,7 +1457,7 @@ const CommandPalette = ({
 
 
 
-          className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-start justify-center pt-20"
+          className="fixed inset-0 z-50 bg-background/80 backdrop-blur-sm flex items-start justify-center pt-20"
 
 
 
@@ -1521,7 +1553,7 @@ const CommandPalette = ({
 
 
 
-            className="w-full max-w-xl rounded-2xl border border-border/60 bg-[#0c0f1a] p-4 shadow-2xl"
+            className="w-full max-w-xl rounded-2xl border border-border/60 bg-popover p-4 shadow-2xl"
 
 
 
@@ -1593,7 +1625,7 @@ const CommandPalette = ({
 
 
 
-                className="w-full bg-transparent text-white focus:outline-none text-sm"
+                className="w-full bg-transparent text-foreground focus:outline-none text-sm"
 
 
 
@@ -1921,7 +1953,7 @@ const RightDrawer = ({ open, onClose, title, body }: { open: boolean; onClose: (
 
 
 
-          className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm"
+          className="fixed inset-0 z-40 bg-background/80 backdrop-blur-sm"
 
 
 
@@ -3641,7 +3673,7 @@ const OverviewPage: React.FC = () => {
 
 
 
-        return [{ dataKey: 'spend', name: 'Spend', color: '#22c55e', type: 'line' }];
+        return [{ dataKey: 'spend', name: 'Spend', color: 'var(--color-primary)', type: 'line' }];
 
 
 
@@ -3657,7 +3689,7 @@ const OverviewPage: React.FC = () => {
 
 
 
-        return [{ dataKey: 'revenue', name: 'Revenue', color: '#38bdf8', type: 'line' }];
+        return [{ dataKey: 'revenue', name: 'Revenue', color: 'var(--color-foreground)', type: 'line' }];
 
 
 
@@ -3673,7 +3705,7 @@ const OverviewPage: React.FC = () => {
 
 
 
-        return [{ dataKey: 'cpa', name: 'CPA', color: '#f97316', type: 'line' }];
+        return [{ dataKey: 'cpa', name: 'CPA', color: 'var(--color-muted-foreground)', type: 'line' }];
 
 
 
@@ -3689,7 +3721,7 @@ const OverviewPage: React.FC = () => {
 
 
 
-        return [{ dataKey: 'ctr', name: 'CTR', color: '#a855f7', type: 'line' }];
+        return [{ dataKey: 'ctr', name: 'CTR', color: 'var(--color-accent-foreground)', type: 'line' }];
 
 
 
@@ -3713,7 +3745,7 @@ const OverviewPage: React.FC = () => {
 
 
 
-        return [{ dataKey: 'roas', name: 'ROAS', color: '#f43f5e', type: 'line' }];
+        return [{ dataKey: 'roas', name: 'ROAS', color: 'var(--color-primary)', type: 'line' }];
 
 
 
@@ -4150,18 +4182,19 @@ const OverviewPage: React.FC = () => {
 
 
             <PageShell title="Overview" subtitle="Meta Performance + Creative Engine" rightActions={null}>
-        <div className={CX.section}>
-          <CardShell className="p-0">
-            <div className="flex flex-wrap items-center justify-between gap-4 p-5">
-              <div className="space-y-1">
-                <p className="text-xs uppercase tracking-wide text-muted-foreground">Overview</p>
-                <h1 className="text-2xl font-semibold">Meta Performance + Creative Engine</h1>
-                <p className="text-sm text-muted-foreground">SaaS Usage, Creative Insights und Meta-ready KPIs.</p>
-              </div>
-            </div>
-          </CardShell>
+        <div className="space-y-6">
+          <div className="grid grid-cols-12 gap-6">
+            <aside className="col-span-12 lg:col-span-3 space-y-4">
+              <MiniKpiCard label="Credits Used" value={kpis ? `${kpis.creditsUsed}` : '—'} meta="im Zeitraum" icon={<Zap size={14} />} />
+              <MiniKpiCard label="System Health" value="99.9%" meta="Uptime" icon={<Sparkles size={14} />} />
+              <MiniKpiCard label="Avg Response" value="142ms" meta="P50" icon={<Clock3 size={14} />} />
+              <MiniKpiCard label="Ads Generated" value={kpis ? `${kpis.adsGenerated}` : '—'} meta="im Zeitraum" icon={<Rocket size={14} />} />
+              <MiniKpiCard label="Strategies Created" value={kpis ? `${kpis.strategiesCreated}` : '—'} meta="im Zeitraum" icon={<Lightbulb size={14} />} />
+              <MiniKpiCard label="Analyses Run" value={kpis ? `${kpis.analysesRun}` : '—'} meta="im Zeitraum" icon={<BarChart3 size={14} />} />
+            </aside>
 
-          <FilterBar
+            <main className="col-span-12 lg:col-span-9 space-y-6">
+              <FilterBar
             left={
               <div className="flex flex-wrap items-center gap-2">
                 {[
@@ -4184,17 +4217,66 @@ const OverviewPage: React.FC = () => {
               </div>
             }
             right={
-              <div className="flex flex-wrap items-center gap-3">
-                <DateRangePicker value={range} onChange={setRange} />
+              <div className="flex flex-wrap items-end justify-end gap-3">
+                <details className="rounded-xl border border-border/60 bg-card/60 px-3 py-2">
+                  <summary className="cursor-pointer select-none text-sm text-foreground">Benutzerdefiniert</summary>
+                  <div className="mt-3 flex flex-wrap items-end gap-3">
+                    <div className="flex flex-col gap-1">
+                      <label className="text-xs text-muted-foreground">Start</label>
+                      <input
+                        type="datetime-local"
+                        value={toDateTimeLocalInput(range.start)}
+                        onChange={(e) => {
+                          const nextStart = fromDateTimeLocalInput(e.target.value);
+                          if (!nextStart) return;
+                          setRange((prev) => ({ ...prev, start: nextStart, preset: 'custom' }));
+                        }}
+                        className="w-52 rounded-lg border border-border/60 bg-card px-3 py-2 text-sm text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
+                      />
+                    </div>
+                    <div className="flex flex-col gap-1">
+                      <label className="text-xs text-muted-foreground">Ende</label>
+                      <input
+                        type="datetime-local"
+                        value={toDateTimeLocalInput(range.end)}
+                        onChange={(e) => {
+                          const nextEnd = fromDateTimeLocalInput(e.target.value);
+                          if (!nextEnd) return;
+                          setRange((prev) => ({ ...prev, end: nextEnd, preset: 'custom' }));
+                        }}
+                        className="w-52 rounded-lg border border-border/60 bg-card px-3 py-2 text-sm text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
+                      />
+                    </div>
+                  </div>
+                </details>
+
+                <div className="flex flex-col gap-1">
+                  <label className="text-xs text-muted-foreground">Timezone</label>
+                  <select
+                    value={range.timezone}
+                    onChange={(e) => setRange((prev) => ({ ...prev, timezone: e.target.value }))}
+                    className="w-52 rounded-lg border border-border/60 bg-card px-3 py-2 text-sm text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
+                  >
+                    {TIMEZONES.map((tz) => (
+                      <option key={tz} value={tz}>
+                        {tz}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <button type="button" onClick={() => navigate('/ad-ruby-ad-builder')} className={cxButtonPrimary}>
+                  Neue Anzeige
+                </button>
               </div>
             }
           />
 
-          <CardShell className="relative overflow-hidden">
-
-
-
-          <div className="pointer-events-none absolute inset-0 opacity-60">
+          <details className="rounded-2xl border border-border/60 bg-card/60 p-4">
+            <summary className="cursor-pointer select-none text-sm text-foreground">Weitere KPIs</summary>
+            <div className="mt-4 space-y-6">
+              <CardShell className="relative overflow-hidden">
+            <div className="pointer-events-none absolute inset-0 opacity-60">
 
 
 
@@ -4830,6 +4912,9 @@ const OverviewPage: React.FC = () => {
 
 
 
+            </div>
+          </details>
+
         {!kpis?.spend && (
 
 
@@ -4838,7 +4923,7 @@ const OverviewPage: React.FC = () => {
 
 
 
-          <div className="rounded-2xl border border-amber-400/40 bg-amber-500/10 px-4 py-3 text-sm text-amber-100 flex items-center justify-between">
+          <div className="rounded-2xl border border-border/60 bg-card/60 px-4 py-3 text-sm flex flex-wrap items-center justify-between gap-3">
 
 
 
@@ -4854,7 +4939,7 @@ const OverviewPage: React.FC = () => {
 
 
 
-              <AlertTriangle size={16} />
+              <AlertTriangle size={16} className="text-foreground" />
 
 
 
@@ -4862,7 +4947,7 @@ const OverviewPage: React.FC = () => {
 
 
 
-              <span>Connect Meta to unlock live KPIs (Spend/Revenue/ROAS/CPA/CTR).</span>
+              <span className="text-muted-foreground">Connect Meta to unlock live KPIs (Spend/Revenue/ROAS/CPA/CTR).</span>
 
 
 
@@ -4902,7 +4987,7 @@ const OverviewPage: React.FC = () => {
 
 
 
-              className="rounded-lg border border-amber-300/60 px-3 py-1 text-amber-50 hover:bg-amber-500/20"
+              className={`${cxButtonSecondary} h-9 px-3 text-sm`}
 
 
 
@@ -4958,14 +5043,14 @@ const OverviewPage: React.FC = () => {
 
 
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        <div className="grid grid-cols-12 gap-6">
 
 
 
 
 
 
-          <ChartCard className="lg:col-span-2" title="Performance"
+          <ChartCard className="col-span-12 lg:col-span-7" title="Usage & Output Trend"
             rightActions={
               <div className="flex items-center gap-2">
                 {metricsList.map((m) => (
@@ -4991,7 +5076,7 @@ const OverviewPage: React.FC = () => {
             isLoading={loading}
             isEmpty={!filteredPerformanceSeries?.length}
             emptyTitle="Keine Daten"
-            emptyDescription="FÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â‚¬Å¾Ã‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¾Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â¡ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¼r diesen Zeitraum liegen keine Performance-Daten vor."
+            emptyDescription="Für diesen Zeitraum liegen keine Performance-Daten vor."
           >
             <div ref={lineRef}>
               <LineChartAnimated data={filteredPerformanceSeries} timezone={range.timezone} series={metricToChartSeries} />
@@ -5012,7 +5097,7 @@ const OverviewPage: React.FC = () => {
 
 
 
-          <CardShell title="Creative Engine">
+          <CardShell className="col-span-12 lg:col-span-5" title="Creative Engine">
 
 
 
@@ -5364,7 +5449,7 @@ const OverviewPage: React.FC = () => {
 
 
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        <div className="space-y-6">
 
 
 
@@ -5372,7 +5457,7 @@ const OverviewPage: React.FC = () => {
 
 
 
-          <CardShell className="lg:col-span-2" title="Activity Feed">
+          <CardShell title="Activity Feed">
 
 
 
@@ -5508,7 +5593,7 @@ const OverviewPage: React.FC = () => {
 
 
 
-                    className="flex w-full items-center justify-between rounded-xl border border-border/60 bg-black/20 px-3 py-3 hover:border-border/60"
+                    className="flex w-full items-center justify-between rounded-xl border border-border/60 bg-card/60 px-3 py-3 hover:bg-card/80"
 
 
 
@@ -5532,7 +5617,7 @@ const OverviewPage: React.FC = () => {
 
 
 
-                      <p className="text-sm font-semibold text-white">{item.title}</p>
+                      <p className="text-sm font-semibold text-foreground">{item.title}</p>
 
 
 
@@ -5540,7 +5625,7 @@ const OverviewPage: React.FC = () => {
 
 
 
-                      <p className="text-xs text-foreground">{item.type}</p>
+                      <p className="text-xs text-muted-foreground">{item.type}</p>
 
 
 
@@ -5556,7 +5641,7 @@ const OverviewPage: React.FC = () => {
 
 
 
-                    <p className="text-xs text-foreground">{item.created_at}</p>
+                    <p className="text-xs text-muted-foreground">{item.created_at}</p>
 
 
 
@@ -5596,7 +5681,7 @@ const OverviewPage: React.FC = () => {
 
 
 
-              <p className="text-sm text-foreground">Keine Aktivit???????ten im Zeitraum.</p>
+              <p className="text-sm text-foreground">Keine Aktivitäten im Zeitraum.</p>
 
 
 
@@ -5716,7 +5801,7 @@ const OverviewPage: React.FC = () => {
 
 
 
-                className="flex items-center justify-between rounded-xl border border-border/60 bg-card px-3 py-3 text-white hover:border-border/60"
+                className="flex items-center justify-between rounded-xl border border-border/60 bg-card px-3 py-3 text-foreground hover:bg-card/80"
 
 
 
@@ -5772,7 +5857,7 @@ const OverviewPage: React.FC = () => {
 
 
 
-                className="flex items-center justify-between rounded-xl border border-border/60 bg-card px-3 py-3 text-white hover:border-border/60"
+                className="flex items-center justify-between rounded-xl border border-border/60 bg-card px-3 py-3 text-foreground hover:bg-card/80"
 
 
 
@@ -5844,7 +5929,7 @@ const OverviewPage: React.FC = () => {
 
 
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        <div className="space-y-6">
 
 
 
@@ -5876,7 +5961,7 @@ const OverviewPage: React.FC = () => {
 
 
 
-          <CardShell className="lg:col-span-2" title="Assets">
+          <CardShell title="Latest Activity">
 
 
 
@@ -6116,7 +6201,7 @@ const OverviewPage: React.FC = () => {
 
 
 
-                  className="rounded-lg border border-border/60 bg-card px-2 py-1 text-xs text-white"
+                  className="rounded-lg border border-border/60 bg-card px-2 py-1 text-xs text-foreground"
 
 
 
@@ -6188,7 +6273,7 @@ const OverviewPage: React.FC = () => {
 
 
 
-            {loading ? <TableSkeleton /> : <DataTable data={tableRows} columns={tableColumns} summary={undefined} title="Assets" />}
+            {loading ? <TableSkeleton /> : <DataTable data={tableRows} columns={tableColumns} summary={undefined} title="Latest Activity" />}
 
 
 
@@ -6212,7 +6297,7 @@ const OverviewPage: React.FC = () => {
 
 
 
-                No assets in this view ??????????? generate your first Ad Variant oder Strategy.
+                No assets in this view — generate your first Ad Variant oder Strategy.
 
 
 
@@ -6276,7 +6361,7 @@ const OverviewPage: React.FC = () => {
 
 
 
-            <RefreshCw className="mr-2 inline animate-spin" size={16} /> L???????dt...
+            <RefreshCw className="mr-2 inline animate-spin" size={16} /> Lädt...
 
 
 
@@ -6300,13 +6385,9 @@ const OverviewPage: React.FC = () => {
 
 
 
-      </div>
-
-
-
-
-
-
+            </main>
+          </div>
+        </div>
 
       </PageShell>
 
