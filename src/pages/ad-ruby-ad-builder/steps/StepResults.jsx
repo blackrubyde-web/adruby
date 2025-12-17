@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+﻿import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { UI } from '../../../components/ui/uiPrimitives';
 import { supabase } from '../../../lib/supabaseClient';
 import AdVariantCard from '../components/AdVariantCard';
@@ -25,6 +25,7 @@ const StepResults = ({ ads, userId, briefing = {}, creativeDNA = {} }) => {
   const [saveMessage, setSaveMessage] = useState('');
   const [saveError, setSaveError] = useState('');
   const [copied, setCopied] = useState('');
+  const savedFingerprintsRef = useRef(new Set());
 
   useEffect(() => {
     const mapped = (ads || []).map(sanitizeVariant);
@@ -91,7 +92,7 @@ const StepResults = ({ ads, userId, briefing = {}, creativeDNA = {} }) => {
       const firstSentence = text.split(/[\.\!\?]/)[0];
       const target = firstSentence?.length > 0 ? firstSentence : text.slice(0, 120);
       const shortened = target.trim();
-      const suffix = text.length > shortened.length ? '…' : '';
+      const suffix = text.length > shortened.length ? 'â€¦' : '';
       return { primaryText: `${shortened}${suffix}` };
     });
   };
@@ -103,7 +104,7 @@ const StepResults = ({ ads, userId, briefing = {}, creativeDNA = {} }) => {
     'Schnell erklärt: ',
     'Kurz & knapp: ',
     'Pro-Tipp: ',
-    'Don’t miss: ',
+    'Don\'t miss: ',
     'Heads up: ',
   ];
 
@@ -152,7 +153,7 @@ const StepResults = ({ ads, userId, briefing = {}, creativeDNA = {} }) => {
 
   const handleCopyPack = (variant) => {
     if (!variant) return;
-    const block = `Headline: ${variant.headline || '—'}\nPrimary Text: ${variant.primaryText || '—'}\nDescription: ${variant.description || '—'}\nCTA: ${variant.cta || '—'}`;
+    const block = `Headline: ${variant.headline || 'â€”'}\nPrimary Text: ${variant.primaryText || 'â€”'}\nDescription: ${variant.description || 'â€”'}\nCTA: ${variant.cta || 'â€”'}`;
     navigator?.clipboard?.writeText?.(block);
     setCopied('pack');
     setTimeout(() => setCopied(''), 1500);
@@ -232,6 +233,13 @@ const StepResults = ({ ads, userId, briefing = {}, creativeDNA = {} }) => {
       return;
     }
 
+    const fingerprint = `${(active.headline || '').trim().toLowerCase()}|${(active.primaryText || '').trim().toLowerCase()}|${(active.cta || '').trim().toLowerCase()}`;
+    if (savedFingerprintsRef.current.has(fingerprint)) {
+      setSaveMessage('Bereits gespeichert.');
+      setSaving(false);
+      return;
+    }
+
     const headline = active.headline || 'Headline';
     const primaryText = active.primaryText || '';
     const cta = active.cta || 'Jetzt kaufen';
@@ -252,7 +260,7 @@ const StepResults = ({ ads, userId, briefing = {}, creativeDNA = {} }) => {
           ?.insert({
             user_id: userId,
             headline,
-            primary_text: primaryText || '—',
+            primary_text: primaryText || 'â€”',
             cta,
             status: 'generated',
             facebook_preview_data: {
@@ -283,10 +291,11 @@ const StepResults = ({ ads, userId, briefing = {}, creativeDNA = {} }) => {
           },
         });
       if (saveVariantError) throw saveVariantError;
-
+ 
       setSaveMessage('Gespeichert. Zur Bibliothek wechseln?');
+      savedFingerprintsRef.current.add(fingerprint);
     } catch (e) {
-      setSaveError(e?.message || 'Speichern nicht mÇÉglich.');
+      setSaveError(e?.message || 'Speichern nicht moeglich.');
     } finally {
       setSaving(false);
     }
@@ -318,7 +327,7 @@ const StepResults = ({ ads, userId, briefing = {}, creativeDNA = {} }) => {
       <div className="space-y-3">
         <MetaAdPreview ad={active} />
         <ResultsToolbar
-          onCopy={() => handleCopyPack(active)}
+          onCopyPack={() => handleCopyPack(active)}
           onCopySheet={() => handleCopySheet(active)}
           onDownloadJson={() => handleDownloadJson(active)}
           onDownloadCsv={handleDownloadCsv}
@@ -343,3 +352,8 @@ const StepResults = ({ ads, userId, briefing = {}, creativeDNA = {} }) => {
 };
 
 export default StepResults;
+
+
+
+
+
