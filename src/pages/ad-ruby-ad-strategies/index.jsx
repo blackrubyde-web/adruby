@@ -26,24 +26,21 @@ const playbooks = [
     subtitle: 'Performance Marketing',
     budget: '€2.500/Monat',
     audience: 'Shopping-affine Millennials',
-    kpi: '+340% ROAS',
-    color: 'from-blue-500 to-indigo-500'
+    kpi: '+340% ROAS'
   },
   {
     title: 'Lead Gen High Intent',
     subtitle: 'Coaches & B2B Services',
     budget: '€900/Monat',
     audience: 'Entscheider 30-50',
-    kpi: '€42 CPL',
-    color: 'from-emerald-500 to-teal-500'
+    kpi: '€42 CPL'
   },
   {
     title: 'UGC/Retention Push',
     subtitle: 'Subscription / SaaS',
     budget: '€1.800/Monat',
     audience: 'Bestandskunden / Lookalikes',
-    kpi: '+2.3% CTR',
-    color: 'from-purple-500 to-fuchsia-500'
+    kpi: '+2.3% CTR'
   }
 ];
 
@@ -138,7 +135,7 @@ const AdRubyAdStrategies = () => {
           initial="hidden"
           animate="visible"
         >
-          <div className="absolute inset-0 pointer-events-none bg-[radial-gradient(circle_at_20%_10%,rgba(244,45,99,0.12),transparent_35%)]" />
+          <div className="absolute inset-0 pointer-events-none bg-accent/20" />
           <div className="max-w-6xl mx-auto relative z-10">
             <div className="flex items-center gap-3 mb-4">
               <span className="px-3 py-1 rounded-full bg-card/60 border border-border/20 text-xs uppercase tracking-[0.08em] text-muted-foreground">
@@ -189,7 +186,7 @@ const AdRubyAdStrategies = () => {
 
                 <motion.div
                   variants={itemVariants}
-                  className="grid grid-cols-3 gap-4 p-4 sm:p-5 glass-panel rounded-2xl"
+                  className="grid grid-cols-3 gap-4 p-4 sm:p-5 rounded-2xl border border-border/60 bg-card/60 backdrop-blur"
                 >
                   {highlights.map((h) => (
                     <div key={h.label} className="text-center">
@@ -203,7 +200,7 @@ const AdRubyAdStrategies = () => {
 
               <motion.div
                 variants={itemVariants}
-                className="glass-panel rounded-2xl p-6 shadow-2xl"
+                className="rounded-2xl border border-border/60 bg-card/60 backdrop-blur p-6 shadow-2xl"
               >
                 <div className="flex items-center justify-between mb-4">
                   <div className="flex items-center gap-2">
@@ -243,7 +240,7 @@ const AdRubyAdStrategies = () => {
                     </div>
                   </div>
 
-                  <div className="bg-gradient-to-r from-primary/10 to-primary/5 rounded-lg p-4">
+                  <div className="rounded-lg p-4 bg-card/60 border border-border/20">
                     <div className="flex items-center gap-2 mb-2">
                       <Users size={16} className="text-primary" />
                       <span className="text-sm font-semibold text-primary">Audience Match</span>
@@ -322,11 +319,14 @@ const AdRubyAdStrategies = () => {
               {playbooks.map((pb) => (
                 <div
                   key={pb.title}
-                  className="glass-panel rounded-xl p-4 hover:-translate-y-1 transition-spatial"
+                  className="rounded-xl border border-border/60 bg-card/60 backdrop-blur p-4 hover:-translate-y-1 transition-spatial"
                 >
-                  <div className={`rounded-lg p-4 mb-3 text-foreground bg-gradient-to-r ${pb.color}`}>
-                    <p className="text-xs opacity-80">{pb.subtitle}</p>
-                    <h3 className="text-lg font-semibold">{pb.title}</h3>
+                  <div className="rounded-lg p-4 mb-3 text-foreground bg-card/60 border border-border/60 flex gap-3 items-start">
+                    <div className="w-1 rounded-full bg-primary/40" aria-hidden />
+                    <div className="space-y-1">
+                      <p className="text-xs text-muted-foreground">{pb.subtitle}</p>
+                      <h3 className="text-lg font-semibold">{pb.title}</h3>
+                    </div>
                   </div>
                   <div className="text-sm text-muted-foreground space-y-1 mb-3">
                     <p>Budget: {pb.budget}</p>
@@ -352,7 +352,7 @@ const AdRubyAdStrategies = () => {
           whileInView="visible"
           viewport={{ once: true, amount: 0.2 }}
         >
-          <div className="max-w-6xl mx-auto glass-panel rounded-2xl p-6 shadow-2xl">
+          <div className="max-w-6xl mx-auto rounded-2xl border border-border/60 bg-card/60 backdrop-blur p-6 shadow-2xl">
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 mb-4">
               <div>
                 <p className="text-sm text-muted-foreground uppercase tracking-[0.12em]">Deine Strategien</p>
@@ -371,7 +371,7 @@ const AdRubyAdStrategies = () => {
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-              <div className="rounded-xl glass-panel p-4 lg:col-span-1">
+              <div className="rounded-xl border border-border/60 bg-card/60 backdrop-blur p-4 lg:col-span-1">
                 <h4 className="text-sm font-semibold mb-3 text-foreground">Gespeicherte Strategien</h4>
 
                 {isLoading && (
@@ -381,7 +381,7 @@ const AdRubyAdStrategies = () => {
                     ))}
                   </div>
                 )}
-                {error && <p className="text-xs text-red-400">{error}</p>}
+                {error && <p className="text-xs text-muted-foreground">Fehler: {error}</p>}
 
                 <ul className="space-y-2 max-h-[360px] overflow-auto">
                   {strategies.map((s) => (
@@ -413,7 +413,7 @@ const AdRubyAdStrategies = () => {
                 </ul>
               </div>
 
-              <div className="rounded-xl glass-panel p-6 lg:col-span-2">
+              <div className="rounded-xl border border-border/60 bg-card/60 backdrop-blur p-6 lg:col-span-2">
                 {isLoading ? (
                   <div className="space-y-3">
                     <div className="h-5 w-2/5 bg-card/20 rounded animate-pulse" />
@@ -485,7 +485,7 @@ const AdRubyAdStrategies = () => {
                 Bewährte Strategiemodelle für jede Branche
               </h2>
               <p className="text-muted-foreground max-w-3xl mx-auto">
-                Unsere KI analysiert erfolgreiche Kampagnen und liefert maẞgeschneiderte Strategien – bereit zum
+                Unsere KI analysiert erfolgreiche Kampagnen und liefert maßgeschneiderte Strategien – bereit zum
                 Kopieren.
               </p>
             </motion.div>
@@ -495,11 +495,14 @@ const AdRubyAdStrategies = () => {
                 <motion.div
                   key={example.title}
                   variants={itemVariants}
-                  className="glass-panel rounded-2xl p-0 overflow-hidden"
+                  className="rounded-2xl border border-border/60 bg-card/60 backdrop-blur overflow-hidden"
                 >
-                  <div className={`bg-gradient-to-r ${example.color} p-6 text-foreground`}>
-                    <h3 className="text-xl font-bold mb-1">{example.title}</h3>
-                    <div className="text-sm opacity-90">{example.subtitle}</div>
+                  <div className="p-6 flex gap-3 items-start border-b border-border/40">
+                    <div className="w-1 rounded-full bg-primary/40" aria-hidden />
+                    <div>
+                      <h3 className="text-xl font-bold mb-1">{example.title}</h3>
+                      <div className="text-sm text-muted-foreground">{example.subtitle}</div>
+                    </div>
                   </div>
                   <div className="p-6 space-y-3 text-muted-foreground text-sm">
                     <div className="flex justify-between items-center">
@@ -523,13 +526,14 @@ const AdRubyAdStrategies = () => {
 
         {/* CTA */}
         <motion.section
-          className="py-16 px-4 sm:px-6 lg:px-10 bg-gradient-to-br from-primary to-accent text-foreground"
+          className="relative overflow-hidden py-16 px-4 sm:px-6 lg:px-10 bg-primary text-foreground"
           variants={containerVariants}
           initial="hidden"
           whileInView="visible"
           viewport={{ once: true, amount: 0.3 }}
         >
-          <div className="max-w-4xl mx-auto text-center space-y-6">
+          <div className="absolute inset-0 bg-accent/30 pointer-events-none" />
+          <div className="relative max-w-4xl mx-auto text-center space-y-6">
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-card/20 border border-border/20 text-xs uppercase tracking-[0.12em] text-muted-foreground">
               <Sparkles size={14} />
               Strategy Copilot
