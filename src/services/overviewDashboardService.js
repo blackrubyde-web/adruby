@@ -18,10 +18,44 @@ const fallbackSeries = () => {
   return points;
 };
 
+const buildFallbackResponse = () => ({
+  kpis: {
+    adsGenerated: 0,
+    strategiesCreated: 0,
+    analysesRun: 0,
+    creditsUsed: 0
+  },
+  performanceSeries: fallbackSeries(),
+  creativeInsights: {
+    topHooks: [],
+    winningAngles: [],
+    fatigueAlerts: [],
+    sessionsByDevice: [
+      { name: 'Mobile', value: 12450 },
+      { name: 'Desktop', value: 8450 },
+      { name: 'Tablet', value: 2200 }
+    ]
+  },
+  recentStrategies: [],
+  recentAds: [],
+  activityFeed: [],
+  table: {
+    rows: [],
+    page: 1,
+    pageSize: 10,
+    total: 0
+  }
+});
+
 export async function getOverviewDashboard({ userId, range, timezone }) {
   // range: { start: Date, end: Date }
   const startIso = range.start.toISOString();
   const endIso = range.end.toISOString();
+  const useRemote = import.meta.env.VITE_OVERVIEW_USE_REMOTE === 'true';
+
+  if (!useRemote) {
+    return buildFallbackResponse();
+  }
 
   try {
     const [{ count: adsGenerated = 0 }, { count: strategiesCreated = 0 }, { count: analysesRun = 0 }] = await Promise.all([
@@ -145,33 +179,6 @@ export async function getOverviewDashboard({ userId, range, timezone }) {
       }
     };
   } catch (err) {
-    return {
-      kpis: {
-        adsGenerated: 0,
-        strategiesCreated: 0,
-        analysesRun: 0,
-        creditsUsed: 0
-      },
-      performanceSeries: fallbackSeries(),
-      creativeInsights: {
-        topHooks: [],
-        winningAngles: [],
-        fatigueAlerts: [],
-        sessionsByDevice: [
-          { name: 'Mobile', value: 12450 },
-          { name: 'Desktop', value: 8450 },
-          { name: 'Tablet', value: 2200 }
-        ]
-      },
-      recentStrategies: [],
-      recentAds: [],
-      activityFeed: [],
-      table: {
-        rows: [],
-        page: 1,
-        pageSize: 10,
-        total: 0
-      }
-    };
+    return buildFallbackResponse();
   }
 }
