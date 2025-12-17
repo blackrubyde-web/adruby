@@ -1,4 +1,4 @@
-import React, { useMemo, useReducer, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useReducer, useRef, useState } from 'react';
 import { Sparkles, Zap, Brain, TrendingUp, Clock } from 'lucide-react';
 import DashboardLayout from '../../layouts/DashboardLayout';
 import PageShell from '../../components/ui/PageShell';
@@ -12,6 +12,7 @@ import StepCreativeDNA from './steps/StepCreativeDNA';
 import StepResults from './steps/StepResults';
 import { adBuilderReducer, initialAdBuilderState } from './state/adBuilderMachine';
 import { runAdBuilderFlow } from './utils/runAdBuilderFlow';
+import { useAuth } from '../../contexts/AuthContext';
 
 const sampleAds = [
   {
@@ -75,6 +76,10 @@ const AdRubyAdBuilder = () => {
   const [state, dispatch] = useReducer(adBuilderReducer, initialAdBuilderState);
   const runRef = useRef(null);
   const [isLocked, setIsLocked] = useState(false);
+  const runIdRef = useRef(0);
+  const saveTimerRef = useRef(null);
+  const draftKey = 'adruby_ad_builder_draft_v1';
+  const { user } = useAuth();
   const [searchUrl, setSearchUrl] = useState('');
   const [product, setProduct] = useState('');
   const [goal, setGoal] = useState('');
@@ -85,34 +90,84 @@ const AdRubyAdBuilder = () => {
 
   const filteredAds = useMemo(() => state.generatedAds || [], [state.generatedAds]);
 
+  // Load draft on mount
+  useEffect(() => {
+    try {
+      const draft = JSON.parse(localStorage.getItem(draftKey) || 'null');
+      if (draft) {
+        setSearchUrl(draft.searchUrl || '');
+        setProduct(draft.product || '');
+        setGoal(draft.goal || '');
+        setMarket(draft.market || '');
+        setLanguage(draft.language || 'de');
+        setCreativeTone(draft.creativeTone || 'balanced');
+      }
+    } catch {
+      /* ignore */
+    }
+  }, []);
+
+  // Persist draft (debounced)
+  useEffect(() => {
+    clearTimeout(saveTimerRef.current);
+    saveTimerRef.current = setTimeout(() => {
+      const payload = { searchUrl, product, goal, market, language, creativeTone };
+      localStorage.setItem(draftKey, JSON.stringify(payload));
+    }, 300);
+    return () => clearTimeout(saveTimerRef.current);
+  }, [searchUrl, product, goal, market, language, creativeTone]);
+
+  // Abort on unmount
+  useEffect(() => () => handleCancel(), []);
+
+  const normalizeError = (msg) =>
+    msg || 'Unbekannter Fehler. Bitte Eingaben prüfen und erneut versuchen.';
+
   const handleUseSampleData = () => {
     dispatch({ type: 'AI_SUCCESS', payload: sampleAds });
   };
 
+  const handleResetDraft = () => {
+    localStorage.removeItem(draftKey);
+    setSearchUrl('');
+    setProduct('');
+    setGoal('');
+    setMarket('');
+    setLanguage('de');
+    setCreativeTone('balanced');
+    dispatch({ type: 'RESET' });
+  };
+
   const handleStart = () => {
-    if (isLocked) return;
+    if (isLocked || !searchUrl) return;
     if (runRef.current) {
       runRef.current.abort();
       runRef.current = null;
     }
     setIsLocked(true);
     dispatch({ type: 'START' });
-
+    const currentRun = ++runIdRef.current;
     runRef.current = runAdBuilderFlow({
       inputs: { searchUrl, product, goal, market, language },
       onPhase: (phase) => {
+        if (runIdRef.current !== currentRun) return;
         if (phase === 'scraping') dispatch({ type: 'START' });
       },
       onScrapeItems: (items) => {
+        if (runIdRef.current !== currentRun) return;
         dispatch({ type: 'SCRAPE_SUCCESS', payload: items });
       },
       onResults: (ads) => {
+        if (runIdRef.current !== currentRun) return;
         dispatch({ type: 'AI_SUCCESS', payload: ads });
         setIsLocked(false);
+        runRef.current = null;
       },
       onError: (message) => {
-        dispatch({ type: 'SCRAPE_ERROR', payload: message });
+        if (runIdRef.current !== currentRun) return;
+        dispatch({ type: 'SCRAPE_ERROR', payload: normalizeError(message) });
         setIsLocked(false);
+        runRef.current = null;
       },
     });
   };
@@ -122,6 +177,10 @@ const AdRubyAdBuilder = () => {
     runRef.current = null;
     setIsLocked(false);
     dispatch({ type: 'RESET' });
+  };
+  const handleRetry = () => {
+    dispatch({ type: 'RESET' });
+    handleStart();
   };
 
   const BuilderHeader = () => (
@@ -140,8 +199,11 @@ const AdRubyAdBuilder = () => {
             Abbrechen
           </Button>
         )}
-        <Button variant="default" onClick={handleStart} iconName="Zap" disabled={isLocked || state.phase === 'scraping' || state.phase === 'analyzing'}>
+        <Button variant="default" onClick={handleStart} iconName="Zap" disabled={isLocked || state.phase === 'scraping' || state.phase === 'analyzing' || !searchUrl}>
           {state.phase === 'scraping' || state.phase === 'analyzing' ? 'Läuft...' : 'Ads generieren'}
+        </Button>
+        <Button variant="secondary" onClick={handleResetDraft}>
+          Draft zurücksetzen
         </Button>
       </div>
     </div>
@@ -223,14 +285,19 @@ const AdRubyAdBuilder = () => {
           title="Fehler im Flow"
           description={state.error || 'Bitte Eingaben prüfen und erneut versuchen.'}
           actionLabel="Erneut versuchen"
-          onAction={handleStart}
+          onAction={handleRetry}
         />
       )}
 
       {state.phase === 'results' && (
         <>
           <StepCreativeDNA tone={creativeTone} onChangeTone={setCreativeTone} />
-          <StepResults ads={filteredAds.length ? filteredAds : sampleAds} />
+          <StepResults
+            ads={filteredAds.length ? filteredAds : sampleAds}
+            userId={user?.id}
+            briefing={{ product, goal, market, language }}
+            creativeDNA={{ tone: creativeTone }}
+          />
         </>
       )}
 
@@ -244,11 +311,11 @@ const AdRubyAdBuilder = () => {
     </div>
   );
 
-  const StatsBar = () => (
-    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-      <div className={`${UI.card} p-4`}>
-        <p className={UI.meta}>Durchschnittliche Erstellung</p>
-        <p className="text-2xl font-semibold text-foreground">15s</p>
+const StatsBar = () => (
+  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+    <div className={`${UI.card} p-4`}>
+      <p className={UI.meta}>Durchschnittliche Erstellung</p>
+      <p className="text-2xl font-semibold text-foreground">15s</p>
       </div>
       <div className={`${UI.card} p-4`}>
         <p className={UI.meta}>CTR Lift</p>
