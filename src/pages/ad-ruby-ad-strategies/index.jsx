@@ -228,7 +228,7 @@ const AdRubyAdStrategies = () => {
                         <p className="text-xs text-muted-foreground mb-1">Wettbewerb</p>
                         <div className="flex items-center gap-2">
                           <div className="flex-1 bg-card/20 rounded-full h-2">
-                            <div className="bg-primary h-2 rounded-full" style={{ width: '72%' }} />
+                            <div className="bg-primary h-2 rounded-full w-[72%]" />
                           </div>
                           <span className="text-xs">Hoch</span>
                         </div>
