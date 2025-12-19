@@ -1,5 +1,3 @@
-// netlify/functions/stripe-webhook.js
-
 import { stripe, supabaseAdmin, SUBSCRIPTION_TABLE } from './_shared/clients.js';
 import { withCors, serverError } from './utils/response.js';
 import { initTelemetry, captureException } from './utils/telemetry.js';
@@ -18,7 +16,6 @@ function extractInvoicePeriod(invoice) {
   };
 }
 
-// Hilfsfunktion: user_id aus Subscription + Customer-Metadata auflösen
 async function resolveUserIdAndCustomer(subscription, source = 'unknown') {
   if (!subscription) {
     console.warn('[Webhook] resolveUserIdAndCustomer called without subscription', { source });
@@ -29,40 +26,23 @@ async function resolveUserIdAndCustomer(subscription, source = 'unknown') {
   const md = subscription.metadata || {};
 
   let userId =
-    md.user_id ||
-    md.userId ||
-    md.supabase_user_id ||
-    md.supabaseUserId ||
-    null;
+    md.user_id || md.userId || md.supabase_user_id || md.supabaseUserId || null;
 
   if (userId) {
-    console.log('[Webhook] user_id from subscription metadata', {
-      source,
-      userId,
-      customerId
-    });
+    console.log('[Webhook] user_id from subscription metadata', { source, userId, customerId });
     return { userId, customerId };
   }
 
-  // Fallback: Customer-Metadata abfragen
   if (customerId) {
     try {
       const customer = await stripe.customers.retrieve(customerId);
       const cmd = customer.metadata || {};
 
       userId =
-        cmd.user_id ||
-        cmd.userId ||
-        cmd.supabase_user_id ||
-        cmd.supabaseUserId ||
-        null;
+        cmd.user_id || cmd.userId || cmd.supabase_user_id || cmd.supabaseUserId || null;
 
       if (userId) {
-        console.log('[Webhook] user_id resolved from customer metadata', {
-          source,
-          userId,
-          customerId
-        });
+        console.log('[Webhook] user_id resolved from customer metadata', { source, userId, customerId });
         return { userId, customerId };
       } else {
         console.warn('[Webhook] No user_id found on customer metadata', {
@@ -89,6 +69,31 @@ async function resolveUserIdAndCustomer(subscription, source = 'unknown') {
   return { userId: null, customerId };
 }
 
+async function updatePaymentOrder(match, payload, source) {
+  const matchEntries = Object.entries(match || {}).filter(([, value]) => value);
+  if (!matchEntries.length) {
+    console.warn('[Webhook] payment_orders update skipped (no match)', { source });
+    return;
+  }
+
+  try {
+    let query = supabaseAdmin.from('payment_orders').update(payload);
+    matchEntries.forEach(([key, value]) => {
+      query = query.eq(key, value);
+    });
+
+    const { data, error } = await query.select('id');
+
+    if (error) {
+      console.error('[Webhook] payment_orders update failed', { source, match, error });
+    } else {
+      console.log('[Webhook] payment_orders updated', { source, match, updated: data?.length || 0 });
+    }
+  } catch (err) {
+    console.error('[Webhook] payment_orders update crashed', { source, error: err?.message || err });
+  }
+}
+
 async function updateUserFromSubscription(subscription, source = 'unknown') {
   try {
     if (!subscription) {
@@ -99,7 +104,6 @@ async function updateUserFromSubscription(subscription, source = 'unknown') {
     const { userId, customerId } = await resolveUserIdAndCustomer(subscription, source);
 
     if (!userId) {
-      // Ohne user_id können wir nichts in user_profiles mappen
       console.warn('[Webhook] No userId resolved, skipping update', {
         source,
         subId: subscription.id,
@@ -200,35 +204,21 @@ async function upsertAffiliateReferral({
       last_invoice_paid_at: lastInvoiceAt
     };
 
-    const { error } = await supabaseAdmin
-      .from('affiliate_referrals')
-      .upsert(payload, {
-        onConflict: 'affiliate_id,referred_user_id'
-      });
+    const { error } = await supabaseAdmin.from('affiliate_referrals').upsert(payload, {
+      onConflict: 'affiliate_id,referred_user_id'
+    });
 
     if (error) {
       console.error('[Affiliate] Failed to upsert referral', { payload, error });
     } else {
-      console.log('[Affiliate] Referral upserted', {
-        affiliateId,
-        referredUserId,
-        stripeSubscriptionId,
-        status
-      });
+      console.log('[Affiliate] Referral upserted', { affiliateId, referredUserId, stripeSubscriptionId, status });
     }
   } catch (err) {
-    console.error('[Affiliate] upsertAffiliateReferral crashed', {
-      error: err.message || err
-    });
+    console.error('[Affiliate] upsertAffiliateReferral crashed', { error: err.message || err });
   }
 }
 
-async function recordAffiliateEarning({
-  affiliateId,
-  referredUserId,
-  invoice,
-  subscriptionId
-}) {
+async function recordAffiliateEarning({ affiliateId, referredUserId, invoice, subscriptionId }) {
   if (!affiliateId || !referredUserId || !invoice) {
     console.warn('[Affiliate] recordAffiliateEarning missing data', {
       affiliateId,
@@ -253,9 +243,7 @@ async function recordAffiliateEarning({
     }
 
     if (existing) {
-      console.log('[Affiliate] Earning already exists for invoice, skipping', {
-        invoiceId: invoice.id
-      });
+      console.log('[Affiliate] Earning already exists for invoice, skipping', { invoiceId: invoice.id });
       return;
     }
   } catch (err) {
@@ -279,32 +267,21 @@ async function recordAffiliateEarning({
       period_end: periodEnd
     };
 
-    const { error: earningError } = await supabaseAdmin
-      .from('affiliate_earnings')
-      .insert(earningPayload);
+    const { error: earningError } = await supabaseAdmin.from('affiliate_earnings').insert(earningPayload);
 
     if (earningError) {
-      console.error('[Affiliate] Failed to insert earning', {
-        earningPayload,
-        earningError
-      });
+      console.error('[Affiliate] Failed to insert earning', { earningPayload, earningError });
     } else {
       console.log('[Affiliate] Earning recorded', earningPayload);
     }
 
-    const { error: balanceError } = await supabaseAdmin.rpc(
-      'add_affiliate_earning',
-      {
-        p_affiliate_id: affiliateId,
-        p_amount: AFFILIATE_PAYOUT_PER_INVOICE
-      }
-    );
+    const { error: balanceError } = await supabaseAdmin.rpc('add_affiliate_earning', {
+      p_affiliate_id: affiliateId,
+      p_amount: AFFILIATE_PAYOUT_PER_INVOICE
+    });
 
     if (balanceError) {
-      console.error('[Affiliate] Failed to update affiliate balance via RPC', {
-        affiliateId,
-        balanceError
-      });
+      console.error('[Affiliate] Failed to update affiliate balance via RPC', { affiliateId, balanceError });
     } else {
       console.log('[Affiliate] Affiliate balance updated via RPC', { affiliateId });
     }
@@ -320,16 +297,12 @@ async function recordAffiliateEarning({
 
 async function handleInvoicePaymentSucceeded(invoice) {
   if (!invoice?.customer) {
-    console.warn('[Affiliate] invoice.payment_succeeded without customer', {
-      invoiceId: invoice?.id
-    });
+    console.warn('[Affiliate] invoice.payment_succeeded without customer', { invoiceId: invoice?.id });
     return;
   }
 
   if (!invoice?.subscription) {
-    console.log('[Affiliate] Skipping non-subscription invoice for affiliate payout', {
-      invoiceId: invoice?.id
-    });
+    console.log('[Affiliate] Skipping non-subscription invoice for affiliate payout', { invoiceId: invoice?.id });
     return;
   }
 
@@ -349,19 +322,12 @@ async function handleInvoicePaymentSucceeded(invoice) {
 
   const { user, error } = await findUserByCustomerId(invoice.customer);
   if (error || !user) {
-    console.warn('[Affiliate] No user found for invoice customer', {
-      invoiceId: invoice.id,
-      customerId: invoice.customer,
-      error
-    });
+    console.warn('[Affiliate] No user found for invoice customer', { invoiceId: invoice.id, customerId: invoice.customer, error });
     return;
   }
 
   if (!user.referred_by_affiliate_id) {
-    console.log('[Affiliate] User has no affiliate referral, skipping earning', {
-      userId: user.id,
-      customerId: invoice.customer
-    });
+    console.log('[Affiliate] User has no affiliate referral, skipping earning', { userId: user.id, customerId: invoice.customer });
     return;
   }
 
@@ -400,25 +366,14 @@ async function handleSubscriptionCancellation(subscription) {
       .eq('referred_user_id', user.id);
 
     if (updateError) {
-      console.error('[Affiliate] Failed to mark referral cancelled', {
-        subId: subscription.id,
-        customerId,
-        updateError
-      });
+      console.error('[Affiliate] Failed to mark referral cancelled', { subId: subscription.id, customerId, updateError });
     } else {
-      console.log('[Affiliate] Referral marked cancelled', {
-        subId: subscription.id,
-        customerId
-      });
+      console.log('[Affiliate] Referral marked cancelled', { subId: subscription.id, customerId });
     }
   } catch (err) {
-    console.error('[Affiliate] handleSubscriptionCancellation crashed', {
-      subId: subscription.id,
-      error: err.message || err
-    });
+    console.error('[Affiliate] handleSubscriptionCancellation crashed', { subId: subscription.id, error: err.message || err });
   }
 }
-
 
 export async function handler(event) {
   if (event.httpMethod === 'OPTIONS') {
@@ -431,10 +386,7 @@ export async function handler(event) {
 
   initTelemetry();
 
-  const sig =
-    event.headers['stripe-signature'] ||
-    event.headers['Stripe-Signature'];
-
+  const sig = event.headers['stripe-signature'] || event.headers['Stripe-Signature'];
   const secret = process.env.STRIPE_WEBHOOK_SECRET;
 
   if (!secret) {
@@ -445,15 +397,8 @@ export async function handler(event) {
   let stripeEvent;
 
   try {
-    const rawBody = event.isBase64Encoded
-      ? Buffer.from(event.body, 'base64')
-      : event.body;
-
-    stripeEvent = stripe.webhooks.constructEvent(
-      rawBody,
-      sig,
-      secret
-    );
+    const rawBody = event.isBase64Encoded ? Buffer.from(event.body, 'base64') : event.body;
+    stripeEvent = stripe.webhooks.constructEvent(rawBody, sig, secret);
   } catch (err) {
     console.error('[Webhook] Signature verification failed', err.message);
     captureException(err, { function: 'stripe-webhook', stage: 'signature' });
@@ -463,10 +408,7 @@ export async function handler(event) {
   const type = stripeEvent.type;
   const obj = stripeEvent.data.object;
 
-  console.log('[Webhook] Event received', {
-    type,
-    eventId: stripeEvent.id
-  });
+  console.log('[Webhook] Event received', { type, eventId: stripeEvent.id });
 
   try {
     if (type === 'checkout.session.completed') {
@@ -477,13 +419,27 @@ export async function handler(event) {
         metadata: obj.metadata
       });
 
+      const orderId = obj.client_reference_id || obj.metadata?.order_id || null;
+      await updatePaymentOrder(
+        orderId ? { id: orderId } : { stripe_checkout_session_id: obj.id },
+        {
+          status: 'completed',
+          stripe_checkout_session_id: obj.id,
+          stripe_subscription_id: obj.subscription || null,
+          stripe_payment_intent_id: obj.payment_intent || null,
+          stripe_invoice_id: obj.invoice || null,
+          amount_total: obj.amount_total ?? null,
+          currency: obj.currency ?? null,
+          updated_at: new Date().toISOString()
+        },
+        'checkout.session.completed'
+      );
+
       if (obj.subscription) {
         const subscription = await stripe.subscriptions.retrieve(obj.subscription);
         await updateUserFromSubscription(subscription, 'checkout.session.completed');
       } else {
-        console.warn('[Webhook] checkout.session.completed without subscription', {
-          sessionId: obj.id
-        });
+        console.warn('[Webhook] checkout.session.completed without subscription', { sessionId: obj.id });
       }
     }
 
@@ -507,35 +463,80 @@ export async function handler(event) {
     }
 
     if (type === 'invoice.payment_succeeded') {
-      console.log('[Webhook] invoice.payment_succeeded', {
-        invoiceId: obj.id,
-        subscription: obj.subscription
-      });
+      console.log('[Webhook] invoice.payment_succeeded', { invoiceId: obj.id, subscription: obj.subscription });
 
       if (obj.subscription) {
         const subscription = await stripe.subscriptions.retrieve(obj.subscription);
         await updateUserFromSubscription(subscription, 'invoice.payment_succeeded');
       }
 
-       await handleInvoicePaymentSucceeded(obj);
+      const orderId = obj.metadata?.order_id || null;
+      await updatePaymentOrder(
+        orderId
+          ? { id: orderId }
+          : {
+              stripe_invoice_id: obj.id,
+              stripe_subscription_id: obj.subscription || null
+            },
+        {
+          status: 'paid',
+          stripe_invoice_id: obj.id,
+          stripe_subscription_id: obj.subscription || null,
+          amount_total: obj.amount_paid ?? obj.amount_due ?? null,
+          currency: obj.currency ?? null,
+          updated_at: new Date().toISOString()
+        },
+        'invoice.payment_succeeded'
+      );
+
+      await handleInvoicePaymentSucceeded(obj);
     }
 
     if (type === 'invoice.payment_failed') {
-      console.log('[Webhook] invoice.payment_failed', {
-        invoiceId: obj.id,
-        subscription: obj.subscription
-      });
+      console.log('[Webhook] invoice.payment_failed', { invoiceId: obj.id, subscription: obj.subscription });
 
       if (obj.subscription) {
         const subscription = await stripe.subscriptions.retrieve(obj.subscription);
         await updateUserFromSubscription(subscription, 'invoice.payment_failed');
       }
+
+      const orderId = obj.metadata?.order_id || null;
+      await updatePaymentOrder(
+        orderId
+          ? { id: orderId }
+          : {
+              stripe_invoice_id: obj.id,
+              stripe_subscription_id: obj.subscription || null
+            },
+        {
+          status: 'invoice_failed',
+          stripe_invoice_id: obj.id,
+          stripe_subscription_id: obj.subscription || null,
+          updated_at: new Date().toISOString()
+        },
+        'invoice.payment_failed'
+      );
+    }
+
+    if (type === 'payment_intent.succeeded') {
+      console.log('[Webhook] payment_intent.succeeded', { paymentIntentId: obj.id });
+
+      const orderId = obj.metadata?.order_id || null;
+      await updatePaymentOrder(
+        orderId ? { id: orderId } : { stripe_payment_intent_id: obj.id },
+        {
+          status: 'paid',
+          stripe_payment_intent_id: obj.id,
+          stripe_invoice_id: obj.invoice || null,
+          amount_total: obj.amount_received ?? obj.amount ?? null,
+          currency: obj.currency ?? null,
+          updated_at: new Date().toISOString()
+        },
+        'payment_intent.succeeded'
+      );
     }
   } catch (err) {
-    console.error('[Webhook] Handler crashed processing event', {
-      type,
-      error: err.message || err
-    });
+    console.error('[Webhook] Handler crashed processing event', { type, error: err.message || err });
     captureException(err, { function: 'stripe-webhook', type });
   }
 

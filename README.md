@@ -1,54 +1,45 @@
-# Overview Dashboard (React + TypeScript + Vite)
+# TestRuby (AdRuby SaaS Starter)
 
-Interaktives Analytics-Dashboard mit animierten Recharts, react-table, Date/Timezone-Auswahl, Mock-API und Live-Update-Simulation. Alle Fetch/WS-Stellen sind markiert und können schnell gegen echte Endpunkte getauscht werden.
+Production-ready Vite + React + Supabase + Netlify Functions starter for the AdRuby SaaS.
 
-## Setup
-- `npm install`
-- `npm run dev` (lokal)
-- `npm test` (Jest + RTL, jsdom)
+## Quick start
 
-## Wichtige Dateien
-- `src/pages/Overview.tsx` – Hauptseite (Grid, KPIs, Charts, Tabelle, Exporte)
-- `src/components/*` – Header, DateRangePicker, Charts, MetricCard, DataTable
-- `src/hooks/useMockApi.ts` – Mock-Fetch + Mock-WebSocket **// TODO: INTEGRATE REAL API**
-- `src/api/types.ts` – TypeScript Contracts
-- `src/api/schema.json` – JSON-Schema für REST/WS
-- `src/utils/dateUtils.ts` – Presets, Zeitzonen, Formatierung
-- `src/utils/export.ts` – CSV/PNG Export
-- `tests/overview.test.tsx` – Beispieltest (KPI-Render)
+1. Install dependencies
 
-## Daten-Contract (Kurzfassung)
-Siehe `src/api/schema.json`.
-- REST: `GET /api/overview/metrics?start=ISO&end=ISO&tz=Europe/Berlin`
-  - `kpis`: `{ ctr|conversion_rate|roas: { value:number, delta:number } }`
-  - `timeSeries[]`: `{ timestamp, ctr, conversions, roas, impressions, cost }`
-  - `topCampaigns[]`: `{ id, name, spend, revenue, ctr, conversions }`
-  - `sessionsByDevice[]`: `{ device, sessions }`
-- WebSocket Events:
-  - `updateTimeseries` (payload wie einzelner `timeSeries`-Datensatz)
-  - `metricsUpdate` (Partial `kpis`)
-  - `tableUpdate` (Partial `topCampaigns`-Row)
+```bash
+npm install
+```
 
-## Echte Endpunkte anbinden
-1) REST:
-   - In `src/hooks/useMockApi.ts` den Block `// TODO: INTEGRATE REAL API` durch echten `fetch` ersetzen (auth header etc.).
-   - Verwende `OverviewFilters` (start/end/tz) für Query-Params.
-2) WebSocket:
-   - Im selben File MockWebSocket durch echten WS-Client ersetzen.
-   - Events `updateTimeseries | metricsUpdate | tableUpdate` dispatchen.
-3) Daten in Komponenten:
-   - `Overview.tsx` bezieht alles aus `useMockApi(range)`. Keine weiteren Änderungen nötig, solange die Response dem Schema folgt.
+2. Configure env vars
 
-## Live-Updates & Animation
-- Recharts mit Legend-Toggle, Tooltip, Brush/Zoom, Auto-Scale.
-- Mock-WebSocket pusht regelmäßige Updates (siehe `useMockApi`).
+```bash
+cp .env.example .env.local
+```
 
-## Export
-- Charts: `exportNodeToPng` (html-to-image), Buttons in `Overview.tsx`.
-- Tabellen: `exportTableToCsv` (papaparse), Button in `DataTable`.
+3. Run development server
 
-## Tests
-- `npm test` nutzt Jest + ts-jest + RTL (`tests/overview.test.tsx`).
+```bash
+npm run dev
+```
 
-## Theming & Accessibility
-- Tailwind-Klassen, Darkmode-kompatibel, Fokus-Styles auf interaktiven Controls.
+4. (Optional) Run Netlify functions locally
+
+```bash
+npm run dev:netlify
+```
+
+## Scripts
+- `npm run dev` – start Vite dev server
+- `npm run dev:netlify` – Netlify dev with functions
+- `npm run build` – production build
+- `npm run preview` – preview production build
+- `npm run lint` – lint source
+- `npm run format` – format code with Prettier
+- `npm run test` – run unit tests (Vitest)
+- `npm run typecheck` – run TypeScript checks
+
+## Environment
+See `.env.example` for required variables. Do not commit secrets.
+
+## Performance notes
+- Use compressed images (WebP/AVIF) and prefer a CDN for production assets.

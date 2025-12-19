@@ -28,3 +28,4 @@ export const captureException = (err, context = {}) => {
 };
 
 export default { initTelemetry, captureException };
+

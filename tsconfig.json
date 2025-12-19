@@ -1,22 +1,22 @@
 {
   "compilerOptions": {
-    "target": "ESNext",
+    "target": "ES2022",
+    "useDefineForClassFields": true,
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
     "module": "ESNext",
+    "skipLibCheck": true,
     "moduleResolution": "Bundler",
-    "jsx": "react-jsx",
-    "allowJs": true,
-    "checkJs": false,
-    "strict": true,
-    "esModuleInterop": true,
     "resolveJsonModule": true,
     "isolatedModules": true,
-    "skipLibCheck": true,
-    "types": ["jest", "node"],
+    "noEmit": true,
+    "jsx": "react-jsx",
+    "strict": true,
+  "types": ["vite/client", "vitest/globals", "@testing-library/jest-dom"],
     "baseUrl": ".",
     "paths": {
       "@/*": ["src/*"]
     }
   },
-  "include": ["src", "tests", "vite.config.mjs", "jest.config.cjs"],
-  "exclude": ["node_modules", "dist"]
+  "include": ["src"]
 }
+
