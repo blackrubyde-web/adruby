@@ -1,15 +1,12 @@
-// netlify/functions/verify-checkout-session.js
-
 import { stripe } from './_shared/clients.js';
-import { ok, badRequest, serverError, methodNotAllowed, withCors } from './utils/response.js';
+import { ok, badRequest, serverError, methodNotAllowed, unauthorized, withCors } from './utils/response.js';
 import { initTelemetry, captureException } from './utils/telemetry.js';
+import { requireUserId } from './_shared/auth.js';
 
 const missingEnv = () => !process.env.STRIPE_SECRET_KEY;
 
 const extractSessionId = (event, body) => {
-  const qsId =
-    event?.queryStringParameters?.session_id ||
-    event?.queryStringParameters?.sessionId;
+  const qsId = event?.queryStringParameters?.session_id || event?.queryStringParameters?.sessionId;
   const bodyId = body?.session_id || body?.sessionId;
   return qsId || bodyId || null;
 };
@@ -25,6 +22,9 @@ export async function handler(event) {
 
   initTelemetry();
 
+  const auth = await requireUserId(event);
+  if (!auth.ok) return auth.response;
+
   if (missingEnv()) {
     return serverError('Server misconfiguration: STRIPE_SECRET_KEY missing');
   }
@@ -32,11 +32,9 @@ export async function handler(event) {
   let body = {};
   if (event.body) {
     try {
-      const parsed = event.isBase64Encoded
-        ? Buffer.from(event.body, 'base64').toString()
-        : event.body;
+      const parsed = event.isBase64Encoded ? Buffer.from(event.body, 'base64').toString() : event.body;
       body = JSON.parse(parsed || '{}');
-    } catch (err) {
+    } catch {
       return badRequest('Invalid JSON body');
     }
   }
@@ -53,25 +51,24 @@ export async function handler(event) {
 
     const paid = session.payment_status === 'paid';
     const completed = session.status === 'complete';
-    const ok = paid || completed;
+    const isOk = paid || completed;
 
-    const response = {
-      ok,
-      status: session.payment_status || session.status || 'unknown',
-      checkout_status: session.status || null,
-      customer_email:
-        session.customer_details?.email ||
-        session.customer_email ||
-        session.customer?.email ||
-        null,
-      subscription_id:
-        (typeof session.subscription === 'string'
-          ? session.subscription
-          : session.subscription?.id) || null,
-      metadata: session.metadata || {}
-    };
+    const sessionUserId = session.metadata?.user_id || session.metadata?.userId || null;
+    if (sessionUserId && sessionUserId !== auth.userId) {
+      return unauthorized('Forbidden');
+    }
 
-    return ok(response, ok ? 200 : 202);
+    return ok(
+      {
+        ok: isOk,
+        status: session.payment_status || session.status || 'unknown',
+        checkout_status: session.status || null,
+        subscription_id:
+          (typeof session.subscription === 'string' ? session.subscription : session.subscription?.id) ||
+          null,
+      },
+      isOk ? 200 : 202
+    );
   } catch (err) {
     const isStripeNotFound =
       err?.type === 'StripeInvalidRequestError' ||
@@ -79,9 +76,7 @@ export async function handler(event) {
       err?.message?.toLowerCase?.().includes('no such');
 
     const statusCode = isStripeNotFound ? 400 : 500;
-    const message = isStripeNotFound
-      ? 'Invalid or expired session_id'
-      : 'Failed to verify checkout session';
+    const message = isStripeNotFound ? 'Invalid or expired session_id' : 'Failed to verify checkout session';
 
     console.error('[verify-checkout-session] error', {
       message: err?.message,

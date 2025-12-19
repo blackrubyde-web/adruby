@@ -1,9 +1,24 @@
 [build]
   command = "npm run build"
-  publish = "build"
+  publish = "dist"
 
 [functions]
   directory = "netlify/functions"
+
+[[redirects]]
+  from = "/api/creative/analyze"
+  to = "/.netlify/functions/creative-analyze"
+  status = 200
+
+[[redirects]]
+  from = "/api/creative/generate"
+  to = "/.netlify/functions/creative-generate"
+  status = 200
+
+[[redirects]]
+  from = "/api/creative/save"
+  to = "/.netlify/functions/creative-save"
+  status = 200
 
 [[redirects]]
   from = "/api/*"

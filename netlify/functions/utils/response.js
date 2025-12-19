@@ -30,10 +30,15 @@ export const serverError = (message = 'Server error', statusCode = 500) =>
     body: JSON.stringify({ error: message })
   });
 
+export const unauthorized = (message = 'Unauthorized') =>
+  withCors({
+    statusCode: 401,
+    body: JSON.stringify({ error: message })
+  });
+
 export const methodNotAllowed = (allowed = 'GET,POST,OPTIONS') =>
   withCors({
     statusCode: 405,
     headers: { Allow: allowed },
     body: JSON.stringify({ error: 'Method not allowed' })
   });
-

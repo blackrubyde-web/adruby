@@ -1,0 +1,577 @@
+import { ImageIcon, Upload, Search, Eye, Download, Trash2, Star, Grid3x3, List, Video, FileText, Copy, Edit2, MousePointerClick, TrendingUp } from 'lucide-react';
+import { toast } from 'sonner';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { Button } from './ui/button';
+import { Input } from './ui/input';
+import { EmptyState } from './EmptyState';
+import { supabase } from '../lib/supabaseClient';
+
+interface Creative {
+  id: string;
+  name: string;
+  type: 'image' | 'video' | 'carousel';
+  url: string;
+  thumbnail: string;
+  tags: string[];
+  performance: {
+    impressions: number;
+    clicks: number;
+    ctr: number;
+    conversions: number;
+    roas: number;
+  };
+  uploadedAt: string;
+  usedInCampaigns: number;
+  isFavorite: boolean;
+  rawOutputs?: Record<string, unknown> | null;
+  rawInputs?: Record<string, unknown> | null;
+}
+
+export function CreativeLibraryPage() {
+  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedType, setSelectedType] = useState<'all' | 'image' | 'video' | 'carousel'>('all');
+
+  const [creatives, setCreatives] = useState<Creative[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [favoriteIds, setFavoriteIds] = useState<Set<string>>(() => {
+    try {
+      const raw = localStorage.getItem('creativeLibraryFavorites');
+      const ids = raw ? JSON.parse(raw) : [];
+      return new Set<string>(Array.isArray(ids) ? ids : []);
+    } catch {
+      return new Set<string>();
+    }
+  });
+
+  type CreativeOutput = {
+    brief?: {
+      product?: { name?: string; category?: string };
+      goal?: string;
+    };
+    creatives?: Array<{ copy?: { hook?: string } }>;
+  };
+
+  type CreativeRow = {
+    id: string;
+    outputs?: Record<string, unknown> | null;
+    inputs?: Record<string, unknown> | null;
+    created_at?: string | null;
+    metrics?: {
+      impressions?: number;
+      clicks?: number;
+      ctr?: number;
+      conversions?: number;
+      roas?: number;
+    } | null;
+  };
+
+  const mapCreativeRow = useCallback((row: CreativeRow, favorites: Set<string>): Creative => {
+    const output = (row?.outputs as CreativeOutput | null) || null;
+    const inputs = row?.inputs || null;
+    const brief = output?.brief || (inputs as { brief?: CreativeOutput['brief'] } | null)?.brief || null;
+    const creative = Array.isArray(output?.creatives) ? output.creatives[0] : null;
+    const name =
+      creative?.copy?.hook ||
+      brief?.product?.name ||
+      (inputs as { productName?: string } | null)?.productName ||
+      'AI Creative';
+
+    const type: Creative['type'] =
+      output?.creatives && output.creatives.length > 1 ? 'carousel' : 'image';
+
+    return {
+      id: row.id,
+      name,
+      type,
+      url: '',
+      thumbnail: '',
+      tags: [
+        brief?.product?.category || 'ai',
+        brief?.goal || 'performance',
+        'generated',
+      ].filter(Boolean),
+      performance: {
+        impressions: Number(row?.metrics?.impressions || 0),
+        clicks: Number(row?.metrics?.clicks || 0),
+        ctr: Number(row?.metrics?.ctr || 0),
+        conversions: Number(row?.metrics?.conversions || 0),
+        roas: Number(row?.metrics?.roas || 0),
+      },
+      uploadedAt: row.created_at ? String(row.created_at).split('T')[0] : '—',
+      usedInCampaigns: 0,
+      isFavorite: favorites.has(row.id),
+      rawOutputs: row?.outputs || null,
+      rawInputs: row?.inputs || null,
+    };
+  }, []);
+
+  useEffect(() => {
+    localStorage.setItem(
+      'creativeLibraryFavorites',
+      JSON.stringify(Array.from(favoriteIds))
+    );
+  }, [favoriteIds]);
+
+  useEffect(() => {
+    let mounted = true;
+    setIsLoading(true);
+    setLoadError(null);
+
+    (async () => {
+      try {
+        const { data: session } = await supabase.auth.getSession();
+        if (!session.session) {
+          if (mounted) setCreatives([]);
+          return;
+        }
+
+        const { data, error } = await supabase
+          .from('generated_creatives')
+          .select('id,outputs,inputs,created_at,saved')
+          .eq('saved', true)
+          .order('created_at', { ascending: false })
+          .limit(50);
+
+        if (error) throw error;
+        const mapped = (data || []).map((row) => mapCreativeRow(row, favoriteIds));
+        if (mounted) setCreatives(mapped);
+      } catch (err: unknown) {
+        if (mounted) {
+          setLoadError(err instanceof Error ? err.message : 'Failed to load creatives');
+          setCreatives([]);
+        }
+      } finally {
+        if (mounted) setIsLoading(false);
+      }
+    })();
+
+    return () => {
+      mounted = false;
+    };
+  }, [favoriteIds, mapCreativeRow]);
+
+  const filteredCreatives = useMemo(() => {
+    return creatives.filter(creative => {
+      const matchesSearch = creative.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                           creative.tags.some(tag => tag.toLowerCase().includes(searchQuery.toLowerCase()));
+      const matchesType = selectedType === 'all' || creative.type === selectedType;
+      return matchesSearch && matchesType;
+    });
+  }, [creatives, searchQuery, selectedType]);
+
+  const stats = useMemo(() => {
+    const total = creatives.length;
+    const sumRoas = creatives.reduce((sum, c) => sum + c.performance.roas, 0);
+    return {
+      total,
+      images: creatives.filter(c => c.type === 'image').length,
+      videos: creatives.filter(c => c.type === 'video').length,
+      carousels: creatives.filter(c => c.type === 'carousel').length,
+      avgROAS: total ? (sumRoas / total).toFixed(1) : '0.0'
+    };
+  }, [creatives]);
+
+  const handleToggleFavorite = (id: string) => {
+    setCreatives(prev => prev.map(c => 
+      c.id === id ? { ...c, isFavorite: !c.isFavorite } : c
+    ));
+    setFavoriteIds(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) {
+        next.delete(id);
+      } else {
+        next.add(id);
+      }
+      return next;
+    });
+    const creative = creatives.find(c => c.id === id);
+    toast.success(creative?.isFavorite ? 'Removed from favorites' : '⭐ Added to favorites');
+  };
+
+  const handleDelete = (id: string) => {
+    (async () => {
+      const creative = creatives.find(c => c.id === id);
+      try {
+        const { error } = await supabase.from('generated_creatives').delete().eq('id', id);
+        if (error) throw error;
+        setCreatives(prev => prev.filter(c => c.id !== id));
+        toast.success(`Deleted "${creative?.name}"`);
+      } catch (err: unknown) {
+        toast.error(err instanceof Error ? err.message : 'Delete failed');
+      }
+    })();
+  };
+
+  const handleDuplicate = (id: string) => {
+    const creative = creatives.find(c => c.id === id);
+    if (creative) {
+      (async () => {
+        try {
+          const { data: session } = await supabase.auth.getSession();
+          const userId = session.session?.user?.id;
+          if (!userId) {
+            throw new Error('Bitte zuerst anmelden.');
+          }
+
+          const { data, error } = await supabase
+            .from('generated_creatives')
+            .insert({
+              user_id: userId,
+              outputs: creative.rawOutputs || null,
+              inputs: creative.rawInputs || null,
+              saved: true,
+            })
+            .select('id,outputs,inputs,created_at,saved')
+            .single();
+
+          if (error) throw error;
+          const mapped = mapCreativeRow(data, favoriteIds);
+          setCreatives(prev => [mapped, ...prev]);
+          toast.success('🎉 Creative duplicated successfully!');
+        } catch (err: unknown) {
+          toast.error(err instanceof Error ? err.message : 'Duplicate failed');
+        }
+      })();
+    }
+  };
+
+  const typeIcons = {
+    image: ImageIcon,
+    video: Video,
+    carousel: FileText
+  };
+
+  return (
+    <div className="space-y-6">
+      {/* Hero Header */}
+      <div className="backdrop-blur-xl bg-card/60 rounded-2xl border border-border/50 shadow-xl p-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
+        <div className="flex items-start justify-between mb-6">
+          <div>
+            <h1 className="text-foreground mb-2 bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">
+              Creative Library
+            </h1>
+            <p className="text-muted-foreground">
+              Manage and analyze all your ad creatives in one place
+            </p>
+          </div>
+          <Button className="bg-gradient-to-r from-primary to-primary/80 text-primary-foreground hover:opacity-90">
+            <Upload className="w-4 h-4 mr-2" />
+            Upload Creative
+          </Button>
+        </div>
+
+        {/* Stats Grid */}
+        <div className="grid grid-cols-5 gap-4">
+          <div className="p-4 rounded-xl bg-gradient-to-br from-primary/10 to-transparent border border-border/30">
+            <div className="text-2xl text-foreground font-bold mb-1">{stats.total}</div>
+            <div className="text-sm text-muted-foreground">Total Creatives</div>
+          </div>
+          <div className="p-4 rounded-xl bg-gradient-to-br from-blue-500/10 to-transparent border border-border/30">
+            <div className="text-2xl text-foreground font-bold mb-1">{stats.images}</div>
+            <div className="text-sm text-muted-foreground">Images</div>
+          </div>
+          <div className="p-4 rounded-xl bg-gradient-to-br from-purple-500/10 to-transparent border border-border/30">
+            <div className="text-2xl text-foreground font-bold mb-1">{stats.videos}</div>
+            <div className="text-sm text-muted-foreground">Videos</div>
+          </div>
+          <div className="p-4 rounded-xl bg-gradient-to-br from-green-500/10 to-transparent border border-border/30">
+            <div className="text-2xl text-foreground font-bold mb-1">{stats.carousels}</div>
+            <div className="text-sm text-muted-foreground">Carousels</div>
+          </div>
+          <div className="p-4 rounded-xl bg-gradient-to-br from-orange-500/10 to-transparent border border-border/30">
+            <div className="text-2xl text-foreground font-bold mb-1">{stats.avgROAS}x</div>
+            <div className="text-sm text-muted-foreground">Avg. ROAS</div>
+          </div>
+        </div>
+      </div>
+
+      {loadError && (
+        <div className="p-4 rounded-xl border border-red-500/30 bg-red-500/5 text-red-600">
+          {loadError}
+        </div>
+      )}
+
+      {isLoading && (
+        <div className="p-4 rounded-xl border border-border bg-card text-sm text-muted-foreground">
+          Lade Creative Library…
+        </div>
+      )}
+
+      {/* Filters & Search */}
+      <div className="bg-card border border-border rounded-xl p-4">
+        <div className="flex items-center justify-between gap-4">
+          {/* Search */}
+          <div className="flex-1 relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+            <Input
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Search creatives by name or tags..."
+              className="pl-10 bg-input border-border text-foreground"
+            />
+          </div>
+
+          {/* Type Filter */}
+          <div className="flex items-center gap-2">
+            {(['all', 'image', 'video', 'carousel'] as const).map((type) => (
+              <button
+                key={type}
+                onClick={() => setSelectedType(type)}
+                className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+                  selectedType === type
+                    ? 'bg-primary text-primary-foreground'
+                    : 'bg-muted text-muted-foreground hover:bg-muted/80'
+                }`}
+              >
+                {type === 'all' ? 'All' : type.charAt(0).toUpperCase() + type.slice(1)}
+              </button>
+            ))}
+          </div>
+
+          {/* View Mode Toggle */}
+          <div className="flex items-center gap-1 bg-muted rounded-lg p-1">
+            <button
+              onClick={() => setViewMode('grid')}
+              className={`p-2 rounded transition-colors ${
+                viewMode === 'grid' ? 'bg-card shadow-sm' : 'hover:bg-card/50'
+              }`}
+            >
+              <Grid3x3 className="w-4 h-4 text-foreground" />
+            </button>
+            <button
+              onClick={() => setViewMode('list')}
+              className={`p-2 rounded transition-colors ${
+                viewMode === 'list' ? 'bg-card shadow-sm' : 'hover:bg-card/50'
+              }`}
+            >
+              <List className="w-4 h-4 text-foreground" />
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* Creatives Grid/List */}
+      {viewMode === 'grid' ? (
+        <div className="grid grid-cols-3 gap-6">
+          {filteredCreatives.map((creative) => {
+            const TypeIcon = typeIcons[creative.type];
+            return (
+              <div
+                key={creative.id}
+                className="bg-card border border-border rounded-xl overflow-hidden hover:shadow-xl transition-all hover:scale-[1.02] group"
+              >
+                {/* Thumbnail */}
+                <div className="relative aspect-video bg-muted overflow-hidden">
+                  {creative.thumbnail ? (
+                    <img
+                      src={creative.thumbnail}
+                      alt={creative.name}
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <div className="w-full h-full bg-gradient-to-br from-muted to-muted/40 flex items-center justify-center text-muted-foreground text-sm">
+                      AI Creative
+                    </div>
+                  )}
+                  
+                  {/* Overlay Actions */}
+                  <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
+                    <button
+                      onClick={() => handleToggleFavorite(creative.id)}
+                      className="p-2 bg-card rounded-lg hover:bg-card/90 transition-colors"
+                    >
+                      <Star className={`w-4 h-4 ${creative.isFavorite ? 'fill-yellow-500 text-yellow-500' : 'text-foreground'}`} />
+                    </button>
+                    <button className="p-2 bg-card rounded-lg hover:bg-card/90 transition-colors">
+                      <Download className="w-4 h-4 text-foreground" />
+                    </button>
+                    <button
+                      onClick={() => handleDuplicate(creative.id)}
+                      className="p-2 bg-card rounded-lg hover:bg-card/90 transition-colors"
+                    >
+                      <Copy className="w-4 h-4 text-foreground" />
+                    </button>
+                    <button className="p-2 bg-card rounded-lg hover:bg-card/90 transition-colors">
+                      <Edit2 className="w-4 h-4 text-foreground" />
+                    </button>
+                    <button
+                      onClick={() => handleDelete(creative.id)}
+                      className="p-2 bg-red-500/20 rounded-lg hover:bg-red-500/30 transition-colors"
+                    >
+                      <Trash2 className="w-4 h-4 text-red-500" />
+                    </button>
+                  </div>
+
+                  {/* Type Badge */}
+                  <div className="absolute top-3 left-3 px-2 py-1 bg-black/80 rounded-lg flex items-center gap-1">
+                    <TypeIcon className="w-3 h-3 text-white" />
+                    <span className="text-xs text-white font-medium capitalize">{creative.type}</span>
+                  </div>
+
+                  {/* Favorite Badge */}
+                  {creative.isFavorite && (
+                    <div className="absolute top-3 right-3">
+                      <Star className="w-5 h-5 fill-yellow-500 text-yellow-500" />
+                    </div>
+                  )}
+                </div>
+
+                {/* Info */}
+                <div className="p-4">
+                  <h3 className="font-semibold text-foreground mb-2 line-clamp-1">{creative.name}</h3>
+                  
+                  {/* Tags */}
+                  <div className="flex flex-wrap gap-1 mb-3">
+                    {creative.tags.slice(0, 3).map((tag) => (
+                      <span key={tag} className="px-2 py-0.5 bg-muted rounded text-xs text-muted-foreground">
+                        #{tag}
+                      </span>
+                    ))}
+                  </div>
+
+                  {/* Performance */}
+                  <div className="grid grid-cols-3 gap-2 pt-3 border-t border-border">
+                    <div>
+                      <div className="flex items-center gap-1 text-muted-foreground mb-1">
+                        <Eye className="w-3 h-3" />
+                        <span className="text-xs">Views</span>
+                      </div>
+                      <div className="text-sm font-bold text-foreground">
+                        {(creative.performance.impressions / 1000).toFixed(1)}K
+                      </div>
+                    </div>
+                    <div>
+                      <div className="flex items-center gap-1 text-muted-foreground mb-1">
+                        <MousePointerClick className="w-3 h-3" />
+                        <span className="text-xs">CTR</span>
+                      </div>
+                      <div className="text-sm font-bold text-foreground">
+                        {creative.performance.ctr}%
+                      </div>
+                    </div>
+                    <div>
+                      <div className="flex items-center gap-1 text-muted-foreground mb-1">
+                        <TrendingUp className="w-3 h-3" />
+                        <span className="text-xs">ROAS</span>
+                      </div>
+                      <div className="text-sm font-bold text-green-500">
+                        {creative.performance.roas}x
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Meta Info */}
+                  <div className="flex items-center justify-between mt-3 pt-3 border-t border-border text-xs text-muted-foreground">
+                    <span>Used in {creative.usedInCampaigns} campaigns</span>
+                    <span>{creative.uploadedAt}</span>
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      ) : (
+        <div className="bg-card border border-border rounded-xl overflow-hidden">
+          <table className="w-full">
+            <thead className="bg-muted border-b border-border">
+              <tr>
+                <th className="text-left p-4 text-sm font-semibold text-foreground">Creative</th>
+                <th className="text-left p-4 text-sm font-semibold text-foreground">Type</th>
+                <th className="text-left p-4 text-sm font-semibold text-foreground">Tags</th>
+                <th className="text-right p-4 text-sm font-semibold text-foreground">Impressions</th>
+                <th className="text-right p-4 text-sm font-semibold text-foreground">CTR</th>
+                <th className="text-right p-4 text-sm font-semibold text-foreground">ROAS</th>
+                <th className="text-right p-4 text-sm font-semibold text-foreground">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filteredCreatives.map((creative) => {
+                const TypeIcon = typeIcons[creative.type];
+                return (
+                  <tr key={creative.id} className="border-b border-border hover:bg-muted/50 transition-colors">
+                    <td className="p-4">
+                      <div className="flex items-center gap-3">
+                        {creative.thumbnail ? (
+                          <img
+                            src={creative.thumbnail}
+                            alt={creative.name}
+                            className="w-16 h-10 object-cover rounded"
+                          />
+                        ) : (
+                          <div className="w-16 h-10 rounded bg-muted flex items-center justify-center text-[10px] text-muted-foreground">
+                            AI
+                          </div>
+                        )}
+                        <div>
+                          <div className="font-medium text-foreground">{creative.name}</div>
+                          <div className="text-xs text-muted-foreground">{creative.uploadedAt}</div>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="p-4">
+                      <div className="flex items-center gap-1 text-foreground">
+                        <TypeIcon className="w-4 h-4" />
+                        <span className="capitalize">{creative.type}</span>
+                      </div>
+                    </td>
+                    <td className="p-4">
+                      <div className="flex flex-wrap gap-1">
+                        {creative.tags.slice(0, 2).map((tag) => (
+                          <span key={tag} className="px-2 py-0.5 bg-muted rounded text-xs text-muted-foreground">
+                            #{tag}
+                          </span>
+                        ))}
+                      </div>
+                    </td>
+                    <td className="p-4 text-right font-medium text-foreground">
+                      {(creative.performance.impressions / 1000).toFixed(1)}K
+                    </td>
+                    <td className="p-4 text-right font-medium text-foreground">
+                      {creative.performance.ctr}%
+                    </td>
+                    <td className="p-4 text-right font-bold text-green-500">
+                      {creative.performance.roas}x
+                    </td>
+                    <td className="p-4">
+                      <div className="flex items-center justify-end gap-1">
+                        <button
+                          onClick={() => handleToggleFavorite(creative.id)}
+                          className="p-1.5 hover:bg-muted rounded transition-colors"
+                        >
+                          <Star className={`w-4 h-4 ${creative.isFavorite ? 'fill-yellow-500 text-yellow-500' : 'text-muted-foreground'}`} />
+                        </button>
+                        <button
+                          onClick={() => handleDuplicate(creative.id)}
+                          className="p-1.5 hover:bg-muted rounded transition-colors"
+                        >
+                          <Copy className="w-4 h-4 text-muted-foreground" />
+                        </button>
+                        <button
+                          onClick={() => handleDelete(creative.id)}
+                          className="p-1.5 hover:bg-red-500/20 rounded transition-colors"
+                        >
+                          <Trash2 className="w-4 h-4 text-red-500" />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      )}
+
+      {/* Empty State */}
+      {!isLoading && filteredCreatives.length === 0 && (
+        <EmptyState
+          icon={ImageIcon}
+          title="No creatives found"
+          description="Speichere Creatives aus dem Ad Builder, damit sie hier erscheinen."
+        />
+      )}
+    </div>
+  );
+}

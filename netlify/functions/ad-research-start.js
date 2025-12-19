@@ -1,34 +1,16 @@
-// netlify/functions/ad-research-start.js
-
-import { runAdResearchActor } from "./_shared/apifyClient.js";
+import { runAdResearchActor } from "./_shared/apifyClientShim.js";
 import { supabaseAdmin } from "./_shared/clients.js";
+import { withCors } from "./utils/response.js";
 
-const corsHeaders = () => ({
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "Content-Type, Authorization",
-  "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
-});
-
-export const handler = async (event) => {
-  const headers = {
-    ...corsHeaders(),
-    "Content-Type": "application/json",
-  };
+export async function handler(event) {
+  const headers = { ...withCors().headers, "Content-Type": "application/json" };
 
   if (event.httpMethod === "OPTIONS") {
-    return {
-      statusCode: 200,
-      headers,
-      body: "",
-    };
+    return { statusCode: 200, headers, body: "" };
   }
 
   if (event.httpMethod !== "POST") {
-    return {
-      statusCode: 405,
-      headers,
-      body: JSON.stringify({ error: "Method not allowed" }),
-    };
+    return { statusCode: 405, headers, body: JSON.stringify({ error: "Method not allowed" }) };
   }
 
   try {
@@ -37,32 +19,17 @@ export const handler = async (event) => {
 
     if (!searchUrl) {
       console.warn("[AdResearch][Start] searchUrl fehlt im Request-Body:", body);
-      return {
-        statusCode: 400,
-        headers,
-        body: JSON.stringify({
-          error:
-            "searchUrl fehlt. Sende eine gültige Facebook Ad Library URL im Body.",
-        }),
-      };
+      return { statusCode: 400, headers, body: JSON.stringify({ error: "searchUrl fehlt. Sende eine gültige Facebook Ad Library URL im Body." }) };
     }
 
-    console.log("[AdResearch][Start] Starting Apify run with", {
-      searchUrl,
-      maxAds,
-    });
+    console.log("[AdResearch][Start] Starting Apify run with", { searchUrl, maxAds });
 
     const result = await runAdResearchActor({ searchUrl, maxAds });
 
     const runId = result?.runId || null;
     const items = Array.isArray(result?.items) ? result.items : [];
 
-    console.log("[AdResearch][Start] Apify result summary", {
-      runId,
-      status: result?.status || null,
-      datasetId: result?.defaultDatasetId || null,
-      itemCount: items.length,
-    });
+    console.log("[AdResearch][Start] Apify result summary", { runId, status: result?.status || null, datasetId: result?.defaultDatasetId || null, itemCount: items.length });
 
     if (runId && items.length > 0) {
       const rows = items.map((item) => ({
@@ -78,52 +45,25 @@ export const handler = async (event) => {
         raw_payload: item || null,
       }));
 
-      console.log("[AdResearch][Start] Inserting ads into Supabase", {
-        jobId: runId,
-        count: rows.length,
-      });
+      console.log("[AdResearch][Start] Inserting ads into Supabase", { jobId: runId, count: rows.length });
 
-      const { error: insertError } = await supabaseAdmin
-        .from("ad_research_ads")
-        .insert(rows);
+      const { error: insertError } = await supabaseAdmin.from("ad_research_ads").insert(rows);
 
       if (insertError) {
         console.error("[AdResearch][Start] Failed to insert ads", insertError);
         throw new Error(insertError.message || "Failed to insert ads");
       }
 
-      console.log(
-        "[AdResearch][Start] Stored ads for job",
-        runId,
-        "count",
-        rows.length
-      );
+      console.log("[AdResearch][Start] Stored ads for job", runId, "count", rows.length);
     } else {
-      console.warn("[AdResearch][Start] No items to insert or missing runId", {
-        runId,
-        itemsCount: items.length,
-      });
+      console.warn("[AdResearch][Start] No items to insert or missing runId", { runId, itemsCount: items.length });
     }
 
-    return {
-      statusCode: 200,
-      headers,
-      body: JSON.stringify({
-        jobId: runId,
-        status: result?.status || null,
-        datasetId: result?.defaultDatasetId || null,
-        itemCount: items.length,
-      }),
-    };
+    return { statusCode: 200, headers, body: JSON.stringify({ jobId: runId, status: result?.status || null, datasetId: result?.defaultDatasetId || null, itemCount: items.length }) };
   } catch (error) {
     console.error("[AdResearch][Start] Error", error);
-    return {
-      statusCode: 500,
-      headers,
-      body: JSON.stringify({
-        error: "Failed to start ad research",
-        details: error.message,
-      }),
-    };
+    return { statusCode: 500, headers, body: JSON.stringify({ error: "Failed to start ad research", details: error?.message }) };
   }
-};
+}
+
+export default { handler };

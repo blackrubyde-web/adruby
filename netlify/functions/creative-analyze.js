@@ -1,0 +1,202 @@
+import { badRequest, methodNotAllowed, ok, serverError, withCors } from "./utils/response.js";
+import { initTelemetry, captureException } from "./utils/telemetry.js";
+import { requireUserId } from "./_shared/auth.js";
+import { assertAndConsumeCredits } from "./_shared/credits.js";
+import { requireActiveSubscription } from "./_shared/entitlements.js";
+import { uploadCreativeInputImage } from "./_shared/storage.js";
+import { logAiAction } from "./_shared/aiLogging.js";
+import { supabaseAdmin } from "./_shared/clients.js";
+import { getOpenAiClient, getOpenAiModel } from "./_shared/openai.js";
+import { buildAnalyzePrompt } from "./_shared/creativePrompts.js";
+import { parseWithRepair } from "./_shared/repair.js";
+import { NormalizedBriefSchema } from "./_shared/creativeSchemas.js";
+import { parseMultipart } from "./utils/multipart.js";
+
+const ALLOWED_TYPES = new Set(["image/jpeg", "image/png", "image/webp"]);
+
+export async function handler(event) {
+  if (event.httpMethod === "OPTIONS") return withCors({ statusCode: 200 });
+  if (event.httpMethod !== "POST") return methodNotAllowed("POST,OPTIONS");
+
+  initTelemetry();
+
+  const auth = await requireUserId(event);
+  if (!auth.ok) return auth.response;
+  const userId = auth.userId;
+
+  const entitlement = await requireActiveSubscription(userId);
+  if (!entitlement.ok) return entitlement.response;
+
+  let fields;
+  let files;
+  try {
+    const parsed = await parseMultipart(event, { maxFileSizeBytes: 10 * 1024 * 1024 });
+    fields = parsed.fields;
+    files = parsed.files;
+  } catch (err) {
+    return badRequest(err?.message || "Invalid multipart request");
+  }
+
+  const brandName = String(fields.brandName || "").trim();
+  const productName = String(fields.productName || "").trim();
+  const audience = String(fields.audience || "").trim();
+
+  const tone = String(fields.tone || "direct").trim() || "direct";
+  const goal = String(fields.goal || "sales").trim() || "sales";
+  const funnel = String(fields.funnel || "cold").trim() || "cold";
+  const language = String(fields.language || "de").trim() || "de";
+  const format = String(fields.format || "1:1").trim() || "1:1";
+
+  const productUrl = fields.productUrl ? String(fields.productUrl).trim() : null;
+  const offer = fields.offer ? String(fields.offer).trim() : null;
+  const inspiration = fields.inspiration ? String(fields.inspiration).trim() : null;
+  const avoidClaims = fields.avoidClaims ? String(fields.avoidClaims).trim() : null;
+  const strategyId = fields.strategyId ? String(fields.strategyId).trim() : null;
+
+  if (!brandName || !productName || !audience) {
+    return badRequest("Missing required fields (brandName, productName, audience).");
+  }
+
+  let imageMeta = null;
+  try {
+    const file = files?.image;
+    if (file && file.size > 0) {
+      if (!ALLOWED_TYPES.has(file.contentType)) {
+        return badRequest("Unsupported image type. Use JPG, PNG or WebP.");
+      }
+      imageMeta = await uploadCreativeInputImage({ userId, file });
+    }
+  } catch (err) {
+    return serverError(err?.message || "Image upload failed");
+  }
+
+  let strategyBlueprint = null;
+  if (strategyId) {
+    const { data, error } = await supabaseAdmin
+      .from("strategy_blueprints")
+      .select("raw_content_markdown")
+      .eq("id", strategyId)
+      .single();
+
+    if (error || !data) {
+      return badRequest("Unknown strategy blueprint.");
+    }
+    strategyBlueprint = data.raw_content_markdown;
+  }
+
+  let credits;
+  try {
+    credits = await assertAndConsumeCredits(userId, "creative_analyze");
+  } catch (err) {
+    return badRequest(err?.message || "Insufficient credits", 402);
+  }
+
+  const prompt = buildAnalyzePrompt({
+    brandName,
+    productName,
+    productUrl,
+    offer,
+    audience,
+    tone,
+    goal,
+    funnel,
+    language,
+    format,
+    inspiration,
+    avoidClaims,
+    strategyBlueprint,
+  });
+
+  const inputForLog = {
+    brandName,
+    productName,
+    productUrl,
+    offer,
+    audience,
+    tone,
+    goal,
+    funnel,
+    language,
+    format,
+    inspiration,
+    avoidClaims,
+    strategyId,
+    imagePath: imageMeta?.path ?? null,
+  };
+
+  try {
+    const initial = await callOpenAiJson({
+      prompt,
+      imageUrl: imageMeta?.signedUrl ?? null,
+    });
+
+    const repaired = await parseWithRepair({
+      schema: NormalizedBriefSchema,
+      initial,
+      makeRequest: async (instruction) =>
+        callOpenAiJson({
+          prompt: prompt + "\n\n" + instruction,
+          imageUrl: imageMeta?.signedUrl ?? null,
+        }),
+    });
+
+    await logAiAction({
+      userId,
+      actionType: "creative_analyze",
+      status: "success",
+      input: inputForLog,
+      output: repaired.data,
+      meta: { attempts: repaired.attempts, credits },
+    });
+
+    return ok({
+      brief: repaired.data,
+      image: imageMeta ? { path: imageMeta.path, signedUrl: imageMeta.signedUrl } : null,
+      credits,
+    });
+  } catch (err) {
+    console.error("[creative-analyze] failed", err);
+    captureException(err, { function: "creative-analyze" });
+
+    await logAiAction({
+      userId,
+      actionType: "creative_analyze",
+      status: "error",
+      input: inputForLog,
+      errorMessage: err?.message || "Unknown error",
+    });
+
+    return serverError(err?.message || "Analyze failed.");
+  }
+}
+
+async function callOpenAiJson({ prompt, imageUrl }) {
+  const openai = getOpenAiClient();
+  const model = getOpenAiModel();
+
+  const input = [
+    {
+      role: "system",
+      content: "Return ONLY valid JSON. No markdown. Follow the schema strictly. Do not add extra keys.",
+    },
+    {
+      role: "user",
+      content: imageUrl
+        ? [
+            { type: "input_text", text: prompt },
+            { type: "input_image", image_url: imageUrl },
+          ]
+        : [{ type: "input_text", text: prompt }],
+    },
+  ];
+
+  const res = await openai.responses.create({
+    model,
+    input,
+    temperature: 0.4,
+  });
+
+  const text = String(res.output_text || "").trim();
+  if (!text) throw new Error("Empty OpenAI response.");
+  return text;
+}
