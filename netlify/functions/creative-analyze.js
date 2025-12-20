@@ -25,6 +25,112 @@ const TONES = new Set([
   "bold",
   "trustworthy",
 ]);
+const NORMALIZED_BRIEF_JSON_SCHEMA = {
+  name: "normalized_brief",
+  strict: true,
+  schema: {
+    type: "object",
+    additionalProperties: false,
+    required: [
+      "brand",
+      "product",
+      "goal",
+      "funnel_stage",
+      "language",
+      "format",
+      "audience",
+      "offer",
+      "tone",
+      "angles",
+      "risk_flags",
+    ],
+    properties: {
+      brand: {
+        type: "object",
+        additionalProperties: false,
+        required: ["name"],
+        properties: {
+          name: { type: "string", minLength: 1 },
+        },
+      },
+      product: {
+        type: "object",
+        additionalProperties: false,
+        required: ["name", "url", "category"],
+        properties: {
+          name: { type: "string", minLength: 1 },
+          url: {
+            anyOf: [{ type: "string", format: "uri" }, { type: "null" }],
+          },
+          category: {
+            anyOf: [{ type: "string" }, { type: "null" }],
+          },
+        },
+      },
+      goal: { type: "string", enum: [...GOALS] },
+      funnel_stage: { type: "string", enum: [...FUNNELS] },
+      language: { type: "string", enum: [...LANGS] },
+      format: { type: "string", enum: [...FORMATS] },
+      audience: {
+        type: "object",
+        additionalProperties: false,
+        required: ["summary", "segments"],
+        properties: {
+          summary: { type: "string", minLength: 1 },
+          segments: {
+            type: "array",
+            minItems: 1,
+            items: { type: "string", minLength: 1 },
+          },
+        },
+      },
+      offer: {
+        type: "object",
+        additionalProperties: false,
+        required: ["summary", "constraints"],
+        properties: {
+          summary: {
+            anyOf: [{ type: "string" }, { type: "null" }],
+          },
+          constraints: {
+            type: "array",
+            items: { type: "string", minLength: 1 },
+            default: [],
+          },
+        },
+      },
+      tone: { type: "string", enum: [...TONES] },
+      angles: {
+        type: "array",
+        minItems: 2,
+        items: {
+          type: "object",
+          additionalProperties: false,
+          required: ["id", "label", "why_it_fits"],
+          properties: {
+            id: { type: "string", minLength: 1 },
+            label: { type: "string", minLength: 1 },
+            why_it_fits: { type: "string", minLength: 1 },
+          },
+        },
+      },
+      risk_flags: {
+        type: "array",
+        items: {
+          type: "object",
+          additionalProperties: false,
+          required: ["type", "severity", "note"],
+          properties: {
+            type: { type: "string", minLength: 1 },
+            severity: { type: "string", enum: ["low", "medium", "high"] },
+            note: { type: "string", minLength: 1 },
+          },
+        },
+        default: [],
+      },
+    },
+  },
+};
 
 function inferImageType(filename) {
   const name = String(filename || "").toLowerCase();
@@ -284,6 +390,7 @@ export async function handler(event) {
 async function callOpenAiJson({ prompt, imageUrl }) {
   const openai = getOpenAiClient();
   const model = getOpenAiModel();
+  const useSchema = process.env.USE_JSON_SCHEMA === "1";
 
   const input = [
     {
@@ -306,6 +413,14 @@ async function callOpenAiJson({ prompt, imageUrl }) {
     input,
     // make the model deterministic for structured JSON output
     temperature: 0.0,
+    ...(useSchema
+      ? {
+          response_format: {
+            type: "json_schema",
+            json_schema: NORMALIZED_BRIEF_JSON_SCHEMA,
+          },
+        }
+      : {}),
   });
 
   const text = String(res.output_text || "").trim();
