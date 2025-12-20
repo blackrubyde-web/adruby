@@ -17,6 +17,10 @@ const DEMO_OUTPUT = {
   metadata: { estimated_performance: 78 },
 };
 
+const isTestEnv = import.meta.env.MODE === "test";
+const analyzeDelayMs = isTestEnv ? 50 : 1000;
+const generateDelayMs = isTestEnv ? 50 : 1200;
+
 export function useAdBuilderMock() {
   const [status, setStatus] = useState<Status>("idle");
   const [brief, setBrief] = useState<NormalizedBrief | null>(null);
@@ -33,7 +37,7 @@ export function useAdBuilderMock() {
     setError(null);
     setStatus("analyzing");
     // simulate network + model latency
-    await new Promise((r) => setTimeout(r, 250));
+    await new Promise((r) => setTimeout(r, analyzeDelayMs));
 
     // build a trivial normalized brief from FormData for demo
     const b: Record<string, string> = {};
@@ -55,11 +59,11 @@ export function useAdBuilderMock() {
       cancelledRef.current = false;
 
       // simulate model generation and gradual quality checks
-      await new Promise((r) => setTimeout(r, 400));
+      await new Promise((r) => setTimeout(r, generateDelayMs));
       if (cancelledRef.current) throw new Error("Cancelled");
 
       setStatus("polling");
-      await new Promise((r) => setTimeout(r, 400));
+      await new Promise((r) => setTimeout(r, generateDelayMs));
       if (cancelledRef.current) throw new Error("Cancelled");
 
       setResult(DEMO_OUTPUT);

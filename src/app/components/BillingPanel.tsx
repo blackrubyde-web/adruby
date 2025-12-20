@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import { CreditCard, ExternalLink, RefreshCw, ShieldAlert } from 'lucide-react';
 import { toast } from 'sonner';
-import { useAuth } from '../contexts/AuthContext';
+import { useAuthActions, useAuthState } from '../contexts/AuthContext';
 import { apiClient } from '../utils/apiClient';
 import { startStripeCheckout } from '../lib/stripeService';
 
@@ -16,7 +16,8 @@ function formatDate(iso: string) {
 }
 
 export function BillingPanel() {
-  const { user, profile, billing, refreshProfile, isLoading } = useAuth();
+  const { user, profile, billing, isLoading } = useAuthState();
+  const { refreshProfile } = useAuthActions();
   const [isStartingCheckout, setIsStartingCheckout] = useState(false);
   const [isOpeningPortal, setIsOpeningPortal] = useState(false);
 

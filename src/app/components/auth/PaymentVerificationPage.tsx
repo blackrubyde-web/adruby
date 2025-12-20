@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Loader2, Sparkles, CheckCircle, XCircle, Home, LogOut } from 'lucide-react';
 import { apiClient } from '../../utils/apiClient';
 import { supabase } from '../../lib/supabaseClient';
-import { useAuth } from '../../contexts/AuthContext';
+import { useAuthActions, useAuthState } from '../../contexts/AuthContext';
 
 interface PaymentVerificationPageProps {
   sessionId?: string;
@@ -21,7 +21,8 @@ export function PaymentVerificationPage({
 }: PaymentVerificationPageProps) {
   const [status, setStatus] = useState<'loading' | 'success' | 'error'>('loading');
   const [message, setMessage] = useState('Verifying your payment...');
-  const { user, refreshProfile } = useAuth();
+  const { user } = useAuthState();
+  const { refreshProfile } = useAuthActions();
 
   useEffect(() => {
     let cancelled = false;
