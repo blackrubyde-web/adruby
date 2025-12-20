@@ -20,6 +20,13 @@ export async function handler(event) {
 
   initTelemetry();
 
+  if (!process.env.SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) {
+    return serverError("Supabase env missing. Check SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY.");
+  }
+  if (!process.env.OPENAI_API_KEY) {
+    return badRequest("AI not configured. Set OPENAI_API_KEY in Netlify.", 400);
+  }
+
   const auth = await requireUserId(event);
   if (!auth.ok) return auth.response;
   const userId = auth.userId;
@@ -58,6 +65,7 @@ export async function handler(event) {
   }
 
   let imageMeta = null;
+  let imageWarning = null;
   try {
     const file = files?.image;
     if (file && file.size > 0) {
@@ -67,7 +75,14 @@ export async function handler(event) {
       imageMeta = await uploadCreativeInputImage({ userId, file });
     }
   } catch (err) {
-    return serverError(err?.message || "Image upload failed");
+    const msg = String(err?.message || "");
+    const lower = msg.toLowerCase();
+    if (lower.includes("bucket") || lower.includes("storage not configured")) {
+      imageWarning = msg || "Image storage not configured. Skipped image analysis.";
+      imageMeta = null;
+    } else {
+      return serverError(err?.message || "Image upload failed");
+    }
   }
 
   let strategyBlueprint = null;
@@ -122,6 +137,7 @@ export async function handler(event) {
     avoidClaims,
     strategyId,
     imagePath: imageMeta?.path ?? null,
+    imageWarning,
   };
 
   try {
@@ -153,6 +169,7 @@ export async function handler(event) {
       brief: repaired.data,
       image: imageMeta ? { path: imageMeta.path, signedUrl: imageMeta.signedUrl } : null,
       credits,
+      warning: imageWarning || null,
     });
   } catch (err) {
     console.error("[creative-analyze] failed", err);
