@@ -29,6 +29,7 @@ interface SpendRevenueChartProps {
   range: 'today' | '7d' | '30d';
   loading?: boolean;
   error?: string | null;
+  metaConnected?: boolean;
 }
 
 export function SpendRevenueChart({
@@ -36,6 +37,7 @@ export function SpendRevenueChart({
   range,
   loading,
   error,
+  metaConnected = false,
 }: SpendRevenueChartProps) {
   // Loading State
   if (loading) {
@@ -73,6 +75,10 @@ export function SpendRevenueChart({
 
   // Empty State
   if (!points || points.length === 0) {
+    const title = metaConnected ? 'No campaigns yet' : 'No data available';
+    const subtitle = metaConnected
+      ? 'Run your first campaign to unlock charts.'
+      : 'Connect Meta account to see charts';
     return (
       <div className="rounded-2xl bg-card/70 border border-border/50 p-6 shadow-[0_1px_0_rgba(255,255,255,0.5),0_12px_30px_rgba(0,0,0,0.06)]">
         <div className="flex items-start justify-between mb-4">
@@ -85,12 +91,8 @@ export function SpendRevenueChart({
         </div>
         <div className="h-56 flex items-center justify-center">
           <div className="text-center">
-            <p className="text-sm font-medium text-foreground mb-1">
-              No data available
-            </p>
-            <p className="text-sm text-muted-foreground">
-              Connect Meta account to see charts
-            </p>
+            <p className="text-sm font-medium text-foreground mb-1">{title}</p>
+            <p className="text-sm text-muted-foreground">{subtitle}</p>
           </div>
         </div>
       </div>
