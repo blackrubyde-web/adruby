@@ -321,6 +321,7 @@ export function OverviewPage({ onNavigate }: OverviewPageProps) {
               range={dateFilter}
               loading={loading}
               error={error}
+              metaConnected={metaConnected}
             />
           </Suspense>
         </div>
@@ -333,6 +334,7 @@ export function OverviewPage({ onNavigate }: OverviewPageProps) {
               range={dateFilter}
               loading={loading}
               error={error}
+              metaConnected={metaConnected}
             />
           </Suspense>
         </div>

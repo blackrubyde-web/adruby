@@ -13,6 +13,7 @@ interface RoasMiniChartProps {
   range: 'today' | '7d' | '30d';
   loading?: boolean;
   error?: string | null;
+  metaConnected?: boolean;
 }
 
 export function RoasMiniChart({
@@ -20,6 +21,7 @@ export function RoasMiniChart({
   range,
   loading,
   error,
+  metaConnected = false,
 }: RoasMiniChartProps) {
   // Loading State
   if (loading) {
@@ -59,6 +61,8 @@ export function RoasMiniChart({
 
   // Empty State
   if (!points || points.length === 0) {
+    const title = metaConnected ? 'No campaigns yet' : 'No data';
+    const subtitle = metaConnected ? 'Run your first campaign to see ROAS.' : 'Connect Meta account';
     return (
       <div className="rounded-2xl bg-card/70 border border-border/50 p-6 shadow-[0_1px_0_rgba(255,255,255,0.5),0_12px_30px_rgba(0,0,0,0.06)]">
         <div className="flex items-start justify-between mb-4">
@@ -73,8 +77,8 @@ export function RoasMiniChart({
         </div>
         <div className="h-40 flex items-center justify-center">
           <div className="text-center">
-            <p className="text-sm font-medium text-foreground mb-1">No data</p>
-            <p className="text-sm text-muted-foreground">Connect Meta account</p>
+            <p className="text-sm font-medium text-foreground mb-1">{title}</p>
+            <p className="text-sm text-muted-foreground">{subtitle}</p>
           </div>
         </div>
       </div>
