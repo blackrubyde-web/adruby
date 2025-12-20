@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { lazy, Suspense, useEffect, useState } from 'react';
 import {
   TrendingUp,
   TrendingDown,
@@ -16,9 +16,14 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useOverview } from '../hooks/useOverview';
-import { SpendRevenueChart } from './SpendRevenueChart';
-import { RoasMiniChart } from './RoasMiniChart';
 import { PageShell, HeroHeader, Card, Chip } from './layout';
+
+const LazySpendRevenueChart = lazy(() =>
+  import('./SpendRevenueChart').then((mod) => ({ default: mod.SpendRevenueChart }))
+);
+const LazyRoasMiniChart = lazy(() =>
+  import('./RoasMiniChart').then((mod) => ({ default: mod.RoasMiniChart }))
+);
 
 interface ChecklistStep {
   id: string;
@@ -35,6 +40,14 @@ interface OverviewPageProps {
 
 type DateFilter = 'today' | '7d' | '30d';
 type ChannelFilter = 'meta' | 'google' | 'tiktok';
+
+function ChartPlaceholder({ title }: { title: string }) {
+  return (
+    <div className="h-[280px] rounded-2xl border border-border/60 bg-muted/30 animate-pulse flex items-center justify-center">
+      <span className="text-sm text-muted-foreground">{title}</span>
+    </div>
+  );
+}
 
 export function OverviewPage({ onNavigate }: OverviewPageProps) {
   const [dateFilter, setDateFilter] = useState<DateFilter>('7d');
@@ -302,22 +315,26 @@ export function OverviewPage({ onNavigate }: OverviewPageProps) {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-5 mb-6 sm:mb-8">
         {/* Spend vs Revenue - 2/3 width */}
         <div className="lg:col-span-2">
-          <SpendRevenueChart
-            points={data?.timeseries ?? []}
-            range={dateFilter}
-            loading={loading}
-            error={error}
-          />
+          <Suspense fallback={<ChartPlaceholder title="Loading spend vs revenue" />}>
+            <LazySpendRevenueChart
+              points={data?.timeseries ?? []}
+              range={dateFilter}
+              loading={loading}
+              error={error}
+            />
+          </Suspense>
         </div>
         
         {/* ROAS Trend - 1/3 width */}
         <div className="lg:col-span-1">
-          <RoasMiniChart
-            points={(data?.timeseries ?? []).map(p => ({ ts: p.ts, roas: p.roas }))}
-            range={dateFilter}
-            loading={loading}
-            error={error}
-          />
+          <Suspense fallback={<ChartPlaceholder title="Loading ROAS trend" />}>
+            <LazyRoasMiniChart
+              points={(data?.timeseries ?? []).map(p => ({ ts: p.ts, roas: p.roas }))}
+              range={dateFilter}
+              loading={loading}
+              error={error}
+            />
+          </Suspense>
         </div>
       </div>
 

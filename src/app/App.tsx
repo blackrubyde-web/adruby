@@ -2,24 +2,35 @@ import { lazy, Suspense, useCallback, useEffect, useState } from 'react';
 import { Sidebar } from './components/Sidebar';
 import { Header } from './components/Header';
 import { Footer } from './components/Footer';
-import { AdsStrategiesPage } from './components/AdsStrategiesPage';
-import { CampaignsPage } from './components/CampaignsPage';
-import { SettingsPage } from './components/SettingsPage';
-import { AffiliatePage } from './components/AffiliatePage';
-import { ProfilePage } from './components/ProfilePage';
-import { HelpSupportPage } from './components/HelpSupportPage';
-import { OverviewPage } from './components/OverviewPage';
-import { LandingPage } from './components/LandingPage';
-import { FeaturesPage } from './components/FeaturesPage';
-import { PricingPage } from './components/PricingPage';
-import { 
-  LoginPage, 
-  RegisterPage, 
-  AuthProcessingPage, 
-  PaymentVerificationPage,
-  PaymentSuccessPage,
-  PaymentCancelledPage 
-} from './components/auth';
+// Lazy-load most full pages to reduce initial bundle size
+const LandingPage = lazy(() => import('./components/LandingPage').then((mod) => ({ default: mod.LandingPage })));
+const FeaturesPage = lazy(() => import('./components/FeaturesPage').then((mod) => ({ default: mod.FeaturesPage })));
+const PricingPage = lazy(() => import('./components/PricingPage').then((mod) => ({ default: mod.PricingPage })));
+const AdsStrategiesPage = lazy(() => import('./components/AdsStrategiesPage').then((mod) => ({ default: mod.AdsStrategiesPage })));
+const CampaignsPage = lazy(() => import('./components/CampaignsPage').then((mod) => ({ default: mod.CampaignsPage })));
+const SettingsPage = lazy(() => import('./components/SettingsPage').then((mod) => ({ default: mod.SettingsPage })));
+const AffiliatePage = lazy(() => import('./components/AffiliatePage').then((mod) => ({ default: mod.AffiliatePage })));
+const ProfilePage = lazy(() => import('./components/ProfilePage').then((mod) => ({ default: mod.ProfilePage })));
+const HelpSupportPage = lazy(() => import('./components/HelpSupportPage').then((mod) => ({ default: mod.HelpSupportPage })));
+const OverviewPage = lazy(() => import('./components/OverviewPage').then((mod) => ({ default: mod.OverviewPage })));
+const LoginPage = lazy(() =>
+  import('./components/auth').then((mod) => ({ default: mod.LoginPage }))
+);
+const RegisterPage = lazy(() =>
+  import('./components/auth').then((mod) => ({ default: mod.RegisterPage }))
+);
+const AuthProcessingPage = lazy(() =>
+  import('./components/auth').then((mod) => ({ default: mod.AuthProcessingPage }))
+);
+const PaymentVerificationPage = lazy(() =>
+  import('./components/auth').then((mod) => ({ default: mod.PaymentVerificationPage }))
+);
+const PaymentSuccessPage = lazy(() =>
+  import('./components/auth').then((mod) => ({ default: mod.PaymentSuccessPage }))
+);
+const PaymentCancelledPage = lazy(() =>
+  import('./components/auth').then((mod) => ({ default: mod.PaymentCancelledPage }))
+);
 import { ThemeProvider } from './components/ThemeProvider';
 import { QuickActionsButton } from './components/QuickActionsButton';
 import { Sparkles } from 'lucide-react';
@@ -214,6 +225,7 @@ const LazyAIAnalysisPage = lazy(() =>
 function AppContent() {
   const {
     user,
+    profile,
     billing,
     isAuthReady,
     isLoading,
@@ -265,29 +277,6 @@ function AppContent() {
     return () => window.removeEventListener('popstate', onPopState);
   }, []);
 
-  const handleGoogleLogin = useCallback(
-    async (redirectOverride?: string) => {
-      const redirectPath =
-        safeRedirectPath(redirectOverride) ||
-        safeRedirectPath(new URLSearchParams(window.location.search).get('redirect')) ||
-        PAGE_PATHS.dashboard;
-      try {
-        await signInWithGoogle(redirectPath);
-      } catch (err: unknown) {
-        const message = err instanceof Error ? err.message : 'Google login failed';
-        toast.error(message);
-      }
-    },
-    [signInWithGoogle]
-  );
-
-  const handleAuthComplete = useCallback(() => {
-    const params = new URLSearchParams(window.location.search);
-    const redirectPath = safeRedirectPath(params.get('redirect')) || PAGE_PATHS.dashboard;
-    const targetPage = pageFromPathname(new URL(redirectPath, window.location.origin).pathname);
-    go(targetPage, { replace: true });
-  }, [go]);
-
   useEffect(() => {
     const onResize = () => setIsDesktop(window.innerWidth >= 768);
     window.addEventListener('resize', onResize);
@@ -303,9 +292,11 @@ function AppContent() {
 
   // Auth + subscription guards
   useEffect(() => {
-    if (!isAuthReady) return;
-    if (user && isLoading) return;
-    if (profileError) return;
+  // Wait until auth init is completed and profile is available before redirecting.
+  if (!isAuthReady) return;
+  if (user && isLoading) return;
+  if (user && profile == null) return; // ensure profile loaded so onboarding flag is respected
+  if (profileError) return;
 
     let holdAuthRedirect = false;
     try {
@@ -315,31 +306,20 @@ function AppContent() {
     }
 
     // Redirect signed-in users away from auth pages
-    if (user) {
+    if (user && (currentPage === 'login' || currentPage === 'register' || currentPage === 'auth-processing')) {
+      if (holdAuthRedirect && currentPage === 'register') return;
       const params = new URLSearchParams(window.location.search);
       const redirectPath = safeRedirectPath(params.get('redirect')) || PAGE_PATHS.dashboard;
       const targetPage = pageFromPathname(new URL(redirectPath, window.location.origin).pathname);
-      const isAuthPage =
-        currentPage === 'login' ||
-        currentPage === 'register' ||
-        currentPage === 'auth-processing';
-      const isPaymentPage =
-        currentPage === 'payment-verification' ||
-        currentPage === 'payment-success' ||
-        currentPage === 'payment-cancelled';
 
-      if (isAuthPage || (isPaymentPage && params.get('redirect'))) {
-        if (holdAuthRedirect && currentPage === 'register') return;
-
-        if (!billing.isSubscribed && targetPage !== 'settings') {
-          if (allowRedirect(PAGE_PATHS.settings)) {
-            go('settings', { replace: true, query: { tab: 'billing' } });
-          }
-        } else if (allowRedirect(PAGE_PATHS[targetPage])) {
-          go(targetPage, { replace: true });
+      if (!billing.isSubscribed && targetPage !== 'settings') {
+        if (allowRedirect(PAGE_PATHS.settings)) {
+          go('settings', { replace: true, query: { tab: 'billing' } });
         }
-        return;
+      } else if (allowRedirect(PAGE_PATHS[targetPage])) {
+        go(targetPage, { replace: true });
       }
+      return;
     }
 
     const isProtected = !PUBLIC_PAGES.has(currentPage);
@@ -363,6 +343,29 @@ function AppContent() {
     go('adbuilder');
   };
 
+  const handleGoogleLogin = useCallback(
+    async (redirectOverride?: string) => {
+      const redirectPath =
+        safeRedirectPath(redirectOverride ?? null) ||
+        safeRedirectPath(new URLSearchParams(window.location.search).get('redirect')) ||
+        PAGE_PATHS.dashboard;
+      try {
+        await signInWithGoogle(redirectPath);
+      } catch (err: unknown) {
+        const message = err instanceof Error ? err.message : 'Google login failed';
+        toast.error(message);
+      }
+    },
+    [signInWithGoogle]
+  );
+
+  const handleAuthComplete = useCallback(() => {
+    const params = new URLSearchParams(window.location.search);
+    const redirectPath = safeRedirectPath(params.get('redirect')) || PAGE_PATHS.dashboard;
+    const targetPage = pageFromPathname(new URL(redirectPath, window.location.origin).pathname);
+    go(targetPage, { replace: true });
+  }, [go]);
+
   const isProtectedPage = !PUBLIC_PAGES.has(currentPage);
   const pageFallback = (
     <FullScreenLoader title="Loading page..." subtitle="Preparing your workspace" />
@@ -376,7 +379,7 @@ function AppContent() {
     return <FullScreenLoader title="Loading your account..." subtitle="Fetching your billing status" />;
   }
 
-  if (profileError && user && isProtectedPage) {
+  if (profileError && user) {
     return (
       <FullScreenError
         title="Profile unavailable"
@@ -399,142 +402,143 @@ function AppContent() {
         currentPage === 'payment-verification' || 
         currentPage === 'payment-success' || 
         currentPage === 'payment-cancelled') && (
-        <>
-          {currentPage === 'landing' && (
-            <LandingPage 
-              onGetStarted={() => go('register')}
-              onLogin={() => go('login')}
-              onGoogleLogin={() => handleGoogleLogin(PAGE_PATHS.dashboard)}
-            />
-          )}
-          
-          {currentPage === 'features' && (
-            <FeaturesPage
-              onNavigate={(page) => go(page as PageType)}
-              onSignIn={() => go('login')}
-              onGetStarted={() => go('register')}
-            />
-          )}
-          
-          {currentPage === 'pricing' && (
-            <PricingPage
-              onNavigate={(page) => go(page as PageType)}
-              onSignIn={() => go('login')}
-              onGetStarted={() => go('register')}
-            />
-          )}
-          
-          {currentPage === 'login' && (
-            <LoginPage
-              authError={authError}
-              isAuthReady={isAuthReady}
-              onGoogleLogin={() => handleGoogleLogin()}
-              onEmailLogin={async (email, password) => {
-                const redirectPath =
-                  safeRedirectPath(new URLSearchParams(window.location.search).get('redirect')) ||
-                  PAGE_PATHS.dashboard;
-                try {
-                  await signInWithEmail(email, password);
-                  go(pageFromPathname(new URL(redirectPath, window.location.origin).pathname), {
-                    replace: true
-                  });
-                } catch (err: unknown) {
-                  const message = err instanceof Error ? err.message : 'Login failed';
-                  toast.error(message);
-                }
-              }}
-              onNavigateToRegister={() => {
-                const redirectPath = safeRedirectPath(new URLSearchParams(window.location.search).get('redirect'));
-                go('register', { query: { redirect: redirectPath || undefined } });
-              }}
-              onForgotPassword={async (email) => {
-                if (!email) {
-                  toast.info('Enter your email address first');
-                  return;
-                }
-                try {
-                  await resetPassword(email);
-                  toast.success('Password reset email sent');
-                } catch (err: unknown) {
-                  const message = err instanceof Error ? err.message : 'Failed to send reset email';
-                  toast.error(message);
-                }
-              }}
-            />
-          )}
-          
-          {currentPage === 'register' && (
-            <RegisterPage
-              onGoogleRegister={async () => {
-                const redirectPath =
-                  safeRedirectPath(new URLSearchParams(window.location.search).get('redirect')) ||
-                  PAGE_PATHS.dashboard;
-                try {
-                  await signInWithGoogle(redirectPath);
-                } catch (err: unknown) {
-                  const message = err instanceof Error ? err.message : 'Google login failed';
-                  toast.error(message);
-                }
-              }}
-              onEmailRegister={async (name, email, password) => {
-                try {
-                  const result = await signUpWithEmail(name, email, password);
-                  if (result === 'needs_confirmation') {
-                    toast.success('Account created. Please confirm your email, then sign in.');
+        <Suspense fallback={pageFallback}>
+          <>
+            {currentPage === 'landing' && (
+              <LandingPage 
+                onGetStarted={() => go('register')}
+                onLogin={() => go('login')}
+              />
+            )}
+
+            {currentPage === 'features' && (
+              <FeaturesPage
+                onNavigate={(page) => go(page as PageType)}
+                onSignIn={() => go('login')}
+                onGetStarted={() => go('register')}
+              />
+            )}
+
+            {currentPage === 'pricing' && (
+              <PricingPage
+                onNavigate={(page) => go(page as PageType)}
+                onSignIn={() => go('login')}
+                onGetStarted={() => go('register')}
+              />
+            )}
+
+            {currentPage === 'login' && (
+              <LoginPage
+                authError={authError}
+                isAuthReady={isAuthReady}
+                onGoogleLogin={() => handleGoogleLogin()}
+                onEmailLogin={async (email, password) => {
+                  const redirectPath =
+                    safeRedirectPath(new URLSearchParams(window.location.search).get('redirect')) ||
+                    PAGE_PATHS.dashboard;
+                  try {
+                    await signInWithEmail(email, password);
+                    go(pageFromPathname(new URL(redirectPath, window.location.origin).pathname), {
+                      replace: true
+                    });
+                  } catch (err: unknown) {
+                    const message = err instanceof Error ? err.message : 'Login failed';
+                    toast.error(message);
                   }
-                  return result;
-                } catch (err: unknown) {
-                  const message = err instanceof Error ? err.message : 'Registration failed';
-                  toast.error(message);
-                  throw err;
-                }
-              }}
-              onNavigateToLogin={() => {
-                sessionStorage.removeItem(AUTH_HOLD_KEY);
-                const redirectPath = safeRedirectPath(new URLSearchParams(window.location.search).get('redirect'));
-                go('login', { query: { redirect: redirectPath || undefined } });
-              }}
-              onProceedToPayment={() => {
-                sessionStorage.removeItem(AUTH_HOLD_KEY);
-                go('settings', { query: { tab: 'billing' } });
-              }}
-            />
-          )}
-          
-          {currentPage === 'auth-processing' && (
-            <AuthProcessingPage
-              message="Logging you in..."
-              onComplete={handleAuthComplete}
-            />
-          )}
-          
-          {currentPage === 'payment-verification' && (
-            <PaymentVerificationPage
-              sessionId={new URLSearchParams(window.location.search).get('session_id') ?? undefined}
-              onVerificationSuccess={() => go('payment-success', { replace: true })}
-              onVerificationError={() => go('payment-cancelled', { replace: true })}
-              onGoHome={() => go('landing', { replace: true })}
-              onLogout={async () => {
-                await signOut().catch(() => undefined);
-                go('login', { replace: true });
-              }}
-            />
-          )}
-          
-          {currentPage === 'payment-success' && (
-            <PaymentSuccessPage
-              onGoToDashboard={() => go('dashboard', { replace: true })}
-            />
-          )}
-          
-          {currentPage === 'payment-cancelled' && (
-            <PaymentCancelledPage
-              onRetryCheckout={() => go('settings', { query: { tab: 'billing' } })}
-              onViewPricing={() => go('pricing')}
-              onGoHome={() => go('landing')}
-            />
-          )}
-        </>
+                }}
+                onNavigateToRegister={() => {
+                  const redirectPath = safeRedirectPath(new URLSearchParams(window.location.search).get('redirect'));
+                  go('register', { query: { redirect: redirectPath || undefined } });
+                }}
+                onForgotPassword={async (email) => {
+                  if (!email) {
+                    toast.info('Enter your email address first');
+                    return;
+                  }
+                  try {
+                    await resetPassword(email);
+                    toast.success('Password reset email sent');
+                  } catch (err: unknown) {
+                    const message = err instanceof Error ? err.message : 'Failed to send reset email';
+                    toast.error(message);
+                  }
+                }}
+              />
+            )}
+
+            {currentPage === 'register' && (
+              <RegisterPage
+                onGoogleRegister={async () => {
+                  const redirectPath =
+                    safeRedirectPath(new URLSearchParams(window.location.search).get('redirect')) ||
+                    PAGE_PATHS.dashboard;
+                  try {
+                    await signInWithGoogle(redirectPath);
+                  } catch (err: unknown) {
+                    const message = err instanceof Error ? err.message : 'Google login failed';
+                    toast.error(message);
+                  }
+                }}
+                onEmailRegister={async (name, email, password) => {
+                  try {
+                    const result = await signUpWithEmail(name, email, password);
+                    if (result === 'needs_confirmation') {
+                      toast.success('Account created. Please confirm your email, then sign in.');
+                    }
+                    return result;
+                  } catch (err: unknown) {
+                    const message = err instanceof Error ? err.message : 'Registration failed';
+                    toast.error(message);
+                    throw err;
+                  }
+                }}
+                onNavigateToLogin={() => {
+                  sessionStorage.removeItem(AUTH_HOLD_KEY);
+                  const redirectPath = safeRedirectPath(new URLSearchParams(window.location.search).get('redirect'));
+                  go('login', { query: { redirect: redirectPath || undefined } });
+                }}
+                onProceedToPayment={() => {
+                  sessionStorage.removeItem(AUTH_HOLD_KEY);
+                  go('settings', { query: { tab: 'billing' } });
+                }}
+              />
+            )}
+
+            {currentPage === 'auth-processing' && (
+              <AuthProcessingPage
+                message="Logging you in..."
+                onComplete={handleAuthComplete}
+              />
+            )}
+
+            {currentPage === 'payment-verification' && (
+              <PaymentVerificationPage
+                sessionId={new URLSearchParams(window.location.search).get('session_id') ?? undefined}
+                onVerificationSuccess={() => go('payment-success', { replace: true })}
+                onVerificationError={() => go('payment-cancelled', { replace: true })}
+                onGoHome={() => go('landing', { replace: true })}
+                onLogout={async () => {
+                  await signOut().catch(() => undefined);
+                  go('login', { replace: true });
+                }}
+              />
+            )}
+
+            {currentPage === 'payment-success' && (
+              <PaymentSuccessPage
+                onGoToDashboard={() => go('dashboard', { replace: true })}
+              />
+            )}
+
+            {currentPage === 'payment-cancelled' && (
+              <PaymentCancelledPage
+                onRetryCheckout={() => go('settings', { query: { tab: 'billing' } })}
+                onViewPricing={() => go('pricing')}
+                onGoHome={() => go('landing')}
+              />
+            )}
+          </>
+        </Suspense>
       )}
 
       {/* Dashboard Pages - With Sidebar/Header */}
@@ -580,7 +584,9 @@ function AppContent() {
           {/* Page Content */}
           {currentPage === 'dashboard' && (
             <div className="pt-16 min-h-screen">
-              <OverviewPage onNavigate={(page, query) => go(page as PageType, { query })} />
+              <Suspense fallback={pageFallback}>
+                <OverviewPage onNavigate={(page, query) => go(page as PageType, { query })} />
+              </Suspense>
             </div>
           )}
 
@@ -595,14 +601,18 @@ function AppContent() {
 
           {currentPage === 'strategies' && (
             <div className="pt-16 min-h-screen">
-              <AdsStrategiesPage />
+              <Suspense fallback={pageFallback}>
+                <AdsStrategiesPage />
+              </Suspense>
               <Footer />
             </div>
           )}
 
           {currentPage === 'campaigns' && (
             <div className="pt-16 min-h-screen">
-              <CampaignsPage />
+              <Suspense fallback={pageFallback}>
+                <CampaignsPage />
+              </Suspense>
               <Footer />
             </div>
           )}
@@ -618,28 +628,36 @@ function AppContent() {
 
           {currentPage === 'settings' && (
             <div className="pt-16 min-h-screen">
-              <SettingsPage />
+              <Suspense fallback={pageFallback}>
+                <SettingsPage />
+              </Suspense>
               <Footer />
             </div>
           )}
 
           {currentPage === 'affiliate' && (
             <div className="pt-16 min-h-screen">
-              <AffiliatePage />
+              <Suspense fallback={pageFallback}>
+                <AffiliatePage />
+              </Suspense>
               <Footer />
             </div>
           )}
 
           {currentPage === 'profile' && (
             <div className="pt-16 min-h-screen">
-              <ProfilePage />
+              <Suspense fallback={pageFallback}>
+                <ProfilePage />
+              </Suspense>
               <Footer />
             </div>
           )}
 
           {currentPage === 'help' && (
             <div className="pt-16 min-h-screen">
-              <HelpSupportPage />
+              <Suspense fallback={pageFallback}>
+                <HelpSupportPage />
+              </Suspense>
               <Footer />
             </div>
           )}

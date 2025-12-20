@@ -16,11 +16,12 @@ export function AuthProcessingPage({
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    let mounted = true;
-    let tries = 0;
-    const maxTries = 50; // ~10s
+  let mounted = true;
+  let tries = 0;
+  // Poll less frequently to reduce client load (400ms * 25 ~= 10s)
+  const maxTries = 25; // ~10s
 
-    const interval = setInterval(async () => {
+  const interval = setInterval(async () => {
       tries += 1;
 
       setProgress((prev) => Math.min(90, prev + 2));
@@ -46,7 +47,7 @@ export function AuthProcessingPage({
         clearInterval(interval);
         setError('Auth check failed. Please try again.');
       }
-    }, 200);
+  }, 400);
 
     return () => {
       mounted = false;
