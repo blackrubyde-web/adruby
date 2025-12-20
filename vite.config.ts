@@ -30,7 +30,6 @@ export default defineConfig({
             if (id.includes('@supabase') || id.includes('supabase-js')) return 'vendor-supabase';
             // Isolate known heavy UI/layout libs (they often include CSS)
             if (id.includes('react-grid-layout') || id.includes('react-resizable') || id.includes('react-slick') || id.includes('slick-carousel')) return 'vendor-layout';
-            if (id.includes('react') || id.includes('react-dom')) return 'vendor-react';
             if (id.includes('@mui') || id.includes('@mui/material') || id.includes('@mui/icons-material')) return 'vendor-mui';
             if (id.includes('recharts')) return 'vendor-charts';
             if (id.includes('lucide-react')) return 'vendor-icons';
