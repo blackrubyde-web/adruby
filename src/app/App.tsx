@@ -308,20 +308,31 @@ function AppContent() {
     }
 
     // Redirect signed-in users away from auth pages
-    if (user && (currentPage === 'login' || currentPage === 'register' || currentPage === 'auth-processing')) {
-      if (holdAuthRedirect && currentPage === 'register') return;
+    if (user) {
       const params = new URLSearchParams(window.location.search);
       const redirectPath = safeRedirectPath(params.get('redirect')) || PAGE_PATHS.dashboard;
       const targetPage = pageFromPathname(new URL(redirectPath, window.location.origin).pathname);
+      const isAuthPage =
+        currentPage === 'login' ||
+        currentPage === 'register' ||
+        currentPage === 'auth-processing';
+      const isPaymentPage =
+        currentPage === 'payment-verification' ||
+        currentPage === 'payment-success' ||
+        currentPage === 'payment-cancelled';
 
-      if (!billing.isSubscribed && targetPage !== 'settings') {
-        if (allowRedirect(PAGE_PATHS.settings)) {
-          go('settings', { replace: true, query: { tab: 'billing' } });
+      if (isAuthPage || (isPaymentPage && params.get('redirect'))) {
+        if (holdAuthRedirect && currentPage === 'register') return;
+
+        if (!billing.isSubscribed && targetPage !== 'settings') {
+          if (allowRedirect(PAGE_PATHS.settings)) {
+            go('settings', { replace: true, query: { tab: 'billing' } });
+          }
+        } else if (allowRedirect(PAGE_PATHS[targetPage])) {
+          go(targetPage, { replace: true });
         }
-      } else if (allowRedirect(PAGE_PATHS[targetPage])) {
-        go(targetPage, { replace: true });
+        return;
       }
-      return;
     }
 
     const isProtected = !PUBLIC_PAGES.has(currentPage);
