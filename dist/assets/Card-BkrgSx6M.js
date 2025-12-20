@@ -1,1 +1,0 @@
-import{j as a}from"./vendor-react-BtVdps6C.js";function t({children:d,className:o="",onClick:r}){return a.jsx("div",{role:r?"button":void 0,tabIndex:r?0:void 0,onClick:r,className:"rounded-xl border border-border/60 bg-card shadow-[0_1px_0_rgba(255,255,255,0.6),0_10px_30px_rgba(0,0,0,0.06)] "+o,children:d})}export{t as C};
