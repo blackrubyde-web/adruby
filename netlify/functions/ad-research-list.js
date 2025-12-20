@@ -15,6 +15,10 @@ export async function handler(event) {
       .limit(limit);
 
     if (error) {
+      const msg = error?.message || '';
+      if (msg.includes('ad_research_ads') || msg.includes('does not exist')) {
+        return { statusCode: 200, headers, body: JSON.stringify({ count: 0, items: [] }) };
+      }
       console.error('[ad-research-list] supabase error', error);
       return { statusCode: 500, headers, body: JSON.stringify({ error: 'Failed to fetch ads' }) };
     }

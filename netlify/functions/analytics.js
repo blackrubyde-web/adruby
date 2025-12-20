@@ -52,6 +52,11 @@ function calcDelta(current, previous) {
   return (current - previous) / previous;
 }
 
+function isMissingRelation(error, relation) {
+  const msg = error?.message || "";
+  return msg.includes("relation") && msg.includes(relation);
+}
+
 export async function handler(event) {
   if (event.httpMethod === "OPTIONS") return withCors({ statusCode: 200 });
   if (event.httpMethod !== "GET" && event.httpMethod !== "POST") {
@@ -118,6 +123,26 @@ export async function handler(event) {
       .order("date", { ascending: true });
 
     if (currentError) {
+      if (isMissingRelation(currentError, "meta_insights_daily")) {
+        return ok({
+          range,
+          compare,
+          granularity: "day",
+          summary: {
+            impressions: 0,
+            clicks: 0,
+            spend: 0,
+            revenue: 0,
+            conversions: 0,
+            ctr: 0,
+            roas: 0,
+            cpa: 0,
+          },
+          timeseries: { current: [], previous: compare ? [] : undefined },
+          campaigns: [],
+          warning: "meta_insights_daily_missing",
+        });
+      }
       return serverError(`Failed to load analytics: ${currentError.message}`);
     }
 

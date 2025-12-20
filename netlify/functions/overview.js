@@ -26,6 +26,74 @@ function calcDelta(current, previous) {
   return ((current - previous) / previous) * 100;
 }
 
+function isMissingRelation(error, relation) {
+  const msg = error?.message || "";
+  return msg.includes("relation") && msg.includes(relation);
+}
+
+function emptyOverview() {
+  return {
+    kpis: {
+      spend: 0,
+      revenue: 0,
+      roas: 0,
+      activeCampaigns: 0,
+      spendChangePct: undefined,
+      revenueChangePct: undefined,
+      roasChangePct: undefined,
+    },
+    timeseries: [],
+    topCampaign: {
+      id: "campaign-0",
+      name: "No campaigns yet",
+      roas: 0,
+      spend: 0,
+      revenue: 0,
+    },
+    bestCreative: {
+      id: "creative-0",
+      name: "Meta connection required",
+      aiScore: 0,
+      ctr: 0,
+      conversions: 0,
+    },
+    onboarding: {
+      completedSteps: 0,
+      totalSteps: 4,
+      steps: [
+        {
+          id: "connect-meta",
+          title: "Connect Meta Ads account",
+          description: "Link your Facebook Business account to import campaigns",
+          completed: false,
+          actionLabel: "Connect",
+        },
+        {
+          id: "create-campaign",
+          title: "Create your first campaign",
+          description: "Launch a campaign to start getting results",
+          completed: false,
+          actionLabel: "Create",
+        },
+        {
+          id: "generate-creatives",
+          title: "Generate AI ad creatives",
+          description: "Use AI to create high-performing ad variations",
+          completed: false,
+          actionLabel: "Generate",
+        },
+        {
+          id: "enable-optimization",
+          title: "Enable AI optimization rules",
+          description: "Let AI automatically optimize your campaigns",
+          completed: false,
+          actionLabel: "Enable",
+        },
+      ],
+    },
+  };
+}
+
 export async function handler(event) {
   if (event.httpMethod === "OPTIONS") return withCors({ statusCode: 200 });
   if (event.httpMethod !== "GET") return methodNotAllowed("GET,OPTIONS");
@@ -52,6 +120,9 @@ export async function handler(event) {
       .order("date", { ascending: true });
 
     if (dailyError) {
+      if (isMissingRelation(dailyError, "meta_insights_daily")) {
+        return ok({ ...emptyOverview(), warning: "meta_insights_daily_missing" });
+      }
       return serverError(`Failed to load overview data: ${dailyError.message}`);
     }
 
