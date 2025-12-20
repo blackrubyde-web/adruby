@@ -62,7 +62,6 @@ export async function handler(event) {
       [
         "ads_read",
         "ads_management",
-        "read_insights",
         "business_management",
         "pages_show_list",
       ].join(",")
