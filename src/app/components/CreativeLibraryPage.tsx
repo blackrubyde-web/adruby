@@ -111,9 +111,10 @@ export function CreativeLibraryPage() {
           return;
         }
 
+        // Only fetch minimal fields for the listing to avoid storing large JSON blobs in memory.
         const { data, error } = await supabase
           .from('generated_creatives')
-          .select('id,inputs,created_at,saved')
+          .select('id,thumbnail,created_at,metrics,saved')
           .eq('saved', true)
           .order('created_at', { ascending: false })
           .limit(50);
@@ -232,6 +233,75 @@ export function CreativeLibraryPage() {
     video: Video,
     carousel: FileText
   };
+
+  // Memoized row component for list view to avoid re-renders when unrelated state changes
+  const CreativeListRow = useCallback(
+    (props: { creative: Creative }) => {
+      const { creative } = props;
+      const TypeIcon = typeIcons[creative.type];
+      return (
+        <tr key={creative.id} className="border-b border-border hover:bg-muted/50 transition-colors">
+          <td className="p-4">
+            <div className="flex items-center gap-3">
+              {creative.thumbnail ? (
+                <img
+                  src={creative.thumbnail}
+                  alt={creative.name}
+                  loading="lazy"
+                  decoding="async"
+                  width={64}
+                  height={40}
+                  className="w-16 h-10 object-cover rounded"
+                />
+              ) : (
+                <div className="w-16 h-10 rounded bg-muted flex items-center justify-center text-[10px] text-muted-foreground">
+                  AI
+                </div>
+              )}
+              <div>
+                <div className="font-medium text-foreground">{creative.name}</div>
+                <div className="text-xs text-muted-foreground">{creative.uploadedAt}</div>
+              </div>
+            </div>
+          </td>
+          <td className="p-4">
+            <div className="flex items-center gap-1 text-foreground">
+              <TypeIcon className="w-4 h-4" />
+              <span className="capitalize">{creative.type}</span>
+            </div>
+          </td>
+          <td className="p-4">
+            <div className="flex flex-wrap gap-1">
+              {creative.tags.slice(0, 2).map((tag) => (
+                <span key={tag} className="px-2 py-0.5 bg-muted rounded text-xs text-muted-foreground">
+                  #{tag}
+                </span>
+              ))}
+            </div>
+          </td>
+          <td className="p-4 text-right font-medium text-foreground">
+            {(creative.performance.impressions / 1000).toFixed(1)}K
+          </td>
+          <td className="p-4 text-right font-medium text-foreground">{creative.performance.ctr}%</td>
+          <td className="p-4 text-right font-bold text-green-500">{creative.performance.roas}x</td>
+          <td className="p-4">
+            <div className="flex items-center justify-end gap-1">
+              <button onClick={() => handleToggleFavorite(creative.id)} className="p-1.5 hover:bg-muted rounded transition-colors">
+                <Star className={`w-4 h-4 ${creative.isFavorite ? 'fill-yellow-500 text-yellow-500' : 'text-muted-foreground'}`} />
+              </button>
+              <button onClick={() => handleDuplicate(creative.id)} className="p-1.5 hover:bg-muted rounded transition-colors">
+                <Copy className="w-4 h-4 text-muted-foreground" />
+              </button>
+              <button onClick={() => handleDelete(creative.id)} className="p-1.5 hover:bg-red-500/20 rounded transition-colors">
+                <Trash2 className="w-4 h-4 text-red-500" />
+              </button>
+            </div>
+          </td>
+        </tr>
+      );
+    },
+    [handleDelete, handleDuplicate, handleToggleFavorite, typeIcons]
+  );
 
   const gridRef = useRef<HTMLDivElement | null>(null);
   const [gridWidth, setGridWidth] = useState(0);
@@ -529,82 +599,9 @@ export function CreativeLibraryPage() {
               </tr>
             </thead>
             <tbody>
-              {filteredCreatives.map((creative) => {
-                const TypeIcon = typeIcons[creative.type];
-                return (
-                  <tr key={creative.id} className="border-b border-border hover:bg-muted/50 transition-colors">
-                    <td className="p-4">
-                      <div className="flex items-center gap-3">
-                        {creative.thumbnail ? (
-                          <img
-                            src={creative.thumbnail}
-                            alt={creative.name}
-                            loading="lazy"
-                            decoding="async"
-                            width={64}
-                            height={40}
-                            className="w-16 h-10 object-cover rounded"
-                          />
-                        ) : (
-                          <div className="w-16 h-10 rounded bg-muted flex items-center justify-center text-[10px] text-muted-foreground">
-                            AI
-                          </div>
-                        )}
-                        <div>
-                          <div className="font-medium text-foreground">{creative.name}</div>
-                          <div className="text-xs text-muted-foreground">{creative.uploadedAt}</div>
-                        </div>
-                      </div>
-                    </td>
-                    <td className="p-4">
-                      <div className="flex items-center gap-1 text-foreground">
-                        <TypeIcon className="w-4 h-4" />
-                        <span className="capitalize">{creative.type}</span>
-                      </div>
-                    </td>
-                    <td className="p-4">
-                      <div className="flex flex-wrap gap-1">
-                        {creative.tags.slice(0, 2).map((tag) => (
-                          <span key={tag} className="px-2 py-0.5 bg-muted rounded text-xs text-muted-foreground">
-                            #{tag}
-                          </span>
-                        ))}
-                      </div>
-                    </td>
-                    <td className="p-4 text-right font-medium text-foreground">
-                      {(creative.performance.impressions / 1000).toFixed(1)}K
-                    </td>
-                    <td className="p-4 text-right font-medium text-foreground">
-                      {creative.performance.ctr}%
-                    </td>
-                    <td className="p-4 text-right font-bold text-green-500">
-                      {creative.performance.roas}x
-                    </td>
-                    <td className="p-4">
-                      <div className="flex items-center justify-end gap-1">
-                        <button
-                          onClick={() => handleToggleFavorite(creative.id)}
-                          className="p-1.5 hover:bg-muted rounded transition-colors"
-                        >
-                          <Star className={`w-4 h-4 ${creative.isFavorite ? 'fill-yellow-500 text-yellow-500' : 'text-muted-foreground'}`} />
-                        </button>
-                        <button
-                          onClick={() => handleDuplicate(creative.id)}
-                          className="p-1.5 hover:bg-muted rounded transition-colors"
-                        >
-                          <Copy className="w-4 h-4 text-muted-foreground" />
-                        </button>
-                        <button
-                          onClick={() => handleDelete(creative.id)}
-                          className="p-1.5 hover:bg-red-500/20 rounded transition-colors"
-                        >
-                          <Trash2 className="w-4 h-4 text-red-500" />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                );
-              })}
+              {filteredCreatives.map((creative) => (
+                <CreativeListRow key={creative.id} creative={creative} />
+              ))}
             </tbody>
           </table>
         </div>
