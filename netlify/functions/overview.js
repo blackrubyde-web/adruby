@@ -94,6 +94,31 @@ function emptyOverview() {
   };
 }
 
+const OVERVIEW_CACHE = new Map();
+const OVERVIEW_CACHE_TTL_MS = 1000 * 30;
+
+function getCachedOverview(key) {
+  const hit = OVERVIEW_CACHE.get(key);
+  if (!hit) return null;
+  if (Date.now() - hit.ts > OVERVIEW_CACHE_TTL_MS) {
+    OVERVIEW_CACHE.delete(key);
+    return null;
+  }
+  return hit.data;
+}
+
+function setCachedOverview(key, data) {
+  OVERVIEW_CACHE.set(key, { ts: Date.now(), data });
+}
+
+function okCached(data) {
+  return withCors({
+    statusCode: 200,
+    headers: { "Cache-Control": "private, max-age=30" },
+    body: JSON.stringify(data),
+  });
+}
+
 export async function handler(event) {
   if (event.httpMethod === "OPTIONS") return withCors({ statusCode: 200 });
   if (event.httpMethod !== "GET") return methodNotAllowed("GET,OPTIONS");
@@ -105,13 +130,23 @@ export async function handler(event) {
   const userId = auth.userId;
 
   const range = event.queryStringParameters?.range || "7d";
+  const channel = event.queryStringParameters?.channel || "meta";
   const days = parseRange(range);
   const today = new Date();
   const since = new Date();
   since.setDate(today.getDate() - (days - 1));
 
+  const cacheKey = `${userId}:${range}:${channel}`;
+  const cached = getCachedOverview(cacheKey);
+  if (cached) return okCached(cached);
+
   try {
-    const { data: daily, error: dailyError } = await supabaseAdmin
+    const prevEnd = new Date(since);
+    prevEnd.setDate(prevEnd.getDate() - 1);
+    const prevStart = new Date(prevEnd);
+    prevStart.setDate(prevEnd.getDate() - (days - 1));
+
+    const dailyPromise = supabaseAdmin
       .from("meta_insights_daily")
       .select("date,spend,revenue,roas,impressions,clicks,conversions")
       .eq("user_id", userId)
@@ -119,12 +154,59 @@ export async function handler(event) {
       .lte("date", formatDate(today))
       .order("date", { ascending: true });
 
+    const prevPromise = supabaseAdmin
+      .from("meta_insights_daily")
+      .select("spend,revenue,roas")
+      .eq("user_id", userId)
+      .gte("date", formatDate(prevStart))
+      .lte("date", formatDate(prevEnd));
+
+    const campaignPromise = supabaseAdmin
+      .from("meta_campaigns")
+      .select("id,facebook_campaign_id,name,roas,spend,revenue,conversions")
+      .eq("user_id", userId)
+      .order("roas", { ascending: false })
+      .limit(1);
+
+    const countPromise = supabaseAdmin
+      .from("meta_campaigns")
+      .select("id", { count: "exact", head: true })
+      .eq("user_id", userId);
+
+    const connectionPromise = supabaseAdmin
+      .from("facebook_connections")
+      .select("id")
+      .eq("user_id", userId)
+      .eq("is_active", true)
+      .maybeSingle();
+
+    const [
+      { data: daily, error: dailyError },
+      { data: prevDaily, error: prevError },
+      { data: campaignStats, error: campaignError },
+      { count: campaignCount, error: countError },
+      { data: connection, error: connectionError },
+    ] = await Promise.all([
+      dailyPromise,
+      prevPromise,
+      campaignPromise,
+      countPromise,
+      connectionPromise,
+    ]);
+
     if (dailyError) {
       if (isMissingRelation(dailyError, "meta_insights_daily")) {
-        return ok({ ...emptyOverview(), warning: "meta_insights_daily_missing" });
+        const payload = { ...emptyOverview(), warning: "meta_insights_daily_missing" };
+        setCachedOverview(cacheKey, payload);
+        return okCached(payload);
       }
       return serverError(`Failed to load overview data: ${dailyError.message}`);
     }
+
+    if (prevError) captureException(prevError, { function: "overview", stage: "prev" });
+    if (campaignError) captureException(campaignError, { function: "overview", stage: "campaign" });
+    if (countError) captureException(countError, { function: "overview", stage: "campaign_count" });
+    if (connectionError) captureException(connectionError, { function: "overview", stage: "connection" });
 
     const points =
       (daily || []).map((row) => {
@@ -142,44 +224,13 @@ export async function handler(event) {
     const revenue = points.reduce((acc, p) => acc + p.revenue, 0);
     const roas = spend > 0 ? revenue / spend : 0;
 
-    const prevEnd = new Date(since);
-    prevEnd.setDate(prevEnd.getDate() - 1);
-    const prevStart = new Date(prevEnd);
-    prevStart.setDate(prevEnd.getDate() - (days - 1));
-
-    const { data: prevDaily } = await supabaseAdmin
-      .from("meta_insights_daily")
-      .select("spend,revenue,roas")
-      .eq("user_id", userId)
-      .gte("date", formatDate(prevStart))
-      .lte("date", formatDate(prevEnd));
-
     const prevSpend =
       (prevDaily || []).reduce((acc, row) => acc + safeNumber(row.spend), 0) || 0;
     const prevRevenue =
       (prevDaily || []).reduce((acc, row) => acc + safeNumber(row.revenue), 0) || 0;
     const prevRoas = prevSpend > 0 ? prevRevenue / prevSpend : 0;
 
-    const { data: campaignStats } = await supabaseAdmin
-      .from("meta_campaigns")
-      .select("id,facebook_campaign_id,name,roas,spend,revenue,conversions")
-      .eq("user_id", userId)
-      .order("roas", { ascending: false })
-      .limit(1);
-
     const topCampaign = campaignStats?.[0];
-
-    const { count: campaignCount } = await supabaseAdmin
-      .from("meta_campaigns")
-      .select("id", { count: "exact", head: true })
-      .eq("user_id", userId);
-
-    const { data: connection } = await supabaseAdmin
-      .from("facebook_connections")
-      .select("id")
-      .eq("user_id", userId)
-      .eq("is_active", true)
-      .maybeSingle();
 
     const onboardingSteps = [
       {
@@ -214,7 +265,7 @@ export async function handler(event) {
 
     const completedSteps = onboardingSteps.filter((s) => s.completed).length;
 
-    return ok({
+    const payload = {
       kpis: {
         spend,
         revenue,
@@ -252,7 +303,10 @@ export async function handler(event) {
         totalSteps: onboardingSteps.length,
         steps: onboardingSteps,
       },
-    });
+    };
+
+    setCachedOverview(cacheKey, payload);
+    return okCached(payload);
   } catch (err) {
     captureException(err, { function: "overview" });
     return serverError(err?.message || "Failed to load overview");

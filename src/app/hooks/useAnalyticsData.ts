@@ -14,7 +14,24 @@ export function useAnalyticsData(
 
   useEffect(() => {
     let cancelled = false;
-    setLoading(true);
+    const cacheKey = `analytics:${range}:${compare ? 1 : 0}:${channel}`;
+    const cacheTtlMs = 1000 * 60 * 5;
+    let hasCached = false;
+
+    try {
+      const raw = sessionStorage.getItem(cacheKey);
+      if (raw) {
+        const parsed = JSON.parse(raw) as { ts: number; data: AnalyticsData };
+        if (parsed?.ts && Date.now() - parsed.ts < cacheTtlMs && parsed.data) {
+          hasCached = true;
+          setData(parsed.data);
+        }
+      }
+    } catch {
+      hasCached = false;
+    }
+
+    setLoading(!hasCached);
     setError(null);
 
     apiClient
@@ -22,12 +39,19 @@ export function useAnalyticsData(
         `/api/analytics?range=${range}&compare=${compare ? 1 : 0}&channel=${channel}`
       )
       .then((json) => {
-        if (!cancelled) setData(json);
+        if (!cancelled) {
+          setData(json);
+          try {
+            sessionStorage.setItem(cacheKey, JSON.stringify({ ts: Date.now(), data: json }));
+          } catch {
+            // ignore cache write issues
+          }
+        }
       })
       .catch((e) => {
         if (!cancelled) {
           setError(e?.message ?? "Failed");
-          setData(null);
+          if (!hasCached) setData(null);
         }
       })
       .finally(() => {
