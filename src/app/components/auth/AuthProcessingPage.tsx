@@ -18,8 +18,9 @@ export function AuthProcessingPage({
   useEffect(() => {
   let mounted = true;
   let tries = 0;
-  // Poll less frequently to reduce client load (400ms * 25 ~= 10s)
-  const maxTries = 25; // ~10s
+  // Poll less frequently to reduce client load (1000ms * 30 ~= 30s)
+  // This reduces rapid getSession() calls which can cause perceived jank and server load.
+  const maxTries = 30; // ~30s
 
   const interval = setInterval(async () => {
       tries += 1;
@@ -47,7 +48,7 @@ export function AuthProcessingPage({
         clearInterval(interval);
         setError('Auth check failed. Please try again.');
       }
-  }, 400);
+  }, 1000);
 
     return () => {
       mounted = false;
