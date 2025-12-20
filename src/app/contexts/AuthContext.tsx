@@ -20,7 +20,7 @@ export type UserProfile = {
   verification_method?: string | null;
 };
 
-type AuthContextValue = {
+type AuthStateValue = {
   session: Session | null;
   user: User | null;
   profile: UserProfile | null;
@@ -28,7 +28,14 @@ type AuthContextValue = {
   isLoading: boolean;
   authError: string | null;
   profileError: string | null;
-  isSubscribed: () => boolean;
+  billing: {
+    isSubscribed: boolean;
+    statusLabel: string;
+    trialEndsAt: string | null;
+  };
+};
+
+type AuthActionsValue = {
   signInWithGoogle: (redirectPath?: string) => Promise<void>;
   signInWithEmail: (email: string, password: string) => Promise<void>;
   signUpWithEmail: (
@@ -39,14 +46,12 @@ type AuthContextValue = {
   resetPassword: (email: string) => Promise<void>;
   signOut: () => Promise<void>;
   refreshProfile: () => Promise<void>;
-  billing: {
-    isSubscribed: boolean;
-    statusLabel: string;
-    trialEndsAt: string | null;
-  };
 };
 
-const AuthContext = createContext<AuthContextValue | null>(null);
+type AuthContextValue = AuthStateValue & AuthActionsValue;
+
+const AuthStateContext = createContext<AuthStateValue | null>(null);
+const AuthActionsContext = createContext<AuthActionsValue | null>(null);
 
 function isTrialActive(trialEndsAt: string | null) {
   if (!trialEndsAt) return false;
@@ -342,9 +347,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return { isSubscribed, statusLabel, trialEndsAt };
   }, [profile]);
 
-  const isSubscribed = useCallback(() => billing.isSubscribed, [billing.isSubscribed]);
-
-  const value = useMemo<AuthContextValue>(
+  const stateValue = useMemo<AuthStateValue>(
     () => ({
       session,
       user,
@@ -353,39 +356,46 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       isLoading,
       authError,
       profileError,
-      isSubscribed,
-      signInWithGoogle,
-      signInWithEmail,
-      signUpWithEmail,
-      resetPassword,
-      signOut,
-      refreshProfile,
-      billing
+      billing,
     }),
-    [
-      session,
-      user,
-      profile,
-      isAuthReady,
-      isLoading,
-      authError,
-      profileError,
-      isSubscribed,
-      signInWithGoogle,
-      signInWithEmail,
-      signUpWithEmail,
-      resetPassword,
-      signOut,
-      refreshProfile,
-      billing
-    ]
+    [session, user, profile, isAuthReady, isLoading, authError, profileError, billing]
   );
 
-  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+  const actionsValue = useMemo<AuthActionsValue>(
+    () => ({
+      signInWithGoogle,
+      signInWithEmail,
+      signUpWithEmail,
+      resetPassword,
+      signOut,
+      refreshProfile,
+    }),
+    [signInWithGoogle, signInWithEmail, signUpWithEmail, resetPassword, signOut, refreshProfile]
+  );
+
+  return (
+    <AuthStateContext.Provider value={stateValue}>
+      <AuthActionsContext.Provider value={actionsValue}>
+        {children}
+      </AuthActionsContext.Provider>
+    </AuthStateContext.Provider>
+  );
+}
+
+export function useAuthState() {
+  const ctx = useContext(AuthStateContext);
+  if (!ctx) throw new Error('useAuth must be used within AuthProvider');
+  return ctx;
+}
+
+export function useAuthActions() {
+  const ctx = useContext(AuthActionsContext);
+  if (!ctx) throw new Error('useAuth must be used within AuthProvider');
+  return ctx;
 }
 
 export function useAuth() {
-  const ctx = useContext(AuthContext);
-  if (!ctx) throw new Error('useAuth must be used within AuthProvider');
-  return ctx;
+  const state = useAuthState();
+  const actions = useAuthActions();
+  return { ...state, ...actions } as AuthContextValue;
 }

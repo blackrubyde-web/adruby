@@ -36,7 +36,7 @@ import { QuickActionsButton } from './components/QuickActionsButton';
 import { Sparkles } from 'lucide-react';
 import { toast } from 'sonner';
 import { Toaster } from './components/ui/sonner';
-import { AuthProvider, useAuth } from './contexts/AuthContext';
+import { AuthProvider, useAuthActions, useAuthState } from './contexts/AuthContext';
 
 const REDIRECT_GUARD_KEY = 'adruby_last_redirect';
 const AUTH_HOLD_KEY = 'adruby_hold_auth_redirect';
@@ -223,21 +223,15 @@ const LazyAIAnalysisPage = lazy(() =>
 );
 
 function AppContent() {
+  const { user, profile, billing, isAuthReady, isLoading, profileError, authError } = useAuthState();
   const {
-    user,
-    profile,
-    billing,
-    isAuthReady,
-    isLoading,
-    profileError,
-    authError,
     signInWithGoogle,
     signInWithEmail,
     signUpWithEmail,
     resetPassword,
     signOut,
     refreshProfile,
-  } = useAuth();
+  } = useAuthActions();
 
   const [currentPage, setCurrentPage] = useState<PageType>(() =>
     pageFromPathname(window.location.pathname)

@@ -14,7 +14,7 @@ import NormalizedBriefReview from "./NormalizedBriefReview";
 import CreativeResults from "./CreativeResults";
 import type { CreativeOutput, NormalizedBrief } from "../../lib/creative/schemas";
 import { creativeAnalyze, creativeGenerate } from "../../lib/api/creative";
-import { useAuth } from "../../contexts/AuthContext";
+import { useAuthState } from "../../contexts/AuthContext";
 
 const FormSchema = z.object({
   brandName: z.string().min(1, "Brand is required"),
@@ -34,7 +34,7 @@ const FormSchema = z.object({
 type FormValues = z.infer<typeof FormSchema>;
 
 export default function CreativeBuilderWizard() {
-  const { session, isAuthReady, isLoading, authError } = useAuth();
+  const { session, isAuthReady, isLoading, authError } = useAuthState();
 
   const [step, setStep] = useState<1 | 2 | 3>(1);
   const [imageFile, setImageFile] = useState<File | null>(null);
