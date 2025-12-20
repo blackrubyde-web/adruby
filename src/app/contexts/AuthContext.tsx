@@ -238,6 +238,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (envRedirect) {
       try {
         const url = new URL(envRedirect);
+        if (!url.pathname.endsWith('/auth/callback')) {
+          url.pathname = '/auth/callback';
+          url.search = '';
+        }
         if (!url.searchParams.get('redirect')) {
           url.searchParams.set('redirect', desiredRedirect);
         }

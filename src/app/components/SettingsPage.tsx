@@ -104,6 +104,28 @@ export function SettingsPage() {
   }, []);
 
   useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const metaFlag = params.get('meta');
+    if (metaFlag === 'connected') {
+      setMetaError(null);
+      refreshMetaStatus()
+        .then(() => {
+          toast.success('Meta account connected successfully!');
+        })
+        .catch((err: unknown) => {
+          const message = err instanceof Error ? err.message : 'Failed to refresh Meta status';
+          setMetaError(message);
+        })
+        .finally(() => {
+          params.delete('meta');
+          params.delete('meta_ts');
+          const nextUrl = `${window.location.pathname}?${params.toString()}`;
+          window.history.replaceState({}, document.title, nextUrl);
+        });
+    }
+  }, [refreshMetaStatus]);
+
+  useEffect(() => {
     if (metaStatusError) {
       setMetaError(metaStatusError);
     }
