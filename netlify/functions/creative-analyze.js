@@ -14,6 +14,14 @@ import { parseMultipart } from "./utils/multipart.js";
 
 const ALLOWED_TYPES = new Set(["image/jpeg", "image/png", "image/webp"]);
 
+function inferImageType(filename) {
+  const name = String(filename || "").toLowerCase();
+  if (name.endsWith(".png")) return "image/png";
+  if (name.endsWith(".jpg") || name.endsWith(".jpeg")) return "image/jpeg";
+  if (name.endsWith(".webp")) return "image/webp";
+  return null;
+}
+
 export async function handler(event) {
   if (event.httpMethod === "OPTIONS") return withCors({ statusCode: 200 });
   if (event.httpMethod !== "POST") return methodNotAllowed("POST,OPTIONS");
@@ -69,9 +77,15 @@ export async function handler(event) {
   try {
     const file = files?.image;
     if (file && file.size > 0) {
-      if (!ALLOWED_TYPES.has(file.contentType)) {
+      const inferred = inferImageType(file.filename);
+      const contentType =
+        !file.contentType || file.contentType === "application/octet-stream"
+          ? inferred || file.contentType
+          : file.contentType;
+      if (!ALLOWED_TYPES.has(contentType)) {
         return badRequest("Unsupported image type. Use JPG, PNG or WebP.");
       }
+      file.contentType = contentType;
       imageMeta = await uploadCreativeInputImage({ userId, file });
     }
   } catch (err) {
