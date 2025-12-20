@@ -13,6 +13,18 @@ import { NormalizedBriefSchema } from "./_shared/creativeSchemas.js";
 import { parseMultipart } from "./utils/multipart.js";
 
 const ALLOWED_TYPES = new Set(["image/jpeg", "image/png", "image/webp"]);
+const GOALS = new Set(["sales", "leads", "traffic", "app_installs"]);
+const FUNNELS = new Set(["cold", "warm", "hot"]);
+const LANGS = new Set(["de", "en"]);
+const FORMATS = new Set(["1:1", "4:5", "9:16"]);
+const TONES = new Set([
+  "direct",
+  "luxury",
+  "playful",
+  "minimal",
+  "bold",
+  "trustworthy",
+]);
 
 function inferImageType(filename) {
   const name = String(filename || "").toLowerCase();
@@ -20,6 +32,54 @@ function inferImageType(filename) {
   if (name.endsWith(".jpg") || name.endsWith(".jpeg")) return "image/jpeg";
   if (name.endsWith(".webp")) return "image/webp";
   return null;
+}
+
+function buildFallbackBrief(input) {
+  const safeGoal = GOALS.has(input.goal) ? input.goal : "sales";
+  const safeFunnel = FUNNELS.has(input.funnel) ? input.funnel : "cold";
+  const safeLang = LANGS.has(input.language) ? input.language : "de";
+  const safeFormat = FORMATS.has(input.format) ? input.format : "4:5";
+  const safeTone = TONES.has(input.tone) ? input.tone : "direct";
+  const brandName = input.brandName || input.productName || "AdRuby";
+  const productName = input.productName || brandName;
+  const audienceSummary = input.audience || "General audience";
+  const offerSummary = input.offer || null;
+  const constraints = input.avoidClaims ? [input.avoidClaims] : [];
+
+  return NormalizedBriefSchema.parse({
+    brand: { name: brandName },
+    product: {
+      name: productName,
+      url: input.productUrl || null,
+      category: null,
+    },
+    goal: safeGoal,
+    funnel_stage: safeFunnel,
+    language: safeLang,
+    format: safeFormat,
+    audience: {
+      summary: audienceSummary,
+      segments: [audienceSummary],
+    },
+    offer: {
+      summary: offerSummary,
+      constraints,
+    },
+    tone: safeTone,
+    angles: [
+      {
+        id: "benefit",
+        label: "Key benefit",
+        why_it_fits: "Highlights the main value proposition for the audience.",
+      },
+      {
+        id: "proof",
+        label: "Social proof",
+        why_it_fits: "Builds trust with credible, simple proof points.",
+      },
+    ],
+    risk_flags: [],
+  });
 }
 
 export async function handler(event) {
@@ -189,15 +249,36 @@ export async function handler(event) {
     console.error("[creative-analyze] failed", err);
     captureException(err, { function: "creative-analyze" });
 
+    const fallback = buildFallbackBrief({
+      brandName,
+      productName,
+      productUrl,
+      offer,
+      audience,
+      tone,
+      goal,
+      funnel,
+      language,
+      format,
+      avoidClaims,
+    });
+
     await logAiAction({
       userId,
       actionType: "creative_analyze",
-      status: "error",
+      status: "fallback",
       input: inputForLog,
-      errorMessage: err?.message || "Unknown error",
+      output: fallback,
+      errorMessage: err?.message || "Invalid JSON",
+      meta: { credits, fallback: true },
     });
 
-    return serverError(err?.message || "Analyze failed.");
+    return ok({
+      brief: fallback,
+      image: imageMeta ? { path: imageMeta.path, signedUrl: imageMeta.signedUrl } : null,
+      credits,
+      warning: "AI response invalid. Returned a safe fallback brief.",
+    });
   }
 }
 
