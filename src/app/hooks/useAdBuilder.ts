@@ -64,7 +64,7 @@ export function useAdBuilder() {
         // If server provided a jobId, poll for completion. Otherwise accept immediate output.
         if (res.jobId) {
           setStatus("polling");
-          const maxAttempts = 30;
+          const maxAttempts = 20;
           let attempt = 0;
           while (!pollRef.current.cancelled && attempt < maxAttempts) {
             attempt += 1;
@@ -86,9 +86,9 @@ export function useAdBuilder() {
               // if 404 treat as pending and continue
             }
 
-            // backoff delay
+            // backoff delay (start a bit slower to reduce rapid polling)
             // eslint-disable-next-line no-await-in-loop
-            await new Promise((r) => setTimeout(r, 1000 + Math.min(2000, attempt * 200)));
+            await new Promise((r) => setTimeout(r, 1500 + Math.min(4000, attempt * 400)));
           }
 
           if (pollRef.current.cancelled) {
