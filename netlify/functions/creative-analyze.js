@@ -246,8 +246,7 @@ export async function handler(event) {
       warning: imageWarning || null,
     });
   } catch (err) {
-    console.error("[creative-analyze] failed", err);
-    captureException(err, { function: "creative-analyze" });
+    console.warn("[creative-analyze] fallback after JSON repair failure", err?.message || err);
 
     const fallback = buildFallbackBrief({
       brandName,
