@@ -305,7 +305,8 @@ async function callOpenAiJson({ prompt, imageUrl }) {
   const res = await openai.responses.create({
     model,
     input,
-    temperature: 0.4,
+    // make the model deterministic for structured JSON output
+    temperature: 0.0,
   });
 
   const text = String(res.output_text || "").trim();

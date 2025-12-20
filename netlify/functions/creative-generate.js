@@ -10,12 +10,18 @@ import {
   buildGeneratePrompt,
   buildImprovePrompt,
   buildQualityEvalPrompt,
+  buildMentorUgcGeneratePrompt,
+  buildQualityEvalPromptV2,
+  buildImprovePromptDiagnosePlanRewrite,
 } from "./_shared/creativePrompts.js";
 import { parseWithRepair } from "./_shared/repair.js";
 import {
   CreativeOutputSchema,
   NormalizedBriefSchema,
   QualityEvalSchema,
+  CreativeOutputSchemaV2,
+  CreativeVariantSchema,
+  QualityEvalV2Schema,
 } from "./_shared/creativeSchemas.js";
 import { applySanityFilter } from "./_shared/creativeQuality.js";
 
@@ -142,6 +148,138 @@ export async function handler(event) {
       console.warn('[creative-generate] placeholder insert failed', e?.message || e);
     }
 
+    // support optional premium style modes (non-breaking)
+    const styleMode = String(body?.style_mode || "default").trim();
+
+    if (styleMode === "mentor_ugc") {
+      // premium Mentor-UGC flow: generate 12 variants, evaluate, improve top candidate, CD pass
+      try {
+        // update progress: validate -> research
+        if (placeholderId) {
+          await supabaseAdmin.from('generated_creatives').update({ progress: 5, progress_meta: { phase: 'validate' } }).eq('id', placeholderId);
+        }
+
+        const prompt = buildMentorUgcGeneratePrompt(brief, researchContext, { style_mode: 'mentor_ugc' });
+
+        if (placeholderId) await supabaseAdmin.from('generated_creatives').update({ progress: 10, progress_meta: { phase: 'research' } }).eq('id', placeholderId);
+
+        const initial = await callOpenAiJson(prompt);
+        const repaired = await parseWithRepair({
+          schema: CreativeOutputSchemaV2,
+          initial,
+          makeRequest: async (instruction) => callOpenAiJson(prompt + "\n\n" + instruction),
+        });
+
+        const v2output = repaired.data;
+
+        // ensure variants exist
+        const variants = Array.isArray(v2output.variants) ? v2output.variants : [];
+
+        // update progress: generation done
+        if (placeholderId) await supabaseAdmin.from('generated_creatives').update({ progress: 40, progress_meta: { phase: 'generate' } }).eq('id', placeholderId);
+
+        // evaluate each variant
+        const evals = [];
+        for (let i = 0; i < variants.length; i++) {
+          const variant = variants[i];
+          try {
+            const evalPrompt = buildQualityEvalPromptV2({ brief, variant, strategyBlueprint, researchContext });
+            const evalRaw = await callOpenAiJson(evalPrompt);
+            const evalParsed = await parseWithRepair({
+              schema: QualityEvalV2Schema,
+              initial: evalRaw,
+              makeRequest: async (instruction) => callOpenAiJson(evalPrompt + "\n\n" + instruction),
+            });
+            evals.push({ index: i, variant, eval: evalParsed.data });
+          } catch (e) {
+            // on eval failure, mark low score and continue
+            evals.push({ index: i, variant, eval: { subscores: { hookPower:0, clarity:0, proof:0, offer:0, objectionHandling:0, platformFit:0, novelty:0 }, ko: { complianceFail:false, genericBuzzwordFail:false }, issues: ['eval_failed'] , weakest_dimensions: [] } });
+          }
+        }
+
+        // compute score by summing subscores
+        const scored = evals.map((e) => {
+          const s = e.eval && e.eval.subscores ? Object.values(e.eval.subscores).reduce((a,b)=>a+b,0) : 0;
+          return { ...e, score: s };
+        });
+
+        scored.sort((a,b) => b.score - a.score);
+
+        const top3 = scored.slice(0,3).map(s => ({ index: s.index, variant: s.variant, eval: s.eval, score: s.score }));
+
+        if (placeholderId) await supabaseAdmin.from('generated_creatives').update({ progress: 60, progress_meta: { phase: 'eval', top_count: top3.length } }).eq('id', placeholderId);
+
+        // improve-loop on top1 only (max 2 attempts)
+        if (top3.length > 0) {
+          let top = top3[0];
+          for (let attempt = 1; attempt <= 2; attempt++) {
+            const weakest = top.eval.weakest_dimensions && top.eval.weakest_dimensions.length ? top.eval.weakest_dimensions.slice(0,2) : ['clarity','hookPower'];
+            const improvePrompt = buildImprovePromptDiagnosePlanRewrite({ brief, currentVariant: top.variant, evalV2: top.eval, targetDimensions: weakest });
+            try {
+              const improvedRaw = await callOpenAiJson(improvePrompt);
+              const improvedParsed = await parseWithRepair({
+                schema: CreativeVariantSchema,
+                initial: improvedRaw,
+                makeRequest: async (instruction) => callOpenAiJson(improvePrompt + "\n\n" + instruction),
+              });
+              // replace in variants
+              variants[top.index] = improvedParsed.data;
+              // re-evaluate improved variant
+              const reEvalPrompt = buildQualityEvalPromptV2({ brief, variant: improvedParsed.data, strategyBlueprint, researchContext });
+              const reEvalRaw = await callOpenAiJson(reEvalPrompt);
+              const reEvalParsed = await parseWithRepair({ schema: QualityEvalV2Schema, initial: reEvalRaw, makeRequest: async (instruction) => callOpenAiJson(reEvalPrompt + "\n\n" + instruction) });
+              top.eval = reEvalParsed.data;
+              // update progress
+              if (placeholderId) await supabaseAdmin.from('generated_creatives').update({ progress: 80, progress_meta: { phase: 'improve', attempt } }).eq('id', placeholderId);
+            } catch (e) {
+              // continue on failures
+              break;
+            }
+          }
+        }
+
+        // Creative Director pass: sharpen top variant (finalize)
+        try {
+          if (top3.length > 0) {
+            const top = top3[0];
+            const cdPrompt = buildImprovePromptDiagnosePlanRewrite({ brief, currentVariant: variants[top.index], evalV2: top.eval, targetDimensions: ['clarity','hookPower'] });
+            const cdRaw = await callOpenAiJson(cdPrompt);
+            const cdParsed = await parseWithRepair({ schema: CreativeVariantSchema, initial: cdRaw, makeRequest: async (instruction) => callOpenAiJson(cdPrompt + "\n\n" + instruction) });
+            variants[top.index] = cdParsed.data;
+          }
+        } catch (e) {
+          // ignore CD failures
+        }
+
+        // finalize: persist outputs (store full v2 output but keep legacy outputs for compatibility)
+        const finalOutput = { ...v2output, variants };
+        try {
+          if (placeholderId) {
+            await supabaseAdmin.from('generated_creatives').update({ outputs: finalOutput, score: scored[0]?.score ?? null, status: 'complete', progress: 100, progress_meta: { phase: 'finalize' } }).eq('id', placeholderId);
+          }
+        } catch (e) {
+          console.warn('[creative-generate] failed to update generated_creatives (v2):', e?.message || e);
+        }
+
+        await logAiAction({ userId, actionType: 'creative_generate', status: 'success', input: inputForLog, output: finalOutput, meta: { credits, top3Count: top3.length } });
+
+        return ok({ output: finalOutput, credits, quality: { target: TARGET_SATISFACTION, top3 }, jobId: placeholderId });
+      } catch (err) {
+        // On parse failure, save raw snippet and mark error
+        console.error('[creative-generate][mentor_ugc] failed', err);
+        // capture raw sample if available (best effort)
+        try {
+          if (placeholderId) {
+            await supabaseAdmin.from('generated_creatives').update({ status: 'error', progress: 0, progress_meta: { phase: 'error', code: 'PARSE_FAIL', error: String(err) } }).eq('id', placeholderId);
+          }
+        } catch (e) {
+          /* ignore */
+        }
+        throw err;
+      }
+    }
+
+    // default (existing) flow
     const prompt = buildGeneratePrompt(brief, hasImage, strategyBlueprint, researchContext);
 
     const initial = await callOpenAiJson(prompt);
@@ -267,7 +405,8 @@ async function callOpenAiJson(prompt) {
       },
       { role: "user", content: [{ type: "input_text", text: prompt }] },
     ],
-    temperature: 0.5,
+    // make generation deterministic for structured JSON output
+    temperature: 0.0,
   });
 
   const text = String(res.output_text || "").trim();
