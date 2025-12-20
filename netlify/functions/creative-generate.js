@@ -124,21 +124,35 @@ export async function handler(event) {
     // create a placeholder generated_creatives row so clients can poll status/progress
     let placeholderId = null;
     try {
-      const { data: createdRow, error: createErr } = await supabaseAdmin
+      const insertPayload = {
+        user_id: userId,
+        blueprint_id: strategyId || null,
+        inputs: { brief, hasImage, strategyId: strategyId || null },
+        outputs: null,
+        score: null,
+        research_snapshot: researchContext,
+        saved: false,
+        status: 'pending',
+        progress: 0,
+      };
+
+      let createdRow;
+      let createErr;
+      ({ data: createdRow, error: createErr } = await supabaseAdmin
         .from('generated_creatives')
-        .insert({
-          user_id: userId,
-          blueprint_id: strategyId || null,
-          inputs: { brief, hasImage, strategyId: strategyId || null },
-          outputs: null,
-          score: null,
-          research_snapshot: researchContext,
-          saved: false,
-          status: 'pending',
-          progress: 0,
-        })
+        .insert(insertPayload)
         .select('id')
-        .single();
+        .single());
+
+      if (createErr && String(createErr.message || '').includes('research_snapshot')) {
+        const { research_snapshot, ...retryPayload } = insertPayload;
+        ({ data: createdRow, error: createErr } = await supabaseAdmin
+          .from('generated_creatives')
+          .insert(retryPayload)
+          .select('id')
+          .single());
+      }
+
       if (createErr) {
         console.warn('[creative-generate] failed to create placeholder row:', createErr.message);
       } else {
