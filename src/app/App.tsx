@@ -281,6 +281,13 @@ function AppContent() {
     [signInWithGoogle]
   );
 
+  const handleAuthComplete = useCallback(() => {
+    const params = new URLSearchParams(window.location.search);
+    const redirectPath = safeRedirectPath(params.get('redirect')) || PAGE_PATHS.dashboard;
+    const targetPage = pageFromPathname(new URL(redirectPath, window.location.origin).pathname);
+    go(targetPage, { replace: true });
+  }, [go]);
+
   useEffect(() => {
     const onResize = () => setIsDesktop(window.innerWidth >= 768);
     window.addEventListener('resize', onResize);
@@ -497,6 +504,7 @@ function AppContent() {
           {currentPage === 'auth-processing' && (
             <AuthProcessingPage
               message="Logging you in..."
+              onComplete={handleAuthComplete}
             />
           )}
           

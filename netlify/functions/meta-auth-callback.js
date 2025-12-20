@@ -179,7 +179,9 @@ export async function handler(event) {
       throw new Error(tokenUpsertError.message);
     }
 
-    return redirectResponse(`${frontendUrl}/settings?tab=integrations&meta=connected`);
+    return redirectResponse(
+      `${frontendUrl}/settings?tab=integrations&meta=connected&meta_ts=${Date.now()}`
+    );
   } catch (err) {
     return redirectResponse(
       `${frontendUrl}/settings?tab=integrations&meta_error=${encodeURIComponent(err?.message || "Meta OAuth failed")}`
