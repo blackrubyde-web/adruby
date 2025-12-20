@@ -265,6 +265,22 @@ function AppContent() {
     return () => window.removeEventListener('popstate', onPopState);
   }, []);
 
+  const handleGoogleLogin = useCallback(
+    async (redirectOverride?: string) => {
+      const redirectPath =
+        safeRedirectPath(redirectOverride) ||
+        safeRedirectPath(new URLSearchParams(window.location.search).get('redirect')) ||
+        PAGE_PATHS.dashboard;
+      try {
+        await signInWithGoogle(redirectPath);
+      } catch (err: unknown) {
+        const message = err instanceof Error ? err.message : 'Google login failed';
+        toast.error(message);
+      }
+    },
+    [signInWithGoogle]
+  );
+
   useEffect(() => {
     const onResize = () => setIsDesktop(window.innerWidth >= 768);
     window.addEventListener('resize', onResize);
@@ -342,7 +358,7 @@ function AppContent() {
     return <FullScreenLoader title="Loading your account..." subtitle="Fetching your billing status" />;
   }
 
-  if (profileError && user) {
+  if (profileError && user && isProtectedPage) {
     return (
       <FullScreenError
         title="Profile unavailable"
@@ -370,6 +386,7 @@ function AppContent() {
             <LandingPage 
               onGetStarted={() => go('register')}
               onLogin={() => go('login')}
+              onGoogleLogin={() => handleGoogleLogin(PAGE_PATHS.dashboard)}
             />
           )}
           
@@ -393,17 +410,7 @@ function AppContent() {
             <LoginPage
               authError={authError}
               isAuthReady={isAuthReady}
-              onGoogleLogin={async () => {
-                const redirectPath =
-                  safeRedirectPath(new URLSearchParams(window.location.search).get('redirect')) ||
-                  PAGE_PATHS.dashboard;
-                try {
-                  await signInWithGoogle(redirectPath);
-                } catch (err: unknown) {
-                  const message = err instanceof Error ? err.message : 'Google login failed';
-                  toast.error(message);
-                }
-              }}
+              onGoogleLogin={() => handleGoogleLogin()}
               onEmailLogin={async (email, password) => {
                 const redirectPath =
                   safeRedirectPath(new URLSearchParams(window.location.search).get('redirect')) ||
