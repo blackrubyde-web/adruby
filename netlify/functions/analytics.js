@@ -57,6 +57,31 @@ function isMissingRelation(error, relation) {
   return msg.includes("relation") && msg.includes(relation);
 }
 
+const ANALYTICS_CACHE = new Map();
+const ANALYTICS_CACHE_TTL_MS = 1000 * 30;
+
+function getCachedAnalytics(key) {
+  const hit = ANALYTICS_CACHE.get(key);
+  if (!hit) return null;
+  if (Date.now() - hit.ts > ANALYTICS_CACHE_TTL_MS) {
+    ANALYTICS_CACHE.delete(key);
+    return null;
+  }
+  return hit.data;
+}
+
+function setCachedAnalytics(key, data) {
+  ANALYTICS_CACHE.set(key, { ts: Date.now(), data });
+}
+
+function okCached(data) {
+  return withCors({
+    statusCode: 200,
+    headers: { "Cache-Control": "private, max-age=30" },
+    body: JSON.stringify(data),
+  });
+}
+
 export async function handler(event) {
   if (event.httpMethod === "OPTIONS") return withCors({ statusCode: 200 });
   if (event.httpMethod !== "GET" && event.httpMethod !== "POST") {
@@ -102,6 +127,7 @@ export async function handler(event) {
 
   const range = event.queryStringParameters?.range || "30d";
   const compare = event.queryStringParameters?.compare === "1";
+  const channel = event.queryStringParameters?.channel || "meta";
   const days = parseRange(range);
 
   const today = new Date();
@@ -113,8 +139,12 @@ export async function handler(event) {
   const prevStart = new Date(prevEnd);
   prevStart.setDate(prevEnd.getDate() - (days - 1));
 
+  const cacheKey = `${userId}:${range}:${compare ? 1 : 0}:${channel}`;
+  const cached = getCachedAnalytics(cacheKey);
+  if (cached) return okCached(cached);
+
   try {
-    const { data: currentRows, error: currentError } = await supabaseAdmin
+    const currentPromise = supabaseAdmin
       .from("meta_insights_daily")
       .select("date,impressions,clicks,spend,revenue,conversions,ctr,roas,cpa")
       .eq("user_id", userId)
@@ -122,9 +152,32 @@ export async function handler(event) {
       .lte("date", formatDate(today))
       .order("date", { ascending: true });
 
+    const prevPromise = compare
+      ? supabaseAdmin
+          .from("meta_insights_daily")
+          .select("date,impressions,clicks,spend,revenue,conversions,ctr,roas,cpa")
+          .eq("user_id", userId)
+          .gte("date", formatDate(prevStart))
+          .lte("date", formatDate(prevEnd))
+          .order("date", { ascending: true })
+      : Promise.resolve({ data: [], error: null });
+
+    const campaignsPromise = supabaseAdmin
+      .from("meta_campaigns")
+      .select("facebook_campaign_id,name,status,spend,revenue,roas,ctr,conversions,impressions,clicks")
+      .eq("user_id", userId)
+      .order("spend", { ascending: false })
+      .limit(50);
+
+    const [
+      { data: currentRows, error: currentError },
+      { data: previousRows, error: prevError },
+      { data: campaignsData, error: campaignsError },
+    ] = await Promise.all([currentPromise, prevPromise, campaignsPromise]);
+
     if (currentError) {
       if (isMissingRelation(currentError, "meta_insights_daily")) {
-        return ok({
+        const payload = {
           range,
           compare,
           granularity: "day",
@@ -141,25 +194,15 @@ export async function handler(event) {
           timeseries: { current: [], previous: compare ? [] : undefined },
           campaigns: [],
           warning: "meta_insights_daily_missing",
-        });
+        };
+        setCachedAnalytics(cacheKey, payload);
+        return okCached(payload);
       }
       return serverError(`Failed to load analytics: ${currentError.message}`);
     }
 
-    let previousRows = [];
-    if (compare) {
-      const { data: prevData, error: prevError } = await supabaseAdmin
-        .from("meta_insights_daily")
-        .select("date,impressions,clicks,spend,revenue,conversions,ctr,roas,cpa")
-        .eq("user_id", userId)
-        .gte("date", formatDate(prevStart))
-        .lte("date", formatDate(prevEnd))
-        .order("date", { ascending: true });
-
-      if (prevError) {
-        return serverError(`Failed to load comparison data: ${prevError.message}`);
-      }
-      previousRows = prevData || [];
+    if (prevError) {
+      return serverError(`Failed to load comparison data: ${prevError.message}`);
     }
 
     const summary = computeSummary(currentRows || []);
@@ -214,12 +257,9 @@ export async function handler(event) {
         : undefined,
     };
 
-    const { data: campaignsData } = await supabaseAdmin
-      .from("meta_campaigns")
-      .select("facebook_campaign_id,name,status,spend,revenue,roas,ctr,conversions,impressions,clicks")
-      .eq("user_id", userId)
-      .order("spend", { ascending: false })
-      .limit(50);
+    if (campaignsError) {
+      captureException(campaignsError, { function: "analytics", stage: "campaigns" });
+    }
 
     const campaigns = (campaignsData || []).map((row) => ({
       id: row.facebook_campaign_id,
@@ -234,14 +274,17 @@ export async function handler(event) {
       clicks: safeNumber(row.clicks),
     }));
 
-    return ok({
+    const payload = {
       range,
       compare,
       granularity: "day",
       summary: { ...summary, deltas },
       timeseries,
       campaigns,
-    });
+    };
+
+    setCachedAnalytics(cacheKey, payload);
+    return okCached(payload);
   } catch (err) {
     captureException(err, { function: "analytics" });
     return serverError(err?.message || "Failed to load analytics");

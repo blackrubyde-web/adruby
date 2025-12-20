@@ -1,26 +1,63 @@
-import { useState } from 'react';
+import { lazy, Suspense, useState } from 'react';
 import { DashboardCustomizer, DashboardSection } from './DashboardCustomizer';
 import { ReorderableWidget } from './ReorderableWidget';
 import { TimeRangeFilter } from './TimeRangeFilter';
-import { NotificationBanner } from './NotificationBanner';
-import { PerformanceScore } from './PerformanceScore';
-import { BudgetTracker } from './BudgetTracker';
-import { AIInsightsPanel } from './AIInsightsPanel';
-import { PerformanceChart } from './PerformanceChart';
-import { AudienceBreakdown } from './AudienceBreakdown';
-import { ConversionFunnel } from './ConversionFunnel';
-import { PerformanceHeatmap } from './PerformanceHeatmap';
-import { PredictiveAnalytics } from './PredictiveAnalytics';
-import { StrategyInsights } from './StrategyInsights';
-import { CampaignsTable } from './CampaignsTable';
-import { AdMetricsCard } from './AdMetricsCard';
-import { AutomatedRulesManager } from './AutomatedRulesManager';
-import { AppleGridDashboard } from './AppleGridDashboard';
 import { Eye, MousePointerClick, DollarSign, TrendingUp, LayoutGrid } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from './ui/button';
 import { PageShell, HeroHeader, Card, Chip } from './layout';
 import { useAnalyticsData } from '../hooks/useAnalyticsData';
+
+const LazyNotificationBanner = lazy(() =>
+  import('./NotificationBanner').then((mod) => ({ default: mod.NotificationBanner }))
+);
+const LazyPerformanceScore = lazy(() =>
+  import('./PerformanceScore').then((mod) => ({ default: mod.PerformanceScore }))
+);
+const LazyBudgetTracker = lazy(() =>
+  import('./BudgetTracker').then((mod) => ({ default: mod.BudgetTracker }))
+);
+const LazyAIInsightsPanel = lazy(() =>
+  import('./AIInsightsPanel').then((mod) => ({ default: mod.AIInsightsPanel }))
+);
+const LazyPerformanceChart = lazy(() =>
+  import('./PerformanceChart').then((mod) => ({ default: mod.PerformanceChart }))
+);
+const LazyAudienceBreakdown = lazy(() =>
+  import('./AudienceBreakdown').then((mod) => ({ default: mod.AudienceBreakdown }))
+);
+const LazyConversionFunnel = lazy(() =>
+  import('./ConversionFunnel').then((mod) => ({ default: mod.ConversionFunnel }))
+);
+const LazyPerformanceHeatmap = lazy(() =>
+  import('./PerformanceHeatmap').then((mod) => ({ default: mod.PerformanceHeatmap }))
+);
+const LazyPredictiveAnalytics = lazy(() =>
+  import('./PredictiveAnalytics').then((mod) => ({ default: mod.PredictiveAnalytics }))
+);
+const LazyStrategyInsights = lazy(() =>
+  import('./StrategyInsights').then((mod) => ({ default: mod.StrategyInsights }))
+);
+const LazyCampaignsTable = lazy(() =>
+  import('./CampaignsTable').then((mod) => ({ default: mod.CampaignsTable }))
+);
+const LazyAdMetricsCard = lazy(() =>
+  import('./AdMetricsCard').then((mod) => ({ default: mod.AdMetricsCard }))
+);
+const LazyAutomatedRulesManager = lazy(() =>
+  import('./AutomatedRulesManager').then((mod) => ({ default: mod.AutomatedRulesManager }))
+);
+const LazyAppleGridDashboard = lazy(() =>
+  import('./AppleGridDashboard').then((mod) => ({ default: mod.AppleGridDashboard }))
+);
+
+function WidgetPlaceholder({ title }: { title: string }) {
+  return (
+    <div className="min-h-[220px] rounded-2xl border border-border/60 bg-muted/30 animate-pulse flex items-center justify-center">
+      <span className="text-sm text-muted-foreground">{title}</span>
+    </div>
+  );
+}
 
 // Analytics Configuration - All widgets available by default
 const ANALYTICS_SECTIONS: DashboardSection[] = [
@@ -238,21 +275,27 @@ export function AnalyticsPage() {
       case 'notifications':
         return (
           <Card className="hidden md:block overflow-hidden">
-            <NotificationBanner />
+            <Suspense fallback={<WidgetPlaceholder title="Loading alerts..." />}>
+              <LazyNotificationBanner />
+            </Suspense>
           </Card>
         );
       
       case 'performance-score':
         return (
           <Card className="hidden md:block p-6">
-            <PerformanceScore />
+            <Suspense fallback={<WidgetPlaceholder title="Loading score..." />}>
+              <LazyPerformanceScore />
+            </Suspense>
           </Card>
         );
       
       case 'budget-tracker':
         return (
           <Card className="hidden md:block p-6">
-            <BudgetTracker />
+            <Suspense fallback={<WidgetPlaceholder title="Loading budget..." />}>
+              <LazyBudgetTracker />
+            </Suspense>
           </Card>
         );
       
@@ -292,118 +335,138 @@ export function AnalyticsPage() {
               </div>
             </div>
 
-            <div className="grid grid-cols-1 gap-4">
-              <AdMetricsCard
-                title="Impressions"
-                value={formatCompact(totalImpressions)}
-                subValue={`Clicks: ${formatCompact(totalClicks)}`}
-                percentage={formatDeltaPct(summary?.deltas?.impressions)}
-                isPositive={(summary?.deltas?.impressions ?? 0) >= 0}
-                icon={<Eye className="w-5 h-5" />}
-                color="#3b82f6"
-                tooltip="Total number of times your ads were shown to users"
-              />
-              <AdMetricsCard
-                title="Click-through rate"
-                value={`${(summary?.ctr ?? 0).toFixed(2)}%`}
-                subValue={`Impressions: ${formatCompact(totalImpressions)}`}
-                percentage={formatDeltaPct(summary?.deltas?.ctr)}
-                isPositive={(summary?.deltas?.ctr ?? 0) >= 0}
-                icon={<MousePointerClick className="w-5 h-5" />}
-                color="#10b981"
-                tooltip="Percentage of impressions that resulted in clicks"
-              />
-              <AdMetricsCard
-                title="Cost per acquisition"
-                value={formatCurrency(averageCpa)}
-                subValue={`Conversions: ${formatCompact(totalConversions)}`}
-                percentage={formatDeltaPct(summary?.deltas?.cpa)}
-                isPositive={(summary?.deltas?.cpa ?? 0) <= 0}
-                icon={<DollarSign className="w-5 h-5" />}
-                color="#f59e0b"
-                tooltip="Average cost you pay for each conversion"
-              />
-              <AdMetricsCard
-                title="Return on ad spend"
-                value={`${(summary?.roas ?? 0).toFixed(2)}x`}
-                subValue={`Revenue: ${formatCurrency(totalRevenue)}`}
-                percentage={formatDeltaPct(summary?.deltas?.roas)}
-                isPositive={(summary?.deltas?.roas ?? 0) >= 0}
-                icon={<TrendingUp className="w-5 h-5" />}
-                color="#8b5cf6"
-                tooltip="Revenue generated for every dollar spent on advertising"
-              />
-            </div>
+            <Suspense fallback={<WidgetPlaceholder title="Loading metrics..." />}>
+              <div className="grid grid-cols-1 gap-4">
+                <LazyAdMetricsCard
+                  title="Impressions"
+                  value={formatCompact(totalImpressions)}
+                  subValue={`Clicks: ${formatCompact(totalClicks)}`}
+                  percentage={formatDeltaPct(summary?.deltas?.impressions)}
+                  isPositive={(summary?.deltas?.impressions ?? 0) >= 0}
+                  icon={<Eye className="w-5 h-5" />}
+                  color="#3b82f6"
+                  tooltip="Total number of times your ads were shown to users"
+                />
+                <LazyAdMetricsCard
+                  title="Click-through rate"
+                  value={`${(summary?.ctr ?? 0).toFixed(2)}%`}
+                  subValue={`Impressions: ${formatCompact(totalImpressions)}`}
+                  percentage={formatDeltaPct(summary?.deltas?.ctr)}
+                  isPositive={(summary?.deltas?.ctr ?? 0) >= 0}
+                  icon={<MousePointerClick className="w-5 h-5" />}
+                  color="#10b981"
+                  tooltip="Percentage of impressions that resulted in clicks"
+                />
+                <LazyAdMetricsCard
+                  title="Cost per acquisition"
+                  value={formatCurrency(averageCpa)}
+                  subValue={`Conversions: ${formatCompact(totalConversions)}`}
+                  percentage={formatDeltaPct(summary?.deltas?.cpa)}
+                  isPositive={(summary?.deltas?.cpa ?? 0) <= 0}
+                  icon={<DollarSign className="w-5 h-5" />}
+                  color="#f59e0b"
+                  tooltip="Average cost you pay for each conversion"
+                />
+                <LazyAdMetricsCard
+                  title="Return on ad spend"
+                  value={`${(summary?.roas ?? 0).toFixed(2)}x`}
+                  subValue={`Revenue: ${formatCurrency(totalRevenue)}`}
+                  percentage={formatDeltaPct(summary?.deltas?.roas)}
+                  isPositive={(summary?.deltas?.roas ?? 0) >= 0}
+                  icon={<TrendingUp className="w-5 h-5" />}
+                  color="#8b5cf6"
+                  tooltip="Revenue generated for every dollar spent on advertising"
+                />
+              </div>
+            </Suspense>
           </Card>
         );
       
       case 'ai-insights':
         return (
           <Card className="overflow-hidden">
-            <AIInsightsPanel />
+            <Suspense fallback={<WidgetPlaceholder title="Loading AI insights..." />}>
+              <LazyAIInsightsPanel />
+            </Suspense>
           </Card>
         );
       
       case 'performance-chart':
         return (
           <Card className="overflow-hidden">
-            <PerformanceChart
-              current={data?.timeseries.current ?? []}
-              previous={data?.timeseries.previous ?? []}
-              compare={isComparing}
-              granularity={data?.granularity ?? 'day'}
-              range={timeRange}
-              loading={loading}
-            />
+            <Suspense fallback={<WidgetPlaceholder title="Loading chart..." />}>
+              <LazyPerformanceChart
+                current={data?.timeseries.current ?? []}
+                previous={data?.timeseries.previous ?? []}
+                compare={isComparing}
+                granularity={data?.granularity ?? 'day'}
+                range={timeRange}
+                loading={loading}
+              />
+            </Suspense>
           </Card>
         );
       
       case 'audience-breakdown':
         return (
           <Card className="p-6">
-            <AudienceBreakdown />
+            <Suspense fallback={<WidgetPlaceholder title="Loading audience..." />}>
+              <LazyAudienceBreakdown />
+            </Suspense>
           </Card>
         );
       
       case 'conversion-funnel':
         return (
           <Card className="p-6">
-            <ConversionFunnel />
+            <Suspense fallback={<WidgetPlaceholder title="Loading funnel..." />}>
+              <LazyConversionFunnel />
+            </Suspense>
           </Card>
         );
       
       case 'performance-heatmap':
         return (
           <Card className="p-6">
-            <PerformanceHeatmap />
+            <Suspense fallback={<WidgetPlaceholder title="Loading heatmap..." />}>
+              <LazyPerformanceHeatmap />
+            </Suspense>
           </Card>
         );
       
       case 'predictive-analytics':
         return (
           <Card className="p-6">
-            <PredictiveAnalytics />
+            <Suspense fallback={<WidgetPlaceholder title="Loading forecast..." />}>
+              <LazyPredictiveAnalytics />
+            </Suspense>
           </Card>
         );
       
       case 'strategy-insights':
         return (
           <Card>
-            <StrategyInsights />
+            <Suspense fallback={<WidgetPlaceholder title="Loading strategies..." />}>
+              <LazyStrategyInsights />
+            </Suspense>
           </Card>
         );
       
       case 'campaigns-table':
         return (
           <Card className="overflow-hidden">
-            <CampaignsTable campaigns={data?.campaigns ?? []} />
+            <Suspense fallback={<WidgetPlaceholder title="Loading campaigns..." />}>
+              <LazyCampaignsTable campaigns={data?.campaigns ?? []} />
+            </Suspense>
           </Card>
         );
 
       case 'automations':
         return (
           <Card className="p-6">
-            <AutomatedRulesManager />
+            <Suspense fallback={<WidgetPlaceholder title="Loading automations..." />}>
+              <LazyAutomatedRulesManager />
+            </Suspense>
           </Card>
         );
       
@@ -513,7 +576,9 @@ export function AnalyticsPage() {
       {/* DESKTOP LAYOUT - Grid or List with Reorder */}
       <div className="hidden md:block">
         {useGridLayout ? (
-          <AppleGridDashboard />
+          <Suspense fallback={<WidgetPlaceholder title="Loading grid..." />}>
+            <LazyAppleGridDashboard />
+          </Suspense>
         ) : (
           <div className="space-y-6">
             {visibleSections.map((section, index) => (
