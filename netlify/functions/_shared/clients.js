@@ -1,20 +1,17 @@
 // netlify/functions/_shared/clients.js
 
 import { createClient } from '@supabase/supabase-js';
-let StripeLib = null;
+import Stripe from 'stripe';
+
 let stripeInstance = null;
-try {
-  // require Stripe only when a key is present to avoid runtime errors in test/dev without secrets
-  if (process.env.STRIPE_SECRET_KEY) {
-    // dynamic import to avoid bundling/initializing when key is absent
-    // eslint-disable-next-line global-require
-    StripeLib = require('stripe');
-    stripeInstance = new StripeLib(process.env.STRIPE_SECRET_KEY, { apiVersion: '2023-10-16' });
-  } else {
-    console.error('[Init] STRIPE_SECRET_KEY is missing');
+if (process.env.STRIPE_SECRET_KEY) {
+  try {
+    stripeInstance = new Stripe(process.env.STRIPE_SECRET_KEY, { apiVersion: '2023-10-16' });
+  } catch (e) {
+    console.error('[Init] Stripe init failed:', e?.message || e);
   }
-} catch (e) {
-  console.error('[Init] Stripe init failed:', e?.message || e);
+} else {
+  console.error('[Init] STRIPE_SECRET_KEY is missing');
 }
 
 export const stripe = stripeInstance;
@@ -50,4 +47,3 @@ export { supabaseAdmin };
 
 // Keep compatibility with AdRuby schema: subscription + billing state lives on user_profiles
 export const SUBSCRIPTION_TABLE = 'user_profiles';
-
