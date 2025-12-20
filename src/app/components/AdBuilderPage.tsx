@@ -52,6 +52,8 @@ export function AdBuilderPage() {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [analysisProgress, setAnalysisProgress] = useState(0);
   const [analysisError, setAnalysisError] = useState<string | null>(null);
+  const [analysisWarning, setAnalysisWarning] = useState<string | null>(null);
+  const [analysisRetrying, setAnalysisRetrying] = useState(false);
   const [copyError, setCopyError] = useState<string | null>(null);
   const [draftRestored, setDraftRestored] = useState(false);
   const [draftTimestamp, setDraftTimestamp] = useState<string | null>(null);
@@ -452,33 +454,55 @@ export function AdBuilderPage() {
     Boolean(state.formData.targetAudience) &&
     Boolean(state.formData.uniqueSellingPoint);
 
+  const buildAnalyzeFormData = () => {
+    const fd = new FormData();
+    fd.append(
+      'brandName',
+      state.formData.brandName || state.formData.productName || 'AdRuby'
+    );
+    fd.append('productName', state.formData.productName);
+    fd.append('audience', state.formData.targetAudience);
+    fd.append(
+      'offer',
+      state.formData.uniqueSellingPoint || state.formData.productDescription || ''
+    );
+    fd.append('tone', 'direct');
+    fd.append('goal', goalFromObjective(state.formData.objective));
+    fd.append('funnel', 'cold');
+    fd.append('language', 'de');
+    fd.append('format', '4:5');
+    fd.append('inspiration', state.formData.productDescription || '');
+    if (state.formData.strategyId) {
+      fd.append('strategyId', state.formData.strategyId);
+    }
+    return fd;
+  };
+
+  const retryAnalyze = async () => {
+    if (!canGenerateCopy || isGeneratingCopy || analysisRetrying) return;
+    setAnalysisWarning(null);
+    setAnalysisRetrying(true);
+    try {
+      const analyzeRes = await hookAnalyze(buildAnalyzeFormData());
+      setAnalysisWarning(analyzeRes?.warning ?? null);
+      toast.success('Analyse aktualisiert');
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'Analyse fehlgeschlagen.';
+      toast.error(message);
+    } finally {
+      setAnalysisRetrying(false);
+    }
+  };
+
   const generateCopy = async () => {
     if (!canGenerateCopy || isGeneratingCopy) return;
     setCopyError(null);
     try {
-      const fd = new FormData();
-      fd.append(
-        'brandName',
-        state.formData.brandName || state.formData.productName || 'AdRuby'
-      );
-      fd.append('productName', state.formData.productName);
-      fd.append('audience', state.formData.targetAudience);
-      fd.append(
-        'offer',
-        state.formData.uniqueSellingPoint || state.formData.productDescription || ''
-      );
-      fd.append('tone', 'direct');
-      fd.append('goal', goalFromObjective(state.formData.objective));
-      fd.append('funnel', 'cold');
-      fd.append('language', 'de');
-      fd.append('format', '4:5');
-      fd.append('inspiration', state.formData.productDescription || '');
-      if (state.formData.strategyId) {
-        fd.append('strategyId', state.formData.strategyId);
-      }
+      const fd = buildAnalyzeFormData();
 
       // use hook analyze + generate — hook will poll if backend returns jobId
       const analyzeRes = await hookAnalyze(fd);
+      setAnalysisWarning(analyzeRes?.warning ?? null);
       const generateRes = await hookGenerate({
         brief: analyzeRes.brief,
         hasImage: false,
@@ -594,6 +618,32 @@ export function AdBuilderPage() {
       {analysisError && (
         <div className="p-4 border border-red-500/20 bg-red-500/10 rounded-xl text-sm text-red-600">
           {analysisError}
+        </div>
+      )}
+
+      {analysisWarning && (
+        <div className="p-4 border border-amber-400/30 bg-amber-50 text-amber-800 rounded-xl text-sm flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+          <div>
+            <div className="font-semibold">Analyse mit Fallback erstellt</div>
+            <div className="text-xs text-amber-700/80">{analysisWarning}</div>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={retryAnalyze}
+              disabled={analysisRetrying || isGeneratingCopy}
+            >
+              Analyse erneut
+            </Button>
+            <Button
+              size="sm"
+              onClick={generateCopy}
+              disabled={isGeneratingCopy}
+            >
+              Erneut generieren
+            </Button>
+          </div>
         </div>
       )}
 

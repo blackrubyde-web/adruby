@@ -40,7 +40,12 @@ export async function creativeAnalyze(fd: FormData) {
   const parsed = NormalizedBriefSchema.safeParse(json?.brief);
   if (!parsed.success) throw new Error("Server returned invalid brief JSON.");
 
-  return { brief: parsed.data, image: json?.image ?? null, credits: json?.credits ?? null };
+  return {
+    brief: parsed.data,
+    image: json?.image ?? null,
+    credits: json?.credits ?? null,
+    warning: json?.warning ?? null,
+  };
 }
 
 export type CreativeGenerateResponse = {

@@ -30,6 +30,325 @@ function clampInt(n, min, max) {
   return Math.max(min, Math.min(max, v));
 }
 
+const GOALS = ["sales", "leads", "traffic", "app_installs"];
+const FUNNELS = ["cold", "warm", "hot"];
+const LANGS = ["de", "en"];
+const FORMATS = ["1:1", "4:5", "9:16"];
+const TONES = ["direct", "luxury", "playful", "minimal", "bold", "trustworthy"];
+
+const NORMALIZED_BRIEF_JSON_SCHEMA = {
+  name: "normalized_brief",
+  strict: true,
+  schema: {
+    type: "object",
+    additionalProperties: false,
+    required: [
+      "brand",
+      "product",
+      "goal",
+      "funnel_stage",
+      "language",
+      "format",
+      "audience",
+      "offer",
+      "tone",
+      "angles",
+      "risk_flags",
+    ],
+    properties: {
+      brand: {
+        type: "object",
+        additionalProperties: false,
+        required: ["name"],
+        properties: {
+          name: { type: "string", minLength: 1 },
+        },
+      },
+      product: {
+        type: "object",
+        additionalProperties: false,
+        required: ["name", "url", "category"],
+        properties: {
+          name: { type: "string", minLength: 1 },
+          url: {
+            anyOf: [{ type: "string", format: "uri" }, { type: "null" }],
+          },
+          category: {
+            anyOf: [{ type: "string" }, { type: "null" }],
+          },
+        },
+      },
+      goal: { type: "string", enum: GOALS },
+      funnel_stage: { type: "string", enum: FUNNELS },
+      language: { type: "string", enum: LANGS },
+      format: { type: "string", enum: FORMATS },
+      audience: {
+        type: "object",
+        additionalProperties: false,
+        required: ["summary", "segments"],
+        properties: {
+          summary: { type: "string", minLength: 1 },
+          segments: {
+            type: "array",
+            minItems: 1,
+            items: { type: "string", minLength: 1 },
+          },
+        },
+      },
+      offer: {
+        type: "object",
+        additionalProperties: false,
+        required: ["summary", "constraints"],
+        properties: {
+          summary: {
+            anyOf: [{ type: "string" }, { type: "null" }],
+          },
+          constraints: {
+            type: "array",
+            items: { type: "string", minLength: 1 },
+            default: [],
+          },
+        },
+      },
+      tone: { type: "string", enum: TONES },
+      angles: {
+        type: "array",
+        minItems: 2,
+        items: {
+          type: "object",
+          additionalProperties: false,
+          required: ["id", "label", "why_it_fits"],
+          properties: {
+            id: { type: "string", minLength: 1 },
+            label: { type: "string", minLength: 1 },
+            why_it_fits: { type: "string", minLength: 1 },
+          },
+        },
+      },
+      risk_flags: {
+        type: "array",
+        items: {
+          type: "object",
+          additionalProperties: false,
+          required: ["type", "severity", "note"],
+          properties: {
+            type: { type: "string", minLength: 1 },
+            severity: { type: "string", enum: ["low", "medium", "high"] },
+            note: { type: "string", minLength: 1 },
+          },
+        },
+        default: [],
+      },
+    },
+  },
+};
+
+const CREATIVE_VARIANT_JSON_SCHEMA = {
+  name: "creative_variant_v2",
+  strict: true,
+  schema: {
+    type: "object",
+    additionalProperties: false,
+    required: [
+      "platform",
+      "language",
+      "tone",
+      "hook",
+      "proof_type",
+      "offer_type",
+      "on_screen_text",
+      "script",
+      "cta",
+    ],
+    properties: {
+      platform: {
+        type: "string",
+        enum: ["meta", "tiktok", "youtube_shorts", "linkedin"],
+      },
+      language: { type: "string", minLength: 1 },
+      tone: { type: "string", enum: ["raw", "premium", "direct", "empathetic"] },
+      hook: { type: "string", minLength: 1 },
+      proof_type: {
+        type: "string",
+        enum: ["demo", "social", "authority", "mechanism"],
+      },
+      offer_type: {
+        type: "string",
+        enum: ["trial", "discount", "lead", "bundle", "risk_reversal", "none"],
+      },
+      on_screen_text: {
+        type: "array",
+        minItems: 2,
+        maxItems: 8,
+        items: { type: "string", minLength: 1 },
+      },
+      script: {
+        type: "object",
+        additionalProperties: false,
+        required: ["hook", "problem", "proof", "offer", "cta"],
+        properties: {
+          hook: { type: "string", minLength: 1 },
+          problem: { type: "string", minLength: 1 },
+          proof: { type: "string", minLength: 1 },
+          offer: { type: "string", minLength: 1 },
+          cta: { type: "string", minLength: 1 },
+        },
+      },
+      cta: { type: "string", minLength: 1 },
+    },
+  },
+};
+
+const CREATIVE_OUTPUT_JSON_SCHEMA_V2 = {
+  name: "creative_output_v2",
+  strict: true,
+  schema: {
+    type: "object",
+    additionalProperties: false,
+    required: ["schema_version", "style_mode", "variants"],
+    properties: {
+      schema_version: { type: "string", enum: ["2.0"] },
+      style_mode: {
+        type: "string",
+        enum: ["default", "mentor_ugc", "brand_direct", "ugc_demo"],
+      },
+      brand: {
+        type: "object",
+        additionalProperties: false,
+        required: [],
+        properties: {
+          name: { type: "string" },
+          voice: { type: "array", items: { type: "string" } },
+        },
+      },
+      variants: {
+        type: "array",
+        minItems: 6,
+        maxItems: 12,
+        items: CREATIVE_VARIANT_JSON_SCHEMA.schema,
+      },
+      quality_eval: {
+        type: "object",
+        additionalProperties: false,
+        required: ["subscores", "ko", "issues", "weakest_dimensions"],
+        properties: {
+          subscores: {
+            type: "object",
+            additionalProperties: false,
+            required: [
+              "hookPower",
+              "clarity",
+              "proof",
+              "offer",
+              "objectionHandling",
+              "platformFit",
+              "novelty",
+            ],
+            properties: {
+              hookPower: { type: "integer", minimum: 0, maximum: 5 },
+              clarity: { type: "integer", minimum: 0, maximum: 5 },
+              proof: { type: "integer", minimum: 0, maximum: 5 },
+              offer: { type: "integer", minimum: 0, maximum: 5 },
+              objectionHandling: { type: "integer", minimum: 0, maximum: 5 },
+              platformFit: { type: "integer", minimum: 0, maximum: 5 },
+              novelty: { type: "integer", minimum: 0, maximum: 5 },
+            },
+          },
+          ko: {
+            type: "object",
+            additionalProperties: false,
+            required: ["complianceFail", "genericBuzzwordFail"],
+            properties: {
+              complianceFail: { type: "boolean" },
+              genericBuzzwordFail: { type: "boolean" },
+            },
+          },
+          issues: { type: "array", items: { type: "string" }, default: [] },
+          weakest_dimensions: {
+            type: "array",
+            items: {
+              type: "string",
+              enum: [
+                "hookPower",
+                "clarity",
+                "proof",
+                "offer",
+                "objectionHandling",
+                "platformFit",
+                "novelty",
+              ],
+            },
+            default: [],
+          },
+        },
+      },
+    },
+  },
+};
+
+const CREATIVE_OUTPUT_JSON_SCHEMA_V1 = {
+  name: "creative_output_v1",
+  strict: true,
+  schema: {
+    type: "object",
+    additionalProperties: false,
+    required: ["version", "brief", "creatives"],
+    properties: {
+      version: { type: "string", enum: ["1.0"] },
+      brief: NORMALIZED_BRIEF_JSON_SCHEMA.schema,
+      creatives: {
+        type: "array",
+        minItems: 2,
+        maxItems: 8,
+        items: {
+          type: "object",
+          additionalProperties: false,
+          required: ["id", "angle_id", "format", "copy", "score", "image"],
+          properties: {
+            id: { type: "string", minLength: 1 },
+            angle_id: { type: "string", minLength: 1 },
+            format: { type: "string", enum: FORMATS },
+            copy: {
+              type: "object",
+              additionalProperties: false,
+              required: ["hook", "primary_text", "cta", "bullets"],
+              properties: {
+                hook: { type: "string", minLength: 1, maxLength: 80 },
+                primary_text: { type: "string", minLength: 1, maxLength: 700 },
+                cta: { type: "string", minLength: 1, maxLength: 30 },
+                bullets: {
+                  type: "array",
+                  items: { type: "string", minLength: 1, maxLength: 90 },
+                  maxItems: 6,
+                  default: [],
+                },
+              },
+            },
+            score: {
+              type: "object",
+              additionalProperties: false,
+              required: ["value", "rationale"],
+              properties: {
+                value: { type: "integer", minimum: 0, maximum: 100 },
+                rationale: { type: "string", minLength: 1, maxLength: 240 },
+              },
+            },
+            image: {
+              type: "object",
+              additionalProperties: false,
+              required: ["input_image_used", "render_intent"],
+              properties: {
+                input_image_used: { type: "boolean" },
+                render_intent: { type: "string", minLength: 1, maxLength: 200 },
+              },
+            },
+          },
+        },
+      },
+    },
+  },
+};
+
 const TARGET_SATISFACTION = clampInt(
   Number.parseInt(process.env.CREATIVE_QUALITY_TARGET || "95", 10),
   0,
@@ -177,11 +496,16 @@ export async function handler(event) {
 
         if (placeholderId) await supabaseAdmin.from('generated_creatives').update({ progress: 10, progress_meta: { phase: 'research' } }).eq('id', placeholderId);
 
-        const initial = await callOpenAiJson(prompt);
+        const initial = await callOpenAiJson(prompt, {
+          responseFormat: CREATIVE_OUTPUT_JSON_SCHEMA_V2,
+        });
         const repaired = await parseWithRepair({
           schema: CreativeOutputSchemaV2,
           initial,
-          makeRequest: async (instruction) => callOpenAiJson(prompt + "\n\n" + instruction),
+          makeRequest: async (instruction) =>
+            callOpenAiJson(prompt + "\n\n" + instruction, {
+              responseFormat: CREATIVE_OUTPUT_JSON_SCHEMA_V2,
+            }),
         });
 
         const v2output = repaired.data;
@@ -230,11 +554,16 @@ export async function handler(event) {
             const weakest = top.eval.weakest_dimensions && top.eval.weakest_dimensions.length ? top.eval.weakest_dimensions.slice(0,2) : ['clarity','hookPower'];
             const improvePrompt = buildImprovePromptDiagnosePlanRewrite({ brief, currentVariant: top.variant, evalV2: top.eval, targetDimensions: weakest });
             try {
-              const improvedRaw = await callOpenAiJson(improvePrompt);
+              const improvedRaw = await callOpenAiJson(improvePrompt, {
+                responseFormat: CREATIVE_VARIANT_JSON_SCHEMA,
+              });
               const improvedParsed = await parseWithRepair({
                 schema: CreativeVariantSchema,
                 initial: improvedRaw,
-                makeRequest: async (instruction) => callOpenAiJson(improvePrompt + "\n\n" + instruction),
+                makeRequest: async (instruction) =>
+                  callOpenAiJson(improvePrompt + "\n\n" + instruction, {
+                    responseFormat: CREATIVE_VARIANT_JSON_SCHEMA,
+                  }),
               });
               // replace in variants
               variants[top.index] = improvedParsed.data;
@@ -257,8 +586,17 @@ export async function handler(event) {
           if (top3.length > 0) {
             const top = top3[0];
             const cdPrompt = buildImprovePromptDiagnosePlanRewrite({ brief, currentVariant: variants[top.index], evalV2: top.eval, targetDimensions: ['clarity','hookPower'] });
-            const cdRaw = await callOpenAiJson(cdPrompt);
-            const cdParsed = await parseWithRepair({ schema: CreativeVariantSchema, initial: cdRaw, makeRequest: async (instruction) => callOpenAiJson(cdPrompt + "\n\n" + instruction) });
+            const cdRaw = await callOpenAiJson(cdPrompt, {
+              responseFormat: CREATIVE_VARIANT_JSON_SCHEMA,
+            });
+            const cdParsed = await parseWithRepair({
+              schema: CreativeVariantSchema,
+              initial: cdRaw,
+              makeRequest: async (instruction) =>
+                callOpenAiJson(cdPrompt + "\n\n" + instruction, {
+                  responseFormat: CREATIVE_VARIANT_JSON_SCHEMA,
+                }),
+            });
             variants[top.index] = cdParsed.data;
           }
         } catch (e) {
@@ -296,11 +634,16 @@ export async function handler(event) {
     // default (existing) flow
     const prompt = buildGeneratePrompt(brief, hasImage, strategyBlueprint, researchContext);
 
-    const initial = await callOpenAiJson(prompt);
+    const initial = await callOpenAiJson(prompt, {
+      responseFormat: CREATIVE_OUTPUT_JSON_SCHEMA_V1,
+    });
     const repaired = await parseWithRepair({
       schema: CreativeOutputSchema,
       initial,
-      makeRequest: async (instruction) => callOpenAiJson(prompt + "\n\n" + instruction),
+      makeRequest: async (instruction) =>
+        callOpenAiJson(prompt + "\n\n" + instruction, {
+          responseFormat: CREATIVE_OUTPUT_JSON_SCHEMA_V1,
+        }),
     });
 
     let best = applySanityFilter(repaired.data);
@@ -324,12 +667,16 @@ export async function handler(event) {
         researchContext,
       });
 
-      const improvedRaw = await callOpenAiJson(improvePrompt);
+      const improvedRaw = await callOpenAiJson(improvePrompt, {
+        responseFormat: CREATIVE_OUTPUT_JSON_SCHEMA_V1,
+      });
       const improvedParsed = await parseWithRepair({
         schema: CreativeOutputSchema,
         initial: improvedRaw,
         makeRequest: async (instruction) =>
-          callOpenAiJson(improvePrompt + "\n\n" + instruction),
+          callOpenAiJson(improvePrompt + "\n\n" + instruction, {
+            responseFormat: CREATIVE_OUTPUT_JSON_SCHEMA_V1,
+          }),
       });
 
       const improved = applySanityFilter(improvedParsed.data);
@@ -405,9 +752,11 @@ export async function handler(event) {
   }
 }
 
-async function callOpenAiJson(prompt) {
+async function callOpenAiJson(prompt, options = {}) {
   const openai = getOpenAiClient();
   const model = getOpenAiModel();
+  const useSchema = process.env.USE_JSON_SCHEMA === "1";
+  const responseFormat = options?.responseFormat;
 
   const res = await openai.responses.create({
     model,
@@ -421,6 +770,14 @@ async function callOpenAiJson(prompt) {
     ],
     // make generation deterministic for structured JSON output
     temperature: 0.0,
+    ...(useSchema && responseFormat
+      ? {
+          response_format: {
+            type: "json_schema",
+            json_schema: responseFormat,
+          },
+        }
+      : {}),
   });
 
   const text = String(res.output_text || "").trim();
