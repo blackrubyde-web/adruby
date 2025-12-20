@@ -65,6 +65,90 @@ ${strategyBlock}
 `;
 }
 
+// --- Premium Mentor UGC generator prompt builder ---
+export function buildMentorUgcGeneratePrompt(brief, researchContext, options = {}) {
+  const banned = [
+    "Gamechanger",
+    "revolutionär",
+    "perfekt für dich",
+    "garantiert",
+    "100% sicher",
+    "passives Einkommen",
+    "in wenigen Minuten",
+    "die beste Lösung",
+  ];
+
+  return `
+You are a hands-on Creative Director specialized in Mentor-UGC and Authority Funnel ads.
+STYLE MODE: mentor_ugc. Tone: raw, spoken, call-and-response, slightly repetitive, believable.
+Return ONLY valid JSON (no markdown, no commentary). Follow the JSON schema exactly.
+
+BLACKLIST: Avoid these phrases: ${JSON.stringify(banned)}.
+
+TASK:
+- Produce exactly 12 variants (diversity required). Each variant must include platform, language, tone, hook, proof_type, offer_type, on_screen_text, script (hook/problem/proof/offer/cta), cta.
+- Diversity enforcement: produce 3 Hook Patterns × 2 Proof Types × 2 Offer Types × tonalities split across the 12 variants.
+- No new unverifiable claims. No medical/financial guarantees. Keep it actionable and scriptable.
+
+BRIEF:
+${JSON.stringify(brief)}
+
+RESEARCH_CONTEXT:
+${JSON.stringify(researchContext || [])}
+
+BRANCH-ADAPTER RULES:
+- Extract industry/category, persona, pains, desired outcome, objections, offer, proof assets.
+- Map to 2 Angles from: speed, trust, value, authority, convenience, risk_reversal.
+- Hook patterns per industry (choose matching):
+  - D2C: pattern_interrupt, before_after, listicle
+  - SaaS B2B: pain-to-metric, contrarian, system/blueprint
+  - Local Services: trust-first, guarantee/process, before-after
+  - Coaching: identity_shift, contrarian_truth, case-study_teaser
+
+OUTPUT JSON MUST MATCH:
+{
+  "schema_version":"2.0",
+  "style_mode":"mentor_ugc",
+  "variants": [ /* 12 items */ ]
+}
+
+Rules:
+- Each variant must be short and production-ready for a 15-60s social creative.
+- For each variant, mark proof_type and offer_type.
+- For on_screen_text include 2-6 short captions that can be shown on-screen.
+`;
+}
+
+export function buildQualityEvalPromptV2({ brief, variant, strategyBlueprint, researchContext }) {
+  const researchBlock = renderResearchContext(researchContext);
+  const strategyBlock = strategyBlueprint ? `\nStrategy: ${strategyBlueprint}` : "";
+
+  return `
+You are a strict creative reviewer. Return ONLY valid JSON matching the QualityEvalV2 schema.
+Evaluate the single variant against the brief. Provide subscores 0-5 for hookPower, clarity, proof, offer, objectionHandling, platformFit, novelty.
+Provide KO flags: complianceFail, genericBuzzwordFail. Provide issues array and weakest_dimensions ordered by priority.
+
+BRIEF: ${JSON.stringify(brief)}
+VARIANT: ${JSON.stringify(variant)}
+${strategyBlock}
+${researchBlock}
+`;
+}
+
+export function buildImprovePromptDiagnosePlanRewrite({ brief, currentVariant, evalV2, targetDimensions = [] }) {
+  return `
+Return ONLY valid JSON.
+You will improve ONE variant using: DIAGNOSE -> PLAN -> REWRITE.
+1) diagnosis: 1-2 bullets with biggest weaknesses.
+2) plan: 1-3 concrete edits targeting: ${JSON.stringify(targetDimensions)}
+3) rewrite: full variant matching CreativeVariant schema. No new claims.
+
+BRIEF: ${JSON.stringify(brief)}
+CURRENT_VARIANT: ${JSON.stringify(currentVariant)}
+EVAL: ${JSON.stringify(evalV2)}
+`;
+}
+
 function renderResearchContext(ctx) {
   if (!ctx || !Array.isArray(ctx) || ctx.length === 0) return '';
   const items = ctx.slice(0, 8).map((i, idx) => {
