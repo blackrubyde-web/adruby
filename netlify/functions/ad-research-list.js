@@ -6,6 +6,10 @@ export async function handler(event) {
   if (event.httpMethod === 'OPTIONS') return { statusCode: 200, headers, body: '' };
   if (event.httpMethod !== 'GET') return { statusCode: 405, headers, body: JSON.stringify({ error: 'Method not allowed' }) };
 
+  if (!process.env.SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) {
+    return { statusCode: 200, headers, body: JSON.stringify({ count: 0, items: [], warning: 'supabase_env_missing' }) };
+  }
+
   try {
     const limit = parseInt((event.queryStringParameters && event.queryStringParameters.limit) || '10', 10);
     const { data, error } = await supabaseAdmin
