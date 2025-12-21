@@ -420,37 +420,41 @@ async function callOpenAiJson({ prompt, imageUrl }) {
 
   let res;
   const timeoutMs = Number(process.env.OPENAI_TIMEOUT_MS || 30000);
-  const controller = typeof AbortController !== 'undefined' ? new AbortController() : null;
-  const timer = controller ? setTimeout(() => controller.abort(), timeoutMs) : null;
+  let timeoutId;
+  const timeoutPromise = new Promise((_, reject) => {
+    timeoutId = setTimeout(() => reject(new Error("OpenAI request timed out")), timeoutMs);
+  });
   try {
-    res = await openai.responses.create({
-      model,
-      input,
-      // make the model deterministic for structured JSON output
-      temperature: 0.0,
-      ...(useSchema
-        ? {
-            text: {
-              format: {
-                type: "json_schema",
-                name: NORMALIZED_BRIEF_JSON_SCHEMA.name,
-                schema: NORMALIZED_BRIEF_JSON_SCHEMA.schema,
-                strict: NORMALIZED_BRIEF_JSON_SCHEMA.strict ?? true,
+    res = await Promise.race([
+      openai.responses.create({
+        model,
+        input,
+        // make the model deterministic for structured JSON output
+        temperature: 0.0,
+        ...(useSchema
+          ? {
+              text: {
+                format: {
+                  type: "json_schema",
+                  name: NORMALIZED_BRIEF_JSON_SCHEMA.name,
+                  schema: NORMALIZED_BRIEF_JSON_SCHEMA.schema,
+                  strict: NORMALIZED_BRIEF_JSON_SCHEMA.strict ?? true,
+                },
               },
-            },
-          }
-        : {}),
-      ...(controller ? { signal: controller.signal } : {}),
-    });
+            }
+          : {}),
+      }),
+      timeoutPromise,
+    ]);
   } catch (err) {
-    if (err && err.name === 'AbortError') {
-      console.error('[creative-analyze] OpenAI request aborted after timeout', { timeoutMs });
-      throw new Error('OpenAI request timed out');
+    if (err?.message === "OpenAI request timed out") {
+      console.error("[creative-analyze] OpenAI request timed out", { timeoutMs });
+      throw err;
     }
     console.error('[creative-analyze] OpenAI request failed', err?.message || err);
     throw err;
   } finally {
-    if (timer) clearTimeout(timer);
+    if (timeoutId) clearTimeout(timeoutId);
   }
 
   const text = String(res.output_text || "").trim();
