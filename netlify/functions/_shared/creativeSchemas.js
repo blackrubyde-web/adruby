@@ -4,6 +4,7 @@ export const GoalEnum = z.enum(["sales", "leads", "traffic", "app_installs"]);
 export const FunnelEnum = z.enum(["cold", "warm", "hot"]);
 export const LangEnum = z.enum(["de", "en"]);
 export const FormatEnum = z.enum(["1:1", "4:5", "9:16"]);
+export const PlatformEnum = z.enum(["meta", "tiktok", "ytshorts", "linkedin"]);
 export const ToneEnum = z.enum([
   "direct",
   "luxury",
@@ -88,6 +89,14 @@ export const CreativeOutputSchema = z
               .object({
                 input_image_used: z.boolean(),
                 render_intent: z.string().min(1).max(200),
+                hero_image_url: z.string().min(1).optional(),
+                final_image_url: z.string().min(1).optional(),
+                width: z.number().int().optional(),
+                height: z.number().int().optional(),
+                model: z.string().min(1).optional(),
+                seed: z.number().int().optional(),
+                prompt_hash: z.string().min(6).optional(),
+                render_version: z.string().min(1).optional(),
               })
               .strict(),
           })
@@ -121,6 +130,52 @@ export const QualityEvalSchema = z
       )
       .default([]),
     best_practices: z.array(z.string().min(1).max(140)).default([]),
+  })
+  .strict();
+
+export const ImageSpecSchema = z
+  .object({
+    version: z.literal("1.0"),
+    format: FormatEnum,
+    platform: PlatformEnum.default("meta"),
+    style: z
+      .object({
+        mood: z.string().min(1),
+        lighting: z.string().min(1),
+        palette: z.array(z.string().min(1)).min(2).max(6),
+        camera: z.string().min(1),
+        render_style: z.string().min(1),
+        realism_level: z.enum(["low", "medium", "high"]),
+      })
+      .strict(),
+    scene: z
+      .object({
+        subject: z.string().min(1),
+        environment: z.string().min(1),
+        composition: z.string().min(1),
+        props: z.array(z.string().min(1)).min(1).max(6),
+        wardrobe: z.array(z.string().min(1)).max(6).optional(),
+      })
+      .strict(),
+    brand_safety: z
+      .object({
+        avoid: z.array(z.string().min(1)).default([]),
+      })
+      .strict(),
+    negative_prompt: z.array(z.string().min(1)).default([]),
+    text_safe_area: z
+      .object({
+        position: z.enum(["left", "right", "center"]),
+        margin: z.enum(["tight", "normal", "wide"]),
+      })
+      .strict(),
+    overlay_guidance: z
+      .object({
+        headline_max_chars: z.number().int().min(10).max(90),
+        cta_style: z.enum(["solid", "outline", "pill"]),
+        badge_optional: z.boolean(),
+      })
+      .strict(),
   })
   .strict();
 
@@ -177,6 +232,20 @@ export const CreativeVariantSchema = z.object({
     })
     .strict(),
   cta: z.string().min(1),
+  image: z
+    .object({
+      input_image_used: z.boolean().optional(),
+      render_intent: z.string().min(1).max(200).optional(),
+      hero_image_url: z.string().min(1).optional(),
+      final_image_url: z.string().min(1).optional(),
+      width: z.number().int().optional(),
+      height: z.number().int().optional(),
+      model: z.string().min(1).optional(),
+      seed: z.number().int().optional(),
+      prompt_hash: z.string().min(6).optional(),
+      render_version: z.string().min(1).optional(),
+    })
+    .optional(),
 });
 
 export const CreativeOutputSchemaV2 = z.object({
@@ -191,4 +260,3 @@ export const CreativeOutputSchemaV2 = z.object({
   variants: z.array(CreativeVariantSchema).min(6).max(12),
   quality_eval: QualityEvalV2Schema.optional(),
 });
-

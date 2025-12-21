@@ -81,6 +81,14 @@ export const CreativeOutputSchema = z
             image: z.object({
               input_image_used: z.boolean(),
               render_intent: z.string().min(1).max(200),
+              hero_image_url: z.string().min(1).optional(),
+              final_image_url: z.string().min(1).optional(),
+              width: z.number().int().optional(),
+              height: z.number().int().optional(),
+              model: z.string().min(1).optional(),
+              seed: z.number().int().optional(),
+              prompt_hash: z.string().min(6).optional(),
+              render_version: z.string().min(1).optional(),
             }),
           })
           .strict(),
@@ -91,4 +99,3 @@ export const CreativeOutputSchema = z
   .strict();
 
 export type CreativeOutput = z.infer<typeof CreativeOutputSchema>;
-

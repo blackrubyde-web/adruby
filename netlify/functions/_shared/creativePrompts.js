@@ -247,3 +247,57 @@ ${JSON.stringify(priorOutput)}
 `;
 }
 
+export function buildImageSpecPrompt({ brief, creative, strategyBlueprint, researchContext }) {
+  const strategyBlock = strategyBlueprint
+    ? `\nStrategy blueprint:\n${strategyBlueprint}\n`
+    : "";
+  const researchBlock = renderResearchContext(researchContext);
+
+  return `
+You are a senior Creative Director for paid social ads.
+Return ONLY valid JSON that matches the ImageSpec schema. No markdown, no extra text.
+
+Goals:
+- Create a hero image concept that sells the offer and supports the copy.
+- No text in the image. No watermark. No logos with text. Clean negative space for overlay.
+- Mobile-first composition, safe area for text overlays.
+- Keep it compliant and realistic for Meta ads.
+
+Brief:
+${JSON.stringify(brief)}
+
+Creative variant:
+${JSON.stringify(creative)}
+${strategyBlock}
+${researchBlock}
+`;
+}
+
+export function buildImagePromptFromSpec(imageSpec) {
+  const style = imageSpec?.style || {};
+  const scene = imageSpec?.scene || {};
+  const safety = imageSpec?.brand_safety?.avoid || [];
+  const negatives = imageSpec?.negative_prompt || [];
+
+  return `
+Photorealistic hero image for a mobile social ad.
+Subject: ${scene.subject || "product in use"}.
+Environment: ${scene.environment || "clean modern setting"}.
+Composition: ${scene.composition || "centered hero with clear negative space"}.
+Props: ${(scene.props || []).join(", ") || "minimal props"}.
+Wardrobe: ${(scene.wardrobe || []).join(", ") || "brand-appropriate casual"}.
+
+Style:
+Mood: ${style.mood || "confident"}.
+Lighting: ${style.lighting || "soft natural"}.
+Palette: ${(style.palette || []).join(", ") || "clean brand colors"}.
+Camera: ${style.camera || "35mm, shallow depth of field"}.
+Render style: ${style.render_style || "clean commercial"}.
+Realism: ${style.realism_level || "high"}.
+
+Rules:
+- No text, no captions, no watermark, no logos with words.
+- Avoid: ${(safety || []).join(", ") || "none"}.
+- Negative prompt: ${(negatives || []).join(", ") || "none"}.
+`.trim();
+}

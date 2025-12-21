@@ -6,6 +6,7 @@ import { Button } from "../ui/button";
 import { Separator } from "../ui/separator";
 import type { CreativeOutput } from "../../lib/creative/schemas";
 import { toast } from "sonner";
+import { ImageWithFallback } from "../figma/ImageWithFallback";
 
 export default function CreativeCard(props: {
   creative: CreativeOutput["creatives"][number];
@@ -33,6 +34,21 @@ export default function CreativeCard(props: {
 
   return (
     <Card className="p-4">
+      {c.image.final_image_url || c.image.hero_image_url ? (
+        <div className="mb-3 overflow-hidden rounded-xl border border-border bg-muted/20">
+          <ImageWithFallback
+            src={c.image.final_image_url || c.image.hero_image_url}
+            alt={c.copy.hook}
+            className="h-auto w-full"
+            loading="lazy"
+            decoding="async"
+          />
+        </div>
+      ) : (
+        <div className="mb-3 flex min-h-[180px] items-center justify-center rounded-xl border border-dashed border-border bg-muted/20 text-xs text-muted-foreground">
+          Image rendering pending
+        </div>
+      )}
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-2">

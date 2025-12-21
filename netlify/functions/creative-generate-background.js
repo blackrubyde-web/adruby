@@ -1,3 +1,4 @@
+import crypto from "crypto";
 import { badRequest, methodNotAllowed, ok, serverError, withCors } from "./utils/response.js";
 import { initTelemetry, captureException } from "./utils/telemetry.js";
 import { requireUserId } from "./_shared/auth.js";
@@ -5,7 +6,7 @@ import { assertAndConsumeCredits } from "./_shared/credits.js";
 import { requireActiveSubscription } from "./_shared/entitlements.js";
 import { logAiAction } from "./_shared/aiLogging.js";
 import { supabaseAdmin } from "./_shared/clients.js";
-import { getOpenAiClient, getOpenAiModel } from "./_shared/openai.js";
+import { getOpenAiClient, getOpenAiModel, generateHeroImage } from "./_shared/openai.js";
 import {
   buildGeneratePrompt,
   buildImprovePrompt,
@@ -14,6 +15,8 @@ import {
   buildQualityEvalPromptV2,
   buildImprovePromptDiagnosePlanRewrite,
   buildBatchQualityEvalPromptV2,
+  buildImageSpecPrompt,
+  buildImagePromptFromSpec,
 } from "./_shared/creativePrompts.js";
 import { parseWithRepair } from "./_shared/repair.js";
 import {
@@ -24,8 +27,11 @@ import {
   CreativeVariantSchema,
   QualityEvalV2Schema,
   BatchQualityEvalV2Schema,
+  ImageSpecSchema,
 } from "./_shared/creativeSchemas.js";
 import { applySanityFilter } from "./_shared/creativeQuality.js";
+import { renderAdImage } from "./_shared/renderAdImage.js";
+import { uploadHeroImage, uploadRenderedImage } from "./_shared/storageRenders.js";
 
 function clampInt(n, min, max) {
   const v = Number.isFinite(n) ? Math.trunc(n) : min;
@@ -197,6 +203,23 @@ const CREATIVE_VARIANT_JSON_SCHEMA = {
         },
       },
       cta: { type: "string", minLength: 1 },
+      image: {
+        type: "object",
+        additionalProperties: false,
+        required: [],
+        properties: {
+          input_image_used: { type: "boolean" },
+          render_intent: { type: "string", minLength: 1, maxLength: 200 },
+          hero_image_url: { type: "string", minLength: 1 },
+          final_image_url: { type: "string", minLength: 1 },
+          width: { type: "integer", minimum: 1 },
+          height: { type: "integer", minimum: 1 },
+          model: { type: "string", minLength: 1 },
+          seed: { type: "integer", minimum: 0 },
+          prompt_hash: { type: "string", minLength: 6 },
+          render_version: { type: "string", minLength: 1 },
+        },
+      },
     },
   },
 };
@@ -342,9 +365,95 @@ const CREATIVE_OUTPUT_JSON_SCHEMA_V1 = {
               properties: {
                 input_image_used: { type: "boolean" },
                 render_intent: { type: "string", minLength: 1, maxLength: 200 },
+                hero_image_url: { type: "string", minLength: 1 },
+                final_image_url: { type: "string", minLength: 1 },
+                width: { type: "integer", minimum: 1 },
+                height: { type: "integer", minimum: 1 },
+                model: { type: "string", minLength: 1 },
+                seed: { type: "integer", minimum: 0 },
+                prompt_hash: { type: "string", minLength: 6 },
+                render_version: { type: "string", minLength: 1 },
               },
             },
           },
+        },
+      },
+    },
+  },
+};
+
+const IMAGE_SPEC_JSON_SCHEMA = {
+  name: "image_spec_v1",
+  strict: true,
+  schema: {
+    type: "object",
+    additionalProperties: false,
+    required: [
+      "version",
+      "format",
+      "platform",
+      "style",
+      "scene",
+      "brand_safety",
+      "negative_prompt",
+      "text_safe_area",
+      "overlay_guidance",
+    ],
+    properties: {
+      version: { type: "string", enum: ["1.0"] },
+      format: { type: "string", enum: FORMATS },
+      platform: { type: "string", enum: ["meta", "tiktok", "ytshorts", "linkedin"] },
+      style: {
+        type: "object",
+        additionalProperties: false,
+        required: ["mood", "lighting", "palette", "camera", "render_style", "realism_level"],
+        properties: {
+          mood: { type: "string", minLength: 1 },
+          lighting: { type: "string", minLength: 1 },
+          palette: { type: "array", minItems: 2, maxItems: 6, items: { type: "string", minLength: 1 } },
+          camera: { type: "string", minLength: 1 },
+          render_style: { type: "string", minLength: 1 },
+          realism_level: { type: "string", enum: ["low", "medium", "high"] },
+        },
+      },
+      scene: {
+        type: "object",
+        additionalProperties: false,
+        required: ["subject", "environment", "composition", "props"],
+        properties: {
+          subject: { type: "string", minLength: 1 },
+          environment: { type: "string", minLength: 1 },
+          composition: { type: "string", minLength: 1 },
+          props: { type: "array", minItems: 1, maxItems: 6, items: { type: "string", minLength: 1 } },
+          wardrobe: { type: "array", maxItems: 6, items: { type: "string", minLength: 1 } },
+        },
+      },
+      brand_safety: {
+        type: "object",
+        additionalProperties: false,
+        required: ["avoid"],
+        properties: {
+          avoid: { type: "array", items: { type: "string", minLength: 1 }, default: [] },
+        },
+      },
+      negative_prompt: { type: "array", items: { type: "string", minLength: 1 }, default: [] },
+      text_safe_area: {
+        type: "object",
+        additionalProperties: false,
+        required: ["position", "margin"],
+        properties: {
+          position: { type: "string", enum: ["left", "right", "center"] },
+          margin: { type: "string", enum: ["tight", "normal", "wide"] },
+        },
+      },
+      overlay_guidance: {
+        type: "object",
+        additionalProperties: false,
+        required: ["headline_max_chars", "cta_style", "badge_optional"],
+        properties: {
+          headline_max_chars: { type: "integer", minimum: 10, maximum: 90 },
+          cta_style: { type: "string", enum: ["solid", "outline", "pill"] },
+          badge_optional: { type: "boolean" },
         },
       },
     },
@@ -366,6 +475,64 @@ const MAX_DURATION_MS = clampInt(
   10000,
   300000,
 );
+const IMAGE_TOP_N = clampInt(
+  Number.parseInt(process.env.CREATIVE_IMAGE_TOP_N || "0", 10),
+  0,
+  12,
+);
+
+function hashPrompt(prompt) {
+  return crypto.createHash("sha256").update(prompt).digest("hex").slice(0, 16);
+}
+
+function sizeForFormat(format) {
+  switch (format) {
+    case "9:16":
+    case "4:5":
+      return "1024x1792";
+    case "1:1":
+    default:
+      return "1024x1024";
+  }
+}
+
+function pickCreativesForImages(creatives) {
+  if (!Array.isArray(creatives) || creatives.length === 0) return [];
+  if (!IMAGE_TOP_N) return creatives.map((c, idx) => ({ index: idx, creative: c }));
+  const ranked = creatives
+    .map((creative, index) => ({ creative, index }))
+    .sort((a, b) => (b.creative?.score?.value ?? 0) - (a.creative?.score?.value ?? 0));
+  return ranked.slice(0, IMAGE_TOP_N);
+}
+
+function buildFallbackImageSpec(brief, creative) {
+  const avoid = (brief?.risk_flags || []).map((f) => f?.note).filter(Boolean);
+  const format = creative?.format || brief?.format || "4:5";
+  return {
+    version: "1.0",
+    format,
+    platform: "meta",
+    style: {
+      mood: "confident",
+      lighting: "soft natural",
+      palette: ["#ffffff", "#0f172a", "#e2e8f0"],
+      camera: "35mm, shallow depth of field",
+      render_style: "clean commercial",
+      realism_level: "high",
+    },
+    scene: {
+      subject: brief?.product?.name || "product in use",
+      environment: "clean modern setting",
+      composition: "centered hero with negative space for text overlay",
+      props: ["product", "hands"],
+      wardrobe: ["neutral tones"],
+    },
+    brand_safety: { avoid },
+    negative_prompt: ["text", "watermark", "logo text"],
+    text_safe_area: { position: "center", margin: "normal" },
+    overlay_guidance: { headline_max_chars: 60, cta_style: "solid", badge_optional: true },
+  };
+}
 
 export async function handler(event) {
   if (event.httpMethod === "OPTIONS") return withCors({ statusCode: 200 });
@@ -718,6 +885,182 @@ export async function handler(event) {
           // ignore CD failures
         }
 
+        const scoredMap = new Map(scored.map((s) => [s.index, s.score]));
+        const mentorTargets = IMAGE_TOP_N
+          ? scored.slice(0, IMAGE_TOP_N).map((s) => ({ index: s.index, variant: s.variant }))
+          : variants.map((variant, index) => ({ index, variant }));
+
+        if (mentorTargets.length) {
+          logStep("mentor.images.start", { jobId: placeholderId, count: mentorTargets.length });
+          const imageQuality = process.env.CREATIVE_IMAGE_QUALITY || "standard";
+          try {
+            if (placeholderId) {
+              await supabaseAdmin
+                .from("generated_creatives")
+                .update({
+                  progress: 92,
+                  progress_meta: { phase: "gen_images", total: mentorTargets.length },
+                })
+                .eq("id", placeholderId);
+            }
+          } catch {
+            /* ignore */
+          }
+
+          for (let i = 0; i < mentorTargets.length; i += 1) {
+            const { variant, index } = mentorTargets[i];
+            const renderCreative = {
+              format: brief.format,
+              copy: {
+                hook: variant.hook || variant?.script?.hook || " ",
+                primary_text:
+                  variant?.script?.offer ||
+                  variant?.script?.proof ||
+                  variant?.script?.problem ||
+                  " ",
+                cta: variant.cta || variant?.script?.cta || "Mehr erfahren",
+                bullets: [],
+              },
+              image: {
+                input_image_used: hasImage,
+                render_intent: variant.hook || "Hero image",
+              },
+            };
+
+            let imageSpec = buildFallbackImageSpec(brief, renderCreative);
+            try {
+              const specPrompt = buildImageSpecPrompt({
+                brief,
+                creative: renderCreative,
+                strategyBlueprint,
+                researchContext,
+              });
+              const specRaw = await callOpenAiJson(specPrompt, {
+                responseFormat: IMAGE_SPEC_JSON_SCHEMA,
+              });
+              const specParsed = await parseWithRepair({
+                schema: ImageSpecSchema,
+                initial: specRaw,
+                makeRequest: async (instruction) =>
+                  callOpenAiJson(specPrompt + "\n\n" + instruction, {
+                    responseFormat: IMAGE_SPEC_JSON_SCHEMA,
+                  }),
+              });
+              imageSpec = specParsed.data;
+            } catch (err) {
+              logStep("mentor.images.spec.error", {
+                jobId: placeholderId,
+                index,
+                error: err?.message || String(err),
+              });
+            }
+
+            const imagePrompt = buildImagePromptFromSpec(imageSpec);
+            const promptHash = hashPrompt(imagePrompt);
+            const format = imageSpec?.format || brief.format;
+            const size = sizeForFormat(format);
+
+            let heroB64 = null;
+            let heroMeta = null;
+            try {
+              const hero = await generateHeroImage({
+                prompt: imagePrompt,
+                size,
+                quality: imageQuality,
+              });
+              heroB64 = hero.b64;
+              heroMeta = hero;
+            } catch (err) {
+              logStep("mentor.images.hero.error", {
+                jobId: placeholderId,
+                index,
+                error: err?.message || String(err),
+              });
+            }
+
+            let heroUrl = null;
+            if (heroB64) {
+              try {
+                const heroUpload = await uploadHeroImage({
+                  userId,
+                  buffer: Buffer.from(heroB64, "base64"),
+                  promptHash,
+                });
+                heroUrl = heroUpload.url;
+              } catch (err) {
+                logStep("mentor.images.hero.upload.error", {
+                  jobId: placeholderId,
+                  index,
+                  error: err?.message || String(err),
+                });
+              }
+            }
+
+            let finalUrl = null;
+            let renderWidth = null;
+            let renderHeight = null;
+            let renderVersion = null;
+            try {
+              const rendered = await renderAdImage({
+                creative: renderCreative,
+                brief,
+                format,
+                heroBase64: heroB64,
+              });
+              renderWidth = rendered.width;
+              renderHeight = rendered.height;
+              renderVersion = rendered.renderVersion;
+              const finalUpload = await uploadRenderedImage({
+                userId,
+                buffer: rendered.buffer,
+                promptHash,
+              });
+              finalUrl = finalUpload.url;
+            } catch (err) {
+              logStep("mentor.images.render.error", {
+                jobId: placeholderId,
+                index,
+                error: err?.message || String(err),
+              });
+            }
+
+            variants[index] = {
+              ...variant,
+              image: {
+                input_image_used: hasImage,
+                render_intent: renderCreative.image.render_intent,
+                hero_image_url: heroUrl || undefined,
+                final_image_url: finalUrl || undefined,
+                width: renderWidth || undefined,
+                height: renderHeight || undefined,
+                model: heroMeta?.model || undefined,
+                seed: heroMeta?.seed || undefined,
+                prompt_hash: promptHash,
+                render_version: renderVersion || undefined,
+              },
+            };
+
+            try {
+              if (placeholderId) {
+                const pct = Math.min(99, 92 + Math.round(((i + 1) / mentorTargets.length) * 6));
+                await supabaseAdmin
+                  .from("generated_creatives")
+                  .update({
+                    progress: pct,
+                    progress_meta: {
+                      phase: "render_images",
+                      done: i + 1,
+                      total: mentorTargets.length,
+                    },
+                  })
+                  .eq("id", placeholderId);
+              }
+            } catch {
+              /* ignore */
+            }
+          }
+        }
+
         // finalize: persist outputs (store full v2 output but keep legacy outputs for compatibility)
         const finalOutput = { ...v2output, variants };
         try {
@@ -826,6 +1169,154 @@ export async function handler(event) {
       if (improvedEval.satisfaction > bestEval.satisfaction) {
         best = improved;
         bestEval = improvedEval;
+      }
+    }
+
+    const imageTargets = pickCreativesForImages(best.creatives);
+    if (imageTargets.length) {
+      logStep("default.images.start", { jobId: placeholderId, count: imageTargets.length });
+      const imageQuality = process.env.CREATIVE_IMAGE_QUALITY || "standard";
+      try {
+        if (placeholderId) {
+          await supabaseAdmin
+            .from("generated_creatives")
+            .update({ progress: 92, progress_meta: { phase: "gen_images", total: imageTargets.length } })
+            .eq("id", placeholderId);
+        }
+      } catch {
+        /* ignore */
+      }
+
+      for (let i = 0; i < imageTargets.length; i += 1) {
+        const { creative, index } = imageTargets[i];
+        let imageSpec = buildFallbackImageSpec(brief, creative);
+        try {
+          const specPrompt = buildImageSpecPrompt({
+            brief,
+            creative,
+            strategyBlueprint,
+            researchContext,
+          });
+          const specRaw = await callOpenAiJson(specPrompt, {
+            responseFormat: IMAGE_SPEC_JSON_SCHEMA,
+          });
+          const specParsed = await parseWithRepair({
+            schema: ImageSpecSchema,
+            initial: specRaw,
+            makeRequest: async (instruction) =>
+              callOpenAiJson(specPrompt + "\n\n" + instruction, {
+                responseFormat: IMAGE_SPEC_JSON_SCHEMA,
+              }),
+          });
+          imageSpec = specParsed.data;
+        } catch (err) {
+          logStep("default.images.spec.error", {
+            jobId: placeholderId,
+            index,
+            error: err?.message || String(err),
+          });
+        }
+
+        const imagePrompt = buildImagePromptFromSpec(imageSpec);
+        const promptHash = hashPrompt(imagePrompt);
+        const format = imageSpec?.format || creative?.format || brief.format;
+        const size = sizeForFormat(format);
+
+        let heroB64 = null;
+        let heroMeta = null;
+        try {
+          const hero = await generateHeroImage({
+            prompt: imagePrompt,
+            size,
+            quality: imageQuality,
+          });
+          heroB64 = hero.b64;
+          heroMeta = hero;
+        } catch (err) {
+          logStep("default.images.hero.error", {
+            jobId: placeholderId,
+            index,
+            error: err?.message || String(err),
+          });
+        }
+
+        let heroUrl = null;
+        if (heroB64) {
+          try {
+            const heroUpload = await uploadHeroImage({
+              userId,
+              buffer: Buffer.from(heroB64, "base64"),
+              promptHash,
+            });
+            heroUrl = heroUpload.url;
+          } catch (err) {
+            logStep("default.images.hero.upload.error", {
+              jobId: placeholderId,
+              index,
+              error: err?.message || String(err),
+            });
+          }
+        }
+
+        let finalUrl = null;
+        let renderWidth = null;
+        let renderHeight = null;
+        let renderVersion = null;
+        try {
+          const rendered = await renderAdImage({
+            creative,
+            brief,
+            format,
+            heroBase64: heroB64,
+          });
+          renderWidth = rendered.width;
+          renderHeight = rendered.height;
+          renderVersion = rendered.renderVersion;
+          const finalUpload = await uploadRenderedImage({
+            userId,
+            buffer: rendered.buffer,
+            promptHash,
+          });
+          finalUrl = finalUpload.url;
+        } catch (err) {
+          logStep("default.images.render.error", {
+            jobId: placeholderId,
+            index,
+            error: err?.message || String(err),
+          });
+        }
+
+        const updatedImage = {
+          ...creative.image,
+          hero_image_url: heroUrl || undefined,
+          final_image_url: finalUrl || undefined,
+          width: renderWidth || undefined,
+          height: renderHeight || undefined,
+          model: heroMeta?.model || undefined,
+          seed: heroMeta?.seed || undefined,
+          prompt_hash: promptHash,
+          render_version: renderVersion || undefined,
+        };
+
+        best.creatives[index] = {
+          ...creative,
+          image: updatedImage,
+        };
+
+        try {
+          if (placeholderId) {
+            const pct = Math.min(99, 92 + Math.round(((i + 1) / imageTargets.length) * 6));
+            await supabaseAdmin
+              .from("generated_creatives")
+              .update({
+                progress: pct,
+                progress_meta: { phase: "render_images", done: i + 1, total: imageTargets.length },
+              })
+              .eq("id", placeholderId);
+          }
+        } catch {
+          /* ignore */
+        }
       }
     }
 
