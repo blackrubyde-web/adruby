@@ -76,7 +76,8 @@ vi.mock('../netlify/functions/_shared/clients.js', () => ({
 import { handler } from '../netlify/functions/creative-generate.js';
 
 describe('creative-generate', () => {
-  it('returns jobId after generation and storage', async () => {
+  it('returns jobId after queueing generation', async () => {
+    global.fetch = vi.fn(async () => ({ ok: true }));
     const event = {
       httpMethod: 'POST',
       body: JSON.stringify({ brief: { brandName: 'Demo' }, hasImage: false }),
@@ -86,6 +87,6 @@ describe('creative-generate', () => {
     expect(res.statusCode).toBe(200);
     const body = JSON.parse(res.body || '{}');
     expect(body.jobId).toBe('g-1');
-    expect(body.output).toBeDefined();
+    expect(body.status).toBe('queued');
   });
 });

@@ -3,7 +3,7 @@ import { Sparkles, Copy, RefreshCw, TrendingUp, Zap, Heart, Brain, Target, Clock
 import { Button } from './ui/button';
 import { Label } from './ui/label';
 import { toast } from 'sonner';
-import { creativeAnalyze, creativeGenerate } from '../lib/api/creative';
+import { creativeAnalyze, creativeGenerate, creativeStatus } from '../lib/api/creative';
 
 interface CopyVariant {
   id: number;
@@ -63,8 +63,10 @@ export function AIAdCopyGenerator({
   const [variants, setVariants] = useState<CopyVariant[]>([]);
   const [selectedVariant, setSelectedVariant] = useState<number | null>(null);
   const [selectedTone, setSelectedTone] = useState<'all' | 'professional' | 'friendly' | 'urgent' | 'emotional'>('all');
+  const [progress, setProgress] = useState<number | null>(null);
 
   const toneCycle: CopyVariant['tone'][] = ['professional', 'friendly', 'urgent', 'emotional'];
+  const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
   const mapToneToBrief = (tone: typeof selectedTone) => {
     switch (tone) {
@@ -88,6 +90,7 @@ export function AIAdCopyGenerator({
     }
 
     setIsGenerating(true);
+    setProgress(null);
     try {
       const fd = new FormData();
       fd.append('brandName', productName);
@@ -107,7 +110,26 @@ export function AIAdCopyGenerator({
         strategyId,
       });
 
-      const creatives = generated.output?.creatives || [];
+      let output = generated.output ?? null;
+      if (!output && generated.jobId) {
+        const maxAttempts = 30;
+        for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
+          const status = await creativeStatus(generated.jobId);
+          if (typeof status.progress === 'number') setProgress(status.progress);
+          if (status.status === 'complete' && status.outputs) {
+            output = status.outputs;
+            break;
+          }
+          if (status.status === 'error') {
+            throw new Error('Generierung fehlgeschlagen.');
+          }
+          // backoff to reduce polling load
+          // eslint-disable-next-line no-await-in-loop
+          await sleep(Math.min(4000, 1200 + attempt * 250));
+        }
+      }
+
+      const creatives = output?.creatives || [];
       const newVariants: CopyVariant[] = creatives.map((creative, idx) => {
         const score = creative.score?.value ?? 70;
         const tone = toneCycle[idx % toneCycle.length];
@@ -130,6 +152,7 @@ export function AIAdCopyGenerator({
       toast.error(message);
     } finally {
       setIsGenerating(false);
+      setProgress(null);
     }
   };
 
@@ -182,6 +205,11 @@ export function AIAdCopyGenerator({
             </>
           )}
         </Button>
+        {isGenerating && typeof progress === 'number' && (
+          <div className="mt-2 text-xs text-muted-foreground">
+            Fortschritt: {Math.round(progress)}%
+          </div>
+        )}
       </div>
 
       {/* Tone Filter */}
