@@ -885,7 +885,7 @@ export async function handler(event) {
 
         if (mentorTargets.length) {
           logStep("mentor.images.start", { jobId: placeholderId, count: mentorTargets.length });
-          const imageQuality = process.env.CREATIVE_IMAGE_QUALITY || "standard";
+          const imageQuality = process.env.CREATIVE_IMAGE_QUALITY || "auto";
           try {
             if (placeholderId) {
               await supabaseAdmin
@@ -1168,7 +1168,7 @@ export async function handler(event) {
     const imageTargets = pickCreativesForImages(best.creatives);
     if (imageTargets.length) {
       logStep("default.images.start", { jobId: placeholderId, count: imageTargets.length });
-      const imageQuality = process.env.CREATIVE_IMAGE_QUALITY || "standard";
+      const imageQuality = process.env.CREATIVE_IMAGE_QUALITY || "auto";
       try {
         if (placeholderId) {
           await supabaseAdmin

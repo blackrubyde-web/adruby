@@ -35,7 +35,7 @@ async function fetchImageAsBase64(url) {
 export async function generateHeroImage({
   prompt,
   size,
-  quality = "standard",
+  quality = "auto",
   seed,
 } = {}) {
   const openai = getOpenAiClient();
@@ -44,11 +44,14 @@ export async function generateHeroImage({
     throw new Error("Missing prompt or size for image generation");
   }
 
+  const allowedQuality = new Set(["low", "medium", "high", "auto"]);
+  const safeQuality = allowedQuality.has(quality) ? quality : "auto";
+
   const params = {
     model,
     prompt,
     size,
-    quality,
+    quality: safeQuality,
   };
   if (typeof seed === "number") {
     params.seed = seed;
