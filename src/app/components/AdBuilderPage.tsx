@@ -259,6 +259,12 @@ export function AdBuilderPage() {
 
   const isGeneratingCopy = adStatus === 'generating' || adStatus === 'polling';
 
+  useEffect(() => {
+    if (hookResult && adStatus === 'complete' && state.currentStep < 6) {
+      dispatch({ type: 'SET_STEP', step: 6 });
+    }
+  }, [hookResult, adStatus, state.currentStep]);
+
   const retryWithBackoff = async <T,>(
     fn: () => Promise<T>,
     { retries = 2, baseDelayMs = 400 } = {}
@@ -647,6 +653,8 @@ export function AdBuilderPage() {
         researchIds: selectedResearchIds.length ? selectedResearchIds : undefined,
         outputMode: 'pro',
         style_mode: 'default',
+        visual_style: selectedVisualStyle || undefined,
+        cta_preference: selectedCTA || undefined,
         platforms: ['meta'],
         formats: ['4:5'],
       });

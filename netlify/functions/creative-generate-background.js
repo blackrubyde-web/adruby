@@ -1117,6 +1117,14 @@ export async function handler(event) {
 
     // support optional premium style modes (non-breaking)
     const styleMode = String(body?.style_mode || "default").trim();
+    const visualStyle =
+      typeof body?.visual_style === "string" && body.visual_style.trim()
+        ? body.visual_style.trim()
+        : null;
+    const ctaPreference =
+      typeof body?.cta_preference === "string" && body.cta_preference.trim()
+        ? body.cta_preference.trim()
+        : null;
     logStep("style.mode", { jobId: placeholderId, styleMode });
 
     if (styleMode === "mentor_ugc") {
@@ -1579,7 +1587,10 @@ export async function handler(event) {
     // default (existing) flow
     const startedAt = Date.now();
     logStep("default.start", { jobId: placeholderId });
-    const prompt = buildGeneratePrompt(brief, hasImage, strategyBlueprint, researchContext);
+    const prompt = buildGeneratePrompt(brief, hasImage, strategyBlueprint, researchContext, {
+      visual_style: visualStyle,
+      cta_preference: ctaPreference,
+    });
 
     const initial = await callOpenAiJson(prompt, {
       responseFormat: CREATIVE_OUTPUT_JSON_SCHEMA_V1,
@@ -1624,6 +1635,7 @@ export async function handler(event) {
         issues: bestEval.issues,
         strategyBlueprint,
         researchContext,
+        preferences: { visual_style: visualStyle, cta_preference: ctaPreference },
       });
 
       const improvedRaw = await callOpenAiJson(improvePrompt, {

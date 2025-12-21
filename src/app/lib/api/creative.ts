@@ -63,6 +63,8 @@ export async function creativeGenerate(params: {
   researchIds?: string[] | null;
   outputMode?: string | null;
   style_mode?: string | null;
+  visual_style?: string | null;
+  cta_preference?: string | null;
   platforms?: string[] | null;
   formats?: string[] | null;
 }): Promise<CreativeGenerateResponse> {

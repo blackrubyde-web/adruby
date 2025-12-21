@@ -46,6 +46,7 @@ export function CreativeLibraryPage() {
 
   type CreativeRow = {
     id: string;
+    thumbnail?: string | null;
     inputs?: Record<string, unknown> | null;
     created_at?: string | null;
     metrics?: {
@@ -72,7 +73,7 @@ export function CreativeLibraryPage() {
       name,
       type,
       url: '',
-      thumbnail: '',
+      thumbnail: row.thumbnail || '',
       tags: [
         brief?.product?.category || 'ai',
         brief?.goal || 'performance',

@@ -89,6 +89,14 @@ export async function handler(event) {
     typeof body?.outputMode === "string" && body.outputMode.trim()
       ? body.outputMode.trim()
       : null;
+  const visualStyle =
+    typeof body?.visual_style === "string" && body.visual_style.trim()
+      ? body.visual_style.trim()
+      : null;
+  const ctaPreference =
+    typeof body?.cta_preference === "string" && body.cta_preference.trim()
+      ? body.cta_preference.trim()
+      : null;
   const styleMode =
     typeof body?.style_mode === "string" && body.style_mode.trim()
       ? body.style_mode.trim()
@@ -108,6 +116,8 @@ export async function handler(event) {
         strategyId: strategyId || null,
         outputMode,
         style_mode: styleMode,
+        visual_style: visualStyle,
+        cta_preference: ctaPreference,
         platforms,
         formats,
       },

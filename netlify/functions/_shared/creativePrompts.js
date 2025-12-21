@@ -31,9 +31,21 @@ ${strategyBlock}
 `;
 }
 
-export function buildGeneratePrompt(brief, hasImage, strategyBlueprint, researchContext) {
+export function buildGeneratePrompt(
+  brief,
+  hasImage,
+  strategyBlueprint,
+  researchContext,
+  preferences = {},
+) {
   const strategyBlock = strategyBlueprint
     ? `\nStrategy blueprint (apply it carefully and stay compliant):\n${strategyBlueprint}\n`
+    : "";
+  const visualStyle = preferences?.visual_style
+    ? `\nPreferred visual style: ${preferences.visual_style}`
+    : "";
+  const ctaPreference = preferences?.cta_preference
+    ? `\nPreferred CTA wording: ${preferences.cta_preference}`
     : "";
   return `
 You are AdRuby Performance Copywriter for Meta ads.
@@ -70,6 +82,8 @@ Scoring:
 Brief JSON:
 ${JSON.stringify(brief)}
 ${strategyBlock}
+${visualStyle}
+${ctaPreference}
 `;
 }
 
@@ -244,13 +258,26 @@ ${JSON.stringify(output)}
 `;
 }
 
-export function buildImprovePrompt({ brief, priorOutput, issues, strategyBlueprint, researchContext }) {
+export function buildImprovePrompt({
+  brief,
+  priorOutput,
+  issues,
+  strategyBlueprint,
+  researchContext,
+  preferences = {},
+}) {
   const issueText =
     issues?.length > 0
       ? issues.map((i) => `- [${i.severity}] ${i.type}: ${i.note}`).join("\n")
       : "- No issues provided";
   const strategyBlock = strategyBlueprint
     ? `\nStrategy blueprint (apply it carefully and stay compliant):\n${strategyBlueprint}\n`
+    : "";
+  const visualStyle = preferences?.visual_style
+    ? `\nPreferred visual style: ${preferences.visual_style}`
+    : "";
+  const ctaPreference = preferences?.cta_preference
+    ? `\nPreferred CTA wording: ${preferences.cta_preference}`
     : "";
 
   return `
@@ -271,6 +298,8 @@ Rules:
 Brief JSON:
 ${JSON.stringify(brief)}
 ${strategyBlock}
+${visualStyle}
+${ctaPreference}
 
 Previous CreativeOutput JSON:
 ${JSON.stringify(priorOutput)}
