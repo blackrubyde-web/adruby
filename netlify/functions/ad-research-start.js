@@ -24,6 +24,24 @@ export async function handler(event) {
 
     console.log("[AdResearch][Start] Starting Apify run with", { searchUrl, maxAds });
 
+    if (!process.env.APIFY_API_TOKEN || !process.env.APIFY_FACEBOOK_ADS_ACTOR_ID) {
+      console.warn("[AdResearch][Start] Apify env missing, skipping run", {
+        hasToken: Boolean(process.env.APIFY_API_TOKEN),
+        hasActor: Boolean(process.env.APIFY_FACEBOOK_ADS_ACTOR_ID),
+      });
+      return {
+        statusCode: 200,
+        headers,
+        body: JSON.stringify({
+          jobId: null,
+          status: "skipped",
+          datasetId: null,
+          itemCount: 0,
+          warning: "APIFY not configured",
+        }),
+      };
+    }
+
     const result = await runAdResearchActor({ searchUrl, maxAds });
 
     const runId = result?.runId || null;

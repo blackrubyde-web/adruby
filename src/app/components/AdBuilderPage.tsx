@@ -517,9 +517,20 @@ export function AdBuilderPage() {
           },
           body: JSON.stringify({ searchUrl, maxAds: 20 })
         });
-        const json = await res.json();
+        const text = await res.text();
+        let json: any = {};
+        try {
+          json = text ? JSON.parse(text) : {};
+        } catch {
+          json = {};
+        }
         if (!res.ok) {
-          throw new Error(json?.error || 'Market analysis failed');
+          const message = json?.details || json?.error || `Market analysis failed (${res.status})`;
+          throw new Error(message);
+        }
+        if (json?.warning) {
+          toast.warning(`Marktanalyse übersprungen: ${json.warning}`);
+          return json;
         }
         return json;
       });
