@@ -254,5 +254,3 @@ export async function handler() {
     return serverError(err?.message || "Scheduled sync failed");
   }
 }
-
-export default handler;

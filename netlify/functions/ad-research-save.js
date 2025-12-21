@@ -49,5 +49,3 @@ export async function handler(event) {
     return badRequest('Save failed');
   }
 }
-
-export default handler;

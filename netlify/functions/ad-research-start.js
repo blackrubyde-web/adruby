@@ -83,5 +83,3 @@ export async function handler(event) {
     return { statusCode: 500, headers, body: JSON.stringify({ error: "Failed to start ad research", details: error?.message }) };
   }
 }
-
-export default handler;

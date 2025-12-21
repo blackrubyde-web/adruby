@@ -221,5 +221,3 @@ export async function handler(event) {
     return serverError(err?.message || "Strategy generation failed.");
   }
 }
-
-export default handler;

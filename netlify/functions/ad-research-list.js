@@ -33,5 +33,3 @@ export async function handler(event) {
     return { statusCode: 500, headers, body: JSON.stringify({ error: 'Internal error' }) };
   }
 }
-
-export default handler;
