@@ -13,7 +13,7 @@ import CreativeBriefForm from "./CreativeBriefForm";
 import NormalizedBriefReview from "./NormalizedBriefReview";
 import CreativeResults from "./CreativeResults";
 import type { CreativeOutput, NormalizedBrief } from "../../lib/creative/schemas";
-import { creativeAnalyze, creativeGenerate } from "../../lib/api/creative";
+import { creativeAnalyze, creativeGenerate, creativeStatus } from "../../lib/api/creative";
 import { useAuthState } from "../../contexts/AuthContext";
 
 const FormSchema = z.object({
@@ -45,6 +45,8 @@ export default function CreativeBuilderWizard() {
   const [quality, setQuality] = useState<{ satisfaction?: number; target?: number; issues?: unknown[] } | null>(null);
 
   const [loading, setLoading] = useState<null | "analyze" | "generate">(null);
+  const [progress, setProgress] = useState<number | null>(null);
+  const [jobId, setJobId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   const form = useForm<FormValues>({
@@ -92,15 +94,37 @@ export default function CreativeBuilderWizard() {
     if (!brief) return;
     setError(null);
     setLoading("generate");
+    setProgress(null);
     try {
       const res = await creativeGenerate({ brief, hasImage: Boolean(imageFile) });
-      setOutput(res.output);
+      setJobId(res.jobId ?? null);
+
+      let resolvedOutput = res.output ?? null;
+      if (!resolvedOutput && res.jobId) {
+        const maxAttempts = 30;
+        for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
+          const status = await creativeStatus(res.jobId);
+          if (typeof status.progress === "number") setProgress(status.progress);
+          if (status.status === "complete" && status.outputs) {
+            resolvedOutput = status.outputs;
+            break;
+          }
+          if (status.status === "error") {
+            throw new Error("Generierung fehlgeschlagen.");
+          }
+          // eslint-disable-next-line no-await-in-loop
+          await new Promise((resolve) => setTimeout(resolve, Math.min(4000, 1200 + attempt * 250)));
+        }
+      }
+
+      setOutput(resolvedOutput);
       setQuality(res.quality != null ? { satisfaction: res.quality } : null);
       setStep(3);
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : "Generate failed.");
     } finally {
       setLoading(null);
+      setProgress(null);
     }
   }
 
@@ -111,6 +135,8 @@ export default function CreativeBuilderWizard() {
     setBrief(null);
     setOutput(null);
     setQuality(null);
+    setJobId(null);
+    setProgress(null);
     setError(null);
     setStep(1);
   }
@@ -206,6 +232,24 @@ export default function CreativeBuilderWizard() {
 
       {step === 3 && output && (
         <CreativeResults output={output} quality={quality} onReset={resetAll} />
+      )}
+
+      {step === 3 && !output && (
+        <Card className="p-5">
+          <div className="text-sm text-muted-foreground">
+            {loading === "generate" ? "Generierung läuft…" : "Ergebnis wird geladen…"}
+          </div>
+          {typeof progress === "number" && (
+            <div className="mt-2 text-xs text-muted-foreground">
+              Fortschritt: {Math.round(progress)}%
+            </div>
+          )}
+          {jobId && (
+            <div className="mt-2 text-xs text-muted-foreground">
+              Job: <span className="font-medium">{jobId}</span>
+            </div>
+          )}
+        </Card>
       )}
     </div>
   );

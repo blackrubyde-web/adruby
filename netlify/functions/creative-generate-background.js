@@ -366,6 +366,16 @@ export async function handler(event) {
 
   initTelemetry();
 
+  const debug = process.env.DEBUG_FUNCTIONS === "1";
+  const logStep = (step, meta = {}) => {
+    if (!debug) return;
+    try {
+      console.info("[creative-generate-bg]", step, meta);
+    } catch {
+      /* ignore logging errors */
+    }
+  };
+
   if (process.env.DEBUG_FUNCTIONS === "1") {
     try {
       console.info(`[creative-generate] start method=${event.httpMethod} hasAuth=${Boolean(event.headers?.authorization)} body-length=${event?.body ? String(event.body).length : 0}`);
@@ -387,6 +397,8 @@ export async function handler(event) {
   } catch {
     return badRequest("Invalid JSON body");
   }
+
+  logStep("start", { hasJobId: Boolean(body?.jobId) });
 
   const briefParsed = NormalizedBriefSchema.safeParse(body?.brief ?? body);
   if (!briefParsed.success) {
@@ -449,6 +461,7 @@ export async function handler(event) {
           raw: a.raw_payload || null,
         }));
       }
+      logStep("research.loaded", { count: researchContext.length });
     } catch (e) {
       console.warn('[creative-generate] failed to load ad_research_ads', e?.message || e);
     }
@@ -522,13 +535,16 @@ export async function handler(event) {
     if (!placeholderId) {
       return serverError('Failed to allocate generation job.');
     }
+    logStep("job.ready", { jobId: placeholderId, hasImage });
 
     // support optional premium style modes (non-breaking)
     const styleMode = String(body?.style_mode || "default").trim();
+    logStep("style.mode", { jobId: placeholderId, styleMode });
 
     if (styleMode === "mentor_ugc") {
       // premium Mentor-UGC flow: generate 12 variants, evaluate, improve top candidate, CD pass
       try {
+        logStep("mentor.start", { jobId: placeholderId });
         // update progress: validate -> research
         if (placeholderId) {
           await supabaseAdmin.from('generated_creatives').update({ progress: 5, progress_meta: { phase: 'validate' } }).eq('id', placeholderId);
@@ -538,6 +554,7 @@ export async function handler(event) {
 
         if (placeholderId) await supabaseAdmin.from('generated_creatives').update({ progress: 10, progress_meta: { phase: 'research' } }).eq('id', placeholderId);
 
+        logStep("mentor.generate", { jobId: placeholderId });
         const initial = await callOpenAiJson(prompt, {
           responseFormat: CREATIVE_OUTPUT_JSON_SCHEMA_V2,
         });
@@ -558,6 +575,7 @@ export async function handler(event) {
         // update progress: generation done
         if (placeholderId) await supabaseAdmin.from('generated_creatives').update({ progress: 40, progress_meta: { phase: 'generate' } }).eq('id', placeholderId);
 
+        logStep("mentor.eval", { jobId: placeholderId, variants: variants.length });
         // evaluate each variant
         const evals = [];
         for (let i = 0; i < variants.length; i++) {
@@ -591,6 +609,7 @@ export async function handler(event) {
 
         // improve-loop on top1 only (max 2 attempts)
         if (top3.length > 0) {
+          logStep("mentor.improve", { jobId: placeholderId });
           let top = top3[0];
           for (let attempt = 1; attempt <= 2; attempt++) {
             const weakest = top.eval.weakest_dimensions && top.eval.weakest_dimensions.length ? top.eval.weakest_dimensions.slice(0,2) : ['clarity','hookPower'];
@@ -626,6 +645,7 @@ export async function handler(event) {
         // Creative Director pass: sharpen top variant (finalize)
         try {
           if (top3.length > 0) {
+            logStep("mentor.cd-pass", { jobId: placeholderId });
             const top = top3[0];
             const cdPrompt = buildImprovePromptDiagnosePlanRewrite({ brief, currentVariant: variants[top.index], evalV2: top.eval, targetDimensions: ['clarity','hookPower'] });
             const cdRaw = await callOpenAiJson(cdPrompt, {
@@ -657,10 +677,12 @@ export async function handler(event) {
 
         await logAiAction({ userId, actionType: 'creative_generate', status: 'success', input: inputForLog, output: finalOutput, meta: { credits, top3Count: top3.length } });
 
+        logStep("mentor.complete", { jobId: placeholderId });
         return ok({ output: finalOutput, credits, quality: { target: TARGET_SATISFACTION, top3 }, jobId: placeholderId });
       } catch (err) {
         // On parse failure, save raw snippet and mark error
         console.error('[creative-generate][mentor_ugc] failed', err);
+        logStep("mentor.error", { jobId: placeholderId, error: err?.message || String(err) });
         // capture raw sample if available (best effort)
         try {
           if (placeholderId) {
@@ -674,6 +696,7 @@ export async function handler(event) {
     }
 
     // default (existing) flow
+    logStep("default.start", { jobId: placeholderId });
     const prompt = buildGeneratePrompt(brief, hasImage, strategyBlueprint, researchContext);
 
     const initial = await callOpenAiJson(prompt, {
@@ -696,11 +719,13 @@ export async function handler(event) {
       /* ignore */
     }
 
+    logStep("default.eval", { jobId: placeholderId });
     let bestEval = await evaluateOutput(brief, best, strategyBlueprint, researchContext);
 
     for (let attempt = 1; attempt <= MAX_IMPROVE_ATTEMPTS; attempt++) {
       if (bestEval.satisfaction >= TARGET_SATISFACTION) break;
 
+      logStep("default.improve", { jobId: placeholderId, attempt });
       const improvePrompt = buildImprovePrompt({
         brief,
         priorOutput: best,
@@ -772,6 +797,7 @@ export async function handler(event) {
   } catch (err) {
     console.error("[creative-generate] failed", err);
     captureException(err, { function: "creative-generate" });
+    logStep("error", { jobId: placeholderId, error: err?.message || String(err) });
 
     await logAiAction({
       userId,
