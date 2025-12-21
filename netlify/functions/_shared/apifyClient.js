@@ -1,11 +1,4 @@
 // netlify/functions/_shared/apifyClient.js (ESM)
-import { createRequire } from 'module';
-import { pathToFileURL } from 'url';
-
-const requireBase =
-  (typeof import.meta !== 'undefined' && import.meta.url) ||
-  pathToFileURL(`${process.cwd()}/`).href;
-const require = createRequire(requireBase);
 const APIFY_API_TOKEN = process.env.APIFY_API_TOKEN;
 const APIFY_FACEBOOK_ADS_ACTOR_ID = process.env.APIFY_FACEBOOK_ADS_ACTOR_ID;
 
@@ -59,34 +52,47 @@ export async function runAdResearchActor(params = {}) {
 
   console.log('[ApifyClient] Starting actor run', { actorId, input });
 
-  let ApifyClient;
   try {
-    const mod = require('apify-client');
-    ApifyClient = mod?.ApifyClient ?? mod?.default ?? mod;
-  } catch (error) {
-    console.error('[ApifyClient] Failed to load apify-client (CJS)', error?.message || error);
-    throw new Error('Failed to load apify-client');
-  }
-  const client = new ApifyClient({ token: APIFY_API_TOKEN });
+    const apiBase = 'https://api.apify.com/v2';
+    const encodedActor = encodeURIComponent(actorId);
+    const runRes = await fetch(`${apiBase}/acts/${encodedActor}/runs?token=${APIFY_API_TOKEN}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(input),
+    });
 
-  try {
-    const run = await client.actor(actorId).call(input);
+    if (!runRes.ok) {
+      const text = await runRes.text();
+      console.error('[ApifyClient] Actor run failed', { status: runRes.status, body: text });
+      throw new Error(`Apify actor run failed (${runRes.status})`);
+    }
 
+    const runJson = await runRes.json();
+    const run = runJson?.data || null;
     console.log('[ApifyClient] Actor run response', { runId: run?.id, status: run?.status, defaultDatasetId: run?.defaultDatasetId });
 
     const defaultDatasetId = run?.defaultDatasetId;
-
     if (!defaultDatasetId) {
       console.warn('[ApifyClient] Kein defaultDatasetId im Run – keine Dataset-Ergebnisse verfügbar.');
       return { runId: run?.id, status: run?.status, defaultDatasetId: null, items: [] };
     }
 
-    const datasetClient = client.dataset(defaultDatasetId);
-    const { items } = await datasetClient.listItems({ limit: input.count || 200 });
+    const itemsRes = await fetch(
+      `${apiBase}/datasets/${encodeURIComponent(defaultDatasetId)}/items?clean=true&format=json&limit=${encodeURIComponent(
+        String(input.count || 200),
+      )}&token=${APIFY_API_TOKEN}`,
+    );
 
+    if (!itemsRes.ok) {
+      const text = await itemsRes.text();
+      console.error('[ApifyClient] Dataset fetch failed', { status: itemsRes.status, body: text });
+      throw new Error(`Apify dataset fetch failed (${itemsRes.status})`);
+    }
+
+    const items = (await itemsRes.json()) || [];
     console.log('[ApifyClient] Dataset items fetched', { defaultDatasetId, itemCount: items?.length || 0 });
 
-    return { runId: run?.id, status: run?.status, defaultDatasetId, items: items || [] };
+    return { runId: run?.id, status: run?.status, defaultDatasetId, items };
   } catch (error) {
     console.error('[ApifyClient] Failed to run actor or load dataset', { status: error?.status, message: error?.message, body: error?.body });
     throw new Error(`Failed to run Apify actor or fetch dataset: ${(error?.body && error.body.error && error.body.error.message) || error?.message || String(error)}`);
