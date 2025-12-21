@@ -85,7 +85,7 @@ export function OverviewPage({ onNavigate }: OverviewPageProps) {
       completed: false,
       actionLabel: 'Generate',
       onAction: () => {
-        onNavigate('creative-builder');
+        onNavigate('adbuilder');
       },
     },
     {
@@ -205,7 +205,7 @@ export function OverviewPage({ onNavigate }: OverviewPageProps) {
       priority: 'medium',
       cta: 'Open builder',
       icon: <Wand2 className="w-5 h-5 text-primary" />,
-      onClick: () => onNavigate('creative-builder'),
+      onClick: () => onNavigate('adbuilder'),
     },
     {
       id: 'campaign-review',

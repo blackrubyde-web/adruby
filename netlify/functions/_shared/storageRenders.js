@@ -34,18 +34,38 @@ async function resolveUrl({ bucket, path }) {
   return signed.data.signedUrl;
 }
 
+async function uploadWithFallback({ bucket, fallbackBucket, path, buffer }) {
+  try {
+    await uploadBuffer({ bucket, path, buffer, contentType: "image/png" });
+    return { bucket, path };
+  } catch (err) {
+    const msg = err?.message || "";
+    if (
+      fallbackBucket &&
+      fallbackBucket !== bucket &&
+      msg.toLowerCase().includes("storage not configured")
+    ) {
+      await uploadBuffer({ bucket: fallbackBucket, path, buffer, contentType: "image/png" });
+      return { bucket: fallbackBucket, path };
+    }
+    throw err;
+  }
+}
+
 export async function uploadHeroImage({ userId, buffer, promptHash }) {
   const bucket = process.env.CREATIVE_IMAGES_BUCKET || process.env.CREATIVE_RENDERS_BUCKET || "creative-renders";
+  const fallbackBucket = process.env.CREATIVE_FALLBACK_BUCKET || "creative-inputs";
   const path = buildPath({ userId, prefix: `hero-${promptHash || "img"}`, ext: "png" });
-  await uploadBuffer({ bucket, path, buffer, contentType: "image/png" });
-  const url = await resolveUrl({ bucket, path });
-  return { path, url, bucket };
+  const upload = await uploadWithFallback({ bucket, fallbackBucket, path, buffer });
+  const url = await resolveUrl({ bucket: upload.bucket, path: upload.path });
+  return { path: upload.path, url, bucket: upload.bucket };
 }
 
 export async function uploadRenderedImage({ userId, buffer, promptHash }) {
   const bucket = process.env.CREATIVE_RENDERS_BUCKET || "creative-renders";
+  const fallbackBucket = process.env.CREATIVE_FALLBACK_BUCKET || "creative-inputs";
   const path = buildPath({ userId, prefix: `render-${promptHash || "img"}`, ext: "png" });
-  await uploadBuffer({ bucket, path, buffer, contentType: "image/png" });
-  const url = await resolveUrl({ bucket, path });
-  return { path, url, bucket };
+  const upload = await uploadWithFallback({ bucket, fallbackBucket, path, buffer });
+  const url = await resolveUrl({ bucket: upload.bucket, path: upload.path });
+  return { path: upload.path, url, bucket: upload.bucket };
 }

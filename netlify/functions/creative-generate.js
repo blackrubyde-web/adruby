@@ -85,6 +85,16 @@ export async function handler(event) {
       ? body.imagePath.trim()
       : null;
   const strategyId = typeof body?.strategyId === "string" ? body.strategyId.trim() : null;
+  const outputMode =
+    typeof body?.outputMode === "string" && body.outputMode.trim()
+      ? body.outputMode.trim()
+      : null;
+  const styleMode =
+    typeof body?.style_mode === "string" && body.style_mode.trim()
+      ? body.style_mode.trim()
+      : null;
+  const platforms = Array.isArray(body?.platforms) ? body.platforms : null;
+  const formats = Array.isArray(body?.formats) ? body.formats : null;
 
   let placeholderId = null;
   try {
@@ -96,6 +106,10 @@ export async function handler(event) {
         hasImage,
         imagePath,
         strategyId: strategyId || null,
+        outputMode,
+        style_mode: styleMode,
+        platforms,
+        formats,
       },
       outputs: null,
       score: null,

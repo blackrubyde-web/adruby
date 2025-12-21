@@ -212,9 +212,6 @@ function FullScreenError({
 const LazyAdBuilderPage = lazy(() =>
   import('./components/AdBuilderPage').then((mod) => ({ default: mod.AdBuilderPage }))
 );
-const LazyCreativeBuilderPage = lazy(() =>
-  import('./components/CreativeBuilderPage').then((mod) => ({ default: mod.CreativeBuilderPage }))
-);
 const LazyAnalyticsPage = lazy(() =>
   import('./components/AnalyticsPage').then((mod) => ({ default: mod.AnalyticsPage }))
 );
@@ -668,7 +665,7 @@ function AppContent() {
           {currentPage === 'creative-builder' && (
             <div className="pt-16 min-h-screen">
               <Suspense fallback={pageFallback}>
-                <LazyCreativeBuilderPage />
+                <LazyAdBuilderPage />
               </Suspense>
               <Footer />
             </div>

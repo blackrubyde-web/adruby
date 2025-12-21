@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { RotateCcw, Save } from "lucide-react";
-import type { CreativeOutput } from "../../lib/creative/schemas";
+import type { CreativeOutputV1 } from "../../lib/creative/schemas";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../ui/tabs";
 import { Button } from "../ui/button";
 import { Card } from "../ui/card";
@@ -12,7 +12,7 @@ import { creativeLibraryStatus, creativeSaveToLibrary } from "../../lib/api/crea
 import { toast } from "sonner";
 
 export default function CreativeResults(props: {
-  output: CreativeOutput;
+  output: CreativeOutputV1;
   quality?: { satisfaction?: number; target?: number; issues?: unknown[] } | null;
   onReset: () => void;
 }) {

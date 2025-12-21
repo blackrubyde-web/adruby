@@ -16,6 +16,7 @@ import {
   buildImprovePromptDiagnosePlanRewrite,
   buildBatchQualityEvalPromptV2,
   buildImageSpecPrompt,
+  buildImageSpecPromptPro,
   buildImagePromptFromSpec,
 } from "./_shared/creativePrompts.js";
 import { parseWithRepair } from "./_shared/repair.js";
@@ -28,6 +29,7 @@ import {
   QualityEvalV2Schema,
   BatchQualityEvalV2Schema,
   ImageSpecSchema,
+  AD_IMAGE_SPEC_JSON_SCHEMA,
 } from "./_shared/creativeSchemas.js";
 import { applySanityFilter } from "./_shared/creativeQuality.js";
 import { renderAdImage } from "./_shared/renderAdImage.js";
@@ -167,6 +169,7 @@ const CREATIVE_VARIANT_JSON_SCHEMA = {
       "on_screen_text",
       "script",
       "cta",
+      "image",
     ],
     properties: {
       platform: {
@@ -206,18 +209,29 @@ const CREATIVE_VARIANT_JSON_SCHEMA = {
       image: {
         type: "object",
         additionalProperties: false,
-        required: [],
+        required: [
+          "input_image_used",
+          "render_intent",
+          "hero_image_url",
+          "final_image_url",
+          "width",
+          "height",
+          "model",
+          "seed",
+          "prompt_hash",
+          "render_version",
+        ],
         properties: {
           input_image_used: { type: "boolean" },
           render_intent: { type: "string", minLength: 1, maxLength: 200 },
-          hero_image_url: { type: "string", minLength: 1 },
-          final_image_url: { type: "string", minLength: 1 },
-          width: { type: "integer", minimum: 1 },
-          height: { type: "integer", minimum: 1 },
-          model: { type: "string", minLength: 1 },
-          seed: { type: "integer", minimum: 0 },
-          prompt_hash: { type: "string", minLength: 6 },
-          render_version: { type: "string", minLength: 1 },
+          hero_image_url: { type: ["string", "null"] },
+          final_image_url: { type: ["string", "null"] },
+          width: { type: ["integer", "null"], minimum: 1 },
+          height: { type: ["integer", "null"], minimum: 1 },
+          model: { type: ["string", "null"], minLength: 1 },
+          seed: { type: ["integer", "null"], minimum: 0 },
+          prompt_hash: { type: ["string", "null"], minLength: 6 },
+          render_version: { type: ["string", "null"], minLength: 1 },
         },
       },
     },
@@ -240,10 +254,10 @@ const CREATIVE_OUTPUT_JSON_SCHEMA_V2 = {
       brand: {
         type: "object",
         additionalProperties: false,
-        required: [],
+        required: ["name", "voice"],
         properties: {
           name: { type: "string" },
-          voice: { type: "array", items: { type: "string" } },
+          voice: { type: "array", items: { type: "string" }, default: [] },
         },
       },
       variants: {
@@ -361,10 +375,29 @@ const CREATIVE_OUTPUT_JSON_SCHEMA_V1 = {
             image: {
               type: "object",
               additionalProperties: false,
-              required: ["input_image_used", "render_intent"],
+              required: [
+                "input_image_used",
+                "render_intent",
+                "hero_image_url",
+                "final_image_url",
+                "width",
+                "height",
+                "model",
+                "seed",
+                "prompt_hash",
+                "render_version",
+              ],
               properties: {
                 input_image_used: { type: "boolean" },
                 render_intent: { type: "string", minLength: 1, maxLength: 200 },
+                hero_image_url: { type: ["string", "null"] },
+                final_image_url: { type: ["string", "null"] },
+                width: { type: ["integer", "null"], minimum: 1 },
+                height: { type: ["integer", "null"], minimum: 1 },
+                model: { type: ["string", "null"], minLength: 1 },
+                seed: { type: ["integer", "null"], minimum: 0 },
+                prompt_hash: { type: ["string", "null"], minLength: 6 },
+                render_version: { type: ["string", "null"], minLength: 1 },
               },
             },
           },
@@ -513,6 +546,224 @@ function pickCreativesForImages(creatives) {
   return ranked.slice(0, IMAGE_TOP_N);
 }
 
+function scoreToFive(score) {
+  if (!Number.isFinite(score)) return 0;
+  return clampInt(Math.round(score / 20), 0, 5);
+}
+
+function deriveVisualThumbStop(creative) {
+  if (creative?.image?.final_image_url) return 5;
+  if (creative?.image?.hero_image_url) return 4;
+  return 2;
+}
+
+function buildProQuality(creative) {
+  const base = scoreToFive(creative?.score?.value ?? 0);
+  const visualThumbStop = deriveVisualThumbStop(creative);
+  const scores = {
+    hookPower: base,
+    clarity: base,
+    proof: Math.max(1, base - 1),
+    offer: base,
+    platformFit: base,
+    objectionHandling: Math.max(1, base - 1),
+    novelty: Math.max(1, base - 1),
+    visualThumbStop,
+  };
+  const totalRaw =
+    2 * scores.visualThumbStop +
+    scores.hookPower +
+    scores.clarity +
+    scores.proof +
+    scores.offer +
+    scores.platformFit +
+    scores.objectionHandling +
+    scores.novelty;
+  const total = clampInt(Math.round((totalRaw / 40) * 100), 0, 100);
+  return {
+    scores,
+    total,
+    ko: { complianceFail: false, genericBuzzwordFail: false },
+    issues: [],
+  };
+}
+
+function buildWinnerSelection(variants) {
+  const scores = variants.map((v) => ({ id: v.id, total: v.quality.total }));
+  const winner = scores.slice().sort((a, b) => b.total - a.total)[0];
+  return {
+    recommended_winner_id: winner?.id || variants[0]?.id || "unknown",
+    rationale: "Highest weighted total score across copy + visual thumb-stop.",
+    scores,
+  };
+}
+
+function buildProOutputFromV1({
+  output,
+  brief,
+  jobId,
+  styleMode,
+  platforms,
+  formats,
+  strategyId,
+  strategyBlueprint,
+  imageSpecsByIndex,
+}) {
+  const variants = output.creatives.map((creative, idx) => {
+    const quality = buildProQuality(creative);
+    return {
+      id: creative.id,
+      platform: "meta",
+      format: creative.format,
+      copy: {
+        hook: creative.copy.hook,
+        primary_text: creative.copy.primary_text,
+        bullets: creative.copy.bullets ?? [],
+        cta: creative.copy.cta,
+        alt_hooks: [],
+        on_screen_text: [creative.copy.hook].slice(0, 4),
+      },
+      visual: {
+        image_spec: imageSpecsByIndex?.[idx] ?? null,
+        image: {
+          input_image_used: Boolean(creative.image?.input_image_used),
+          render_intent: creative.image?.render_intent || "Hero image",
+          hero_image_url: creative.image?.hero_image_url ?? null,
+          final_image_url: creative.image?.final_image_url ?? null,
+          width: creative.image?.width ?? null,
+          height: creative.image?.height ?? null,
+          model: creative.image?.model ?? null,
+          seed: creative.image?.seed ?? null,
+          prompt_hash: creative.image?.prompt_hash ?? null,
+          render_version: creative.image?.render_version ?? null,
+        },
+      },
+      quality,
+      experiment: { ab_tests: [] },
+    };
+  });
+
+  return {
+    schema_version: "2.1-pro",
+    job: {
+      id: jobId,
+      style_mode: styleMode,
+      platforms: platforms.length ? platforms : ["meta"],
+      formats: formats.length ? formats : [brief.format],
+      language: brief.language,
+    },
+    brand: { name: brief.brand?.name || "AdRuby" },
+    product: {
+      name: brief.product?.name || "Product",
+      url: brief.product?.url ?? null,
+      category: brief.product?.category ?? null,
+    },
+    audience: {
+      summary: brief.audience?.summary || "Audience",
+      segments: brief.audience?.segments || [],
+    },
+    offer: {
+      summary: brief.offer?.summary ?? null,
+      constraints: brief.offer?.constraints || [],
+    },
+    strategy: {
+      id: strategyId || null,
+      blueprint: strategyBlueprint || null,
+    },
+    variants,
+    winner_selection: buildWinnerSelection(variants),
+    brief,
+  };
+}
+
+function buildProOutputFromV2({
+  output,
+  brief,
+  jobId,
+  styleMode,
+  platforms,
+  formats,
+  strategyId,
+  strategyBlueprint,
+  imageSpecsByIndex,
+}) {
+  const variants = output.variants.map((variant, idx) => {
+    const creative = {
+      score: { value: 80 },
+      image: variant.image || {},
+    };
+    const quality = buildProQuality(creative);
+    return {
+      id: variant.id || `v${idx + 1}`,
+      platform: variant.platform || "meta",
+      format: variant.format || brief.format,
+      copy: {
+        hook: variant.hook || variant?.script?.hook || "Hook",
+        primary_text:
+          variant?.script?.offer ||
+          variant?.script?.proof ||
+          variant?.script?.problem ||
+          "Primary text",
+        bullets: [],
+        cta: variant.cta || variant?.script?.cta || "Mehr erfahren",
+        alt_hooks: [],
+        on_screen_text: Array.isArray(variant.on_screen_text)
+          ? variant.on_screen_text.slice(0, 6)
+          : [],
+      },
+      visual: {
+        image_spec: imageSpecsByIndex?.[idx] ?? null,
+        image: {
+          input_image_used: Boolean(variant?.image?.input_image_used),
+          render_intent: variant?.image?.render_intent || "Hero image",
+          hero_image_url: variant?.image?.hero_image_url ?? null,
+          final_image_url: variant?.image?.final_image_url ?? null,
+          width: variant?.image?.width ?? null,
+          height: variant?.image?.height ?? null,
+          model: variant?.image?.model ?? null,
+          seed: variant?.image?.seed ?? null,
+          prompt_hash: variant?.image?.prompt_hash ?? null,
+          render_version: variant?.image?.render_version ?? null,
+        },
+      },
+      quality,
+      experiment: { ab_tests: [] },
+    };
+  });
+
+  return {
+    schema_version: "2.1-pro",
+    job: {
+      id: jobId,
+      style_mode: styleMode,
+      platforms: platforms.length ? platforms : ["meta"],
+      formats: formats.length ? formats : [brief.format],
+      language: brief.language,
+    },
+    brand: { name: brief.brand?.name || "AdRuby" },
+    product: {
+      name: brief.product?.name || "Product",
+      url: brief.product?.url ?? null,
+      category: brief.product?.category ?? null,
+    },
+    audience: {
+      summary: brief.audience?.summary || "Audience",
+      segments: brief.audience?.segments || [],
+    },
+    offer: {
+      summary: brief.offer?.summary ?? null,
+      constraints: brief.offer?.constraints || [],
+    },
+    strategy: {
+      id: strategyId || null,
+      blueprint: strategyBlueprint || null,
+    },
+    variants,
+    winner_selection: buildWinnerSelection(variants),
+    brief,
+  };
+}
+
 function buildFallbackImageSpec(brief, creative) {
   const avoid = (brief?.risk_flags || []).map((f) => f?.note).filter(Boolean);
   const format = creative?.format || brief?.format || "4:5";
@@ -599,6 +850,14 @@ export async function handler(event) {
   const hasImage = Boolean(body?.hasImage || imagePath);
   const strategyId = typeof body?.strategyId === "string" ? body.strategyId.trim() : "";
   let strategyBlueprint = null;
+  const outputModeRaw = typeof body?.outputMode === "string" ? body.outputMode.trim() : "";
+  const outputMode = outputModeRaw === "pro" ? "pro" : "v1";
+  const platforms = Array.isArray(body?.platforms)
+    ? body.platforms.filter((p) => ["meta", "tiktok", "youtube_shorts", "linkedin"].includes(p))
+    : [];
+  const formats = Array.isArray(body?.formats)
+    ? body.formats.filter((f) => FORMATS.includes(f))
+    : [];
 
   if (strategyId) {
     const { data, error } = await supabaseAdmin
@@ -619,8 +878,9 @@ export async function handler(event) {
   } catch (err) {
     return badRequest(err?.message || "Insufficient credits", 402);
   }
-  const inputForLog = { brief, hasImage, imagePath, strategyId: strategyId || null };
+  const inputForLog = { brief, hasImage, imagePath, strategyId: strategyId || null, outputMode };
   let placeholderId = "";
+  const imageSpecsByIndex = {};
 
   try {
     // Fetch scraped ads as research context. If the client passed specific researchIds, prefer those.
@@ -943,24 +1203,34 @@ export async function handler(event) {
 
             let imageSpec = buildFallbackImageSpec(brief, renderCreative);
             try {
-              const specPrompt = buildImageSpecPrompt({
-                brief,
-                creative: renderCreative,
-                strategyBlueprint,
-                researchContext,
-              });
+              const specPrompt =
+                outputMode === "pro"
+                  ? buildImageSpecPromptPro({
+                      brief,
+                      variant: renderCreative,
+                      strategyBlueprint,
+                      researchContext,
+                    })
+                  : buildImageSpecPrompt({
+                      brief,
+                      creative: renderCreative,
+                      strategyBlueprint,
+                      researchContext,
+                    });
+              const specSchema = outputMode === "pro" ? AD_IMAGE_SPEC_JSON_SCHEMA : IMAGE_SPEC_JSON_SCHEMA;
               const specRaw = await callOpenAiJson(specPrompt, {
-                responseFormat: IMAGE_SPEC_JSON_SCHEMA,
+                responseFormat: specSchema,
               });
               const specParsed = await parseWithRepair({
                 schema: ImageSpecSchema,
                 initial: specRaw,
                 makeRequest: async (instruction) =>
                   callOpenAiJson(specPrompt + "\n\n" + instruction, {
-                    responseFormat: IMAGE_SPEC_JSON_SCHEMA,
+                    responseFormat: specSchema,
                   }),
               });
               imageSpec = specParsed.data;
+              imageSpecsByIndex[index] = imageSpec;
             } catch (err) {
               logStep("mentor.images.spec.error", {
                 jobId: placeholderId,
@@ -968,6 +1238,7 @@ export async function handler(event) {
                 error: err?.message || String(err),
               });
             }
+            imageSpecsByIndex[index] = imageSpec;
 
             const imagePrompt = buildImagePromptFromSpec(imageSpec);
             const promptHash = hashPrompt(imagePrompt);
@@ -1046,16 +1317,16 @@ export async function handler(event) {
             variants[index] = {
               ...variant,
               image: {
-                input_image_used: hasImage,
-                render_intent: renderCreative.image.render_intent,
-                hero_image_url: heroUrl || undefined,
-                final_image_url: finalUrl || undefined,
-                width: renderWidth || undefined,
-                height: renderHeight || undefined,
-                model: heroMeta?.model || undefined,
-                seed: heroMeta?.seed || undefined,
+                input_image_used: Boolean(hasImage),
+                render_intent: renderCreative.image.render_intent || "Hero image",
+                hero_image_url: heroUrl ?? null,
+                final_image_url: finalUrl ?? null,
+                width: renderWidth ?? null,
+                height: renderHeight ?? null,
+                model: heroMeta?.model ?? null,
+                seed: heroMeta?.seed ?? null,
                 prompt_hash: promptHash,
-                render_version: renderVersion || undefined,
+                render_version: renderVersion ?? null,
               },
             };
 
@@ -1081,7 +1352,20 @@ export async function handler(event) {
         }
 
         // finalize: persist outputs (store full v2 output but keep legacy outputs for compatibility)
-        const finalOutput = { ...v2output, variants };
+        const finalOutput =
+          outputMode === "pro"
+            ? buildProOutputFromV2({
+                output: { ...v2output, variants },
+                brief,
+                jobId: placeholderId,
+                styleMode,
+                platforms,
+                formats,
+                strategyId: strategyId || null,
+                strategyBlueprint,
+                imageSpecsByIndex,
+              })
+            : { ...v2output, variants };
         try {
           if (placeholderId) {
             await supabaseAdmin.from('generated_creatives').update({ outputs: finalOutput, score: scored[0]?.score ?? null, status: 'complete', progress: 100, progress_meta: { phase: 'finalize' } }).eq('id', placeholderId);
@@ -1211,24 +1495,34 @@ export async function handler(event) {
         const { creative, index } = imageTargets[i];
         let imageSpec = buildFallbackImageSpec(brief, creative);
         try {
-          const specPrompt = buildImageSpecPrompt({
-            brief,
-            creative,
-            strategyBlueprint,
-            researchContext,
-          });
+          const specPrompt =
+            outputMode === "pro"
+              ? buildImageSpecPromptPro({
+                  brief,
+                  variant: creative,
+                  strategyBlueprint,
+                  researchContext,
+                })
+              : buildImageSpecPrompt({
+                  brief,
+                  creative,
+                  strategyBlueprint,
+                  researchContext,
+                });
+          const specSchema = outputMode === "pro" ? AD_IMAGE_SPEC_JSON_SCHEMA : IMAGE_SPEC_JSON_SCHEMA;
           const specRaw = await callOpenAiJson(specPrompt, {
-            responseFormat: IMAGE_SPEC_JSON_SCHEMA,
+            responseFormat: specSchema,
           });
           const specParsed = await parseWithRepair({
             schema: ImageSpecSchema,
             initial: specRaw,
             makeRequest: async (instruction) =>
               callOpenAiJson(specPrompt + "\n\n" + instruction, {
-                responseFormat: IMAGE_SPEC_JSON_SCHEMA,
+                responseFormat: specSchema,
               }),
           });
           imageSpec = specParsed.data;
+          imageSpecsByIndex[index] = imageSpec;
         } catch (err) {
           logStep("default.images.spec.error", {
             jobId: placeholderId,
@@ -1236,6 +1530,7 @@ export async function handler(event) {
             error: err?.message || String(err),
           });
         }
+        imageSpecsByIndex[index] = imageSpec;
 
         const imagePrompt = buildImagePromptFromSpec(imageSpec);
         const promptHash = hashPrompt(imagePrompt);
@@ -1312,15 +1607,16 @@ export async function handler(event) {
         }
 
         const updatedImage = {
-          ...creative.image,
-          hero_image_url: heroUrl || undefined,
-          final_image_url: finalUrl || undefined,
-          width: renderWidth || undefined,
-          height: renderHeight || undefined,
-          model: heroMeta?.model || undefined,
-          seed: heroMeta?.seed || undefined,
+          input_image_used: Boolean(creative.image?.input_image_used ?? hasImage),
+          render_intent: creative.image?.render_intent || "Hero image",
+          hero_image_url: heroUrl ?? null,
+          final_image_url: finalUrl ?? null,
+          width: renderWidth ?? null,
+          height: renderHeight ?? null,
+          model: heroMeta?.model ?? null,
+          seed: heroMeta?.seed ?? null,
           prompt_hash: promptHash,
-          render_version: renderVersion || undefined,
+          render_version: renderVersion ?? null,
         };
 
         best.creatives[index] = {
@@ -1345,12 +1641,34 @@ export async function handler(event) {
       }
     }
 
+    const finalOutput =
+      outputMode === "pro"
+        ? buildProOutputFromV1({
+            output: best,
+            brief,
+            jobId: placeholderId,
+            styleMode,
+            platforms,
+            formats,
+            strategyId: strategyId || null,
+            strategyBlueprint,
+            imageSpecsByIndex,
+          })
+        : best;
+
+    const finalScore =
+      outputMode === "pro"
+        ? finalOutput?.winner_selection?.scores?.find(
+            (s) => s.id === finalOutput?.winner_selection?.recommended_winner_id,
+          )?.total ?? bestEval.satisfaction
+        : bestEval.satisfaction;
+
     await logAiAction({
       userId,
       actionType: "creative_generate",
       status: "success",
       input: inputForLog,
-      output: best,
+      output: finalOutput,
       meta: { credits, quality: bestEval, strategyId: strategyId || null },
     });
     // finalize placeholder row with outputs/score/status
@@ -1358,7 +1676,7 @@ export async function handler(event) {
       if (placeholderId) {
         await supabaseAdmin
           .from('generated_creatives')
-          .update({ outputs: best, score: bestEval.satisfaction, status: 'complete', progress: 100 })
+          .update({ outputs: finalOutput, score: finalScore, status: 'complete', progress: 100 })
           .eq('id', placeholderId);
       }
     } catch (e) {
@@ -1373,7 +1691,7 @@ export async function handler(event) {
     });
 
     return ok({
-      output: best,
+      output: finalOutput,
       credits,
       quality: {
         target: TARGET_SATISFACTION,

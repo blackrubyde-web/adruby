@@ -61,6 +61,10 @@ export async function creativeGenerate(params: {
   imagePath?: string | null;
   strategyId?: string | null;
   researchIds?: string[] | null;
+  outputMode?: string | null;
+  style_mode?: string | null;
+  platforms?: string[] | null;
+  formats?: string[] | null;
 }): Promise<CreativeGenerateResponse> {
   const token = await requireAccessToken();
 

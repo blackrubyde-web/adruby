@@ -182,12 +182,16 @@ export function AdsStrategiesPage() {
   ];
 
   type CreativeOutput = {
+    schema_version?: string;
     brief?: {
       product?: { name?: string };
       audience?: { summary?: string };
       goal?: string;
     };
     creatives?: Array<{ copy?: { hook?: string; primary_text?: string; cta?: string } }>;
+    variants?: Array<{
+      copy?: { hook?: string; primary_text?: string; cta?: string };
+    }>;
   };
 
   type CreativeRow = {
@@ -205,10 +209,25 @@ export function AdsStrategiesPage() {
     const hasBrief = Boolean((inputs as { brief?: unknown } | null)?.brief);
     const output = row.outputs || hasBrief ? (row.outputs ?? { brief: (inputs as { brief?: unknown } | null)?.brief, creatives: [] }) : null;
     const brief = (output as CreativeOutput | null)?.brief || (inputs as { brief?: CreativeOutput['brief'] } | null)?.brief || null;
-    const creative = Array.isArray((output as CreativeOutput | null)?.creatives) ? (output as CreativeOutput).creatives?.[0] : null;
-    const headline = creative?.copy?.hook || (inputs as { headline?: string; title?: string } | null)?.headline || (inputs as { title?: string } | null)?.title || 'Untitled Ad';
-    const description = creative?.copy?.primary_text || (inputs as { description?: string } | null)?.description || '';
-    const cta = creative?.copy?.cta || (inputs as { cta?: string } | null)?.cta || 'Learn More';
+    const creative =
+      Array.isArray((output as CreativeOutput | null)?.creatives) && (output as CreativeOutput).creatives?.length
+        ? (output as CreativeOutput).creatives?.[0]
+        : Array.isArray((output as CreativeOutput | null)?.variants)
+          ? (output as CreativeOutput).variants?.[0]
+          : null;
+    const headline =
+      creative?.copy?.hook ||
+      (inputs as { headline?: string; title?: string } | null)?.headline ||
+      (inputs as { title?: string } | null)?.title ||
+      'Untitled Ad';
+    const description =
+      creative?.copy?.primary_text ||
+      (inputs as { description?: string } | null)?.description ||
+      '';
+    const cta =
+      creative?.copy?.cta ||
+      (inputs as { cta?: string } | null)?.cta ||
+      'Learn More';
     const productName = brief?.product?.name || (inputs as { productName?: string; brandName?: string } | null)?.productName || (inputs as { brandName?: string } | null)?.brandName || 'Produkt';
     const targetAudience = brief?.audience?.summary || (inputs as { targetAudience?: string } | null)?.targetAudience || 'Zielgruppe';
     const objective = brief?.goal || (inputs as { objective?: string } | null)?.objective || 'sales';

@@ -3,7 +3,7 @@ import { initTelemetry, captureException } from "./utils/telemetry.js";
 import { requireUserId } from "./_shared/auth.js";
 import { supabaseAdmin } from "./_shared/clients.js";
 import { logAiAction } from "./_shared/aiLogging.js";
-import { CreativeOutputSchema } from "./_shared/creativeSchemas.js";
+import { CreativeOutputAnySchema } from "./_shared/creativeSchemas.js";
 
 function getLibraryConfig() {
   const rpc = process.env.CREATIVE_LIBRARY_RPC || "";
@@ -36,15 +36,23 @@ export async function handler(event) {
     return badRequest("Invalid JSON body");
   }
 
-  const parsed = CreativeOutputSchema.safeParse(body?.output ?? body);
+  const parsed = CreativeOutputAnySchema.safeParse(body?.output ?? body);
   if (!parsed.success) return badRequest("Invalid creative output");
 
   const creativeId = typeof body?.creativeId === "string" ? body.creativeId : null;
   const averageScore = (() => {
     try {
-      const scores = parsed.data?.creatives?.map((c) => c?.score?.value ?? 0) || [];
-      const sum = scores.reduce((acc, n) => acc + Number(n || 0), 0);
-      return scores.length ? Math.round(sum / scores.length) : null;
+      if (Array.isArray(parsed.data?.creatives)) {
+        const scores = parsed.data.creatives.map((c) => c?.score?.value ?? 0);
+        const sum = scores.reduce((acc, n) => acc + Number(n || 0), 0);
+        return scores.length ? Math.round(sum / scores.length) : null;
+      }
+      if (Array.isArray(parsed.data?.variants)) {
+        const scores = parsed.data.variants.map((v) => v?.quality?.total ?? 0);
+        const sum = scores.reduce((acc, n) => acc + Number(n || 0), 0);
+        return scores.length ? Math.round(sum / scores.length) : null;
+      }
+      return null;
     } catch {
       return null;
     }
@@ -90,13 +98,9 @@ export async function handler(event) {
     const baseInputs =
       existingInputs && typeof existingInputs === "object" ? existingInputs : {};
     const existingBrief =
-      baseInputs?.brief && typeof baseInputs.brief === "object"
-        ? baseInputs.brief
-        : {};
+      baseInputs?.brief && typeof baseInputs.brief === "object" ? baseInputs.brief : {};
     const nextBrief =
-      parsed.data?.brief && typeof parsed.data.brief === "object"
-        ? parsed.data.brief
-        : {};
+      parsed.data?.brief && typeof parsed.data.brief === "object" ? parsed.data.brief : {};
 
     const mergedInputs = {
       ...baseInputs,

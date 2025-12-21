@@ -17,7 +17,7 @@ type Status = "idle" | "analyzing" | "generating" | "polling" | "complete" | "er
 export function useAdBuilder() {
   const [status, setStatus] = useState<Status>("idle");
   const [brief, setBrief] = useState<NormalizedBrief | null>(null);
-  const [imageMeta, setImageMeta] = useState<unknown | null>(null);
+  const [imageMeta, setImageMeta] = useState<{ path?: string | null } | null>(null);
   const [result, setResult] = useState<CreativeOutput | null>(null);
   const [quality, setQuality] = useState<Quality | null>(null);
   const [progress, setProgress] = useState<number | null>(null);
@@ -53,7 +53,17 @@ export function useAdBuilder() {
   }, []);
 
   const generate = useCallback(
-  async (opts: { brief: NormalizedBrief | unknown; hasImage: boolean; strategyId?: string | null; researchIds?: string[] | null }): Promise<CreativeGenerateResponse | CreativeStatusResponse> => {
+    async (opts: {
+      brief: NormalizedBrief | unknown;
+      hasImage: boolean;
+      strategyId?: string | null;
+      researchIds?: string[] | null;
+      imagePath?: string | null;
+      outputMode?: string | null;
+      style_mode?: string | null;
+      platforms?: string[] | null;
+      formats?: string[] | null;
+    }): Promise<CreativeGenerateResponse | CreativeStatusResponse> => {
       setError(null);
       setStatus("generating");
       setJobId(null);
@@ -62,7 +72,15 @@ export function useAdBuilder() {
       pollIdRef.current += 1;
       const pollId = pollIdRef.current;
       try {
-  const res = await creativeGenerate(opts);
+        const resolvedImagePath =
+          opts.imagePath ||
+          (imageMeta && typeof imageMeta === "object" && "path" in imageMeta
+            ? imageMeta.path || null
+            : null);
+        const res = await creativeGenerate({
+          ...opts,
+          imagePath: resolvedImagePath,
+        });
         setJobId(res.jobId ?? null);
 
         // If server provided a jobId, poll for completion. Otherwise accept immediate output.

@@ -45,7 +45,8 @@ export async function generateHeroImage({
   }
 
   const allowedQuality = new Set(["low", "medium", "high", "auto"]);
-  const safeQuality = allowedQuality.has(quality) ? quality : "auto";
+  const normalizedQuality = quality === "standard" ? "medium" : quality;
+  const safeQuality = allowedQuality.has(normalizedQuality) ? normalizedQuality : "auto";
 
   const params = {
     model,

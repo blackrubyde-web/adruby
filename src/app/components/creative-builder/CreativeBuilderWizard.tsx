@@ -12,7 +12,7 @@ import ImageDropzone from "./ImageDropzone";
 import CreativeBriefForm from "./CreativeBriefForm";
 import NormalizedBriefReview from "./NormalizedBriefReview";
 import CreativeResults from "./CreativeResults";
-import type { CreativeOutput, NormalizedBrief } from "../../lib/creative/schemas";
+import type { CreativeOutputV1, NormalizedBrief } from "../../lib/creative/schemas";
 import { creativeAnalyze, creativeGenerate, creativeStatus } from "../../lib/api/creative";
 import { useAuthState } from "../../contexts/AuthContext";
 
@@ -41,7 +41,7 @@ export default function CreativeBuilderWizard() {
   const [imageMeta, setImageMeta] = useState<{ path: string; signedUrl: string } | null>(null);
 
   const [brief, setBrief] = useState<NormalizedBrief | null>(null);
-  const [output, setOutput] = useState<CreativeOutput | null>(null);
+  const [output, setOutput] = useState<CreativeOutputV1 | null>(null);
   const [quality, setQuality] = useState<{ satisfaction?: number; target?: number; issues?: unknown[] } | null>(null);
 
   const [loading, setLoading] = useState<null | "analyze" | "generate">(null);

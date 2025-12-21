@@ -214,30 +214,37 @@ export async function renderAdImage({ creative, brief, format, heroBase64 }) {
   const brandName = brief?.brand?.name || "";
 
   if (renderEngine === "chromium") {
-    const html = buildHtml({ creative, brandName, format, heroDataUri });
-    const executablePath = await chromium.executablePath();
-    const browser = await puppeteer.launch({
-      args: chromium.args,
-      executablePath,
-      headless: chromium.headless,
-      defaultViewport: { width, height, deviceScaleFactor: 2 },
-      ignoreHTTPSErrors: true,
-    });
-
     try {
-      const page = await browser.newPage();
-      await page.setViewport({ width, height, deviceScaleFactor: 2 });
-      await page.setContent(html, { waitUntil: "networkidle0" });
-      const buffer = await page.screenshot({ type: "png" });
-      await page.close();
-      return {
-        buffer,
-        width,
-        height,
-        renderVersion: process.env.CREATIVE_RENDER_VERSION || "v1",
-      };
-    } finally {
-      await browser.close();
+      const html = buildHtml({ creative, brandName, format, heroDataUri });
+      const executablePath = await chromium.executablePath();
+      const browser = await puppeteer.launch({
+        args: chromium.args,
+        executablePath,
+        headless: chromium.headless,
+        defaultViewport: { width, height, deviceScaleFactor: 2 },
+        ignoreHTTPSErrors: true,
+      });
+
+      try {
+        const page = await browser.newPage();
+        await page.setViewport({ width, height, deviceScaleFactor: 2 });
+        await page.setContent(html, { waitUntil: "networkidle0" });
+        const buffer = await page.screenshot({ type: "png" });
+        await page.close();
+        return {
+          buffer,
+          width,
+          height,
+          renderVersion: process.env.CREATIVE_RENDER_VERSION || "v1",
+        };
+      } finally {
+        await browser.close();
+      }
+    } catch (err) {
+      console.warn(
+        "[renderAdImage] Chromium render failed, falling back to svg",
+        err?.message || err,
+      );
     }
   }
 

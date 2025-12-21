@@ -54,6 +54,14 @@ Constraints:
 Image usage:
 - input_image_used: ${hasImage ? "true" : "false"}
 - render_intent: describe what the image generator should create/edit (short, concrete, non-artsy).
+- hero_image_url: null
+- final_image_url: null
+- width: null
+- height: null
+- model: null
+- seed: null
+- prompt_hash: null
+- render_version: null
 
 Scoring:
 - value 0-100. Be strict. 70+ only if genuinely strong.
@@ -116,6 +124,17 @@ Rules:
 - Each variant must be short and production-ready for a 15-60s social creative.
 - For each variant, mark proof_type and offer_type.
 - For on_screen_text include 2-6 short captions that can be shown on-screen.
+- Include an "image" object for each variant with:
+  - input_image_used: false
+  - render_intent: short, concrete visual intent
+  - hero_image_url: null
+  - final_image_url: null
+  - width: null
+  - height: null
+  - model: null
+  - seed: null
+  - prompt_hash: null
+  - render_version: null
 `;
 }
 
@@ -167,6 +186,17 @@ You will improve ONE variant using: DIAGNOSE -> PLAN -> REWRITE.
 1) diagnosis: 1-2 bullets with biggest weaknesses.
 2) plan: 1-3 concrete edits targeting: ${JSON.stringify(targetDimensions)}
 3) rewrite: full variant matching CreativeVariant schema. No new claims.
+Include image object with:
+- input_image_used: false
+- render_intent: short, concrete visual intent
+- hero_image_url: null
+- final_image_url: null
+- width: null
+- height: null
+- model: null
+- seed: null
+- prompt_hash: null
+- render_version: null
 
 BRIEF: ${JSON.stringify(brief)}
 CURRENT_VARIANT: ${JSON.stringify(currentVariant)}
@@ -300,4 +330,63 @@ Rules:
 - Avoid: ${(safety || []).join(", ") || "none"}.
 - Negative prompt: ${(negatives || []).join(", ") || "none"}.
 `.trim();
+}
+
+export function buildImageSpecPromptPro({ brief, variant, strategyBlueprint, researchContext }) {
+  const strategyBlock = strategyBlueprint
+    ? `\nStrategy blueprint:\n${strategyBlueprint}\n`
+    : "";
+  const researchBlock = renderResearchContext(researchContext);
+
+  return `
+You are a senior Creative Director. Return ONLY valid JSON matching AD_IMAGE_SPEC schema.
+Hard rules:
+- Output JSON only. No markdown. No extra keys.
+- No text in the image. No watermark. No logo text.
+- Leave clean negative space for overlay as instructed by text_safe_area.
+- Respect brief.offer.constraints and brief.risk_flags. Avoid unverified claims.
+- Always include scene.wardrobe (empty array if not applicable).
+
+BRIEF:
+${JSON.stringify(brief)}
+
+VARIANT:
+${JSON.stringify(variant)}
+${strategyBlock}
+${researchBlock}
+`;
+}
+
+export function buildQualityEvalProPrompt({ brief, variant, strategyBlueprint, researchContext }) {
+  const strategyBlock = strategyBlueprint ? `\nStrategy: ${strategyBlueprint}` : "";
+  const researchBlock = renderResearchContext(researchContext);
+
+  return `
+Return ONLY valid JSON matching QualityEvalPro schema.
+Score each dimension 0-5: hookPower, clarity, proof, offer, platformFit, objectionHandling, novelty, visualThumbStop.
+Set total (0-100) using your own judgment. Provide KO flags and issues (short strings).
+
+BRIEF:
+${JSON.stringify(brief)}
+
+VARIANT:
+${JSON.stringify(variant)}
+${strategyBlock}
+${researchBlock}
+`;
+}
+
+export function buildCreativeDirectorPrompt({ brief, variant, evalPro, targetDimensions }) {
+  return `
+Return ONLY valid JSON.
+You will improve ONE variant using: DIAGNOSE -> PLAN -> REWRITE.
+1) diagnosis: 1-2 bullets with biggest weaknesses.
+2) plan: 1-3 concrete edits targeting: ${JSON.stringify(targetDimensions || [])}
+3) rewrite: full variant matching CreativeVariantPro schema.
+Preserve visual.image if present. If unknown, set hero_image_url/final_image_url/width/height/model/seed/prompt_hash/render_version to null.
+
+BRIEF: ${JSON.stringify(brief)}
+CURRENT_VARIANT: ${JSON.stringify(variant)}
+EVAL: ${JSON.stringify(evalPro)}
+`;
 }

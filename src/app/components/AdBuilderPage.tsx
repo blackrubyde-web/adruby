@@ -27,23 +27,25 @@ import {
   initialAdBuilderState,
   type AdBuilderData
 } from './ad-builder/adBuilderReducer';
-import type { CreativeOutput } from '../lib/creative/types';
+import type { CreativeOutput, CreativeOutputV1, CreativeOutputPro } from '../lib/creative/types';
 import { useStrategies } from '../hooks/useStrategies';
 import useAdBuilder from '../hooks/useAdBuilder';
 import { creativeSaveToLibrary } from '../lib/api/creative';
 import { toast } from 'sonner';
 import AdResearchList from '../demo/AdResearchList';
+import CreativeResults from './creative-builder/CreativeResults';
+import ImageDropzone from './creative-builder/ImageDropzone';
 import { supabase } from '../lib/supabaseClient';
 
 const DRAFT_KEY = 'ad_ruby_ad_builder_draft';
 
 const steps = [
-  { id: 1, name: 'Produkt & Messaging', icon: Sparkles },
+  { id: 1, name: 'Produkt & Angebot', icon: Sparkles },
   { id: 2, name: 'Zielgruppe', icon: Users },
-  { id: 3, name: 'Ad Creative', icon: ImageIcon },
+  { id: 3, name: 'Creative System', icon: ImageIcon },
   { id: 4, name: 'Marktanalyse', icon: BarChart3 },
-  { id: 5, name: 'Performance', icon: TrendingUp },
-  { id: 6, name: 'Review & Launch', icon: Rocket },
+  { id: 5, name: 'Generierung', icon: TrendingUp },
+  { id: 6, name: 'Review & Export', icon: Rocket },
 ];
 
 export function AdBuilderPage() {
@@ -58,6 +60,7 @@ export function AdBuilderPage() {
   const [draftRestored, setDraftRestored] = useState(false);
   const [draftTimestamp, setDraftTimestamp] = useState<string | null>(null);
   const [draftId, setDraftId] = useState<string | null>(null);
+  const [imageFile, setImageFile] = useState<File | null>(null);
 
   const [generatedCopy, setGeneratedCopy] = useState<{headline: string, description: string, cta: string}[]>([]);
   const [selectedCopy, setSelectedCopy] = useState<number | null>(null);
@@ -190,9 +193,17 @@ export function AdBuilderPage() {
     setSelectedCopy(null);
     setSelectedVisualStyle(null);
     setSelectedCTA(null);
+    setImageFile(null);
     setDraftId(null);
     setDraftRestored(false);
     setDraftTimestamp(null);
+  };
+
+  const resetAll = () => {
+    clearDraft();
+    setAnalysisError(null);
+    setAnalysisWarning(null);
+    setCopyError(null);
   };
 
   const [savedFlag, setSavedFlag] = useState(false);
@@ -244,6 +255,7 @@ export function AdBuilderPage() {
     quality: hookQuality,
     progress: hookProgress,
     jobId: hookJobId,
+    imageMeta: hookImageMeta,
     error: hookError,
   } = useAdBuilder();
 
@@ -275,9 +287,124 @@ export function AdBuilderPage() {
     return typed.output ?? typed.outputs ?? null;
   };
 
+  const buildFallbackBrief = () => {
+    const audienceSummary = state.formData.targetAudience || 'Audience';
+    return {
+      brand: { name: state.formData.brandName || state.formData.productName || 'AdRuby' },
+      product: { name: state.formData.productName || 'Product', url: null, category: null },
+      goal: 'sales',
+      funnel_stage: 'cold',
+      language: 'de',
+      format: '4:5',
+      audience: {
+        summary: audienceSummary,
+        segments: [audienceSummary].filter(Boolean),
+      },
+      offer: { summary: state.formData.uniqueSellingPoint || null, constraints: [] },
+      tone: 'direct',
+      angles: [],
+      risk_flags: [],
+    };
+  };
+
+  const normalizeOutputToV1 = (output: CreativeOutput | null): CreativeOutputV1 | null => {
+    if (!output || typeof output !== 'object') return null;
+    if ('version' in output && output.version === '1.0') {
+      return output as CreativeOutputV1;
+    }
+    if ('schema_version' in output && output.schema_version === '2.1-pro') {
+      const pro = output as CreativeOutputPro;
+      const baseBrief = pro.brief || buildFallbackBrief();
+      const creatives = (pro.variants || []).map((variant, idx) => ({
+        id: variant.id || `c${idx + 1}`,
+        angle_id: variant.id || `angle${idx + 1}`,
+        format: variant.format || baseBrief.format,
+        copy: {
+          hook: variant.copy.hook || 'Hook',
+          primary_text: variant.copy.primary_text || 'Primary text',
+          cta: variant.copy.cta || 'Mehr erfahren',
+          bullets: variant.copy.bullets || [],
+        },
+        score: {
+          value: variant.quality?.total ?? 0,
+          rationale:
+            (variant.quality?.issues && variant.quality.issues[0]) ||
+            'Auto-scored variant',
+        },
+        image: {
+          input_image_used: Boolean(variant.visual?.image?.input_image_used),
+          render_intent: variant.visual?.image?.render_intent || 'Hero image',
+          hero_image_url: variant.visual?.image?.hero_image_url || undefined,
+          final_image_url: variant.visual?.image?.final_image_url || undefined,
+          width: variant.visual?.image?.width || undefined,
+          height: variant.visual?.image?.height || undefined,
+          model: variant.visual?.image?.model || undefined,
+          seed: variant.visual?.image?.seed || undefined,
+          prompt_hash: variant.visual?.image?.prompt_hash || undefined,
+          render_version: variant.visual?.image?.render_version || undefined,
+        },
+      }));
+      const angles =
+        baseBrief.angles?.length
+          ? baseBrief.angles
+          : creatives.map((c) => ({
+              id: c.angle_id,
+              label: c.copy.hook,
+              why_it_fits: 'Generated variant',
+            }));
+      return {
+        version: '1.0',
+        brief: { ...baseBrief, angles },
+        creatives,
+      } as CreativeOutputV1;
+    }
+    if ('schema_version' in output && output.schema_version === '2.0') {
+      const baseBrief = buildFallbackBrief();
+      const variants = (output as { variants?: any[] })?.variants || [];
+      const creatives = variants.map((variant, idx) => ({
+        id: variant.id || `c${idx + 1}`,
+        angle_id: variant.id || `angle${idx + 1}`,
+        format: variant.format || baseBrief.format,
+        copy: {
+          hook: variant.hook || variant?.script?.hook || 'Hook',
+          primary_text:
+            variant?.script?.offer ||
+            variant?.script?.proof ||
+            variant?.script?.problem ||
+            'Primary text',
+          cta: variant.cta || variant?.script?.cta || 'Mehr erfahren',
+          bullets: [],
+        },
+        score: { value: 80, rationale: 'Auto-scored variant' },
+        image: {
+          input_image_used: Boolean(variant?.image?.input_image_used),
+          render_intent: variant?.image?.render_intent || 'Hero image',
+          hero_image_url: variant?.image?.hero_image_url || undefined,
+          final_image_url: variant?.image?.final_image_url || undefined,
+          width: variant?.image?.width || undefined,
+          height: variant?.image?.height || undefined,
+          model: variant?.image?.model || undefined,
+          seed: variant?.image?.seed || undefined,
+          prompt_hash: variant?.image?.prompt_hash || undefined,
+          render_version: variant?.image?.render_version || undefined,
+        },
+      }));
+      return {
+        version: '1.0',
+        brief: { ...baseBrief, angles: baseBrief.angles },
+        creatives,
+      } as CreativeOutputV1;
+    }
+    return null;
+  };
+
   const buildDraftInputs = () => {
     const selectedCopyData =
       selectedCopy !== null ? generatedCopy[selectedCopy] : generatedCopy[0] || null;
+    const imagePath =
+      hookImageMeta && typeof hookImageMeta === 'object' && 'path' in hookImageMeta
+        ? String(hookImageMeta.path || '')
+        : null;
     return {
       productName: state.formData.productName,
       targetAudience: state.formData.targetAudience,
@@ -296,6 +423,7 @@ export function AdBuilderPage() {
       selectedCTA,
       lifecycle: { status: 'draft' },
       createdFrom: 'ad_builder',
+      imagePath: imagePath || null,
     };
   };
 
@@ -435,13 +563,13 @@ export function AdBuilderPage() {
   const getNextButtonLabel = () => {
     switch (state.currentStep) {
       case 1:
-        return 'Continue to Targeting';
+        return 'Weiter zur Zielgruppe';
       case 2:
-        return 'Continue to Creative';
+        return 'Weiter zum Creative System';
       case 3:
-        return 'Analyze Market';
+        return 'Marktanalyse starten';
       case 5:
-        return 'Review Campaign';
+        return 'Review & Export';
       case 6:
         return 'Complete';
       default:
@@ -475,6 +603,9 @@ export function AdBuilderPage() {
     if (state.formData.strategyId) {
       fd.append('strategyId', state.formData.strategyId);
     }
+    if (imageFile) {
+      fd.append('image', imageFile);
+    }
     return fd;
   };
 
@@ -505,12 +636,20 @@ export function AdBuilderPage() {
       setAnalysisWarning(analyzeRes?.warning ?? null);
       const generateRes = await hookGenerate({
         brief: analyzeRes.brief,
-        hasImage: false,
+        hasImage: Boolean(imageFile || hookImageMeta?.path),
+        imagePath:
+          hookImageMeta && typeof hookImageMeta === 'object' && 'path' in hookImageMeta
+            ? String(hookImageMeta.path || '')
+            : null,
         strategyId: state.formData.strategyId || undefined,
         researchIds: selectedResearchIds.length ? selectedResearchIds : undefined,
+        outputMode: 'pro',
+        style_mode: 'default',
+        platforms: ['meta'],
+        formats: ['4:5'],
       });
 
-      const source = extractCreativeOutput(generateRes) ?? hookResult ?? null;
+      const source = normalizeOutputToV1(extractCreativeOutput(generateRes) ?? hookResult ?? null);
       const creatives = Array.isArray(source?.creatives) ? source.creatives : [];
       const copies = creatives.map((creative) => ({
         headline: creative.copy.hook || '',
@@ -528,12 +667,21 @@ export function AdBuilderPage() {
   };
 
   const progressPercentage = (state.currentStep / steps.length) * 100;
+  const displayOutput = useMemo(
+    () => normalizeOutputToV1(hookResult),
+    [hookResult, state.formData],
+  );
+  const displayQuality = useMemo(() => {
+    if (!hookQuality) return null;
+    if (typeof hookQuality === 'number') return { satisfaction: hookQuality };
+    return hookQuality;
+  }, [hookQuality]);
 
   return (
     <PageShell>
       <HeroHeader
-        title="Ad Builder"
-        subtitle="Create high-performing Facebook ads with AI-powered targeting, creative optimization, and automated workflows"
+        title="Creative Generator Pro"
+        subtitle="Generate premium ads with AI copy + hero images + production-ready templates"
       />
 
       {/* Stats Overview */}
@@ -885,6 +1033,16 @@ export function AdBuilderPage() {
 
                   <div className="space-y-6">
                     <div>
+                      <Label className="text-foreground mb-3">Produktbild (optional)</Label>
+                      <ImageDropzone value={imageFile} onChange={setImageFile} />
+                      {hookImageMeta?.path && (
+                        <div className="mt-2 text-xs text-muted-foreground">
+                          Uploaded to storage: <span className="font-medium">{hookImageMeta.path}</span>
+                        </div>
+                      )}
+                    </div>
+
+                    <div>
                       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-3">
                         <Label className="text-foreground">Ad Copy Varianten</Label>
                         <Button
@@ -1098,6 +1256,16 @@ export function AdBuilderPage() {
                       <p className="text-muted-foreground text-sm break-words">Finale Übersicht & Kampagnenstart</p>
                     </div>
                   </div>
+
+                  {displayOutput && (
+                    <div className="mb-6">
+                      <CreativeResults
+                        output={displayOutput}
+                        quality={displayQuality}
+                        onReset={resetAll}
+                      />
+                    </div>
+                  )}
 
                   <div className="space-y-4">
                     <Card className="bg-muted border-border p-5 w-full max-w-full overflow-hidden">

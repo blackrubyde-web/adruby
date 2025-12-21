@@ -4,12 +4,12 @@ import { Card } from "../ui/card";
 import { Badge } from "../ui/badge";
 import { Button } from "../ui/button";
 import { Separator } from "../ui/separator";
-import type { CreativeOutput } from "../../lib/creative/schemas";
+import type { CreativeOutputV1 } from "../../lib/creative/schemas";
 import { toast } from "sonner";
 import { ImageWithFallback } from "../figma/ImageWithFallback";
 
 export default function CreativeCard(props: {
-  creative: CreativeOutput["creatives"][number];
+  creative: CreativeOutputV1["creatives"][number];
   angleLabel?: string;
   onDuplicate?: () => void;
   onCopy?: (text: string) => void;
