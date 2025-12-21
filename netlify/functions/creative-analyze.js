@@ -194,6 +194,14 @@ export async function handler(event) {
 
   initTelemetry();
 
+  if (process.env.DEBUG_FUNCTIONS === "1") {
+    try {
+      console.info(`[creative-analyze] start method=${event.httpMethod} hasAuth=${Boolean(event.headers?.authorization)} content-length=${event.headers?.["content-length"] || event.headers?.["Content-Length"] || 0}`);
+    } catch (e) {
+      /* ignore logging errors */
+    }
+  }
+
   if (!process.env.SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) {
     return serverError("Supabase env missing. Check SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY.");
   }
@@ -211,7 +219,9 @@ export async function handler(event) {
   let fields;
   let files;
   try {
+    if (process.env.DEBUG_FUNCTIONS === "1") console.info('[creative-analyze] parsing multipart payload');
     const parsed = await parseMultipart(event, { maxFileSizeBytes: 10 * 1024 * 1024 });
+    if (process.env.DEBUG_FUNCTIONS === "1") console.info('[creative-analyze] parsed multipart payload', { fields: Object.keys(parsed.fields || {}), files: Object.keys(parsed.files || {}) });
     fields = parsed.fields;
     files = parsed.files;
   } catch (err) {
@@ -408,24 +418,40 @@ async function callOpenAiJson({ prompt, imageUrl }) {
     },
   ];
 
-  const res = await openai.responses.create({
-    model,
-    input,
-    // make the model deterministic for structured JSON output
-    temperature: 0.0,
-    ...(useSchema
-      ? {
-          text: {
-            format: {
-              type: "json_schema",
-              name: NORMALIZED_BRIEF_JSON_SCHEMA.name,
-              schema: NORMALIZED_BRIEF_JSON_SCHEMA.schema,
-              strict: NORMALIZED_BRIEF_JSON_SCHEMA.strict ?? true,
+  let res;
+  const timeoutMs = Number(process.env.OPENAI_TIMEOUT_MS || 30000);
+  const controller = typeof AbortController !== 'undefined' ? new AbortController() : null;
+  const timer = controller ? setTimeout(() => controller.abort(), timeoutMs) : null;
+  try {
+    res = await openai.responses.create({
+      model,
+      input,
+      // make the model deterministic for structured JSON output
+      temperature: 0.0,
+      ...(useSchema
+        ? {
+            text: {
+              format: {
+                type: "json_schema",
+                name: NORMALIZED_BRIEF_JSON_SCHEMA.name,
+                schema: NORMALIZED_BRIEF_JSON_SCHEMA.schema,
+                strict: NORMALIZED_BRIEF_JSON_SCHEMA.strict ?? true,
+              },
             },
-          },
-        }
-      : {}),
-  });
+          }
+        : {}),
+      ...(controller ? { signal: controller.signal } : {}),
+    });
+  } catch (err) {
+    if (err && err.name === 'AbortError') {
+      console.error('[creative-analyze] OpenAI request aborted after timeout', { timeoutMs });
+      throw new Error('OpenAI request timed out');
+    }
+    console.error('[creative-analyze] OpenAI request failed', err?.message || err);
+    throw err;
+  } finally {
+    if (timer) clearTimeout(timer);
+  }
 
   const text = String(res.output_text || "").trim();
   if (!text) throw new Error("Empty OpenAI response.");

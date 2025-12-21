@@ -366,6 +366,14 @@ export async function handler(event) {
 
   initTelemetry();
 
+  if (process.env.DEBUG_FUNCTIONS === "1") {
+    try {
+      console.info(`[creative-generate] start method=${event.httpMethod} hasAuth=${Boolean(event.headers?.authorization)} body-length=${event?.body ? String(event.body).length : 0}`);
+    } catch (e) {
+      /* ignore logging errors */
+    }
+  }
+
   const auth = await requireUserId(event);
   if (!auth.ok) return auth.response;
   const userId = auth.userId;
@@ -382,6 +390,11 @@ export async function handler(event) {
 
   const briefParsed = NormalizedBriefSchema.safeParse(body?.brief ?? body);
   if (!briefParsed.success) {
+    if (process.env.DEBUG_FUNCTIONS === "1") {
+      try {
+        console.warn('[creative-generate] Invalid brief payload', { bodySample: String(body).slice(0, 200) });
+      } catch (e) {}
+    }
     return badRequest("Invalid brief");
   }
   const brief = briefParsed.data;
@@ -758,31 +771,47 @@ async function callOpenAiJson(prompt, options = {}) {
   const useSchema = process.env.USE_JSON_SCHEMA === "1";
   const responseFormat = options?.responseFormat;
 
-  const res = await openai.responses.create({
-    model,
-    input: [
-      {
-        role: "system",
-        content:
-          "Return ONLY valid JSON. No markdown. Follow the schema strictly. Do not add extra keys.",
-      },
-      { role: "user", content: [{ type: "input_text", text: prompt }] },
-    ],
-    // make generation deterministic for structured JSON output
-    temperature: 0.0,
-    ...(useSchema && responseFormat
-      ? {
-          text: {
-            format: {
-              type: "json_schema",
-              name: responseFormat?.name || "schema",
-              schema: responseFormat?.schema || responseFormat,
-              strict: responseFormat?.strict ?? true,
+  // Safe timeout around OpenAI requests to prevent hanging on network issues.
+  let res;
+  const timeoutMs = Number(process.env.OPENAI_TIMEOUT_MS || 30000);
+  const controller = typeof AbortController !== 'undefined' ? new AbortController() : null;
+  const timer = controller ? setTimeout(() => controller.abort(), timeoutMs) : null;
+  try {
+    res = await openai.responses.create({
+      model,
+      input: [
+        {
+          role: "system",
+          content:
+            "Return ONLY valid JSON. No markdown. Follow the schema strictly. Do not add extra keys.",
+        },
+        { role: "user", content: [{ type: "input_text", text: prompt }] },
+      ],
+      temperature: 0.0,
+      ...(useSchema && responseFormat
+        ? {
+            text: {
+              format: {
+                type: "json_schema",
+                name: responseFormat?.name || "schema",
+                schema: responseFormat?.schema || responseFormat,
+                strict: responseFormat?.strict ?? true,
+              },
             },
-          },
-        }
-      : {}),
-  });
+          }
+        : {}),
+      ...(controller ? { signal: controller.signal } : {}),
+    });
+  } catch (err) {
+    if (err && err.name === 'AbortError') {
+      console.error('[creative-generate] OpenAI request aborted after timeout', { timeoutMs });
+      throw new Error('OpenAI request timed out');
+    }
+    console.error('[creative-generate] OpenAI request failed', err?.message || err);
+    throw err;
+  } finally {
+    if (timer) clearTimeout(timer);
+  }
 
   const text = String(res.output_text || "").trim();
   if (!text) throw new Error("Empty OpenAI response.");
