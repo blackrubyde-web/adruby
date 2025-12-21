@@ -10,9 +10,13 @@ function getAuthHeader(headers) {
   return headers.authorization || headers.Authorization || null;
 }
 
-function getBaseUrl() {
-  const base = process.env.URL || process.env.SITE_URL || "";
+function getBaseUrl(event) {
+  const base = process.env.URL || process.env.DEPLOY_URL || process.env.SITE_URL || "";
   if (base) return base.replace(/\/$/, "");
+  const headers = event?.headers || {};
+  const proto = headers["x-forwarded-proto"] || headers["X-Forwarded-Proto"] || "https";
+  const host = headers["x-forwarded-host"] || headers["X-Forwarded-Host"] || headers.host || headers.Host;
+  if (host) return `${proto}://${host}`;
   return "http://localhost:8888";
 }
 
@@ -128,12 +132,12 @@ export async function handler(event) {
     return serverError("Failed to allocate generation job");
   }
 
-  const baseUrl = getBaseUrl();
+  const baseUrl = getBaseUrl(event);
   const authHeader = getAuthHeader(event.headers);
   const backgroundUrl = `${baseUrl}/.netlify/functions/creative-generate-background`;
 
   try {
-    await fetch(backgroundUrl, {
+    const bgRes = await fetch(backgroundUrl, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -141,7 +145,34 @@ export async function handler(event) {
       },
       body: JSON.stringify({ ...body, jobId: placeholderId }),
     });
+    if (process.env.DEBUG_FUNCTIONS === "1") {
+      console.info("[creative-generate] background response", {
+        status: bgRes.status,
+        ok: bgRes.ok,
+        url: backgroundUrl,
+      });
+    }
+    if (!bgRes.ok) {
+      const text = await bgRes.text();
+      if (process.env.DEBUG_FUNCTIONS === "1") {
+        console.warn("[creative-generate] background failed", {
+          status: bgRes.status,
+          body: text?.slice(0, 200) || null,
+        });
+      }
+      await supabaseAdmin
+        .from("generated_creatives")
+        .update({
+          status: "error",
+          progress: 0,
+          progress_meta: { error: "queue_failed", status: bgRes.status },
+        })
+        .eq("id", placeholderId);
+    }
   } catch (err) {
+    if (process.env.DEBUG_FUNCTIONS === "1") {
+      console.warn("[creative-generate] background fetch error", err?.message || err);
+    }
     try {
       await supabaseAdmin
         .from("generated_creatives")
