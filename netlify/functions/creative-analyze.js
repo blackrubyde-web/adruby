@@ -418,7 +418,9 @@ async function callOpenAiJson({ prompt, imageUrl }) {
           text: {
             format: {
               type: "json_schema",
-              json_schema: NORMALIZED_BRIEF_JSON_SCHEMA,
+              name: NORMALIZED_BRIEF_JSON_SCHEMA.name,
+              schema: NORMALIZED_BRIEF_JSON_SCHEMA.schema,
+              strict: NORMALIZED_BRIEF_JSON_SCHEMA.strict ?? true,
             },
           },
         }

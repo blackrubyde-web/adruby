@@ -775,7 +775,9 @@ async function callOpenAiJson(prompt, options = {}) {
           text: {
             format: {
               type: "json_schema",
-              json_schema: responseFormat,
+              name: responseFormat?.name || "schema",
+              schema: responseFormat?.schema || responseFormat,
+              strict: responseFormat?.strict ?? true,
             },
           },
         }
