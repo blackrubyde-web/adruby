@@ -60,7 +60,7 @@ const NORMALIZED_BRIEF_JSON_SCHEMA = {
         properties: {
           name: { type: "string", minLength: 1 },
           url: {
-            anyOf: [{ type: "string", format: "uri" }, { type: "null" }],
+            anyOf: [{ type: "string" }, { type: "null" }],
           },
           category: {
             anyOf: [{ type: "string" }, { type: "null" }],
