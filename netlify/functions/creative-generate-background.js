@@ -40,6 +40,31 @@ function clampInt(n, min, max) {
   return Math.max(min, Math.min(max, v));
 }
 
+function tokenizeStrategy(value) {
+  return String(value || "")
+    .toLowerCase()
+    .replace(/[^a-z0-9äöüß\s-]/gi, " ")
+    .split(/\s+/)
+    .filter((token) => token.length > 2);
+}
+
+function scoreStrategyBlueprint(blueprint, keywords) {
+  if (!blueprint) return 0;
+  const hay = [
+    blueprint.title,
+    blueprint.category,
+    blueprint.raw_content_markdown?.slice(0, 1200),
+  ]
+    .filter(Boolean)
+    .join(" ")
+    .toLowerCase();
+  let score = 0;
+  keywords.forEach((kw) => {
+    if (kw && hay.includes(kw)) score += 1;
+  });
+  return score;
+}
+
 const GOALS = ["sales", "leads", "traffic", "app_installs"];
 const FUNNELS = ["cold", "warm", "hot"];
 const LANGS = ["de", "en"];
@@ -898,8 +923,9 @@ export async function handler(event) {
       ? body.imagePath.trim()
       : null;
   const hasImage = Boolean(body?.hasImage || imagePath);
-  const strategyId = typeof body?.strategyId === "string" ? body.strategyId.trim() : "";
+  let strategyId = typeof body?.strategyId === "string" ? body.strategyId.trim() : "";
   let strategyBlueprint = null;
+  let strategyTitle = null;
   const outputModeRaw = typeof body?.outputMode === "string" ? body.outputMode.trim() : "";
   const outputMode = outputModeRaw === "pro" ? "pro" : "v1";
   const platforms = Array.isArray(body?.platforms)
@@ -909,10 +935,43 @@ export async function handler(event) {
     ? body.formats.filter((f) => FORMATS.includes(f))
     : [];
 
-  if (strategyId) {
+  if (!strategyId) {
+    try {
+      const { data: blueprints } = await supabaseAdmin
+        .from("strategy_blueprints")
+        .select("id,title,category,raw_content_markdown,created_at")
+        .order("created_at", { ascending: false });
+      if (Array.isArray(blueprints) && blueprints.length > 0) {
+        const keywords = [
+          ...(brief?.product?.name ? tokenizeStrategy(brief.product.name) : []),
+          ...(brief?.product?.category ? tokenizeStrategy(brief.product.category) : []),
+          ...(brief?.audience?.summary ? tokenizeStrategy(brief.audience.summary) : []),
+          ...(Array.isArray(brief?.audience?.segments)
+            ? brief.audience.segments.flatMap(tokenizeStrategy)
+            : []),
+        ];
+        let best = blueprints[0];
+        let bestScore = -1;
+        for (const bp of blueprints) {
+          const score = scoreStrategyBlueprint(bp, keywords);
+          if (score > bestScore) {
+            best = bp;
+            bestScore = score;
+          }
+        }
+        strategyId = best?.id || "";
+        strategyBlueprint = best?.raw_content_markdown || null;
+        strategyTitle = best?.title || null;
+      }
+    } catch (err) {
+      console.warn("[creative-generate] failed to auto-select strategy", err?.message || err);
+    }
+  }
+
+  if (strategyId && !strategyBlueprint) {
     const { data, error } = await supabaseAdmin
       .from("strategy_blueprints")
-      .select("raw_content_markdown")
+      .select("raw_content_markdown,title")
       .eq("id", strategyId)
       .single();
 
@@ -920,6 +979,7 @@ export async function handler(event) {
       return badRequest("Unknown strategy blueprint.");
     }
     strategyBlueprint = data.raw_content_markdown;
+    strategyTitle = data.title || null;
   }
 
   let credits;
@@ -1016,6 +1076,27 @@ export async function handler(event) {
           .eq('id', placeholderId);
       } catch (e) {
         console.warn('[creative-generate] failed to update placeholder row', e?.message || e);
+      }
+      if (strategyId) {
+        try {
+          const { data: existingInputs } = await supabaseAdmin
+            .from('generated_creatives')
+            .select('inputs')
+            .eq('id', placeholderId)
+            .single();
+          const mergedInputs = {
+            ...(existingInputs?.inputs && typeof existingInputs.inputs === 'object'
+              ? existingInputs.inputs
+              : {}),
+            strategyId,
+          };
+          await supabaseAdmin
+            .from('generated_creatives')
+            .update({ blueprint_id: strategyId, inputs: mergedInputs })
+            .eq('id', placeholderId);
+        } catch (e) {
+          console.warn('[creative-generate] failed to persist auto strategy', e?.message || e);
+        }
       }
       if (researchContext.length) {
         try {

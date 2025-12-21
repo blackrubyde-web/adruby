@@ -397,6 +397,192 @@ export const CreativeOutputAnySchema = z.union([
   CreativeOutputProSchema,
 ]);
 
+export const StrategyPlanSchema = z
+  .object({
+    schema_version: z.literal("1.0"),
+    name: z.string().min(1),
+    summary: z.string().min(1),
+    confidence: z.number().int().min(0).max(100),
+    recommendations: z.array(z.string().min(1)).min(6),
+    blueprint: z
+      .object({
+        id: z.string().nullable(),
+        title: z.string().nullable(),
+      })
+      .strict(),
+    product_focus: z
+      .object({
+        positioning: z.string().min(1),
+        usp: z.string().min(1),
+        offer: z.string().min(1),
+        proof_points: z.array(z.string().min(1)).min(3),
+        objections: z.array(z.string().min(1)).min(3),
+        voice: z.string().min(1),
+        value_props: z.array(z.string().min(1)).min(4),
+      })
+      .strict(),
+    audience: z
+      .object({
+        core: z.string().min(1),
+        segments: z.array(z.string().min(1)).min(3),
+        pains: z.array(z.string().min(1)).min(3),
+        desires: z.array(z.string().min(1)).min(3),
+        objections: z.array(z.string().min(1)).min(3),
+        language: z.string().min(2),
+        region: z.string().nullable(),
+      })
+      .strict(),
+    messaging: z
+      .object({
+        key_messages: z.array(z.string().min(1)).min(5),
+        angles: z.array(z.string().min(1)).min(5),
+        hooks: z.array(z.string().min(1)).min(7),
+        cta_guidance: z.array(z.string().min(1)).min(3),
+        compliance_notes: z.array(z.string().min(1)).min(2),
+      })
+      .strict(),
+    creative_system: z
+      .object({
+        formats: z.array(z.string().min(1)).min(2),
+        visual_style: z
+          .object({
+            mood: z.string().min(1),
+            palette: z.array(z.string().min(1)).min(2),
+            photography_style: z.string().min(1),
+            do: z.array(z.string().min(1)).min(2),
+            dont: z.array(z.string().min(1)).min(2),
+          })
+          .strict(),
+        ad_examples: z
+          .array(
+            z
+              .object({
+                hook: z.string().min(1),
+                primary_text: z.string().min(1),
+                cta: z.string().min(1),
+                render_intent: z.string().min(1),
+              })
+              .strict(),
+          )
+          .min(4),
+      })
+      .strict(),
+    funnel: z
+      .object({
+        stages: z
+          .array(
+            z
+              .object({
+                stage: z.string().min(1),
+                goal: z.string().min(1),
+                message: z.string().min(1),
+                kpi: z.string().min(1),
+              })
+              .strict(),
+          )
+          .min(4),
+      })
+      .strict(),
+    testing_plan: z
+      .object({
+        hypotheses: z.array(z.string().min(1)).min(4),
+        experiments: z.array(z.string().min(1)).min(4),
+        timeline: z.string().min(1),
+        success_metrics: z.array(z.string().min(1)).min(3),
+      })
+      .strict(),
+    budget: z
+      .object({
+        daily: z.string().min(1),
+        monthly: z.string().min(1),
+        scaling: z.string().min(1),
+        allocation: z
+          .object({
+            testing: z.number().int().min(0).max(100),
+            scaling: z.number().int().min(0).max(100),
+          })
+          .strict(),
+        guardrails: z.array(z.string().min(1)).min(3),
+      })
+      .strict(),
+    targeting: z
+      .object({
+        age: z.string().min(1),
+        gender: z.string().min(1),
+        locations: z.array(z.string().min(1)).min(1),
+        interests: z.array(z.string().min(1)).min(5),
+        behaviors: z.array(z.string().min(1)).min(3),
+        lookalikes: z.array(z.string().min(1)).min(1),
+        exclusions: z.array(z.string().min(1)).min(1),
+        placements: z.array(z.string().min(1)).min(5),
+      })
+      .strict(),
+    meta_setup: z
+      .object({
+        campaign: z
+          .object({
+            name: z.string().min(1),
+            objective: z.string().min(1),
+            budget_type: z.string().min(1),
+            daily_budget: z.string().min(1),
+            bid_strategy: z.string().min(1),
+            optimization_goal: z.string().min(1),
+            attribution: z.string().min(1),
+            special_ad_categories: z.array(z.string().min(1)).min(1),
+          })
+          .strict(),
+        ad_sets: z
+          .array(
+            z
+              .object({
+                name: z.string().min(1),
+                budget: z.string().min(1),
+                schedule: z.string().min(1),
+                optimization_goal: z.string().min(1),
+                audience: z
+                  .object({
+                    locations: z.array(z.string().min(1)).min(1),
+                    age: z.string().min(1),
+                    gender: z.string().min(1),
+                    interests: z.array(z.string().min(1)).min(2),
+                    lookalikes: z.array(z.string().min(1)).min(1),
+                    exclusions: z.array(z.string().min(1)).min(1),
+                  })
+                  .strict(),
+                placements: z.array(z.string().min(1)).min(3),
+              })
+              .strict(),
+          )
+          .min(1),
+        ads: z
+          .array(
+            z
+              .object({
+                name: z.string().min(1),
+                primary_text: z.string().min(1),
+                headline: z.string().min(1),
+                description: z.string().min(1),
+                cta: z.string().min(1),
+                format: z.string().min(1),
+                creative_notes: z.string().min(1),
+              })
+              .strict(),
+          )
+          .min(1),
+        tracking: z
+          .object({
+            pixel: z.string().min(1),
+            conversion_api: z.string().min(1),
+            utm_template: z.string().min(1),
+          })
+          .strict(),
+      })
+      .strict(),
+    execution_checklist: z.array(z.string().min(1)).min(5),
+    long_form: z.string().min(800),
+  })
+  .strict();
+
 export const AD_IMAGE_SPEC_JSON_SCHEMA = {
   name: "ad_image_spec_v1",
   strict: true,
@@ -680,6 +866,315 @@ export const CREATIVE_OUTPUT_PRO_JSON_SCHEMA = {
         },
       },
       brief: { type: "object", additionalProperties: true },
+    },
+  },
+};
+
+export const STRATEGY_PLAN_JSON_SCHEMA = {
+  name: "strategy_plan_v1",
+  strict: true,
+  schema: {
+    type: "object",
+    additionalProperties: false,
+    required: [
+      "schema_version",
+      "name",
+      "summary",
+      "confidence",
+      "recommendations",
+      "blueprint",
+      "product_focus",
+      "audience",
+      "messaging",
+      "creative_system",
+      "funnel",
+      "testing_plan",
+      "budget",
+      "targeting",
+      "meta_setup",
+      "execution_checklist",
+      "long_form",
+    ],
+    properties: {
+      schema_version: { type: "string", enum: ["1.0"] },
+      name: { type: "string", minLength: 1 },
+      summary: { type: "string", minLength: 1 },
+      confidence: { type: "integer", minimum: 0, maximum: 100 },
+      recommendations: {
+        type: "array",
+        minItems: 6,
+        items: { type: "string", minLength: 1 },
+      },
+      blueprint: {
+        type: "object",
+        additionalProperties: false,
+        required: ["id", "title"],
+        properties: {
+          id: { type: ["string", "null"] },
+          title: { type: ["string", "null"] },
+        },
+      },
+      product_focus: {
+        type: "object",
+        additionalProperties: false,
+        required: [
+          "positioning",
+          "usp",
+          "offer",
+          "proof_points",
+          "objections",
+          "voice",
+          "value_props",
+        ],
+        properties: {
+          positioning: { type: "string", minLength: 1 },
+          usp: { type: "string", minLength: 1 },
+          offer: { type: "string", minLength: 1 },
+          proof_points: { type: "array", minItems: 3, items: { type: "string", minLength: 1 } },
+          objections: { type: "array", minItems: 3, items: { type: "string", minLength: 1 } },
+          voice: { type: "string", minLength: 1 },
+          value_props: { type: "array", minItems: 4, items: { type: "string", minLength: 1 } },
+        },
+      },
+      audience: {
+        type: "object",
+        additionalProperties: false,
+        required: ["core", "segments", "pains", "desires", "objections", "language", "region"],
+        properties: {
+          core: { type: "string", minLength: 1 },
+          segments: { type: "array", minItems: 3, items: { type: "string", minLength: 1 } },
+          pains: { type: "array", minItems: 3, items: { type: "string", minLength: 1 } },
+          desires: { type: "array", minItems: 3, items: { type: "string", minLength: 1 } },
+          objections: { type: "array", minItems: 3, items: { type: "string", minLength: 1 } },
+          language: { type: "string", minLength: 2 },
+          region: { type: ["string", "null"] },
+        },
+      },
+      messaging: {
+        type: "object",
+        additionalProperties: false,
+        required: ["key_messages", "angles", "hooks", "cta_guidance", "compliance_notes"],
+        properties: {
+          key_messages: { type: "array", minItems: 5, items: { type: "string", minLength: 1 } },
+          angles: { type: "array", minItems: 5, items: { type: "string", minLength: 1 } },
+          hooks: { type: "array", minItems: 7, items: { type: "string", minLength: 1 } },
+          cta_guidance: { type: "array", minItems: 3, items: { type: "string", minLength: 1 } },
+          compliance_notes: { type: "array", minItems: 2, items: { type: "string", minLength: 1 } },
+        },
+      },
+      creative_system: {
+        type: "object",
+        additionalProperties: false,
+        required: ["formats", "visual_style", "ad_examples"],
+        properties: {
+          formats: { type: "array", minItems: 2, items: { type: "string", minLength: 1 } },
+          visual_style: {
+            type: "object",
+            additionalProperties: false,
+            required: ["mood", "palette", "photography_style", "do", "dont"],
+            properties: {
+              mood: { type: "string", minLength: 1 },
+              palette: { type: "array", minItems: 2, items: { type: "string", minLength: 1 } },
+              photography_style: { type: "string", minLength: 1 },
+              do: { type: "array", minItems: 2, items: { type: "string", minLength: 1 } },
+              dont: { type: "array", minItems: 2, items: { type: "string", minLength: 1 } },
+            },
+          },
+          ad_examples: {
+            type: "array",
+            minItems: 4,
+            items: {
+              type: "object",
+              additionalProperties: false,
+              required: ["hook", "primary_text", "cta", "render_intent"],
+              properties: {
+                hook: { type: "string", minLength: 1 },
+                primary_text: { type: "string", minLength: 1 },
+                cta: { type: "string", minLength: 1 },
+                render_intent: { type: "string", minLength: 1 },
+              },
+            },
+          },
+        },
+      },
+      funnel: {
+        type: "object",
+        additionalProperties: false,
+        required: ["stages"],
+        properties: {
+          stages: {
+            type: "array",
+            minItems: 4,
+            items: {
+              type: "object",
+              additionalProperties: false,
+              required: ["stage", "goal", "message", "kpi"],
+              properties: {
+                stage: { type: "string", minLength: 1 },
+                goal: { type: "string", minLength: 1 },
+                message: { type: "string", minLength: 1 },
+                kpi: { type: "string", minLength: 1 },
+              },
+            },
+          },
+        },
+      },
+      testing_plan: {
+        type: "object",
+        additionalProperties: false,
+        required: ["hypotheses", "experiments", "timeline", "success_metrics"],
+        properties: {
+          hypotheses: { type: "array", minItems: 4, items: { type: "string", minLength: 1 } },
+          experiments: { type: "array", minItems: 4, items: { type: "string", minLength: 1 } },
+          timeline: { type: "string", minLength: 1 },
+          success_metrics: { type: "array", minItems: 3, items: { type: "string", minLength: 1 } },
+        },
+      },
+      budget: {
+        type: "object",
+        additionalProperties: false,
+        required: ["daily", "monthly", "scaling", "allocation", "guardrails"],
+        properties: {
+          daily: { type: "string", minLength: 1 },
+          monthly: { type: "string", minLength: 1 },
+          scaling: { type: "string", minLength: 1 },
+          allocation: {
+            type: "object",
+            additionalProperties: false,
+            required: ["testing", "scaling"],
+            properties: {
+              testing: { type: "integer", minimum: 0, maximum: 100 },
+              scaling: { type: "integer", minimum: 0, maximum: 100 },
+            },
+          },
+          guardrails: { type: "array", minItems: 3, items: { type: "string", minLength: 1 } },
+        },
+      },
+      targeting: {
+        type: "object",
+        additionalProperties: false,
+        required: [
+          "age",
+          "gender",
+          "locations",
+          "interests",
+          "behaviors",
+          "lookalikes",
+          "exclusions",
+          "placements",
+        ],
+        properties: {
+          age: { type: "string", minLength: 1 },
+          gender: { type: "string", minLength: 1 },
+          locations: { type: "array", minItems: 1, items: { type: "string", minLength: 1 } },
+          interests: { type: "array", minItems: 5, items: { type: "string", minLength: 1 } },
+          behaviors: { type: "array", minItems: 3, items: { type: "string", minLength: 1 } },
+          lookalikes: { type: "array", minItems: 1, items: { type: "string", minLength: 1 } },
+          exclusions: { type: "array", minItems: 1, items: { type: "string", minLength: 1 } },
+          placements: { type: "array", minItems: 5, items: { type: "string", minLength: 1 } },
+        },
+      },
+      meta_setup: {
+        type: "object",
+        additionalProperties: false,
+        required: ["campaign", "ad_sets", "ads", "tracking"],
+        properties: {
+          campaign: {
+            type: "object",
+            additionalProperties: false,
+            required: [
+              "name",
+              "objective",
+              "budget_type",
+              "daily_budget",
+              "bid_strategy",
+              "optimization_goal",
+              "attribution",
+              "special_ad_categories",
+            ],
+            properties: {
+              name: { type: "string", minLength: 1 },
+              objective: { type: "string", minLength: 1 },
+              budget_type: { type: "string", minLength: 1 },
+              daily_budget: { type: "string", minLength: 1 },
+              bid_strategy: { type: "string", minLength: 1 },
+              optimization_goal: { type: "string", minLength: 1 },
+              attribution: { type: "string", minLength: 1 },
+              special_ad_categories: {
+                type: "array",
+                minItems: 1,
+                items: { type: "string", minLength: 1 },
+              },
+            },
+          },
+          ad_sets: {
+            type: "array",
+            minItems: 1,
+            items: {
+              type: "object",
+              additionalProperties: false,
+              required: [
+                "name",
+                "budget",
+                "schedule",
+                "optimization_goal",
+                "audience",
+                "placements",
+              ],
+              properties: {
+                name: { type: "string", minLength: 1 },
+                budget: { type: "string", minLength: 1 },
+                schedule: { type: "string", minLength: 1 },
+                optimization_goal: { type: "string", minLength: 1 },
+                audience: {
+                  type: "object",
+                  additionalProperties: false,
+                  required: ["locations", "age", "gender", "interests", "lookalikes", "exclusions"],
+                  properties: {
+                    locations: { type: "array", minItems: 1, items: { type: "string", minLength: 1 } },
+                    age: { type: "string", minLength: 1 },
+                    gender: { type: "string", minLength: 1 },
+                    interests: { type: "array", minItems: 2, items: { type: "string", minLength: 1 } },
+                    lookalikes: { type: "array", minItems: 1, items: { type: "string", minLength: 1 } },
+                    exclusions: { type: "array", minItems: 1, items: { type: "string", minLength: 1 } },
+                  },
+                },
+                placements: { type: "array", minItems: 3, items: { type: "string", minLength: 1 } },
+              },
+            },
+          },
+          ads: {
+            type: "array",
+            minItems: 1,
+            items: {
+              type: "object",
+              additionalProperties: false,
+              required: ["name", "primary_text", "headline", "description", "cta", "format", "creative_notes"],
+              properties: {
+                name: { type: "string", minLength: 1 },
+                primary_text: { type: "string", minLength: 1 },
+                headline: { type: "string", minLength: 1 },
+                description: { type: "string", minLength: 1 },
+                cta: { type: "string", minLength: 1 },
+                format: { type: "string", minLength: 1 },
+                creative_notes: { type: "string", minLength: 1 },
+              },
+            },
+          },
+          tracking: {
+            type: "object",
+            additionalProperties: false,
+            required: ["pixel", "conversion_api", "utm_template"],
+            properties: {
+              pixel: { type: "string", minLength: 1 },
+              conversion_api: { type: "string", minLength: 1 },
+              utm_template: { type: "string", minLength: 1 },
+            },
+          },
+        },
+      },
+      execution_checklist: { type: "array", minItems: 8, items: { type: "string", minLength: 1 } },
+      long_form: { type: "string", minLength: 800 },
     },
   },
 };

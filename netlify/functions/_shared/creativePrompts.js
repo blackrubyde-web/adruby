@@ -390,3 +390,44 @@ CURRENT_VARIANT: ${JSON.stringify(variant)}
 EVAL: ${JSON.stringify(evalPro)}
 `;
 }
+
+export function buildStrategyPrompt({
+  brief,
+  blueprint,
+  blueprintTitle,
+  outputs,
+  researchContext,
+  userNotes,
+}) {
+  const researchBlock = renderResearchContext(researchContext);
+  const blueprintBlock = blueprint
+    ? `\nStrategy Blueprint (${blueprintTitle || "unlabeled"}):\n${blueprint}\n`
+    : "";
+  const notesBlock = userNotes ? `\nUser notes:\n${userNotes}\n` : "";
+  return `
+You are AdRuby's Elite Performance Strategist.
+Task: Create a deeply detailed, product-specific advertising strategy for Meta that is directly grounded in the blueprint and the brief.
+Return ONLY valid JSON matching the StrategyPlan schema. No markdown.
+
+Rules:
+- Be concrete and tactical. No vague advice.
+- Use the blueprint as the main source of truth.
+- Use the brief and outputs to tailor to the product and audience.
+- Provide a strong Meta setup (campaign/ad set/ad structure, targeting, placements, budget).
+- Provide 6-10 recommendations with specific actions.
+- Messaging must include at least 5 key messages, 5 angles, 7 hooks, 3 CTAs, 2 compliance notes.
+- Creative system must include 4+ ad examples and detailed visual guidance.
+- Meta setup must be detailed: campaign settings, 2+ ad sets, 2+ ads, tracking.
+- Long form section must be detailed and actionable (target 1200+ chars).
+
+BRIEF:
+${JSON.stringify(brief)}
+
+EXISTING OUTPUTS (if any):
+${JSON.stringify(outputs || {})}
+
+${researchBlock}
+${notesBlock}
+${blueprintBlock}
+`;
+}

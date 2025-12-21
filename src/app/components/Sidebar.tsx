@@ -1,4 +1,4 @@
-import { BarChart3, Target, Layers, Brain, Settings, LogOut, X, Zap, BarChart2, Gift, Sparkles } from 'lucide-react';
+import { BarChart3, Target, Layers, Brain, Settings, LogOut, X, Zap, BarChart2, Gift, Sparkles, BookOpen } from 'lucide-react';
 import { PageType } from '../App';
 
 interface SidebarProps {
@@ -25,6 +25,7 @@ export function Sidebar({
     { icon: BarChart3, label: 'Dashboard', page: 'dashboard' as PageType },
     { icon: BarChart2, label: 'Analytics', page: 'analytics' as PageType },
     { icon: Sparkles, label: 'Creative Generator Pro', page: 'adbuilder' as PageType },
+    { icon: BookOpen, label: 'Creative Library', page: 'library' as PageType },
     { icon: Target, label: 'Strategies', page: 'strategies' as PageType },
     { icon: Layers, label: 'Campaigns', page: 'campaigns' as PageType },
     { icon: Brain, label: 'AI Analysis', page: 'aianalysis' as PageType },

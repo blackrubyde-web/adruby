@@ -1,20 +1,125 @@
-import { Target, Search, Filter, Sparkles, Brain, DollarSign, Users, Zap, CheckCircle2, ArrowRight, Play, Pause, Copy, Trash2, Eye } from 'lucide-react';
+import { Target, Search, Filter, Sparkles, Brain, DollarSign, Users, Zap, CheckCircle2, Play, Pause, Copy, Trash2, Eye } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
 import { toast } from 'sonner';
 import { StrategyViewModal } from './StrategyViewModal';
 import { PageShell, HeroHeader, Card } from './layout';
 import { supabase } from '../lib/supabaseClient';
+import { generateStrategyPlan } from '../lib/api/creative';
 
 type GeneratedStrategy = {
+  schema_version?: string;
   name: string;
-  goal?: string;
-  confidence: number;
-  recommendations: string[];
-  performance: {
-    expectedCTR: number;
-    expectedROAS: number;
+  summary?: string;
+  confidence?: number;
+  blueprint?: { id?: string | null; title?: string | null };
+  recommendations?: string[];
+  performance?: {
+    expectedCTR?: number;
+    expectedROAS?: number;
     expectedCPA?: number;
   };
+  product_focus?: {
+    positioning?: string;
+    usp?: string;
+    offer?: string;
+    proof_points?: string[];
+    objections?: string[];
+    voice?: string;
+    value_props?: string[];
+  };
+  audience?: {
+    core?: string;
+    segments?: string[];
+    pains?: string[];
+    desires?: string[];
+    objections?: string[];
+    language?: string;
+    region?: string | null;
+  };
+  messaging?: {
+    key_messages?: string[];
+    angles?: string[];
+    hooks?: string[];
+    cta_guidance?: string[];
+    compliance_notes?: string[];
+  };
+  creative_system?: {
+    formats?: string[];
+    visual_style?: {
+      mood?: string;
+      palette?: string[];
+      photography_style?: string;
+      do?: string[];
+      dont?: string[];
+    };
+    ad_examples?: Array<{ hook?: string; primary_text?: string; cta?: string; render_intent?: string }>;
+  };
+  funnel?: { stages?: Array<{ stage?: string; goal?: string; message?: string; kpi?: string }> };
+  testing_plan?: {
+    hypotheses?: string[];
+    experiments?: string[];
+    timeline?: string;
+    success_metrics?: string[];
+  };
+  budget?: {
+    daily?: string;
+    monthly?: string;
+    scaling?: string;
+    allocation?: {
+      testing?: number;
+      scaling?: number;
+    };
+    guardrails?: string[];
+  };
+  targeting?: {
+    age?: string;
+    gender?: string;
+    locations?: string[];
+    interests?: string[];
+    behaviors?: string[];
+    lookalikes?: string[];
+    exclusions?: string[];
+    placements?: string[];
+  };
+  meta_setup?: {
+    campaign?: {
+      name?: string;
+      objective?: string;
+      budget_type?: string;
+      daily_budget?: string;
+      bid_strategy?: string;
+      optimization_goal?: string;
+      attribution?: string;
+      special_ad_categories?: string[];
+    };
+    ad_sets?: Array<{
+      name?: string;
+      budget?: string;
+      schedule?: string;
+      optimization_goal?: string;
+      audience?: {
+        locations?: string[];
+        age?: string;
+        gender?: string;
+        interests?: string[];
+        lookalikes?: string[];
+        exclusions?: string[];
+      };
+      placements?: string[];
+    }>;
+    ads?: Array<{
+      name?: string;
+      primary_text?: string;
+      headline?: string;
+      description?: string;
+      cta?: string;
+      format?: string;
+      creative_notes?: string;
+    }>;
+    tracking?: { pixel?: string; conversion_api?: string; utm_template?: string };
+  };
+  execution_checklist?: string[];
+  long_form?: string;
 };
 
 interface SavedAd {
@@ -43,19 +148,6 @@ interface SavedAd {
   blueprintTitle?: string | null;
 }
 
-interface StrategyQuestion {
-  id: string;
-  category: string;
-  step: number;
-  question: string;
-  description: string;
-  type: 'select';
-  options: {
-    value: string;
-    label: string;
-    description: string;
-  }[];
-}
 
 export function AdsStrategiesPage() {
   const [savedAds, setSavedAds] = useState<SavedAd[]>([]);
@@ -65,121 +157,11 @@ export function AdsStrategiesPage() {
   const [showStrategyModal, setShowStrategyModal] = useState(false);
   const [showStrategyViewModal, setShowStrategyViewModal] = useState(false);
   const [selectedAdForStrategy, setSelectedAdForStrategy] = useState<SavedAd | null>(null);
-  const [currentQuestionStep, setCurrentQuestionStep] = useState(1);
-  const [strategyAnswers, setStrategyAnswers] = useState<Record<string, string>>({});
   const [isGeneratingStrategy, setIsGeneratingStrategy] = useState(false);
   const [generatedStrategy, setGeneratedStrategy] = useState<GeneratedStrategy | null>(null);
   const [isLoadingAds, setIsLoadingAds] = useState(false);
   const [adsError, setAdsError] = useState<string | null>(null);
 
-  // Strategy Questions (from your service)
-  const strategyQuestions: StrategyQuestion[] = [
-    {
-      id: 'goal',
-      category: 'Ziele & Ausrichtung',
-      step: 1,
-      question: 'Welches Hauptziel verfolgst du mit dieser Anzeige?',
-      description: 'Definiere das primäre Geschäftsziel für diese Kampagne',
-      type: 'select',
-      options: [
-        { value: 'leads', label: 'Lead-Generierung', description: 'Kontaktdaten und Interessenten sammeln für zukünftige Verkäufe' },
-        { value: 'sales', label: 'Direktverkäufe', description: 'Sofortige Käufe und Transaktionen über die Anzeige generieren' },
-        { value: 'awareness', label: 'Markenbekanntheit', description: 'Reichweite und Sichtbarkeit der Marke erhöhen' },
-        { value: 'traffic', label: 'Website-Traffic', description: 'Qualifizierten Traffic auf die Website lenken' },
-        { value: 'app', label: 'App-Downloads', description: 'Mobile App Installation und Nutzung fördern' },
-        { value: 'engagement', label: 'Community-Engagement', description: 'Interaktion, Likes, Comments und Follower aufbauen' }
-      ]
-    },
-    {
-      id: 'budget_scaling',
-      category: 'Budget & Skalierung',
-      step: 2,
-      question: 'Wie planst du dein Werbebudget und die Skalierung?',
-      description: 'Budget-Strategie und Wachstumspläne definieren für optimale Performance',
-      type: 'select',
-      options: [
-        { value: '50-150-conservative', label: '50-150 EUR/Tag - Konservativ', description: 'Langsame, sichere Skalierung mit geringem Risiko' },
-        { value: '150-300-moderate', label: '150-300 EUR/Tag - Moderat', description: 'Ausgewogenes Wachstum mit mittlerem Risiko' },
-        { value: '300-500-aggressive', label: '300-500 EUR/Tag - Aggressiv', description: 'Schnelle Skalierung bei guter Performance' },
-        { value: '500plus-enterprise', label: 'Über 500 EUR/Tag - Enterprise', description: 'Maximale Reichweite und Dominanz' }
-      ]
-    },
-    {
-      id: 'performance_goals',
-      category: 'Performance & KPIs',
-      step: 3,
-      question: 'Welche Kennzahlen sind für dich am wichtigsten?',
-      description: 'Priorisiere die Metriken für deinen Erfolg',
-      type: 'select',
-      options: [
-        { value: 'roas-focused', label: 'ROAS (Return on Ad Spend)', description: 'Umsatz pro investiertem Euro maximieren' },
-        { value: 'cpa-focused', label: 'CPA (Cost per Acquisition)', description: 'Kosten pro Conversion minimieren' },
-        { value: 'ctr-focused', label: 'CTR (Click-Through Rate)', description: 'Engagement und Relevanz steigern' },
-        { value: 'reach-focused', label: 'Reichweite & Impressions', description: 'Maximale Sichtbarkeit erreichen' },
-        { value: 'quality-focused', label: 'Lead-Qualität', description: 'Hochwertige, kaufbereite Leads generieren' }
-      ]
-    },
-    {
-      id: 'target_audience',
-      category: 'Zielgruppen & Targeting',
-      step: 4,
-      question: 'Wie möchtest du deine Zielgruppe ansprechen?',
-      description: 'Targeting-Strategie und Zielgruppenfokus',
-      type: 'select',
-      options: [
-        { value: 'broad-expansion', label: 'Breite Zielgruppe', description: 'Neue Märkte erschließen' },
-        { value: 'lookalike-similar', label: 'Lookalike Audiences', description: 'Ähnliche Kunden finden' },
-        { value: 'retargeting-warm', label: 'Retargeting', description: 'Warme Zielgruppen ansprechen' },
-        { value: 'interest-specific', label: 'Interesse-basiert', description: 'Spezifische Interessen nutzen' },
-        { value: 'demographic-precise', label: 'Demografisch präzise', description: 'Exakte Zielgruppen-Ansprache' }
-      ]
-    },
-    {
-      id: 'creative_strategy',
-      category: 'Kreativ & Content',
-      step: 5,
-      question: 'Welche Content-Strategie passt zu deiner Marke?',
-      description: 'Art der Werbemittel wählen',
-      type: 'select',
-      options: [
-        { value: 'video-storytelling', label: 'Video & Storytelling', description: 'Emotionale Videos und Geschichten' },
-        { value: 'ugc-authentic', label: 'User Generated Content', description: 'Authentische Kundenerfahrungen' },
-        { value: 'product-showcase', label: 'Produkt-Showcase', description: 'Direkte Produktpräsentation' },
-        { value: 'educational-howto', label: 'Educational Content', description: 'Tutorials und How-Tos' },
-        { value: 'testimonial-social', label: 'Testimonials & Social Proof', description: 'Kundenbewertungen nutzen' }
-      ]
-    },
-    {
-      id: 'timeline_commitment',
-      category: 'Zeitplanung & Engagement',
-      step: 6,
-      question: 'Wie ist deine zeitliche Planung?',
-      description: 'Kampagnendauer und Management-Intensität',
-      type: 'select',
-      options: [
-        { value: 'sprint-1week', label: '1-2 Wochen Sprint', description: 'Kurze, intensive Kampagne' },
-        { value: 'campaign-1month', label: '1 Monat Kampagne', description: 'Mittelfristige Zielerreichung' },
-        { value: 'growth-3months', label: '3 Monate Wachstum', description: 'Nachhaltiges Wachstum' },
-        { value: 'ongoing-always', label: 'Dauerhaft aktiv', description: 'Kontinuierliche Optimierung' },
-        { value: 'seasonal-specific', label: 'Saisonal/Event-basiert', description: 'Bestimmte Zeiträume nutzen' }
-      ]
-    },
-    {
-      id: 'risk_innovation',
-      category: 'Risiko & Innovation',
-      step: 7,
-      question: 'Wie ist deine Risikobereitschaft?',
-      description: 'Experimentierfreude und Risikotoleranz',
-      type: 'select',
-      options: [
-        { value: 'conservative-safe', label: 'Konservativ & Sicher', description: 'Bewährte Strategien mit geringem Risiko' },
-        { value: 'balanced-steady', label: 'Ausgewogen & Stetig', description: 'Kontrolliertes Wachstum' },
-        { value: 'aggressive-fast', label: 'Aggressiv & Schnell', description: 'Schnelle Skalierung' },
-        { value: 'innovative-experimental', label: 'Innovativ & Experimentell', description: 'Neue Ansätze testen' },
-        { value: 'data-driven-analytical', label: 'Datengetrieben & Analytisch', description: 'Datenbasierte Entscheidungen' }
-      ]
-    }
-  ];
 
   type CreativeOutput = {
     schema_version?: string;
@@ -310,95 +292,57 @@ export function AdsStrategiesPage() {
     totalAds: savedAds.length,
     activeAds: savedAds.filter(a => a.status === 'active').length,
     withStrategy: savedAds.filter(a => a.strategy).length,
-    avgRoas: savedAds.filter(a => a.strategy).reduce((sum, a) => sum + (a.strategy?.performance.expectedROAS || 0), 0) / (savedAds.filter(a => a.strategy).length || 1)
+    avgRoas: savedAds
+      .filter(a => a.strategy)
+      .reduce((sum, a) => sum + (a.strategy?.performance?.expectedROAS || 0), 0) /
+      (savedAds.filter(a => a.strategy).length || 1)
   };
 
   // Open strategy modal
-  const handleCreateStrategy = (ad: SavedAd) => {
+  const handleCreateStrategy = async (ad: SavedAd) => {
     setSelectedAdForStrategy(ad);
     setShowStrategyModal(true);
-    setCurrentQuestionStep(1);
-    setStrategyAnswers({});
     setGeneratedStrategy(null);
+    await generateStrategy(ad);
   };
 
-  // Answer question
-  const handleAnswerQuestion = (questionId: string, value: string) => {
-    setStrategyAnswers(prev => ({ ...prev, [questionId]: value }));
-  };
-
-  // Next question
-  const handleNextQuestion = () => {
-    if (currentQuestionStep < 7) {
-      setCurrentQuestionStep(prev => prev + 1);
-    } else {
-      generateStrategy();
-    }
-  };
-
-  // Generate AI Strategy
-  const generateStrategy = () => {
+  // Generate AI Strategy (server-side)
+  const generateStrategy = async (ad?: SavedAd | null) => {
+    const targetAd = ad ?? selectedAdForStrategy;
+    if (!targetAd) return;
     setIsGeneratingStrategy(true);
-
-    // Simulate AI generation
-    setTimeout(() => {
-      const strategy = {
-        name: 'Performance Boost Pro',
-        goal: strategyAnswers.goal || 'Conversions',
-        confidence: 94,
-        recommendations: [
-          'Nutze Video-Creatives für 68% höhere CTR',
-          'Implementiere Retargeting für 3.2x ROAS',
-          'Schalte zwischen 18-21 Uhr für optimale Performance',
-          'Teste 3 Ad-Varianten mit Auto-Optimization'
-        ],
-        performance: {
-          expectedCTR: 3.8,
-          expectedROAS: 6.2,
-          expectedCPA: 12.5
-        },
-        targeting: {
-          age: '25-45',
-          interests: ['E-Commerce', 'Online Shopping', 'Tech'],
-          placements: ['Facebook Feed', 'Instagram Stories', 'Reels']
-        },
-        budget: {
-          daily: '€150',
-          monthly: '€4,500',
-          allocation: { testing: '30%', scaling: '70%' }
-        }
-      };
-
+    try {
+      const result = await generateStrategyPlan({ creativeId: targetAd.id });
+      const strategy = result?.strategy as GeneratedStrategy;
+      if (!strategy) {
+        throw new Error('Strategy generation failed');
+      }
       setGeneratedStrategy(strategy);
-      setIsGeneratingStrategy(false);
 
-      // Save strategy to ad
-      if (selectedAdForStrategy) {
-        const updatedAds = savedAds.map(ad =>
-          ad.id === selectedAdForStrategy.id
-            ? { ...ad, strategy }
-            : ad
-        );
-        setSavedAds(updatedAds);
+      const updatedAds = savedAds.map((row) =>
+        row.id === targetAd.id ? { ...row, strategy } : row,
+      );
+      setSavedAds(updatedAds);
 
-        if (selectedAdForStrategy.rawInputs) {
-          supabase
-            .from('generated_creatives')
-            .update({
-              inputs: {
-                ...selectedAdForStrategy.rawInputs,
-                ai_strategy: strategy,
-              },
-            })
-            .eq('id', selectedAdForStrategy.id)
-            .then(({ error }) => {
-              if (error) {
-                console.warn('Failed to persist strategy:', error.message);
-              }
-            });
+      if (targetAd.rawInputs) {
+        const mergedInputs = {
+          ...targetAd.rawInputs,
+          ai_strategy: strategy,
+        };
+        const { error } = await supabase
+          .from('generated_creatives')
+          .update({ inputs: mergedInputs })
+          .eq('id', targetAd.id);
+        if (error) {
+          console.warn('Failed to persist strategy:', error.message);
         }
       }
-    }, 4000);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Strategie konnte nicht erstellt werden.';
+      toast.error(message);
+    } finally {
+      setIsGeneratingStrategy(false);
+    }
   };
 
   // Actions
@@ -481,8 +425,6 @@ export function AdsStrategiesPage() {
     }
     toast.success(`Ad ${newStatus === 'active' ? 'activated' : 'paused'}`);
   };
-
-  const currentQuestion = strategyQuestions.find(q => q.step === currentQuestionStep);
 
   return (
     <PageShell>
@@ -692,15 +634,21 @@ export function AdsStrategiesPage() {
                       <div className="grid grid-cols-3 gap-2 mb-4">
                         <div className="p-2 rounded-lg bg-green-500/10 border border-green-500/20">
                           <div className="text-xs text-green-500 mb-1">CTR</div>
-                          <div className="text-foreground font-bold">{ad.strategy.performance.expectedCTR}%</div>
+                      <div className="text-foreground font-bold">
+                        {ad.strategy.performance?.expectedCTR != null ? `${ad.strategy.performance.expectedCTR}%` : '—'}
+                      </div>
                         </div>
                         <div className="p-2 rounded-lg bg-blue-500/10 border border-blue-500/20">
                           <div className="text-xs text-blue-500 mb-1">ROAS</div>
-                          <div className="text-foreground font-bold">{ad.strategy.performance.expectedROAS}x</div>
+                      <div className="text-foreground font-bold">
+                        {ad.strategy.performance?.expectedROAS != null ? `${ad.strategy.performance.expectedROAS}x` : '—'}
+                      </div>
                         </div>
                         <div className="p-2 rounded-lg bg-orange-500/10 border border-orange-500/20">
                           <div className="text-xs text-orange-500 mb-1">CPA</div>
-                          <div className="text-foreground font-bold">€{ad.strategy.performance.expectedCPA}</div>
+                      <div className="text-foreground font-bold">
+                        {ad.strategy.performance?.expectedCPA != null ? `€${ad.strategy.performance.expectedCPA}` : '—'}
+                      </div>
                         </div>
                       </div>
 
@@ -711,12 +659,12 @@ export function AdsStrategiesPage() {
                           Empfehlungen
                         </h5>
                         <div className="space-y-1.5">
-                          {ad.strategy.recommendations.slice(0, 3).map((rec, idx) => (
-                            <div key={idx} className="flex items-start gap-2 text-sm text-muted-foreground">
-                              <CheckCircle2 className="w-4 h-4 text-green-500 flex-shrink-0 mt-0.5" />
-                              <span className="line-clamp-1">{rec}</span>
-                            </div>
-                          ))}
+                        {(ad.strategy.recommendations || []).slice(0, 3).map((rec, idx) => (
+                          <div key={idx} className="flex items-start gap-2 text-sm text-muted-foreground">
+                            <CheckCircle2 className="w-4 h-4 text-green-500 flex-shrink-0 mt-0.5" />
+                            <span className="line-clamp-1">{rec}</span>
+                          </div>
+                        ))}
                         </div>
                       </div>
 
@@ -761,100 +709,7 @@ export function AdsStrategiesPage() {
       {showStrategyModal && selectedAdForStrategy && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <div className="bg-card rounded-2xl border border-border/50 shadow-2xl max-w-3xl w-full max-h-[90vh] overflow-hidden">
-            {!isGeneratingStrategy && !generatedStrategy ? (
-              <>
-                {/* Question Header */}
-                <div className="p-6 border-b border-border/30">
-                  <div className="flex items-center justify-between mb-4">
-                    <div>
-                      <h2 className="text-2xl font-bold text-foreground mb-1">AI Strategie Wizard</h2>
-                      <p className="text-muted-foreground">Schritt {currentQuestionStep} von 7</p>
-                    </div>
-                    <button
-                      onClick={() => setShowStrategyModal(false)}
-                      className="p-2 hover:bg-muted rounded-lg transition-colors"
-                    >
-                      <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                      </svg>
-                    </button>
-                  </div>
-                  <div className="h-2 bg-muted rounded-full overflow-hidden">
-                    <div
-                      className="h-full bg-gradient-to-r from-primary to-primary/80 transition-all duration-500"
-                      style={{ width: `${(currentQuestionStep / 7) * 100}%` }}
-                    />
-                  </div>
-                </div>
-
-                {/* Question Content */}
-                <div className="p-6 overflow-y-auto max-h-[calc(90vh-280px)]">
-                  {currentQuestion && (
-                    <div>
-                      <div className="mb-6">
-                        <div className="inline-block px-3 py-1 bg-primary/10 text-primary rounded-full text-sm font-medium mb-3">
-                          {currentQuestion.category}
-                        </div>
-                        <h3 className="text-xl font-bold text-foreground mb-2">{currentQuestion.question}</h3>
-                        <p className="text-muted-foreground">{currentQuestion.description}</p>
-                      </div>
-
-                      <div className="space-y-3">
-                        {currentQuestion.options.map((option) => (
-                          <button
-                            key={option.value}
-                            onClick={() => handleAnswerQuestion(currentQuestion.id, option.value)}
-                            className={`w-full p-4 rounded-xl border-2 transition-all text-left ${
-                              strategyAnswers[currentQuestion.id] === option.value
-                                ? 'border-primary bg-primary/10'
-                                : 'border-border/50 hover:border-primary/50 bg-card/50'
-                            }`}
-                          >
-                            <div className="flex items-start justify-between">
-                              <div className="flex-1">
-                                <div className="font-semibold text-foreground mb-1">{option.label}</div>
-                                <div className="text-sm text-muted-foreground">{option.description}</div>
-                              </div>
-                              {strategyAnswers[currentQuestion.id] === option.value && (
-                                <CheckCircle2 className="w-5 h-5 text-primary flex-shrink-0 ml-2" />
-                              )}
-                            </div>
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                </div>
-
-                {/* Navigation */}
-                <div className="p-6 border-t border-border/30 flex items-center justify-between">
-                  <button
-                    onClick={() => setCurrentQuestionStep(prev => Math.max(1, prev - 1))}
-                    disabled={currentQuestionStep === 1}
-                    className="px-6 py-2.5 border border-border/50 rounded-xl text-foreground hover:bg-muted transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    Zurück
-                  </button>
-                  <button
-                    onClick={handleNextQuestion}
-                    disabled={!strategyAnswers[currentQuestion?.id || '']}
-                    className="px-6 py-2.5 bg-gradient-to-r from-primary to-primary/80 text-primary-foreground rounded-xl hover:scale-105 transition-all duration-300 shadow-lg shadow-primary/30 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
-                  >
-                    {currentQuestionStep === 7 ? (
-                      <>
-                        <Sparkles className="w-5 h-5" />
-                        Strategie generieren
-                      </>
-                    ) : (
-                      <>
-                        Weiter
-                        <ArrowRight className="w-5 h-5" />
-                      </>
-                    )}
-                  </button>
-                </div>
-              </>
-            ) : isGeneratingStrategy ? (
+            {isGeneratingStrategy ? (
               // Loading State
               <div className="p-12 text-center">
                 <div className="w-20 h-20 mx-auto mb-6 relative">
@@ -869,19 +724,19 @@ export function AdsStrategiesPage() {
                 <div className="max-w-md mx-auto space-y-2">
                   <div className="flex items-center gap-3 text-sm text-muted-foreground">
                     <div className="w-2 h-2 bg-primary rounded-full animate-pulse" />
-                    Analysiere Zielgruppe und Objectives...
+                    Analysiere Produkt, Markt und Zielgruppe...
                   </div>
                   <div className="flex items-center gap-3 text-sm text-muted-foreground">
                     <div className="w-2 h-2 bg-primary rounded-full animate-pulse animation-delay-200" />
-                    Optimiere Budget-Allokation...
+                    Erzeuge Strategie, Funnel und Messaging...
                   </div>
                   <div className="flex items-center gap-3 text-sm text-muted-foreground">
                     <div className="w-2 h-2 bg-primary rounded-full animate-pulse animation-delay-400" />
-                    Generiere Targeting-Strategie...
+                    Baue Meta Setup & Creative System...
                   </div>
                 </div>
               </div>
-            ) : generatedStrategy && (
+            ) : generatedStrategy ? (
               // Strategy Result
               <div className="p-6 overflow-y-auto max-h-[calc(90vh-100px)]">
                 <div className="text-center mb-6">
@@ -898,15 +753,25 @@ export function AdsStrategiesPage() {
                   <div className="grid grid-cols-3 gap-4">
                     <div>
                       <div className="text-sm text-muted-foreground mb-1">Confidence</div>
-                      <div className="text-2xl font-bold text-primary">{generatedStrategy.confidence}%</div>
+                      <div className="text-2xl font-bold text-primary">
+                        {generatedStrategy.confidence != null ? `${generatedStrategy.confidence}%` : '—'}
+                      </div>
                     </div>
                     <div>
                       <div className="text-sm text-muted-foreground mb-1">Expected ROAS</div>
-                      <div className="text-2xl font-bold text-foreground">{generatedStrategy.performance.expectedROAS}x</div>
+                      <div className="text-2xl font-bold text-foreground">
+                        {generatedStrategy.performance?.expectedROAS != null
+                          ? `${generatedStrategy.performance.expectedROAS}x`
+                          : '—'}
+                      </div>
                     </div>
                     <div>
                       <div className="text-sm text-muted-foreground mb-1">Expected CTR</div>
-                      <div className="text-2xl font-bold text-foreground">{generatedStrategy.performance.expectedCTR}%</div>
+                      <div className="text-2xl font-bold text-foreground">
+                        {generatedStrategy.performance?.expectedCTR != null
+                          ? `${generatedStrategy.performance.expectedCTR}%`
+                          : '—'}
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -918,7 +783,7 @@ export function AdsStrategiesPage() {
                     Top Empfehlungen
                   </h5>
                   <div className="space-y-2">
-                    {generatedStrategy.recommendations.map((rec: string, idx: number) => (
+                    {(generatedStrategy.recommendations || []).map((rec: string, idx: number) => (
                       <div key={idx} className="flex items-start gap-3 p-3 rounded-lg bg-muted/5">
                         <CheckCircle2 className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" />
                         <span className="text-foreground">{rec}</span>
@@ -935,6 +800,22 @@ export function AdsStrategiesPage() {
                   className="w-full px-6 py-3 bg-gradient-to-r from-primary to-primary/80 text-primary-foreground rounded-xl hover:scale-105 transition-all duration-300 shadow-lg shadow-primary/30 font-semibold"
                 >
                   Strategie übernehmen
+                </button>
+              </div>
+            ) : (
+              <div className="p-12 text-center">
+                <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-primary/10 flex items-center justify-center">
+                  <Brain className="w-8 h-8 text-primary" />
+                </div>
+                <h3 className="text-2xl font-bold text-foreground mb-2">Strategie wird erstellt…</h3>
+                <p className="text-muted-foreground mb-6">
+                  Wir erstellen eine individuelle, ausführliche Strategie basierend auf deinem Produkt.
+                </p>
+                <button
+                  onClick={() => generateStrategy(selectedAdForStrategy)}
+                  className="px-6 py-3 bg-gradient-to-r from-primary to-primary/80 text-primary-foreground rounded-xl hover:scale-105 transition-all duration-300 shadow-lg shadow-primary/30 font-semibold"
+                >
+                  Jetzt generieren
                 </button>
               </div>
             )}

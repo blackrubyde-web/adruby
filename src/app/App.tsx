@@ -12,6 +12,9 @@ const SettingsPage = lazy(() => import('./components/SettingsPage').then((mod) =
 const AffiliatePage = lazy(() => import('./components/AffiliatePage').then((mod) => ({ default: mod.AffiliatePage })));
 const ProfilePage = lazy(() => import('./components/ProfilePage').then((mod) => ({ default: mod.ProfilePage })));
 const HelpSupportPage = lazy(() => import('./components/HelpSupportPage').then((mod) => ({ default: mod.HelpSupportPage })));
+const CreativeLibraryPage = lazy(() =>
+  import('./components/CreativeLibraryPage').then((mod) => ({ default: mod.CreativeLibraryPage }))
+);
 const OverviewPage = lazy(() => import('./components/OverviewPage').then((mod) => ({ default: mod.OverviewPage })));
 const LoginPage = lazy(() =>
   import('./components/auth').then((mod) => ({ default: mod.LoginPage }))
@@ -76,6 +79,7 @@ export type PageType =
   | 'analytics' 
   | 'adbuilder' 
   | 'creative-builder'
+  | 'library'
   | 'strategies' 
   | 'campaigns' 
   | 'aianalysis' 
@@ -98,6 +102,7 @@ const PAGE_PATHS: Record<PageType, string> = {
   analytics: '/analytics',
   adbuilder: '/adbuilder',
   'creative-builder': '/dashboard/creative-builder/new',
+  library: '/library',
   strategies: '/strategies',
   campaigns: '/campaigns',
   aianalysis: '/aianalysis',
@@ -657,6 +662,15 @@ function AppContent() {
             <div className="pt-16 min-h-screen">
               <Suspense fallback={pageFallback}>
                 <LazyAdBuilderPage />
+              </Suspense>
+              <Footer />
+            </div>
+          )}
+
+          {currentPage === 'library' && (
+            <div className="pt-16 min-h-screen">
+              <Suspense fallback={pageFallback}>
+                <CreativeLibraryPage />
               </Suspense>
               <Footer />
             </div>

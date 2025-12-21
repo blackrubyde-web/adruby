@@ -28,7 +28,6 @@ import {
   type AdBuilderData
 } from './ad-builder/adBuilderReducer';
 import type { CreativeOutput, CreativeOutputV1, CreativeOutputPro } from '../lib/creative/types';
-import { useStrategies } from '../hooks/useStrategies';
 import useAdBuilder from '../hooks/useAdBuilder';
 import { creativeSaveToLibrary } from '../lib/api/creative';
 import { toast } from 'sonner';
@@ -50,7 +49,6 @@ const steps = [
 
 export function AdBuilderPage() {
   const [state, dispatch] = useReducer(adBuilderReducer, initialAdBuilderState);
-  const { strategies, loading: strategiesLoading, error: strategiesError } = useStrategies();
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [analysisProgress, setAnalysisProgress] = useState(0);
   const [analysisError, setAnalysisError] = useState<string | null>(null);
@@ -69,10 +67,6 @@ export function AdBuilderPage() {
   const [selectedResearchIds, setSelectedResearchIds] = useState<string[]>([]);
   const [researchRefreshKey, setResearchRefreshKey] = useState(0);
 
-  const selectedStrategy = useMemo(
-    () => strategies.find((strategy) => strategy.id === state.formData.strategyId) ?? null,
-    [strategies, state.formData.strategyId]
-  );
 
   useEffect(() => {
     const raw = localStorage.getItem(DRAFT_KEY);
@@ -611,9 +605,7 @@ export function AdBuilderPage() {
     fd.append('language', 'de');
     fd.append('format', '4:5');
     fd.append('inspiration', state.formData.productDescription || '');
-    if (state.formData.strategyId) {
-      fd.append('strategyId', state.formData.strategyId);
-    }
+    // Strategy is auto-determined server-side; no manual strategyId here.
     if (imageFile) {
       fd.append('image', imageFile);
     }
@@ -652,7 +644,6 @@ export function AdBuilderPage() {
           hookImageMeta && typeof hookImageMeta === 'object' && 'path' in hookImageMeta
             ? String(hookImageMeta.path || '')
             : null,
-        strategyId: state.formData.strategyId || undefined,
         researchIds: selectedResearchIds.length ? selectedResearchIds : undefined,
         outputMode: 'pro',
         style_mode: 'default',
@@ -899,61 +890,9 @@ export function AdBuilderPage() {
                       />
                     </div>
 
-                    <div>
-                      <div className="flex items-center justify-between gap-2 mb-2">
-                        <Label className="text-foreground">Strategy Blueprint</Label>
-                        {strategiesLoading && (
-                          <span className="text-xs text-muted-foreground">Lade Strategien…</span>
-                        )}
-                      </div>
-
-                      {strategiesError && (
-                        <div className="text-xs text-red-600 mb-2">{strategiesError}</div>
-                      )}
-
-                      {strategies.length === 0 && !strategiesLoading ? (
-                        <div className="text-sm text-muted-foreground bg-muted rounded-lg p-4 border border-border">
-                          Noch keine Strategies verfügbar. Importiere Blueprints, um sie hier zu sehen.
-                        </div>
-                      ) : (
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                          {strategies.map((strategy) => (
-                            <button
-                              type="button"
-                              key={strategy.id}
-                              onClick={() => updateFormData('strategyId', strategy.id)}
-                              className={`text-left border-2 rounded-lg p-4 transition-all w-full min-w-0 ${
-                                state.formData.strategyId === strategy.id
-                                  ? 'border-primary bg-primary/10'
-                                  : 'border-border bg-card hover:border-muted-foreground'
-                              }`}
-                            >
-                              <div className="flex items-start justify-between gap-2 min-w-0">
-                                <div className="min-w-0">
-                                  <div className="text-xs text-muted-foreground mb-1">
-                                    {strategy.category || 'general'}
-                                  </div>
-                                  <div className="font-medium text-foreground truncate">
-                                    {strategy.title}
-                                  </div>
-                                  <div className="text-xs text-muted-foreground mt-2 line-clamp-3">
-                                    {strategy.raw_content_markdown.slice(0, 160)}
-                                  </div>
-                                </div>
-                                {state.formData.strategyId === strategy.id && (
-                                  <Check className="w-5 h-5 text-primary shrink-0" />
-                                )}
-                              </div>
-                            </button>
-                          ))}
-                        </div>
-                      )}
-
-                      {selectedStrategy && (
-                        <div className="mt-3 text-xs text-muted-foreground">
-                          Ausgewählt: <span className="font-medium">{selectedStrategy.title}</span>
-                        </div>
-                      )}
+                    <div className="rounded-lg border border-border bg-muted/30 p-4 text-sm text-muted-foreground">
+                      Die Strategie wird jetzt automatisch aus deinem Produkt, deiner Zielgruppe und den
+                      Blueprint‑Daten abgeleitet. Du musst hier nichts mehr auswählen.
                     </div>
                   </div>
                 </div>
@@ -1497,7 +1436,7 @@ export function AdBuilderPage() {
                   productDescription={state.formData.productDescription}
                   targetAudience={state.formData.targetAudience}
                   uniqueSellingPoint={state.formData.uniqueSellingPoint}
-                  strategyId={state.formData.strategyId || null}
+                  strategyId={null}
                   onSelectCopy={(copy) => {
                     // Add selected AI copy to generatedCopy list
                     const newCopy = {
@@ -1520,7 +1459,7 @@ export function AdBuilderPage() {
                   productDescription={state.formData.productDescription}
                   targetAudience={state.formData.targetAudience}
                   uniqueSellingPoint={state.formData.uniqueSellingPoint}
-                  strategyId={state.formData.strategyId || null}
+                  strategyId={null}
                   onSelectCopy={(copy) => {
                     // Add selected AI copy to generatedCopy list
                     const newCopy = {

@@ -184,3 +184,15 @@ export async function creativeSaveToLibrary(params: { output: unknown; creativeI
   if (!res.ok) throw new Error(json?.error ?? "Save failed");
   return json;
 }
+
+export async function generateStrategyPlan(params: { creativeId: string; strategyId?: string | null }) {
+  const token = await requireAccessToken();
+  const res = await fetch(apiUrl("/api/strategy-generate"), {
+    method: "POST",
+    headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+    body: JSON.stringify({ creativeId: params.creativeId, strategyId: params.strategyId || null }),
+  });
+  const json = await parseJson(res);
+  if (!res.ok) throw new Error(json?.error ?? "Strategy generation failed");
+  return json;
+}

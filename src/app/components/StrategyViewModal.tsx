@@ -3,11 +3,11 @@ import { useEffect, useRef, useState } from 'react';
 
 type StrategyDetails = {
   name: string;
-  confidence: number;
-  recommendations: string[];
-  performance: {
-    expectedCTR: number;
-    expectedROAS: number;
+  confidence?: number;
+  recommendations?: string[];
+  performance?: {
+    expectedCTR?: number;
+    expectedROAS?: number;
     expectedCPA?: number;
   };
   targeting?: {
@@ -32,6 +32,43 @@ type StrategyDetails = {
   timeline?: {
     duration?: string;
     optimization?: string;
+  };
+  meta_setup?: {
+    campaign?: {
+      name?: string;
+      objective?: string;
+      budget_type?: string;
+      daily_budget?: string;
+      bid_strategy?: string;
+      optimization_goal?: string;
+      attribution?: string;
+      special_ad_categories?: string[];
+    };
+    ad_sets?: Array<{
+      name?: string;
+      budget?: string;
+      schedule?: string;
+      optimization_goal?: string;
+      audience?: {
+        locations?: string[];
+        age?: string;
+        gender?: string;
+        interests?: string[];
+        lookalikes?: string[];
+        exclusions?: string[];
+      };
+      placements?: string[];
+    }>;
+    ads?: Array<{
+      name?: string;
+      primary_text?: string;
+      headline?: string;
+      description?: string;
+      cta?: string;
+      format?: string;
+      creative_notes?: string;
+    }>;
+    tracking?: { pixel?: string; conversion_api?: string; utm_template?: string };
   };
 };
 
@@ -83,6 +120,8 @@ export function StrategyViewModal({ strategy, ad, onClose }: StrategyViewModalPr
     }
   };
 
+  const metaSetup = strategy.meta_setup;
+
   return (
     <div className="fixed inset-0 bg-black/70 backdrop-blur-md z-50 flex items-center justify-center p-4 overflow-y-auto">
       <div
@@ -114,7 +153,9 @@ export function StrategyViewModal({ strategy, ad, onClose }: StrategyViewModalPr
                   <span className="text-sm font-medium text-primary">Ad: {ad.name}</span>
                 </div>
                 <div className="px-3 py-1.5 rounded-full bg-purple-500/10 border border-purple-500/20">
-                  <span className="text-sm font-medium text-purple-500">Confidence: {strategy.confidence}%</span>
+                  <span className="text-sm font-medium text-purple-500">
+                    Confidence: {strategy.confidence != null ? `${strategy.confidence}%` : '—'}
+                  </span>
                 </div>
               </div>
             </div>
@@ -174,7 +215,9 @@ export function StrategyViewModal({ strategy, ad, onClose }: StrategyViewModalPr
                       <MousePointerClick className="w-6 h-6 text-green-500" />
                       <span className="text-sm text-muted-foreground">Click-Through Rate</span>
                     </div>
-                    <div className="text-3xl font-bold text-foreground mb-1">{strategy.performance.expectedCTR}%</div>
+                    <div className="text-3xl font-bold text-foreground mb-1">
+                      {strategy.performance?.expectedCTR != null ? `${strategy.performance.expectedCTR}%` : '—'}
+                    </div>
                     <div className="text-xs text-green-500 font-medium">+68% vs. Benchmark</div>
                   </div>
                   <div className="p-6 rounded-xl bg-gradient-to-br from-blue-500/10 to-transparent border border-blue-500/20">
@@ -182,7 +225,9 @@ export function StrategyViewModal({ strategy, ad, onClose }: StrategyViewModalPr
                       <TrendingUp className="w-6 h-6 text-blue-500" />
                       <span className="text-sm text-muted-foreground">Return on Ad Spend</span>
                     </div>
-                    <div className="text-3xl font-bold text-foreground mb-1">{strategy.performance.expectedROAS}x</div>
+                    <div className="text-3xl font-bold text-foreground mb-1">
+                      {strategy.performance?.expectedROAS != null ? `${strategy.performance.expectedROAS}x` : '—'}
+                    </div>
                     <div className="text-xs text-blue-500 font-medium">Excellent ROI</div>
                   </div>
                   <div className="p-6 rounded-xl bg-gradient-to-br from-orange-500/10 to-transparent border border-orange-500/20">
@@ -190,7 +235,9 @@ export function StrategyViewModal({ strategy, ad, onClose }: StrategyViewModalPr
                       <DollarSign className="w-6 h-6 text-orange-500" />
                       <span className="text-sm text-muted-foreground">Cost per Acquisition</span>
                     </div>
-                    <div className="text-3xl font-bold text-foreground mb-1">€{strategy.performance.expectedCPA}</div>
+                    <div className="text-3xl font-bold text-foreground mb-1">
+                      {strategy.performance?.expectedCPA != null ? `€${strategy.performance.expectedCPA}` : '—'}
+                    </div>
                     <div className="text-xs text-orange-500 font-medium">Optimiert</div>
                   </div>
                 </div>
@@ -203,7 +250,7 @@ export function StrategyViewModal({ strategy, ad, onClose }: StrategyViewModalPr
                   AI-Empfehlungen
                 </h3>
                 <div className="space-y-3">
-                  {strategy.recommendations.map((rec: string, idx: number) => (
+                  {(strategy.recommendations || []).map((rec: string, idx: number) => (
                     <div key={idx} className="p-4 rounded-xl bg-gradient-to-br from-muted/50 to-transparent border border-border/30 hover:border-primary/30 transition-all">
                       <div className="flex items-start gap-3">
                         <CheckCircle2 className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" />
@@ -307,6 +354,209 @@ export function StrategyViewModal({ strategy, ad, onClose }: StrategyViewModalPr
             </div>
           ) : (
             <div className="space-y-6">
+              {metaSetup ? (
+                <>
+                  {/* Campaign */}
+                  <div>
+                    <h3 className="text-lg font-bold text-foreground mb-4 flex items-center gap-2">
+                      <Layers className="w-5 h-5 text-primary" />
+                      Campaign Setup
+                    </h3>
+                    <div className="p-6 rounded-xl bg-gradient-to-br from-primary/5 to-transparent border border-primary/20 space-y-4">
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <div className="text-sm text-muted-foreground mb-2">Campaign Name</div>
+                          <div className="text-foreground font-medium">{metaSetup.campaign?.name || '—'}</div>
+                        </div>
+                        <div>
+                          <div className="text-sm text-muted-foreground mb-2">Objective</div>
+                          <div className="text-foreground font-medium">{metaSetup.campaign?.objective || '—'}</div>
+                        </div>
+                        <div>
+                          <div className="text-sm text-muted-foreground mb-2">Budget</div>
+                          <div className="text-foreground font-medium">
+                            {metaSetup.campaign?.daily_budget || strategy.budget?.daily || '—'}
+                          </div>
+                        </div>
+                        <div>
+                          <div className="text-sm text-muted-foreground mb-2">Bid Strategy</div>
+                          <div className="text-foreground font-medium">{metaSetup.campaign?.bid_strategy || '—'}</div>
+                        </div>
+                      </div>
+                      <div className="pt-4 border-t border-border/20">
+                        <div className="text-sm text-muted-foreground mb-2">Optimization</div>
+                        <div className="text-foreground font-medium">
+                          {metaSetup.campaign?.optimization_goal || '—'}
+                        </div>
+                      </div>
+                      <div className="pt-4 border-t border-border/20">
+                        <div className="text-sm text-muted-foreground mb-2">Attribution</div>
+                        <div className="text-foreground font-medium">
+                          {metaSetup.campaign?.attribution || '—'}
+                        </div>
+                      </div>
+                      <div className="pt-4 border-t border-border/20">
+                        <div className="text-sm text-muted-foreground mb-2">Special Ad Categories</div>
+                        <div className="flex flex-wrap gap-2">
+                          {(metaSetup.campaign?.special_ad_categories || ['None']).map((cat, idx) => (
+                            <span key={idx} className="px-3 py-1.5 rounded-lg bg-muted/20 text-foreground text-sm">
+                              {cat}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Ad Sets */}
+                  <div>
+                    <h3 className="text-lg font-bold text-foreground mb-4 flex items-center gap-2">
+                      <Target className="w-5 h-5 text-primary" />
+                      Ad Sets
+                    </h3>
+                    <div className="space-y-4">
+                      {(metaSetup.ad_sets || []).map((adset, idx) => (
+                        <div key={idx} className="p-6 rounded-xl bg-gradient-to-br from-blue-500/5 to-transparent border border-blue-500/20 space-y-4">
+                          <div className="flex items-center justify-between">
+                            <div className="text-lg font-semibold text-foreground">{adset.name || `Ad Set ${idx + 1}`}</div>
+                            <div className="text-sm text-muted-foreground">{adset.budget || '—'}</div>
+                          </div>
+                          <div className="grid grid-cols-2 gap-4">
+                            <div>
+                              <div className="text-sm text-muted-foreground mb-2">Schedule</div>
+                              <div className="text-foreground font-medium">{adset.schedule || '—'}</div>
+                            </div>
+                            <div>
+                              <div className="text-sm text-muted-foreground mb-2">Optimization</div>
+                              <div className="text-foreground font-medium">{adset.optimization_goal || '—'}</div>
+                            </div>
+                          </div>
+                          <div className="pt-4 border-t border-border/20">
+                            <div className="text-sm text-muted-foreground mb-3">Audience</div>
+                            <div className="space-y-2">
+                              <div className="flex items-center justify-between p-3 rounded-lg bg-muted/10">
+                                <span className="text-foreground">Locations</span>
+                                <span className="text-muted-foreground">
+                                  {(adset.audience?.locations || []).join(', ') || '—'}
+                                </span>
+                              </div>
+                              <div className="flex items-center justify-between p-3 rounded-lg bg-muted/10">
+                                <span className="text-foreground">Age / Gender</span>
+                                <span className="text-muted-foreground">
+                                  {adset.audience?.age || '—'} · {adset.audience?.gender || '—'}
+                                </span>
+                              </div>
+                              <div className="p-3 rounded-lg bg-muted/10">
+                                <div className="text-foreground mb-2">Interests</div>
+                                <div className="flex flex-wrap gap-2">
+                                  {(adset.audience?.interests || []).map((interest, i) => (
+                                    <span key={i} className="px-2 py-1 text-xs rounded-full bg-blue-500/10 text-blue-500 border border-blue-500/20">
+                                      {interest}
+                                    </span>
+                                  ))}
+                                </div>
+                              </div>
+                              {adset.audience?.exclusions?.length ? (
+                                <div className="p-3 rounded-lg bg-muted/10">
+                                  <div className="text-foreground mb-2">Exclusions</div>
+                                  <div className="flex flex-wrap gap-2">
+                                    {adset.audience.exclusions.map((ex, i) => (
+                                      <span key={i} className="px-2 py-1 text-xs rounded-full bg-red-500/10 text-red-500 border border-red-500/20">
+                                        {ex}
+                                      </span>
+                                    ))}
+                                  </div>
+                                </div>
+                              ) : null}
+                            </div>
+                          </div>
+                          <div className="pt-4 border-t border-border/20">
+                            <div className="text-sm text-muted-foreground mb-3">Placements</div>
+                            <div className="grid grid-cols-2 gap-2">
+                              {(adset.placements || []).map((placement, i) => (
+                                <div key={i} className="flex items-center gap-2 p-2 rounded-lg bg-muted/10">
+                                  <CheckCircle2 className="w-4 h-4 text-green-500" />
+                                  <span className="text-foreground text-sm">{placement}</span>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Ads */}
+                  <div>
+                    <h3 className="text-lg font-bold text-foreground mb-4 flex items-center gap-2">
+                      <Eye className="w-5 h-5 text-primary" />
+                      Ads
+                    </h3>
+                    <div className="space-y-4">
+                      {(metaSetup.ads || []).map((adItem, idx) => (
+                        <div key={idx} className="p-6 rounded-xl bg-gradient-to-br from-purple-500/5 to-transparent border border-purple-500/20">
+                          <div className="flex items-center justify-between mb-3">
+                            <div className="text-lg font-semibold text-foreground">{adItem.name || `Ad ${idx + 1}`}</div>
+                            <div className="text-sm text-muted-foreground">{adItem.format || '—'}</div>
+                          </div>
+                          <div className="space-y-3">
+                            <div>
+                              <div className="text-xs text-muted-foreground mb-1">Primary Text</div>
+                              <div className="text-foreground">{adItem.primary_text || '—'}</div>
+                            </div>
+                            <div>
+                              <div className="text-xs text-muted-foreground mb-1">Headline</div>
+                              <div className="text-foreground font-medium">{adItem.headline || '—'}</div>
+                            </div>
+                            <div>
+                              <div className="text-xs text-muted-foreground mb-1">CTA</div>
+                              <div className="inline-flex items-center px-4 py-2 bg-primary/20 border border-primary/30 text-primary rounded-lg font-medium text-sm">
+                                {adItem.cta || '—'}
+                              </div>
+                            </div>
+                            {adItem.description ? (
+                              <div>
+                                <div className="text-xs text-muted-foreground mb-1">Description</div>
+                                <div className="text-foreground">{adItem.description}</div>
+                              </div>
+                            ) : null}
+                            {adItem.creative_notes ? (
+                              <div className="p-3 rounded-lg bg-muted/10 text-sm text-muted-foreground">
+                                {adItem.creative_notes}
+                              </div>
+                            ) : null}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Tracking */}
+                  <div>
+                    <h3 className="text-lg font-bold text-foreground mb-4 flex items-center gap-2">
+                      <Settings className="w-5 h-5 text-primary" />
+                      Tracking & Attribution
+                    </h3>
+                    <div className="p-6 rounded-xl bg-muted/5 border border-border/20 space-y-3">
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm text-muted-foreground">Pixel</span>
+                        <span className="text-foreground">{metaSetup.tracking?.pixel || '—'}</span>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm text-muted-foreground">Conversion API</span>
+                        <span className="text-foreground">{metaSetup.tracking?.conversion_api || '—'}</span>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm text-muted-foreground">UTM Template</span>
+                        <span className="text-foreground">{metaSetup.tracking?.utm_template || '—'}</span>
+                      </div>
+                    </div>
+                  </div>
+                </>
+              ) : null}
+
+              {!metaSetup ? (
+                <>
               {/* Campaign Settings */}
               <div>
                 <h3 className="text-lg font-bold text-foreground mb-4 flex items-center gap-2">
@@ -462,6 +712,8 @@ export function StrategyViewModal({ strategy, ad, onClose }: StrategyViewModalPr
                   </div>
                 </div>
               </div>
+                </>
+              ) : null}
             </div>
           )}
         </div>
