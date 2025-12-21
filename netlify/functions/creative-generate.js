@@ -772,9 +772,11 @@ async function callOpenAiJson(prompt, options = {}) {
     temperature: 0.0,
     ...(useSchema && responseFormat
       ? {
-          response_format: {
-            type: "json_schema",
-            json_schema: responseFormat,
+          text: {
+            format: {
+              type: "json_schema",
+              json_schema: responseFormat,
+            },
           },
         }
       : {}),

@@ -415,9 +415,11 @@ async function callOpenAiJson({ prompt, imageUrl }) {
     temperature: 0.0,
     ...(useSchema
       ? {
-          response_format: {
-            type: "json_schema",
-            json_schema: NORMALIZED_BRIEF_JSON_SCHEMA,
+          text: {
+            format: {
+              type: "json_schema",
+              json_schema: NORMALIZED_BRIEF_JSON_SCHEMA,
+            },
           },
         }
       : {}),
