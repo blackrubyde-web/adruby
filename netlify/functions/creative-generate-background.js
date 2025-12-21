@@ -793,6 +793,56 @@ function buildFallbackImageSpec(brief, creative) {
   };
 }
 
+function normalizeV1OutputImages(output, hasImage) {
+  if (!output || !Array.isArray(output.creatives)) return output;
+  return {
+    ...output,
+    creatives: output.creatives.map((creative) => {
+      const image = creative?.image || {};
+      return {
+        ...creative,
+        image: {
+          input_image_used: Boolean(image.input_image_used ?? hasImage),
+          render_intent: image.render_intent || "Hero image",
+          hero_image_url: image.hero_image_url ?? null,
+          final_image_url: image.final_image_url ?? null,
+          width: image.width ?? null,
+          height: image.height ?? null,
+          model: image.model ?? null,
+          seed: image.seed ?? null,
+          prompt_hash: image.prompt_hash ?? null,
+          render_version: image.render_version ?? null,
+        },
+      };
+    }),
+  };
+}
+
+function normalizeV2OutputImages(output, hasImage) {
+  if (!output || !Array.isArray(output.variants)) return output;
+  return {
+    ...output,
+    variants: output.variants.map((variant) => {
+      const image = variant?.image || {};
+      return {
+        ...variant,
+        image: {
+          input_image_used: Boolean(image.input_image_used ?? hasImage),
+          render_intent: image.render_intent || "Hero image",
+          hero_image_url: image.hero_image_url ?? null,
+          final_image_url: image.final_image_url ?? null,
+          width: image.width ?? null,
+          height: image.height ?? null,
+          model: image.model ?? null,
+          seed: image.seed ?? null,
+          prompt_hash: image.prompt_hash ?? null,
+          render_version: image.render_version ?? null,
+        },
+      };
+    }),
+  };
+}
+
 export async function handler(event) {
   if (event.httpMethod === "OPTIONS") return withCors({ statusCode: 200 });
   if (event.httpMethod !== "POST") return methodNotAllowed("POST,OPTIONS");
@@ -1014,7 +1064,8 @@ export async function handler(event) {
             }),
         });
 
-        const v2output = repaired.data;
+        let v2output = repaired.data;
+        v2output = normalizeV2OutputImages(v2output, hasImage);
 
         // ensure variants exist
         const variants = Array.isArray(v2output.variants) ? v2output.variants : [];
@@ -1099,6 +1150,39 @@ export async function handler(event) {
         const top3 = scored.slice(0,3).map(s => ({ index: s.index, variant: s.variant, eval: s.eval, score: s.score }));
 
         if (placeholderId) await supabaseAdmin.from('generated_creatives').update({ progress: 60, progress_meta: { phase: 'eval', top_count: top3.length } }).eq('id', placeholderId);
+
+        try {
+          if (placeholderId) {
+            const partialOutput =
+              outputMode === "pro"
+                ? buildProOutputFromV2({
+                    output: v2output,
+                    brief,
+                    jobId: placeholderId,
+                    styleMode,
+                    platforms,
+                    formats,
+                    strategyId,
+                    strategyBlueprint,
+                    imageSpecsByIndex,
+                  })
+                : v2output;
+            await supabaseAdmin
+              .from("generated_creatives")
+              .update({
+                outputs: partialOutput,
+                status: "in_progress",
+                progress: 65,
+                progress_meta: {
+                  phase: "text_ready",
+                  message: "Text-Varianten fertig. Bilder werden generiert…",
+                },
+              })
+              .eq("id", placeholderId);
+          }
+        } catch (e) {
+          logStep("mentor.partial.save.error", { jobId: placeholderId, error: e?.message || String(e) });
+        }
 
         // improve-loop on top1 only (max 2 attempts)
         if (top3.length > 0) {
@@ -1333,14 +1417,31 @@ export async function handler(event) {
             try {
               if (placeholderId) {
                 const pct = Math.min(99, 92 + Math.round(((i + 1) / mentorTargets.length) * 6));
+                const progressOutput =
+                  outputMode === "pro"
+                    ? buildProOutputFromV2({
+                        output: v2output,
+                        brief,
+                        jobId: placeholderId,
+                        styleMode,
+                        platforms,
+                        formats,
+                        strategyId,
+                        strategyBlueprint,
+                        imageSpecsByIndex,
+                      })
+                    : v2output;
                 await supabaseAdmin
                   .from("generated_creatives")
                   .update({
+                    outputs: progressOutput,
                     progress: pct,
                     progress_meta: {
-                      phase: "render_images",
+                      phase: "images_progress",
+                      message: `Bild ${i + 1}/${mentorTargets.length} fertig`,
                       done: i + 1,
                       total: mentorTargets.length,
+                      lastVariantId: variant.id || null,
                     },
                   })
                   .eq("id", placeholderId);
@@ -1473,6 +1574,40 @@ export async function handler(event) {
         best = improved;
         bestEval = improvedEval;
       }
+    }
+
+    best = normalizeV1OutputImages(best, hasImage);
+    const partialOutput =
+      outputMode === "pro"
+        ? buildProOutputFromV1({
+            output: best,
+            brief,
+            jobId: placeholderId,
+            styleMode,
+            platforms,
+            formats,
+            strategyId: strategyId || null,
+            strategyBlueprint,
+            imageSpecsByIndex,
+          })
+        : best;
+    try {
+      if (placeholderId) {
+        await supabaseAdmin
+          .from("generated_creatives")
+          .update({
+            outputs: partialOutput,
+            status: "in_progress",
+            progress: 45,
+            progress_meta: {
+              phase: "text_ready",
+              message: "Text-Varianten fertig. Bilder werden generiert…",
+            },
+          })
+          .eq("id", placeholderId);
+      }
+    } catch {
+      /* ignore */
     }
 
     const inputImageBase64 = await resolveInputImageBase64(imagePath);
@@ -1627,11 +1762,32 @@ export async function handler(event) {
         try {
           if (placeholderId) {
             const pct = Math.min(99, 92 + Math.round(((i + 1) / imageTargets.length) * 6));
+            const progressOutput =
+              outputMode === "pro"
+                ? buildProOutputFromV1({
+                    output: best,
+                    brief,
+                    jobId: placeholderId,
+                    styleMode,
+                    platforms,
+                    formats,
+                    strategyId: strategyId || null,
+                    strategyBlueprint,
+                    imageSpecsByIndex,
+                  })
+                : best;
             await supabaseAdmin
               .from("generated_creatives")
               .update({
+                outputs: progressOutput,
                 progress: pct,
-                progress_meta: { phase: "render_images", done: i + 1, total: imageTargets.length },
+                progress_meta: {
+                  phase: "images_progress",
+                  message: `Bild ${i + 1}/${imageTargets.length} fertig`,
+                  done: i + 1,
+                  total: imageTargets.length,
+                  lastVariantId: creative?.id ?? null,
+                },
               })
               .eq("id", placeholderId);
           }
