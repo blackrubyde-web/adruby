@@ -96,7 +96,11 @@ export default function CreativeBuilderWizard() {
     setLoading("generate");
     setProgress(null);
     try {
-      const res = await creativeGenerate({ brief, hasImage: Boolean(imageFile) });
+      const res = await creativeGenerate({
+        brief,
+        hasImage: Boolean(imageFile),
+        imagePath: imageMeta?.path ?? null,
+      });
       setJobId(res.jobId ?? null);
       if (res.output) {
         setOutput(res.output);

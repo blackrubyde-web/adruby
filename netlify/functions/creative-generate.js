@@ -80,6 +80,10 @@ export async function handler(event) {
   }
 
   const hasImage = Boolean(body?.hasImage);
+  const imagePath =
+    typeof body?.imagePath === "string" && body.imagePath.trim()
+      ? body.imagePath.trim()
+      : null;
   const strategyId = typeof body?.strategyId === "string" ? body.strategyId.trim() : null;
 
   let placeholderId = null;
@@ -87,7 +91,12 @@ export async function handler(event) {
     const insertPayload = {
       user_id: userId,
       blueprint_id: strategyId || null,
-      inputs: { brief: briefParsed.data, hasImage, strategyId: strategyId || null },
+      inputs: {
+        brief: briefParsed.data,
+        hasImage,
+        imagePath,
+        strategyId: strategyId || null,
+      },
       outputs: null,
       score: null,
       saved: false,
@@ -146,7 +155,7 @@ export async function handler(event) {
         "Content-Type": "application/json",
         ...(authHeader ? { Authorization: authHeader } : {}),
       },
-      body: JSON.stringify({ ...body, jobId: placeholderId }),
+      body: JSON.stringify({ ...body, jobId: placeholderId, imagePath }),
     });
     if (process.env.DEBUG_FUNCTIONS === "1") {
       console.info("[creative-generate] background response", {

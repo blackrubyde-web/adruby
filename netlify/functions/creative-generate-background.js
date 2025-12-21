@@ -481,10 +481,26 @@ function sizeForFormat(format) {
   switch (format) {
     case "9:16":
     case "4:5":
-      return "1024x1792";
+      return "1024x1536";
     case "1:1":
     default:
       return "1024x1024";
+  }
+}
+
+async function resolveInputImageBase64(imagePath) {
+  if (!imagePath) return null;
+  try {
+    const signed = await supabaseAdmin.storage
+      .from("creative-inputs")
+      .createSignedUrl(imagePath, 60 * 10);
+    if (signed.error || !signed.data?.signedUrl) return null;
+    const res = await fetch(signed.data.signedUrl);
+    if (!res.ok) return null;
+    const arrayBuffer = await res.arrayBuffer();
+    return Buffer.from(arrayBuffer).toString("base64");
+  } catch {
+    return null;
   }
 }
 
@@ -576,7 +592,11 @@ export async function handler(event) {
     return badRequest("Invalid brief");
   }
   const brief = briefParsed.data;
-  const hasImage = Boolean(body?.hasImage);
+  const imagePath =
+    typeof body?.imagePath === "string" && body.imagePath.trim()
+      ? body.imagePath.trim()
+      : null;
+  const hasImage = Boolean(body?.hasImage || imagePath);
   const strategyId = typeof body?.strategyId === "string" ? body.strategyId.trim() : "";
   let strategyBlueprint = null;
 
@@ -599,7 +619,7 @@ export async function handler(event) {
   } catch (err) {
     return badRequest(err?.message || "Insufficient credits", 402);
   }
-  const inputForLog = { brief, hasImage, strategyId: strategyId || null };
+  const inputForLog = { brief, hasImage, imagePath, strategyId: strategyId || null };
   let placeholderId = "";
 
   try {
@@ -886,6 +906,7 @@ export async function handler(event) {
         if (mentorTargets.length) {
           logStep("mentor.images.start", { jobId: placeholderId, count: mentorTargets.length });
           const imageQuality = process.env.CREATIVE_IMAGE_QUALITY || "auto";
+          const inputImageBase64 = await resolveInputImageBase64(imagePath);
           try {
             if (placeholderId) {
               await supabaseAdmin
@@ -955,24 +976,29 @@ export async function handler(event) {
 
             let heroB64 = null;
             let heroMeta = null;
-            try {
-              const hero = await generateHeroImage({
-                prompt: imagePrompt,
-                size,
-                quality: imageQuality,
-              });
-              heroB64 = hero.b64;
-              heroMeta = hero;
-            } catch (err) {
-              logStep("mentor.images.hero.error", {
-                jobId: placeholderId,
-                index,
-                error: err?.message || String(err),
-              });
+            if (inputImageBase64) {
+              heroB64 = inputImageBase64;
+              heroMeta = { model: "user_upload" };
+            } else {
+              try {
+                const hero = await generateHeroImage({
+                  prompt: imagePrompt,
+                  size,
+                  quality: imageQuality,
+                });
+                heroB64 = hero.b64;
+                heroMeta = hero;
+              } catch (err) {
+                logStep("mentor.images.hero.error", {
+                  jobId: placeholderId,
+                  index,
+                  error: err?.message || String(err),
+                });
+              }
             }
 
             let heroUrl = null;
-            if (heroB64) {
+            if (heroB64 && !inputImageBase64) {
               try {
                 const heroUpload = await uploadHeroImage({
                   userId,
@@ -1165,6 +1191,7 @@ export async function handler(event) {
       }
     }
 
+    const inputImageBase64 = await resolveInputImageBase64(imagePath);
     const imageTargets = pickCreativesForImages(best.creatives);
     if (imageTargets.length) {
       logStep("default.images.start", { jobId: placeholderId, count: imageTargets.length });
@@ -1217,24 +1244,29 @@ export async function handler(event) {
 
         let heroB64 = null;
         let heroMeta = null;
-        try {
-          const hero = await generateHeroImage({
-            prompt: imagePrompt,
-            size,
-            quality: imageQuality,
-          });
-          heroB64 = hero.b64;
-          heroMeta = hero;
-        } catch (err) {
-          logStep("default.images.hero.error", {
-            jobId: placeholderId,
-            index,
-            error: err?.message || String(err),
-          });
+        if (inputImageBase64) {
+          heroB64 = inputImageBase64;
+          heroMeta = { model: "user_upload" };
+        } else {
+          try {
+            const hero = await generateHeroImage({
+              prompt: imagePrompt,
+              size,
+              quality: imageQuality,
+            });
+            heroB64 = hero.b64;
+            heroMeta = hero;
+          } catch (err) {
+            logStep("default.images.hero.error", {
+              jobId: placeholderId,
+              index,
+              error: err?.message || String(err),
+            });
+          }
         }
 
         let heroUrl = null;
-        if (heroB64) {
+        if (heroB64 && !inputImageBase64) {
           try {
             const heroUpload = await uploadHeroImage({
               userId,

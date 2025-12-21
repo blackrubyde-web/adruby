@@ -58,6 +58,7 @@ export type CreativeGenerateResponse = {
 export async function creativeGenerate(params: {
   brief: NormalizedBrief | unknown;
   hasImage: boolean;
+  imagePath?: string | null;
   strategyId?: string | null;
   researchIds?: string[] | null;
 }): Promise<CreativeGenerateResponse> {

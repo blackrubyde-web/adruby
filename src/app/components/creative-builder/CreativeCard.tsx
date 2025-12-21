@@ -16,6 +16,12 @@ export default function CreativeCard(props: {
   actions?: ReactNode;
 }) {
   const c = props.creative;
+  const aspectClass =
+    c.format === "9:16"
+      ? "aspect-[9/16]"
+      : c.format === "4:5"
+        ? "aspect-[4/5]"
+        : "aspect-square";
 
   const scoreVariant =
     c.score.value >= 85 ? "default" : c.score.value >= 70 ? "secondary" : "outline";
@@ -35,17 +41,21 @@ export default function CreativeCard(props: {
   return (
     <Card className="p-4">
       {c.image.final_image_url || c.image.hero_image_url ? (
-        <div className="mb-3 overflow-hidden rounded-xl border border-border bg-muted/20">
+        <div
+          className={`mb-3 w-full overflow-hidden rounded-xl border border-border bg-muted/20 ${aspectClass}`}
+        >
           <ImageWithFallback
             src={c.image.final_image_url || c.image.hero_image_url}
             alt={c.copy.hook}
-            className="h-auto w-full"
+            className="h-full w-full object-cover"
             loading="lazy"
             decoding="async"
           />
         </div>
       ) : (
-        <div className="mb-3 flex min-h-[180px] items-center justify-center rounded-xl border border-dashed border-border bg-muted/20 text-xs text-muted-foreground">
+        <div
+          className={`mb-3 flex w-full items-center justify-center rounded-xl border border-dashed border-border bg-muted/20 text-xs text-muted-foreground ${aspectClass}`}
+        >
           Image rendering pending
         </div>
       )}
