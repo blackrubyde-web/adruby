@@ -1,20 +1,17 @@
 // netlify/functions/_shared/clients.js
 
 import { createClient } from '@supabase/supabase-js';
-import { createRequire } from 'module';
+import Stripe from 'stripe';
 
 let stripeInstance = null;
-const require = createRequire(import.meta.url);
 if (process.env.STRIPE_SECRET_KEY) {
   try {
-    const mod = require('stripe');
-    const Stripe = mod?.default ?? mod;
     stripeInstance = new Stripe(process.env.STRIPE_SECRET_KEY, { apiVersion: '2023-10-16' });
   } catch (e) {
-    console.error('[Init] Stripe import/init failed:', e?.message || e);
+    console.error('[Init] Stripe init failed:', e?.message || e);
   }
 } else {
-  console.error('[Init] STRIPE_SECRET_KEY is missing');
+  console.warn('[Init] STRIPE_SECRET_KEY is missing');
 }
 
 export const stripe = stripeInstance;
