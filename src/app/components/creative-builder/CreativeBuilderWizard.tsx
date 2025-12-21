@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -98,27 +98,10 @@ export default function CreativeBuilderWizard() {
     try {
       const res = await creativeGenerate({ brief, hasImage: Boolean(imageFile) });
       setJobId(res.jobId ?? null);
-
-      let resolvedOutput = res.output ?? null;
-      if (!resolvedOutput && res.jobId) {
-        const maxAttempts = 30;
-        for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
-          const status = await creativeStatus(res.jobId);
-          if (typeof status.progress === "number") setProgress(status.progress);
-          if (status.status === "complete" && status.outputs) {
-            resolvedOutput = status.outputs;
-            break;
-          }
-          if (status.status === "error") {
-            throw new Error("Generierung fehlgeschlagen.");
-          }
-          // eslint-disable-next-line no-await-in-loop
-          await new Promise((resolve) => setTimeout(resolve, Math.min(4000, 1200 + attempt * 250)));
-        }
+      if (res.output) {
+        setOutput(res.output);
+        setQuality(res.quality != null ? { satisfaction: res.quality } : null);
       }
-
-      setOutput(resolvedOutput);
-      setQuality(res.quality != null ? { satisfaction: res.quality } : null);
       setStep(3);
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : "Generate failed.");
@@ -146,6 +129,46 @@ export default function CreativeBuilderWizard() {
     if (!session) return { kind: "missing" as const };
     return { kind: "ok" as const };
   }, [isAuthReady, isLoading, session]);
+
+  useEffect(() => {
+    if (!jobId || output || loading === "generate") return;
+    let cancelled = false;
+    let attempt = 0;
+
+    const poll = async () => {
+      if (cancelled) return;
+      try {
+        const status = await creativeStatus(jobId);
+        if (cancelled) return;
+        if (typeof status.progress === "number") setProgress(status.progress);
+        if (status.status === "complete" && status.outputs) {
+          setOutput(status.outputs);
+          setQuality(
+            status.score != null ? { satisfaction: status.score, target: quality?.target } : null,
+          );
+          return;
+        }
+        if (status.status === "error") {
+          setError("Generierung fehlgeschlagen.");
+          return;
+        }
+      } catch (err: unknown) {
+        if (!cancelled) {
+          setError(err instanceof Error ? err.message : "Status check failed.");
+        }
+        return;
+      }
+
+      attempt += 1;
+      const delay = Math.min(5000, 1200 + attempt * 300);
+      setTimeout(poll, delay);
+    };
+
+    poll();
+    return () => {
+      cancelled = true;
+    };
+  }, [jobId, output, loading, quality?.target]);
 
   return (
     <div className="mx-auto w-full max-w-6xl space-y-6">

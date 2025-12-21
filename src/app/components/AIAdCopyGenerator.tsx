@@ -112,8 +112,9 @@ export function AIAdCopyGenerator({
 
       let output = generated.output ?? null;
       if (!output && generated.jobId) {
-        const maxAttempts = 30;
-        for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
+        const deadline = Date.now() + 180000;
+        let attempt = 0;
+        while (Date.now() < deadline) {
           const status = await creativeStatus(generated.jobId);
           if (typeof status.progress === 'number') setProgress(status.progress);
           if (status.status === 'complete' && status.outputs) {
@@ -123,9 +124,13 @@ export function AIAdCopyGenerator({
           if (status.status === 'error') {
             throw new Error('Generierung fehlgeschlagen.');
           }
+          attempt += 1;
           // backoff to reduce polling load
           // eslint-disable-next-line no-await-in-loop
-          await sleep(Math.min(4000, 1200 + attempt * 250));
+          await sleep(Math.min(5000, 1200 + attempt * 300));
+        }
+        if (!output) {
+          throw new Error('Generierung läuft noch. Bitte in 1–2 Minuten erneut prüfen.');
         }
       }
 

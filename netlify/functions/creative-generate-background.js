@@ -357,9 +357,14 @@ const TARGET_SATISFACTION = clampInt(
   100,
 );
 const MAX_IMPROVE_ATTEMPTS = clampInt(
-  Number.parseInt(process.env.CREATIVE_QUALITY_MAX_ATTEMPTS || "5", 10),
+  Number.parseInt(process.env.CREATIVE_QUALITY_MAX_ATTEMPTS || "3", 10),
   0,
   10,
+);
+const MAX_DURATION_MS = clampInt(
+  Number.parseInt(process.env.CREATIVE_MAX_DURATION_MS || "60000", 10),
+  10000,
+  300000,
 );
 
 export async function handler(event) {
@@ -744,6 +749,7 @@ export async function handler(event) {
     }
 
     // default (existing) flow
+    const startedAt = Date.now();
     logStep("default.start", { jobId: placeholderId });
     const prompt = buildGeneratePrompt(brief, hasImage, strategyBlueprint, researchContext);
 
@@ -770,7 +776,17 @@ export async function handler(event) {
     logStep("default.eval", { jobId: placeholderId });
     let bestEval = await evaluateOutput(brief, best, strategyBlueprint, researchContext);
 
+    let attemptsUsed = 0;
     for (let attempt = 1; attempt <= MAX_IMPROVE_ATTEMPTS; attempt++) {
+      attemptsUsed = attempt;
+      if (Date.now() - startedAt > MAX_DURATION_MS) {
+        logStep("default.timeout", {
+          jobId: placeholderId,
+          elapsedMs: Date.now() - startedAt,
+          attemptsUsed,
+        });
+        break;
+      }
       if (bestEval.satisfaction >= TARGET_SATISFACTION) break;
 
       logStep("default.improve", { jobId: placeholderId, attempt });
@@ -832,6 +848,13 @@ export async function handler(event) {
     } catch (e) {
       console.warn('[creative-generate] failed to update generated_creatives:', e?.message || e);
     }
+
+    logStep("default.complete", {
+      jobId: placeholderId,
+      elapsedMs: Date.now() - startedAt,
+      attemptsUsed,
+      satisfaction: bestEval.satisfaction,
+    });
 
     return ok({
       output: best,
