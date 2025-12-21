@@ -11,7 +11,7 @@ function getAuthHeader(headers) {
 }
 
 function getBaseUrl(event) {
-  const base = process.env.URL || process.env.DEPLOY_URL || process.env.SITE_URL || "";
+  const base = process.env.DEPLOY_URL || process.env.URL || process.env.SITE_URL || "";
   if (base) return base.replace(/\/$/, "");
   const headers = event?.headers || {};
   const proto = headers["x-forwarded-proto"] || headers["X-Forwarded-Proto"] || "https";
@@ -137,6 +137,9 @@ export async function handler(event) {
   const backgroundUrl = `${baseUrl}/.netlify/functions/creative-generate-background`;
 
   try {
+    if (process.env.DEBUG_FUNCTIONS === "1") {
+      console.info("[creative-generate] background url", { url: backgroundUrl });
+    }
     const bgRes = await fetch(backgroundUrl, {
       method: "POST",
       headers: {
