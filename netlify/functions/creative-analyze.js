@@ -210,11 +210,24 @@ export async function handler(event) {
   }
 
   const auth = await requireUserId(event);
-  if (!auth.ok) return auth.response;
+  if (!auth.ok) {
+    if (process.env.DEBUG_FUNCTIONS === "1") {
+      console.warn("[creative-analyze] Auth failed", {
+        path: event.path,
+        method: event.httpMethod,
+      });
+    }
+    return auth.response;
+  }
   const userId = auth.userId;
 
   const entitlement = await requireActiveSubscription(userId);
-  if (!entitlement.ok) return entitlement.response;
+  if (!entitlement.ok) {
+    if (process.env.DEBUG_FUNCTIONS === "1") {
+      console.warn("[creative-analyze] Entitlement check failed", { userId });
+    }
+    return entitlement.response;
+  }
 
   let fields;
   let files;
@@ -225,6 +238,12 @@ export async function handler(event) {
     fields = parsed.fields;
     files = parsed.files;
   } catch (err) {
+    if (process.env.DEBUG_FUNCTIONS === "1") {
+      console.warn("[creative-analyze] Multipart parsing failed", {
+        error: err?.message || "Unknown error",
+        headers: event.headers,
+      });
+    }
     return badRequest(err?.message || "Invalid multipart request");
   }
 
@@ -293,6 +312,12 @@ export async function handler(event) {
   try {
     credits = await assertAndConsumeCredits(userId, "creative_analyze");
   } catch (err) {
+    if (process.env.DEBUG_FUNCTIONS === "1") {
+      console.warn("[creative-analyze] Credit consumption failed", {
+        userId,
+        error: err?.message || "Unknown error",
+      });
+    }
     return badRequest(err?.message || "Insufficient credits", 402);
   }
 

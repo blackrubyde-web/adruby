@@ -135,6 +135,31 @@ ${researchBlock}
 `;
 }
 
+export function buildBatchQualityEvalPromptV2({ brief, variants, strategyBlueprint, researchContext }) {
+  const researchBlock = renderResearchContext(researchContext);
+  const strategyBlock = strategyBlueprint ? `\nStrategy: ${strategyBlueprint}` : "";
+
+  const variantsJson = JSON.stringify(
+    variants.map((v, i) => ({ id: i, variant: v })),
+    null,
+    2,
+  );
+
+  return `
+You are a strict creative reviewer. Return ONLY valid JSON matching the BatchQualityEvalV2 schema.
+Your task is to evaluate a batch of creative variants against a single brief.
+For each variant in the input array, provide a corresponding evaluation object in an "evaluations" array.
+The order of evaluations in your output array MUST EXACTLY match the order of variants in the input array.
+
+Respond with a single JSON object: { "evaluations": [ ... ] }
+
+BRIEF: ${JSON.stringify(brief)}
+VARIANTS: ${variantsJson}
+${strategyBlock}
+${researchBlock}
+`;
+}
+
 export function buildImprovePromptDiagnosePlanRewrite({ brief, currentVariant, evalV2, targetDimensions = [] }) {
   return `
 Return ONLY valid JSON.

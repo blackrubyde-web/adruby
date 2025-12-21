@@ -155,6 +155,10 @@ export const QualityEvalV2Schema = z.object({
     .default([]),
 });
 
+export const BatchQualityEvalV2Schema = z.object({
+  evaluations: z.array(QualityEvalV2Schema).min(1),
+});
+
 export const CreativeVariantSchema = z.object({
   platform: z.enum(["meta", "tiktok", "youtube_shorts", "linkedin"]).default("meta"),
   language: z.string().default("de-DE"),

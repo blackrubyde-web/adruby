@@ -35,11 +35,24 @@ export async function handler(event) {
   }
 
   const auth = await requireUserId(event);
-  if (!auth.ok) return auth.response;
+  if (!auth.ok) {
+    if (process.env.DEBUG_FUNCTIONS === "1") {
+      console.warn("[creative-generate] Auth failed", {
+        path: event.path,
+        method: event.httpMethod,
+      });
+    }
+    return auth.response;
+  }
   const userId = auth.userId;
 
   const entitlement = await requireActiveSubscription(userId);
-  if (!entitlement.ok) return entitlement.response;
+  if (!entitlement.ok) {
+    if (process.env.DEBUG_FUNCTIONS === "1") {
+      console.warn("[creative-generate] Entitlement check failed", { userId });
+    }
+    return entitlement.response;
+  }
 
   let body;
   try {

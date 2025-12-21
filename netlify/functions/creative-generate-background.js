@@ -13,6 +13,7 @@ import {
   buildMentorUgcGeneratePrompt,
   buildQualityEvalPromptV2,
   buildImprovePromptDiagnosePlanRewrite,
+  buildBatchQualityEvalPromptV2,
 } from "./_shared/creativePrompts.js";
 import { parseWithRepair } from "./_shared/repair.js";
 import {
@@ -22,6 +23,7 @@ import {
   CreativeOutputSchemaV2,
   CreativeVariantSchema,
   QualityEvalV2Schema,
+  BatchQualityEvalV2Schema,
 } from "./_shared/creativeSchemas.js";
 import { applySanityFilter } from "./_shared/creativeQuality.js";
 
@@ -575,24 +577,70 @@ export async function handler(event) {
         // update progress: generation done
         if (placeholderId) await supabaseAdmin.from('generated_creatives').update({ progress: 40, progress_meta: { phase: 'generate' } }).eq('id', placeholderId);
 
-        logStep("mentor.eval", { jobId: placeholderId, variants: variants.length });
-        // evaluate each variant
-        const evals = [];
-        for (let i = 0; i < variants.length; i++) {
-          const variant = variants[i];
-          try {
-            const evalPrompt = buildQualityEvalPromptV2({ brief, variant, strategyBlueprint, researchContext });
-            const evalRaw = await callOpenAiJson(evalPrompt);
-            const evalParsed = await parseWithRepair({
-              schema: QualityEvalV2Schema,
-              initial: evalRaw,
-              makeRequest: async (instruction) => callOpenAiJson(evalPrompt + "\n\n" + instruction),
-            });
-            evals.push({ index: i, variant, eval: evalParsed.data });
-          } catch (e) {
-            // on eval failure, mark low score and continue
-            evals.push({ index: i, variant, eval: { subscores: { hookPower:0, clarity:0, proof:0, offer:0, objectionHandling:0, platformFit:0, novelty:0 }, ko: { complianceFail:false, genericBuzzwordFail:false }, issues: ['eval_failed'] , weakest_dimensions: [] } });
+        logStep("mentor.eval.batch", { jobId: placeholderId, variants: variants.length });
+
+        // batch-evaluate all variants in a single call
+        let evals = [];
+        try {
+          const batchEvalPrompt = buildBatchQualityEvalPromptV2({
+            brief,
+            variants,
+            strategyBlueprint,
+            researchContext,
+          });
+          const batchEvalRaw = await callOpenAiJson(batchEvalPrompt, {
+            responseFormat: {
+              name: "batch_quality_eval_v2",
+              schema: BatchQualityEvalV2Schema.openapi("batch_quality_eval_v2").schema,
+              strict: true,
+            },
+          });
+          const batchEvalParsed = await parseWithRepair({
+            schema: BatchQualityEvalV2Schema,
+            initial: batchEvalRaw,
+            makeRequest: async (instruction) =>
+              callOpenAiJson(batchEvalPrompt + "\n\n" + instruction, {
+                responseFormat: {
+                  name: "batch_quality_eval_v2",
+                  schema: BatchQualityEvalV2Schema.openapi("batch_quality_eval_v2").schema,
+                  strict: true,
+                },
+              }),
+          });
+
+          const receivedEvals = batchEvalParsed.data.evaluations || [];
+          if (receivedEvals.length !== variants.length) {
+            throw new Error(
+              `Batch eval count mismatch: expected ${variants.length}, got ${receivedEvals.length}`,
+            );
           }
+
+          evals = variants.map((variant, i) => ({
+            index: i,
+            variant,
+            eval: receivedEvals[i],
+          }));
+        } catch (e) {
+          logStep("mentor.eval.batch.error", { jobId: placeholderId, error: e.message });
+          // on batch failure, create dummy evals to avoid crashing
+          evals = variants.map((variant, i) => ({
+            index: i,
+            variant,
+            eval: {
+              subscores: {
+                hookPower: 0,
+                clarity: 0,
+                proof: 0,
+                offer: 0,
+                objectionHandling: 0,
+                platformFit: 0,
+                novelty: 0,
+              },
+              ko: { complianceFail: false, genericBuzzwordFail: false },
+              issues: ["batch_eval_failed"],
+              weakest_dimensions: [],
+            },
+          }));
         }
 
         // compute score by summing subscores
