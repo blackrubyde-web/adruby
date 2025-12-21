@@ -1,4 +1,7 @@
 // netlify/functions/_shared/apifyClient.js (ESM)
+import { createRequire } from 'module';
+
+const require = createRequire(import.meta.url);
 const APIFY_API_TOKEN = process.env.APIFY_API_TOKEN;
 const APIFY_FACEBOOK_ADS_ACTOR_ID = process.env.APIFY_FACEBOOK_ADS_ACTOR_ID;
 
@@ -52,8 +55,13 @@ export async function runAdResearchActor(params = {}) {
 
   console.log('[ApifyClient] Starting actor run', { actorId, input });
 
-  // Use dynamic import to avoid resolving apify-client at module import time (helps tests)
-  const { ApifyClient } = await import('apify-client');
+  let ApifyClient;
+  try {
+    ({ ApifyClient } = require('apify-client'));
+  } catch (error) {
+    console.error('[ApifyClient] Failed to load apify-client (CJS)', error?.message || error);
+    throw new Error('Failed to load apify-client');
+  }
   const client = new ApifyClient({ token: APIFY_API_TOKEN });
 
   try {
