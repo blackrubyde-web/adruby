@@ -154,7 +154,7 @@ export const ImageSpecSchema = z
         environment: z.string().min(1),
         composition: z.string().min(1),
         props: z.array(z.string().min(1)).min(1).max(6),
-        wardrobe: z.array(z.string().min(1)).max(6).optional(),
+        wardrobe: z.array(z.string().min(1)).max(6).default([]),
       })
       .strict(),
     brand_safety: z

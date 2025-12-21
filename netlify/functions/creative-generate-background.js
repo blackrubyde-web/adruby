@@ -411,13 +411,13 @@ const IMAGE_SPEC_JSON_SCHEMA = {
       scene: {
         type: "object",
         additionalProperties: false,
-        required: ["subject", "environment", "composition", "props"],
+        required: ["subject", "environment", "composition", "props", "wardrobe"],
         properties: {
           subject: { type: "string", minLength: 1 },
           environment: { type: "string", minLength: 1 },
           composition: { type: "string", minLength: 1 },
           props: { type: "array", minItems: 1, maxItems: 6, items: { type: "string", minLength: 1 } },
-          wardrobe: { type: "array", maxItems: 6, items: { type: "string", minLength: 1 } },
+          wardrobe: { type: "array", maxItems: 6, items: { type: "string", minLength: 1 }, default: [] },
         },
       },
       brand_safety: {

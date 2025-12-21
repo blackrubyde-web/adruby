@@ -23,6 +23,15 @@ export function getOpenAiImageModel() {
   return process.env.CREATIVE_IMAGE_MODEL || "gpt-image-1";
 }
 
+async function fetchImageAsBase64(url) {
+  const res = await fetch(url);
+  if (!res.ok) {
+    throw new Error(`Image download failed: ${res.status}`);
+  }
+  const arrayBuffer = await res.arrayBuffer();
+  return Buffer.from(arrayBuffer).toString("base64");
+}
+
 export async function generateHeroImage({
   prompt,
   size,
@@ -40,16 +49,25 @@ export async function generateHeroImage({
     prompt,
     size,
     quality,
-    response_format: "b64_json",
   };
   if (typeof seed === "number") {
     params.seed = seed;
   }
 
   const result = await openai.images.generate(params);
-  const b64 = result?.data?.[0]?.b64_json;
-  if (!b64) {
+  const item = result?.data?.[0];
+  if (!item) {
     throw new Error("Image generation returned no data");
   }
-  return { b64, model, seed };
+
+  if (item.b64_json) {
+    return { b64: item.b64_json, model, seed };
+  }
+
+  if (item.url) {
+    const b64 = await fetchImageAsBase64(item.url);
+    return { b64, model, seed };
+  }
+
+  throw new Error("Image generation returned no usable output");
 }

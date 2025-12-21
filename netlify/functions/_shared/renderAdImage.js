@@ -1,3 +1,4 @@
+import { Resvg } from "@resvg/resvg-js";
 import chromium from "@sparticuz/chromium";
 import puppeteer from "puppeteer-core";
 
@@ -133,38 +134,122 @@ function buildHtml({ creative, brandName, format, heroDataUri }) {
 `;
 }
 
+function buildSvg({ creative, brandName, format, heroDataUri }) {
+  const { width, height } = getViewport(format);
+  const hook = escapeHtml(creative?.copy?.hook);
+  const primary = escapeHtml(creative?.copy?.primary_text);
+  const cta = escapeHtml(creative?.copy?.cta || "Mehr erfahren");
+  const badge = escapeHtml(brandName || "");
+
+  const safeHook = splitText(hook, 28, 3);
+  const safePrimary = splitText(primary, 42, 4);
+
+  const hero = heroDataUri
+    ? `<image href="${heroDataUri}" x="0" y="0" width="${width}" height="${height}" preserveAspectRatio="xMidYMid slice" />`
+    : `<rect x="0" y="0" width="${width}" height="${height}" fill="url(#bg)" />`;
+
+  const badgeMarkup = badge
+    ? `<rect x="80" y="${height - 470}" rx="999" ry="999" width="${Math.min(700, badge.length * 16 + 50)}" height="56" fill="rgba(255,255,255,0.92)" />
+       <text x="110" y="${height - 432}" font-size="26" font-weight="600" fill="#0f172a">${badge}</text>`
+    : "";
+
+  const ctaWidth = Math.min(360, cta.length * 16 + 90);
+
+  return `
+<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}">
+  <defs>
+    <linearGradient id="bg" x1="0" x2="1" y1="0" y2="1">
+      <stop offset="0%" stop-color="#f8fafc"/>
+      <stop offset="50%" stop-color="#eef2ff"/>
+      <stop offset="100%" stop-color="#fdf2f8"/>
+    </linearGradient>
+    <linearGradient id="overlay" x1="0" x2="0" y1="0" y2="1">
+      <stop offset="0%" stop-color="rgba(8,10,12,0)"/>
+      <stop offset="55%" stop-color="rgba(8,10,12,0.35)"/>
+      <stop offset="100%" stop-color="rgba(8,10,12,0.75)"/>
+    </linearGradient>
+  </defs>
+  ${hero}
+  <rect x="0" y="0" width="${width}" height="${height}" fill="url(#overlay)"/>
+  ${badgeMarkup}
+  ${renderTextBlock(safeHook, 80, height - 360, 64, 1.1, "#ffffff", 700)}
+  ${renderTextBlock(safePrimary, 80, height - 200, 30, 1.3, "#f1f5f9", 400)}
+  <rect x="80" y="${height - 120}" rx="18" ry="18" width="${ctaWidth}" height="64" fill="#2563eb"/>
+  <text x="${100}" y="${height - 80}" font-size="28" font-weight="700" fill="#ffffff">${cta}</text>
+</svg>`;
+}
+
+function splitText(text, maxChars, maxLines) {
+  if (!text) return [""];
+  const words = text.split(" ");
+  const lines = [];
+  let current = "";
+  for (const w of words) {
+    const candidate = current ? `${current} ${w}` : w;
+    if (candidate.length <= maxChars) {
+      current = candidate;
+    } else {
+      lines.push(current);
+      current = w;
+    }
+    if (lines.length >= maxLines) break;
+  }
+  if (current && lines.length < maxLines) lines.push(current);
+  return lines;
+}
+
+function renderTextBlock(lines, x, y, fontSize, lineHeight, color, weight) {
+  return lines
+    .map((line, idx) => {
+      const dy = idx * fontSize * lineHeight;
+      return `<text x="${x}" y="${y + dy}" font-size="${fontSize}" font-weight="${weight}" fill="${color}">${escapeHtml(line)}</text>`;
+    })
+    .join("\n");
+}
+
 export async function renderAdImage({ creative, brief, format, heroBase64 }) {
   const { width, height } = getViewport(format);
   const heroDataUri = heroBase64 ? `data:image/png;base64,${heroBase64}` : null;
-  const html = buildHtml({
-    creative,
-    brandName: brief?.brand?.name || "",
-    format,
-    heroDataUri,
-  });
+  const renderEngine = process.env.CREATIVE_RENDER_ENGINE || "svg";
+  const brandName = brief?.brand?.name || "";
 
-  const executablePath = await chromium.executablePath();
-  const browser = await puppeteer.launch({
-    args: chromium.args,
-    executablePath,
-    headless: chromium.headless,
-    defaultViewport: { width, height, deviceScaleFactor: 2 },
-    ignoreHTTPSErrors: true,
-  });
+  if (renderEngine === "chromium") {
+    const html = buildHtml({ creative, brandName, format, heroDataUri });
+    const executablePath = await chromium.executablePath();
+    const browser = await puppeteer.launch({
+      args: chromium.args,
+      executablePath,
+      headless: chromium.headless,
+      defaultViewport: { width, height, deviceScaleFactor: 2 },
+      ignoreHTTPSErrors: true,
+    });
 
-  try {
-    const page = await browser.newPage();
-    await page.setViewport({ width, height, deviceScaleFactor: 2 });
-    await page.setContent(html, { waitUntil: "networkidle0" });
-    const buffer = await page.screenshot({ type: "png" });
-    await page.close();
-    return {
-      buffer,
-      width,
-      height,
-      renderVersion: process.env.CREATIVE_RENDER_VERSION || "v1",
-    };
-  } finally {
-    await browser.close();
+    try {
+      const page = await browser.newPage();
+      await page.setViewport({ width, height, deviceScaleFactor: 2 });
+      await page.setContent(html, { waitUntil: "networkidle0" });
+      const buffer = await page.screenshot({ type: "png" });
+      await page.close();
+      return {
+        buffer,
+        width,
+        height,
+        renderVersion: process.env.CREATIVE_RENDER_VERSION || "v1",
+      };
+    } finally {
+      await browser.close();
+    }
   }
+
+  const svg = buildSvg({ creative, brandName, format, heroDataUri });
+  const resvg = new Resvg(svg, { fitTo: { mode: "width", value: width } });
+  const pngData = resvg.render();
+  const buffer = pngData.asPng();
+  return {
+    buffer,
+    width,
+    height,
+    renderVersion: process.env.CREATIVE_RENDER_VERSION || "v1",
+  };
+
 }
