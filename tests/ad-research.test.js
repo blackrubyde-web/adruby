@@ -28,6 +28,11 @@ import { handler } from '../netlify/functions/ad-research-start.js';
 
 describe('ad-research-start', () => {
   it('starts apify actor and stores items', async () => {
+    const previousToken = process.env.APIFY_API_TOKEN;
+    const previousActor = process.env.APIFY_FACEBOOK_ADS_ACTOR_ID;
+    process.env.APIFY_API_TOKEN = 'test-token';
+    process.env.APIFY_FACEBOOK_ADS_ACTOR_ID = 'actor-123';
+
     const event = {
       httpMethod: 'POST',
       body: JSON.stringify({ searchUrl: 'https://www.facebook.com/ads/library/?id=123' }),
@@ -38,5 +43,8 @@ describe('ad-research-start', () => {
     const body = JSON.parse(res.body || '{}');
     expect(body.jobId).toBe('run-123');
     expect(body.itemCount).toBe(1);
+
+    process.env.APIFY_API_TOKEN = previousToken;
+    process.env.APIFY_FACEBOOK_ADS_ACTOR_ID = previousActor;
   });
 });
