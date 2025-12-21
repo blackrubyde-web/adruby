@@ -365,14 +365,6 @@ const CREATIVE_OUTPUT_JSON_SCHEMA_V1 = {
               properties: {
                 input_image_used: { type: "boolean" },
                 render_intent: { type: "string", minLength: 1, maxLength: 200 },
-                hero_image_url: { type: "string", minLength: 1 },
-                final_image_url: { type: "string", minLength: 1 },
-                width: { type: "integer", minimum: 1 },
-                height: { type: "integer", minimum: 1 },
-                model: { type: "string", minLength: 1 },
-                seed: { type: "integer", minimum: 0 },
-                prompt_hash: { type: "string", minLength: 6 },
-                render_version: { type: "string", minLength: 1 },
               },
             },
           },
@@ -608,6 +600,7 @@ export async function handler(event) {
     return badRequest(err?.message || "Insufficient credits", 402);
   }
   const inputForLog = { brief, hasImage, strategyId: strategyId || null };
+  let placeholderId = "";
 
   try {
     // Fetch scraped ads as research context. If the client passed specific researchIds, prefer those.
@@ -641,7 +634,7 @@ export async function handler(event) {
     }
 
     // create or reuse a placeholder generated_creatives row so clients can poll status/progress
-    let placeholderId = typeof body?.jobId === 'string' ? body.jobId.trim() : '';
+    placeholderId = typeof body?.jobId === 'string' ? body.jobId.trim() : '';
     if (!placeholderId) {
       try {
         const insertPayload = {
