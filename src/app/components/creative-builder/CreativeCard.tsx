@@ -38,14 +38,16 @@ export default function CreativeCard(props: {
     props.onCopy?.(text);
   };
 
+  const imageSrc = c.image.final_image_url ?? c.image.hero_image_url ?? undefined;
+
   return (
     <Card className="p-4">
-      {c.image.final_image_url || c.image.hero_image_url ? (
+      {imageSrc ? (
         <div
           className={`mb-3 w-full overflow-hidden rounded-xl border border-border bg-muted/20 ${aspectClass}`}
         >
           <ImageWithFallback
-            src={c.image.final_image_url || c.image.hero_image_url}
+            src={imageSrc}
             alt={c.copy.hook}
             className="h-full w-full object-cover"
             loading="lazy"

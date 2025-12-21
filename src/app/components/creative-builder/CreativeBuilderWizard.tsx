@@ -12,7 +12,13 @@ import ImageDropzone from "./ImageDropzone";
 import CreativeBriefForm from "./CreativeBriefForm";
 import NormalizedBriefReview from "./NormalizedBriefReview";
 import CreativeResults from "./CreativeResults";
-import type { CreativeOutputV1, NormalizedBrief } from "../../lib/creative/schemas";
+import type {
+  CreativeOutput,
+  CreativeOutputPro,
+  CreativeOutputV1,
+  CreativeOutputV2,
+  NormalizedBrief,
+} from "../../lib/creative/schemas";
 import { creativeAnalyze, creativeGenerate, creativeStatus } from "../../lib/api/creative";
 import { useAuthState } from "../../contexts/AuthContext";
 
@@ -70,6 +76,135 @@ export default function CreativeBuilderWizard() {
 
   const canAnalyze = form.formState.isValid && !loading && isAuthReady && !isLoading && !!session;
 
+  const buildFallbackBrief = (): NormalizedBrief => {
+    const values = form.getValues();
+    const goal =
+      values.goal === "leads"
+        ? "leads"
+        : values.goal === "traffic"
+          ? "traffic"
+          : values.goal === "app_installs"
+            ? "app_installs"
+            : "sales";
+    const funnel = values.funnel === "hot" ? "hot" : values.funnel === "warm" ? "warm" : "cold";
+    const format =
+      values.format === "1:1" || values.format === "9:16" || values.format === "4:5"
+        ? values.format
+        : "4:5";
+    const language = values.language === "en" ? "en" : "de";
+    const audienceSummary = values.audience || "Audience";
+
+    return {
+      brand: { name: values.brandName || values.productName || "Brand" },
+      product: {
+        name: values.productName || "Product",
+        url: values.productUrl || null,
+        category: null,
+      },
+      goal,
+      funnel_stage: funnel,
+      language,
+      format,
+      audience: {
+        summary: audienceSummary,
+        segments: [audienceSummary].filter(Boolean),
+      },
+      offer: { summary: values.offer || null, constraints: [] },
+      tone: "direct",
+      angles: [],
+      risk_flags: [],
+    };
+  };
+
+  const normalizeOutputToV1 = (raw: CreativeOutput | null): CreativeOutputV1 | null => {
+    if (!raw || typeof raw !== "object") return null;
+    if ("version" in raw && raw.version === "1.0") return raw as CreativeOutputV1;
+    const baseBrief = brief ?? buildFallbackBrief();
+
+    if ("schema_version" in raw && raw.schema_version === "2.1-pro") {
+      const pro = raw as CreativeOutputPro;
+      const creatives = (pro.variants || []).map((variant, idx) => ({
+        id: variant.id || `c${idx + 1}`,
+        angle_id: variant.id || `angle${idx + 1}`,
+        format: variant.format || baseBrief.format,
+        copy: {
+          hook: variant.copy.hook || "Hook",
+          primary_text: variant.copy.primary_text || "Primary text",
+          cta: variant.copy.cta || "Mehr erfahren",
+          bullets: variant.copy.bullets || [],
+        },
+        score: {
+          value: variant.quality?.total ?? 0,
+          rationale: variant.quality?.issues?.[0] || "Auto-scored variant",
+        },
+        image: {
+          input_image_used: Boolean(variant.visual?.image?.input_image_used),
+          render_intent: variant.visual?.image?.render_intent || "Hero image",
+          hero_image_url: variant.visual?.image?.hero_image_url ?? undefined,
+          final_image_url: variant.visual?.image?.final_image_url ?? undefined,
+          width: variant.visual?.image?.width ?? undefined,
+          height: variant.visual?.image?.height ?? undefined,
+          model: variant.visual?.image?.model ?? undefined,
+          seed: variant.visual?.image?.seed ?? undefined,
+          prompt_hash: variant.visual?.image?.prompt_hash ?? undefined,
+          render_version: variant.visual?.image?.render_version ?? undefined,
+        },
+      }));
+      const angles =
+        baseBrief.angles?.length
+          ? baseBrief.angles
+          : creatives.map((c) => ({
+              id: c.angle_id,
+              label: c.copy.hook,
+              why_it_fits: "Generated variant",
+            }));
+      return {
+        version: "1.0",
+        brief: { ...baseBrief, angles },
+        creatives,
+      } as CreativeOutputV1;
+    }
+
+    if ("schema_version" in raw && raw.schema_version === "2.0") {
+      const v2 = raw as CreativeOutputV2;
+      const creatives = (v2.variants || []).map((variant: any, idx: number) => ({
+        id: variant.id || `c${idx + 1}`,
+        angle_id: variant.id || `angle${idx + 1}`,
+        format: variant.format || baseBrief.format,
+        copy: {
+          hook: variant.hook || variant?.script?.hook || "Hook",
+          primary_text:
+            variant?.script?.offer ||
+            variant?.script?.proof ||
+            variant?.script?.problem ||
+            "Primary text",
+          cta: variant.cta || variant?.script?.cta || "Mehr erfahren",
+          bullets: [],
+        },
+        score: { value: 80, rationale: "Auto-scored variant" },
+        image: {
+          input_image_used: Boolean(variant?.image?.input_image_used),
+          render_intent: variant?.image?.render_intent || "Hero image",
+          hero_image_url: variant?.image?.hero_image_url ?? undefined,
+          final_image_url: variant?.image?.final_image_url ?? undefined,
+          width: variant?.image?.width ?? undefined,
+          height: variant?.image?.height ?? undefined,
+          model: variant?.image?.model ?? undefined,
+          seed: variant?.image?.seed ?? undefined,
+          prompt_hash: variant?.image?.prompt_hash ?? undefined,
+          render_version: variant?.image?.render_version ?? undefined,
+        },
+      }));
+      return {
+        version: "1.0",
+        brief: { ...baseBrief, angles: baseBrief.angles },
+        creatives,
+      } as CreativeOutputV1;
+    }
+
+    return null;
+  };
+
   async function onAnalyze() {
     setError(null);
     setLoading("analyze");
@@ -103,7 +238,8 @@ export default function CreativeBuilderWizard() {
       });
       setJobId(res.jobId ?? null);
       if (res.output) {
-        setOutput(res.output);
+        const normalized = normalizeOutputToV1(res.output ?? null);
+        setOutput(normalized);
         setQuality(res.quality != null ? { satisfaction: res.quality } : null);
       }
       setStep(3);
@@ -146,7 +282,8 @@ export default function CreativeBuilderWizard() {
         if (cancelled) return;
         if (typeof status.progress === "number") setProgress(status.progress);
         if (status.status === "complete" && status.outputs) {
-          setOutput(status.outputs);
+          const normalized = normalizeOutputToV1(status.outputs);
+          setOutput(normalized);
           setQuality(
             status.score != null ? { satisfaction: status.score, target: quality?.target } : null,
           );

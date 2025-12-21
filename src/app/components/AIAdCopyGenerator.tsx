@@ -4,6 +4,7 @@ import { Button } from './ui/button';
 import { Label } from './ui/label';
 import { toast } from 'sonner';
 import { creativeAnalyze, creativeGenerate, creativeStatus } from '../lib/api/creative';
+import type { CreativeOutput, CreativeOutputPro, CreativeOutputV2 } from '../lib/creative/types';
 
 interface CopyVariant {
   id: number;
@@ -67,6 +68,50 @@ export function AIAdCopyGenerator({
 
   const toneCycle: CopyVariant['tone'][] = ['professional', 'friendly', 'urgent', 'emotional'];
   const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+
+  const extractCreatives = (
+    output: CreativeOutput | null
+  ): Array<{
+    copy: { hook: string; primary_text: string; cta: string };
+    score?: { value?: number };
+  }> => {
+    if (!output || typeof output !== 'object') return [];
+    if ('version' in output && output.version === '1.0') {
+      return (
+        (output as {
+          creatives?: Array<{ copy: { hook: string; primary_text: string; cta: string }; score?: { value?: number } }>;
+        }).creatives ?? []
+      );
+    }
+    if ('schema_version' in output && output.schema_version === '2.1-pro') {
+      const pro = output as CreativeOutputPro;
+      return (pro.variants || []).map((variant) => ({
+        copy: {
+          hook: variant.copy.hook,
+          primary_text: variant.copy.primary_text,
+          cta: variant.copy.cta,
+        },
+        score: { value: variant.quality?.total ?? 80 },
+      }));
+    }
+    if ('schema_version' in output && output.schema_version === '2.0') {
+      const v2 = output as CreativeOutputV2;
+      const variants = Array.isArray(v2.variants) ? (v2.variants as any[]) : [];
+      return variants.map((variant) => ({
+        copy: {
+          hook: variant.hook || variant?.script?.hook || 'Hook',
+          primary_text:
+            variant?.script?.offer ||
+            variant?.script?.proof ||
+            variant?.script?.problem ||
+            'Primary text',
+          cta: variant.cta || variant?.script?.cta || 'Mehr erfahren',
+        },
+        score: { value: 80 },
+      }));
+    }
+    return [];
+  };
 
   const mapToneToBrief = (tone: typeof selectedTone) => {
     switch (tone) {
@@ -134,7 +179,7 @@ export function AIAdCopyGenerator({
         }
       }
 
-      const creatives = output?.creatives || [];
+      const creatives = extractCreatives(output);
       const newVariants: CopyVariant[] = creatives.map((creative, idx) => {
         const score = creative.score?.value ?? 70;
         const tone = toneCycle[idx % toneCycle.length];

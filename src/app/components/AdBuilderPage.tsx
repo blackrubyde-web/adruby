@@ -674,7 +674,19 @@ export function AdBuilderPage() {
   const displayQuality = useMemo(() => {
     if (!hookQuality) return null;
     if (typeof hookQuality === 'number') return { satisfaction: hookQuality };
-    return hookQuality;
+    if (typeof hookQuality === 'object') {
+      const typed = hookQuality as Record<string, unknown>;
+      const satisfaction =
+        typeof typed.satisfaction === 'number'
+          ? typed.satisfaction
+          : typeof typed.score === 'number'
+            ? typed.score
+            : undefined;
+      const target = typeof typed.target === 'number' ? typed.target : undefined;
+      const issues = Array.isArray(typed.issues) ? typed.issues : undefined;
+      return { satisfaction, target, issues };
+    }
+    return null;
   }, [hookQuality]);
 
   return (
