@@ -1010,16 +1010,6 @@ export function AdBuilderPage() {
                       <div className="text-sm text-red-600">{copyError}</div>
                     )}
 
-                    {isGeneratingCopy && (
-                      <Card className="p-3">
-                        <div className="flex items-center justify-between mb-2">
-                          <div className="text-sm font-medium">Generierung läuft…</div>
-                          <div className="text-xs text-muted-foreground">Status: {adStatus}</div>
-                        </div>
-                        <Progress value={hookProgress ?? 0} className="h-2" />
-                      </Card>
-                    )}
-
                     {displayOutput && (
                       <CreativeResults
                         output={displayOutput}
@@ -1124,6 +1114,23 @@ export function AdBuilderPage() {
               </div>
             </Card>
       </div>
+
+      {isGeneratingCopy && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4">
+          <div className="w-full max-w-md rounded-2xl border border-border bg-card p-6 shadow-2xl">
+            <div className="flex items-center justify-between">
+              <div className="text-lg font-semibold text-foreground">Generierung läuft…</div>
+              <div className="text-xs text-muted-foreground">Status: {adStatus}</div>
+            </div>
+            <p className="mt-2 text-sm text-muted-foreground">
+              Bitte warten – die KI erstellt gerade deine Varianten.
+            </p>
+            <div className="mt-4">
+              <Progress value={hookProgress ?? 0} className="h-2" />
+            </div>
+          </div>
+        </div>
+      )}
     </PageShell>
   );
 }
