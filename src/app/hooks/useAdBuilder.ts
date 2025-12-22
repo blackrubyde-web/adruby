@@ -91,6 +91,8 @@ export function useAdBuilder() {
           const maxPollingMs = Number(import.meta.env.VITE_CREATIVE_POLL_MAX_MS || 20 * 60 * 1000);
           const deadline = Date.now() + Math.max(60000, maxPollingMs);
           let attempt = 0;
+          let lastStatus: string | null = null;
+          let lastProgress: number | null = null;
           while (
             !pollRef.current.cancelled &&
             Date.now() < deadline &&
@@ -101,8 +103,14 @@ export function useAdBuilder() {
               // eslint-disable-next-line no-await-in-loop
               const s = await creativeStatus(res.jobId);
               // update live progress/status if available
-              if (typeof s?.progress === 'number') setProgress(Number(s.progress));
-              if (s?.status) setStatus(s.status === 'complete' ? 'complete' : 'polling');
+              if (typeof s?.progress === 'number') {
+                lastProgress = Number(s.progress);
+                setProgress(lastProgress);
+              }
+              if (s?.status) {
+                lastStatus = s.status;
+                setStatus(s.status === 'complete' ? 'complete' : 'polling');
+              }
               if (s?.id) setJobId(s.id);
               if (s?.status === "error") {
                 throw new Error("Generierung fehlgeschlagen.");
@@ -134,6 +142,11 @@ export function useAdBuilder() {
             throw new Error("Poll cancelled");
           }
 
+          console.warn("[useAdBuilder] Polling timed out", {
+            jobId: res.jobId,
+            status: lastStatus,
+            progress: lastProgress,
+          });
           throw new Error("Polling timed out");
         }
 

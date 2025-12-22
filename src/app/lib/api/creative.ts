@@ -88,8 +88,12 @@ export async function creativeGenerate(params: {
   let parsedOutput: CreativeOutput | null = null;
   if (json?.output) {
     const p = CreativeOutputSchema.safeParse(json.output);
-    if (!p.success) throw new Error("Server returned invalid CreativeOutput JSON.");
-    parsedOutput = p.data;
+    if (!p.success) {
+      console.warn("[creativeGenerate] Invalid CreativeOutput JSON", p.error?.issues);
+      parsedOutput = json.output as CreativeOutput;
+    } else {
+      parsedOutput = p.data;
+    }
   }
 
   return {
@@ -121,10 +125,13 @@ export async function creativeStatus(jobId: string): Promise<CreativeStatusRespo
   const json = await parseJson(res);
   if (!res.ok) throw new Error(json?.error ?? "Status check failed");
   // Validate outputs if present
-  if (json?.outputs) {
+  if (json?.outputs && json?.status === "complete") {
     const p = CreativeOutputSchema.safeParse(json.outputs);
-    if (!p.success) throw new Error('Server returned invalid CreativeOutput JSON in status');
-    json.outputs = p.data;
+    if (!p.success) {
+      console.warn("[creativeStatus] Invalid CreativeOutput JSON", p.error?.issues);
+    } else {
+      json.outputs = p.data;
+    }
   }
   return json as CreativeStatusResponse;
 }
