@@ -222,12 +222,10 @@ const DashboardPageContent = memo(function DashboardPageContent({
   currentPage,
   pageFallback,
   onNavigate,
-  onCreateAd,
 }: {
   currentPage: PageType;
   pageFallback: JSX.Element;
   onNavigate: (page: PageType, query?: Record<string, string | undefined | null>) => void;
-  onCreateAd: () => void;
 }) {
   switch (currentPage) {
     case 'dashboard':
@@ -487,10 +485,6 @@ function AppContent() {
     }
   }, [billing.isSubscribed, currentPage, go, isAuthReady, isLoading, profile, profileError, user]);
 
-  const handleCreateAd = useCallback(() => {
-    go('adbuilder');
-  }, [go]);
-
   const handleNavigate = useCallback(
     (page: PageType, query?: Record<string, string | undefined | null>) => {
       go(page, { query });
@@ -745,7 +739,6 @@ function AppContent() {
             currentPage={currentPage}
             pageFallback={pageFallback}
             onNavigate={handleNavigate}
-            onCreateAd={handleCreateAd}
           />
         </div>
       </div>
