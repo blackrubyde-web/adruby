@@ -4,23 +4,15 @@ import { Input } from './ui/input';
 import { Label } from './ui/label';
 import { Textarea } from './ui/textarea';
 import { Progress } from './ui/progress';
-import { 
-  ChevronRight, 
-  ChevronLeft, 
-  Sparkles, 
-  Image as ImageIcon, 
-  TrendingUp,
+import {
+  ChevronRight,
+  ChevronLeft,
+  Sparkles,
+  Image as ImageIcon,
   Users,
   Check,
   Zap,
-  Brain,
-  BarChart3,
-  Rocket
 } from 'lucide-react';
-import { MarketAnalysisLoader } from './MarketAnalysisLoader';
-import { AdPreview } from './AdPreview';
-import { ConversionScore } from './ConversionScore';
-import { AIAdCopyGenerator } from './AIAdCopyGenerator';
 import { PageShell, HeroHeader, Card } from './layout';
 import {
   adBuilderReducer,
@@ -31,7 +23,6 @@ import type { CreativeOutput, CreativeOutputV1, CreativeOutputPro } from '../lib
 import useAdBuilder from '../hooks/useAdBuilder';
 import { creativeSaveToLibrary } from '../lib/api/creative';
 import { toast } from 'sonner';
-import AdResearchList from '../demo/AdResearchList';
 import CreativeResults from './creative-builder/CreativeResults';
 import ImageDropzone from './creative-builder/ImageDropzone';
 import { supabase } from '../lib/supabaseClient';
@@ -39,19 +30,13 @@ import { supabase } from '../lib/supabaseClient';
 const DRAFT_KEY = 'ad_ruby_ad_builder_draft';
 
 const steps = [
-  { id: 1, name: 'Produkt & Angebot', icon: Sparkles },
-  { id: 2, name: 'Zielgruppe', icon: Users },
-  { id: 3, name: 'Creative System', icon: ImageIcon },
-  { id: 4, name: 'Marktanalyse', icon: BarChart3 },
-  { id: 5, name: 'Generierung', icon: TrendingUp },
-  { id: 6, name: 'Review & Export', icon: Rocket },
+  { id: 1, name: 'Produkt & Bild', icon: Sparkles },
+  { id: 2, name: 'Zielgruppe & Angebot', icon: Users },
+  { id: 3, name: 'Generieren & Ergebnisse', icon: ImageIcon },
 ];
 
 export function AdBuilderPage() {
   const [state, dispatch] = useReducer(adBuilderReducer, initialAdBuilderState);
-  const [isAnalyzing, setIsAnalyzing] = useState(false);
-  const [analysisProgress, setAnalysisProgress] = useState(0);
-  const [analysisError, setAnalysisError] = useState<string | null>(null);
   const [analysisWarning, setAnalysisWarning] = useState<string | null>(null);
   const [analysisRetrying, setAnalysisRetrying] = useState(false);
   const [copyError, setCopyError] = useState<string | null>(null);
@@ -64,8 +49,6 @@ export function AdBuilderPage() {
   const [selectedCopy, setSelectedCopy] = useState<number | null>(null);
   const [selectedVisualStyle, setSelectedVisualStyle] = useState<string | null>(null);
   const [selectedCTA, setSelectedCTA] = useState<string | null>(null);
-  const [selectedResearchIds, setSelectedResearchIds] = useState<string[]>([]);
-  const [researchRefreshKey, setResearchRefreshKey] = useState(0);
 
 
   useEffect(() => {
@@ -85,7 +68,6 @@ export function AdBuilderPage() {
         setSelectedCopy(parsed.selectedCopy ?? null);
         setSelectedVisualStyle(parsed.selectedVisualStyle ?? null);
         setSelectedCTA(parsed.selectedCTA ?? null);
-        setSelectedResearchIds(parsed.selectedResearchIds || []);
         setDraftTimestamp(parsed.updatedAt || null);
         setDraftId(parsed.draftId || null);
         setDraftRestored(true);
@@ -134,7 +116,6 @@ export function AdBuilderPage() {
       setSelectedCopy(inputs.selectedCopy ?? null);
       setSelectedVisualStyle(inputs.selectedVisualStyle ?? null);
       setSelectedCTA(inputs.selectedCTA ?? null);
-      setSelectedResearchIds(inputs.researchIds || []);
       setDraftTimestamp(draftRow.created_at || null);
       setDraftId(draftRow.id || null);
       setDraftRestored(true);
@@ -165,7 +146,6 @@ export function AdBuilderPage() {
       selectedCopy,
       selectedVisualStyle,
       selectedCTA,
-      selectedResearchIds,
       updatedAt: new Date().toISOString()
     };
     localStorage.setItem(DRAFT_KEY, JSON.stringify(draft));
@@ -174,7 +154,6 @@ export function AdBuilderPage() {
     selectedCopy,
     selectedCTA,
     selectedVisualStyle,
-    selectedResearchIds,
     draftId,
     state.currentStep,
     state.formData
@@ -195,7 +174,6 @@ export function AdBuilderPage() {
 
   const resetAll = () => {
     clearDraft();
-    setAnalysisError(null);
     setAnalysisWarning(null);
     setCopyError(null);
   };
@@ -228,18 +206,6 @@ export function AdBuilderPage() {
     }
   };
 
-  const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
-
-  const buildAdLibraryUrl = () => {
-    const query = [state.formData.productName, state.formData.brandName]
-      .map((value) => value?.trim())
-      .filter(Boolean)
-      .join(' ');
-    if (!query) return null;
-    const encoded = encodeURIComponent(query);
-    return `https://www.facebook.com/ads/library/?active_status=all&ad_type=all&country=DE&q=${encoded}&search_type=keyword_unordered`;
-  };
-
   // use centralized ad builder hook for analyze/generate/poll
   const {
     status: adStatus,
@@ -260,26 +226,10 @@ export function AdBuilderPage() {
   const isGeneratingCopy = adStatus === 'generating' || adStatus === 'polling';
 
   useEffect(() => {
-    if (hookResult && adStatus === 'complete' && state.currentStep < 6) {
-      dispatch({ type: 'SET_STEP', step: 6 });
+    if (hookResult && adStatus === 'complete' && state.currentStep < 3) {
+      dispatch({ type: 'SET_STEP', step: 3 });
     }
   }, [hookResult, adStatus, state.currentStep]);
-
-  const retryWithBackoff = async <T,>(
-    fn: () => Promise<T>,
-    { retries = 2, baseDelayMs = 400 } = {}
-  ): Promise<T> => {
-    for (let attempt = 0; attempt <= retries; attempt += 1) {
-      try {
-        return await fn();
-      } catch (err) {
-        if (attempt >= retries) throw err;
-        const delay = baseDelayMs * Math.pow(2, attempt);
-        await sleep(delay);
-      }
-    }
-    throw new Error('Retry failed');
-  };
 
   const extractCreativeOutput = (value: unknown): CreativeOutput | null => {
     if (!value || typeof value !== 'object') return null;
@@ -414,7 +364,6 @@ export function AdBuilderPage() {
       description: selectedCopyData?.description || null,
       cta: selectedCopyData?.cta || null,
       strategyId: state.formData.strategyId || null,
-      researchIds: selectedResearchIds,
       formData: state.formData,
       currentStep: state.currentStep,
       generatedCopy,
@@ -489,103 +438,22 @@ export function AdBuilderPage() {
     }
   };
 
-  const runMarketAnalysis = async () => {
-    setAnalysisError(null);
-    setAnalysisProgress(0);
-
-    const interval = window.setInterval(() => {
-      setAnalysisProgress((prev) => Math.min(prev + 7, 90));
-    }, 500);
-
-    try {
-      const searchUrl = buildAdLibraryUrl();
-      if (!searchUrl) {
-        throw new Error('Bitte Produktname oder Brand angeben.');
-      }
-
-      await retryWithBackoff(async () => {
-        const apiBase = String(import.meta.env.VITE_API_BASE_URL || '').replace(/\/$/, '');
-        const apiUrl = apiBase ? `${apiBase}/api/ad-research-start` : '/api/ad-research-start';
-        const { data } = await supabase.auth.getSession();
-        const token = data.session?.access_token;
-
-        const res = await fetch(apiUrl, {
-          method: 'POST',
-          headers: {
-            ...(token ? { Authorization: `Bearer ${token}` } : {}),
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({ searchUrl, maxAds: 20 })
-        });
-        const text = await res.text();
-        let json: any = {};
-        try {
-          json = text ? JSON.parse(text) : {};
-        } catch {
-          json = {};
-        }
-        if (!res.ok) {
-          const message = json?.details || json?.error || `Market analysis failed (${res.status})`;
-          throw new Error(message);
-        }
-        if (json?.warning) {
-          toast.warning(`Marktanalyse übersprungen: ${json.warning}`);
-          return json;
-        }
-        return json;
-      });
-
-      setAnalysisProgress(100);
-      await sleep(400);
-      setResearchRefreshKey((prev) => prev + 1);
-    } finally {
-      window.clearInterval(interval);
-    }
-  };
-
   const handleNext = async () => {
-    if (state.currentStep === 3) {
-      dispatch({ type: 'SET_STEP', step: 4 });
-      setIsAnalyzing(true);
-      try {
-        await runMarketAnalysis();
-        dispatch({ type: 'SET_STEP', step: 5 });
-      } catch (err) {
-        const message = err instanceof Error ? err.message : 'Analyse fehlgeschlagen. Bitte erneut versuchen.';
-        setAnalysisError(message);
-        dispatch({ type: 'SET_STEP', step: 3 });
-      } finally {
-        setIsAnalyzing(false);
-      }
-      return;
-    }
-
     if (state.currentStep < steps.length) {
       dispatch({ type: 'NEXT_STEP' });
     }
   };
 
   const handleBack = () => {
-    if (state.currentStep > 1 && !isAnalyzing) {
+    if (state.currentStep > 1) {
       dispatch({ type: 'PREV_STEP' });
     }
   };
 
   const getNextButtonLabel = () => {
-    switch (state.currentStep) {
-      case 1:
-        return 'Weiter zur Zielgruppe';
-      case 2:
-        return 'Weiter zum Creative System';
-      case 3:
-        return 'Marktanalyse starten';
-      case 5:
-        return 'Review & Export';
-      case 6:
-        return 'Complete';
-      default:
-        return 'Continue';
-    }
+    if (state.currentStep === 1) return 'Weiter zu Zielgruppe';
+    if (state.currentStep === 2) return 'Weiter zur Generierung';
+    return 'Weiter';
   };
 
   const canGenerateCopy =
@@ -595,6 +463,12 @@ export function AdBuilderPage() {
 
   const buildAnalyzeFormData = () => {
     const fd = new FormData();
+    const inspirationParts = [
+      state.formData.productDescription,
+      state.formData.creativeNotes,
+    ]
+      .map((value) => value?.trim())
+      .filter(Boolean);
     fd.append(
       'brandName',
       state.formData.brandName || state.formData.productName || 'AdRuby'
@@ -610,7 +484,7 @@ export function AdBuilderPage() {
     fd.append('funnel', 'cold');
     fd.append('language', 'de');
     fd.append('format', '4:5');
-    fd.append('inspiration', state.formData.productDescription || '');
+    fd.append('inspiration', inspirationParts.join('\n\n'));
     // Strategy is auto-determined server-side; no manual strategyId here.
     if (imageFile) {
       fd.append('image', imageFile);
@@ -650,7 +524,6 @@ export function AdBuilderPage() {
           hookImageMeta && typeof hookImageMeta === 'object' && 'path' in hookImageMeta
             ? String(hookImageMeta.path || '')
             : null,
-        researchIds: selectedResearchIds.length ? selectedResearchIds : undefined,
         outputMode: 'pro',
         style_mode: 'default',
         visual_style: selectedVisualStyle || undefined,
@@ -706,26 +579,6 @@ export function AdBuilderPage() {
         subtitle="Generate premium ads with AI copy + hero images + production-ready templates"
       />
 
-      {/* Stats Overview */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <div className="p-5 rounded-lg bg-muted/50 border border-border">
-          <div className="text-sm text-muted-foreground mb-1">Ads Created</div>
-          <div className="text-2xl font-bold text-foreground">24</div>
-        </div>
-        <div className="p-5 rounded-lg bg-muted/50 border border-border">
-          <div className="text-sm text-muted-foreground mb-1">Avg. ROAS</div>
-          <div className="text-2xl font-bold text-foreground">4.8x</div>
-        </div>
-        <div className="p-5 rounded-lg bg-muted/50 border border-border">
-          <div className="text-sm text-muted-foreground mb-1">Avg. CTR</div>
-          <div className="text-2xl font-bold text-foreground">3.2%</div>
-        </div>
-        <div className="p-5 rounded-lg bg-muted/50 border border-border">
-          <div className="text-sm text-muted-foreground mb-1">Active Ads</div>
-          <div className="text-2xl font-bold text-foreground">12</div>
-        </div>
-      </div>
-
       {/* Progress Stepper */}
       <Card className="p-6">
         <div className="flex items-center justify-between mb-4">
@@ -768,9 +621,6 @@ export function AdBuilderPage() {
         <Progress value={progressPercentage} className="h-2" />
       </Card>
 
-      {/* Market Analysis Loader */}
-      {isAnalyzing && <MarketAnalysisLoader progress={analysisProgress} />}
-
       {draftRestored && (
         <Card className="p-4 border border-primary/20 bg-primary/5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
           <div>
@@ -783,12 +633,6 @@ export function AdBuilderPage() {
             Reset draft
           </Button>
         </Card>
-      )}
-
-      {analysisError && (
-        <div className="p-4 border border-red-500/20 bg-red-500/10 rounded-xl text-sm text-red-600">
-          {analysisError}
-        </div>
       )}
 
       {analysisWarning && (
@@ -818,13 +662,9 @@ export function AdBuilderPage() {
       )}
 
       {/* Main Content */}
-      {!isAnalyzing && (
-        // FIX 1: Outer Grid - Responsive + Overflow Protection
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-4 lg:gap-6 w-full max-w-full overflow-x-hidden">
-          {/* FIX 2: Left Column - Mobile full width + min-w-0 */}
-          <div className="lg:col-span-2 min-w-0">
-            <Card className="bg-card border-border p-4 sm:p-6 min-w-0">
-              {/* Step 1: Product & Messaging */}
+      <div className="w-full max-w-5xl mx-auto">
+        <Card className="bg-card border-border p-4 sm:p-6 min-w-0">
+              {/* Step 1: Product & Image */}
               {state.currentStep === 1 && (
                 <div>
                   <div className="flex items-center gap-3 mb-6 min-w-0">
@@ -832,8 +672,10 @@ export function AdBuilderPage() {
                       <Sparkles className="w-6 h-6 text-primary-foreground" />
                     </div>
                     <div className="min-w-0 flex-1">
-                      <h2 className="text-foreground truncate">Produkt-Input für Conversion-Ad</h2>
-                      <p className="text-muted-foreground text-sm break-words">Geben Sie Ihre Produktdaten ein für die KI-Analyse</p>
+                      <h2 className="text-foreground truncate">Produkt & Bild</h2>
+                      <p className="text-muted-foreground text-sm break-words">
+                        Die wichtigsten Infos + optional dein Produktbild.
+                      </p>
                     </div>
                   </div>
 
@@ -843,7 +685,7 @@ export function AdBuilderPage() {
                       <Input
                         value={state.formData.brandName}
                         onChange={(e) => updateFormData('brandName', e.target.value)}
-                        placeholder="z.B: BlackRuby Performance"
+                        placeholder="z.B. BlackRuby Performance"
                         className="bg-input border-border text-foreground w-full max-w-full"
                       />
                     </div>
@@ -853,7 +695,7 @@ export function AdBuilderPage() {
                       <Input
                         value={state.formData.productName}
                         onChange={(e) => updateFormData('productName', e.target.value)}
-                        placeholder="z.B: FitMax Pro Supplement"
+                        placeholder="z.B. FitMax Pro Supplement"
                         className="bg-input border-border text-foreground w-full max-w-full"
                       />
                     </div>
@@ -869,24 +711,6 @@ export function AdBuilderPage() {
                       />
                     </div>
 
-                    {/* FIX 5A: Responsive 2-column grid */}
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                      <div>
-                        <Label className="text-foreground mb-2">Branche</Label>
-                        <Input
-                          placeholder="E-Commerce"
-                          className="bg-input border-border text-foreground w-full max-w-full"
-                        />
-                      </div>
-                      <div>
-                        <Label className="text-foreground mb-2">Preis</Label>
-                        <Input
-                          placeholder="€49.99"
-                          className="bg-input border-border text-foreground w-full max-w-full"
-                        />
-                      </div>
-                    </div>
-
                     <div>
                       <Label className="text-foreground mb-2">Hauptnutzen *</Label>
                       <Textarea
@@ -898,6 +722,16 @@ export function AdBuilderPage() {
                       />
                     </div>
 
+                    <div>
+                      <Label className="text-foreground mb-3">Produktbild (optional)</Label>
+                      <ImageDropzone value={imageFile} onChange={setImageFile} />
+                      {hookImageMeta?.path && (
+                        <div className="mt-2 text-xs text-muted-foreground">
+                          Uploaded to storage: <span className="font-medium">{hookImageMeta.path}</span>
+                        </div>
+                      )}
+                    </div>
+
                     <div className="rounded-lg border border-border bg-muted/30 p-4 text-sm text-muted-foreground">
                       Die Strategie wird jetzt automatisch aus deinem Produkt, deiner Zielgruppe und den
                       Blueprint‑Daten abgeleitet. Du musst hier nichts mehr auswählen.
@@ -906,7 +740,7 @@ export function AdBuilderPage() {
                 </div>
               )}
 
-              {/* Step 2: Target Audience */}
+              {/* Step 2: Audience & Offer */}
               {state.currentStep === 2 && (
                 <div>
                   <div className="flex items-center gap-3 mb-6 min-w-0">
@@ -914,8 +748,10 @@ export function AdBuilderPage() {
                       <Users className="w-6 h-6 text-primary-foreground" />
                     </div>
                     <div className="min-w-0 flex-1">
-                      <h2 className="text-foreground truncate">Zielgruppen-Targeting</h2>
-                      <p className="text-muted-foreground text-sm break-words">KI-gestützte Audience-Definition</p>
+                      <h2 className="text-foreground truncate">Zielgruppe & Angebot</h2>
+                      <p className="text-muted-foreground text-sm break-words">
+                        Wer soll die Anzeige sehen und was ist der Kernnutzen?
+                      </p>
                     </div>
                   </div>
 
@@ -971,24 +807,21 @@ export function AdBuilderPage() {
                       />
                     </div>
 
-                    <div className="bg-muted rounded-lg p-4 border border-border w-full max-w-full overflow-hidden">
-                      <div className="flex items-start gap-3 min-w-0">
-                        <Brain className="w-5 h-5 text-primary mt-1 shrink-0" />
-                        <div className="min-w-0 flex-1">
-                          <h3 className="text-foreground mb-1">KI-Empfehlung</h3>
-                          <p className="text-sm text-muted-foreground break-words">
-                            Basierend auf Ihren Eingaben empfehlen wir zusätzliche Targeting-Optionen:
-                            "Personen die kürzlich Fitness-Apps installiert haben" und "Online-Käufer im
-                            Health-Segment"
-                          </p>
-                        </div>
-                      </div>
+                    <div>
+                      <Label className="text-foreground mb-2">Zusatzhinweise (optional)</Label>
+                      <Textarea
+                        value={state.formData.creativeNotes}
+                        onChange={(e) => updateFormData('creativeNotes', e.target.value)}
+                        placeholder="z.B. Ton: direkt, Fokus auf Vorteil X, keine Rabattversprechen"
+                        rows={3}
+                        className="bg-input border-border text-foreground w-full max-w-full"
+                      />
                     </div>
                   </div>
                 </div>
               )}
 
-              {/* Step 3: Ad Creative */}
+              {/* Step 3: Generate & Results */}
               {state.currentStep === 3 && (
                 <div>
                   <div className="flex items-center gap-3 mb-6 min-w-0">
@@ -996,362 +829,122 @@ export function AdBuilderPage() {
                       <ImageIcon className="w-6 h-6 text-primary-foreground" />
                     </div>
                     <div className="min-w-0 flex-1">
-                      <h2 className="text-foreground truncate">Ad Creative Generierung</h2>
-                      <p className="text-muted-foreground text-sm break-words">KI-generierte Copy & Visuals</p>
+                      <h2 className="text-foreground truncate">Generieren & Ergebnisse</h2>
+                      <p className="text-muted-foreground text-sm break-words">
+                        Starte die Generierung und passe bei Bedarf Feinschliff an.
+                      </p>
                     </div>
                   </div>
 
                   <div className="space-y-6">
-                    <div>
-                      <Label className="text-foreground mb-3">Produktbild (optional)</Label>
-                      <ImageDropzone value={imageFile} onChange={setImageFile} />
-                      {hookImageMeta?.path && (
-                        <div className="mt-2 text-xs text-muted-foreground">
-                          Uploaded to storage: <span className="font-medium">{hookImageMeta.path}</span>
-                        </div>
-                      )}
-                    </div>
-
-                    <div>
-                      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-3">
-                        <Label className="text-foreground">Ad Copy Varianten</Label>
-                        <Button
-                          onClick={generateCopy}
-                          size="sm"
-                          disabled={!canGenerateCopy || isGeneratingCopy}
-                          className="bg-primary hover:bg-primary/90 text-primary-foreground w-full sm:w-auto"
-                        >
-                          <Zap className={`w-4 h-4 mr-2 ${isGeneratingCopy ? 'animate-pulse' : ''}`} />
-                          {isGeneratingCopy ? 'Generiere…' : 'KI generieren'}
-                        </Button>
-                      </div>
-
-                      {copyError && (
-                        <div className="text-sm text-red-600 mb-2">{copyError}</div>
-                      )}
-
-                      {generatedCopy.length > 0 ? (
-                        <div className="space-y-3">
-                          {generatedCopy.map((copy, index) => (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <Label className="text-foreground mb-3">Visual Style</Label>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                          {[
+                            { name: 'Modern & Clean', gradient: 'from-blue-500 to-cyan-400' },
+                            { name: 'Bold & Vibrant', gradient: 'from-primary to-orange-500' },
+                            { name: 'Minimalistisch', gradient: 'from-gray-800 to-gray-600' }
+                          ].map((style) => (
                             <div
-                              key={index}
-                              onClick={() => setSelectedCopy(index)}
-                              className={`p-4 rounded-lg border-2 cursor-pointer transition-all min-w-0 ${
-                                selectedCopy === index
+                              key={style.name}
+                              onClick={() => setSelectedVisualStyle(style.name)}
+                              className={`border-2 rounded-lg p-4 text-center cursor-pointer transition-all w-full min-w-0 ${
+                                selectedVisualStyle === style.name
                                   ? 'border-primary bg-primary/10'
                                   : 'border-border bg-card hover:border-muted-foreground'
                               }`}
                             >
-                              {/* FIX 7: Anti-Overflow in Copy Cards */}
-                              <div className="flex items-start justify-between min-w-0 gap-2">
-                                <div className="flex-1 min-w-0">
-                                  <div className="text-xs text-muted-foreground mb-1">Variante {index + 1}</div>
-                                  <p className="text-foreground break-words">{copy.headline}</p>
-                                  <p className="text-foreground text-sm break-words">{copy.description}</p>
-                                </div>
-                                {selectedCopy === index && (
-                                  <Check className="w-5 h-5 text-primary shrink-0 ml-2" />
+                              <div className={`w-full h-16 bg-gradient-to-br ${style.gradient} rounded mb-2 relative`}>
+                                {selectedVisualStyle === style.name && (
+                                  <div className="absolute inset-0 flex items-center justify-center">
+                                    <Check className="w-6 h-6 text-white drop-shadow-lg" />
+                                  </div>
                                 )}
                               </div>
+                              <p className="text-sm text-foreground font-medium truncate">{style.name}</p>
                             </div>
                           ))}
                         </div>
-                      ) : (
-                        <div className="bg-muted rounded-lg p-8 text-center border border-border">
-                          <Sparkles className="w-12 h-12 text-muted-foreground mx-auto mb-3" />
-                          <p className="text-muted-foreground break-words">
-                            Klicken Sie auf "KI generieren" um automatische Ad Copy zu erstellen
-                          </p>
-                        </div>
-                      )}
-                    </div>
-
-                    <div>
-                      <Label className="text-foreground mb-3">Visual Style</Label>
-                      {/* FIX 5B: Responsive 3-column grid */}
-                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                        {[
-                          { name: 'Modern & Clean', gradient: 'from-blue-500 to-cyan-400' },
-                          { name: 'Bold & Vibrant', gradient: 'from-primary to-orange-500' },
-                          { name: 'Minimalistisch', gradient: 'from-gray-800 to-gray-600' }
-                        ].map((style) => (
-                          <div
-                            key={style.name}
-                            onClick={() => setSelectedVisualStyle(style.name)}
-                            className={`border-2 rounded-lg p-4 text-center cursor-pointer transition-all w-full min-w-0 ${
-                              selectedVisualStyle === style.name
-                                ? 'border-primary bg-primary/10'
-                                : 'border-border bg-card hover:border-muted-foreground'
-                            }`}
-                          >
-                            <div className={`w-full h-20 bg-gradient-to-br ${style.gradient} rounded mb-2 relative`}>
-                              {selectedVisualStyle === style.name && (
-                                <div className="absolute inset-0 flex items-center justify-center">
-                                  <Check className="w-8 h-8 text-white drop-shadow-lg" />
-                                </div>
-                              )}
-                            </div>
-                            <p className="text-sm text-foreground font-medium truncate">{style.name}</p>
-                          </div>
-                        ))}
                       </div>
-                    </div>
 
-                    <div>
-                      <Label className="text-foreground mb-3">Call-to-Action</Label>
-                      {/* FIX 5A: Responsive 2-column grid */}
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                        {['Jetzt kaufen', 'Mehr erfahren', 'Kostenlos testen', 'Angebot sichern'].map(
-                          (cta) => (
-                            <div
-                              key={cta}
-                              onClick={() => setSelectedCTA(cta)}
-                              className={`border-2 rounded-lg p-4 text-center cursor-pointer transition-all w-full min-w-0 ${
-                                selectedCTA === cta
-                                  ? 'border-primary bg-primary/10'
-                                  : 'border-border bg-card hover:border-muted-foreground'
-                              }`}
-                            >
-                              <div className="flex items-center justify-center gap-2">
-                                <p className="text-foreground font-medium truncate">{cta}</p>
-                                {selectedCTA === cta && <Check className="w-5 h-5 text-primary shrink-0" />}
-                              </div>
-                            </div>
-                          )
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* Step 5: Performance Prediction */}
-              {state.currentStep === 5 && (
-                <div>
-                  <div className="flex items-center gap-3 mb-6 min-w-0">
-                    <div className="w-10 h-10 bg-primary rounded-lg flex items-center justify-center shrink-0">
-                      <TrendingUp className="w-6 h-6 text-primary-foreground" />
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <h2 className="text-foreground truncate">Performance Prediction</h2>
-                      <p className="text-muted-foreground text-sm break-words">KI-basierte Erfolgs-Prognose</p>
-                    </div>
-                  </div>
-
-                  <div className="space-y-6">
-                    {/* FIX 5C: Responsive 3-column grid */}
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                      <Card className="bg-primary border-0 p-4 w-full min-w-0">
-                        <div className="text-primary-foreground/80 text-sm mb-1">Erwartete CTR</div>
-                        <div className="text-3xl text-primary-foreground font-bold tabular-nums">2.8%</div>
-                        <div className="text-primary-foreground/80 text-xs mt-2">+38% vs. Branche</div>
-                      </Card>
-                      <Card className="bg-foreground border-0 p-4 w-full min-w-0">
-                        <div className="text-background/80 text-sm mb-1">Erwartete CVR</div>
-                        <div className="text-3xl text-background font-bold tabular-nums">4.2%</div>
-                        <div className="text-background/80 text-xs mt-2">Hochwertige Leads</div>
-                      </Card>
-                      <Card className="bg-muted border-border p-4 w-full min-w-0">
-                        <div className="text-muted-foreground text-sm mb-1">Prognostizierter ROAS</div>
-                        <div className="text-3xl text-foreground font-bold tabular-nums">5.2x</div>
-                        <div className="text-muted-foreground text-xs mt-2">Excellent ROI</div>
-                      </Card>
-                    </div>
-
-                    <Card className="bg-muted border-border p-5 w-full max-w-full overflow-hidden">
-                      <h3 className="text-foreground mb-4">Audience Insights</h3>
-                      <div className="space-y-3">
-                        <div>
-                          <div className="flex justify-between text-sm mb-1 min-w-0 gap-2">
-                            <span className="text-muted-foreground truncate">Potentielle Reichweite</span>
-                            <span className="text-foreground tabular-nums shrink-0">2.4M - 3.2M</span>
-                          </div>
-                          <Progress value={75} className="h-2" />
-                        </div>
-                        <div>
-                          <div className="flex justify-between text-sm mb-1 min-w-0 gap-2">
-                            <span className="text-muted-foreground truncate">Kaufbereitschaft</span>
-                            <span className="text-primary tabular-nums shrink-0">Hoch (82%)</span>
-                          </div>
-                          <Progress value={82} className="h-2" />
-                        </div>
-                        <div>
-                          <div className="flex justify-between text-sm mb-1 min-w-0 gap-2">
-                            <span className="text-muted-foreground truncate">Wettbewerbsintensität</span>
-                            <span className="text-foreground tabular-nums shrink-0">Mittel (65%)</span>
-                          </div>
-                          <Progress value={65} className="h-2" />
-                        </div>
-                      </div>
-                    </Card>
-
-                    {/* FIX 5D: 7-column grid with horizontal scroll */}
-                    <Card className="bg-muted border-border p-5 w-full max-w-full overflow-hidden">
-                      <h3 className="text-foreground mb-4">Beste Performance-Zeiträume</h3>
-                      <div className="w-full max-w-full overflow-x-auto">
-                        <div className="grid grid-cols-7 gap-2 min-w-[420px]">
-                          {['Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa', 'So'].map((day, index) => (
-                            <div key={day} className="text-center">
-                              <div className="text-xs text-muted-foreground mb-2">{day}</div>
+                      <div>
+                        <Label className="text-foreground mb-3">Call-to-Action</Label>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                          {['Jetzt kaufen', 'Mehr erfahren', 'Kostenlos testen', 'Angebot sichern'].map(
+                            (cta) => (
                               <div
-                                className={`h-16 rounded ${
-                                  index >= 4
-                                    ? 'bg-primary'
-                                    : index >= 2
-                                    ? 'bg-foreground'
-                                    : 'bg-border'
+                                key={cta}
+                                onClick={() => setSelectedCTA(cta)}
+                                className={`border-2 rounded-lg p-4 text-center cursor-pointer transition-all w-full min-w-0 ${
+                                  selectedCTA === cta
+                                    ? 'border-primary bg-primary/10'
+                                    : 'border-border bg-card hover:border-muted-foreground'
                                 }`}
-                              ></div>
-                            </div>
-                          ))}
+                              >
+                                <div className="flex items-center justify-center gap-2">
+                                  <p className="text-foreground font-medium truncate">{cta}</p>
+                                  {selectedCTA === cta && <Check className="w-5 h-5 text-primary shrink-0" />}
+                                </div>
+                              </div>
+                            )
+                          )}
                         </div>
                       </div>
-                      <p className="text-sm text-muted-foreground mt-3 break-words">
-                        Beste Performance: Freitag-Sonntag, 18:00-22:00 Uhr
-                      </p>
-                    </Card>
-                  </div>
-                </div>
-              )}
-
-              {/* Step 6: Review & Launch */}
-              {state.currentStep === 6 && (
-                <div>
-                  <div className="flex items-center gap-3 mb-6 min-w-0">
-                    <div className="w-10 h-10 bg-primary rounded-lg flex items-center justify-center shrink-0">
-                      <Rocket className="w-6 h-6 text-primary-foreground" />
                     </div>
-                    <div className="min-w-0 flex-1">
-                      <h2 className="text-foreground truncate">Review & Launch</h2>
-                      <p className="text-muted-foreground text-sm break-words">Finale Übersicht & Kampagnenstart</p>
-                    </div>
-                  </div>
 
-                  {displayOutput && (
-                    <div className="mb-6">
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                      <div className="text-sm text-muted-foreground">
+                        Bereit zur Generierung
+                      </div>
+                      <Button
+                        onClick={generateCopy}
+                        size="sm"
+                        disabled={!canGenerateCopy || isGeneratingCopy}
+                        className="bg-primary hover:bg-primary/90 text-primary-foreground w-full sm:w-auto"
+                      >
+                        <Zap className={`w-4 h-4 mr-2 ${isGeneratingCopy ? 'animate-pulse' : ''}`} />
+                        {isGeneratingCopy ? 'Generiere…' : 'KI generieren'}
+                      </Button>
+                    </div>
+
+                    {copyError && (
+                      <div className="text-sm text-red-600">{copyError}</div>
+                    )}
+
+                    {isGeneratingCopy && (
+                      <Card className="p-3">
+                        <div className="flex items-center justify-between mb-2">
+                          <div className="text-sm font-medium">Generierung läuft…</div>
+                          <div className="text-xs text-muted-foreground">Status: {adStatus}</div>
+                        </div>
+                        <Progress value={hookProgress ?? 0} className="h-2" />
+                      </Card>
+                    )}
+
+                    {displayOutput && (
                       <CreativeResults
                         output={displayOutput}
                         quality={displayQuality}
                         onReset={resetAll}
                       />
-                    </div>
-                  )}
+                    )}
 
-                  <div className="space-y-4">
-                    <Card className="bg-muted border-border p-5 w-full max-w-full overflow-hidden">
-                      <h3 className="text-foreground mb-3">Kampagnen-Zusammenfassung</h3>
-                      {/* FIX 5A: Responsive 2-column grid */}
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        <div className="min-w-0">
-                          <div className="text-sm text-muted-foreground">Produkt</div>
-                          <div className="text-foreground truncate">{state.formData.productName || 'Nicht angegeben'}</div>
-                        </div>
-                        <div className="min-w-0">
-                          <div className="text-sm text-muted-foreground">Zielgruppe</div>
-                          <div className="text-foreground truncate">
-                            {state.formData.targetAudience || 'Nicht angegeben'}
-                          </div>
-                        </div>
-                        <div className="min-w-0">
-                          <div className="text-sm text-muted-foreground">Budget</div>
-                          <div className="text-foreground truncate">€{state.formData.budget || '0'} / Tag</div>
-                        </div>
-                        <div className="min-w-0">
-                          <div className="text-sm text-muted-foreground">Laufzeit</div>
-                          <div className="text-foreground truncate">{state.formData.duration || '0'} Tage</div>
-                        </div>
-                      </div>
-                    </Card>
-
-                    <Card className="bg-primary/10 border-primary p-5 w-full max-w-full overflow-hidden">
-                      <div className="flex items-center gap-3 mb-3 min-w-0">
-                        <Check className="w-6 h-6 text-primary shrink-0" />
-                        <h3 className="text-foreground truncate">Kampagne bereit zum Start!</h3>
-                      </div>
-                      <p className="text-foreground/80 text-sm break-words">
-                        Alle Einstellungen wurden überprüft. Ihre Kampagne kann jetzt gestartet werden.
-                      </p>
-                    </Card>
-
-                      {/* Generation status & quality info */}
-                      {isGeneratingCopy && (
-                        <Card className="mt-3 p-3">
-                          <div className="flex items-center justify-between mb-2">
-                            <div className="text-sm font-medium">Generating creative…</div>
-                            <div className="text-xs text-muted-foreground">Status: {adStatus}</div>
-                          </div>
-                          <Progress value={hookProgress ?? 0} className="h-2" />
-                        </Card>
-                      )}
-
-                      {hookQuality && (
-                        <Card className="mt-3 p-3">
-                          <div className="flex items-center justify-between">
-                            <div>
-                              <div className="text-sm text-muted-foreground">Quality score</div>
-                              <div className="text-lg font-semibold">
-                                {typeof hookQuality === 'object'
-                                  ? (hookQuality.satisfaction ?? hookQuality.score ?? 'n/a')
-                                  : typeof hookQuality === 'number'
-                                  ? hookQuality
-                                  : 'n/a'}%
-                              </div>
-                            </div>
-                            <div className="text-sm text-muted-foreground max-w-xs text-right">
-                              {typeof hookQuality === 'object'
-                                ? hookQuality.comment || hookQuality.summary || 'Model evaluation of the creative relevance and clarity.'
-                                : 'Model evaluation of the creative relevance and clarity.'}
-                            </div>
-                          </div>
-                        </Card>
-                      )}
-
-                    <div className="bg-muted border border-border rounded-lg p-4 w-full max-w-full overflow-hidden">
-                      <h4 className="text-foreground mb-3">Was passiert nach dem Launch?</h4>
-                      <ul className="space-y-2 text-sm text-foreground/80">
-                        <li className="flex items-start gap-2 min-w-0">
-                          <Check className="w-4 h-4 text-primary mt-0.5 shrink-0" />
-                          <span className="break-words">Kampagne wird bei Meta zur Freigabe eingereicht</span>
-                        </li>
-                        <li className="flex items-start gap-2 min-w-0">
-                          <Check className="w-4 h-4 text-primary mt-0.5 shrink-0" />
-                          <span className="break-words">Automatisches A/B Testing startet</span>
-                        </li>
-                        <li className="flex items-start gap-2 min-w-0">
-                          <Check className="w-4 h-4 text-primary mt-0.5 shrink-0" />
-                          <span className="break-words">Echtzeit-Performance-Tracking aktiviert</span>
-                        </li>
-                        <li className="flex items-start gap-2 min-w-0">
-                          <Check className="w-4 h-4 text-primary mt-0.5 shrink-0" />
-                          <span className="break-words">KI-Optimierung läuft kontinuierlich im Hintergrund</span>
-                        </li>
-                      </ul>
-                    </div>
-
-                    <Button className="w-full bg-primary hover:bg-primary/90 text-primary-foreground h-12">
-                      <Rocket className="w-5 h-5 mr-2" />
-                      Kampagne jetzt starten
-                    </Button>
-
-                    <Button
-                      onClick={saveDraft}
-                      variant="outline"
-                      className="w-full border-border text-foreground hover:bg-muted h-12"
-                    >
-                      Als Entwurf speichern
-                    </Button>
-                    
-                    {/* Export & Save actions */}
-                    <div className="mt-4 grid grid-cols-2 gap-3">
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                      <Button
+                        onClick={saveDraft}
+                        variant="outline"
+                        className="w-full border-border text-foreground hover:bg-muted"
+                      >
+                        Als Entwurf speichern
+                      </Button>
                       <Button
                         onClick={() => {
                           try {
-                            const selected = selectedCopy !== null ? generatedCopy[selectedCopy] : generatedCopy[0] || null;
-                            const payload = {
-                              meta: { productName: state.formData.productName, targetAudience: state.formData.targetAudience },
-                              creative: selected || generatedCopy,
-                            };
-                            const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+                            if (!displayOutput) {
+                              throw new Error('Bitte zuerst eine Generierung abschließen.');
+                            }
+                            const blob = new Blob([JSON.stringify(displayOutput, null, 2)], { type: 'application/json' });
                             const url = URL.createObjectURL(blob);
                             const a = document.createElement('a');
                             a.href = url;
@@ -1360,9 +953,10 @@ export function AdBuilderPage() {
                             a.click();
                             a.remove();
                             URL.revokeObjectURL(url);
-                            toast.success('Creative exported');
+                            toast.success('Creative exportiert');
                           } catch (err: unknown) {
-                            toast.error('Export failed');
+                            const message = err instanceof Error ? err.message : 'Export fehlgeschlagen';
+                            toast.error(message);
                           }
                         }}
                         className="w-full"
@@ -1370,7 +964,6 @@ export function AdBuilderPage() {
                       >
                         Export JSON
                       </Button>
-
                       <Button
                         onClick={async () => {
                           try {
@@ -1396,115 +989,35 @@ export function AdBuilderPage() {
                 </div>
               )}
 
-              {/* FIX 6: Navigation Buttons - Mobile Stack */}
-              {state.currentStep !== 4 && (
-                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mt-8 pt-6 border-t border-border">
-                  <Button
-                    onClick={handleBack}
-                    disabled={state.currentStep === 1}
-                    variant="outline"
-                    className="border-border text-foreground hover:bg-muted w-full sm:w-auto"
-                  >
-                    <ChevronLeft className="w-4 h-4 mr-2" />
-                    Zurück
-                  </Button>
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mt-8 pt-6 border-t border-border">
+                <Button
+                  onClick={handleBack}
+                  disabled={state.currentStep === 1}
+                  variant="outline"
+                  className="border-border text-foreground hover:bg-muted w-full sm:w-auto"
+                >
+                  <ChevronLeft className="w-4 h-4 mr-2" />
+                  Zurück
+                </Button>
+                {state.currentStep < steps.length ? (
                   <Button
                     onClick={handleNext}
-                    disabled={state.currentStep === steps.length}
                     className="bg-primary hover:bg-primary/90 text-primary-foreground w-full sm:w-auto"
                   >
                     {getNextButtonLabel()}
                     <ChevronRight className="w-4 h-4 ml-2" />
                   </Button>
-                </div>
-              )}
-            </Card>
-          </div>
-
-          {/* FIX 3: Right Column - Mobile full width + min-w-0 */}
-          <div className="lg:col-span-1 space-y-4 lg:space-y-6 min-w-0">
-            <AdPreview
-              copy={selectedCopy !== null ? generatedCopy[selectedCopy] : undefined}
-              productName={state.formData.productName}
-            />
-            <ConversionScore score={94} />
-          </div>
-
-          {/* FIX 4: AI Copy Generator Sidebar - Mobile Collapsible */}
-          <div className="lg:col-span-1 min-w-0">
-            {/* Mobile: Collapsible Section */}
-            <details className="lg:hidden rounded-xl border border-border bg-card">
-              <summary className="px-4 py-3 cursor-pointer text-foreground font-medium flex items-center gap-2">
-                <Brain className="w-5 h-5 text-primary" />
-                AI Copy Generator öffnen
-              </summary>
-              <div className="p-4 border-t border-border">
-                <AIAdCopyGenerator
-                  productName={state.formData.productName}
-                  productDescription={state.formData.productDescription}
-                  targetAudience={state.formData.targetAudience}
-                  uniqueSellingPoint={state.formData.uniqueSellingPoint}
-                  strategyId={null}
-                  onSelectCopy={(copy) => {
-                    // Add selected AI copy to generatedCopy list
-                    const newCopy = {
-                      headline: copy.headline,
-                      description: copy.description,
-                      cta: copy.cta
-                    };
-                    setGeneratedCopy(prev => [...prev, newCopy]);
-                    setSelectedCopy(generatedCopy.length); // Select the newly added copy
-                  }}
-                />
+                ) : (
+                  <Button
+                    onClick={resetAll}
+                    variant="outline"
+                    className="w-full sm:w-auto"
+                  >
+                    Neues Briefing
+                  </Button>
+                )}
               </div>
-            </details>
-
-            {/* Desktop: Full Sidebar */}
-            <div className="hidden lg:block h-auto lg:h-[800px]">
-              <Card className="bg-card border-border h-full overflow-hidden min-w-0">
-                <AIAdCopyGenerator
-                  productName={state.formData.productName}
-                  productDescription={state.formData.productDescription}
-                  targetAudience={state.formData.targetAudience}
-                  uniqueSellingPoint={state.formData.uniqueSellingPoint}
-                  strategyId={null}
-                  onSelectCopy={(copy) => {
-                    // Add selected AI copy to generatedCopy list
-                    const newCopy = {
-                      headline: copy.headline,
-                      description: copy.description,
-                      cta: copy.cta
-                    };
-                    setGeneratedCopy(prev => [...prev, newCopy]);
-                    setSelectedCopy(generatedCopy.length); // Select the newly added copy
-                  }}
-                />
-              </Card>
-            </div>
-          </div>
-        </div>
-      )}
-    
-      {/* Research panel - allow selecting research items to guide generation */}
-      <div className="mt-4 lg:col-span-1">
-        <Card className="p-4 border-border bg-card">
-          <h4 className="font-semibold mb-3">Ad Research (select to include)</h4>
-          <AdResearchList
-            limit={8}
-            selectedIds={selectedResearchIds}
-            refreshKey={researchRefreshKey}
-            onToggle={(id) => {
-              setSelectedResearchIds((prev) => {
-                if (prev.includes(id)) return prev.filter((p) => p !== id);
-                return [...prev, id];
-              });
-            }}
-          />
-
-          <div className="mt-3 text-sm text-muted-foreground">
-            Selected: <strong>{selectedResearchIds.length}</strong>
-          </div>
-        </Card>
+            </Card>
       </div>
     </PageShell>
   );

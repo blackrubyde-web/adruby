@@ -7,6 +7,7 @@ export type AdBuilderData = {
   interests: string;
   painPoints: string;
   uniqueSellingPoint: string;
+  creativeNotes: string;
   budget: string;
   duration: string;
   objective: string;
@@ -29,6 +30,7 @@ export const initialAdBuilderState: AdBuilderState = {
     interests: '',
     painPoints: '',
     uniqueSellingPoint: '',
+    creativeNotes: '',
     budget: '',
     duration: '',
     objective: 'conversions',
@@ -44,6 +46,8 @@ export type AdBuilderAction =
   | { type: 'LOAD_DRAFT'; payload: { currentStep?: number; formData?: Partial<AdBuilderData> } }
   | { type: 'RESET' };
 
+const MAX_STEP = 3;
+
 export function adBuilderReducer(state: AdBuilderState, action: AdBuilderAction): AdBuilderState {
   switch (action.type) {
     case 'SET_FIELD':
@@ -57,7 +61,7 @@ export function adBuilderReducer(state: AdBuilderState, action: AdBuilderAction)
     case 'NEXT_STEP':
       return {
         ...state,
-        currentStep: Math.min(state.currentStep + 1, 6)
+        currentStep: Math.min(state.currentStep + 1, MAX_STEP)
       };
     case 'PREV_STEP':
       return {
