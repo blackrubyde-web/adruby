@@ -13,11 +13,7 @@ export function buildAnalyzePrompt(input: {
   format: string;
   inspiration?: string | null;
   avoidClaims?: string | null;
-  strategyBlueprint?: string | null;
 }) {
-  const strategyBlock = input.strategyBlueprint
-    ? `\nStrategy blueprint (follow if relevant):\n${input.strategyBlueprint}\n`
-    : "";
   return `
 You are AdRuby Creative Strategist.
 Task: Normalize a creative brief for Meta ads and propose strong angles.
@@ -43,18 +39,13 @@ language: ${input.language}
 format: ${input.format}
 inspiration: ${input.inspiration ?? "null"}
 claims_to_avoid: ${input.avoidClaims ?? "null"}
-${strategyBlock}
 `;
 }
 
 export function buildGeneratePrompt(
   brief: NormalizedBrief,
   hasImage: boolean,
-  strategyBlueprint?: string | null,
 ) {
-  const strategyBlock = strategyBlueprint
-    ? `\nStrategy blueprint (apply it carefully and stay compliant):\n${strategyBlueprint}\n`
-    : "";
   return `
 You are AdRuby Performance Copywriter for Meta ads.
 Generate high-performing ad copy variations, structured and compliant.
@@ -81,18 +72,13 @@ Scoring:
 
 Brief JSON:
 ${JSON.stringify(brief)}
-${strategyBlock}
 `;
 }
 
 export function buildQualityEvalPrompt(params: {
   brief: NormalizedBrief;
   output: unknown;
-  strategyBlueprint?: string | null;
 }) {
-  const strategyBlock = params.strategyBlueprint
-    ? `\nStrategy blueprint reference:\n${params.strategyBlueprint}\n`
-    : "";
   return `
 You are an expert Meta Ads creative reviewer.
 Evaluate quality and compliance of the provided CreativeOutput against the brief.
@@ -111,7 +97,6 @@ Scoring rubric (be strict):
 
 Brief JSON:
 ${JSON.stringify(params.brief)}
-${strategyBlock}
 
 CreativeOutput JSON:
 ${JSON.stringify(params.output)}
@@ -122,15 +107,11 @@ export function buildImprovePrompt(params: {
   brief: NormalizedBrief;
   priorOutput: unknown;
   issues: Array<{ type: string; severity: string; note: string }>;
-  strategyBlueprint?: string | null;
 }) {
   const issueText =
     params.issues?.length > 0
       ? params.issues.map((i) => `- [${i.severity}] ${i.type}: ${i.note}`).join("\n")
       : "- No issues provided";
-  const strategyBlock = params.strategyBlueprint
-    ? `\nStrategy blueprint (apply it carefully and stay compliant):\n${params.strategyBlueprint}\n`
-    : "";
 
   return `
 You are AdRuby Performance Copywriter.
@@ -149,7 +130,6 @@ Rules:
 
 Brief JSON:
 ${JSON.stringify(params.brief)}
-${strategyBlock}
 
 Previous CreativeOutput JSON:
 ${JSON.stringify(params.priorOutput)}

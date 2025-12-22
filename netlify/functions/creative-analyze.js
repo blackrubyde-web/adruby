@@ -294,20 +294,6 @@ export async function handler(event) {
     }
   }
 
-  let strategyBlueprint = null;
-  if (strategyId) {
-    const { data, error } = await supabaseAdmin
-      .from("strategy_blueprints")
-      .select("raw_content_markdown")
-      .eq("id", strategyId)
-      .single();
-
-    if (error || !data) {
-      return badRequest("Unknown strategy blueprint.");
-    }
-    strategyBlueprint = data.raw_content_markdown;
-  }
-
   let credits;
   try {
     credits = await assertAndConsumeCredits(userId, "creative_analyze");
@@ -334,7 +320,6 @@ export async function handler(event) {
     format,
     inspiration,
     avoidClaims,
-    strategyBlueprint,
   });
 
   const inputForLog = {

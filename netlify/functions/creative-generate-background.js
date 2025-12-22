@@ -40,31 +40,6 @@ function clampInt(n, min, max) {
   return Math.max(min, Math.min(max, v));
 }
 
-function tokenizeStrategy(value) {
-  return String(value || "")
-    .toLowerCase()
-    .replace(/[^a-z0-9äöüß\s-]/gi, " ")
-    .split(/\s+/)
-    .filter((token) => token.length > 2);
-}
-
-function scoreStrategyBlueprint(blueprint, keywords) {
-  if (!blueprint) return 0;
-  const hay = [
-    blueprint.title,
-    blueprint.category,
-    blueprint.raw_content_markdown?.slice(0, 1200),
-  ]
-    .filter(Boolean)
-    .join(" ")
-    .toLowerCase();
-  let score = 0;
-  keywords.forEach((kw) => {
-    if (kw && hay.includes(kw)) score += 1;
-  });
-  return score;
-}
-
 const GOALS = ["sales", "leads", "traffic", "app_installs"];
 const FUNNELS = ["cold", "warm", "hot"];
 const LANGS = ["de", "en"];
@@ -521,9 +496,9 @@ const MAX_IMPROVE_ATTEMPTS = clampInt(
   10,
 );
 const MAX_DURATION_MS = clampInt(
-  Number.parseInt(process.env.CREATIVE_MAX_DURATION_MS || "60000", 10),
+  Number.parseInt(process.env.CREATIVE_MAX_DURATION_MS || "300000", 10),
   10000,
-  300000,
+  600000,
 );
 const IMAGE_TOP_N = clampInt(
   Number.parseInt(process.env.CREATIVE_IMAGE_TOP_N || "0", 10),
@@ -924,8 +899,7 @@ export async function handler(event) {
       : null;
   const hasImage = Boolean(body?.hasImage || imagePath);
   let strategyId = typeof body?.strategyId === "string" ? body.strategyId.trim() : "";
-  let strategyBlueprint = null;
-  let strategyTitle = null;
+  const strategyBlueprint = null;
   const outputModeRaw = typeof body?.outputMode === "string" ? body.outputMode.trim() : "";
   const outputMode = outputModeRaw === "pro" ? "pro" : "v1";
   const platforms = Array.isArray(body?.platforms)
@@ -934,53 +908,6 @@ export async function handler(event) {
   const formats = Array.isArray(body?.formats)
     ? body.formats.filter((f) => FORMATS.includes(f))
     : [];
-
-  if (!strategyId) {
-    try {
-      const { data: blueprints } = await supabaseAdmin
-        .from("strategy_blueprints")
-        .select("id,title,category,raw_content_markdown,created_at")
-        .order("created_at", { ascending: false });
-      if (Array.isArray(blueprints) && blueprints.length > 0) {
-        const keywords = [
-          ...(brief?.product?.name ? tokenizeStrategy(brief.product.name) : []),
-          ...(brief?.product?.category ? tokenizeStrategy(brief.product.category) : []),
-          ...(brief?.audience?.summary ? tokenizeStrategy(brief.audience.summary) : []),
-          ...(Array.isArray(brief?.audience?.segments)
-            ? brief.audience.segments.flatMap(tokenizeStrategy)
-            : []),
-        ];
-        let best = blueprints[0];
-        let bestScore = -1;
-        for (const bp of blueprints) {
-          const score = scoreStrategyBlueprint(bp, keywords);
-          if (score > bestScore) {
-            best = bp;
-            bestScore = score;
-          }
-        }
-        strategyId = best?.id || "";
-        strategyBlueprint = best?.raw_content_markdown || null;
-        strategyTitle = best?.title || null;
-      }
-    } catch (err) {
-      console.warn("[creative-generate] failed to auto-select strategy", err?.message || err);
-    }
-  }
-
-  if (strategyId && !strategyBlueprint) {
-    const { data, error } = await supabaseAdmin
-      .from("strategy_blueprints")
-      .select("raw_content_markdown,title")
-      .eq("id", strategyId)
-      .single();
-
-    if (error || !data) {
-      return badRequest("Unknown strategy blueprint.");
-    }
-    strategyBlueprint = data.raw_content_markdown;
-    strategyTitle = data.title || null;
-  }
 
   let credits;
   try {
@@ -1586,6 +1513,7 @@ export async function handler(event) {
 
     // default (existing) flow
     const startedAt = Date.now();
+    const isOverTimeBudget = () => Date.now() - startedAt > MAX_DURATION_MS;
     logStep("default.start", { jobId: placeholderId });
     const prompt = buildGeneratePrompt(brief, hasImage, strategyBlueprint, researchContext, {
       visual_style: visualStyle,
@@ -1618,7 +1546,7 @@ export async function handler(event) {
     let attemptsUsed = 0;
     for (let attempt = 1; attempt <= MAX_IMPROVE_ATTEMPTS; attempt++) {
       attemptsUsed = attempt;
-      if (Date.now() - startedAt > MAX_DURATION_MS) {
+      if (isOverTimeBudget()) {
         logStep("default.timeout", {
           jobId: placeholderId,
           elapsedMs: Date.now() - startedAt,
@@ -1720,6 +1648,15 @@ export async function handler(event) {
       }
 
       for (let i = 0; i < imageTargets.length; i += 1) {
+        if (isOverTimeBudget()) {
+          logStep("default.timeout", {
+            jobId: placeholderId,
+            elapsedMs: Date.now() - startedAt,
+            attemptsUsed,
+            phase: "images",
+          });
+          break;
+        }
         const { creative, index } = imageTargets[i];
         let imageSpec = buildFallbackImageSpec(brief, creative);
         try {
@@ -1978,6 +1915,27 @@ function sleep(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
+let openAiCooldownUntil = 0;
+let openAiLastCallAt = 0;
+
+function getOpenAiMinIntervalMs() {
+  return clampInt(Number(process.env.OPENAI_MIN_INTERVAL_MS || 0), 0, 60000);
+}
+
+function getOpenAiRetryBufferMs() {
+  return clampInt(Number(process.env.OPENAI_RETRY_BUFFER_MS || 5000), 0, 30000);
+}
+
+async function waitForOpenAiSlot() {
+  const now = Date.now();
+  const minIntervalMs = getOpenAiMinIntervalMs();
+  const nextAllowed = Math.max(openAiCooldownUntil, openAiLastCallAt + minIntervalMs);
+  if (nextAllowed > now) {
+    await sleep(nextAllowed - now);
+  }
+  openAiLastCallAt = Date.now();
+}
+
 function isOpenAiTimeoutError(err) {
   const name = String(err?.name || "");
   const message = String(err?.message || "");
@@ -2025,7 +1983,8 @@ function getRetryDelayMs(err, attempt) {
   const msgMatch = message.match(/try again in ([\d.]+)s/i);
   const messageDelay = msgMatch ? Math.ceil(Number(msgMatch[1]) * 1000) : 0;
   const backoffMs = 500 * Math.pow(2, attempt) + Math.floor(Math.random() * 200);
-  return clampInt(Math.max(backoffMs, headerDelay, messageDelay), 300, 60000);
+  const bufferMs = getOpenAiRetryBufferMs();
+  return clampInt(Math.max(backoffMs, headerDelay, messageDelay) + bufferMs, 300, 120000);
 }
 
 async function callOpenAiJson(prompt, options = {}) {
@@ -2034,16 +1993,17 @@ async function callOpenAiJson(prompt, options = {}) {
   const useSchema = process.env.USE_JSON_SCHEMA === "1";
   const responseFormat = options?.responseFormat;
   const baseTimeoutMs = clampInt(
-    Number(process.env.OPENAI_TIMEOUT_MS || 60000),
+    Number(process.env.OPENAI_TIMEOUT_MS || 120000),
     5000,
     180000,
   );
-  const maxRetries = clampInt(Number(process.env.OPENAI_MAX_RETRIES || 1), 0, 3);
+  const maxRetries = clampInt(Number(process.env.OPENAI_MAX_RETRIES || 2), 0, 4);
 
   let lastError;
   for (let attempt = 0; attempt <= maxRetries; attempt += 1) {
     const timeoutMs = clampInt(baseTimeoutMs + attempt * 5000, 5000, 180000);
     try {
+      await waitForOpenAiSlot();
       const res = await openai.responses.create(
         {
           model,
@@ -2088,6 +2048,9 @@ async function callOpenAiJson(prompt, options = {}) {
 
       if (attempt < maxRetries && isRetryableOpenAiError(err)) {
         const delayMs = getRetryDelayMs(err, attempt);
+        if (Number(err?.status) === 429) {
+          openAiCooldownUntil = Math.max(openAiCooldownUntil, Date.now() + delayMs);
+        }
         await sleep(delayMs);
         continue;
       }

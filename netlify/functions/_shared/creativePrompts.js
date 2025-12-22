@@ -1,7 +1,44 @@
+function clampInt(value, min, max) {
+  const n = Number.parseInt(value, 10);
+  if (!Number.isFinite(n)) return min;
+  return Math.min(max, Math.max(min, n));
+}
+
+const RESEARCH_MAX_ITEMS = clampInt(
+  process.env.CREATIVE_RESEARCH_MAX_ITEMS || "8",
+  0,
+  12,
+);
+const RESEARCH_FIELD_MAX_CHARS = clampInt(
+  process.env.CREATIVE_RESEARCH_FIELD_MAX_CHARS || "320",
+  50,
+  4000,
+);
+
+function trimText(value, maxChars) {
+  if (!value) return "";
+  const text = String(value);
+  if (text.length <= maxChars) return text;
+  return text.slice(0, maxChars);
+}
+
+function trimResearchField(value) {
+  return trimText(value, RESEARCH_FIELD_MAX_CHARS);
+}
+
+function trimResearchContext(ctx) {
+  if (!ctx || !Array.isArray(ctx) || ctx.length === 0) return [];
+  return ctx.slice(0, RESEARCH_MAX_ITEMS).map((item) => ({
+    ...item,
+    page_name: trimResearchField(item?.page_name ?? "unknown"),
+    headline: trimResearchField(item?.headline ?? "null"),
+    primary_text: trimResearchField(item?.primary_text ?? "null"),
+    description: trimResearchField(item?.description ?? "null"),
+    image_url: trimResearchField(item?.image_url ?? "null"),
+  }));
+}
+
 export function buildAnalyzePrompt(input) {
-  const strategyBlock = input.strategyBlueprint
-    ? `\nStrategy blueprint (follow if relevant):\n${input.strategyBlueprint}\n`
-    : "";
   return `
 You are AdRuby Creative Strategist.
 Task: Normalize a creative brief for Meta ads and propose strong angles.
@@ -27,7 +64,6 @@ language: ${input.language}
 format: ${input.format}
 inspiration: ${input.inspiration ?? "null"}
 claims_to_avoid: ${input.avoidClaims ?? "null"}
-${strategyBlock}
 `;
 }
 
@@ -38,9 +74,6 @@ export function buildGeneratePrompt(
   researchContext,
   preferences = {},
 ) {
-  const strategyBlock = strategyBlueprint
-    ? `\nStrategy blueprint (apply it carefully and stay compliant):\n${strategyBlueprint}\n`
-    : "";
   const visualStyle = preferences?.visual_style
     ? `\nPreferred visual style: ${preferences.visual_style}`
     : "";
@@ -81,7 +114,6 @@ Scoring:
 
 Brief JSON:
 ${JSON.stringify(brief)}
-${strategyBlock}
 ${visualStyle}
 ${ctaPreference}
 `;
@@ -116,7 +148,7 @@ BRIEF:
 ${JSON.stringify(brief)}
 
 RESEARCH_CONTEXT:
-${JSON.stringify(researchContext || [])}
+${JSON.stringify(trimResearchContext(researchContext))}
 
 BRANCH-ADAPTER RULES:
 - Extract industry/category, persona, pains, desired outcome, objections, offer, proof assets.
@@ -154,7 +186,6 @@ Rules:
 
 export function buildQualityEvalPromptV2({ brief, variant, strategyBlueprint, researchContext }) {
   const researchBlock = renderResearchContext(researchContext);
-  const strategyBlock = strategyBlueprint ? `\nStrategy: ${strategyBlueprint}` : "";
 
   return `
 You are a strict creative reviewer. Return ONLY valid JSON matching the QualityEvalV2 schema.
@@ -163,14 +194,12 @@ Provide KO flags: complianceFail, genericBuzzwordFail. Provide issues array and 
 
 BRIEF: ${JSON.stringify(brief)}
 VARIANT: ${JSON.stringify(variant)}
-${strategyBlock}
 ${researchBlock}
 `;
 }
 
 export function buildBatchQualityEvalPromptV2({ brief, variants, strategyBlueprint, researchContext }) {
   const researchBlock = renderResearchContext(researchContext);
-  const strategyBlock = strategyBlueprint ? `\nStrategy: ${strategyBlueprint}` : "";
 
   const variantsJson = JSON.stringify(
     variants.map((v, i) => ({ id: i, variant: v })),
@@ -188,7 +217,6 @@ Respond with a single JSON object: { "evaluations": [ ... ] }
 
 BRIEF: ${JSON.stringify(brief)}
 VARIANTS: ${variantsJson}
-${strategyBlock}
 ${researchBlock}
 `;
 }
@@ -220,7 +248,8 @@ EVAL: ${JSON.stringify(evalV2)}
 
 function renderResearchContext(ctx) {
   if (!ctx || !Array.isArray(ctx) || ctx.length === 0) return '';
-  const items = ctx.slice(0, 8).map((i, idx) => {
+  const trimmed = trimResearchContext(ctx);
+  const items = trimmed.map((i, idx) => {
     return `\n[${idx + 1}] page: ${i.page_name || 'unknown'}\nheadline: ${i.headline || 'null'}\nprimary_text: ${i.primary_text || 'null'}\ndescription: ${i.description || 'null'}\nimage_url: ${i.image_url || 'null'}`;
   });
   return `\nResearch context (examples of recent ads scraped from Ad Library):\n${items.join('\n')}`;
@@ -228,9 +257,6 @@ function renderResearchContext(ctx) {
 
 export function buildQualityEvalPrompt({ brief, output, strategyBlueprint, researchContext }) {
   const researchBlock = renderResearchContext(researchContext);
-  const strategyBlock = strategyBlueprint
-    ? `\nStrategy blueprint reference:\n${strategyBlueprint}\n`
-    : "";
 
   return `
 You are an expert Meta Ads creative reviewer.
@@ -250,7 +276,6 @@ Scoring rubric (be strict):
 
 Brief JSON:
 ${JSON.stringify(brief)}
-${strategyBlock}
 ${researchBlock}
 
 CreativeOutput JSON:
@@ -270,9 +295,6 @@ export function buildImprovePrompt({
     issues?.length > 0
       ? issues.map((i) => `- [${i.severity}] ${i.type}: ${i.note}`).join("\n")
       : "- No issues provided";
-  const strategyBlock = strategyBlueprint
-    ? `\nStrategy blueprint (apply it carefully and stay compliant):\n${strategyBlueprint}\n`
-    : "";
   const visualStyle = preferences?.visual_style
     ? `\nPreferred visual style: ${preferences.visual_style}`
     : "";
@@ -297,7 +319,6 @@ Rules:
 
 Brief JSON:
 ${JSON.stringify(brief)}
-${strategyBlock}
 ${visualStyle}
 ${ctaPreference}
 
@@ -307,9 +328,6 @@ ${JSON.stringify(priorOutput)}
 }
 
 export function buildImageSpecPrompt({ brief, creative, strategyBlueprint, researchContext }) {
-  const strategyBlock = strategyBlueprint
-    ? `\nStrategy blueprint:\n${strategyBlueprint}\n`
-    : "";
   const researchBlock = renderResearchContext(researchContext);
 
   return `
@@ -327,7 +345,6 @@ ${JSON.stringify(brief)}
 
 Creative variant:
 ${JSON.stringify(creative)}
-${strategyBlock}
 ${researchBlock}
 `;
 }
@@ -362,9 +379,6 @@ Rules:
 }
 
 export function buildImageSpecPromptPro({ brief, variant, strategyBlueprint, researchContext }) {
-  const strategyBlock = strategyBlueprint
-    ? `\nStrategy blueprint:\n${strategyBlueprint}\n`
-    : "";
   const researchBlock = renderResearchContext(researchContext);
 
   return `
@@ -381,13 +395,11 @@ ${JSON.stringify(brief)}
 
 VARIANT:
 ${JSON.stringify(variant)}
-${strategyBlock}
 ${researchBlock}
 `;
 }
 
 export function buildQualityEvalProPrompt({ brief, variant, strategyBlueprint, researchContext }) {
-  const strategyBlock = strategyBlueprint ? `\nStrategy: ${strategyBlueprint}` : "";
   const researchBlock = renderResearchContext(researchContext);
 
   return `
@@ -400,7 +412,6 @@ ${JSON.stringify(brief)}
 
 VARIANT:
 ${JSON.stringify(variant)}
-${strategyBlock}
 ${researchBlock}
 `;
 }
