@@ -1974,61 +1974,92 @@ export async function handler(event) {
   }
 }
 
+function sleep(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+function isOpenAiTimeoutError(err) {
+  const name = String(err?.name || "");
+  const message = String(err?.message || "");
+  return name.includes("Timeout") || message.toLowerCase().includes("timed out");
+}
+
+function isRetryableOpenAiError(err) {
+  const status = Number(err?.status);
+  if (status === 429 || status >= 500) return true;
+  const name = String(err?.name || "");
+  if (name.includes("APIConnection")) return true;
+  return isOpenAiTimeoutError(err);
+}
+
 async function callOpenAiJson(prompt, options = {}) {
   const openai = getOpenAiClient();
   const model = getOpenAiModel();
   const useSchema = process.env.USE_JSON_SCHEMA === "1";
   const responseFormat = options?.responseFormat;
+  const baseTimeoutMs = clampInt(
+    Number(process.env.OPENAI_TIMEOUT_MS || 60000),
+    5000,
+    180000,
+  );
+  const maxRetries = clampInt(Number(process.env.OPENAI_MAX_RETRIES || 1), 0, 3);
 
-  // Safe timeout around OpenAI requests to prevent hanging on network issues.
-  let res;
-  const timeoutMs = Number(process.env.OPENAI_TIMEOUT_MS || 30000);
-  let timeoutId;
-  const timeoutPromise = new Promise((_, reject) => {
-    timeoutId = setTimeout(() => reject(new Error("OpenAI request timed out")), timeoutMs);
-  });
-  try {
-    res = await Promise.race([
-      openai.responses.create({
-        model,
-        input: [
-          {
-            role: "system",
-            content:
-              "Return ONLY valid JSON. No markdown. Follow the schema strictly. Do not add extra keys.",
-          },
-          { role: "user", content: [{ type: "input_text", text: prompt }] },
-        ],
-        temperature: 0.0,
-        ...(useSchema && responseFormat
-          ? {
-              text: {
-                format: {
-                  type: "json_schema",
-                  name: responseFormat?.name || "schema",
-                  schema: responseFormat?.schema || responseFormat,
-                  strict: responseFormat?.strict ?? true,
+  let lastError;
+  for (let attempt = 0; attempt <= maxRetries; attempt += 1) {
+    const timeoutMs = clampInt(baseTimeoutMs + attempt * 5000, 5000, 180000);
+    try {
+      const res = await openai.responses.create(
+        {
+          model,
+          input: [
+            {
+              role: "system",
+              content:
+                "Return ONLY valid JSON. No markdown. Follow the schema strictly. Do not add extra keys.",
+            },
+            { role: "user", content: [{ type: "input_text", text: prompt }] },
+          ],
+          temperature: 0.0,
+          ...(useSchema && responseFormat
+            ? {
+                text: {
+                  format: {
+                    type: "json_schema",
+                    name: responseFormat?.name || "schema",
+                    schema: responseFormat?.schema || responseFormat,
+                    strict: responseFormat?.strict ?? true,
+                  },
                 },
-              },
-            }
-          : {}),
-      }),
-      timeoutPromise,
-    ]);
-  } catch (err) {
-    if (err?.message === "OpenAI request timed out") {
-      console.error("[creative-generate] OpenAI request timed out", { timeoutMs });
+              }
+            : {}),
+        },
+        {
+          timeout: timeoutMs,
+          maxRetries: 0,
+        },
+      );
+
+      const text = String(res.output_text || "").trim();
+      if (!text) throw new Error("Empty OpenAI response.");
+      return text;
+    } catch (err) {
+      lastError = err;
+      if (isOpenAiTimeoutError(err)) {
+        console.error("[creative-generate] OpenAI request timed out", { timeoutMs, attempt });
+      } else {
+        console.error("[creative-generate] OpenAI request failed", err?.message || err);
+      }
+
+      if (attempt < maxRetries && isRetryableOpenAiError(err)) {
+        const backoffMs = 500 * Math.pow(2, attempt) + Math.floor(Math.random() * 200);
+        await sleep(backoffMs);
+        continue;
+      }
       throw err;
     }
-    console.error('[creative-generate] OpenAI request failed', err?.message || err);
-    throw err;
-  } finally {
-    if (timeoutId) clearTimeout(timeoutId);
   }
 
-  const text = String(res.output_text || "").trim();
-  if (!text) throw new Error("Empty OpenAI response.");
-  return text;
+  throw lastError || new Error("OpenAI request failed.");
 }
 
 async function evaluateOutput(brief, output, strategyBlueprint, researchContext) {
