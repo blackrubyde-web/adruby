@@ -50,6 +50,7 @@ Hard rules:
 - Angles: 3-6. Each angle needs: id, label, why_it_fits.
 - Audience.segments must be specific and actionable (min 3 segments if possible).
 - Risk flags: list potential compliance issues (guarantees, medical claims, misleading results). If none, empty array.
+- Avoid placeholders like "Test" or "Produkt". Use brand/product names from input.
 
 Input:
 brandName: ${input.brandName}
@@ -80,6 +81,10 @@ export function buildGeneratePrompt(
   const ctaPreference = preferences?.cta_preference
     ? `\nPreferred CTA wording: ${preferences.cta_preference}`
     : "";
+  const researchBlock =
+    researchContext && Array.isArray(researchContext) && researchContext.length > 0
+      ? `\nResearch context:\n${JSON.stringify(trimResearchContext(researchContext))}`
+      : "";
   return `
 You are AdRuby Performance Copywriter for Meta ads.
 Generate high-performing ad copy variations, structured and compliant.
@@ -89,6 +94,8 @@ Constraints:
 - Output 4-6 creatives (diverse angles, not repetitive).
 - Hooks max 80 chars. CTA max 30 chars.
 - Primary text: clear benefit + proof style + CTA. Avoid spam, avoid unrealistic promises.
+- Use brand/product names from the brief. Avoid placeholders like "Test" or "Produkt".
+- If proof is missing, use soft proof language (e.g. "erprobt", "von Kunden genutzt").
 - Respect funnel stage:
   - cold: curiosity + problem/solution + light proof
   - warm: clearer offer + differentiators + trust
@@ -116,6 +123,7 @@ Brief JSON:
 ${JSON.stringify(brief)}
 ${visualStyle}
 ${ctaPreference}
+${researchBlock}
 `;
 }
 
@@ -453,6 +461,7 @@ Rules:
 - Be concrete and tactical. No vague advice.
 - Use the blueprint as the main source of truth.
 - Use the brief and outputs to tailor to the product and audience.
+- Avoid placeholders. Always reference the real brand/product from the brief.
 - Provide a strong Meta setup (campaign/ad set/ad structure, targeting, placements, budget).
 - Provide 6-10 recommendations with specific actions.
 - Messaging must include at least 5 key messages, 5 angles, 7 hooks, 3 CTAs, 2 compliance notes.
@@ -496,6 +505,7 @@ Rules:
 - If inputs conflict, choose the most consistent theme and note tradeoffs in recommendations.
 - Use the blueprint as the main source of truth.
 - Be concrete and tactical. No vague advice.
+- Avoid placeholders. Always reference the real brand/product from the brief.
 - Provide a strong Meta setup (campaign/ad set/ad structure, targeting, placements, budget).
 - Provide 6-10 recommendations with specific actions.
 - Messaging must include at least 5 key messages, 5 angles, 7 hooks, 3 CTAs, 2 compliance notes.

@@ -21,7 +21,6 @@ import {
 } from './ad-builder/adBuilderReducer';
 import type { CreativeOutput, CreativeOutputV1, CreativeOutputPro } from '../lib/creative/types';
 import useAdBuilder from '../hooks/useAdBuilder';
-import { creativeSaveToLibrary } from '../lib/api/creative';
 import { toast } from 'sonner';
 import CreativeResults from './creative-builder/CreativeResults';
 import ImageDropzone from './creative-builder/ImageDropzone';
@@ -33,7 +32,8 @@ const DRAFT_SKIP_KEY = 'ad_ruby_skip_draft_restore';
 const steps = [
   { id: 1, name: 'Produkt & Bild', icon: Sparkles },
   { id: 2, name: 'Zielgruppe & Angebot', icon: Users },
-  { id: 3, name: 'Generieren & Ergebnisse', icon: ImageIcon },
+  { id: 3, name: 'Generieren', icon: ImageIcon },
+  { id: 4, name: 'Ergebnisse', icon: Check },
 ];
 
 type PendingDraft = {
@@ -390,8 +390,8 @@ export function AdBuilderPage() {
   }, [isProcessing]);
 
   useEffect(() => {
-    if (hookResult && adStatus === 'complete' && state.currentStep < 3) {
-      dispatch({ type: 'SET_STEP', step: 3 });
+    if (hookResult && adStatus === 'complete' && state.currentStep < 4) {
+      dispatch({ type: 'SET_STEP', step: 4 });
     }
   }, [hookResult, adStatus, state.currentStep]);
 
@@ -535,6 +535,7 @@ export function AdBuilderPage() {
   const getNextButtonLabel = () => {
     if (state.currentStep === 1) return 'Weiter zu Zielgruppe';
     if (state.currentStep === 2) return 'Weiter zur Generierung';
+    if (state.currentStep === 3) return 'Weiter zu Ergebnissen';
     return 'Weiter';
   };
 
@@ -912,7 +913,7 @@ export function AdBuilderPage() {
                 </div>
               )}
 
-              {/* Step 3: Generate & Results */}
+              {/* Step 3: Generate */}
               {state.currentStep === 3 && (
                 <div>
                   <div className="flex items-center gap-3 mb-6 min-w-0">
@@ -920,9 +921,9 @@ export function AdBuilderPage() {
                       <ImageIcon className="w-6 h-6 text-primary-foreground" />
                     </div>
                     <div className="min-w-0 flex-1">
-                      <h2 className="text-foreground truncate">Generieren & Ergebnisse</h2>
+                      <h2 className="text-foreground truncate">Generieren</h2>
                       <p className="text-muted-foreground text-sm break-words">
-                        Starte die Generierung und passe bei Bedarf Feinschliff an.
+                        Starte die Generierung. Die Ergebnisse erscheinen im naechsten Schritt.
                       </p>
                     </div>
                   </div>
@@ -992,7 +993,7 @@ export function AdBuilderPage() {
                         onClick={generateCopy}
                         size="sm"
                         disabled={!canGenerateCopy || isProcessing}
-                        className="bg-primary hover:bg-primary/90 text-primary-foreground w-full sm:w-auto"
+                        className="bg-primary hover:bg-primary/90 text-primary-foreground w-full sm:w-auto shadow-lg shadow-primary/20 hover:shadow-primary/40"
                       >
                         <Zap className={`w-4 h-4 mr-2 ${isProcessing ? 'animate-pulse' : ''}`} />
                         {adStatus === 'analyzing' ? 'Analysiere…' : isGeneratingCopy ? 'Generiere…' : 'KI generieren'}
@@ -1002,45 +1003,38 @@ export function AdBuilderPage() {
                     {copyError && (
                       <div className="text-sm text-red-600">{copyError}</div>
                     )}
+                  </div>
+                </div>
+              )}
 
-                    {displayOutput && (
-                      <CreativeResults
-                        output={displayOutput}
-                        quality={displayQuality}
-                        onReset={resetAll}
-                      />
-                    )}
-
-                    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                      <Button
-                        onClick={async () => {
-                          try {
-                            if (!hookResult) {
-                              throw new Error('Bitte zuerst eine KI‑Generierung abschließen.');
-                            }
-                            const output = hookResult;
-                            await creativeSaveToLibrary({ output, creativeId: hookJobId });
-                            toast.success('Saved to Library');
-                            startNewAd();
-                          } catch (err: unknown) {
-                            const message = err instanceof Error ? err.message : 'Save failed';
-                            toast.error(message);
-                          }
-                        }}
-                        className="w-full"
-                        disabled={!hookResult}
-                      >
-                        Save to Library
-                      </Button>
-                      <Button
-                        onClick={startNewAd}
-                        variant="outline"
-                        className="w-full"
-                      >
-                        Neue Ad
-                      </Button>
+              {/* Step 4: Results */}
+              {state.currentStep === 4 && (
+                <div>
+                  <div className="flex items-center gap-3 mb-6 min-w-0">
+                    <div className="w-10 h-10 bg-primary rounded-lg flex items-center justify-center shrink-0">
+                      <Check className="w-6 h-6 text-primary-foreground" />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <h2 className="text-foreground truncate">Ergebnisse</h2>
+                      <p className="text-muted-foreground text-sm break-words">
+                        Hier findest du die fertigen Creatives und kannst sie speichern.
+                      </p>
                     </div>
                   </div>
+
+                  {!displayOutput && (
+                    <div className="rounded-xl border border-dashed border-border bg-card p-6 text-sm text-muted-foreground">
+                      Noch keine Ergebnisse. Geh zur Generierung zurueck und starte eine KI-Erstellung.
+                    </div>
+                  )}
+
+                  {displayOutput && (
+                    <CreativeResults
+                      output={displayOutput}
+                      quality={displayQuality}
+                      onReset={resetAll}
+                    />
+                  )}
                 </div>
               )}
 
@@ -1057,7 +1051,7 @@ export function AdBuilderPage() {
                 {state.currentStep < steps.length ? (
                   <Button
                     onClick={handleNext}
-                    className="bg-primary hover:bg-primary/90 text-primary-foreground w-full sm:w-auto"
+                    className="bg-primary hover:bg-primary/90 text-primary-foreground w-full sm:w-auto shadow-md shadow-primary/20 hover:shadow-primary/30"
                   >
                     {getNextButtonLabel()}
                     <ChevronRight className="w-4 h-4 ml-2" />

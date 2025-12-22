@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useRef, useState, useEffect } from 'react';
 import GridLayout, { type Layout, type LayoutItem } from 'react-grid-layout/legacy';
 import 'react-grid-layout/css/styles.css';
 import { 
@@ -415,6 +415,7 @@ export function AppleGridDashboard({
     design: 'gradient',
   });
   const [windowWidth, setWindowWidth] = useState(typeof window !== 'undefined' ? window.innerWidth : 1200);
+  const resizeFrameRef = useRef<number | null>(null);
   const handleCreateCampaign = () => {
     const url = '/adbuilder';
     window.history.pushState({}, document.title, url);
@@ -422,9 +423,20 @@ export function AppleGridDashboard({
   };
 
   useEffect(() => {
-    const handleResize = () => setWindowWidth(window.innerWidth);
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
+    const handleResize = () => {
+      if (resizeFrameRef.current !== null) return;
+      resizeFrameRef.current = window.requestAnimationFrame(() => {
+        resizeFrameRef.current = null;
+        setWindowWidth(window.innerWidth);
+      });
+    };
+    window.addEventListener('resize', handleResize, { passive: true });
+    return () => {
+      if (resizeFrameRef.current !== null) {
+        window.cancelAnimationFrame(resizeFrameRef.current);
+      }
+      window.removeEventListener('resize', handleResize);
+    };
   }, []);
 
   useEffect(() => {

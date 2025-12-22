@@ -46,7 +46,7 @@ export type AdBuilderAction =
   | { type: 'LOAD_DRAFT'; payload: { currentStep?: number; formData?: Partial<AdBuilderData> } }
   | { type: 'RESET' };
 
-const MAX_STEP = 3;
+const MAX_STEP = 4;
 
 export function adBuilderReducer(state: AdBuilderState, action: AdBuilderAction): AdBuilderState {
   switch (action.type) {

@@ -500,6 +500,11 @@ const MAX_DURATION_MS = clampInt(
   10000,
   600000,
 );
+const MAX_IMAGE_DURATION_MS = clampInt(
+  Number.parseInt(process.env.CREATIVE_IMAGE_MAX_DURATION_MS || "240000", 10),
+  10000,
+  600000,
+);
 const IMAGE_TOP_N = clampInt(
   Number.parseInt(process.env.CREATIVE_IMAGE_TOP_N || "0", 10),
   0,
@@ -1369,7 +1374,7 @@ export async function handler(event) {
             }
 
             let heroUrl = null;
-            if (heroB64 && !inputImageBase64) {
+            if (heroB64) {
               try {
                 const heroUpload = await uploadHeroImage({
                   userId,
@@ -1634,6 +1639,8 @@ export async function handler(event) {
     const inputImageBase64 = await resolveInputImageBase64(imagePath);
     const imageTargets = pickCreativesForImages(best.creatives);
     if (imageTargets.length) {
+      const imageStartedAt = Date.now();
+      const isOverImageBudget = () => Date.now() - imageStartedAt > MAX_IMAGE_DURATION_MS;
       logStep("default.images.start", { jobId: placeholderId, count: imageTargets.length });
       const imageQuality = process.env.CREATIVE_IMAGE_QUALITY || "auto";
       try {
@@ -1648,10 +1655,11 @@ export async function handler(event) {
       }
 
       for (let i = 0; i < imageTargets.length; i += 1) {
-        if (isOverTimeBudget()) {
+        if (isOverImageBudget()) {
           logStep("default.timeout", {
             jobId: placeholderId,
             elapsedMs: Date.now() - startedAt,
+            imageElapsedMs: Date.now() - imageStartedAt,
             attemptsUsed,
             phase: "images",
           });
@@ -1726,7 +1734,7 @@ export async function handler(event) {
         }
 
         let heroUrl = null;
-        if (heroB64 && !inputImageBase64) {
+        if (heroB64) {
           try {
             const heroUpload = await uploadHeroImage({
               userId,

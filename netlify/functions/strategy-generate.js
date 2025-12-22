@@ -67,45 +67,58 @@ async function pickBlueprint({ brief }) {
   return { blueprint: best, warning: null };
 }
 
-async function callOpenAiJson(prompt, responseFormat) {
+async function callOpenAiJson(prompt, responseFormat, { retries = 2 } = {}) {
   const openai = getOpenAiClient();
   const model = getOpenAiModel();
   const useSchema = process.env.USE_JSON_SCHEMA === "1";
-  const timeoutMs = Number(process.env.OPENAI_TIMEOUT_MS || 30000);
+  const timeoutMs = Number(process.env.OPENAI_TIMEOUT_MS || 60000);
 
-  let timeoutId;
-  const timeoutPromise = new Promise((_, reject) => {
-    timeoutId = setTimeout(() => reject(new Error("OpenAI request timed out")), timeoutMs);
-  });
+  for (let attempt = 0; attempt <= retries; attempt += 1) {
+    let timeoutId;
+    const timeoutPromise = new Promise((_, reject) => {
+      timeoutId = setTimeout(() => reject(new Error("OpenAI request timed out")), timeoutMs);
+    });
 
-  const requestPromise = openai.responses.create({
-    model,
-    input: [
-      {
-        role: "system",
-        content: "Return ONLY valid JSON. No markdown. Follow the schema strictly.",
-      },
-      { role: "user", content: [{ type: "input_text", text: prompt }] },
-    ],
-    temperature: 0.2,
-    ...(useSchema && responseFormat
-      ? {
-          text: {
-            format: {
-              type: "json_schema",
-              name: responseFormat?.name || "schema",
-              schema: responseFormat?.schema || responseFormat,
-              strict: responseFormat?.strict ?? true,
+    const requestPromise = openai.responses.create({
+      model,
+      input: [
+        {
+          role: "system",
+          content: "Return ONLY valid JSON. No markdown. Follow the schema strictly.",
+        },
+        { role: "user", content: [{ type: "input_text", text: prompt }] },
+      ],
+      temperature: 0.2,
+      ...(useSchema && responseFormat
+        ? {
+            text: {
+              format: {
+                type: "json_schema",
+                name: responseFormat?.name || "schema",
+                schema: responseFormat?.schema || responseFormat,
+                strict: responseFormat?.strict ?? true,
+              },
             },
-          },
-        }
-      : {}),
-  });
+          }
+        : {}),
+    });
 
-  const res = await Promise.race([requestPromise, timeoutPromise]).finally(() =>
-    clearTimeout(timeoutId),
-  );
-  return res.output_text;
+    try {
+      const res = await Promise.race([requestPromise, timeoutPromise]).finally(() =>
+        clearTimeout(timeoutId),
+      );
+      return res.output_text;
+    } catch (err) {
+      const isTimeout = err instanceof Error && /timed out/i.test(err.message);
+      if (!isTimeout || attempt >= retries) {
+        throw err;
+      }
+      const backoffMs = 1500 + attempt * 1000;
+      await new Promise((resolve) => setTimeout(resolve, backoffMs));
+    }
+  }
+
+  throw new Error("OpenAI request timed out");
 }
 
 export async function handler(event) {

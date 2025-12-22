@@ -38,7 +38,6 @@ const PaymentCancelledPage = lazy(() =>
   import('./components/auth').then((mod) => ({ default: mod.PaymentCancelledPage }))
 );
 import { ThemeProvider } from './components/ThemeProvider';
-import { QuickActionsButton } from './components/QuickActionsButton';
 import { Sparkles } from 'lucide-react';
 import { toast } from 'sonner';
 import { Toaster } from './components/ui/sonner';
@@ -237,7 +236,6 @@ const DashboardPageContent = memo(function DashboardPageContent({
           <Suspense fallback={pageFallback}>
             <OverviewPage onNavigate={(page, query) => onNavigate(page as PageType, query)} />
           </Suspense>
-          <QuickActionsButton onCreateCampaign={onCreateAd} />
         </div>
       );
     case 'analytics':

@@ -2,7 +2,6 @@ import React from 'react';
 import { Sidebar } from './Sidebar';
 import { Header } from './Header';
 import { Footer } from './Footer';
-import { QuickActionsButton } from './QuickActionsButton';
 import type { PageType } from '../App';
 
 interface AppShellProps {
@@ -51,8 +50,6 @@ export function AppShell({
         {/* Footer */}
         <Footer />
 
-        {/* Quick Actions Button - Mobile */}
-        <QuickActionsButton onCreateAd={() => onNavigate('adbuilder')} />
       </div>
     </div>
   );
