@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -38,6 +38,31 @@ const FormSchema = z.object({
 });
 
 type FormValues = z.infer<typeof FormSchema>;
+type CreativeV2Variant = {
+  id?: string;
+  format?: string;
+  hook?: string;
+  cta?: string;
+  script?: {
+    hook?: string;
+    offer?: string;
+    proof?: string;
+    problem?: string;
+    cta?: string;
+  };
+  image?: {
+    input_image_used?: boolean;
+    render_intent?: string;
+    hero_image_url?: string;
+    final_image_url?: string;
+    width?: number;
+    height?: number;
+    model?: string;
+    seed?: number;
+    prompt_hash?: string;
+    render_version?: string;
+  };
+};
 
 export default function CreativeBuilderWizard() {
   const { session, isAuthReady, isLoading, authError } = useAuthState();
@@ -76,7 +101,7 @@ export default function CreativeBuilderWizard() {
 
   const canAnalyze = form.formState.isValid && !loading && isAuthReady && !isLoading && !!session;
 
-  const buildFallbackBrief = (): NormalizedBrief => {
+  const buildFallbackBrief = useCallback((): NormalizedBrief => {
     const values = form.getValues();
     const goal =
       values.goal === "leads"
@@ -114,9 +139,9 @@ export default function CreativeBuilderWizard() {
       angles: [],
       risk_flags: [],
     };
-  };
+  }, [form]);
 
-  const normalizeOutputToV1 = (raw: CreativeOutput | null): CreativeOutputV1 | null => {
+  const normalizeOutputToV1 = useCallback((raw: CreativeOutput | null): CreativeOutputV1 | null => {
     if (!raw || typeof raw !== "object") return null;
     if ("version" in raw && raw.version === "1.0") return raw as CreativeOutputV1;
     const baseBrief = brief ?? buildFallbackBrief();
@@ -167,12 +192,18 @@ export default function CreativeBuilderWizard() {
 
     if ("schema_version" in raw && raw.schema_version === "2.0") {
       const v2 = raw as CreativeOutputV2;
-      const creatives = (v2.variants || []).map((variant: any, idx: number) => ({
-        id: variant.id || `c${idx + 1}`,
-        angle_id: variant.id || `angle${idx + 1}`,
-        format: variant.format || baseBrief.format,
-        copy: {
-          hook: variant.hook || variant?.script?.hook || "Hook",
+      const variants = Array.isArray(v2.variants) ? v2.variants : [];
+      const creatives = variants.map((variantRaw, idx: number) => {
+        const variant =
+          variantRaw && typeof variantRaw === "object"
+            ? (variantRaw as CreativeV2Variant)
+            : ({} as CreativeV2Variant);
+        return {
+          id: variant.id || `c${idx + 1}`,
+          angle_id: variant.id || `angle${idx + 1}`,
+          format: variant.format || baseBrief.format,
+          copy: {
+            hook: variant.hook || variant?.script?.hook || "Hook",
           primary_text:
             variant?.script?.offer ||
             variant?.script?.proof ||
@@ -194,7 +225,8 @@ export default function CreativeBuilderWizard() {
           prompt_hash: variant?.image?.prompt_hash ?? undefined,
           render_version: variant?.image?.render_version ?? undefined,
         },
-      }));
+        };
+      });
       return {
         version: "1.0",
         brief: { ...baseBrief, angles: baseBrief.angles },
@@ -203,7 +235,7 @@ export default function CreativeBuilderWizard() {
     }
 
     return null;
-  };
+  }, [brief, buildFallbackBrief]);
 
   async function onAnalyze() {
     setError(null);
@@ -309,7 +341,7 @@ export default function CreativeBuilderWizard() {
     return () => {
       cancelled = true;
     };
-  }, [jobId, output, loading, quality?.target]);
+  }, [jobId, output, loading, quality?.target, normalizeOutputToV1]);
 
   return (
     <div className="mx-auto w-full max-w-6xl space-y-6">

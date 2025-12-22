@@ -229,11 +229,14 @@ export function CreativeLibraryPage() {
     })();
   }, [creatives, favoriteIds, mapCreativeRow]);
 
-  const typeIcons = {
-    image: ImageIcon,
-    video: Video,
-    carousel: FileText
-  };
+  const typeIcons = useMemo(
+    () => ({
+      image: ImageIcon,
+      video: Video,
+      carousel: FileText,
+    }),
+    [],
+  );
 
   // Memoized row component for list view to avoid re-renders when unrelated state changes
   const CreativeListRow = useCallback(

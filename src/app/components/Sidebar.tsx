@@ -1,4 +1,4 @@
-import { BarChart3, Target, Layers, Brain, Settings, LogOut, X, Zap, BarChart2, Gift, Sparkles, BookOpen } from 'lucide-react';
+import { BarChart3, Target, Layers, Brain, Settings, LogOut, X, BarChart2, Gift, Sparkles, BookOpen } from 'lucide-react';
 import { PageType } from '../App';
 
 interface SidebarProps {

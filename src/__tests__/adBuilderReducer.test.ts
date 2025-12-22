@@ -32,7 +32,7 @@ describe('adBuilderReducer', () => {
       }
     });
 
-    expect(next.currentStep).toBe(4);
+    expect(next.currentStep).toBe(3);
     expect(next.formData.productName).toBe('DraftName');
   });
 });

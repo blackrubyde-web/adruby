@@ -15,6 +15,18 @@ interface CopyVariant {
   predictedCTR: number;
   predictedCVR: number;
 }
+type CreativeV2Variant = {
+  id?: string;
+  hook?: string;
+  cta?: string;
+  script?: {
+    hook?: string;
+    offer?: string;
+    proof?: string;
+    problem?: string;
+    cta?: string;
+  };
+};
 
 interface AIAdCopyGeneratorProps {
   productName?: string;
@@ -96,19 +108,25 @@ export function AIAdCopyGenerator({
     }
     if ('schema_version' in output && output.schema_version === '2.0') {
       const v2 = output as CreativeOutputV2;
-      const variants = Array.isArray(v2.variants) ? (v2.variants as any[]) : [];
-      return variants.map((variant) => ({
-        copy: {
-          hook: variant.hook || variant?.script?.hook || 'Hook',
-          primary_text:
-            variant?.script?.offer ||
-            variant?.script?.proof ||
-            variant?.script?.problem ||
-            'Primary text',
-          cta: variant.cta || variant?.script?.cta || 'Mehr erfahren',
-        },
-        score: { value: 80 },
-      }));
+      const variants = Array.isArray(v2.variants) ? v2.variants : [];
+      return variants.map((variantRaw) => {
+        const variant =
+          variantRaw && typeof variantRaw === 'object'
+            ? (variantRaw as CreativeV2Variant)
+            : ({} as CreativeV2Variant);
+        return {
+          copy: {
+            hook: variant.hook || variant?.script?.hook || 'Hook',
+            primary_text:
+              variant?.script?.offer ||
+              variant?.script?.proof ||
+              variant?.script?.problem ||
+              'Primary text',
+            cta: variant.cta || variant?.script?.cta || 'Mehr erfahren',
+          },
+          score: { value: 80 },
+        };
+      });
     }
     return [];
   };

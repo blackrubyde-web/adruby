@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useReducer, useState } from 'react';
+import { useCallback, useEffect, useMemo, useReducer, useState } from 'react';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { Label } from './ui/label';
@@ -46,6 +46,31 @@ type PendingDraft = {
   draftId: string | null;
   updatedAt: string | null;
 };
+type CreativeV2Variant = {
+  id?: string;
+  format?: string;
+  hook?: string;
+  cta?: string;
+  script?: {
+    hook?: string;
+    offer?: string;
+    proof?: string;
+    problem?: string;
+    cta?: string;
+  };
+  image?: {
+    input_image_used?: boolean;
+    render_intent?: string;
+    hero_image_url?: string;
+    final_image_url?: string;
+    width?: number;
+    height?: number;
+    model?: string;
+    seed?: number;
+    prompt_hash?: string;
+    render_version?: string;
+  };
+};
 
 export function AdBuilderPage() {
   const [state, dispatch] = useReducer(adBuilderReducer, initialAdBuilderState);
@@ -63,19 +88,19 @@ export function AdBuilderPage() {
   const [selectedVisualStyle, setSelectedVisualStyle] = useState<string | null>(null);
   const [selectedCTA, setSelectedCTA] = useState<string | null>(null);
   const maxStep = steps.length;
-  const normalizeStep = (step: number | null | undefined) => {
+  const normalizeStep = useCallback((step: number | null | undefined) => {
     if (!step || Number.isNaN(step)) return 1;
     return Math.min(Math.max(step, 1), maxStep);
-  };
+  }, [maxStep]);
 
-  const maybeSetPendingDraft = (nextDraft: PendingDraft) => {
+  const maybeSetPendingDraft = useCallback((nextDraft: PendingDraft) => {
     const currentTs = pendingDraft?.updatedAt ? Date.parse(pendingDraft.updatedAt) : 0;
     const nextTs = nextDraft.updatedAt ? Date.parse(nextDraft.updatedAt) : 0;
     if (currentTs && nextTs && nextTs <= currentTs) return;
     setPendingDraft(nextDraft);
     setDraftTimestamp(nextDraft.updatedAt);
     setDraftAvailable(true);
-  };
+  }, [pendingDraft]);
 
   const applyPendingDraft = (draft: PendingDraft) => {
     dispatch({
@@ -119,7 +144,7 @@ export function AdBuilderPage() {
     } catch {
       localStorage.removeItem(DRAFT_KEY);
     }
-  }, []);
+  }, [maybeSetPendingDraft, normalizeStep]);
 
   useEffect(() => {
     let cancelled = false;
@@ -168,7 +193,7 @@ export function AdBuilderPage() {
     return () => {
       cancelled = true;
     };
-  }, [draftTimestamp]);
+  }, [draftTimestamp, maybeSetPendingDraft, normalizeStep]);
 
   useEffect(() => {
     const hasFormData = Object.values(state.formData).some(
@@ -300,7 +325,7 @@ export function AdBuilderPage() {
     return typed.output ?? typed.outputs ?? null;
   };
 
-  const buildFallbackBrief = () => {
+  const buildFallbackBrief = useCallback(() => {
     const audienceSummary = state.formData.targetAudience || 'Audience';
     return {
       brand: { name: state.formData.brandName || state.formData.productName || 'AdRuby' },
@@ -318,9 +343,9 @@ export function AdBuilderPage() {
       angles: [],
       risk_flags: [],
     };
-  };
+  }, [state.formData]);
 
-  const normalizeOutputToV1 = (output: CreativeOutput | null): CreativeOutputV1 | null => {
+  const normalizeOutputToV1 = useCallback((output: CreativeOutput | null): CreativeOutputV1 | null => {
     if (!output || typeof output !== 'object') return null;
     if ('version' in output && output.version === '1.0') {
       return output as CreativeOutputV1;
@@ -373,8 +398,15 @@ export function AdBuilderPage() {
     }
     if ('schema_version' in output && output.schema_version === '2.0') {
       const baseBrief = buildFallbackBrief();
-      const variants = (output as { variants?: any[] })?.variants || [];
-      const creatives = variants.map((variant, idx) => ({
+      const variants = Array.isArray((output as { variants?: unknown[] })?.variants)
+        ? (output as { variants?: unknown[] }).variants ?? []
+        : [];
+      const creatives = variants.map((variantRaw, idx) => {
+        const variant =
+          variantRaw && typeof variantRaw === 'object'
+            ? (variantRaw as CreativeV2Variant)
+            : ({} as CreativeV2Variant);
+        return {
         id: variant.id || `c${idx + 1}`,
         angle_id: variant.id || `angle${idx + 1}`,
         format: variant.format || baseBrief.format,
@@ -401,7 +433,8 @@ export function AdBuilderPage() {
           prompt_hash: variant?.image?.prompt_hash || undefined,
           render_version: variant?.image?.render_version || undefined,
         },
-      }));
+        };
+      });
       return {
         version: '1.0',
         brief: { ...baseBrief, angles: baseBrief.angles },
@@ -409,7 +442,7 @@ export function AdBuilderPage() {
       } as CreativeOutputV1;
     }
     return null;
-  };
+  }, [buildFallbackBrief]);
 
   const buildDraftInputs = () => {
     const selectedCopyData =
@@ -613,10 +646,7 @@ export function AdBuilderPage() {
   };
 
   const progressPercentage = (state.currentStep / steps.length) * 100;
-  const displayOutput = useMemo(
-    () => normalizeOutputToV1(hookResult),
-    [hookResult, state.formData],
-  );
+  const displayOutput = useMemo(() => normalizeOutputToV1(hookResult), [hookResult, normalizeOutputToV1]);
   const displayQuality = useMemo(() => {
     if (!hookQuality) return null;
     if (typeof hookQuality === 'number') return { satisfaction: hookQuality };

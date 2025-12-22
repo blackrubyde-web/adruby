@@ -333,7 +333,7 @@ function AppContent() {
         go('settings', { replace: true, query: { tab: 'billing' } });
       }
     }
-  }, [billing.isSubscribed, currentPage, go, isAuthReady, isLoading, profileError, user]);
+  }, [billing.isSubscribed, currentPage, go, isAuthReady, isLoading, profile, profileError, user]);
 
   const handleCreateAd = () => {
     go('adbuilder');
