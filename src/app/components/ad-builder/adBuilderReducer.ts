@@ -71,11 +71,11 @@ export function adBuilderReducer(state: AdBuilderState, action: AdBuilderAction)
     case 'SET_STEP':
       return {
         ...state,
-        currentStep: action.step
+        currentStep: Math.min(Math.max(action.step, 1), MAX_STEP)
       };
     case 'LOAD_DRAFT':
       return {
-        currentStep: action.payload.currentStep ?? state.currentStep,
+        currentStep: Math.min(action.payload.currentStep ?? state.currentStep, MAX_STEP),
         formData: {
           ...state.formData,
           ...(action.payload.formData || {})

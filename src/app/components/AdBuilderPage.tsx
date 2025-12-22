@@ -28,6 +28,7 @@ import ImageDropzone from './creative-builder/ImageDropzone';
 import { supabase } from '../lib/supabaseClient';
 
 const DRAFT_KEY = 'ad_ruby_ad_builder_draft';
+const DRAFT_SKIP_KEY = 'ad_ruby_skip_draft_restore';
 
 const steps = [
   { id: 1, name: 'Produkt & Bild', icon: Sparkles },
@@ -35,12 +36,24 @@ const steps = [
   { id: 3, name: 'Generieren & Ergebnisse', icon: ImageIcon },
 ];
 
+type PendingDraft = {
+  currentStep: number;
+  formData: Partial<AdBuilderData>;
+  generatedCopy: { headline: string; description: string; cta: string }[];
+  selectedCopy: number | null;
+  selectedVisualStyle: string | null;
+  selectedCTA: string | null;
+  draftId: string | null;
+  updatedAt: string | null;
+};
+
 export function AdBuilderPage() {
   const [state, dispatch] = useReducer(adBuilderReducer, initialAdBuilderState);
   const [analysisWarning, setAnalysisWarning] = useState<string | null>(null);
   const [analysisRetrying, setAnalysisRetrying] = useState(false);
   const [copyError, setCopyError] = useState<string | null>(null);
-  const [draftRestored, setDraftRestored] = useState(false);
+  const [draftAvailable, setDraftAvailable] = useState(false);
+  const [pendingDraft, setPendingDraft] = useState<PendingDraft | null>(null);
   const [draftTimestamp, setDraftTimestamp] = useState<string | null>(null);
   const [draftId, setDraftId] = useState<string | null>(null);
   const [imageFile, setImageFile] = useState<File | null>(null);
@@ -49,28 +62,59 @@ export function AdBuilderPage() {
   const [selectedCopy, setSelectedCopy] = useState<number | null>(null);
   const [selectedVisualStyle, setSelectedVisualStyle] = useState<string | null>(null);
   const [selectedCTA, setSelectedCTA] = useState<string | null>(null);
+  const maxStep = steps.length;
+  const normalizeStep = (step: number | null | undefined) => {
+    if (!step || Number.isNaN(step)) return 1;
+    return Math.min(Math.max(step, 1), maxStep);
+  };
 
+  const maybeSetPendingDraft = (nextDraft: PendingDraft) => {
+    const currentTs = pendingDraft?.updatedAt ? Date.parse(pendingDraft.updatedAt) : 0;
+    const nextTs = nextDraft.updatedAt ? Date.parse(nextDraft.updatedAt) : 0;
+    if (currentTs && nextTs && nextTs <= currentTs) return;
+    setPendingDraft(nextDraft);
+    setDraftTimestamp(nextDraft.updatedAt);
+    setDraftAvailable(true);
+  };
+
+  const applyPendingDraft = (draft: PendingDraft) => {
+    dispatch({
+      type: 'LOAD_DRAFT',
+      payload: {
+        currentStep: normalizeStep(draft.currentStep),
+        formData: draft.formData ?? {}
+      }
+    });
+    setGeneratedCopy(draft.generatedCopy || []);
+    setSelectedCopy(draft.selectedCopy ?? null);
+    setSelectedVisualStyle(draft.selectedVisualStyle ?? null);
+    setSelectedCTA(draft.selectedCTA ?? null);
+    setDraftTimestamp(draft.updatedAt || null);
+    setDraftId(draft.draftId || null);
+    setDraftAvailable(false);
+    setPendingDraft(null);
+  };
 
   useEffect(() => {
+    if (sessionStorage.getItem(DRAFT_SKIP_KEY) === '1') {
+      sessionStorage.removeItem(DRAFT_SKIP_KEY);
+      return;
+    }
     const raw = localStorage.getItem(DRAFT_KEY);
     if (!raw) return;
     try {
       const parsed = JSON.parse(raw);
       if (parsed?.formData || parsed?.currentStep) {
-        dispatch({
-          type: 'LOAD_DRAFT',
-          payload: {
-            currentStep: parsed.currentStep,
-            formData: parsed.formData
-          }
+        maybeSetPendingDraft({
+          currentStep: normalizeStep(parsed.currentStep),
+          formData: parsed.formData ?? {},
+          generatedCopy: parsed.generatedCopy || [],
+          selectedCopy: parsed.selectedCopy ?? null,
+          selectedVisualStyle: parsed.selectedVisualStyle ?? null,
+          selectedCTA: parsed.selectedCTA ?? null,
+          draftId: parsed.draftId || null,
+          updatedAt: parsed.updatedAt || null,
         });
-        setGeneratedCopy(parsed.generatedCopy || []);
-        setSelectedCopy(parsed.selectedCopy ?? null);
-        setSelectedVisualStyle(parsed.selectedVisualStyle ?? null);
-        setSelectedCTA(parsed.selectedCTA ?? null);
-        setDraftTimestamp(parsed.updatedAt || null);
-        setDraftId(parsed.draftId || null);
-        setDraftRestored(true);
       }
     } catch {
       localStorage.removeItem(DRAFT_KEY);
@@ -82,6 +126,10 @@ export function AdBuilderPage() {
     (async () => {
       const { data } = await supabase.auth.getSession();
       if (!data.session || cancelled) return;
+      if (sessionStorage.getItem(DRAFT_SKIP_KEY) === '1') {
+        sessionStorage.removeItem(DRAFT_SKIP_KEY);
+        return;
+      }
 
       const { data: rows, error } = await supabase
         .from('generated_creatives')
@@ -105,20 +153,16 @@ export function AdBuilderPage() {
 
       const inputs = draftRow.inputs || {};
 
-      dispatch({
-        type: 'LOAD_DRAFT',
-        payload: {
-          currentStep: inputs.currentStep ?? 1,
-          formData: inputs.formData ?? {}
-        }
+      maybeSetPendingDraft({
+        currentStep: normalizeStep(inputs.currentStep ?? 1),
+        formData: inputs.formData ?? {},
+        generatedCopy: inputs.generatedCopy || [],
+        selectedCopy: inputs.selectedCopy ?? null,
+        selectedVisualStyle: inputs.selectedVisualStyle ?? null,
+        selectedCTA: inputs.selectedCTA ?? null,
+        draftId: draftRow.id || null,
+        updatedAt: draftRow.created_at || null,
       });
-      setGeneratedCopy(inputs.generatedCopy || []);
-      setSelectedCopy(inputs.selectedCopy ?? null);
-      setSelectedVisualStyle(inputs.selectedVisualStyle ?? null);
-      setSelectedCTA(inputs.selectedCTA ?? null);
-      setDraftTimestamp(draftRow.created_at || null);
-      setDraftId(draftRow.id || null);
-      setDraftRestored(true);
     })();
 
     return () => {
@@ -134,6 +178,7 @@ export function AdBuilderPage() {
       generatedCopy.length > 0 || selectedCopy !== null || selectedCTA || selectedVisualStyle;
 
     if (!hasFormData && !hasSelections && state.currentStep === 1) {
+      if (pendingDraft) return;
       localStorage.removeItem(DRAFT_KEY);
       return;
     }
@@ -154,6 +199,7 @@ export function AdBuilderPage() {
     selectedCopy,
     selectedCTA,
     selectedVisualStyle,
+    pendingDraft,
     draftId,
     state.currentStep,
     state.formData
@@ -168,7 +214,8 @@ export function AdBuilderPage() {
     setSelectedCTA(null);
     setImageFile(null);
     setDraftId(null);
-    setDraftRestored(false);
+    setDraftAvailable(false);
+    setPendingDraft(null);
     setDraftTimestamp(null);
   };
 
@@ -178,18 +225,34 @@ export function AdBuilderPage() {
     setCopyError(null);
   };
 
-  const [savedFlag, setSavedFlag] = useState(false);
+  const startNewAd = () => {
+    sessionStorage.setItem(DRAFT_SKIP_KEY, '1');
+    resetAll();
+    dispatch({ type: 'SET_STEP', step: 1 });
+  };
+
+  const continueDraft = () => {
+    if (pendingDraft) {
+      applyPendingDraft(pendingDraft);
+    } else {
+      setDraftAvailable(false);
+    }
+  };
 
   const draftLabel = useMemo(() => {
-    if (!draftTimestamp) return 'Draft restored';
+    if (!draftTimestamp) return 'Draft gefunden';
     try {
-      return `Draft restored (${new Date(draftTimestamp).toLocaleString('de-DE')})`;
+      return `Draft gefunden (${new Date(draftTimestamp).toLocaleString('de-DE')})`;
     } catch {
-      return 'Draft restored';
+      return 'Draft gefunden';
     }
   }, [draftTimestamp]);
 
   const updateFormData = (field: keyof AdBuilderData, value: string) => {
+    if (draftAvailable) {
+      setDraftAvailable(false);
+      setPendingDraft(null);
+    }
     dispatch({ type: 'SET_FIELD', field, value });
   };
 
@@ -621,17 +684,22 @@ export function AdBuilderPage() {
         <Progress value={progressPercentage} className="h-2" />
       </Card>
 
-      {draftRestored && (
+      {draftAvailable && (
         <Card className="p-4 border border-primary/20 bg-primary/5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
           <div>
             <div className="font-semibold text-foreground">{draftLabel}</div>
             <div className="text-sm text-muted-foreground">
-              You can continue where you left off or reset the draft.
+              Entwurf übernehmen oder mit einem leeren Briefing starten.
             </div>
           </div>
-          <Button variant="outline" onClick={clearDraft}>
-            Reset draft
-          </Button>
+          <div className="flex flex-wrap gap-2">
+            <Button variant="outline" onClick={continueDraft}>
+              Weiter mit Entwurf
+            </Button>
+            <Button onClick={startNewAd}>
+              Neues Briefing
+            </Button>
+          </div>
         </Card>
       )}
 
@@ -930,7 +998,7 @@ export function AdBuilderPage() {
                       />
                     )}
 
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
                       <Button
                         onClick={saveDraft}
                         variant="outline"
@@ -972,17 +1040,24 @@ export function AdBuilderPage() {
                             }
                             const output = hookResult;
                             await creativeSaveToLibrary({ output, creativeId: hookJobId });
-                            setSavedFlag(true);
                             toast.success('Saved to Library');
+                            startNewAd();
                           } catch (err: unknown) {
                             const message = err instanceof Error ? err.message : 'Save failed';
                             toast.error(message);
                           }
                         }}
                         className="w-full"
-                        disabled={savedFlag || !hookResult}
+                        disabled={!hookResult}
                       >
-                        {savedFlag ? 'Saved' : 'Save to Library'}
+                        Save to Library
+                      </Button>
+                      <Button
+                        onClick={startNewAd}
+                        variant="outline"
+                        className="w-full"
+                      >
+                        Neue Ad
                       </Button>
                     </div>
                   </div>
