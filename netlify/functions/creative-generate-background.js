@@ -1992,6 +1992,42 @@ function isRetryableOpenAiError(err) {
   return isOpenAiTimeoutError(err);
 }
 
+function parseRetryAfterMs(value) {
+  if (!value || typeof value !== "string") return null;
+  const trimmed = value.trim();
+  if (!trimmed) return null;
+  const numeric = Number(trimmed);
+  if (Number.isFinite(numeric)) return Math.ceil(numeric * 1000);
+  const secondsMatch = trimmed.match(/([\d.]+)\s*s/i);
+  if (secondsMatch) {
+    const seconds = Number(secondsMatch[1]);
+    if (Number.isFinite(seconds)) return Math.ceil(seconds * 1000);
+  }
+  const dateMs = Date.parse(trimmed);
+  if (Number.isFinite(dateMs)) {
+    const delta = dateMs - Date.now();
+    if (delta > 0) return Math.ceil(delta);
+  }
+  return null;
+}
+
+function getRetryDelayMs(err, attempt) {
+  const headers = err?.headers;
+  let headerValue = null;
+  if (headers && typeof headers.get === "function") {
+    headerValue =
+      headers.get("retry-after") ||
+      headers.get("x-ratelimit-reset-tokens") ||
+      headers.get("x-ratelimit-reset-requests");
+  }
+  const headerDelay = parseRetryAfterMs(headerValue) ?? 0;
+  const message = String(err?.message || "");
+  const msgMatch = message.match(/try again in ([\d.]+)s/i);
+  const messageDelay = msgMatch ? Math.ceil(Number(msgMatch[1]) * 1000) : 0;
+  const backoffMs = 500 * Math.pow(2, attempt) + Math.floor(Math.random() * 200);
+  return clampInt(Math.max(backoffMs, headerDelay, messageDelay), 300, 60000);
+}
+
 async function callOpenAiJson(prompt, options = {}) {
   const openai = getOpenAiClient();
   const model = getOpenAiModel();
@@ -2051,8 +2087,8 @@ async function callOpenAiJson(prompt, options = {}) {
       }
 
       if (attempt < maxRetries && isRetryableOpenAiError(err)) {
-        const backoffMs = 500 * Math.pow(2, attempt) + Math.floor(Math.random() * 200);
-        await sleep(backoffMs);
+        const delayMs = getRetryDelayMs(err, attempt);
+        await sleep(delayMs);
         continue;
       }
       throw err;
