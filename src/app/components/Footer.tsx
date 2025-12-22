@@ -1,10 +1,11 @@
+import { memo } from 'react';
 import { Heart } from 'lucide-react';
 
-export function Footer() {
+export const Footer = memo(function Footer() {
   const currentYear = new Date().getFullYear();
   
   return (
-    <footer className="mt-auto py-6 px-8 border-t border-border/30 backdrop-blur-xl bg-card/40">
+    <footer className="mt-auto py-6 px-8 border-t border-border/30 backdrop-blur-sm bg-card/40">
       <div className="max-w-[1400px] mx-auto">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-6 text-sm text-muted-foreground">
@@ -15,11 +16,11 @@ export function Footer() {
           </div>
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
             <span>Made with</span>
-            <Heart className="w-4 h-4 text-primary fill-primary animate-pulse" />
+            <Heart className="w-4 h-4 text-primary fill-primary" />
             <span>for marketers</span>
           </div>
         </div>
       </div>
     </footer>
   );
-}
+});

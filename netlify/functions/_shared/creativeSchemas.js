@@ -97,6 +97,7 @@ export const CreativeOutputSchema = z
                 seed: z.number().int().nullable().optional(),
                 prompt_hash: z.string().min(6).nullable().optional(),
                 render_version: z.string().min(1).nullable().optional(),
+                error: z.string().nullable().optional(),
               })
               .strict(),
           })
@@ -246,6 +247,7 @@ export const CreativeVariantSchema = z.object({
       seed: z.number().int().nullable().optional(),
       prompt_hash: z.string().min(6).nullable().optional(),
       render_version: z.string().min(1).nullable().optional(),
+      error: z.string().nullable().optional(),
     })
     .optional(),
 });
@@ -318,6 +320,7 @@ export const CreativeVariantProSchema = z
             seed: z.number().int().nullable(),
             prompt_hash: z.string().nullable(),
             render_version: z.string().nullable(),
+            error: z.string().nullable().optional(),
           })
           .strict(),
       })

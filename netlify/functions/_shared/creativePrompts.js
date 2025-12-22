@@ -26,15 +26,14 @@ function trimResearchField(value) {
   return trimText(value, RESEARCH_FIELD_MAX_CHARS);
 }
 
-function trimResearchContext(ctx) {
-  if (!ctx || !Array.isArray(ctx) || ctx.length === 0) return [];
+export function trimResearchContext(ctx) {
+  if (!Array.isArray(ctx) || ctx.length === 0) return [];
   return ctx.slice(0, RESEARCH_MAX_ITEMS).map((item) => ({
-    ...item,
-    page_name: trimResearchField(item?.page_name ?? "unknown"),
-    headline: trimResearchField(item?.headline ?? "null"),
-    primary_text: trimResearchField(item?.primary_text ?? "null"),
-    description: trimResearchField(item?.description ?? "null"),
-    image_url: trimResearchField(item?.image_url ?? "null"),
+    page_name: item?.page_name ? trimResearchField(item.page_name) : null,
+    headline: item?.headline ? trimResearchField(item.headline) : null,
+    primary_text: item?.primary_text ? trimResearchField(item.primary_text) : null,
+    description: item?.description ? trimResearchField(item.description) : null,
+    // image_url: item?.image_url ? trimResearchField(item.image_url) : null,
   }));
 }
 
@@ -81,10 +80,7 @@ export function buildGeneratePrompt(
   const ctaPreference = preferences?.cta_preference
     ? `\nPreferred CTA wording: ${preferences.cta_preference}`
     : "";
-  const researchBlock =
-    researchContext && Array.isArray(researchContext) && researchContext.length > 0
-      ? `\nResearch context:\n${JSON.stringify(trimResearchContext(researchContext))}`
-      : "";
+  const researchBlock = renderResearchContext(researchContext);
   return `
 You are AdRuby Performance Copywriter for Meta ads.
 Generate high-performing ad copy variations, structured and compliant.
@@ -156,7 +152,7 @@ BRIEF:
 ${JSON.stringify(brief)}
 
 RESEARCH_CONTEXT:
-${JSON.stringify(trimResearchContext(researchContext))}
+${renderResearchContext(researchContext)}
 
 BRANCH-ADAPTER RULES:
 - Extract industry/category, persona, pains, desired outcome, objections, offer, proof assets.
@@ -255,12 +251,21 @@ EVAL: ${JSON.stringify(evalV2)}
 }
 
 function renderResearchContext(ctx) {
-  if (!ctx || !Array.isArray(ctx) || ctx.length === 0) return '';
+  if (!ctx || !Array.isArray(ctx) || ctx.length === 0) return "";
   const trimmed = trimResearchContext(ctx);
-  const items = trimmed.map((i, idx) => {
-    return `\n[${idx + 1}] page: ${i.page_name || 'unknown'}\nheadline: ${i.headline || 'null'}\nprimary_text: ${i.primary_text || 'null'}\ndescription: ${i.description || 'null'}\nimage_url: ${i.image_url || 'null'}`;
-  });
-  return `\nResearch context (examples of recent ads scraped from Ad Library):\n${items.join('\n')}`;
+  const items = trimmed
+    .map((i, idx) => {
+      const lines = [];
+      if (i.page_name) lines.push(`page: ${i.page_name}`);
+      if (i.headline) lines.push(`headline: ${i.headline}`);
+      if (i.primary_text) lines.push(`primary_text: ${i.primary_text}`);
+      if (i.description) lines.push(`description: ${i.description}`);
+      if (!lines.length) return null;
+      return `\n[${idx + 1}] ${lines.join("\n")}`;
+    })
+    .filter(Boolean);
+  if (!items.length) return "";
+  return `\nResearch context (examples of recent ads scraped from Ad Library):\n${items.join("\n")}`;
 }
 
 export function buildQualityEvalPrompt({ brief, output, strategyBlueprint, researchContext }) {

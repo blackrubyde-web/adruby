@@ -391,6 +391,15 @@ function AppContent() {
     []
   );
 
+  const handleToggleMobileSidebar = useCallback(() => {
+    setIsMobileSidebarOpen((prev) => !prev);
+  }, []);
+
+  const handleSidebarNavigate = useCallback((page: PageType) => {
+    go(page);
+    setIsMobileSidebarOpen(false);
+  }, [go]);
+
   useEffect(() => {
     const onPopState = () => {
       setCurrentPage(pageFromPathname(window.location.pathname));
@@ -520,6 +529,15 @@ function AppContent() {
     () => <FullScreenLoader title="Loading page..." subtitle="Preparing your workspace" />,
     []
   );
+
+  useEffect(() => {
+    const root = document.documentElement;
+    if (isProtectedPage) {
+      root.classList.add('perf-lite');
+    } else {
+      root.classList.remove('perf-lite');
+    }
+  }, [isProtectedPage]);
 
   if (!isAuthReady && isProtectedPage) {
     return <FullScreenLoader title="Loading session..." subtitle="Checking your login state" />;
@@ -707,10 +725,7 @@ function AppContent() {
           isCollapsed={isSidebarCollapsed} 
           onToggle={setIsSidebarCollapsed}
           currentPage={currentPage}
-          onNavigate={(page) => {
-            go(page);
-            setIsMobileSidebarOpen(false); // Close sidebar when navigating
-          }}
+          onNavigate={handleSidebarNavigate}
           isMobileOpen={isMobileSidebarOpen}
           onMobileClose={() => setIsMobileSidebarOpen(false)}
           onLogout={async () => {
@@ -722,13 +737,13 @@ function AppContent() {
           {/* Main Content */}
         <div 
           className={`flex-1 transition-[margin-left] duration-300 md:ml-0 ${isMobileSidebarOpen ? 'pointer-events-none' : ''}`}
-          style={{ marginLeft: isDesktop ? `${sidebarWidth}px` : '0', willChange: isDesktop ? 'margin-left' : undefined }}
+          style={{ marginLeft: isDesktop ? `${sidebarWidth}px` : '0' }}
         >
           {/* Header */}
           <Header 
             sidebarWidth={isDesktop ? sidebarWidth : 0} 
-            onToggleMobileSidebar={() => setIsMobileSidebarOpen(!isMobileSidebarOpen)}
-            onNavigate={(page) => go(page)}
+            onToggleMobileSidebar={handleToggleMobileSidebar}
+            onNavigate={go}
             currentCredits={profile?.credits ?? undefined}
             avatarUrl={profile?.avatar_url ?? null}
             displayName={profile?.full_name ?? null}

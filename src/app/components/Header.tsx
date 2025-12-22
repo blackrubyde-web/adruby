@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { memo, useMemo } from 'react';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 import { Sun, Moon, User, Settings, HelpCircle, Coins, Menu } from 'lucide-react';
 import { useTheme } from './ThemeProvider';
@@ -24,7 +24,7 @@ interface HeaderProps {
   email?: string | null;
 }
 
-export function Header({
+export const Header = memo(function Header({
   sidebarWidth = 0,
   onToggleMobileSidebar,
   onNavigate,
@@ -48,8 +48,8 @@ export function Header({
   
   return (
     <div 
-      className="h-16 backdrop-blur-xl bg-card/80 border-b border-border/50 flex items-center justify-between px-4 md:px-8 fixed top-0 right-0 z-10 transition-[left] duration-300 shadow-lg"
-      style={{ left: sidebarWidth > 0 ? `${sidebarWidth}px` : '0', willChange: 'left' }}
+      className="h-16 bg-card/90 border-b border-border/50 flex items-center justify-between px-4 md:px-8 fixed top-0 right-0 z-10 transition-[left] duration-200 shadow-sm"
+      style={{ left: sidebarWidth > 0 ? `${sidebarWidth}px` : '0' }}
     >
       {/* Left Side */}
       <div className="flex items-center gap-3">
@@ -115,4 +115,4 @@ export function Header({
       </div>
     </div>
   );
-}
+});

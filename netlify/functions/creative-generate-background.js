@@ -18,6 +18,7 @@ import {
   buildImageSpecPrompt,
   buildImageSpecPromptPro,
   buildImagePromptFromSpec,
+  trimResearchContext,
 } from "./_shared/creativePrompts.js";
 import { parseWithRepair } from "./_shared/repair.js";
 import {
@@ -486,14 +487,14 @@ const IMAGE_SPEC_JSON_SCHEMA = {
 };
 
 const TARGET_SATISFACTION = clampInt(
-  Number.parseInt(process.env.CREATIVE_QUALITY_TARGET || "95", 10),
+  Number.parseInt(process.env.CREATIVE_QUALITY_TARGET || "88", 10),
   0,
   100,
 );
 const MAX_IMPROVE_ATTEMPTS = clampInt(
-  Number.parseInt(process.env.CREATIVE_QUALITY_MAX_ATTEMPTS || "3", 10),
+  Number.parseInt(process.env.CREATIVE_QUALITY_MAX_ATTEMPTS || "1", 10),
   0,
-  10,
+  3,
 );
 const MAX_DURATION_MS = clampInt(
   Number.parseInt(process.env.CREATIVE_MAX_DURATION_MS || "300000", 10),
@@ -501,14 +502,14 @@ const MAX_DURATION_MS = clampInt(
   600000,
 );
 const MAX_IMAGE_DURATION_MS = clampInt(
-  Number.parseInt(process.env.CREATIVE_IMAGE_MAX_DURATION_MS || "240000", 10),
+  Number.parseInt(process.env.CREATIVE_IMAGE_MAX_DURATION_MS || "90000", 10),
   10000,
-  600000,
+  120000,
 );
 const IMAGE_TOP_N = clampInt(
-  Number.parseInt(process.env.CREATIVE_IMAGE_TOP_N || "0", 10),
+  Number.parseInt(process.env.CREATIVE_IMAGE_TOP_N || "2", 10),
   0,
-  12,
+  2,
 );
 
 function hashPrompt(prompt) {
@@ -533,7 +534,10 @@ async function resolveInputImageBase64(imagePath) {
       .from("creative-inputs")
       .createSignedUrl(imagePath, 60 * 10);
     if (signed.error || !signed.data?.signedUrl) return null;
-    const res = await fetch(signed.data.signedUrl);
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 10000);
+    const res = await fetch(signed.data.signedUrl, { signal: controller.signal });
+    clearTimeout(timeoutId);
     if (!res.ok) return null;
     const arrayBuffer = await res.arrayBuffer();
     return Buffer.from(arrayBuffer).toString("base64");
@@ -613,6 +617,7 @@ function buildProOutputFromV1({
   strategyId,
   strategyBlueprint,
   imageSpecsByIndex,
+  hasImage,
 }) {
   const variants = output.creatives.map((creative, idx) => {
     const quality = buildProQuality(creative);
@@ -631,7 +636,7 @@ function buildProOutputFromV1({
       visual: {
         image_spec: imageSpecsByIndex?.[idx] ?? null,
         image: {
-          input_image_used: Boolean(creative.image?.input_image_used),
+          input_image_used: Boolean(hasImage),
           render_intent: creative.image?.render_intent || "Hero image",
           hero_image_url: creative.image?.hero_image_url ?? null,
           final_image_url: creative.image?.final_image_url ?? null,
@@ -641,6 +646,7 @@ function buildProOutputFromV1({
           seed: creative.image?.seed ?? null,
           prompt_hash: creative.image?.prompt_hash ?? null,
           render_version: creative.image?.render_version ?? null,
+          error: creative.image?.error ?? null,
         },
       },
       quality,
@@ -691,6 +697,7 @@ function buildProOutputFromV2({
   strategyId,
   strategyBlueprint,
   imageSpecsByIndex,
+  hasImage,
 }) {
   const variants = output.variants.map((variant, idx) => {
     const creative = {
@@ -719,7 +726,7 @@ function buildProOutputFromV2({
       visual: {
         image_spec: imageSpecsByIndex?.[idx] ?? null,
         image: {
-          input_image_used: Boolean(variant?.image?.input_image_used),
+          input_image_used: Boolean(hasImage),
           render_intent: variant?.image?.render_intent || "Hero image",
           hero_image_url: variant?.image?.hero_image_url ?? null,
           final_image_url: variant?.image?.final_image_url ?? null,
@@ -729,6 +736,7 @@ function buildProOutputFromV2({
           seed: variant?.image?.seed ?? null,
           prompt_hash: variant?.image?.prompt_hash ?? null,
           render_version: variant?.image?.render_version ?? null,
+          error: variant?.image?.error ?? null,
         },
       },
       quality,
@@ -807,7 +815,7 @@ function normalizeV1OutputImages(output, hasImage) {
       return {
         ...creative,
         image: {
-          input_image_used: Boolean(image.input_image_used ?? hasImage),
+          input_image_used: Boolean(hasImage),
           render_intent: image.render_intent || "Hero image",
           hero_image_url: image.hero_image_url ?? null,
           final_image_url: image.final_image_url ?? null,
@@ -817,6 +825,7 @@ function normalizeV1OutputImages(output, hasImage) {
           seed: image.seed ?? null,
           prompt_hash: image.prompt_hash ?? null,
           render_version: image.render_version ?? null,
+          error: image.error ?? null,
         },
       };
     }),
@@ -832,7 +841,7 @@ function normalizeV2OutputImages(output, hasImage) {
       return {
         ...variant,
         image: {
-          input_image_used: Boolean(image.input_image_used ?? hasImage),
+          input_image_used: Boolean(hasImage),
           render_intent: image.render_intent || "Hero image",
           hero_image_url: image.hero_image_url ?? null,
           final_image_url: image.final_image_url ?? null,
@@ -842,6 +851,7 @@ function normalizeV2OutputImages(output, hasImage) {
           seed: image.seed ?? null,
           prompt_hash: image.prompt_hash ?? null,
           render_version: image.render_version ?? null,
+          error: image.error ?? null,
         },
       };
     }),
@@ -929,7 +939,7 @@ export async function handler(event) {
     let researchContext = [];
     try {
       const researchIds = Array.isArray(body?.researchIds) ? body.researchIds.filter(Boolean) : [];
-      let query = supabaseAdmin.from('ad_research_ads').select('id,page_name,primary_text,headline,description,image_url,raw_payload');
+      let query = supabaseAdmin.from('ad_research_ads').select('id,page_name,primary_text,headline,description,image_url');
 
       if (researchIds.length) {
         // fetch only selected items and preserve order roughly by created_at desc
@@ -947,7 +957,6 @@ export async function handler(event) {
           primary_text: a.primary_text || null,
           description: a.description || null,
           image_url: a.image_url || null,
-          raw: a.raw_payload || null,
         }));
       }
       logStep("research.loaded", { count: researchContext.length });
@@ -955,6 +964,7 @@ export async function handler(event) {
       console.warn('[creative-generate] failed to load ad_research_ads', e?.message || e);
     }
 
+    const researchSnapshotTrimmed = trimResearchContext(researchContext);
     // create or reuse a placeholder generated_creatives row so clients can poll status/progress
     placeholderId = typeof body?.jobId === 'string' ? body.jobId.trim() : '';
     if (!placeholderId) {
@@ -965,7 +975,7 @@ export async function handler(event) {
           inputs: { brief, hasImage, strategyId: strategyId || null },
           outputs: null,
           score: null,
-          research_snapshot: researchContext,
+          research_snapshot: researchSnapshotTrimmed,
           saved: false,
           status: 'pending',
           progress: 0,
@@ -1030,11 +1040,11 @@ export async function handler(event) {
           console.warn('[creative-generate] failed to persist auto strategy', e?.message || e);
         }
       }
-      if (researchContext.length) {
+      if (researchSnapshotTrimmed.length) {
         try {
           await supabaseAdmin
             .from('generated_creatives')
-            .update({ research_snapshot: researchContext })
+            .update({ research_snapshot: researchSnapshotTrimmed })
             .eq('id', placeholderId);
         } catch (e) {
           // ignore if column not present
@@ -1186,6 +1196,7 @@ export async function handler(event) {
                     strategyId,
                     strategyBlueprint,
                     imageSpecsByIndex,
+                    hasImage,
                   })
                 : v2output;
             await supabaseAdmin
@@ -1267,6 +1278,10 @@ export async function handler(event) {
         const mentorTargets = IMAGE_TOP_N
           ? scored.slice(0, IMAGE_TOP_N).map((s) => ({ index: s.index, variant: s.variant }))
           : variants.map((variant, index) => ({ index, variant }));
+        let imagesTotal = mentorTargets.length;
+        let imagesDone = 0;
+        let imagesFailed = 0;
+        let imagesSkipped = 0;
 
         if (mentorTargets.length) {
           logStep("mentor.images.start", { jobId: placeholderId, count: mentorTargets.length });
@@ -1307,6 +1322,7 @@ export async function handler(event) {
             };
 
             let imageSpec = buildFallbackImageSpec(brief, renderCreative);
+            let imageError = null;
             try {
               const specPrompt =
                 outputMode === "pro"
@@ -1370,6 +1386,9 @@ export async function handler(event) {
                   index,
                   error: err?.message || String(err),
                 });
+                if (!imageError) {
+                  imageError = `hero_generate_failed: ${err?.message || String(err)}`;
+                }
               }
             }
 
@@ -1388,6 +1407,7 @@ export async function handler(event) {
                   index,
                   error: err?.message || String(err),
                 });
+                imageError = `hero_upload_failed: ${err?.message || String(err)}`;
               }
             }
 
@@ -1417,6 +1437,20 @@ export async function handler(event) {
                 index,
                 error: err?.message || String(err),
               });
+              if (!imageError) {
+                imageError = `render_or_upload_failed: ${err?.message || String(err)}`;
+              }
+            }
+
+            if (!finalUrl && !imageError) {
+              imageError = "render_or_upload_failed: missing_final_url";
+            }
+
+            if (finalUrl) {
+              imageError = null;
+              imagesDone += 1;
+            } else if (imageError) {
+              imagesFailed += 1;
             }
 
             variants[index] = {
@@ -1432,30 +1466,16 @@ export async function handler(event) {
                 seed: heroMeta?.seed ?? null,
                 prompt_hash: promptHash,
                 render_version: renderVersion ?? null,
+                error: imageError ?? null,
               },
             };
 
             try {
               if (placeholderId) {
                 const pct = Math.min(99, 92 + Math.round(((i + 1) / mentorTargets.length) * 6));
-                const progressOutput =
-                  outputMode === "pro"
-                    ? buildProOutputFromV2({
-                        output: v2output,
-                        brief,
-                        jobId: placeholderId,
-                        styleMode,
-                        platforms,
-                        formats,
-                        strategyId,
-                        strategyBlueprint,
-                        imageSpecsByIndex,
-                      })
-                    : v2output;
                 await supabaseAdmin
                   .from("generated_creatives")
                   .update({
-                    outputs: progressOutput,
                     progress: pct,
                     progress_meta: {
                       phase: "images_progress",
@@ -1471,6 +1491,8 @@ export async function handler(event) {
               /* ignore */
             }
           }
+
+          imagesSkipped = Math.max(0, imagesTotal - imagesDone - imagesFailed);
         }
 
         // finalize: persist outputs (store full v2 output but keep legacy outputs for compatibility)
@@ -1486,11 +1508,27 @@ export async function handler(event) {
                 strategyId: strategyId || null,
                 strategyBlueprint,
                 imageSpecsByIndex,
+                hasImage,
               })
             : { ...v2output, variants };
         try {
           if (placeholderId) {
-            await supabaseAdmin.from('generated_creatives').update({ outputs: finalOutput, score: scored[0]?.score ?? null, status: 'complete', progress: 100, progress_meta: { phase: 'finalize' } }).eq('id', placeholderId);
+            await supabaseAdmin
+              .from('generated_creatives')
+              .update({
+                outputs: finalOutput,
+                score: scored[0]?.score ?? null,
+                status: 'complete',
+                progress: 100,
+                progress_meta: {
+                  phase: 'finalize',
+                  images_done: imagesDone,
+                  images_total: imagesTotal,
+                  images_failed: imagesFailed,
+                  images_skipped: imagesSkipped,
+                },
+              })
+              .eq('id', placeholderId);
           }
         } catch (e) {
           console.warn('[creative-generate] failed to update generated_creatives (v2):', e?.message || e);
@@ -1559,7 +1597,8 @@ export async function handler(event) {
         });
         break;
       }
-      if (bestEval.satisfaction >= TARGET_SATISFACTION) break;
+      const hasHighIssues = (bestEval?.issues || []).some((issue) => issue?.severity === "high");
+      if (!hasHighIssues && bestEval.satisfaction >= TARGET_SATISFACTION) break;
 
       logStep("default.improve", { jobId: placeholderId, attempt });
       const improvePrompt = buildImprovePrompt({
@@ -1615,6 +1654,7 @@ export async function handler(event) {
             strategyId: strategyId || null,
             strategyBlueprint,
             imageSpecsByIndex,
+            hasImage,
           })
         : best;
     try {
@@ -1638,6 +1678,10 @@ export async function handler(event) {
 
     const inputImageBase64 = await resolveInputImageBase64(imagePath);
     const imageTargets = pickCreativesForImages(best.creatives);
+    let imagesTotal = imageTargets.length;
+    let imagesDone = 0;
+    let imagesFailed = 0;
+    let imagesSkipped = 0;
     if (imageTargets.length) {
       const imageStartedAt = Date.now();
       const isOverImageBudget = () => Date.now() - imageStartedAt > MAX_IMAGE_DURATION_MS;
@@ -1667,6 +1711,7 @@ export async function handler(event) {
         }
         const { creative, index } = imageTargets[i];
         let imageSpec = buildFallbackImageSpec(brief, creative);
+        let imageError = null;
         try {
           const specPrompt =
             outputMode === "pro"
@@ -1730,6 +1775,9 @@ export async function handler(event) {
               index,
               error: err?.message || String(err),
             });
+            if (!imageError) {
+              imageError = `hero_generate_failed: ${err?.message || String(err)}`;
+            }
           }
         }
 
@@ -1748,6 +1796,7 @@ export async function handler(event) {
               index,
               error: err?.message || String(err),
             });
+            imageError = `hero_upload_failed: ${err?.message || String(err)}`;
           }
         }
 
@@ -1777,10 +1826,24 @@ export async function handler(event) {
             index,
             error: err?.message || String(err),
           });
+          if (!imageError) {
+            imageError = `render_or_upload_failed: ${err?.message || String(err)}`;
+          }
+        }
+
+        if (!finalUrl && !imageError) {
+          imageError = "render_or_upload_failed: missing_final_url";
+        }
+
+        if (finalUrl) {
+          imageError = null;
+          imagesDone += 1;
+        } else if (imageError) {
+          imagesFailed += 1;
         }
 
         const updatedImage = {
-          input_image_used: Boolean(creative.image?.input_image_used ?? hasImage),
+          input_image_used: Boolean(hasImage),
           render_intent: creative.image?.render_intent || "Hero image",
           hero_image_url: heroUrl ?? null,
           final_image_url: finalUrl ?? null,
@@ -1790,6 +1853,7 @@ export async function handler(event) {
           seed: heroMeta?.seed ?? null,
           prompt_hash: promptHash,
           render_version: renderVersion ?? null,
+          error: imageError ?? null,
         };
 
         best.creatives[index] = {
@@ -1797,31 +1861,16 @@ export async function handler(event) {
           image: updatedImage,
         };
 
-        try {
-          if (placeholderId) {
-            const pct = Math.min(99, 92 + Math.round(((i + 1) / imageTargets.length) * 6));
-            const progressOutput =
-              outputMode === "pro"
-                ? buildProOutputFromV1({
-                    output: best,
-                    brief,
-                    jobId: placeholderId,
-                    styleMode,
-                    platforms,
-                    formats,
-                    strategyId: strategyId || null,
-                    strategyBlueprint,
-                    imageSpecsByIndex,
-                  })
-                : best;
-            await supabaseAdmin
-              .from("generated_creatives")
-              .update({
-                outputs: progressOutput,
-                progress: pct,
-                progress_meta: {
-                  phase: "images_progress",
-                  message: `Bild ${i + 1}/${imageTargets.length} fertig`,
+            try {
+              if (placeholderId) {
+                const pct = Math.min(99, 92 + Math.round(((i + 1) / imageTargets.length) * 6));
+                await supabaseAdmin
+                  .from("generated_creatives")
+                  .update({
+                    progress: pct,
+                    progress_meta: {
+                      phase: "images_progress",
+                      message: `Bild ${i + 1}/${imageTargets.length} fertig`,
                   done: i + 1,
                   total: imageTargets.length,
                   lastVariantId: creative?.id ?? null,
@@ -1833,6 +1882,8 @@ export async function handler(event) {
           /* ignore */
         }
       }
+
+      imagesSkipped = Math.max(0, imagesTotal - imagesDone - imagesFailed);
     }
 
     const finalOutput =
@@ -1847,6 +1898,7 @@ export async function handler(event) {
             strategyId: strategyId || null,
             strategyBlueprint,
             imageSpecsByIndex,
+            hasImage,
           })
         : best;
 
@@ -1870,7 +1922,19 @@ export async function handler(event) {
       if (placeholderId) {
         await supabaseAdmin
           .from('generated_creatives')
-          .update({ outputs: finalOutput, score: finalScore, status: 'complete', progress: 100 })
+          .update({
+            outputs: finalOutput,
+            score: finalScore,
+            status: 'complete',
+            progress: 100,
+            progress_meta: {
+              phase: 'finalize',
+              images_done: imagesDone,
+              images_total: imagesTotal,
+              images_failed: imagesFailed,
+              images_skipped: imagesSkipped,
+            },
+          })
           .eq('id', placeholderId);
       }
     } catch (e) {

@@ -64,6 +64,7 @@ body { outline: 2px solid rgba(255,0,0,.2); }
   --sidebar-accent-foreground: #000000;
   --sidebar-border: rgba(229, 229, 229, 0.6);
   --sidebar-ring: #C80000;
+  --perf-shadow: 0 6px 18px rgba(0, 0, 0, 0.08);
 }
 
 .dark {
@@ -102,6 +103,27 @@ body { outline: 2px solid rgba(255,0,0,.2); }
   --sidebar-accent-foreground: #ffffff;
   --sidebar-border: rgba(42, 42, 42, 0.5);
   --sidebar-ring: #C80000;
+  --perf-shadow: 0 6px 18px rgba(0, 0, 0, 0.18);
+}
+
+/* ═══════════════════════════════════════════════════════════
+   PERFORMANCE LITE MODE (dashboard: reduce blur + heavy shadow)
+   ═══════════════════════════════════════════════════════════ */
+
+html.perf-lite .backdrop-blur,
+html.perf-lite .backdrop-blur-sm,
+html.perf-lite .backdrop-blur-md,
+html.perf-lite .backdrop-blur-lg,
+html.perf-lite .backdrop-blur-xl {
+  backdrop-filter: none !important;
+}
+
+html.perf-lite [class*="shadow-"] {
+  box-shadow: var(--perf-shadow) !important;
+}
+
+html.perf-lite .transition-all {
+  transition-property: color, background-color, border-color, box-shadow, transform, opacity;
 }
 
 @theme inline {

@@ -80,7 +80,7 @@ export const Sidebar = memo(function Sidebar({
         )}
       </button>
     );
-  }, [currentPage, handleNavigate, isCollapsed, isMobileOpen]);
+  }, [currentPage, handleNavigate, showLabels]);
 
   return (
     <>
@@ -99,7 +99,6 @@ export const Sidebar = memo(function Sidebar({
           ${!isMobileOpen ? 'md:translate-x-0' : ''}
           ${!isMobileOpen && !isExpanded ? 'md:w-20' : 'md:w-64'}
         `}
-        style={{ willChange: 'transform,width' }}
         onMouseEnter={() => {
           if (!isMobileOpen && isCollapsed) setIsHovering(true);
         }}

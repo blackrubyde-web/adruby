@@ -1,4 +1,6 @@
-export function HeroHeader({
+import { memo } from 'react';
+
+export const HeroHeader = memo(function HeroHeader({
   title,
   subtitle,
   actions,
@@ -17,7 +19,6 @@ export function HeroHeader({
         style={{
           background: 'linear-gradient(90deg, #C80000, #ff6b6b, #ffd93d, #6bcf7f, #4d96ff, #9b59b6, #C80000)',
           backgroundSize: '200% 100%',
-          animation: 'rainbow-border 8s linear infinite'
         }}
       />
       <div className="absolute -top-24 -right-24 h-56 w-56 rounded-full bg-primary/10 blur-3xl" />
@@ -42,4 +43,4 @@ export function HeroHeader({
       </div>
     </div>
   );
-}
+});
