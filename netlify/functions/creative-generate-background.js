@@ -506,6 +506,11 @@ const MAX_IMAGE_DURATION_MS = clampInt(
   10000,
   120000,
 );
+const IMAGE_SPEC_TIMEOUT_MS = clampInt(
+  Number.parseInt(process.env.CREATIVE_IMAGE_SPEC_TIMEOUT_MS || "45000", 10),
+  5000,
+  120000,
+);
 const IMAGE_TOP_N = clampInt(
   Number.parseInt(process.env.CREATIVE_IMAGE_TOP_N || "2", 10),
   0,
@@ -1341,6 +1346,7 @@ export async function handler(event) {
               const specSchema = outputMode === "pro" ? AD_IMAGE_SPEC_JSON_SCHEMA : IMAGE_SPEC_JSON_SCHEMA;
               const specRaw = await callOpenAiJson(specPrompt, {
                 responseFormat: specSchema,
+                timeoutMs: IMAGE_SPEC_TIMEOUT_MS,
               });
               const specParsed = await parseWithRepair({
                 schema: ImageSpecSchema,
@@ -1348,6 +1354,7 @@ export async function handler(event) {
                 makeRequest: async (instruction) =>
                   callOpenAiJson(specPrompt + "\n\n" + instruction, {
                     responseFormat: specSchema,
+                    timeoutMs: IMAGE_SPEC_TIMEOUT_MS,
                   }),
               });
               imageSpec = specParsed.data;
@@ -1730,6 +1737,7 @@ export async function handler(event) {
           const specSchema = outputMode === "pro" ? AD_IMAGE_SPEC_JSON_SCHEMA : IMAGE_SPEC_JSON_SCHEMA;
           const specRaw = await callOpenAiJson(specPrompt, {
             responseFormat: specSchema,
+            timeoutMs: IMAGE_SPEC_TIMEOUT_MS,
           });
           const specParsed = await parseWithRepair({
             schema: ImageSpecSchema,
@@ -1737,6 +1745,7 @@ export async function handler(event) {
             makeRequest: async (instruction) =>
               callOpenAiJson(specPrompt + "\n\n" + instruction, {
                 responseFormat: specSchema,
+                timeoutMs: IMAGE_SPEC_TIMEOUT_MS,
               }),
           });
           imageSpec = specParsed.data;
@@ -2070,8 +2079,9 @@ async function callOpenAiJson(prompt, options = {}) {
   const model = getOpenAiModel();
   const useSchema = process.env.USE_JSON_SCHEMA === "1";
   const responseFormat = options?.responseFormat;
+  const timeoutOverride = options?.timeoutMs;
   const baseTimeoutMs = clampInt(
-    Number(process.env.OPENAI_TIMEOUT_MS || 150000),
+    Number(timeoutOverride ?? process.env.OPENAI_TIMEOUT_MS || 150000),
     5000,
     180000,
   );

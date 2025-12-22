@@ -87,6 +87,9 @@ export function AdBuilderPage() {
   const runIdRef = useRef(0);
   const draftSaveTimeoutRef = useRef<number | null>(null);
   const lastDraftPayloadRef = useRef<string | null>(null);
+  const [displayProgress, setDisplayProgress] = useState(0);
+  const progressRafRef = useRef<number | null>(null);
+  const progressValueRef = useRef(0);
 
   const [generatedCopy, setGeneratedCopy] = useState<{headline: string, description: string, cta: string}[]>([]);
   const [selectedCopy, setSelectedCopy] = useState<number | null>(null);
@@ -343,6 +346,49 @@ export function AdBuilderPage() {
     adStatus === 'analyzing'
       ? 'Wir erstellen dein Briefing und bereiten die Generierung vor.'
       : 'Bitte warten – die KI erstellt gerade deine Varianten.';
+
+  useEffect(() => {
+    if (!isProcessing) {
+      setDisplayProgress(0);
+      progressValueRef.current = 0;
+      if (progressRafRef.current) {
+        cancelAnimationFrame(progressRafRef.current);
+        progressRafRef.current = null;
+      }
+      return;
+    }
+
+    const fallbackTarget = adStatus === 'analyzing' ? 18 : adStatus === 'generating' ? 45 : 72;
+    const target = typeof hookProgress === 'number' ? hookProgress : fallbackTarget;
+    const clamped = Math.max(0, Math.min(100, target));
+    const start = progressValueRef.current;
+    const startTime = performance.now();
+    const duration = Math.max(450, Math.min(1200, Math.abs(clamped - start) * 10));
+
+    if (progressRafRef.current) {
+      cancelAnimationFrame(progressRafRef.current);
+      progressRafRef.current = null;
+    }
+
+    const tick = (now: number) => {
+      const t = Math.min(1, (now - startTime) / duration);
+      const eased = 1 - Math.pow(1 - t, 3);
+      const next = start + (clamped - start) * eased;
+      progressValueRef.current = next;
+      setDisplayProgress(next);
+      if (t < 1) {
+        progressRafRef.current = requestAnimationFrame(tick);
+      }
+    };
+
+    progressRafRef.current = requestAnimationFrame(tick);
+    return () => {
+      if (progressRafRef.current) {
+        cancelAnimationFrame(progressRafRef.current);
+        progressRafRef.current = null;
+      }
+    };
+  }, [adStatus, hookProgress, isProcessing]);
 
   const handleOverlayKeyDown = useCallback((event: KeyboardEvent<HTMLDivElement>) => {
     if (event.key !== 'Tab') return;
@@ -991,9 +1037,8 @@ export function AdBuilderPage() {
                       </div>
                       <Button
                         onClick={generateCopy}
-                        size="sm"
                         disabled={!canGenerateCopy || isProcessing}
-                        className="bg-primary hover:bg-primary/90 text-primary-foreground w-full sm:w-auto shadow-lg shadow-primary/20 hover:shadow-primary/40"
+                        className="btn-sweep bg-primary hover:bg-primary/90 text-primary-foreground w-full sm:w-auto shadow-lg shadow-primary/20 hover:shadow-primary/40 h-11 px-6 text-base font-semibold hover:scale-[1.02] active:scale-[0.99] cursor-pointer"
                       >
                         <Zap className={`w-4 h-4 mr-2 ${isProcessing ? 'animate-pulse' : ''}`} />
                         {adStatus === 'analyzing' ? 'Analysiere…' : isGeneratingCopy ? 'Generiere…' : 'KI generieren'}
@@ -1049,13 +1094,15 @@ export function AdBuilderPage() {
                   Zurück
                 </Button>
                 {state.currentStep < steps.length ? (
-                  <Button
-                    onClick={handleNext}
-                    className="bg-primary hover:bg-primary/90 text-primary-foreground w-full sm:w-auto shadow-md shadow-primary/20 hover:shadow-primary/30"
-                  >
-                    {getNextButtonLabel()}
-                    <ChevronRight className="w-4 h-4 ml-2" />
-                  </Button>
+                  state.currentStep !== 3 ? (
+                    <Button
+                      onClick={handleNext}
+                      className="bg-primary hover:bg-primary/90 text-primary-foreground w-full sm:w-auto shadow-md shadow-primary/20 hover:shadow-primary/30"
+                    >
+                      {getNextButtonLabel()}
+                      <ChevronRight className="w-4 h-4 ml-2" />
+                    </Button>
+                  ) : null
                 ) : (
                   <Button
                     onClick={resetAll}
@@ -1081,11 +1128,13 @@ export function AdBuilderPage() {
           <div className="w-full max-w-md rounded-2xl border border-border bg-card p-6 shadow-2xl">
             <div className="flex items-center justify-between">
               <div className="text-lg font-semibold text-foreground">{overlayTitle}</div>
-              <div className="text-xs text-muted-foreground">Status: {adStatus}</div>
+              <div className="text-xs text-muted-foreground">
+                {Math.round(displayProgress)}% · {adStatus}
+              </div>
             </div>
             <p className="mt-2 text-sm text-muted-foreground">{overlayDescription}</p>
             <div className="mt-4">
-              <Progress value={hookProgress ?? 0} className="h-2" />
+              <Progress value={displayProgress} className="h-2" />
             </div>
             <div className="mt-5 flex justify-end">
               <Button

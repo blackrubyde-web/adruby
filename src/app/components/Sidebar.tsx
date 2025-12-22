@@ -45,6 +45,7 @@ export const Sidebar = memo(function Sidebar({
   const [isHovering, setIsHovering] = useState(false);
   const isExpanded = Boolean(isMobileOpen || !isCollapsed || isHovering);
   const showLabels = isExpanded;
+  const showOverlay = Boolean(!isMobileOpen && isCollapsed && isHovering);
 
   const handleNavigate = useCallback((page: PageType) => {
     onNavigate(page);
@@ -55,16 +56,19 @@ export const Sidebar = memo(function Sidebar({
 
   const renderNavButton = useCallback((item: NavItem) => {
     const isActive = item.page === currentPage;
+    const labelVisibility = showLabels
+      ? "opacity-100 translate-x-0 max-w-[160px]"
+      : "opacity-0 translate-x-1 max-w-0";
     
     return (
       <button
         key={item.page}
         onClick={() => handleNavigate(item.page)}
-        className={`relative w-full flex items-center gap-3 px-4 py-2.5 rounded-lg transition-colors ${
+        className={`relative w-full flex items-center px-4 py-2.5 rounded-lg transition-[color,background-color,gap] duration-200 ${
           isActive
             ? 'bg-sidebar-accent text-sidebar-foreground'
             : 'text-sidebar-foreground/70 hover:text-sidebar-foreground hover:bg-sidebar-accent/50'
-        }`}
+        } ${showLabels ? 'gap-3 justify-start' : 'gap-0 justify-center'}`}
         title={(!showLabels && !isMobileOpen) ? item.label : undefined}
       >
         {/* Left Accent Bar - Only on Active */}
@@ -73,11 +77,12 @@ export const Sidebar = memo(function Sidebar({
         )}
         
         <item.icon className="w-5 h-5 flex-shrink-0" />
-        {showLabels && (
-          <span className={`flex-1 text-left text-sm ${isActive ? 'font-semibold' : 'font-medium'}`}>
-            {item.label}
-          </span>
-        )}
+        <span
+          className={`flex-1 text-left text-sm leading-5 ${isActive ? 'font-semibold' : 'font-medium'} transition-[opacity,transform,max-width] duration-200 ease-out overflow-hidden whitespace-nowrap ${labelVisibility}`}
+          aria-hidden={!showLabels}
+        >
+          {item.label}
+        </span>
       </button>
     );
   }, [currentPage, handleNavigate, showLabels]);
@@ -87,14 +92,21 @@ export const Sidebar = memo(function Sidebar({
       {/* Mobile Overlay */}
       {isMobileOpen && (
         <div 
-          className="fixed inset-0 bg-black/50 z-40 md:hidden"
+          className="fixed inset-0 bg-black/60 z-40 md:hidden"
           onClick={onMobileClose}
+        />
+      )}
+
+      {showOverlay && (
+        <div
+          className="fixed inset-0 bg-black/60 z-40 hidden md:block"
+          onClick={() => setIsHovering(false)}
         />
       )}
 
       {/* Sidebar */}
       <div 
-        className={`bg-sidebar border-r border-sidebar-border h-screen fixed left-0 top-0 flex flex-col transition-[width,transform] duration-200 z-50
+        className={`${isExpanded ? 'bg-black/90 border-white/10' : 'bg-sidebar border-sidebar-border'} border-r h-screen fixed left-0 top-0 flex flex-col transition-[width,transform] duration-200 z-50
           ${isMobileOpen ? 'translate-x-0 w-64' : '-translate-x-full w-64'}
           ${!isMobileOpen ? 'md:translate-x-0' : ''}
           ${!isMobileOpen && !isExpanded ? 'md:w-20' : 'md:w-64'}
