@@ -213,22 +213,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         await ensureUserProfileExists();
         const nextProfile = await loadProfile(user.id);
         if (!cancelled) {
-          if (import.meta.env.DEV) {
-            console.debug('[Auth] profile loaded', {
-              id: nextProfile.id,
-              email: nextProfile.email,
-              onboarding_completed: nextProfile.onboarding_completed,
-              payment_verified: nextProfile.payment_verified,
-              trial_status: nextProfile.trial_status,
-              trial_expires_at: nextProfile.trial_expires_at,
-              trial_ends_at: nextProfile.trial_ends_at
-            });
-          }
           setProfile(nextProfile);
           setProfileError(null);
         }
       } catch (err) {
-        console.error('[Auth] profile load failed', err);
         if (!cancelled) {
           setProfile(null);
           setProfileError('We could not load your profile details.');

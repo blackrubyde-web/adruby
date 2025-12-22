@@ -278,6 +278,9 @@ export function AIAnalysisPage() {
   const totalSpend = analyticsData?.summary?.spend ?? campaigns.reduce((acc, c) => acc + c.spend, 0);
   const totalRevenue = analyticsData?.summary?.revenue ?? campaigns.reduce((acc, c) => acc + c.revenue, 0);
   const totalRoas = analyticsData?.summary?.roas ?? (totalSpend > 0 ? totalRevenue / totalSpend : 0);
+  const totalConversions =
+    analyticsData?.summary?.conversions ??
+    campaigns.reduce((acc, c) => acc + Number(c.conversions || 0), 0);
   const totalAdSets = campaigns.reduce((acc, c) => acc + c.adSets.length, 0);
   const totalAds = campaigns.reduce((acc, c) => acc + c.adSets.reduce((a, s) => a + s.ads.length, 0), 0);
 

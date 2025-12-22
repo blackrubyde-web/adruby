@@ -350,9 +350,21 @@ export function CreativeLibraryPage() {
     [favoriteIds, mapCreativeRow, uploadFileToStorage]
   );
 
+  type CreativeImageRef = {
+    final_image_url?: string | null;
+    hero_image_url?: string | null;
+    input_image_url?: string | null;
+  };
+  type CreativeOutputVariant = {
+    visual?: { image?: CreativeImageRef | null } | null;
+    image?: CreativeImageRef | null;
+  };
+
   const resolveDownloadUrl = useCallback((row: { thumbnail?: string | null; outputs?: unknown | null }) => {
     if (row.thumbnail) return row.thumbnail;
-    const outputs = row.outputs as any;
+    const outputs = row.outputs as
+      | { variants?: CreativeOutputVariant[]; creatives?: CreativeOutputVariant[] }
+      | null;
     const variants = outputs?.variants || outputs?.creatives || [];
     const first = Array.isArray(variants) ? variants[0] : null;
     const image = first?.visual?.image || first?.image || null;

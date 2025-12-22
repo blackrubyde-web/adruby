@@ -173,7 +173,7 @@ export function useAdBuilder() {
         throw err;
       }
     },
-    [],
+    [imageMeta],
   );
 
   const cancel = useCallback(() => {

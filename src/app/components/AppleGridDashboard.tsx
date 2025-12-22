@@ -560,7 +560,14 @@ export function AppleGridDashboard({
                   <X className="w-4 h-4" />
                 </button>
                 <div className="widget-content">
-                  <WidgetRenderer widget={widget} template={template} data={data} loading={loading} error={error} />
+                  <WidgetRenderer
+                    widget={widget}
+                    template={template}
+                    data={data}
+                    loading={loading}
+                    error={error}
+                    onCreateCampaign={handleCreateCampaign}
+                  />
                 </div>
               </div>
             );
@@ -799,26 +806,45 @@ function WidgetPreview({ template }: { template: WidgetTemplate }) {
     design: 'gradient',
   };
 
-  return <WidgetRenderer widget={previewWidget} template={template} data={null} loading={false} error={null} isPreview />;
+  return (
+    <WidgetRenderer
+      widget={previewWidget}
+      template={template}
+      data={null}
+      loading={false}
+      error={null}
+      isPreview
+    />
+  );
 }
 
 // Widget Renderer Component - DATA AWARE
-function WidgetRenderer({ 
-  widget, 
-  template, 
-  data, 
-  loading, 
+function WidgetRenderer({
+  widget,
+  template,
+  data,
+  loading,
   error,
-  isPreview = false 
-}: { 
-  widget: DashboardWidget; 
-  template: WidgetTemplate; 
+  isPreview = false,
+  onCreateCampaign,
+}: {
+  widget: DashboardWidget;
+  template: WidgetTemplate;
   data: AnalyticsData | null;
   loading: boolean;
   error: string | null;
   isPreview?: boolean;
+  onCreateCampaign?: () => void;
 }) {
   const colorTheme = COLOR_THEMES.find(c => c.id === widget.color) || COLOR_THEMES[0];
+  const emptyAction = onCreateCampaign ? (
+    <button
+      onClick={onCreateCampaign}
+      className="text-sm font-medium text-primary hover:underline"
+    >
+      Create campaign →
+    </button>
+  ) : null;
 
   // Loading State
   if (loading && !isPreview) {
@@ -1055,14 +1081,7 @@ function WidgetRenderer({
         error={error}
         emptyTitle="No performance data"
         emptyDescription="Run campaigns to see performance trends here."
-        emptyAction={
-          <button
-            onClick={handleCreateCampaign}
-            className="text-sm font-medium text-primary hover:underline"
-          >
-            Create campaign →
-          </button>
-        }
+        emptyAction={emptyAction}
         headerAction={
           data?.summary?.deltas?.revenue != null && (
             <div className="px-2 py-1 bg-green-500/10 rounded-full">
