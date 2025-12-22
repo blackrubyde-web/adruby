@@ -1,10 +1,12 @@
-import { Target, Search, Filter, Sparkles, Brain, DollarSign, Users, Zap, CheckCircle2, Play, Pause, Copy, Trash2, Eye } from 'lucide-react';
-import { useCallback, useEffect, useState } from 'react';
+import { Target, Search, Filter, Sparkles, Brain, DollarSign, Users, Zap, CheckCircle2, Play, Pause, Copy, Trash2, Eye, CheckSquare, Layers } from 'lucide-react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { toast } from 'sonner';
 import { StrategyViewModal } from './StrategyViewModal';
+import { CampaignStrategyViewModal } from './CampaignStrategyViewModal';
 import { PageShell, HeroHeader, Card } from './layout';
 import { supabase } from '../lib/supabaseClient';
 import { generateStrategyPlan } from '../lib/api/creative';
+import { generateCampaignStrategyPlan } from '../lib/api/strategy';
 
 type GeneratedStrategy = {
   schema_version?: string;
@@ -148,19 +150,41 @@ interface SavedAd {
   blueprintTitle?: string | null;
 }
 
+type CampaignStrategyBlueprint = {
+  id: string;
+  name: string | null;
+  creative_ids: string[];
+  strategy: GeneratedStrategy;
+  created_at?: string | null;
+};
+
+type CampaignStrategyModalState = {
+  strategy: GeneratedStrategy;
+  title?: string | null;
+  ads: SavedAd[];
+  createdAt?: string | null;
+  strategyId?: string | null;
+};
+
 
 export function AdsStrategiesPage() {
   const [savedAds, setSavedAds] = useState<SavedAd[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   type StatusFilter = 'all' | 'active' | 'paused' | 'draft';
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
+  const [selectionMode, setSelectionMode] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [showStrategyModal, setShowStrategyModal] = useState(false);
   const [showStrategyViewModal, setShowStrategyViewModal] = useState(false);
   const [selectedAdForStrategy, setSelectedAdForStrategy] = useState<SavedAd | null>(null);
   const [isGeneratingStrategy, setIsGeneratingStrategy] = useState(false);
   const [generatedStrategy, setGeneratedStrategy] = useState<GeneratedStrategy | null>(null);
+  const [isGeneratingCampaignStrategy, setIsGeneratingCampaignStrategy] = useState(false);
+  const [campaignStrategies, setCampaignStrategies] = useState<CampaignStrategyBlueprint[]>([]);
+  const [campaignStrategyModal, setCampaignStrategyModal] = useState<CampaignStrategyModalState | null>(null);
   const [isLoadingAds, setIsLoadingAds] = useState(false);
   const [adsError, setAdsError] = useState<string | null>(null);
+  const [campaignError, setCampaignError] = useState<string | null>(null);
 
 
   type CreativeOutput = {
@@ -273,9 +297,34 @@ export function AdsStrategiesPage() {
     }
   }, [mapCreativeRow]);
 
+  const loadCampaignStrategies = useCallback(async () => {
+    setCampaignError(null);
+    try {
+      const { data: session } = await supabase.auth.getSession();
+      if (!session.session) {
+        setCampaignStrategies([]);
+        return;
+      }
+
+      const { data, error } = await supabase
+        .from('campaign_strategy_blueprints')
+        .select('id,name,creative_ids,strategy,created_at')
+        .order('created_at', { ascending: false })
+        .limit(20);
+
+      if (error) throw error;
+      setCampaignStrategies((data || []) as CampaignStrategyBlueprint[]);
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'Failed to load campaign strategies';
+      setCampaignError(message);
+      setCampaignStrategies([]);
+    }
+  }, []);
+
   useEffect(() => {
     loadAds().catch(() => undefined);
-  }, [loadAds]);
+    loadCampaignStrategies().catch(() => undefined);
+  }, [loadAds, loadCampaignStrategies]);
 
   // Filter ads
   const filteredAds = savedAds.filter(ad => {
@@ -287,16 +336,60 @@ export function AdsStrategiesPage() {
     return matchesSearch && matchesStatus;
   });
 
+  const selectedAds = useMemo(
+    () => savedAds.filter(ad => selectedIds.includes(ad.id)),
+    [savedAds, selectedIds]
+  );
+  const visibleIds = useMemo(() => filteredAds.map(ad => ad.id), [filteredAds]);
+  const allVisibleSelected = visibleIds.length > 0 && visibleIds.every(id => selectedIds.includes(id));
+
+  useEffect(() => {
+    setSelectedIds((prev) => prev.filter((id) => savedAds.some((ad) => ad.id === id)));
+  }, [savedAds]);
+
+  const toggleSelected = (id: string) => {
+    setSelectionMode(true);
+    setSelectedIds((prev) =>
+      prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id]
+    );
+  };
+
+  const clearSelection = () => {
+    setSelectedIds([]);
+    setSelectionMode(false);
+  };
+
+  const toggleSelectAllVisible = () => {
+    if (allVisibleSelected) {
+      setSelectedIds((prev) => prev.filter((id) => !visibleIds.includes(id)));
+      return;
+    }
+    setSelectionMode(true);
+    setSelectedIds((prev) => Array.from(new Set([...prev, ...visibleIds])));
+  };
+
   // Stats
   const stats = {
     totalAds: savedAds.length,
-    activeAds: savedAds.filter(a => a.status === 'active').length,
     withStrategy: savedAds.filter(a => a.strategy).length,
+    campaignStrategies: campaignStrategies.length,
     avgRoas: savedAds
       .filter(a => a.strategy)
       .reduce((sum, a) => sum + (a.strategy?.performance?.expectedROAS || 0), 0) /
       (savedAds.filter(a => a.strategy).length || 1)
   };
+
+  const campaignMap = useMemo(() => {
+    const map: Record<string, CampaignStrategyBlueprint[]> = {};
+    campaignStrategies.forEach((strategy) => {
+      if (!Array.isArray(strategy.creative_ids)) return;
+      strategy.creative_ids.forEach((id) => {
+        if (!map[id]) map[id] = [];
+        map[id].push(strategy);
+      });
+    });
+    return map;
+  }, [campaignStrategies]);
 
   // Open strategy modal
   const handleCreateStrategy = async (ad: SavedAd) => {
@@ -342,6 +435,143 @@ export function AdsStrategiesPage() {
       toast.error(message);
     } finally {
       setIsGeneratingStrategy(false);
+    }
+  };
+
+  const handleGenerateCampaignStrategy = async () => {
+    if (!selectedIds.length) {
+      toast.error('Bitte wähle mindestens eine Ad aus.');
+      return;
+    }
+    if (isGeneratingCampaignStrategy) return;
+    setIsGeneratingCampaignStrategy(true);
+    try {
+      const { data: session } = await supabase.auth.getSession();
+      const userId = session.session?.user?.id;
+      if (!userId) {
+        throw new Error('Bitte zuerst anmelden.');
+      }
+
+      const result = await generateCampaignStrategyPlan({ creativeIds: selectedIds });
+      const strategy = (result?.strategy || result?.campaignStrategy || result?.plan) as GeneratedStrategy;
+      if (!strategy) {
+        throw new Error('Kampagnen-Strategie konnte nicht erstellt werden.');
+      }
+
+      const fallbackTitle = `Kampagnen-Strategie ${new Date().toLocaleDateString('de-DE')}`;
+      const title = result?.name || strategy.name || fallbackTitle;
+      const adsForModal = selectedAds;
+      let savedEntry: CampaignStrategyBlueprint | null = null;
+
+      try {
+        const { data, error } = await supabase
+          .from('campaign_strategy_blueprints')
+          .insert({
+            user_id: userId,
+            name: title,
+            creative_ids: selectedIds,
+            strategy,
+          })
+          .select('id,name,creative_ids,strategy,created_at')
+          .single();
+        if (error) throw error;
+        savedEntry = data as CampaignStrategyBlueprint;
+        setCampaignStrategies((prev) => [savedEntry as CampaignStrategyBlueprint, ...prev]);
+      } catch (err: unknown) {
+        const message = err instanceof Error ? err.message : 'Kampagnen-Strategie konnte nicht gespeichert werden.';
+        console.warn('[campaign-strategy] persist failed', message);
+        toast.info('Strategie erstellt, aber nicht gespeichert. Migration fehlt?');
+      }
+
+      setCampaignStrategyModal({
+        strategy,
+        title: savedEntry?.name ?? title,
+        ads: adsForModal,
+        createdAt: savedEntry?.created_at ?? null,
+        strategyId: savedEntry?.id ?? null,
+      });
+      setSelectedIds([]);
+      setSelectionMode(false);
+      toast.success('Kampagnen-Strategie erstellt');
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'Kampagnen-Strategie fehlgeschlagen.';
+      toast.error(message);
+    } finally {
+      setIsGeneratingCampaignStrategy(false);
+    }
+  };
+
+  const handleOpenCampaignStrategy = (strategy: CampaignStrategyBlueprint) => {
+    const adsForModal = savedAds.filter((ad) => strategy.creative_ids.includes(ad.id));
+    setCampaignStrategyModal({
+      strategy: strategy.strategy,
+      title: strategy.name,
+      ads: adsForModal,
+      createdAt: strategy.created_at ?? null,
+      strategyId: strategy.id,
+    });
+  };
+
+  const navigateToCampaignBuilder = (draftId: string) => {
+    const url = `/campaign-builder?id=${encodeURIComponent(draftId)}`;
+    window.history.pushState({}, document.title, url);
+    window.dispatchEvent(new PopStateEvent('popstate'));
+  };
+
+  const createCampaignDraft = async (params: {
+    name: string;
+    creativeIds: string[];
+    strategyId?: string | null;
+    strategy?: GeneratedStrategy | null;
+  }) => {
+    const { data: session } = await supabase.auth.getSession();
+    const userId = session.session?.user?.id;
+    if (!userId) throw new Error('Bitte zuerst anmelden.');
+
+    const campaignSpec = {
+      campaign: {
+        name: params.name,
+        objective: params.strategy?.meta_setup?.campaign?.objective ?? '',
+        budget_type: params.strategy?.meta_setup?.campaign?.budget_type ?? '',
+        bid_strategy: params.strategy?.meta_setup?.campaign?.bid_strategy ?? '',
+        attribution: params.strategy?.meta_setup?.campaign?.attribution ?? '',
+        daily_budget: params.strategy?.meta_setup?.campaign?.daily_budget ?? '',
+      },
+      ad_sets: [],
+      ads: params.creativeIds.map((id) => ({ creative_id: id })),
+      strategy_snapshot: params.strategy ?? null,
+    };
+
+    const { data, error } = await supabase
+      .from('campaign_drafts')
+      .insert({
+        user_id: userId,
+        name: params.name,
+        creative_ids: params.creativeIds,
+        strategy_blueprint_id: params.strategyId ?? null,
+        campaign_spec: campaignSpec,
+        status: 'draft',
+      })
+      .select('id')
+      .single();
+
+    if (error) throw error;
+    return data.id as string;
+  };
+
+  const handleOpenBuilderFromCampaignStrategy = async () => {
+    if (!campaignStrategyModal) return;
+    try {
+      const draftId = await createCampaignDraft({
+        name: campaignStrategyModal.title || 'Neue Kampagne',
+        creativeIds: campaignStrategyModal.ads.map((ad) => ad.id),
+        strategyId: campaignStrategyModal.strategyId ?? null,
+        strategy: campaignStrategyModal.strategy,
+      });
+      navigateToCampaignBuilder(draftId);
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'Kampagne konnte nicht erstellt werden.';
+      toast.error(message);
     }
   };
 
@@ -429,13 +659,19 @@ export function AdsStrategiesPage() {
   return (
     <PageShell>
       <HeroHeader
-        title="Saved Ads & Strategien"
-        subtitle="Verwalte deine Ads und erstelle AI-powered Performance-Strategien"
+        title="Strategie & Kampagnenplanung"
+        subtitle="Wähle mehrere Ads aus und erstelle AI-Kampagnenstrategien als Blueprint."
       />
 
       {adsError && (
         <Card className="p-4 border border-red-500/30 bg-red-500/5 text-red-600">
           {adsError}
+        </Card>
+      )}
+
+      {campaignError && (
+        <Card className="p-4 border border-amber-500/30 bg-amber-500/5 text-amber-600">
+          {campaignError}
         </Card>
       )}
 
@@ -449,13 +685,13 @@ export function AdsStrategiesPage() {
           <div className="text-2xl text-foreground font-bold mb-1">{stats.totalAds}</div>
           <div className="text-sm text-muted-foreground">Total Ads</div>
         </div>
-        <div className="p-4 rounded-xl bg-gradient-to-br from-green-500/10 to-transparent border border-border/30">
-          <div className="text-2xl text-foreground font-bold mb-1">{stats.activeAds}</div>
-          <div className="text-sm text-muted-foreground">Active</div>
-        </div>
         <div className="p-4 rounded-xl bg-gradient-to-br from-blue-500/10 to-transparent border border-border/30">
           <div className="text-2xl text-foreground font-bold mb-1">{stats.withStrategy}</div>
           <div className="text-sm text-muted-foreground">With Strategy</div>
+        </div>
+        <div className="p-4 rounded-xl bg-gradient-to-br from-green-500/10 to-transparent border border-border/30">
+          <div className="text-2xl text-foreground font-bold mb-1">{stats.campaignStrategies}</div>
+          <div className="text-sm text-muted-foreground">Campaign Strategien</div>
         </div>
         <div className="p-4 rounded-xl bg-gradient-to-br from-purple-500/10 to-transparent border border-border/30">
           <div className="text-2xl text-foreground font-bold mb-1">{stats.avgRoas.toFixed(1)}x</div>
@@ -489,8 +725,54 @@ export function AdsStrategiesPage() {
               <option value="draft">Draft</option>
             </select>
           </div>
+          <button
+            onClick={() => (selectionMode ? clearSelection() : setSelectionMode(true))}
+            className="px-4 py-2.5 bg-muted hover:bg-muted/80 border border-border/50 rounded-xl text-sm font-semibold flex items-center gap-2"
+          >
+            <CheckSquare className="w-4 h-4" />
+            {selectionMode ? 'Selection aktiv' : 'Ads auswählen'}
+          </button>
         </div>
       </Card>
+
+      {selectedIds.length > 0 && (
+        <Card className="sticky top-20 z-20 p-4 border border-primary/30 bg-primary/5 flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
+              <Layers className="w-5 h-5 text-primary" />
+            </div>
+            <div>
+              <div className="text-sm font-semibold text-foreground">
+                {selectedIds.length} Ads ausgewählt
+              </div>
+              <div className="text-xs text-muted-foreground">
+                Erstelle eine Kampagnen-Strategie aus der Auswahl
+              </div>
+            </div>
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            <button
+              onClick={toggleSelectAllVisible}
+              className="px-3 py-2 bg-muted hover:bg-muted/80 border border-border rounded-lg text-xs font-semibold"
+            >
+              {allVisibleSelected ? 'Auswahl reduzieren' : 'Alle sichtbaren auswählen'}
+            </button>
+            <button
+              onClick={clearSelection}
+              className="px-3 py-2 bg-muted hover:bg-muted/80 border border-border rounded-lg text-xs font-semibold"
+            >
+              Auswahl löschen
+            </button>
+            <button
+              onClick={handleGenerateCampaignStrategy}
+              disabled={isGeneratingCampaignStrategy}
+              className="px-4 py-2 bg-gradient-to-r from-primary to-primary/80 text-primary-foreground rounded-lg text-xs font-semibold shadow-lg shadow-primary/30 hover:scale-105 transition-all disabled:opacity-60"
+            >
+              {isGeneratingCampaignStrategy ? 'Strategie wird erstellt…' : 'Kampagnen-Strategie erstellen'}
+            </button>
+          </div>
+        </Card>
+      )}
 
       {/* Ads Grid */}
       {filteredAds.length === 0 ? (
@@ -498,23 +780,36 @@ export function AdsStrategiesPage() {
           <Target className="w-16 h-16 text-muted-foreground/30 mx-auto mb-4" />
           <h3 className="text-foreground font-semibold mb-2">Keine Ads gefunden</h3>
           <p className="text-muted-foreground mb-6">
-            Erstelle deine erste Ad im Ad Builder!
+            Erstelle deine erste Ad im Ad Builder und wähle mehrere für eine Kampagnenstrategie.
           </p>
         </Card>
       ) : (
         <div className="grid grid-cols-1 gap-6">
-          {filteredAds.map((ad) => (
-            <Card
-              key={ad.id}
-              className="hover:shadow-2xl transition-all duration-300 overflow-hidden group"
-            >
-              <div className="grid grid-cols-1 lg:grid-cols-[1fr_380px]">
+          {filteredAds.map((ad) => {
+            const isSelected = selectedIds.includes(ad.id);
+            const campaignLinks = campaignMap[ad.id] || [];
+            return (
+              <Card
+                key={ad.id}
+                className={`hover:shadow-2xl transition-all duration-300 overflow-hidden group ${isSelected ? 'ring-2 ring-primary/40' : ''}`}
+              >
+                <div className="grid grid-cols-1 lg:grid-cols-[1fr_380px]">
                 {/* Left: Ad Content */}
                 <div className="p-6 lg:border-r border-border/30">
                   {/* Header */}
                   <div className="flex items-start justify-between mb-4">
                     <div className="flex-1">
                       <div className="flex items-center gap-3 mb-2">
+                        {(selectionMode || selectedIds.length > 0) && (
+                          <label className="flex items-center">
+                            <input
+                              type="checkbox"
+                              checked={isSelected}
+                              onChange={() => toggleSelected(ad.id)}
+                              className="h-4 w-4 rounded border-border text-primary focus:ring-primary/40"
+                            />
+                          </label>
+                        )}
                         <h3 className="text-xl font-bold text-foreground">{ad.name}</h3>
                         <span className={`px-3 py-1 rounded-full text-xs font-medium ${
                           ad.status === 'active' ? 'bg-green-500/20 text-green-500' :
@@ -527,6 +822,17 @@ export function AdsStrategiesPage() {
                           <span className="px-3 py-1 rounded-full text-xs font-medium bg-purple-500/20 text-purple-500 flex items-center gap-1">
                             <Brain className="w-3 h-3" />
                             AI Strategie
+                          </span>
+                        )}
+                        {ad.blueprintTitle && (
+                          <span className="px-3 py-1 rounded-full text-xs font-medium bg-blue-500/10 text-blue-500">
+                            Blueprint
+                          </span>
+                        )}
+                        {campaignLinks.length > 0 && (
+                          <span className="px-3 py-1 rounded-full text-xs font-medium bg-emerald-500/10 text-emerald-600 flex items-center gap-1">
+                            <Layers className="w-3 h-3" />
+                            Kampagnenstrategie {campaignLinks.length}
                           </span>
                         )}
                       </div>
@@ -612,6 +918,25 @@ export function AdsStrategiesPage() {
 
                 {/* Right: Strategy/Performance */}
                 <div className="p-6 bg-gradient-to-br from-muted/5 to-transparent">
+                  {campaignLinks.length > 0 && (
+                    <div className="mb-4 p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20">
+                      <div className="text-xs text-emerald-700 mb-1">Kampagnenstrategie</div>
+                      <div className="text-sm font-semibold text-foreground">
+                        {campaignLinks[0].name || 'Kampagnenstrategie'}
+                      </div>
+                      {campaignLinks.length > 1 && (
+                        <div className="text-xs text-muted-foreground">
+                          + {campaignLinks.length - 1} weitere
+                        </div>
+                      )}
+                      <button
+                        onClick={() => handleOpenCampaignStrategy(campaignLinks[0])}
+                        className="mt-2 text-xs text-emerald-700 hover:text-emerald-800 underline"
+                      >
+                        Strategie ansehen
+                      </button>
+                    </div>
+                  )}
                   {ad.strategy ? (
                     <div>
                       <div className="flex items-center gap-2 mb-4">
@@ -621,10 +946,12 @@ export function AdsStrategiesPage() {
 
                       {/* Confidence */}
                       <div className="mb-4">
-                        <div className="flex items-center justify-between mb-2">
-                          <span className="text-sm text-muted-foreground">AI Confidence</span>
-                          <span className="text-lg font-bold text-purple-500">{ad.strategy.confidence}%</span>
-                        </div>
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="text-sm text-muted-foreground">AI Confidence</span>
+                          <span className="text-lg font-bold text-purple-500">
+                            {ad.strategy.confidence != null ? `${ad.strategy.confidence}%` : '—'}
+                          </span>
+                      </div>
                         <div className="h-2 bg-muted rounded-full overflow-hidden">
                           <div className="h-full bg-gradient-to-r from-purple-500 to-purple-400 rounded-full" style={{ width: `${ad.strategy.confidence}%` }} />
                         </div>
@@ -701,7 +1028,8 @@ export function AdsStrategiesPage() {
                 </div>
               </div>
             </Card>
-          ))}
+            );
+          })}
         </div>
       )}
 
@@ -829,6 +1157,22 @@ export function AdsStrategiesPage() {
           strategy={generatedStrategy}
           ad={selectedAdForStrategy}
           onClose={() => setShowStrategyViewModal(false)}
+        />
+      )}
+
+      {campaignStrategyModal && (
+        <CampaignStrategyViewModal
+          strategy={campaignStrategyModal.strategy}
+          title={campaignStrategyModal.title}
+          ads={campaignStrategyModal.ads.map((ad) => ({
+            id: ad.id,
+            name: ad.name,
+            headline: ad.headline,
+            cta: ad.cta,
+          }))}
+          createdAt={campaignStrategyModal.createdAt}
+          onOpenBuilder={handleOpenBuilderFromCampaignStrategy}
+          onClose={() => setCampaignStrategyModal(null)}
         />
       )}
     </PageShell>

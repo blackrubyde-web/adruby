@@ -180,18 +180,28 @@ export async function handler(event) {
       .eq("is_active", true)
       .maybeSingle();
 
+    const creativePromise = supabaseAdmin
+      .from("generated_creatives")
+      .select("id,outputs,score,created_at,inputs")
+      .eq("user_id", userId)
+      .order("score", { ascending: false })
+      .order("created_at", { ascending: false })
+      .limit(1);
+
     const [
       { data: daily, error: dailyError },
       { data: prevDaily, error: prevError },
       { data: campaignStats, error: campaignError },
       { count: campaignCount, error: countError },
       { data: connection, error: connectionError },
+      { data: creativeRows, error: creativeError },
     ] = await Promise.all([
       dailyPromise,
       prevPromise,
       campaignPromise,
       countPromise,
       connectionPromise,
+      creativePromise,
     ]);
 
     if (dailyError) {
@@ -207,6 +217,7 @@ export async function handler(event) {
     if (campaignError) captureException(campaignError, { function: "overview", stage: "campaign" });
     if (countError) captureException(countError, { function: "overview", stage: "campaign_count" });
     if (connectionError) captureException(connectionError, { function: "overview", stage: "connection" });
+    if (creativeError) captureException(creativeError, { function: "overview", stage: "best_creative" });
 
     const points =
       (daily || []).map((row) => {
@@ -231,6 +242,47 @@ export async function handler(event) {
     const prevRoas = prevSpend > 0 ? prevRevenue / prevSpend : 0;
 
     const topCampaign = campaignStats?.[0];
+    const bestCreativeRow = creativeRows?.[0] || null;
+
+    const bestCreative = (() => {
+      if (!bestCreativeRow) {
+        return {
+          id: "creative-0",
+          name: "No creatives yet",
+          aiScore: 0,
+          ctr: 0,
+          conversions: 0,
+        };
+      }
+      const outputs = bestCreativeRow.outputs || {};
+      const inputs = bestCreativeRow.inputs || {};
+      const brief =
+        outputs?.brief ||
+        inputs?.brief ||
+        null;
+      const creative =
+        Array.isArray(outputs?.creatives) && outputs.creatives.length
+          ? outputs.creatives[0]
+          : Array.isArray(outputs?.variants) && outputs.variants.length
+            ? outputs.variants[0]
+            : null;
+      const name =
+        creative?.copy?.hook ||
+        brief?.product?.name ||
+        "Creative";
+      const aiScore =
+        typeof bestCreativeRow.score === "number" && Number.isFinite(bestCreativeRow.score)
+          ? bestCreativeRow.score
+          : 0;
+
+      return {
+        id: bestCreativeRow.id,
+        name,
+        aiScore,
+        ctr: 0,
+        conversions: 0,
+      };
+    })();
 
     const onboardingSteps = [
       {
@@ -251,7 +303,7 @@ export async function handler(event) {
         id: "generate-creatives",
         title: "Generate AI ad creatives",
         description: "Use AI to create high-performing ad variations",
-        completed: false,
+        completed: Boolean(bestCreativeRow),
         actionLabel: "Generate",
       },
       {
@@ -264,6 +316,12 @@ export async function handler(event) {
     ];
 
     const completedSteps = onboardingSteps.filter((s) => s.completed).length;
+
+    const warning = !connection
+      ? "meta_not_connected"
+      : points.length === 0
+        ? "meta_no_data"
+        : null;
 
     const payload = {
       kpis: {
@@ -291,18 +349,13 @@ export async function handler(event) {
             spend: 0,
             revenue: 0,
           },
-      bestCreative: {
-        id: "creative-0",
-        name: "Meta connection required",
-        aiScore: 0,
-        ctr: 0,
-        conversions: 0,
-      },
+      bestCreative,
       onboarding: {
         completedSteps,
         totalSteps: onboardingSteps.length,
         steps: onboardingSteps,
       },
+      warning,
     };
 
     setCachedOverview(cacheKey, payload);

@@ -1,3 +1,4 @@
+import { useMemo } from 'react';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 import { Sun, Moon, User, Settings, HelpCircle, Coins, Menu } from 'lucide-react';
 import { useTheme } from './ThemeProvider';
@@ -18,19 +19,37 @@ interface HeaderProps {
   currentPage?: PageType;
   currentCredits?: number;
   maxCredits?: number;
+  avatarUrl?: string | null;
+  displayName?: string | null;
+  email?: string | null;
 }
 
-export function Header({ sidebarWidth = 0, onToggleMobileSidebar, onNavigate, currentCredits, maxCredits }: HeaderProps) {
+export function Header({
+  sidebarWidth = 0,
+  onToggleMobileSidebar,
+  onNavigate,
+  currentCredits,
+  maxCredits,
+  avatarUrl,
+  displayName,
+  email,
+}: HeaderProps) {
   const { theme, toggleTheme } = useTheme();
   const credits = currentCredits ?? 2450;
   const creditsLabel = maxCredits
     ? `${credits.toLocaleString()} / ${maxCredits.toLocaleString()}`
     : credits.toLocaleString();
+  const initials = useMemo(() => {
+    const base = displayName || email || 'U';
+    const parts = base.split(' ').filter(Boolean);
+    if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+    return `${parts[0][0] || ''}${parts[1][0] || ''}`.toUpperCase();
+  }, [displayName, email]);
   
   return (
     <div 
-      className="h-16 backdrop-blur-xl bg-card/80 border-b border-border/50 flex items-center justify-between px-4 md:px-8 fixed top-0 right-0 z-10 transition-all duration-300 shadow-lg"
-      style={{ left: sidebarWidth > 0 ? `${sidebarWidth}px` : '0' }}
+      className="h-16 backdrop-blur-xl bg-card/80 border-b border-border/50 flex items-center justify-between px-4 md:px-8 fixed top-0 right-0 z-10 transition-[left] duration-300 shadow-lg"
+      style={{ left: sidebarWidth > 0 ? `${sidebarWidth}px` : '0', willChange: 'left' }}
     >
       {/* Left Side */}
       <div className="flex items-center gap-3">
@@ -70,8 +89,8 @@ export function Header({ sidebarWidth = 0, onToggleMobileSidebar, onNavigate, cu
           <DropdownMenuTrigger asChild>
             <button className="hover:opacity-80 transition-opacity cursor-pointer">
               <Avatar className="cursor-pointer w-10 h-10">
-                <AvatarImage src="" />
-                <AvatarFallback className="bg-primary text-primary-foreground">PM</AvatarFallback>
+                <AvatarImage src={avatarUrl || ''} />
+                <AvatarFallback className="bg-primary text-primary-foreground">{initials}</AvatarFallback>
               </Avatar>
             </button>
           </DropdownMenuTrigger>

@@ -11,12 +11,22 @@ import { requireActiveSubscription } from "./_shared/entitlements.js";
 import { fetchGraph, postGraph, resolveMetaAccessToken } from "./_shared/meta.js";
 import { supabaseAdmin } from "./_shared/clients.js";
 
-const ACTIONS = new Set(["pause", "duplicate", "increase", "decrease", "kill"]);
+const ACTIONS = new Set([
+  "pause",
+  "resume",
+  "duplicate",
+  "increase",
+  "decrease",
+  "delete",
+  "kill",
+  "activate",
+]);
 
 function normalizeAction(action) {
   const value = String(action || "").toLowerCase();
   if (!ACTIONS.has(value)) return null;
   if (value === "kill") return "pause";
+  if (value === "activate") return "resume";
   return value;
 }
 
@@ -115,15 +125,22 @@ export async function handler(event) {
       return badRequest("Meta access token not available. Connect Meta first.");
     }
 
-    if (action === "pause") {
+    if (action === "pause" || action === "resume" || action === "delete") {
+      const status =
+        action === "pause" ? "PAUSED" : action === "resume" ? "ACTIVE" : "DELETED";
       const response = await withRetries(() =>
-        postGraph(`/${campaignId}`, token, { status: "PAUSED" })
+        postGraph(`/${campaignId}`, token, { status })
       );
+      await supabaseAdmin
+        .from("meta_campaigns")
+        .update({ status })
+        .eq("user_id", userId)
+        .eq("facebook_campaign_id", campaignId);
       await logMetaAction({
         user_id: userId,
         campaign_id: campaignId,
         action,
-        params: { status: "PAUSED" },
+        params: { status },
         response,
         success: true,
       });

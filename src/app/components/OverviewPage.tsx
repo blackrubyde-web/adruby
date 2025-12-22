@@ -1,4 +1,4 @@
-import { lazy, Suspense, useEffect, useState } from 'react';
+import { lazy, Suspense, useEffect, useMemo, useState } from 'react';
 import {
   TrendingUp,
   TrendingDown,
@@ -17,6 +17,8 @@ import {
 import { toast } from 'sonner';
 import { useOverview } from '../hooks/useOverview';
 import { PageShell, HeroHeader, Card, Chip } from './layout';
+import { useAuthActions, useAuthState } from '../contexts/AuthContext';
+import { supabase } from '../lib/supabaseClient';
 
 const LazySpendRevenueChart = lazy(() =>
   import('./SpendRevenueChart').then((mod) => ({ default: mod.SpendRevenueChart }))
@@ -52,6 +54,10 @@ function ChartPlaceholder({ title }: { title: string }) {
 export function OverviewPage({ onNavigate }: OverviewPageProps) {
   const [dateFilter, setDateFilter] = useState<DateFilter>('7d');
   const [channelFilter, setChannelFilter] = useState<ChannelFilter>('meta');
+  const { user, profile } = useAuthState();
+  const { refreshProfile } = useAuthActions();
+  const [isEditingGoals, setIsEditingGoals] = useState(false);
+  const [isSavingGoals, setIsSavingGoals] = useState(false);
   
   // Fetch data with hook
   const { data, loading, error } = useOverview(dateFilter, channelFilter);
@@ -113,6 +119,35 @@ export function OverviewPage({ onNavigate }: OverviewPageProps) {
   const completedSteps = checklistSteps.filter(s => s.completed).length;
   const totalSteps = checklistSteps.length;
   const progressPercentage = (completedSteps / totalSteps) * 100;
+
+  const profileSettings = useMemo(() => {
+    const raw = profile?.settings;
+    if (raw && typeof raw === 'object') return raw as Record<string, unknown>;
+    return {};
+  }, [profile?.settings]);
+
+  const goalDefaults = useMemo(() => {
+    const goals = profileSettings.goals as { roasTarget?: number; spendCap?: number; revenueGoal?: number } | undefined;
+    return {
+      roasTarget: goals?.roasTarget ?? 3.5,
+      spendCap: goals?.spendCap ?? 6000,
+      revenueGoal: goals?.revenueGoal ?? 18000,
+    };
+  }, [profileSettings]);
+
+  const [goalDraft, setGoalDraft] = useState({
+    roasTarget: goalDefaults.roasTarget.toString(),
+    spendCap: goalDefaults.spendCap.toString(),
+    revenueGoal: goalDefaults.revenueGoal.toString(),
+  });
+
+  useEffect(() => {
+    setGoalDraft({
+      roasTarget: goalDefaults.roasTarget.toString(),
+      spendCap: goalDefaults.spendCap.toString(),
+      revenueGoal: goalDefaults.revenueGoal.toString(),
+    });
+  }, [goalDefaults]);
 
   const formatCurrency = (value: number) =>
     new Intl.NumberFormat('de-DE', {
@@ -182,6 +217,20 @@ export function OverviewPage({ onNavigate }: OverviewPageProps) {
 
   const metaStep = data?.onboarding?.steps?.find((step) => step.id === 'connect-meta');
   const metaConnected = Boolean(metaStep?.completed);
+  const warning = data?.warning || null;
+  const warningMessage = useMemo(() => {
+    if (!warning) return null;
+    if (warning === 'meta_not_connected') {
+      return 'Meta ist noch nicht verbunden. Verbinde dein Konto, um Live-Daten und Scores zu sehen.';
+    }
+    if (warning === 'meta_no_data') {
+      return 'Keine Meta-Daten gefunden. Bitte Sync starten, sobald Meta verbunden ist.';
+    }
+    if (warning === 'meta_insights_daily_missing') {
+      return 'Meta-Datenbank-Tabellen fehlen. Bitte Migration ausführen (meta_insights_daily).';
+    }
+    return 'Daten sind aktuell unvollständig. Bitte später erneut versuchen.';
+  }, [warning]);
 
   const actions = [
     {
@@ -218,13 +267,60 @@ export function OverviewPage({ onNavigate }: OverviewPageProps) {
     },
   ];
 
-  const roasTarget = 3.5;
-  const spendCap = 6000;
-  const revenueGoal = 18000;
+  const roasTarget = goalDefaults.roasTarget;
+  const spendCap = goalDefaults.spendCap;
+  const revenueGoal = goalDefaults.revenueGoal;
 
   const spendProgress = Math.min(100, ((data?.kpis.spend ?? 0) / spendCap) * 100);
   const revenueProgress = Math.min(100, ((data?.kpis.revenue ?? 0) / revenueGoal) * 100);
   const roasProgress = Math.min(100, ((data?.kpis.roas ?? 0) / roasTarget) * 100);
+
+  const handleOpenGoals = () => {
+    setGoalDraft({
+      roasTarget: roasTarget.toString(),
+      spendCap: spendCap.toString(),
+      revenueGoal: revenueGoal.toString(),
+    });
+    setIsEditingGoals(true);
+  };
+
+  const handleSaveGoals = async () => {
+    if (!user?.id) {
+      toast.error('Bitte zuerst anmelden.');
+      return;
+    }
+    const toNumber = (value: string, fallback: number) => {
+      const parsed = Number(value.replace(',', '.'));
+      return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback;
+    };
+    const nextGoals = {
+      roasTarget: toNumber(goalDraft.roasTarget, roasTarget),
+      spendCap: toNumber(goalDraft.spendCap, spendCap),
+      revenueGoal: toNumber(goalDraft.revenueGoal, revenueGoal),
+    };
+
+    setIsSavingGoals(true);
+    try {
+      const { error } = await supabase
+        .from('user_profiles')
+        .update({
+          settings: {
+            ...profileSettings,
+            goals: nextGoals,
+          },
+        })
+        .eq('id', user.id);
+      if (error) throw error;
+      await refreshProfile();
+      setIsEditingGoals(false);
+      toast.success('Ziele gespeichert');
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'Ziele konnten nicht gespeichert werden.';
+      toast.error(message);
+    } finally {
+      setIsSavingGoals(false);
+    }
+  };
 
   return (
     <PageShell>
@@ -239,6 +335,12 @@ export function OverviewPage({ onNavigate }: OverviewPageProps) {
           </div>
         }
       />
+
+      {warningMessage && (
+        <Card className="p-4 border border-amber-500/30 bg-amber-500/10 text-amber-700 mb-6">
+          {warningMessage}
+        </Card>
+      )}
 
       {/* Filters */}
       <div className="flex items-center gap-3">
@@ -449,7 +551,7 @@ export function OverviewPage({ onNavigate }: OverviewPageProps) {
             </div>
 
             <button
-              onClick={() => toast.info('Goal settings coming soon')}
+              onClick={handleOpenGoals}
               className="w-full px-3 py-2 bg-background hover:bg-muted border border-border text-xs font-semibold rounded-lg transition-all"
             >
               Edit goals
@@ -667,6 +769,78 @@ export function OverviewPage({ onNavigate }: OverviewPageProps) {
           </div>
         </div>
       </div>
+
+      {isEditingGoals && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4">
+          <div className="w-full max-w-lg rounded-2xl bg-card border border-border/50 shadow-xl p-6">
+            <div className="flex items-start justify-between mb-4">
+              <div>
+                <h3 className="text-lg font-semibold text-foreground">Edit goals</h3>
+                <p className="text-sm text-muted-foreground">Update your targets for this workspace.</p>
+              </div>
+              <button
+                onClick={() => setIsEditingGoals(false)}
+                className="h-9 w-9 rounded-lg border border-border/60 text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-colors"
+                aria-label="Close"
+              >
+                ×
+              </button>
+            </div>
+
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-semibold text-foreground mb-2">ROAS target</label>
+                <input
+                  type="number"
+                  min="0"
+                  step="0.1"
+                  value={goalDraft.roasTarget}
+                  onChange={(e) => setGoalDraft({ ...goalDraft, roasTarget: e.target.value })}
+                  className="w-full px-4 py-3 bg-muted/50 border border-border/50 rounded-xl text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-semibold text-foreground mb-2">Spend cap (€)</label>
+                <input
+                  type="number"
+                  min="0"
+                  step="1"
+                  value={goalDraft.spendCap}
+                  onChange={(e) => setGoalDraft({ ...goalDraft, spendCap: e.target.value })}
+                  className="w-full px-4 py-3 bg-muted/50 border border-border/50 rounded-xl text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-semibold text-foreground mb-2">Revenue goal (€)</label>
+                <input
+                  type="number"
+                  min="0"
+                  step="1"
+                  value={goalDraft.revenueGoal}
+                  onChange={(e) => setGoalDraft({ ...goalDraft, revenueGoal: e.target.value })}
+                  className="w-full px-4 py-3 bg-muted/50 border border-border/50 rounded-xl text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
+                />
+              </div>
+            </div>
+
+            <div className="flex items-center justify-end gap-3 mt-6">
+              <button
+                onClick={() => setIsEditingGoals(false)}
+                className="px-4 py-2.5 bg-muted hover:bg-muted/80 rounded-xl text-sm font-semibold"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleSaveGoals}
+                disabled={isSavingGoals}
+                className="px-5 py-2.5 bg-primary text-primary-foreground rounded-xl text-sm font-semibold hover:scale-105 transition-all disabled:opacity-60"
+              >
+                {isSavingGoals ? 'Saving…' : 'Save goals'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </PageShell>
   );
 }

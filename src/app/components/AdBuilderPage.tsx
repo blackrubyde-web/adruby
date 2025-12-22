@@ -85,6 +85,8 @@ export function AdBuilderPage() {
   const overlayRef = useRef<HTMLDivElement | null>(null);
   const cancelButtonRef = useRef<HTMLButtonElement | null>(null);
   const runIdRef = useRef(0);
+  const draftSaveTimeoutRef = useRef<number | null>(null);
+  const lastDraftPayloadRef = useRef<string | null>(null);
 
   const [generatedCopy, setGeneratedCopy] = useState<{headline: string, description: string, cta: string}[]>([]);
   const [selectedCopy, setSelectedCopy] = useState<number | null>(null);
@@ -199,6 +201,10 @@ export function AdBuilderPage() {
   }, [draftTimestamp, maybeSetPendingDraft, normalizeStep]);
 
   useEffect(() => {
+    if (draftSaveTimeoutRef.current) {
+      window.clearTimeout(draftSaveTimeoutRef.current);
+      draftSaveTimeoutRef.current = null;
+    }
     const hasFormData = Object.values(state.formData).some(
       (value) => value && value !== 'conversions'
     );
@@ -207,6 +213,7 @@ export function AdBuilderPage() {
 
     if (!hasFormData && !hasSelections && state.currentStep === 1) {
       if (pendingDraft) return;
+      lastDraftPayloadRef.current = null;
       localStorage.removeItem(DRAFT_KEY);
       return;
     }
@@ -221,7 +228,20 @@ export function AdBuilderPage() {
       selectedCTA,
       updatedAt: new Date().toISOString()
     };
-    localStorage.setItem(DRAFT_KEY, JSON.stringify(draft));
+    const payload = JSON.stringify(draft);
+    if (payload === lastDraftPayloadRef.current) return;
+    // Debounce draft saves to keep typing smooth.
+    draftSaveTimeoutRef.current = window.setTimeout(() => {
+      localStorage.setItem(DRAFT_KEY, payload);
+      lastDraftPayloadRef.current = payload;
+      draftSaveTimeoutRef.current = null;
+    }, 350);
+    return () => {
+      if (draftSaveTimeoutRef.current) {
+        window.clearTimeout(draftSaveTimeoutRef.current);
+        draftSaveTimeoutRef.current = null;
+      }
+    };
   }, [
     generatedCopy,
     selectedCopy,
@@ -581,13 +601,16 @@ export function AdBuilderPage() {
       const analyzeRes = await hookAnalyze(fd);
       if (runId !== runIdRef.current) return;
       setAnalysisWarning(analyzeRes?.warning ?? null);
+      const analyzeImagePath =
+        analyzeRes?.image && typeof analyzeRes.image === 'object' && 'path' in analyzeRes.image
+          ? String(analyzeRes.image.path || '')
+          : '';
+      const resolvedImagePath = analyzeImagePath || hookImageMeta?.path || null;
       const generateRes = await hookGenerate({
         brief: analyzeRes.brief,
-        hasImage: Boolean(imageFile || hookImageMeta?.path),
+        hasImage: Boolean(imageFile || resolvedImagePath),
         imagePath:
-          hookImageMeta && typeof hookImageMeta === 'object' && 'path' in hookImageMeta
-            ? String(hookImageMeta.path || '')
-            : null,
+          resolvedImagePath,
         outputMode: 'pro',
         style_mode: 'default',
         visual_style: selectedVisualStyle || undefined,

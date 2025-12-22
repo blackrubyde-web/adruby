@@ -43,4 +43,5 @@ export type OverviewResponse = {
       actionLabel: string;
     }>;
   };
+  warning?: string | null;
 };

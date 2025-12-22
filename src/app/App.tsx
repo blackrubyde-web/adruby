@@ -1,4 +1,4 @@
-import { lazy, Suspense, useCallback, useEffect, useState } from 'react';
+import { lazy, Suspense, memo, useCallback, useEffect, useMemo, useState } from 'react';
 import { Sidebar } from './components/Sidebar';
 import { Header } from './components/Header';
 import { Footer } from './components/Footer';
@@ -8,6 +8,9 @@ const FeaturesPage = lazy(() => import('./components/FeaturesPage').then((mod) =
 const PricingPage = lazy(() => import('./components/PricingPage').then((mod) => ({ default: mod.PricingPage })));
 const AdsStrategiesPage = lazy(() => import('./components/AdsStrategiesPage').then((mod) => ({ default: mod.AdsStrategiesPage })));
 const CampaignsPage = lazy(() => import('./components/CampaignsPage').then((mod) => ({ default: mod.CampaignsPage })));
+const CampaignBuilderPage = lazy(() =>
+  import('./components/CampaignBuilderPage').then((mod) => ({ default: mod.CampaignBuilderPage }))
+);
 const SettingsPage = lazy(() => import('./components/SettingsPage').then((mod) => ({ default: mod.SettingsPage })));
 const AffiliatePage = lazy(() => import('./components/AffiliatePage').then((mod) => ({ default: mod.AffiliatePage })));
 const ProfilePage = lazy(() => import('./components/ProfilePage').then((mod) => ({ default: mod.ProfilePage })));
@@ -82,6 +85,7 @@ export type PageType =
   | 'library'
   | 'strategies' 
   | 'campaigns' 
+  | 'campaign-builder'
   | 'aianalysis' 
   | 'settings' 
   | 'affiliate' 
@@ -105,6 +109,7 @@ const PAGE_PATHS: Record<PageType, string> = {
   library: '/library',
   strategies: '/strategies',
   campaigns: '/campaigns',
+  'campaign-builder': '/campaign-builder',
   aianalysis: '/aianalysis',
   settings: '/settings',
   affiliate: '/affiliate',
@@ -214,6 +219,132 @@ function FullScreenError({
   );
 }
 
+const DashboardPageContent = memo(function DashboardPageContent({
+  currentPage,
+  pageFallback,
+  onNavigate,
+  onCreateAd,
+}: {
+  currentPage: PageType;
+  pageFallback: JSX.Element;
+  onNavigate: (page: PageType, query?: Record<string, string | undefined | null>) => void;
+  onCreateAd: () => void;
+}) {
+  switch (currentPage) {
+    case 'dashboard':
+      return (
+        <div className="pt-16 min-h-screen">
+          <Suspense fallback={pageFallback}>
+            <OverviewPage onNavigate={(page, query) => onNavigate(page as PageType, query)} />
+          </Suspense>
+          <QuickActionsButton onCreateCampaign={onCreateAd} />
+        </div>
+      );
+    case 'analytics':
+      return (
+        <div className="pt-16 min-h-screen">
+          <Suspense fallback={pageFallback}>
+            <LazyAnalyticsPage />
+          </Suspense>
+          <Footer />
+        </div>
+      );
+    case 'strategies':
+      return (
+        <div className="pt-16 min-h-screen">
+          <Suspense fallback={pageFallback}>
+            <AdsStrategiesPage />
+          </Suspense>
+          <Footer />
+        </div>
+      );
+    case 'campaigns':
+      return (
+        <div className="pt-16 min-h-screen">
+          <Suspense fallback={pageFallback}>
+            <CampaignsPage />
+          </Suspense>
+          <Footer />
+        </div>
+      );
+    case 'campaign-builder':
+      return (
+        <div className="pt-16 min-h-screen">
+          <Suspense fallback={pageFallback}>
+            <CampaignBuilderPage />
+          </Suspense>
+          <Footer />
+        </div>
+      );
+    case 'aianalysis':
+      return (
+        <div className="pt-16 min-h-screen">
+          <Suspense fallback={pageFallback}>
+            <LazyAIAnalysisPage />
+          </Suspense>
+          <Footer />
+        </div>
+      );
+    case 'settings':
+      return (
+        <div className="pt-16 min-h-screen">
+          <Suspense fallback={pageFallback}>
+            <SettingsPage />
+          </Suspense>
+          <Footer />
+        </div>
+      );
+    case 'affiliate':
+      return (
+        <div className="pt-16 min-h-screen">
+          <Suspense fallback={pageFallback}>
+            <AffiliatePage />
+          </Suspense>
+          <Footer />
+        </div>
+      );
+    case 'profile':
+      return (
+        <div className="pt-16 min-h-screen">
+          <Suspense fallback={pageFallback}>
+            <ProfilePage onNavigate={onNavigate} />
+          </Suspense>
+          <Footer />
+        </div>
+      );
+    case 'help':
+      return (
+        <div className="pt-16 min-h-screen">
+          <Suspense fallback={pageFallback}>
+            <HelpSupportPage />
+          </Suspense>
+          <Footer />
+        </div>
+      );
+    case 'adbuilder':
+    case 'creative-builder':
+      return (
+        <div className="pt-16 min-h-screen">
+          <Suspense fallback={pageFallback}>
+            <LazyAdBuilderPage />
+          </Suspense>
+          <Footer />
+        </div>
+      );
+    case 'library':
+      return (
+        <div className="pt-16 min-h-screen">
+          <Suspense fallback={pageFallback}>
+            <CreativeLibraryPage />
+          </Suspense>
+          <Footer />
+        </div>
+      );
+    default:
+      return null;
+  }
+});
+
 const LazyAdBuilderPage = lazy(() =>
   import('./components/AdBuilderPage').then((mod) => ({ default: mod.AdBuilderPage }))
 );
@@ -288,17 +419,40 @@ function AppContent() {
 
   // Auth + subscription guards
   useEffect(() => {
-  // Wait until auth init is completed and profile is available before redirecting.
-  if (!isAuthReady) return;
-  if (user && isLoading) return;
-  if (user && profile == null) return; // ensure profile loaded so onboarding flag is respected
-  if (profileError) return;
+    // Wait until auth init is completed and profile is available before redirecting.
+    if (!isAuthReady) return;
+    if (user && isLoading) return;
+    if (user && profile == null) return; // ensure profile loaded so onboarding flag is respected
+    if (profileError) return;
 
     let holdAuthRedirect = false;
     try {
       holdAuthRedirect = sessionStorage.getItem(AUTH_HOLD_KEY) === '1';
     } catch {
       holdAuthRedirect = false;
+    }
+
+    if (user && PUBLIC_PAGES.has(currentPage)) {
+      let oauthRedirect = null;
+      try {
+        oauthRedirect = sessionStorage.getItem('adruby_oauth_redirect');
+      } catch {
+        oauthRedirect = null;
+      }
+      const safePath = safeRedirectPath(oauthRedirect);
+      if (safePath) {
+        const targetPath = new URL(safePath, window.location.origin).pathname;
+        const targetPage = pageFromPathname(targetPath);
+        if (allowRedirect(PAGE_PATHS[targetPage])) {
+          try {
+            sessionStorage.removeItem('adruby_oauth_redirect');
+          } catch {
+            // ignore
+          }
+          go(targetPage, { replace: true });
+          return;
+        }
+      }
     }
 
     // Redirect signed-in users away from auth pages
@@ -335,9 +489,16 @@ function AppContent() {
     }
   }, [billing.isSubscribed, currentPage, go, isAuthReady, isLoading, profile, profileError, user]);
 
-  const handleCreateAd = () => {
+  const handleCreateAd = useCallback(() => {
     go('adbuilder');
-  };
+  }, [go]);
+
+  const handleNavigate = useCallback(
+    (page: PageType, query?: Record<string, string | undefined | null>) => {
+      go(page, { query });
+    },
+    [go]
+  );
 
   const handleGoogleLogin = useCallback(
     async (redirectOverride?: string) => {
@@ -363,8 +524,9 @@ function AppContent() {
   }, [go]);
 
   const isProtectedPage = !PUBLIC_PAGES.has(currentPage);
-  const pageFallback = (
-    <FullScreenLoader title="Loading page..." subtitle="Preparing your workspace" />
+  const pageFallback = useMemo(
+    () => <FullScreenLoader title="Loading page..." subtitle="Preparing your workspace" />,
+    []
   );
 
   if (!isAuthReady && isProtectedPage) {
@@ -565,130 +727,28 @@ function AppContent() {
           }}
         />
 
-          {/* Main Content - Blurred when mobile sidebar is open */}
+          {/* Main Content */}
         <div 
-          className={`flex-1 transition-all duration-300 md:ml-0 ${isMobileSidebarOpen ? 'blur-sm pointer-events-none' : ''}`}
-          style={{ marginLeft: isDesktop ? `${sidebarWidth}px` : '0' }}
+          className={`flex-1 transition-[margin-left] duration-300 md:ml-0 ${isMobileSidebarOpen ? 'pointer-events-none' : ''}`}
+          style={{ marginLeft: isDesktop ? `${sidebarWidth}px` : '0', willChange: isDesktop ? 'margin-left' : undefined }}
         >
           {/* Header */}
           <Header 
             sidebarWidth={isDesktop ? sidebarWidth : 0} 
             onToggleMobileSidebar={() => setIsMobileSidebarOpen(!isMobileSidebarOpen)}
             onNavigate={(page) => go(page)}
+            currentCredits={profile?.credits ?? undefined}
+            avatarUrl={profile?.avatar_url ?? null}
+            displayName={profile?.full_name ?? null}
+            email={profile?.email ?? user?.email ?? null}
           />
 
-          {/* Page Content */}
-          {currentPage === 'dashboard' && (
-            <div className="pt-16 min-h-screen">
-              <Suspense fallback={pageFallback}>
-                <OverviewPage onNavigate={(page, query) => go(page as PageType, { query })} />
-              </Suspense>
-            </div>
-          )}
-
-          {currentPage === 'analytics' && (
-            <div className="pt-16 min-h-screen">
-              <Suspense fallback={pageFallback}>
-                <LazyAnalyticsPage />
-              </Suspense>
-              <Footer />
-            </div>
-          )}
-
-          {currentPage === 'strategies' && (
-            <div className="pt-16 min-h-screen">
-              <Suspense fallback={pageFallback}>
-                <AdsStrategiesPage />
-              </Suspense>
-              <Footer />
-            </div>
-          )}
-
-          {currentPage === 'campaigns' && (
-            <div className="pt-16 min-h-screen">
-              <Suspense fallback={pageFallback}>
-                <CampaignsPage />
-              </Suspense>
-              <Footer />
-            </div>
-          )}
-
-          {currentPage === 'aianalysis' && (
-            <div className="pt-16 min-h-screen">
-              <Suspense fallback={pageFallback}>
-                <LazyAIAnalysisPage />
-              </Suspense>
-              <Footer />
-            </div>
-          )}
-
-          {currentPage === 'settings' && (
-            <div className="pt-16 min-h-screen">
-              <Suspense fallback={pageFallback}>
-                <SettingsPage />
-              </Suspense>
-              <Footer />
-            </div>
-          )}
-
-          {currentPage === 'affiliate' && (
-            <div className="pt-16 min-h-screen">
-              <Suspense fallback={pageFallback}>
-                <AffiliatePage />
-              </Suspense>
-              <Footer />
-            </div>
-          )}
-
-          {currentPage === 'profile' && (
-            <div className="pt-16 min-h-screen">
-              <Suspense fallback={pageFallback}>
-                <ProfilePage />
-              </Suspense>
-              <Footer />
-            </div>
-          )}
-
-          {currentPage === 'help' && (
-            <div className="pt-16 min-h-screen">
-              <Suspense fallback={pageFallback}>
-                <HelpSupportPage />
-              </Suspense>
-              <Footer />
-            </div>
-          )}
-
-          {currentPage === 'adbuilder' && (
-            <div className="pt-16 min-h-screen">
-              <Suspense fallback={pageFallback}>
-                <LazyAdBuilderPage />
-              </Suspense>
-              <Footer />
-            </div>
-          )}
-
-          {currentPage === 'library' && (
-            <div className="pt-16 min-h-screen">
-              <Suspense fallback={pageFallback}>
-                <CreativeLibraryPage />
-              </Suspense>
-              <Footer />
-            </div>
-          )}
-
-          {currentPage === 'creative-builder' && (
-            <div className="pt-16 min-h-screen">
-              <Suspense fallback={pageFallback}>
-                <LazyAdBuilderPage />
-              </Suspense>
-              <Footer />
-            </div>
-          )}
-          
-          {/* Quick Actions Button */}
-          {currentPage === 'dashboard' && (
-            <QuickActionsButton onCreateCampaign={handleCreateAd} />
-          )}
+          <DashboardPageContent
+            currentPage={currentPage}
+            pageFallback={pageFallback}
+            onNavigate={handleNavigate}
+            onCreateAd={handleCreateAd}
+          />
         </div>
       </div>
       )}

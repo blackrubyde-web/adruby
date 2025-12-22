@@ -128,9 +128,12 @@ async function updateUserFromSubscription(subscription, source = 'unknown') {
 
     const payload = {
       stripe_customer_id: customerId,
+      stripe_subscription_id: subscription.id || null,
+      subscription_status: status,
       trial_status: trialStatus,
       trial_started_at: trialStart,
       trial_expires_at: trialEnd,
+      trial_ends_at: trialEnd,
       payment_verified: paymentVerified,
       onboarding_completed: onboardingCompleted,
       verification_method: 'stripe_card'
@@ -386,6 +389,19 @@ export async function handler(event) {
 
   initTelemetry();
 
+  if (!stripe) {
+    console.error('[Webhook] Stripe client not configured');
+    return serverError('Stripe not configured');
+  }
+
+  if (!process.env.SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) {
+    console.error('[Webhook] Supabase env missing', {
+      hasUrl: !!process.env.SUPABASE_URL,
+      hasServiceRole: !!process.env.SUPABASE_SERVICE_ROLE_KEY
+    });
+    return serverError('Supabase not configured');
+  }
+
   const sig = event.headers['stripe-signature'] || event.headers['Stripe-Signature'];
   const secret = process.env.STRIPE_WEBHOOK_SECRET;
 
@@ -394,9 +410,18 @@ export async function handler(event) {
     return serverError('Missing STRIPE_WEBHOOK_SECRET');
   }
 
+  if (!sig) {
+    console.error('[Webhook] Missing Stripe signature header');
+    return withCors({ statusCode: 400 });
+  }
+
   let stripeEvent;
 
   try {
+    if (!event.body) {
+      console.error('[Webhook] Missing request body');
+      return withCors({ statusCode: 400 });
+    }
     const rawBody = event.isBase64Encoded ? Buffer.from(event.body, 'base64') : event.body;
     stripeEvent = stripe.webhooks.constructEvent(rawBody, sig, secret);
   } catch (err) {

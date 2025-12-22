@@ -7,6 +7,8 @@ export type UserProfile = {
   email: string | null;
   full_name?: string | null;
   role?: string | null;
+  avatar_url?: string | null;
+  settings?: Record<string, unknown> | null;
   credits?: number | null;
   stripe_customer_id?: string | null;
   stripe_subscription_id?: string | null;
@@ -86,6 +88,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           'email',
           'full_name',
           'role',
+          'avatar_url',
+          'settings',
           'credits',
           'stripe_customer_id',
           'stripe_subscription_id',
@@ -247,6 +251,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const origin = window.location.origin;
     const desiredRedirect = redirectPath || '/dashboard';
     const defaultRedirectTo = `${origin}/auth/callback?redirect=${encodeURIComponent(desiredRedirect)}`;
+    try {
+      sessionStorage.setItem('adruby_oauth_redirect', desiredRedirect);
+    } catch {
+      // ignore storage errors
+    }
 
     let redirectTo = defaultRedirectTo;
     const envRedirect =
@@ -254,6 +263,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (envRedirect) {
       try {
         const url = new URL(envRedirect);
+        if (!url.pathname || url.pathname === '/' || url.pathname === '') {
+          url.pathname = '/auth/callback';
+        } else if (!url.pathname.includes('/auth/callback')) {
+          url.pathname = '/auth/callback';
+        }
         if (!url.searchParams.get('redirect')) {
           url.searchParams.set('redirect', desiredRedirect);
         }

@@ -60,7 +60,13 @@ export async function fetchMetaCampaigns() {
   }>("/api/meta-campaigns");
 }
 
-export type MetaApplyAction = "pause" | "duplicate" | "increase" | "decrease";
+export type MetaApplyAction =
+  | "pause"
+  | "resume"
+  | "delete"
+  | "duplicate"
+  | "increase"
+  | "decrease";
 
 export async function applyMetaAction(params: {
   campaignId: string;

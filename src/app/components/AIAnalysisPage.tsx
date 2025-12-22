@@ -572,6 +572,40 @@ export function AIAnalysisPage() {
     }
   };
 
+  const handleExportReport = () => {
+    const payload = {
+      generatedAt: new Date().toISOString(),
+      range: timeRange,
+      totals: {
+        campaigns: campaigns.length,
+        adSets: totalAdSets,
+        ads: totalAds,
+        spend: totalSpend,
+        revenue: totalRevenue,
+        roas: totalRoas,
+        conversions: totalConversions,
+      },
+      recommendations: {
+        kill: killAds.length,
+        duplicate: duplicateAds.length,
+        increase: increaseAds.length,
+        decrease: decreaseAds.length,
+      },
+      campaigns: filteredCampaigns,
+    };
+
+    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `ai-analysis-${timeRange}-${new Date().toISOString().slice(0, 10)}.json`;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    URL.revokeObjectURL(url);
+    toast.success('Report exportiert');
+  };
+
   // Get all AI recommendations for the panel
   const getAllRecommendations = () => {
     const recommendations: { ad: Ad; campaign: string; adSet: string }[] = [];
@@ -613,7 +647,10 @@ export function AIAnalysisPage() {
               <RefreshCw className={`w-4 h-4 ${isSyncing ? 'animate-spin' : ''}`} />
               <span className="text-sm font-medium">{isSyncing ? 'Cancel Sync' : 'Sync Data'}</span>
             </button>
-            <button className="px-6 py-3 bg-gradient-to-r from-primary to-primary/80 text-primary-foreground rounded-xl hover:scale-105 transition-all duration-300 shadow-lg shadow-primary/30 flex items-center gap-2">
+            <button
+              onClick={handleExportReport}
+              className="px-6 py-3 bg-gradient-to-r from-primary to-primary/80 text-primary-foreground rounded-xl hover:scale-105 transition-all duration-300 shadow-lg shadow-primary/30 flex items-center gap-2"
+            >
               <Download className="w-4 h-4" />
               <span>Export Report</span>
             </button>

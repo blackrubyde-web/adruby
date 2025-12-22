@@ -5,6 +5,7 @@ import { Badge } from './ui/badge';
 import { MiniSparkline } from './MiniSparkline';
 import { Search, Play, Pause, Trash2, MoreVertical } from 'lucide-react';
 import { useState } from 'react';
+import { toast } from 'sonner';
 
 export interface CampaignRowInput {
   id: string;
@@ -16,6 +17,9 @@ export interface CampaignRowInput {
   conversions?: number;
   roas?: number;
 }
+
+export type CampaignAction = 'view' | 'pause' | 'resume' | 'delete' | 'duplicate';
+export type CampaignBulkAction = 'pause' | 'resume' | 'delete';
 
 interface Campaign {
   id: string;
@@ -111,7 +115,15 @@ const campaigns: Campaign[] = [
   },
 ];
 
-export function CampaignsTable({ campaigns: externalCampaigns }: { campaigns?: CampaignRowInput[] }) {
+export function CampaignsTable({
+  campaigns: externalCampaigns,
+  onAction,
+  onBulkAction,
+}: {
+  campaigns?: CampaignRowInput[];
+  onAction?: (campaignId: string, action: CampaignAction) => void | Promise<void>;
+  onBulkAction?: (campaignIds: string[], action: CampaignBulkAction) => void | Promise<void>;
+}) {
   const [selectedCampaigns, setSelectedCampaigns] = useState<string[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
@@ -129,13 +141,27 @@ export function CampaignsTable({ campaigns: externalCampaigns }: { campaigns?: C
 
   const mappedExternal: Campaign[] = (externalCampaigns || []).map((row) => {
     const spend = row.spend ?? 0;
+    const status = String(row.status || '').toLowerCase();
+    const normalizedStatus =
+      status === 'ended' ||
+      status === 'completed' ||
+      status === 'deleted' ||
+      status === 'archived'
+        ? 'completed'
+        : status === 'active'
+        ? 'live'
+        : status === 'paused'
+        ? 'paused'
+        : status === 'scheduled'
+        ? 'scheduled'
+        : 'paused';
     return {
       id: row.id,
       name: row.name,
       date: now.toLocaleDateString('en-US', { day: '2-digit', month: 'short', year: 'numeric' }),
       time: now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }),
       progress: Math.min(100, Math.max(0, Math.round((row.roas ?? 0) * 12))),
-      status: row.status === 'ended' ? 'completed' : row.status === 'active' ? 'live' : 'paused',
+      status: normalizedStatus,
       adSpend: formatCurrency(spend),
       impressions: formatCompact(row.impressions ?? 0),
       clicks: formatCompact(row.clicks ?? 0),
@@ -146,7 +172,25 @@ export function CampaignsTable({ campaigns: externalCampaigns }: { campaigns?: C
     };
   });
 
-  const activeCampaigns = mappedExternal.length ? mappedExternal : campaigns;
+  const hasExternal = Array.isArray(externalCampaigns);
+  const activeCampaigns = hasExternal ? mappedExternal : campaigns;
+
+  const handleAction = (campaignId: string, action: CampaignAction) => {
+    if (onAction) {
+      void onAction(campaignId, action);
+      return;
+    }
+    toast.info('Öffne die Campaigns-Seite für Aktionen.');
+  };
+
+  const handleBulkAction = (action: CampaignBulkAction) => {
+    if (!selectedCampaigns.length) return;
+    if (onBulkAction) {
+      void onBulkAction(selectedCampaigns, action);
+      return;
+    }
+    toast.info('Öffne die Campaigns-Seite für Bulk-Aktionen.');
+  };
 
   const handleSelectAll = (checked: boolean) => {
     if (checked) {
@@ -236,15 +280,30 @@ export function CampaignsTable({ campaigns: externalCampaigns }: { campaigns?: C
             {selectedCampaigns.length} campaign{selectedCampaigns.length > 1 ? 's' : ''} selected
           </span>
           <div className="flex items-center gap-2">
-            <Button size="sm" variant="outline" className="bg-card hidden md:flex">
+            <Button
+              size="sm"
+              variant="outline"
+              className="bg-card hidden md:flex"
+              onClick={() => handleBulkAction('resume')}
+            >
               <Play className="w-4 h-4 mr-1" />
               Resume
             </Button>
-            <Button size="sm" variant="outline" className="bg-card hidden md:flex">
+            <Button
+              size="sm"
+              variant="outline"
+              className="bg-card hidden md:flex"
+              onClick={() => handleBulkAction('pause')}
+            >
               <Pause className="w-4 h-4 mr-1" />
               Pause
             </Button>
-            <Button size="sm" variant="outline" className="bg-card text-red-500 hover:text-red-600">
+            <Button
+              size="sm"
+              variant="outline"
+              className="bg-card text-red-500 hover:text-red-600"
+              onClick={() => handleBulkAction('delete')}
+            >
               <Trash2 className="w-4 h-4 mr-1" />
               Delete
             </Button>
@@ -324,10 +383,20 @@ export function CampaignsTable({ campaigns: externalCampaigns }: { campaigns?: C
                   <TableCell className="text-purple-500 font-medium">{campaign.roas}</TableCell>
                   <TableCell>
                     <div className="flex items-center gap-2">
-                      <Button variant="outline" size="sm" className="bg-card border-border text-foreground hover:bg-muted">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="bg-card border-border text-foreground hover:bg-muted"
+                        onClick={() => handleAction(campaign.id, 'view')}
+                      >
                         View
                       </Button>
-                      <Button variant="ghost" size="sm" className="opacity-0 group-hover:opacity-100">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="opacity-0 group-hover:opacity-100"
+                        onClick={() => handleAction(campaign.id, 'view')}
+                      >
                         <MoreVertical className="w-4 h-4" />
                       </Button>
                     </div>
@@ -406,23 +475,43 @@ export function CampaignsTable({ campaigns: externalCampaigns }: { campaigns?: C
 
             {/* Actions */}
             <div className="flex gap-2 pt-3 border-t border-border">
-              <Button size="sm" variant="outline" className="flex-1 bg-card border-border">
+              <Button
+                size="sm"
+                variant="outline"
+                className="flex-1 bg-card border-border"
+                onClick={() => handleAction(campaign.id, 'view')}
+              >
                 View
               </Button>
-              <Button size="sm" variant="outline" className="flex-1 bg-card border-border">
+              <Button
+                size="sm"
+                variant="outline"
+                className="flex-1 bg-card border-border"
+                onClick={() => {
+                  if (campaign.status === 'live') {
+                    handleAction(campaign.id, 'pause');
+                  } else if (campaign.status === 'paused') {
+                    handleAction(campaign.id, 'resume');
+                  } else {
+                    handleAction(campaign.id, 'view');
+                  }
+                }}
+              >
                 {campaign.status === 'live' ? (
                   <>
                     <Pause className="w-3 h-3 mr-1" />
                     Pause
                   </>
-                ) : (
+                ) : campaign.status === 'paused' ? (
                   <>
                     <Play className="w-3 h-3 mr-1" />
                     Resume
                   </>
+                ) : (
+                  <>View</>
                 )}
               </Button>
-              <Button size="sm" variant="ghost">
+              <Button size="sm" variant="ghost" onClick={() => handleAction(campaign.id, 'view')}>
                 <MoreVertical className="w-4 h-4" />
               </Button>
             </div>

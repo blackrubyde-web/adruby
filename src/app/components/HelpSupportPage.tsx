@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   HelpCircle,
   MessageCircle,
@@ -17,17 +17,23 @@ import {
   Shield,
   ChevronDown,
 } from 'lucide-react';
+import { toast } from 'sonner';
+import { useAuthState } from '../contexts/AuthContext';
+import { supabase } from '../lib/supabaseClient';
 
 export function HelpSupportPage() {
   const [activeSection, setActiveSection] = useState<'faq' | 'contact' | 'resources'>('faq');
   const [searchQuery, setSearchQuery] = useState('');
   const [expandedFaq, setExpandedFaq] = useState<number | null>(null);
+  const { user, profile } = useAuthState();
   const [contactForm, setContactForm] = useState({
     name: '',
     email: '',
     subject: '',
     message: '',
   });
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
 
   // FAQ Categories
   const faqCategories = [
@@ -171,9 +177,46 @@ export function HelpSupportPage() {
     },
   ];
 
-  const handleContactSubmit = (e: React.FormEvent) => {
+  useEffect(() => {
+    if (!profile && !user) return;
+    setContactForm((prev) => ({
+      ...prev,
+      name: prev.name || profile?.full_name || '',
+      email: prev.email || profile?.email || user?.email || '',
+    }));
+  }, [profile, user]);
+
+  const handleContactSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Handle form submission
+    if (isSubmitting) return;
+    setIsSubmitting(true);
+    setSubmitError(null);
+    try {
+      const payload = {
+        user_id: user?.id ?? null,
+        name: contactForm.name.trim(),
+        email: contactForm.email.trim(),
+        subject: contactForm.subject.trim(),
+        message: contactForm.message.trim(),
+        status: 'open',
+      };
+      const { error } = await supabase.from('support_requests').insert(payload);
+      if (error) throw error;
+      setContactForm({ name: '', email: payload.email, subject: '', message: '' });
+      toast.success('Support-Anfrage gesendet');
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'Senden fehlgeschlagen';
+      setSubmitError(message);
+      toast.error(message);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleResourceClick = (label: string) => {
+    setActiveSection('faq');
+    setSearchQuery(label);
+    setExpandedFaq(null);
   };
 
   return (
@@ -344,10 +387,10 @@ export function HelpSupportPage() {
                 <h3 className="font-bold text-foreground mb-2">Email Support</h3>
                 <p className="text-sm text-muted-foreground mb-3">We typically respond within 24 hours</p>
                 <a
-                  href="mailto:support@example.com"
+                  href="mailto:support@adruby.ai"
                   className="text-sm text-primary hover:underline flex items-center gap-1"
                 >
-                  support@example.com
+                  support@adruby.ai
                   <ExternalLink className="w-3 h-3" />
                 </a>
               </div>
@@ -358,7 +401,12 @@ export function HelpSupportPage() {
                 </div>
                 <h3 className="font-bold text-foreground mb-2">Live Chat</h3>
                 <p className="text-sm text-muted-foreground mb-3">Available Mon-Fri, 9am-6pm CET</p>
-                <button className="text-sm text-primary hover:underline flex items-center gap-1">
+                <button
+                  onClick={() => {
+                    window.location.href = 'mailto:support@adruby.ai';
+                  }}
+                  className="text-sm text-primary hover:underline flex items-center gap-1"
+                >
                   Start a conversation
                   <ChevronRight className="w-3 h-3" />
                 </button>
@@ -417,12 +465,17 @@ export function HelpSupportPage() {
                 />
               </div>
 
+              {submitError && (
+                <div className="text-sm text-red-500">{submitError}</div>
+              )}
+
               <button
                 type="submit"
-                className="w-full md:w-auto px-8 py-3 bg-primary text-primary-foreground rounded-xl font-semibold hover:scale-105 transition-all shadow-lg shadow-primary/30 flex items-center justify-center gap-2"
+                disabled={isSubmitting}
+                className="w-full md:w-auto px-8 py-3 bg-primary text-primary-foreground rounded-xl font-semibold hover:scale-105 transition-all shadow-lg shadow-primary/30 flex items-center justify-center gap-2 disabled:opacity-60"
               >
                 <Send className="w-5 h-5" />
-                Send Message
+                {isSubmitting ? 'Sending…' : 'Send Message'}
               </button>
             </form>
           </div>
@@ -454,6 +507,7 @@ export function HelpSupportPage() {
                     {resource.items.map((item, j) => (
                       <button
                         key={j}
+                        onClick={() => handleResourceClick(item)}
                         className="w-full text-left px-3 py-2 bg-background/50 hover:bg-background/70 rounded-lg text-sm text-foreground flex items-center justify-between group transition-all"
                       >
                         {item}

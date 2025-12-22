@@ -113,7 +113,15 @@ export function useAdBuilder() {
               }
               if (s?.id) setJobId(s.id);
               if (s?.status === "error") {
-                throw new Error("Generierung fehlgeschlagen.");
+                const metaError =
+                  s?.progress_meta && typeof s.progress_meta === "object" && "error" in s.progress_meta
+                    ? String((s.progress_meta as Record<string, unknown>).error || "")
+                    : "";
+                const errMsg = metaError || "Generierung fehlgeschlagen.";
+                setError(errMsg);
+                setStatus("error");
+                setProgress(null);
+                throw new Error(errMsg);
               }
               if (s?.status === "complete") {
                 setResult(s.outputs ?? null);

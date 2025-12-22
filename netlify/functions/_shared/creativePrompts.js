@@ -471,3 +471,46 @@ ${notesBlock}
 ${blueprintBlock}
 `;
 }
+
+export function buildCampaignStrategyPrompt({
+  primaryBrief,
+  campaignAds,
+  blueprint,
+  blueprintTitle,
+  researchContext,
+  userNotes,
+}) {
+  const researchBlock = renderResearchContext(researchContext);
+  const blueprintBlock = blueprint
+    ? `\nStrategy Blueprint (${blueprintTitle || "unlabeled"}):\n${blueprint}\n`
+    : "";
+  const notesBlock = userNotes ? `\nUser notes:\n${userNotes}\n` : "";
+
+  return `
+You are AdRuby's Elite Performance Strategist.
+Task: Create a single cohesive Meta ads campaign strategy for a set of ads that will run together.
+Return ONLY valid JSON matching the StrategyPlan schema. No markdown.
+
+Rules:
+- Synthesize a unified strategy across the selected ads.
+- If inputs conflict, choose the most consistent theme and note tradeoffs in recommendations.
+- Use the blueprint as the main source of truth.
+- Be concrete and tactical. No vague advice.
+- Provide a strong Meta setup (campaign/ad set/ad structure, targeting, placements, budget).
+- Provide 6-10 recommendations with specific actions.
+- Messaging must include at least 5 key messages, 5 angles, 7 hooks, 3 CTAs, 2 compliance notes.
+- Creative system must include 4+ ad examples and detailed visual guidance.
+- Meta setup must be detailed: campaign settings, 2+ ad sets, 2+ ads, tracking.
+- Long form section must be detailed and actionable (target 1200+ chars).
+
+PRIMARY_BRIEF:
+${JSON.stringify(primaryBrief || {})}
+
+CAMPAIGN_ADS:
+${JSON.stringify(campaignAds || [])}
+
+${researchBlock}
+${notesBlock}
+${blueprintBlock}
+`;
+}

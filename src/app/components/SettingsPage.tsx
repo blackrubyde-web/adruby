@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useRef, useState, type ChangeEvent } from 'react';
 import {
   User,
   Bell,
@@ -22,8 +22,36 @@ import { PageShell, HeroHeader } from './layout';
 import { BillingPanel } from './BillingPanel';
 import { connectMeta, disconnectMeta, getMetaAuthUrl, syncMeta } from '../lib/api/meta';
 import { useMetaConnection } from '../hooks/useMetaConnection';
+import { useAuthActions, useAuthState } from '../contexts/AuthContext';
+import { supabase } from '../lib/supabaseClient';
+import { useTheme } from './ThemeProvider';
 
 type SettingsTab = 'account' | 'integrations' | 'notifications' | 'appearance' | 'billing' | 'security';
+
+type NotificationSettings = {
+  emailAlerts: boolean;
+  budgetAlerts: boolean;
+  performanceAlerts: boolean;
+  weeklyReport: boolean;
+  campaignUpdates: boolean;
+};
+
+type AppearanceSettings = {
+  theme: 'dark' | 'light';
+  language: string;
+  compactMode: boolean;
+};
+
+type ProfileSettings = {
+  company?: string;
+  timezone?: string;
+  notifications?: NotificationSettings;
+  appearance?: AppearanceSettings;
+  avatar?: {
+    bucket: string;
+    path: string;
+  };
+};
 
 export function SettingsPage() {
   const [activeTab, setActiveTab] = useState<SettingsTab>(() => {
@@ -39,6 +67,13 @@ export function SettingsPage() {
     return tab && allowed.includes(tab) ? tab : 'account';
   });
   const [isSaving, setIsSaving] = useState(false);
+  const { user, profile } = useAuthState();
+  const { refreshProfile } = useAuthActions();
+  const { theme, setTheme } = useTheme();
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
+  const [passwordData, setPasswordData] = useState({ current: '', next: '', confirm: '' });
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -47,11 +82,19 @@ export function SettingsPage() {
     window.history.replaceState({}, document.title, nextUrl);
   }, [activeTab]);
 
+  const profileSettings = useMemo(() => {
+    const raw = profile?.settings;
+    if (raw && typeof raw === 'object') {
+      return raw as ProfileSettings;
+    }
+    return {};
+  }, [profile?.settings]);
+
   // Account Settings State
   const [accountData, setAccountData] = useState({
-    name: 'Max Mustermann',
-    email: 'max@example.com',
-    company: 'My Company GmbH',
+    name: '',
+    email: '',
+    company: '',
     timezone: 'Europe/Berlin',
   });
 
@@ -67,9 +110,21 @@ export function SettingsPage() {
   const metaDetails = facebookAccount?.meta as { selected_account?: { name?: string } } | null;
   const selectedAdAccountName =
     metaDetails?.selected_account?.name || facebookAccount?.full_name || '—';
+  const initials = useMemo(() => {
+    const base =
+      accountData.name?.trim() ||
+      accountData.email?.trim() ||
+      user?.email?.trim() ||
+      'U';
+    const parts = base.split(' ').filter(Boolean);
+    if (parts.length === 1) {
+      return parts[0].slice(0, 2).toUpperCase();
+    }
+    return `${parts[0][0] || ''}${parts[1][0] || ''}`.toUpperCase();
+  }, [accountData.email, accountData.name, user?.email]);
 
   // Notification Settings State
-  const [notifications, setNotifications] = useState({
+  const [notifications, setNotifications] = useState<NotificationSettings>({
     emailAlerts: true,
     budgetAlerts: true,
     performanceAlerts: true,
@@ -78,19 +133,34 @@ export function SettingsPage() {
   });
 
   // Appearance Settings State
-  const [appearance, setAppearance] = useState({
-    theme: 'dark',
+  const [appearance, setAppearance] = useState<AppearanceSettings>({
+    theme: theme,
     language: 'de',
     compactMode: false,
   });
 
-  const handleSave = () => {
-    setIsSaving(true);
-    setTimeout(() => {
-      setIsSaving(false);
-      toast.success('Settings saved successfully!');
-    }, 1000);
-  };
+  useEffect(() => {
+    if (!profile) return;
+    setAccountData({
+      name: profile.full_name ?? '',
+      email: profile.email ?? user?.email ?? '',
+      company: profileSettings.company ?? '',
+      timezone: profileSettings.timezone ?? 'Europe/Berlin',
+    });
+    setNotifications({
+      emailAlerts: profileSettings.notifications?.emailAlerts ?? true,
+      budgetAlerts: profileSettings.notifications?.budgetAlerts ?? true,
+      performanceAlerts: profileSettings.notifications?.performanceAlerts ?? true,
+      weeklyReport: profileSettings.notifications?.weeklyReport ?? true,
+      campaignUpdates: profileSettings.notifications?.campaignUpdates ?? false,
+    });
+    setAppearance({
+      theme: profileSettings.appearance?.theme ?? theme,
+      language: profileSettings.appearance?.language ?? 'de',
+      compactMode: profileSettings.appearance?.compactMode ?? false,
+    });
+    setAvatarUrl(profile.avatar_url ?? null);
+  }, [profile, profileSettings, theme, user?.email]);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -108,6 +178,183 @@ export function SettingsPage() {
       setMetaError(metaStatusError);
     }
   }, [metaStatusError]);
+
+  const buildSettings = (overrides?: Partial<ProfileSettings>) => ({
+    ...profileSettings,
+    company: accountData.company,
+    timezone: accountData.timezone,
+    notifications,
+    appearance,
+    ...overrides,
+  });
+
+  const saveProfile = async (updates: {
+    full_name?: string | null;
+    email?: string | null;
+    settings?: ProfileSettings;
+    avatar_url?: string | null;
+  }) => {
+    if (!user?.id) {
+      throw new Error('Bitte zuerst anmelden.');
+    }
+    const { error } = await supabase
+      .from('user_profiles')
+      .update(updates)
+      .eq('id', user.id);
+    if (error) throw error;
+  };
+
+  const handleSaveAccount = async () => {
+    if (isSaving) return;
+    setIsSaving(true);
+    try {
+      const trimmedEmail = accountData.email.trim();
+      if (!trimmedEmail) throw new Error('Bitte eine gültige E-Mail angeben.');
+      if (trimmedEmail !== user?.email) {
+        const { error } = await supabase.auth.updateUser({ email: trimmedEmail });
+        if (error) throw error;
+        toast.info('Bitte bestätige deine neue E-Mail-Adresse im Postfach.');
+      }
+      await saveProfile({
+        full_name: accountData.name.trim() || null,
+        email: trimmedEmail,
+        settings: buildSettings(),
+      });
+      await refreshProfile();
+      toast.success('Account gespeichert');
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'Speichern fehlgeschlagen';
+      toast.error(message);
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleSaveNotifications = async () => {
+    if (isSaving) return;
+    setIsSaving(true);
+    try {
+      await saveProfile({ settings: buildSettings() });
+      await refreshProfile();
+      toast.success('Benachrichtigungen gespeichert');
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'Speichern fehlgeschlagen';
+      toast.error(message);
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleSaveAppearance = async () => {
+    if (isSaving) return;
+    setIsSaving(true);
+    try {
+      setTheme(appearance.theme);
+      await saveProfile({ settings: buildSettings() });
+      await refreshProfile();
+      toast.success('Erscheinungsbild gespeichert');
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'Speichern fehlgeschlagen';
+      toast.error(message);
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleAvatarUpload = async (file: File) => {
+    if (!user?.id) throw new Error('Bitte zuerst anmelden.');
+    if (!file.type.startsWith('image/')) {
+      throw new Error('Bitte nur Bilddateien hochladen.');
+    }
+    if (file.size > 2 * 1024 * 1024) {
+      throw new Error('Maximal 2MB pro Datei.');
+    }
+
+    const ext = file.name.split('.').pop() || 'png';
+    const safeName = file.name.replace(/\s+/g, '-').replace(/[^a-z0-9._-]/gi, '');
+    const path = `${user.id}/avatar-${Date.now()}-${crypto.randomUUID()}-${safeName}.${ext}`;
+    const buckets = ['profile-avatars', 'creative-inputs', 'creative-renders'];
+    let bucketUsed = buckets[0];
+    let uploaded = false;
+
+    for (const bucket of buckets) {
+      const { error } = await supabase.storage.from(bucket).upload(path, file, {
+        contentType: file.type,
+        upsert: true,
+      });
+      if (!error) {
+        bucketUsed = bucket;
+        uploaded = true;
+        break;
+      }
+      if (!error?.message?.toLowerCase().includes('bucket')) {
+        throw new Error(error.message);
+      }
+    }
+
+    if (!uploaded) {
+      throw new Error('Kein Storage-Bucket gefunden. Bitte profile-avatars oder creative-inputs anlegen.');
+    }
+
+    const { data: publicData } = supabase.storage.from(bucketUsed).getPublicUrl(path);
+    let avatar = publicData?.publicUrl || '';
+    if (!avatar) {
+      const signed = await supabase.storage.from(bucketUsed).createSignedUrl(path, 60 * 60);
+      if (signed.error) throw new Error(signed.error.message);
+      avatar = signed.data.signedUrl;
+    }
+
+    await saveProfile({
+      avatar_url: avatar,
+      settings: buildSettings({ avatar: { bucket: bucketUsed, path } }),
+    });
+    setAvatarUrl(avatar);
+    await refreshProfile();
+    toast.success('Avatar aktualisiert');
+  };
+
+  const handlePasswordUpdate = async () => {
+    if (isSaving) return;
+    if (!passwordData.next || passwordData.next.length < 8) {
+      toast.error('Passwort muss mindestens 8 Zeichen haben.');
+      return;
+    }
+    if (passwordData.next !== passwordData.confirm) {
+      toast.error('Passwörter stimmen nicht überein.');
+      return;
+    }
+    setIsSaving(true);
+    try {
+      const { error } = await supabase.auth.updateUser({ password: passwordData.next });
+      if (error) throw error;
+      setPasswordData({ current: '', next: '', confirm: '' });
+      toast.success('Passwort aktualisiert');
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'Passwort-Update fehlgeschlagen';
+      toast.error(message);
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleAvatarClick = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleAvatarFileChange = async (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    event.target.value = '';
+    setIsUploadingAvatar(true);
+    try {
+      await handleAvatarUpload(file);
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'Avatar-Upload fehlgeschlagen';
+      toast.error(message);
+    } finally {
+      setIsUploadingAvatar(false);
+    }
+  };
 
   const handleFacebookConnect = async () => {
     setMetaError(null);
@@ -222,14 +469,29 @@ export function SettingsPage() {
                   <div>
                     <label className="block text-sm font-semibold text-foreground mb-3">Profile Picture</label>
                     <div className="flex items-center gap-4">
-                      <div className="w-20 h-20 rounded-full bg-primary/20 flex items-center justify-center text-primary text-2xl font-bold">
-                        MM
+                      <div className="w-20 h-20 rounded-full bg-primary/20 flex items-center justify-center text-primary text-2xl font-bold overflow-hidden">
+                        {avatarUrl ? (
+                          <img src={avatarUrl} alt="Profile avatar" className="w-full h-full object-cover" />
+                        ) : (
+                          <span>{initials}</span>
+                        )}
                       </div>
                       <div>
-                        <button className="px-4 py-2 bg-muted hover:bg-muted/80 rounded-lg text-sm font-semibold transition-all">
-                          Upload New
+                        <button
+                          onClick={handleAvatarClick}
+                          disabled={isUploadingAvatar}
+                          className="px-4 py-2 bg-muted hover:bg-muted/80 rounded-lg text-sm font-semibold transition-all disabled:opacity-60"
+                        >
+                          {isUploadingAvatar ? 'Uploading…' : 'Upload New'}
                         </button>
                         <p className="text-xs text-muted-foreground mt-2">JPG, PNG or GIF. Max 2MB.</p>
+                        <input
+                          ref={fileInputRef}
+                          type="file"
+                          accept="image/*"
+                          onChange={handleAvatarFileChange}
+                          className="hidden"
+                        />
                       </div>
                     </div>
                   </div>
@@ -284,7 +546,7 @@ export function SettingsPage() {
 
                   {/* Save Button */}
                   <button
-                    onClick={handleSave}
+                    onClick={handleSaveAccount}
                     disabled={isSaving}
                     className="w-full md:w-auto px-6 py-3 bg-primary text-primary-foreground rounded-xl font-semibold hover:scale-105 transition-all shadow-lg shadow-primary/30 disabled:opacity-50 flex items-center justify-center gap-2"
                   >
@@ -540,8 +802,9 @@ export function SettingsPage() {
                   </div>
 
                   <button
-                    onClick={handleSave}
-                    className="w-full md:w-auto px-6 py-3 bg-primary text-primary-foreground rounded-xl font-semibold hover:scale-105 transition-all shadow-lg shadow-primary/30 flex items-center justify-center gap-2"
+                    onClick={handleSaveNotifications}
+                    disabled={isSaving}
+                    className="w-full md:w-auto px-6 py-3 bg-primary text-primary-foreground rounded-xl font-semibold hover:scale-105 transition-all shadow-lg shadow-primary/30 flex items-center justify-center gap-2 disabled:opacity-50"
                   >
                     <Save className="w-5 h-5" />
                     Save Preferences
@@ -562,23 +825,22 @@ export function SettingsPage() {
                   {/* Theme */}
                   <div>
                     <label className="block text-sm font-semibold text-foreground mb-3">Theme</label>
-                    <div className="grid grid-cols-3 gap-4">
+                    <div className="grid grid-cols-2 gap-4">
                       {[
                         { id: 'light', label: 'Light', icon: '☀️' },
                         { id: 'dark', label: 'Dark', icon: '🌙' },
-                        { id: 'auto', label: 'Auto', icon: '⚡' },
-                      ].map((theme) => (
+                      ].map((option) => (
                         <button
-                          key={theme.id}
-                          onClick={() => setAppearance({ ...appearance, theme: theme.id })}
+                          key={option.id}
+                          onClick={() => setAppearance({ ...appearance, theme: option.id as AppearanceSettings['theme'] })}
                           className={`p-4 rounded-xl border-2 transition-all ${
-                            appearance.theme === theme.id
+                            appearance.theme === option.id
                               ? 'border-primary bg-primary/10'
                               : 'border-border/30 bg-muted/30 hover:bg-muted/50'
                           }`}
                         >
-                          <div className="text-3xl mb-2">{theme.icon}</div>
-                          <div className="font-semibold text-foreground">{theme.label}</div>
+                          <div className="text-3xl mb-2">{option.icon}</div>
+                          <div className="font-semibold text-foreground">{option.label}</div>
                         </button>
                       ))}
                     </div>
@@ -617,8 +879,9 @@ export function SettingsPage() {
                   </div>
 
                   <button
-                    onClick={handleSave}
-                    className="w-full md:w-auto px-6 py-3 bg-primary text-primary-foreground rounded-xl font-semibold hover:scale-105 transition-all shadow-lg shadow-primary/30 flex items-center justify-center gap-2"
+                    onClick={handleSaveAppearance}
+                    disabled={isSaving}
+                    className="w-full md:w-auto px-6 py-3 bg-primary text-primary-foreground rounded-xl font-semibold hover:scale-105 transition-all shadow-lg shadow-primary/30 flex items-center justify-center gap-2 disabled:opacity-50"
                   >
                     <Save className="w-5 h-5" />
                     Save Preferences
@@ -747,6 +1010,8 @@ export function SettingsPage() {
                         <input
                           type="password"
                           placeholder="Enter current password"
+                          value={passwordData.current}
+                          onChange={(e) => setPasswordData({ ...passwordData, current: e.target.value })}
                           className="w-full px-4 py-3 bg-muted/50 border border-border/50 rounded-xl text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
                         />
                       </div>
@@ -755,6 +1020,8 @@ export function SettingsPage() {
                         <input
                           type="password"
                           placeholder="Enter new password"
+                          value={passwordData.next}
+                          onChange={(e) => setPasswordData({ ...passwordData, next: e.target.value })}
                           className="w-full px-4 py-3 bg-muted/50 border border-border/50 rounded-xl text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
                         />
                       </div>
@@ -763,10 +1030,16 @@ export function SettingsPage() {
                         <input
                           type="password"
                           placeholder="Confirm new password"
+                          value={passwordData.confirm}
+                          onChange={(e) => setPasswordData({ ...passwordData, confirm: e.target.value })}
                           className="w-full px-4 py-3 bg-muted/50 border border-border/50 rounded-xl text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
                         />
                       </div>
-                      <button className="px-6 py-3 bg-primary text-primary-foreground rounded-xl font-semibold hover:scale-105 transition-all shadow-lg shadow-primary/30">
+                      <button
+                        onClick={handlePasswordUpdate}
+                        disabled={isSaving}
+                        className="px-6 py-3 bg-primary text-primary-foreground rounded-xl font-semibold hover:scale-105 transition-all shadow-lg shadow-primary/30 disabled:opacity-50"
+                      >
                         Update Password
                       </button>
                     </div>
@@ -783,8 +1056,11 @@ export function SettingsPage() {
                         Disabled
                       </span>
                     </div>
-                    <button className="px-4 py-2.5 bg-primary text-primary-foreground rounded-xl text-sm font-semibold hover:scale-105 transition-all">
-                      Enable 2FA
+                    <button
+                      disabled
+                      className="px-4 py-2.5 bg-muted text-muted-foreground rounded-xl text-sm font-semibold cursor-not-allowed"
+                    >
+                      2FA coming soon
                     </button>
                   </div>
 
@@ -797,7 +1073,10 @@ export function SettingsPage() {
                         <p className="text-sm text-muted-foreground mb-4">
                           Once you delete your account, there is no going back. Please be certain.
                         </p>
-                        <button className="px-4 py-2.5 bg-red-500/10 hover:bg-red-500/20 text-red-500 rounded-xl text-sm font-semibold transition-all flex items-center gap-2">
+                        <button
+                          disabled
+                          className="px-4 py-2.5 bg-red-500/10 text-red-500/60 rounded-xl text-sm font-semibold transition-all flex items-center gap-2 cursor-not-allowed"
+                        >
                           <Trash2 className="w-4 h-4" />
                           Delete Account
                         </button>

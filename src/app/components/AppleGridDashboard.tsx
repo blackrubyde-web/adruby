@@ -415,6 +415,11 @@ export function AppleGridDashboard({
     design: 'gradient',
   });
   const [windowWidth, setWindowWidth] = useState(typeof window !== 'undefined' ? window.innerWidth : 1200);
+  const handleCreateCampaign = () => {
+    const url = '/adbuilder';
+    window.history.pushState({}, document.title, url);
+    window.dispatchEvent(new PopStateEvent('popstate'));
+  };
 
   useEffect(() => {
     const handleResize = () => setWindowWidth(window.innerWidth);
@@ -991,7 +996,7 @@ function WidgetRenderer({
     return (
       <div className="w-full h-full backdrop-blur-xl bg-card/60 rounded-3xl border border-border/50 shadow-xl overflow-hidden">
         <div className="w-full h-full overflow-hidden">
-          <CampaignsTable />
+          <CampaignsTable campaigns={data?.campaigns} />
         </div>
       </div>
     );
@@ -1051,7 +1056,10 @@ function WidgetRenderer({
         emptyTitle="No performance data"
         emptyDescription="Run campaigns to see performance trends here."
         emptyAction={
-          <button className="text-sm font-medium text-primary hover:underline">
+          <button
+            onClick={handleCreateCampaign}
+            className="text-sm font-medium text-primary hover:underline"
+          >
             Create campaign →
           </button>
         }

@@ -1,6 +1,14 @@
 import crypto from "crypto";
 import { supabaseAdmin } from "./clients.js";
 
+function getSupabaseHost() {
+  try {
+    return new URL(process.env.SUPABASE_URL || "").host || "unknown";
+  } catch {
+    return "unknown";
+  }
+}
+
 function fileExtension(filename) {
   const last = String(filename || "").split(".").pop();
   if (!last || last === filename) return "png";
@@ -20,6 +28,12 @@ export async function uploadCreativeInputImage({ userId, file }) {
 
   if (error) {
     const msg = error.message || "Upload failed";
+    console.warn("[storage] upload failed", {
+      bucket: "creative-inputs",
+      host: getSupabaseHost(),
+      path,
+      error: msg,
+    });
     if (msg.toLowerCase().includes("bucket")) {
       const err = new Error(
         "Storage not configured. Create bucket creative-inputs.",
@@ -34,9 +48,14 @@ export async function uploadCreativeInputImage({ userId, file }) {
     .from("creative-inputs")
     .createSignedUrl(path, 60 * 10);
   if (signed.error) {
+    console.warn("[storage] signed url failed", {
+      bucket: "creative-inputs",
+      host: getSupabaseHost(),
+      path,
+      error: signed.error.message || "Unknown error",
+    });
     throw new Error(`Signed URL failed: ${signed.error.message}`);
   }
 
   return { path, signedUrl: signed.data.signedUrl };
 }
-

@@ -1,4 +1,5 @@
-import { BarChart3, Target, Layers, Brain, Settings, LogOut, X, BarChart2, Gift, Sparkles, BookOpen } from 'lucide-react';
+import { memo, useCallback } from 'react';
+import { BarChart3, Target, Layers, Brain, Settings, LogOut, X, BarChart2, Gift, Sparkles, BookOpen, type LucideIcon } from 'lucide-react';
 import { PageType } from '../App';
 
 interface SidebarProps {
@@ -11,7 +12,28 @@ interface SidebarProps {
   onLogout?: () => void;
 }
 
-export function Sidebar({
+type NavItem = {
+  icon: LucideIcon;
+  label: string;
+  page: PageType;
+};
+
+const CORE_WORKFLOW: NavItem[] = [
+  { icon: BarChart3, label: 'Dashboard', page: 'dashboard' },
+  { icon: BarChart2, label: 'Analytics', page: 'analytics' },
+  { icon: Sparkles, label: 'Creative Generator Pro', page: 'adbuilder' },
+  { icon: BookOpen, label: 'Creative Library', page: 'library' },
+  { icon: Target, label: 'Strategies', page: 'strategies' },
+  { icon: Layers, label: 'Campaigns', page: 'campaigns' },
+  { icon: Brain, label: 'AI Analysis', page: 'aianalysis' },
+];
+
+const ACCOUNT_ITEMS: NavItem[] = [
+  { icon: Settings, label: 'Settings', page: 'settings' },
+  { icon: Gift, label: 'Affiliate', page: 'affiliate' },
+];
+
+export const Sidebar = memo(function Sidebar({
   isCollapsed = false,
   onToggle,
   currentPage,
@@ -20,31 +42,14 @@ export function Sidebar({
   onMobileClose,
   onLogout
 }: SidebarProps) {
-  // GROUP 1: Core Workflow
-  const coreWorkflow = [
-    { icon: BarChart3, label: 'Dashboard', page: 'dashboard' as PageType },
-    { icon: BarChart2, label: 'Analytics', page: 'analytics' as PageType },
-    { icon: Sparkles, label: 'Creative Generator Pro', page: 'adbuilder' as PageType },
-    { icon: BookOpen, label: 'Creative Library', page: 'library' as PageType },
-    { icon: Target, label: 'Strategies', page: 'strategies' as PageType },
-    { icon: Layers, label: 'Campaigns', page: 'campaigns' as PageType },
-    { icon: Brain, label: 'AI Analysis', page: 'aianalysis' as PageType },
-  ];
-
-  // GROUP 2: Account & System
-  const accountItems = [
-    { icon: Settings, label: 'Settings', page: 'settings' as PageType },
-    { icon: Gift, label: 'Affiliate', page: 'affiliate' as PageType },
-  ];
-
-  const handleNavigate = (page: PageType) => {
+  const handleNavigate = useCallback((page: PageType) => {
     onNavigate(page);
     if (onMobileClose) {
       onMobileClose();
     }
-  };
+  }, [onNavigate, onMobileClose]);
 
-  const renderNavButton = (item: typeof coreWorkflow[0]) => {
+  const renderNavButton = useCallback((item: NavItem) => {
     const isActive = item.page === currentPage;
     
     return (
@@ -71,7 +76,7 @@ export function Sidebar({
         )}
       </button>
     );
-  };
+  }, [currentPage, handleNavigate, isCollapsed, isMobileOpen]);
 
   return (
     <>
@@ -85,17 +90,18 @@ export function Sidebar({
 
       {/* Sidebar */}
       <div 
-        className={`bg-sidebar border-r border-sidebar-border h-screen fixed left-0 top-0 flex flex-col transition-all duration-300 z-50
+        className={`bg-sidebar border-r border-sidebar-border h-screen fixed left-0 top-0 flex flex-col transition-[width,transform] duration-300 z-50
           ${isMobileOpen ? 'translate-x-0 w-64' : '-translate-x-full w-64'}
           ${!isMobileOpen && isCollapsed ? 'md:translate-x-0 md:w-20' : ''}
           ${!isMobileOpen && !isCollapsed ? 'md:translate-x-0 md:w-64' : ''}
         `}
-        onMouseLeave={() => !isMobileOpen && onToggle?.(true)}
+        style={{ willChange: 'transform,width' }}
+        onMouseLeave={() => !isMobileOpen && !isCollapsed && onToggle?.(true)}
       >
         {/* Logo Area with Hover Trigger */}
         <div 
           className="flex items-center justify-between p-4 border-b border-sidebar-border"
-          onMouseEnter={() => !isMobileOpen && onToggle?.(false)}
+          onMouseEnter={() => !isMobileOpen && isCollapsed && onToggle?.(false)}
         >
           <div className="flex items-center gap-3">
             <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center flex-shrink-0">
@@ -129,7 +135,7 @@ export function Sidebar({
               </div>
             )}
             <div className="space-y-1">
-              {coreWorkflow.map(renderNavButton)}
+              {CORE_WORKFLOW.map(renderNavButton)}
             </div>
           </div>
 
@@ -146,7 +152,7 @@ export function Sidebar({
               </div>
             )}
             <div className="space-y-1">
-              {accountItems.map(renderNavButton)}
+              {ACCOUNT_ITEMS.map(renderNavButton)}
             </div>
           </div>
         </nav>
@@ -167,4 +173,4 @@ export function Sidebar({
       </div>
     </>
   );
-}
+});

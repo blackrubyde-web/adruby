@@ -22,6 +22,7 @@ export type AnalyticsData = {
   range: "7d" | "30d" | "90d" | "custom";
   compare: boolean;
   granularity: Granularity;
+  warning?: string;
 
   // 1) KPIs for Stat Widgets
   summary: {

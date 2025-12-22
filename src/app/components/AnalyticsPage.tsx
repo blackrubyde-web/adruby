@@ -80,35 +80,35 @@ const ANALYTICS_SECTIONS: DashboardSection[] = [
     name: 'AI-Powered Insights',
     description: 'Smart recommendations and anomaly detection',
     category: 'essential',
-    isVisible: true
+    isVisible: false
   },
   {
     id: 'audience-breakdown',
     name: 'Audience Demographics',
     description: 'Age and gender distribution of your audience',
     category: 'analytics',
-    isVisible: true
+    isVisible: false
   },
   {
     id: 'conversion-funnel',
     name: 'Conversion Funnel',
     description: 'Track user journey from impression to purchase',
     category: 'analytics',
-    isVisible: true
+    isVisible: false
   },
   {
     id: 'performance-heatmap',
     name: 'Performance Heatmap',
     description: 'Best times to run ads by day and hour',
     category: 'advanced',
-    isVisible: true
+    isVisible: false
   },
   {
     id: 'predictive-analytics',
     name: 'Predictive Analytics',
     description: '7-day forecast with AI-powered predictions',
     category: 'advanced',
-    isVisible: true
+    isVisible: false
   },
   {
     id: 'campaigns-table',
@@ -143,7 +143,7 @@ const ANALYTICS_SECTIONS: DashboardSection[] = [
     name: 'Automation Rules',
     description: 'Auto-pause and scale rules that protect your budget',
     category: 'advanced',
-    isVisible: true
+    isVisible: false
   },
   {
     id: 'notifications',
@@ -171,6 +171,7 @@ export function AnalyticsPage() {
   const { data, loading } = useAnalyticsData(timeRange, isComparing, 'meta');
   const summary = data?.summary;
   const currentSeries = data?.timeseries.current ?? [];
+  const warning = data?.warning;
 
   const formatCurrency = (value: number) =>
     new Intl.NumberFormat('de-DE', {
@@ -270,13 +271,22 @@ export function AnalyticsPage() {
   const visibleSections = dashboardSections.filter(s => s.isVisible);
 
   // Render individual widget content based on section ID
+  const renderPreview = (node: JSX.Element) => (
+    <div className="relative">
+      <div className="absolute right-3 top-3 rounded-full bg-amber-500/20 text-amber-600 text-xs px-2 py-1 border border-amber-500/30">
+        Preview
+      </div>
+      {node}
+    </div>
+  );
+
   const renderWidgetContent = (sectionId: string) => {
     switch (sectionId) {
       case 'notifications':
         return (
           <Card className="hidden md:block overflow-hidden">
             <Suspense fallback={<WidgetPlaceholder title="Loading alerts..." />}>
-              <LazyNotificationBanner />
+              {renderPreview(<LazyNotificationBanner />)}
             </Suspense>
           </Card>
         );
@@ -285,7 +295,7 @@ export function AnalyticsPage() {
         return (
           <Card className="hidden md:block p-6">
             <Suspense fallback={<WidgetPlaceholder title="Loading score..." />}>
-              <LazyPerformanceScore />
+              {renderPreview(<LazyPerformanceScore />)}
             </Suspense>
           </Card>
         );
@@ -294,7 +304,7 @@ export function AnalyticsPage() {
         return (
           <Card className="hidden md:block p-6">
             <Suspense fallback={<WidgetPlaceholder title="Loading budget..." />}>
-              <LazyBudgetTracker />
+              {renderPreview(<LazyBudgetTracker />)}
             </Suspense>
           </Card>
         );
@@ -386,7 +396,7 @@ export function AnalyticsPage() {
         return (
           <Card className="overflow-hidden">
             <Suspense fallback={<WidgetPlaceholder title="Loading AI insights..." />}>
-              <LazyAIInsightsPanel />
+              {renderPreview(<LazyAIInsightsPanel />)}
             </Suspense>
           </Card>
         );
@@ -411,7 +421,7 @@ export function AnalyticsPage() {
         return (
           <Card className="p-6">
             <Suspense fallback={<WidgetPlaceholder title="Loading audience..." />}>
-              <LazyAudienceBreakdown />
+              {renderPreview(<LazyAudienceBreakdown />)}
             </Suspense>
           </Card>
         );
@@ -420,7 +430,7 @@ export function AnalyticsPage() {
         return (
           <Card className="p-6">
             <Suspense fallback={<WidgetPlaceholder title="Loading funnel..." />}>
-              <LazyConversionFunnel />
+              {renderPreview(<LazyConversionFunnel />)}
             </Suspense>
           </Card>
         );
@@ -429,7 +439,7 @@ export function AnalyticsPage() {
         return (
           <Card className="p-6">
             <Suspense fallback={<WidgetPlaceholder title="Loading heatmap..." />}>
-              <LazyPerformanceHeatmap />
+              {renderPreview(<LazyPerformanceHeatmap />)}
             </Suspense>
           </Card>
         );
@@ -438,7 +448,7 @@ export function AnalyticsPage() {
         return (
           <Card className="p-6">
             <Suspense fallback={<WidgetPlaceholder title="Loading forecast..." />}>
-              <LazyPredictiveAnalytics />
+              {renderPreview(<LazyPredictiveAnalytics />)}
             </Suspense>
           </Card>
         );
@@ -447,7 +457,7 @@ export function AnalyticsPage() {
         return (
           <Card>
             <Suspense fallback={<WidgetPlaceholder title="Loading strategies..." />}>
-              <LazyStrategyInsights />
+              {renderPreview(<LazyStrategyInsights />)}
             </Suspense>
           </Card>
         );
@@ -465,7 +475,7 @@ export function AnalyticsPage() {
         return (
           <Card className="p-6">
             <Suspense fallback={<WidgetPlaceholder title="Loading automations..." />}>
-              <LazyAutomatedRulesManager />
+              {renderPreview(<LazyAutomatedRulesManager />)}
             </Suspense>
           </Card>
         );
@@ -488,6 +498,14 @@ export function AnalyticsPage() {
           </div>
         }
       />
+
+      {warning && (
+        <Card className="p-4 border border-amber-500/30 bg-amber-500/10 text-amber-700 mb-6">
+          {warning === 'meta_insights_daily_missing'
+            ? 'Meta-Datenbank-Tabellen fehlen. Bitte Migration ausführen (meta_insights_daily).'
+            : 'Analytics-Daten sind noch nicht verfügbar. Bitte später erneut versuchen.'}
+        </Card>
+      )}
 
       {/* ═══════════════════════════════════════════════════════════
           MOBILE-FIRST ANALYTICS CONTROLS

@@ -1,6 +1,6 @@
 import { ImageIcon, Upload, Search, Eye, Download, Trash2, Star, Grid3x3, List, Video, FileText, Copy, Edit2, MousePointerClick, TrendingUp } from 'lucide-react';
 import { toast } from 'sonner';
-import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type ChangeEvent } from 'react';
 import { FixedSizeGrid } from 'react-window';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
@@ -34,6 +34,12 @@ export function CreativeLibraryPage() {
   const [creatives, setCreatives] = useState<Creative[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
+  const [editingCreative, setEditingCreative] = useState<Creative | null>(null);
+  const [editName, setEditName] = useState('');
+  const [editTags, setEditTags] = useState('');
+  const [isSavingEdit, setIsSavingEdit] = useState(false);
   const [favoriteIds, setFavoriteIds] = useState<Set<string>>(() => {
     try {
       const raw = localStorage.getItem('creativeLibraryFavorites');
@@ -43,6 +49,8 @@ export function CreativeLibraryPage() {
       return new Set<string>();
     }
   });
+
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   type CreativeRow = {
     id: string;
@@ -59,14 +67,32 @@ export function CreativeLibraryPage() {
   };
 
   const mapCreativeRow = useCallback((row: CreativeRow, favorites: Set<string>): Creative => {
-    const inputs = row?.inputs || null;
-    const brief = (inputs as { brief?: { product?: { name?: string; category?: string }; goal?: string } } | null)?.brief || null;
+    const inputs = (row?.inputs || {}) as {
+      creativeName?: string;
+      productName?: string;
+      creativeType?: string;
+      tags?: string[];
+      brief?: { product?: { name?: string; category?: string }; goal?: string };
+    };
+    const brief = inputs?.brief || null;
     const name =
+      inputs?.creativeName ||
       brief?.product?.name ||
-      (inputs as { productName?: string } | null)?.productName ||
+      inputs?.productName ||
       'AI Creative';
 
-    const type: Creative['type'] = 'image';
+    const typeCandidate = inputs?.creativeType;
+    const type: Creative['type'] =
+      typeCandidate === 'video' || typeCandidate === 'carousel' ? typeCandidate : 'image';
+
+    const hasCustomTags = Array.isArray(inputs?.tags);
+    const customTags = hasCustomTags ? inputs.tags || [] : [];
+    const fallbackTags = [
+      brief?.product?.category || 'ai',
+      brief?.goal || 'performance',
+      'generated',
+    ].filter(Boolean);
+    const tags = hasCustomTags ? customTags : fallbackTags;
 
     return {
       id: row.id,
@@ -74,11 +100,7 @@ export function CreativeLibraryPage() {
       type,
       url: '',
       thumbnail: row.thumbnail || '',
-      tags: [
-        brief?.product?.category || 'ai',
-        brief?.goal || 'performance',
-        'generated',
-      ].filter(Boolean),
+      tags,
       performance: {
         impressions: Number(row?.metrics?.impressions || 0),
         clicks: Number(row?.metrics?.clicks || 0),
@@ -203,7 +225,7 @@ export function CreativeLibraryPage() {
 
         const { data: detail, error: detailError } = await supabase
           .from('generated_creatives')
-          .select('outputs,inputs')
+          .select('outputs,inputs,thumbnail,metrics')
           .eq('id', id)
           .single();
         if (detailError) throw detailError;
@@ -214,9 +236,11 @@ export function CreativeLibraryPage() {
             user_id: userId,
             outputs: detail?.outputs || null,
             inputs: detail?.inputs || null,
+            thumbnail: detail?.thumbnail || null,
+            metrics: detail?.metrics || null,
             saved: true,
           })
-          .select('id,inputs,created_at,saved')
+          .select('id,inputs,created_at,saved,thumbnail,metrics')
           .single();
 
         if (error) throw error;
@@ -228,6 +252,196 @@ export function CreativeLibraryPage() {
       }
     })();
   }, [creatives, favoriteIds, mapCreativeRow]);
+
+  const handleUploadClick = useCallback(() => {
+    fileInputRef.current?.click();
+  }, []);
+
+  const uploadFileToStorage = useCallback(async (file: File, userId: string) => {
+    const ext = file.name.split('.').pop() || 'png';
+    const safeName = file.name.replace(/\s+/g, '-').replace(/[^a-z0-9._-]/gi, '');
+    const path = `${userId}/library-${Date.now()}-${crypto.randomUUID()}-${safeName}.${ext}`;
+    const buckets = ['creative-renders', 'creative-inputs'];
+    let bucketUsed = buckets[0];
+    let uploaded = false;
+
+    for (const bucket of buckets) {
+      const { error } = await supabase.storage.from(bucket).upload(path, file, {
+        contentType: file.type,
+        upsert: true,
+      });
+      if (!error) {
+        bucketUsed = bucket;
+        uploaded = true;
+        break;
+      }
+      if (!error?.message?.toLowerCase().includes('bucket')) {
+        throw new Error(error.message);
+      }
+    }
+
+    if (!uploaded) {
+      throw new Error('Storage bucket fehlt. Bitte creative-renders oder creative-inputs anlegen.');
+    }
+
+    const { data: publicData } = supabase.storage.from(bucketUsed).getPublicUrl(path);
+    if (publicData?.publicUrl) {
+      return { bucket: bucketUsed, path, url: publicData.publicUrl };
+    }
+
+    const signed = await supabase.storage.from(bucketUsed).createSignedUrl(path, 60 * 60);
+    if (signed.error) {
+      throw new Error(signed.error.message);
+    }
+    return { bucket: bucketUsed, path, url: signed.data.signedUrl };
+  }, []);
+
+  const handleFileChange = useCallback(
+    (event: ChangeEvent<HTMLInputElement>) => {
+      const file = event.target.files?.[0];
+      if (!file) return;
+      event.target.value = '';
+
+      if (!file.type.startsWith('image/')) {
+        toast.error('Bitte nur Bilddateien hochladen.');
+        return;
+      }
+
+      (async () => {
+        setIsUploading(true);
+        setUploadError(null);
+        try {
+          const { data: session } = await supabase.auth.getSession();
+          const userId = session.session?.user?.id;
+          if (!userId) throw new Error('Bitte zuerst anmelden.');
+
+          const upload = await uploadFileToStorage(file, userId);
+          const name = file.name.replace(/\.[^/.]+$/, '') || 'Uploaded Creative';
+
+          const { data, error } = await supabase
+            .from('generated_creatives')
+            .insert({
+              user_id: userId,
+              saved: true,
+              thumbnail: upload.url,
+              inputs: {
+                creativeName: name,
+                creativeType: 'image',
+                tags: ['uploaded'],
+                upload: { bucket: upload.bucket, path: upload.path, filename: file.name },
+              },
+            })
+            .select('id,thumbnail,created_at,metrics,inputs')
+            .single();
+
+          if (error) throw error;
+          const mapped = mapCreativeRow(data, favoriteIds);
+          setCreatives(prev => [mapped, ...prev]);
+          toast.success('Creative hochgeladen');
+        } catch (err: unknown) {
+          const message = err instanceof Error ? err.message : 'Upload fehlgeschlagen';
+          setUploadError(message);
+          toast.error(message);
+        } finally {
+          setIsUploading(false);
+        }
+      })();
+    },
+    [favoriteIds, mapCreativeRow, uploadFileToStorage]
+  );
+
+  const resolveDownloadUrl = useCallback((row: { thumbnail?: string | null; outputs?: unknown | null }) => {
+    if (row.thumbnail) return row.thumbnail;
+    const outputs = row.outputs as any;
+    const variants = outputs?.variants || outputs?.creatives || [];
+    const first = Array.isArray(variants) ? variants[0] : null;
+    const image = first?.visual?.image || first?.image || null;
+    return image?.final_image_url || image?.hero_image_url || image?.input_image_url || null;
+  }, []);
+
+  const handleDownload = useCallback((id: string) => {
+    (async () => {
+      const creative = creatives.find(c => c.id === id);
+      try {
+        const { data, error } = await supabase
+          .from('generated_creatives')
+          .select('thumbnail,outputs')
+          .eq('id', id)
+          .single();
+        if (error) throw error;
+        const url = resolveDownloadUrl(data || {});
+        if (!url) {
+          throw new Error('Kein Bild zum Download gefunden.');
+        }
+        const res = await fetch(url);
+        if (!res.ok) throw new Error('Download fehlgeschlagen.');
+        const blob = await res.blob();
+        const objectUrl = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = objectUrl;
+        const safeName = (creative?.name || 'creative').replace(/[^a-z0-9-_]+/gi, '_');
+        link.download = `${safeName}.png`;
+        link.click();
+        URL.revokeObjectURL(objectUrl);
+        toast.success('Download gestartet');
+      } catch (err: unknown) {
+        toast.error(err instanceof Error ? err.message : 'Download fehlgeschlagen');
+      }
+    })();
+  }, [creatives, resolveDownloadUrl]);
+
+  const handleEditOpen = useCallback((creative: Creative) => {
+    setEditingCreative(creative);
+    setEditName(creative.name);
+    setEditTags(creative.tags.join(', '));
+  }, []);
+
+  const handleEditSave = useCallback(() => {
+    if (!editingCreative) return;
+    const nextName = editName.trim();
+    if (!nextName) {
+      toast.error('Bitte einen Namen angeben.');
+      return;
+    }
+
+    const tags = editTags
+      .split(',')
+      .map((tag) => tag.trim())
+      .filter(Boolean);
+
+    (async () => {
+      setIsSavingEdit(true);
+      try {
+        const { data: detail, error: detailError } = await supabase
+          .from('generated_creatives')
+          .select('inputs')
+          .eq('id', editingCreative.id)
+          .single();
+        if (detailError) throw detailError;
+
+        const inputs = { ...(detail?.inputs || {}), creativeName: nextName, tags };
+        const { error } = await supabase
+          .from('generated_creatives')
+          .update({ inputs })
+          .eq('id', editingCreative.id);
+        if (error) throw error;
+
+        setCreatives(prev =>
+          prev.map(c =>
+            c.id === editingCreative.id
+              ? { ...c, name: nextName, tags }
+              : c
+          )
+        );
+        toast.success('Creative aktualisiert');
+        setEditingCreative(null);
+      } catch (err: unknown) {
+        toast.error(err instanceof Error ? err.message : 'Update fehlgeschlagen');
+      } finally {
+        setIsSavingEdit(false);
+      }
+    })();
+  }, [editName, editTags, editingCreative]);
 
   const typeIcons = useMemo(
     () => ({
@@ -293,8 +507,14 @@ export function CreativeLibraryPage() {
               <button onClick={() => handleToggleFavorite(creative.id)} className="p-1.5 hover:bg-muted rounded transition-colors">
                 <Star className={`w-4 h-4 ${creative.isFavorite ? 'fill-yellow-500 text-yellow-500' : 'text-muted-foreground'}`} />
               </button>
+              <button onClick={() => handleDownload(creative.id)} className="p-1.5 hover:bg-muted rounded transition-colors">
+                <Download className="w-4 h-4 text-muted-foreground" />
+              </button>
               <button onClick={() => handleDuplicate(creative.id)} className="p-1.5 hover:bg-muted rounded transition-colors">
                 <Copy className="w-4 h-4 text-muted-foreground" />
+              </button>
+              <button onClick={() => handleEditOpen(creative)} className="p-1.5 hover:bg-muted rounded transition-colors">
+                <Edit2 className="w-4 h-4 text-muted-foreground" />
               </button>
               <button onClick={() => handleDelete(creative.id)} className="p-1.5 hover:bg-red-500/20 rounded transition-colors">
                 <Trash2 className="w-4 h-4 text-red-500" />
@@ -304,7 +524,7 @@ export function CreativeLibraryPage() {
         </tr>
       );
     },
-    [handleDelete, handleDuplicate, handleToggleFavorite, typeIcons]
+    [handleDelete, handleDownload, handleDuplicate, handleEditOpen, handleToggleFavorite, typeIcons]
   );
 
   const gridRef = useRef<HTMLDivElement | null>(null);
@@ -380,7 +600,10 @@ export function CreativeLibraryPage() {
               >
                 <Star className={`w-4 h-4 ${creative.isFavorite ? 'fill-yellow-500 text-yellow-500' : 'text-foreground'}`} />
               </button>
-              <button className="p-2 bg-card rounded-lg hover:bg-card/90 transition-colors">
+              <button
+                onClick={() => handleDownload(creative.id)}
+                className="p-2 bg-card rounded-lg hover:bg-card/90 transition-colors"
+              >
                 <Download className="w-4 h-4 text-foreground" />
               </button>
               <button
@@ -389,7 +612,10 @@ export function CreativeLibraryPage() {
               >
                 <Copy className="w-4 h-4 text-foreground" />
               </button>
-              <button className="p-2 bg-card rounded-lg hover:bg-card/90 transition-colors">
+              <button
+                onClick={() => handleEditOpen(creative)}
+                className="p-2 bg-card rounded-lg hover:bg-card/90 transition-colors"
+              >
                 <Edit2 className="w-4 h-4 text-foreground" />
               </button>
               <button
@@ -465,6 +691,13 @@ export function CreativeLibraryPage() {
 
   return (
     <div className="space-y-6">
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="image/*"
+        className="hidden"
+        onChange={handleFileChange}
+      />
       {/* Hero Header */}
       <div className="backdrop-blur-xl bg-card/60 rounded-2xl border border-border/50 shadow-xl p-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
         <div className="flex items-start justify-between mb-6">
@@ -476,9 +709,13 @@ export function CreativeLibraryPage() {
               Manage and analyze all your ad creatives in one place
             </p>
           </div>
-          <Button className="bg-gradient-to-r from-primary to-primary/80 text-primary-foreground hover:opacity-90">
+          <Button
+            onClick={handleUploadClick}
+            disabled={isUploading}
+            className="bg-gradient-to-r from-primary to-primary/80 text-primary-foreground hover:opacity-90 disabled:opacity-60"
+          >
             <Upload className="w-4 h-4 mr-2" />
-            Upload Creative
+            {isUploading ? 'Uploading…' : 'Upload Creative'}
           </Button>
         </div>
 
@@ -510,6 +747,12 @@ export function CreativeLibraryPage() {
       {loadError && (
         <div className="p-4 rounded-xl border border-red-500/30 bg-red-500/5 text-red-600">
           {loadError}
+        </div>
+      )}
+
+      {uploadError && (
+        <div className="p-4 rounded-xl border border-amber-500/30 bg-amber-500/10 text-amber-700">
+          {uploadError}
         </div>
       )}
 
@@ -618,6 +861,54 @@ export function CreativeLibraryPage() {
           title="No creatives found"
           description="Speichere Creatives aus dem Ad Builder, damit sie hier erscheinen."
         />
+      )}
+
+      {editingCreative && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm"
+          onClick={() => setEditingCreative(null)}
+        >
+          <div
+            className="w-full max-w-lg rounded-2xl bg-card border border-border p-6 shadow-2xl"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <h3 className="text-lg font-semibold text-foreground mb-4">Creative bearbeiten</h3>
+            <div className="space-y-4">
+              <div>
+                <label className="text-sm font-medium text-muted-foreground">Name</label>
+                <input
+                  value={editName}
+                  onChange={(event) => setEditName(event.target.value)}
+                  className="mt-2 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/40"
+                />
+              </div>
+              <div>
+                <label className="text-sm font-medium text-muted-foreground">Tags</label>
+                <input
+                  value={editTags}
+                  onChange={(event) => setEditTags(event.target.value)}
+                  placeholder="z.B. performance, fitness"
+                  className="mt-2 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/40"
+                />
+              </div>
+            </div>
+            <div className="mt-6 flex justify-end gap-3">
+              <button
+                onClick={() => setEditingCreative(null)}
+                className="px-4 py-2 rounded-lg border border-border text-sm font-medium text-foreground hover:bg-muted"
+              >
+                Abbrechen
+              </button>
+              <button
+                onClick={handleEditSave}
+                disabled={isSavingEdit}
+                className="px-4 py-2 rounded-lg bg-primary text-primary-foreground text-sm font-semibold hover:bg-primary/90 disabled:opacity-50"
+              >
+                {isSavingEdit ? 'Speichern…' : 'Speichern'}
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );
