@@ -119,14 +119,45 @@ export default function CreativeResults(props: {
         </div>
       </Card>
 
-      <Tabs defaultValue="creatives">
+      <Tabs defaultValue="creative">
         <TabsList>
+          <TabsTrigger value="creative">Creative</TabsTrigger>
           <TabsTrigger value="creatives">Creatives</TabsTrigger>
           <TabsTrigger value="json">JSON</TabsTrigger>
         </TabsList>
 
+        <TabsContent value="creative">
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
+            {creatives.map((c) => (
+              <CreativeCard
+                key={c.id}
+                creative={c}
+                angleLabel={angles.get(c.angle_id) ?? c.angle_id}
+                onDuplicate={() => {
+                  const id = crypto.randomUUID();
+                  setCreatives((prev) => [
+                    ...prev,
+                    {
+                      ...c,
+                      id,
+                      score: {
+                        ...c.score,
+                        value: Math.max(0, Math.min(100, Math.trunc(c.score.value - 2))),
+                        rationale: `Variant of ${c.id}. ${c.score.rationale}`.slice(0, 240),
+                      },
+                    },
+                  ]);
+                }}
+                onCopy={async (text) => {
+                  await navigator.clipboard.writeText(text);
+                }}
+              />
+            ))}
+          </div>
+        </TabsContent>
+
         <TabsContent value="creatives">
-          <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
             {creatives.map((c) => (
               <CreativeCard
                 key={c.id}
