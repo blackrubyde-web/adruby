@@ -1,4 +1,4 @@
-import { memo, useCallback } from 'react';
+import { memo, useCallback, useState } from 'react';
 import { BarChart3, Target, Layers, Brain, Settings, LogOut, X, BarChart2, Gift, Sparkles, BookOpen, type LucideIcon } from 'lucide-react';
 import { PageType } from '../App';
 
@@ -42,6 +42,10 @@ export const Sidebar = memo(function Sidebar({
   onMobileClose,
   onLogout
 }: SidebarProps) {
+  const [isHovering, setIsHovering] = useState(false);
+  const isExpanded = Boolean(isMobileOpen || !isCollapsed || isHovering);
+  const showLabels = isExpanded;
+
   const handleNavigate = useCallback((page: PageType) => {
     onNavigate(page);
     if (onMobileClose) {
@@ -61,7 +65,7 @@ export const Sidebar = memo(function Sidebar({
             ? 'bg-sidebar-accent text-sidebar-foreground'
             : 'text-sidebar-foreground/70 hover:text-sidebar-foreground hover:bg-sidebar-accent/50'
         }`}
-        title={(isCollapsed && !isMobileOpen) ? item.label : undefined}
+        title={(!showLabels && !isMobileOpen) ? item.label : undefined}
       >
         {/* Left Accent Bar - Only on Active */}
         {isActive && (
@@ -69,7 +73,7 @@ export const Sidebar = memo(function Sidebar({
         )}
         
         <item.icon className="w-5 h-5 flex-shrink-0" />
-        {(isMobileOpen || !isCollapsed) && (
+        {showLabels && (
           <span className={`flex-1 text-left text-sm ${isActive ? 'font-semibold' : 'font-medium'}`}>
             {item.label}
           </span>
@@ -90,24 +94,34 @@ export const Sidebar = memo(function Sidebar({
 
       {/* Sidebar */}
       <div 
-        className={`bg-sidebar border-r border-sidebar-border h-screen fixed left-0 top-0 flex flex-col transition-[width,transform] duration-300 z-50
+        className={`bg-sidebar border-r border-sidebar-border h-screen fixed left-0 top-0 flex flex-col transition-[width,transform] duration-200 z-50
           ${isMobileOpen ? 'translate-x-0 w-64' : '-translate-x-full w-64'}
-          ${!isMobileOpen && isCollapsed ? 'md:translate-x-0 md:w-20' : ''}
-          ${!isMobileOpen && !isCollapsed ? 'md:translate-x-0 md:w-64' : ''}
+          ${!isMobileOpen ? 'md:translate-x-0' : ''}
+          ${!isMobileOpen && !isExpanded ? 'md:w-20' : 'md:w-64'}
         `}
         style={{ willChange: 'transform,width' }}
-        onMouseLeave={() => !isMobileOpen && !isCollapsed && onToggle?.(true)}
+        onMouseEnter={() => {
+          if (!isMobileOpen && isCollapsed) setIsHovering(true);
+        }}
+        onMouseLeave={() => {
+          if (!isMobileOpen) setIsHovering(false);
+        }}
       >
         {/* Logo Area with Hover Trigger */}
         <div 
           className="flex items-center justify-between p-4 border-b border-sidebar-border"
-          onMouseEnter={() => !isMobileOpen && isCollapsed && onToggle?.(false)}
+          onClick={() => {
+            if (!isMobileOpen) {
+              onToggle?.(!isCollapsed);
+              setIsHovering(false);
+            }
+          }}
         >
           <div className="flex items-center gap-3">
             <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center flex-shrink-0">
               <span className="text-primary-foreground font-bold text-sm">AR</span>
             </div>
-            {(isMobileOpen || !isCollapsed) && (
+            {showLabels && (
               <span className="text-sidebar-foreground font-bold text-lg">
                 AdRuby
               </span>
@@ -127,7 +141,7 @@ export const Sidebar = memo(function Sidebar({
         <nav className="flex-1 overflow-y-auto p-4">
           {/* GROUP 1: Core Workflow */}
           <div className="mb-6">
-            {(isMobileOpen || !isCollapsed) && (
+            {showLabels && (
               <div className="px-4 mb-2">
                 <span className="text-xs font-semibold text-sidebar-foreground/50 uppercase tracking-wider">
                   Workflow
@@ -144,7 +158,7 @@ export const Sidebar = memo(function Sidebar({
 
           {/* GROUP 2: Account & System */}
           <div>
-            {(isMobileOpen || !isCollapsed) && (
+            {showLabels && (
               <div className="px-4 mb-2">
                 <span className="text-xs font-semibold text-sidebar-foreground/50 uppercase tracking-wider">
                   Account
@@ -161,11 +175,11 @@ export const Sidebar = memo(function Sidebar({
         <div className="p-4 border-t border-sidebar-border">
           <button 
             className="w-full flex items-center gap-3 px-4 py-2.5 rounded-lg text-sidebar-foreground/70 hover:text-sidebar-foreground hover:bg-sidebar-accent/50 transition-colors"
-            title={(isCollapsed && !isMobileOpen) ? 'Logout' : undefined}
+            title={(!showLabels && !isMobileOpen) ? 'Logout' : undefined}
             onClick={onLogout}
           >
             <LogOut className="w-5 h-5 flex-shrink-0" />
-            {(isMobileOpen || !isCollapsed) && (
+            {showLabels && (
               <span className="text-sm font-medium">Logout</span>
             )}
           </button>

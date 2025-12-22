@@ -1947,7 +1947,13 @@ async function waitForOpenAiSlot() {
 function isOpenAiTimeoutError(err) {
   const name = String(err?.name || "");
   const message = String(err?.message || "");
-  return name.includes("Timeout") || message.toLowerCase().includes("timed out");
+  const code = String(err?.code || err?.cause?.code || "");
+  return (
+    name.includes("Timeout") ||
+    message.toLowerCase().includes("timed out") ||
+    message.toLowerCase().includes("terminated") ||
+    code === "UND_ERR_BODY_TIMEOUT"
+  );
 }
 
 function isRetryableOpenAiError(err) {
@@ -2001,7 +2007,7 @@ async function callOpenAiJson(prompt, options = {}) {
   const useSchema = process.env.USE_JSON_SCHEMA === "1";
   const responseFormat = options?.responseFormat;
   const baseTimeoutMs = clampInt(
-    Number(process.env.OPENAI_TIMEOUT_MS || 120000),
+    Number(process.env.OPENAI_TIMEOUT_MS || 150000),
     5000,
     180000,
   );
