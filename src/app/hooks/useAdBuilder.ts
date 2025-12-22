@@ -88,9 +88,14 @@ export function useAdBuilder() {
         // If server provided a jobId, poll for completion. Otherwise accept immediate output.
         if (res.jobId) {
           setStatus("polling");
-          const maxAttempts = 40;
+          const maxPollingMs = Number(import.meta.env.VITE_CREATIVE_POLL_MAX_MS || 20 * 60 * 1000);
+          const deadline = Date.now() + Math.max(60000, maxPollingMs);
           let attempt = 0;
-          while (!pollRef.current.cancelled && attempt < maxAttempts && pollId === pollIdRef.current) {
+          while (
+            !pollRef.current.cancelled &&
+            Date.now() < deadline &&
+            pollId === pollIdRef.current
+          ) {
             attempt += 1;
             try {
               // eslint-disable-next-line no-await-in-loop
@@ -99,6 +104,9 @@ export function useAdBuilder() {
               if (typeof s?.progress === 'number') setProgress(Number(s.progress));
               if (s?.status) setStatus(s.status === 'complete' ? 'complete' : 'polling');
               if (s?.id) setJobId(s.id);
+              if (s?.status === "error") {
+                throw new Error("Generierung fehlgeschlagen.");
+              }
               if (s?.status === "complete") {
                 setResult(s.outputs ?? null);
                 setQuality(s.score ?? null);
