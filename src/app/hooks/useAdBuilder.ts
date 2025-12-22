@@ -171,6 +171,10 @@ export function useAdBuilder() {
   const cancel = useCallback(() => {
     pollRef.current.cancelled = true;
     pollIdRef.current += 1;
+    setStatus("idle");
+    setProgress(null);
+    setJobId(null);
+    setError(null);
   }, []);
 
   return {

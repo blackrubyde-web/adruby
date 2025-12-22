@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useReducer, useState } from 'react';
+import { useCallback, useEffect, useMemo, useReducer, useRef, useState, type KeyboardEvent } from 'react';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { Label } from './ui/label';
@@ -82,6 +82,9 @@ export function AdBuilderPage() {
   const [draftTimestamp, setDraftTimestamp] = useState<string | null>(null);
   const [draftId, setDraftId] = useState<string | null>(null);
   const [imageFile, setImageFile] = useState<File | null>(null);
+  const overlayRef = useRef<HTMLDivElement | null>(null);
+  const cancelButtonRef = useRef<HTMLButtonElement | null>(null);
+  const runIdRef = useRef(0);
 
   const [generatedCopy, setGeneratedCopy] = useState<{headline: string, description: string, cta: string}[]>([]);
   const [selectedCopy, setSelectedCopy] = useState<number | null>(null);
@@ -305,6 +308,7 @@ export function AdBuilderPage() {
     jobId: hookJobId,
     imageMeta: hookImageMeta,
     error: hookError,
+    cancel: cancelGeneration,
   } = useAdBuilder();
 
   useEffect(() => {
@@ -312,6 +316,58 @@ export function AdBuilderPage() {
   }, [hookJobId]);
 
   const isGeneratingCopy = adStatus === 'generating' || adStatus === 'polling';
+  const isProcessing = adStatus === 'analyzing' || isGeneratingCopy;
+
+  const overlayTitle = adStatus === 'analyzing' ? 'Analyse läuft…' : 'Generierung läuft…';
+  const overlayDescription =
+    adStatus === 'analyzing'
+      ? 'Wir erstellen dein Briefing und bereiten die Generierung vor.'
+      : 'Bitte warten – die KI erstellt gerade deine Varianten.';
+
+  const handleOverlayKeyDown = useCallback((event: KeyboardEvent<HTMLDivElement>) => {
+    if (event.key !== 'Tab') return;
+    const node = overlayRef.current;
+    if (!node) return;
+    const focusable = Array.from(
+      node.querySelectorAll<HTMLElement>(
+        'button,[href],input,select,textarea,[tabindex]:not([tabindex="-1"])',
+      ),
+    ).filter((el) => !el.hasAttribute('disabled') && el.getAttribute('aria-hidden') !== 'true');
+    if (focusable.length === 0) {
+      event.preventDefault();
+      return;
+    }
+    const first = focusable[0];
+    const last = focusable[focusable.length - 1];
+    const active = document.activeElement as HTMLElement | null;
+    if (event.shiftKey) {
+      if (active === first || !node.contains(active)) {
+        event.preventDefault();
+        last.focus();
+      }
+    } else if (active === last) {
+      event.preventDefault();
+      first.focus();
+    }
+  }, []);
+
+  const handleCancelGeneration = useCallback(() => {
+    runIdRef.current += 1;
+    cancelGeneration();
+    setCopyError('Generierung abgebrochen.');
+  }, [cancelGeneration]);
+
+  useEffect(() => {
+    if (!isProcessing) return undefined;
+    const previous = document.activeElement as HTMLElement | null;
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    cancelButtonRef.current?.focus();
+    return () => {
+      document.body.style.overflow = prevOverflow;
+      previous?.focus();
+    };
+  }, [isProcessing]);
 
   useEffect(() => {
     if (hookResult && adStatus === 'complete' && state.currentStep < 3) {
@@ -444,96 +500,6 @@ export function AdBuilderPage() {
     return null;
   }, [buildFallbackBrief]);
 
-  const buildDraftInputs = () => {
-    const selectedCopyData =
-      selectedCopy !== null ? generatedCopy[selectedCopy] : generatedCopy[0] || null;
-    const imagePath =
-      hookImageMeta && typeof hookImageMeta === 'object' && 'path' in hookImageMeta
-        ? String(hookImageMeta.path || '')
-        : null;
-    return {
-      productName: state.formData.productName,
-      targetAudience: state.formData.targetAudience,
-      objective: state.formData.objective,
-      budget: state.formData.budget,
-      headline: selectedCopyData?.headline || null,
-      description: selectedCopyData?.description || null,
-      cta: selectedCopyData?.cta || null,
-      strategyId: state.formData.strategyId || null,
-      formData: state.formData,
-      currentStep: state.currentStep,
-      generatedCopy,
-      selectedCopy,
-      selectedVisualStyle,
-      selectedCTA,
-      lifecycle: { status: 'draft' },
-      createdFrom: 'ad_builder',
-      imagePath: imagePath || null,
-    };
-  };
-
-  const saveDraft = async () => {
-    try {
-      const { data } = await supabase.auth.getSession();
-      const userId = data.session?.user?.id;
-      if (!userId) {
-        throw new Error('Bitte zuerst anmelden.');
-      }
-
-      const draftInputs = buildDraftInputs();
-
-      const targetId = hookJobId || draftId;
-
-      if (targetId) {
-        const { data: existing, error: readError } = await supabase
-          .from('generated_creatives')
-          .select('inputs')
-          .eq('id', targetId)
-          .maybeSingle();
-
-        if (readError) throw readError;
-
-        const mergedInputs = {
-          ...(existing?.inputs && typeof existing.inputs === 'object' ? existing.inputs : {}),
-          ...draftInputs,
-        };
-
-        const { error: updateError } = await supabase
-          .from('generated_creatives')
-          .update({
-            inputs: mergedInputs,
-            saved: false,
-            status: 'draft',
-          })
-          .eq('id', targetId);
-        if (updateError) throw updateError;
-        setDraftId(targetId);
-      } else {
-        const { data: created, error: insertError } = await supabase
-          .from('generated_creatives')
-          .insert({
-            user_id: userId,
-            inputs: draftInputs,
-            outputs: null,
-            saved: false,
-            status: 'draft',
-            progress: 0,
-          })
-          .select('id')
-          .single();
-        if (insertError) throw insertError;
-        if (created?.id) {
-          setDraftId(created.id);
-        }
-      }
-
-      toast.success('Draft gespeichert');
-    } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : 'Draft speichern fehlgeschlagen';
-      toast.error(message);
-    }
-  };
-
   const handleNext = async () => {
     if (state.currentStep < steps.length) {
       dispatch({ type: 'NEXT_STEP' });
@@ -589,7 +555,7 @@ export function AdBuilderPage() {
   };
 
   const retryAnalyze = async () => {
-    if (!canGenerateCopy || isGeneratingCopy || analysisRetrying) return;
+    if (!canGenerateCopy || isProcessing || analysisRetrying) return;
     setAnalysisWarning(null);
     setAnalysisRetrying(true);
     try {
@@ -605,13 +571,15 @@ export function AdBuilderPage() {
   };
 
   const generateCopy = async () => {
-    if (!canGenerateCopy || isGeneratingCopy) return;
+    if (!canGenerateCopy || isProcessing) return;
+    const runId = (runIdRef.current += 1);
     setCopyError(null);
     try {
       const fd = buildAnalyzeFormData();
 
       // use hook analyze + generate — hook will poll if backend returns jobId
       const analyzeRes = await hookAnalyze(fd);
+      if (runId !== runIdRef.current) return;
       setAnalysisWarning(analyzeRes?.warning ?? null);
       const generateRes = await hookGenerate({
         brief: analyzeRes.brief,
@@ -627,6 +595,7 @@ export function AdBuilderPage() {
         platforms: ['meta'],
         formats: ['4:5'],
       });
+      if (runId !== runIdRef.current) return;
 
       const source = normalizeOutputToV1(extractCreativeOutput(generateRes) ?? hookResult ?? null);
       const creatives = Array.isArray(source?.creatives) ? source.creatives : [];
@@ -638,6 +607,7 @@ export function AdBuilderPage() {
       setGeneratedCopy(copies);
       setSelectedCopy(null);
     } catch (err: unknown) {
+      if (runId !== runIdRef.current) return;
       const message = err instanceof Error ? err.message : hookError || 'Generate failed.';
       setCopyError(message);
     } finally {
@@ -998,11 +968,11 @@ export function AdBuilderPage() {
                       <Button
                         onClick={generateCopy}
                         size="sm"
-                        disabled={!canGenerateCopy || isGeneratingCopy}
+                        disabled={!canGenerateCopy || isProcessing}
                         className="bg-primary hover:bg-primary/90 text-primary-foreground w-full sm:w-auto"
                       >
-                        <Zap className={`w-4 h-4 mr-2 ${isGeneratingCopy ? 'animate-pulse' : ''}`} />
-                        {isGeneratingCopy ? 'Generiere…' : 'KI generieren'}
+                        <Zap className={`w-4 h-4 mr-2 ${isProcessing ? 'animate-pulse' : ''}`} />
+                        {adStatus === 'analyzing' ? 'Analysiere…' : isGeneratingCopy ? 'Generiere…' : 'KI generieren'}
                       </Button>
                     </div>
 
@@ -1018,40 +988,7 @@ export function AdBuilderPage() {
                       />
                     )}
 
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-                      <Button
-                        onClick={saveDraft}
-                        variant="outline"
-                        className="w-full border-border text-foreground hover:bg-muted"
-                      >
-                        Als Entwurf speichern
-                      </Button>
-                      <Button
-                        onClick={() => {
-                          try {
-                            if (!displayOutput) {
-                              throw new Error('Bitte zuerst eine Generierung abschließen.');
-                            }
-                            const blob = new Blob([JSON.stringify(displayOutput, null, 2)], { type: 'application/json' });
-                            const url = URL.createObjectURL(blob);
-                            const a = document.createElement('a');
-                            a.href = url;
-                            a.download = `${(state.formData.productName || 'creative').replace(/\s+/g, '_')}.json`;
-                            document.body.appendChild(a);
-                            a.click();
-                            a.remove();
-                            URL.revokeObjectURL(url);
-                            toast.success('Creative exportiert');
-                          } catch (err: unknown) {
-                            const message = err instanceof Error ? err.message : 'Export fehlgeschlagen';
-                            toast.error(message);
-                          }
-                        }}
-                        className="w-full"
-                        variant="outline"
-                      >
-                        Export JSON
-                      </Button>
+                    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                       <Button
                         onClick={async () => {
                           try {
@@ -1115,18 +1052,33 @@ export function AdBuilderPage() {
             </Card>
       </div>
 
-      {isGeneratingCopy && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4">
+      {isProcessing && (
+        <div
+          ref={overlayRef}
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4"
+          role="dialog"
+          aria-modal="true"
+          aria-label={overlayTitle}
+          onKeyDown={handleOverlayKeyDown}
+        >
           <div className="w-full max-w-md rounded-2xl border border-border bg-card p-6 shadow-2xl">
             <div className="flex items-center justify-between">
-              <div className="text-lg font-semibold text-foreground">Generierung läuft…</div>
+              <div className="text-lg font-semibold text-foreground">{overlayTitle}</div>
               <div className="text-xs text-muted-foreground">Status: {adStatus}</div>
             </div>
-            <p className="mt-2 text-sm text-muted-foreground">
-              Bitte warten – die KI erstellt gerade deine Varianten.
-            </p>
+            <p className="mt-2 text-sm text-muted-foreground">{overlayDescription}</p>
             <div className="mt-4">
               <Progress value={hookProgress ?? 0} className="h-2" />
+            </div>
+            <div className="mt-5 flex justify-end">
+              <Button
+                ref={cancelButtonRef}
+                type="button"
+                variant="outline"
+                onClick={handleCancelGeneration}
+              >
+                Abbrechen
+              </Button>
             </div>
           </div>
         </div>
