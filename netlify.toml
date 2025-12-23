@@ -9,10 +9,10 @@
 [functions]
   directory = "netlify/functions"
   node_bundler = "esbuild"
-  included_files = ["netlify/functions/package.json"]
+  included_files = ["package.json"]
 
 [functions.esbuild]
-  format = "cjs"
+  format = "esm"
   external_node_modules = ["@resvg/resvg-js", "puppeteer-core", "@sparticuz/chromium"]
 
 [[redirects]]
