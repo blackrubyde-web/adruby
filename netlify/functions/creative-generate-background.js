@@ -522,6 +522,12 @@ const IMAGE_TOP_N = clampInt(
   0,
   2,
 );
+const FALLBACK_RENDER_ALL = process.env.CREATIVE_RENDER_FALLBACK_ALL !== "0";
+const FALLBACK_RENDER_MIN_REMAINING_MS = clampInt(
+  Number.parseInt(process.env.CREATIVE_RENDER_FALLBACK_MIN_REMAINING_MS || "8000", 10),
+  1000,
+  60000,
+);
 const SHOULD_PERSIST_IMAGE_URLS =
   process.env.CREATIVE_IMAGES_PUBLIC === "1" ||
   process.env.CREATIVE_PERSIST_SIGNED_URLS !== "0";
@@ -1139,6 +1145,7 @@ export async function handler(event) {
 
         // batch-evaluate all variants in a single call
         let evals = [];
+        let imageModelUnavailable = false;
         try {
           const batchEvalPrompt = buildBatchQualityEvalPromptV2({
             brief,
@@ -1366,7 +1373,9 @@ export async function handler(event) {
             let imageError = null;
             const timeRemainingMs = MAX_IMAGE_DURATION_MS - (Date.now() - imageStartedAt);
             const shouldUseLLMSpec =
-              (!IMAGE_SPEC_ONLY_FIRST || i === 0) && timeRemainingMs > IMAGE_SPEC_MIN_BUDGET_MS;
+              (!IMAGE_SPEC_ONLY_FIRST || i === 0) &&
+              timeRemainingMs > IMAGE_SPEC_MIN_BUDGET_MS &&
+              !imageModelUnavailable;
             if (shouldUseLLMSpec) {
               const specStart = Date.now();
               logStep("mentor.images.spec.start", { jobId: placeholderId, index });
@@ -1435,7 +1444,14 @@ export async function handler(event) {
             let heroPath = null;
             const heroStart = Date.now();
             logStep("mentor.images.hero.start", { jobId: placeholderId, index });
-            if (inputImageBase64) {
+            if (imageModelUnavailable) {
+              imageError = imageError || "image_model_unavailable";
+              logStep("mentor.images.hero.skip", {
+                jobId: placeholderId,
+                index,
+                reason: "image_model_unavailable",
+              });
+            } else if (inputImageBase64) {
               heroB64 = inputImageBase64;
               heroMeta = { model: "user_upload" };
               logStep("mentor.images.hero.done", {
@@ -1474,6 +1490,9 @@ export async function handler(event) {
                 });
                 if (!imageError) {
                   imageError = `hero_generate_failed: ${err?.message || String(err)}`;
+                }
+                if (isImageModelUnavailableError(err)) {
+                  imageModelUnavailable = true;
                 }
               }
             }
@@ -1787,6 +1806,7 @@ export async function handler(event) {
     let imagesDone = 0;
     let imagesFailed = 0;
     let imagesSkipped = 0;
+    let imageModelUnavailable = false;
     if (imageTargets.length) {
       const imageStartedAt = Date.now();
       const isOverImageBudget = () => Date.now() - imageStartedAt > MAX_IMAGE_DURATION_MS;
@@ -1819,7 +1839,9 @@ export async function handler(event) {
         let imageError = null;
         const timeRemainingMs = MAX_IMAGE_DURATION_MS - (Date.now() - imageStartedAt);
         const shouldUseLLMSpec =
-          (!IMAGE_SPEC_ONLY_FIRST || i === 0) && timeRemainingMs > IMAGE_SPEC_MIN_BUDGET_MS;
+          (!IMAGE_SPEC_ONLY_FIRST || i === 0) &&
+          timeRemainingMs > IMAGE_SPEC_MIN_BUDGET_MS &&
+          !imageModelUnavailable;
         if (shouldUseLLMSpec) {
           const specStart = Date.now();
           logStep("default.images.spec.start", { jobId: placeholderId, index });
@@ -1888,7 +1910,14 @@ export async function handler(event) {
         let heroPath = null;
         const heroStart = Date.now();
         logStep("default.images.hero.start", { jobId: placeholderId, index });
-        if (inputImageBase64) {
+        if (imageModelUnavailable) {
+          imageError = imageError || "image_model_unavailable";
+          logStep("default.images.hero.skip", {
+            jobId: placeholderId,
+            index,
+            reason: "image_model_unavailable",
+          });
+        } else if (inputImageBase64) {
           heroB64 = inputImageBase64;
           heroMeta = { model: "user_upload" };
           logStep("default.images.hero.done", {
@@ -1927,6 +1956,9 @@ export async function handler(event) {
             });
             if (!imageError) {
               imageError = `hero_generate_failed: ${err?.message || String(err)}`;
+            }
+            if (isImageModelUnavailableError(err)) {
+              imageModelUnavailable = true;
             }
           }
         }
@@ -2053,6 +2085,84 @@ export async function handler(event) {
       }
 
       imagesSkipped = Math.max(0, imagesTotal - imagesDone - imagesFailed);
+
+      if (FALLBACK_RENDER_ALL && best.creatives.length) {
+        const fallbackStart = Date.now();
+        const remainingMs = MAX_IMAGE_DURATION_MS - Math.max(0, fallbackStart - imageStartedAt);
+        const fallbackCandidates = best.creatives
+          .map((creative, index) => ({ creative, index }))
+          .filter(({ creative }) => !creative?.image?.final_image_url);
+
+        if (fallbackCandidates.length && remainingMs > FALLBACK_RENDER_MIN_REMAINING_MS) {
+          logStep("default.images.fallback.start", {
+            jobId: placeholderId,
+            count: fallbackCandidates.length,
+          });
+
+          for (const { creative, index } of fallbackCandidates) {
+            const promptHash = hashPrompt(`${creative?.copy?.hook || "creative"}-${index}`);
+            const format = creative?.format || brief.format;
+            let fallbackError = null;
+            let renderWidth = null;
+            let renderHeight = null;
+            let renderVersion = null;
+            let finalUrl = null;
+            let finalBucket = null;
+            let finalPath = null;
+
+            try {
+              const rendered = await renderAdImage({
+                creative,
+                brief,
+                format,
+                heroBase64: null,
+              });
+              renderWidth = rendered.width;
+              renderHeight = rendered.height;
+              renderVersion = rendered.renderVersion;
+              const finalUpload = await uploadRenderedImage({
+                userId,
+                buffer: rendered.buffer,
+                promptHash,
+              });
+              finalBucket = finalUpload.bucket ?? null;
+              finalPath = finalUpload.path ?? null;
+              const finalPreviewUrl = finalUpload.previewUrl ?? finalUpload.url ?? null;
+              finalUrl = SHOULD_PERSIST_IMAGE_URLS ? finalPreviewUrl : null;
+            } catch (err) {
+              fallbackError = `render_fallback_failed: ${err?.message || String(err)}`;
+            }
+
+            const updatedImage = {
+              input_image_used: Boolean(hasImage),
+              render_intent: creative?.image?.render_intent || "Hero image",
+              hero_image_url: creative?.image?.hero_image_url ?? null,
+              hero_image_bucket: creative?.image?.hero_image_bucket ?? null,
+              hero_image_path: creative?.image?.hero_image_path ?? null,
+              final_image_url: finalUrl ?? null,
+              final_image_bucket: finalBucket,
+              final_image_path: finalPath,
+              width: renderWidth ?? null,
+              height: renderHeight ?? null,
+              model: creative?.image?.model ?? null,
+              seed: creative?.image?.seed ?? null,
+              prompt_hash: promptHash,
+              render_version: renderVersion ?? null,
+              error: finalUrl ? null : fallbackError,
+            };
+
+            best.creatives[index] = {
+              ...creative,
+              image: updatedImage,
+            };
+          }
+
+          logStep("default.images.fallback.done", {
+            jobId: placeholderId,
+            ms: Date.now() - fallbackStart,
+          });
+        }
+      }
     }
 
     const finalOutput =
@@ -2187,6 +2297,11 @@ function isOpenAiTimeoutError(err) {
     message.toLowerCase().includes("terminated") ||
     code === "UND_ERR_BODY_TIMEOUT"
   );
+}
+
+function isImageModelUnavailableError(err) {
+  const message = String(err?.message || "").toLowerCase();
+  return message.includes("gpt-image-1") || message.includes("organization must be verified");
 }
 
 function isRetryableOpenAiError(err) {
