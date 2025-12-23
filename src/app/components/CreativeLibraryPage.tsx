@@ -352,7 +352,11 @@ export function CreativeLibraryPage() {
 
   type CreativeImageRef = {
     final_image_url?: string | null;
+    final_image_bucket?: string | null;
+    final_image_path?: string | null;
     hero_image_url?: string | null;
+    hero_image_bucket?: string | null;
+    hero_image_path?: string | null;
     input_image_url?: string | null;
   };
   type CreativeOutputVariant = {
@@ -361,14 +365,17 @@ export function CreativeLibraryPage() {
   };
 
   const resolveDownloadUrl = useCallback((row: { thumbnail?: string | null; outputs?: unknown | null }) => {
-    if (row.thumbnail) return row.thumbnail;
+    if (row.thumbnail) return { url: row.thumbnail, bucket: null, path: null };
     const outputs = row.outputs as
       | { variants?: CreativeOutputVariant[]; creatives?: CreativeOutputVariant[] }
       | null;
     const variants = outputs?.variants || outputs?.creatives || [];
     const first = Array.isArray(variants) ? variants[0] : null;
     const image = first?.visual?.image || first?.image || null;
-    return image?.final_image_url || image?.hero_image_url || image?.input_image_url || null;
+    const url = image?.final_image_url || image?.hero_image_url || image?.input_image_url || null;
+    const bucket = image?.final_image_bucket || image?.hero_image_bucket || null;
+    const path = image?.final_image_path || image?.hero_image_path || null;
+    return { url, bucket, path };
   }, []);
 
   const handleDownload = useCallback((id: string) => {
@@ -381,7 +388,16 @@ export function CreativeLibraryPage() {
           .eq('id', id)
           .single();
         if (error) throw error;
-        const url = resolveDownloadUrl(data || {});
+        const resolved = resolveDownloadUrl(data || {});
+        let url = resolved.url || null;
+        if (!url && resolved.bucket && resolved.path) {
+          try {
+            const { creativeImageUrl } = await import("../lib/api/creative");
+            url = await creativeImageUrl({ bucket: resolved.bucket, path: resolved.path });
+          } catch {
+            url = null;
+          }
+        }
         if (!url) {
           throw new Error('Kein Bild zum Download gefunden.');
         }

@@ -136,6 +136,29 @@ export async function creativeStatus(jobId: string): Promise<CreativeStatusRespo
   return json as CreativeStatusResponse;
 }
 
+export async function creativeImageUrl(params: {
+  bucket: string;
+  path: string;
+}): Promise<string | null> {
+  const token = await requireAccessToken();
+
+  const res = await fetch(apiUrl("/api/creative-image-url"), {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${token}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(params),
+  });
+
+  const json = await parseJson(res);
+  if (!res.ok) {
+    throw new Error(json?.error ?? "Image URL request failed");
+  }
+
+  return typeof json?.url === "string" ? json.url : null;
+}
+
 export async function creativeLibraryStatus() {
   const token = await requireAccessToken();
   const res = await fetch(apiUrl("/api/creative/save"), {

@@ -62,13 +62,18 @@ type CreativeV2Variant = {
     input_image_used?: boolean;
     render_intent?: string;
     hero_image_url?: string;
+    hero_image_bucket?: string;
+    hero_image_path?: string;
     final_image_url?: string;
+    final_image_bucket?: string;
+    final_image_path?: string;
     width?: number;
     height?: number;
     model?: string;
     seed?: number;
     prompt_hash?: string;
     render_version?: string;
+    error?: string;
   };
 };
 
@@ -495,13 +500,18 @@ export function AdBuilderPage() {
           input_image_used: Boolean(variant.visual?.image?.input_image_used),
           render_intent: variant.visual?.image?.render_intent || 'Hero image',
           hero_image_url: variant.visual?.image?.hero_image_url || undefined,
+          hero_image_bucket: variant.visual?.image?.hero_image_bucket || undefined,
+          hero_image_path: variant.visual?.image?.hero_image_path || undefined,
           final_image_url: variant.visual?.image?.final_image_url || undefined,
+          final_image_bucket: variant.visual?.image?.final_image_bucket || undefined,
+          final_image_path: variant.visual?.image?.final_image_path || undefined,
           width: variant.visual?.image?.width || undefined,
           height: variant.visual?.image?.height || undefined,
           model: variant.visual?.image?.model || undefined,
           seed: variant.visual?.image?.seed || undefined,
           prompt_hash: variant.visual?.image?.prompt_hash || undefined,
           render_version: variant.visual?.image?.render_version || undefined,
+          error: variant.visual?.image?.error || undefined,
         },
       }));
       const angles =
@@ -547,13 +557,18 @@ export function AdBuilderPage() {
           input_image_used: Boolean(variant?.image?.input_image_used),
           render_intent: variant?.image?.render_intent || 'Hero image',
           hero_image_url: variant?.image?.hero_image_url || undefined,
+          hero_image_bucket: variant?.image?.hero_image_bucket || undefined,
+          hero_image_path: variant?.image?.hero_image_path || undefined,
           final_image_url: variant?.image?.final_image_url || undefined,
+          final_image_bucket: variant?.image?.final_image_bucket || undefined,
+          final_image_path: variant?.image?.final_image_path || undefined,
           width: variant?.image?.width || undefined,
           height: variant?.image?.height || undefined,
           model: variant?.image?.model || undefined,
           seed: variant?.image?.seed || undefined,
           prompt_hash: variant?.image?.prompt_hash || undefined,
           render_version: variant?.image?.render_version || undefined,
+          error: variant?.image?.error || undefined,
         },
         };
       });

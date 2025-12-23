@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import { Copy, Sparkles } from "lucide-react";
+import { useEffect, useState } from "react";
 import { Card } from "../ui/card";
 import { Badge } from "../ui/badge";
 import { Button } from "../ui/button";
@@ -7,6 +8,7 @@ import { Separator } from "../ui/separator";
 import type { CreativeOutputV1 } from "../../lib/creative/schemas";
 import { toast } from "sonner";
 import { ImageWithFallback } from "../figma/ImageWithFallback";
+import { creativeImageUrl } from "../../lib/api/creative";
 
 export default function CreativeCard(props: {
   creative: CreativeOutputV1["creatives"][number];
@@ -39,26 +41,70 @@ export default function CreativeCard(props: {
   };
 
   const imageSrc = c.image.final_image_url ?? c.image.hero_image_url ?? undefined;
+  const imageBucket = c.image.final_image_bucket ?? c.image.hero_image_bucket ?? null;
+  const imagePath = c.image.final_image_path ?? c.image.hero_image_path ?? null;
+  const [resolvedSrc, setResolvedSrc] = useState<string | undefined>(imageSrc);
+  const [imageError, setImageError] = useState<string | null>(c.image.error ?? null);
+  const [refreshAttempted, setRefreshAttempted] = useState(false);
+
+  useEffect(() => {
+    setResolvedSrc(imageSrc);
+    setImageError(c.image.error ?? null);
+    setRefreshAttempted(false);
+  }, [imageSrc, c.image.error]);
+
+  useEffect(() => {
+    if (imageSrc || !imageBucket || !imagePath) return;
+    let active = true;
+    creativeImageUrl({ bucket: imageBucket, path: imagePath })
+      .then((url) => {
+        if (active && url) {
+          setResolvedSrc(url);
+        }
+      })
+      .catch((err: unknown) => {
+        if (!active) return;
+        const message = err instanceof Error ? err.message : "Image URL failed";
+        setImageError(message);
+      });
+    return () => {
+      active = false;
+    };
+  }, [imageSrc, imageBucket, imagePath]);
+
+  const displaySrc = resolvedSrc ?? imageSrc;
 
   return (
     <Card className="p-4">
-      {imageSrc ? (
+      {displaySrc ? (
         <div
           className={`mb-3 w-full overflow-hidden rounded-xl border border-border bg-muted/20 ${aspectClass}`}
         >
           <ImageWithFallback
-            src={imageSrc}
+            src={displaySrc}
             alt={c.copy.hook}
             className="h-full w-full object-cover"
             loading="lazy"
             decoding="async"
+            onError={() => {
+              if (refreshAttempted || !imageBucket || !imagePath) return;
+              setRefreshAttempted(true);
+              creativeImageUrl({ bucket: imageBucket, path: imagePath })
+                .then((url) => {
+                  if (url) setResolvedSrc(url);
+                })
+                .catch((err: unknown) => {
+                  const message = err instanceof Error ? err.message : "Image URL failed";
+                  setImageError(message);
+                });
+            }}
           />
         </div>
       ) : (
         <div
           className={`mb-3 flex w-full items-center justify-center rounded-xl border border-dashed border-border bg-muted/20 text-xs text-muted-foreground ${aspectClass}`}
         >
-          Image rendering pending
+          {imageError ? `Image error: ${imageError}` : "Image rendering pending"}
         </div>
       )}
       <div className="flex items-start justify-between gap-3">
