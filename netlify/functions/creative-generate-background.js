@@ -541,7 +541,8 @@ function sizeForFormat(format) {
   switch (format) {
     case "9:16":
     case "4:5":
-      return "1024x1536";
+      // DALL-E 3 vertical format
+      return "1024x1792";
     case "1:1":
     default:
       return "1024x1024";
@@ -814,22 +815,22 @@ function buildFallbackImageSpec(brief, creative) {
     format,
     platform: "meta",
     style: {
-      mood: "confident",
-      lighting: "soft natural",
-      palette: ["#ffffff", "#0f172a", "#e2e8f0"],
-      camera: "35mm, shallow depth of field",
-      render_style: "clean commercial",
+      mood: "premium and aspirational",
+      lighting: "studio quality, soft diffuse",
+      palette: ["#ffffff", "#000000", "#accent"],
+      camera: "high-end composed shot, shallow depth of field",
+      render_style: "photorealistic 8k",
       realism_level: "high",
     },
     scene: {
-      subject: brief?.product?.name || "product in use",
-      environment: "clean modern setting",
-      composition: "centered hero with negative space for text overlay",
-      props: ["product", "hands"],
-      wardrobe: ["neutral tones"],
+      subject: brief?.product?.name || "product hero shot",
+      environment: "minimalist premium background",
+      composition: "rule of thirds, clear focus",
+      props: [],
+      wardrobe: [],
     },
     brand_safety: { avoid },
-    negative_prompt: ["text", "watermark", "logo text"],
+    negative_prompt: ["text", "watermark", "logo", "blurry", "distorted", "low quality"],
     text_safe_area: { position: "center", margin: "normal" },
     overlay_guidance: { headline_max_chars: 60, cta_style: "solid", badge_optional: true },
   };
@@ -940,7 +941,7 @@ export async function handler(event) {
     if (process.env.DEBUG_FUNCTIONS === "1") {
       try {
         console.warn('[creative-generate] Invalid brief payload', { bodySample: String(body).slice(0, 200) });
-      } catch (e) {}
+      } catch (e) { }
     }
     return badRequest("Invalid brief");
   }
@@ -1210,13 +1211,13 @@ export async function handler(event) {
 
         // compute score by summing subscores
         const scored = evals.map((e) => {
-          const s = e.eval && e.eval.subscores ? Object.values(e.eval.subscores).reduce((a,b)=>a+b,0) : 0;
+          const s = e.eval && e.eval.subscores ? Object.values(e.eval.subscores).reduce((a, b) => a + b, 0) : 0;
           return { ...e, score: s };
         });
 
-        scored.sort((a,b) => b.score - a.score);
+        scored.sort((a, b) => b.score - a.score);
 
-        const top3 = scored.slice(0,3).map(s => ({ index: s.index, variant: s.variant, eval: s.eval, score: s.score }));
+        const top3 = scored.slice(0, 3).map(s => ({ index: s.index, variant: s.variant, eval: s.eval, score: s.score }));
 
         if (placeholderId) await supabaseAdmin.from('generated_creatives').update({ progress: 60, progress_meta: { phase: 'eval', top_count: top3.length } }).eq('id', placeholderId);
 
@@ -1225,17 +1226,17 @@ export async function handler(event) {
             const partialOutput =
               outputMode === "pro"
                 ? buildProOutputFromV2({
-                    output: v2output,
-                    brief,
-                    jobId: placeholderId,
-                    styleMode,
-                    platforms,
-                    formats,
-                    strategyId,
-                    strategyBlueprint,
-                    imageSpecsByIndex,
-                    hasImage,
-                  })
+                  output: v2output,
+                  brief,
+                  jobId: placeholderId,
+                  styleMode,
+                  platforms,
+                  formats,
+                  strategyId,
+                  strategyBlueprint,
+                  imageSpecsByIndex,
+                  hasImage,
+                })
                 : v2output;
             await supabaseAdmin
               .from("generated_creatives")
@@ -1259,7 +1260,7 @@ export async function handler(event) {
           logStep("mentor.improve", { jobId: placeholderId });
           let top = top3[0];
           for (let attempt = 1; attempt <= 2; attempt++) {
-            const weakest = top.eval.weakest_dimensions && top.eval.weakest_dimensions.length ? top.eval.weakest_dimensions.slice(0,2) : ['clarity','hookPower'];
+            const weakest = top.eval.weakest_dimensions && top.eval.weakest_dimensions.length ? top.eval.weakest_dimensions.slice(0, 2) : ['clarity', 'hookPower'];
             const improvePrompt = buildImprovePromptDiagnosePlanRewrite({ brief, currentVariant: top.variant, evalV2: top.eval, targetDimensions: weakest });
             try {
               const improvedRaw = await callOpenAiJson(improvePrompt, {
@@ -1294,7 +1295,7 @@ export async function handler(event) {
           if (top3.length > 0) {
             logStep("mentor.cd-pass", { jobId: placeholderId });
             const top = top3[0];
-            const cdPrompt = buildImprovePromptDiagnosePlanRewrite({ brief, currentVariant: variants[top.index], evalV2: top.eval, targetDimensions: ['clarity','hookPower'] });
+            const cdPrompt = buildImprovePromptDiagnosePlanRewrite({ brief, currentVariant: variants[top.index], evalV2: top.eval, targetDimensions: ['clarity', 'hookPower'] });
             const cdRaw = await callOpenAiJson(cdPrompt, {
               responseFormat: CREATIVE_VARIANT_JSON_SCHEMA,
             });
@@ -1383,17 +1384,17 @@ export async function handler(event) {
                 const specPrompt =
                   outputMode === "pro"
                     ? buildImageSpecPromptPro({
-                        brief,
-                        variant: renderCreative,
-                        strategyBlueprint,
-                        researchContext,
-                      })
+                      brief,
+                      variant: renderCreative,
+                      strategyBlueprint,
+                      researchContext,
+                    })
                     : buildImageSpecPrompt({
-                        brief,
-                        creative: renderCreative,
-                        strategyBlueprint,
-                        researchContext,
-                      });
+                      brief,
+                      creative: renderCreative,
+                      strategyBlueprint,
+                      researchContext,
+                    });
                 const specSchema = outputMode === "pro" ? AD_IMAGE_SPEC_JSON_SCHEMA : IMAGE_SPEC_JSON_SCHEMA;
                 const specRaw = await callOpenAiJson(specPrompt, {
                   responseFormat: specSchema,
@@ -1623,17 +1624,17 @@ export async function handler(event) {
         const finalOutput =
           outputMode === "pro"
             ? buildProOutputFromV2({
-                output: { ...v2output, variants },
-                brief,
-                jobId: placeholderId,
-                styleMode,
-                platforms,
-                formats,
-                strategyId: strategyId || null,
-                strategyBlueprint,
-                imageSpecsByIndex,
-                hasImage,
-              })
+              output: { ...v2output, variants },
+              brief,
+              jobId: placeholderId,
+              styleMode,
+              platforms,
+              formats,
+              strategyId: strategyId || null,
+              strategyBlueprint,
+              imageSpecsByIndex,
+              hasImage,
+            })
             : { ...v2output, variants };
         try {
           if (placeholderId) {
@@ -1769,17 +1770,17 @@ export async function handler(event) {
     const partialOutput =
       outputMode === "pro"
         ? buildProOutputFromV1({
-            output: best,
-            brief,
-            jobId: placeholderId,
-            styleMode,
-            platforms,
-            formats,
-            strategyId: strategyId || null,
-            strategyBlueprint,
-            imageSpecsByIndex,
-            hasImage,
-          })
+          output: best,
+          brief,
+          jobId: placeholderId,
+          styleMode,
+          platforms,
+          formats,
+          strategyId: strategyId || null,
+          strategyBlueprint,
+          imageSpecsByIndex,
+          hasImage,
+        })
         : best;
     try {
       if (placeholderId) {
@@ -1849,17 +1850,17 @@ export async function handler(event) {
             const specPrompt =
               outputMode === "pro"
                 ? buildImageSpecPromptPro({
-                    brief,
-                    variant: creative,
-                    strategyBlueprint,
-                    researchContext,
-                  })
+                  brief,
+                  variant: creative,
+                  strategyBlueprint,
+                  researchContext,
+                })
                 : buildImageSpecPrompt({
-                    brief,
-                    creative,
-                    strategyBlueprint,
-                    researchContext,
-                  });
+                  brief,
+                  creative,
+                  strategyBlueprint,
+                  researchContext,
+                });
             const specSchema = outputMode === "pro" ? AD_IMAGE_SPEC_JSON_SCHEMA : IMAGE_SPEC_JSON_SCHEMA;
             const specRaw = await callOpenAiJson(specPrompt, {
               responseFormat: specSchema,
@@ -2168,24 +2169,24 @@ export async function handler(event) {
     const finalOutput =
       outputMode === "pro"
         ? buildProOutputFromV1({
-            output: best,
-            brief,
-            jobId: placeholderId,
-            styleMode,
-            platforms,
-            formats,
-            strategyId: strategyId || null,
-            strategyBlueprint,
-            imageSpecsByIndex,
-            hasImage,
-          })
+          output: best,
+          brief,
+          jobId: placeholderId,
+          styleMode,
+          platforms,
+          formats,
+          strategyId: strategyId || null,
+          strategyBlueprint,
+          imageSpecsByIndex,
+          hasImage,
+        })
         : best;
 
     const finalScore =
       outputMode === "pro"
         ? finalOutput?.winner_selection?.scores?.find(
-            (s) => s.id === finalOutput?.winner_selection?.recommended_winner_id,
-          )?.total ?? bestEval.satisfaction
+          (s) => s.id === finalOutput?.winner_selection?.recommended_winner_id,
+        )?.total ?? bestEval.satisfaction
         : bestEval.satisfaction;
 
     await logAiAction({
@@ -2385,15 +2386,15 @@ async function callOpenAiJson(prompt, options = {}) {
           temperature: 0.0,
           ...(useSchema && responseFormat
             ? {
-                text: {
-                  format: {
-                    type: "json_schema",
-                    name: responseFormat?.name || "schema",
-                    schema: responseFormat?.schema || responseFormat,
-                    strict: responseFormat?.strict ?? true,
-                  },
+              text: {
+                format: {
+                  type: "json_schema",
+                  name: responseFormat?.name || "schema",
+                  schema: responseFormat?.schema || responseFormat,
+                  strict: responseFormat?.strict ?? true,
                 },
-              }
+              },
+            }
             : {}),
         },
         {

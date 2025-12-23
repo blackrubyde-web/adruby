@@ -7,7 +7,18 @@ function safeJsonParse(s) {
     // continue to heuristics
   }
 
-  const asString = String(s || "");
+  let asString = String(s || "");
+
+  // 0) Strip markdown code blocks if present (e.g. ```json ... ```)
+  const markdownMatch = asString.match(/```(?:json)?\s*([\s\S]*?)\s*```/);
+  if (markdownMatch && markdownMatch[1]) {
+    asString = markdownMatch[1];
+    try {
+      return JSON.parse(asString);
+    } catch (e) {
+      // continue to other heuristics with the stripped string
+    }
+  }
   // 1) try to extract between first { and last }
   const first = asString.indexOf("{");
   const last = asString.lastIndexOf("}");

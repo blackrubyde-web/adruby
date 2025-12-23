@@ -102,9 +102,20 @@ export default function CreativeCard(props: {
         </div>
       ) : (
         <div
-          className={`mb-3 flex w-full items-center justify-center rounded-xl border border-dashed border-border bg-muted/20 text-xs text-muted-foreground ${aspectClass}`}
+          className={`mb-3 flex w-full flex-col items-center justify-center rounded-xl border border-dashed border-border bg-muted/10 text-xs text-muted-foreground ${aspectClass}`}
         >
-          {imageError ? `Image error: ${imageError}` : "Image rendering pending"}
+          {imageError ? (
+            <div className="px-4 text-center text-red-500">
+              <div>Image error</div>
+              <div className="text-[10px] opacity-80">{imageError}</div>
+            </div>
+          ) : (
+            <div className="flex flex-col items-center gap-3">
+              <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+              <div className="animate-pulse font-medium">Rendering image...</div>
+              <div className="text-[10px] opacity-70">Takes up to 60s</div>
+            </div>
+          )}
         </div>
       )}
       <div className="flex items-start justify-between gap-3">

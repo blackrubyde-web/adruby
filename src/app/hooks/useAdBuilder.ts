@@ -6,11 +6,11 @@ import type { NormalizedBrief, CreativeOutput } from "../lib/creative/schemas";
 type Quality =
   | number
   | {
-      satisfaction?: number | null;
-      score?: number | null;
-      comment?: string | null;
-      summary?: string | null;
-    };
+    satisfaction?: number | null;
+    score?: number | null;
+    comment?: string | null;
+    summary?: string | null;
+  };
 
 type Status = "idle" | "analyzing" | "generating" | "polling" | "complete" | "error";
 
@@ -112,12 +112,23 @@ export function useAdBuilder() {
                 setStatus(s.status === 'complete' ? 'complete' : 'polling');
               }
               if (s?.id) setJobId(s.id);
+
+              // Progressive Rendering: expose outputs early if available
+              if (s?.outputs) {
+                setResult(s.outputs);
+                if (s.score) {
+                  setQuality(s.score);
+                }
+              }
+
               if (s?.status === "error") {
                 const metaError =
                   s?.progress_meta && typeof s.progress_meta === "object" && "error" in s.progress_meta
                     ? String((s.progress_meta as Record<string, unknown>).error || "")
                     : "";
                 const errMsg = metaError || "Generierung fehlgeschlagen.";
+                // if we have partial results, maybe don't hard fail? 
+                // but usually error means stop.
                 setError(errMsg);
                 setStatus("error");
                 setProgress(null);
@@ -159,8 +170,8 @@ export function useAdBuilder() {
         }
 
         // immediate output
-  setResult(res.output ?? null);
-  setQuality(res.quality ?? null);
+        setResult(res.output ?? null);
+        setQuality(res.quality ?? null);
         setStatus("complete");
         setProgress(null);
         return res;

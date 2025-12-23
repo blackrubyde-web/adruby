@@ -16,16 +16,16 @@ export function getOpenAiClient() {
 }
 
 export function getOpenAiModel() {
-  return process.env.OPENAI_MODEL_TEXT || "gpt-4.1-mini";
+  return process.env.OPENAI_MODEL_TEXT || "gpt-4o";
 }
 
 export function getOpenAiImageModel() {
-  return process.env.CREATIVE_IMAGE_MODEL || "gpt-image-1";
+  return process.env.CREATIVE_IMAGE_MODEL || "dall-e-3";
 }
 
 async function fetchImageAsBase64(url) {
   const controller = new AbortController();
-  const timeoutMs = Number(process.env.OPENAI_IMAGE_FETCH_TIMEOUT_MS || 15000);
+  const timeoutMs = Number(process.env.OPENAI_IMAGE_FETCH_TIMEOUT_MS || 25000);
   const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
   try {
     const res = await fetch(url, { signal: controller.signal });
@@ -58,9 +58,21 @@ export async function generateHeroImage({
     throw new Error("Missing prompt or size for image generation");
   }
 
-  const allowedQuality = new Set(["low", "medium", "high", "auto"]);
-  const normalizedQuality = quality === "standard" ? "medium" : quality;
-  const safeQuality = allowedQuality.has(normalizedQuality) ? normalizedQuality : "auto";
+  // DALL-E 3 supports "standard" or "hd" quality.
+  // We map our internal quality settings to DALL-E 3 compatible ones.
+  let safeQuality = "standard";
+  if (model === "dall-e-3") {
+    if (quality === "high" || quality === "hd") {
+      safeQuality = "hd";
+    } else {
+      safeQuality = "standard";
+    }
+  } else {
+    // Legacy models (dall-e-2)
+    const allowedQuality = new Set(["low", "medium", "high", "auto"]);
+    const normalizedQuality = quality === "standard" ? "medium" : quality;
+    safeQuality = allowedQuality.has(normalizedQuality) ? normalizedQuality : "auto";
+  }
 
   const params = {
     model,
@@ -68,11 +80,16 @@ export async function generateHeroImage({
     size,
     quality: safeQuality,
   };
+  
+  // DALL-E 3 does not strictly support 'seed' for deterministic generation in the same way 
+  // as some other endpoints, but the API accepts it. Not strictly enforced.
   if (typeof seed === "number") {
-    params.seed = seed;
+    // params.seed = seed; // Uncomment if you want to pass it anyway
   }
 
-  const timeoutMs = Number(process.env.OPENAI_IMAGE_TIMEOUT_MS || 90000);
+  // DALL-E 3 requests often take longer, bump timeout default
+  const timeoutMs = Number(process.env.OPENAI_IMAGE_TIMEOUT_MS || 120000);
+  
   const result = await withTimeout(
     openai.images.generate(params),
     timeoutMs,

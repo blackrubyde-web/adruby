@@ -96,7 +96,7 @@ export function AdBuilderPage() {
   const progressRafRef = useRef<number | null>(null);
   const progressValueRef = useRef(0);
 
-  const [generatedCopy, setGeneratedCopy] = useState<{headline: string, description: string, cta: string}[]>([]);
+  const [generatedCopy, setGeneratedCopy] = useState<{ headline: string, description: string, cta: string }[]>([]);
   const [selectedCopy, setSelectedCopy] = useState<number | null>(null);
   const [selectedVisualStyle, setSelectedVisualStyle] = useState<string | null>(null);
   const [selectedCTA, setSelectedCTA] = useState<string | null>(null);
@@ -344,7 +344,8 @@ export function AdBuilderPage() {
   }, [hookJobId]);
 
   const isGeneratingCopy = adStatus === 'generating' || adStatus === 'polling';
-  const isProcessing = adStatus === 'analyzing' || isGeneratingCopy;
+  // If we are already on step 4 (Results), we don't block with overlay anymore.
+  const isProcessing = (adStatus === 'analyzing' || isGeneratingCopy) && state.currentStep < 4;
 
   const overlayTitle = adStatus === 'analyzing' ? 'Analyse läuft…' : 'Generierung läuft…';
   const overlayDescription =
@@ -441,10 +442,18 @@ export function AdBuilderPage() {
   }, [isProcessing]);
 
   useEffect(() => {
-    if (hookResult && adStatus === 'complete' && state.currentStep < 4) {
+    // Progressive Rendering:
+    // If we have a result and (status is complete OR progress is far enough along that text is ready),
+    // we move to step 4 to show the text results while images load.
+    // Progress 65 is "text_ready" phase in backend.
+    const isReady =
+      hookResult &&
+      (adStatus === 'complete' || (typeof hookProgress === 'number' && hookProgress >= 65));
+
+    if (isReady && state.currentStep < 4) {
       dispatch({ type: 'SET_STEP', step: 4 });
     }
-  }, [hookResult, adStatus, state.currentStep]);
+  }, [hookResult, adStatus, state.currentStep, hookProgress]);
 
   const extractCreativeOutput = (value: unknown): CreativeOutput | null => {
     if (!value || typeof value !== 'object') return null;
@@ -518,10 +527,10 @@ export function AdBuilderPage() {
         baseBrief.angles?.length
           ? baseBrief.angles
           : creatives.map((c) => ({
-              id: c.angle_id,
-              label: c.copy.hook,
-              why_it_fits: 'Generated variant',
-            }));
+            id: c.angle_id,
+            label: c.copy.hook,
+            why_it_fits: 'Generated variant',
+          }));
       return {
         version: '1.0',
         brief: { ...baseBrief, angles },
@@ -539,37 +548,37 @@ export function AdBuilderPage() {
             ? (variantRaw as CreativeV2Variant)
             : ({} as CreativeV2Variant);
         return {
-        id: variant.id || `c${idx + 1}`,
-        angle_id: variant.id || `angle${idx + 1}`,
-        format: variant.format || baseBrief.format,
-        copy: {
-          hook: variant.hook || variant?.script?.hook || 'Hook',
-          primary_text:
-            variant?.script?.offer ||
-            variant?.script?.proof ||
-            variant?.script?.problem ||
-            'Primary text',
-          cta: variant.cta || variant?.script?.cta || 'Mehr erfahren',
-          bullets: [],
-        },
-        score: { value: 80, rationale: 'Auto-scored variant' },
-        image: {
-          input_image_used: Boolean(variant?.image?.input_image_used),
-          render_intent: variant?.image?.render_intent || 'Hero image',
-          hero_image_url: variant?.image?.hero_image_url || undefined,
-          hero_image_bucket: variant?.image?.hero_image_bucket || undefined,
-          hero_image_path: variant?.image?.hero_image_path || undefined,
-          final_image_url: variant?.image?.final_image_url || undefined,
-          final_image_bucket: variant?.image?.final_image_bucket || undefined,
-          final_image_path: variant?.image?.final_image_path || undefined,
-          width: variant?.image?.width || undefined,
-          height: variant?.image?.height || undefined,
-          model: variant?.image?.model || undefined,
-          seed: variant?.image?.seed || undefined,
-          prompt_hash: variant?.image?.prompt_hash || undefined,
-          render_version: variant?.image?.render_version || undefined,
-          error: variant?.image?.error || undefined,
-        },
+          id: variant.id || `c${idx + 1}`,
+          angle_id: variant.id || `angle${idx + 1}`,
+          format: variant.format || baseBrief.format,
+          copy: {
+            hook: variant.hook || variant?.script?.hook || 'Hook',
+            primary_text:
+              variant?.script?.offer ||
+              variant?.script?.proof ||
+              variant?.script?.problem ||
+              'Primary text',
+            cta: variant.cta || variant?.script?.cta || 'Mehr erfahren',
+            bullets: [],
+          },
+          score: { value: 80, rationale: 'Auto-scored variant' },
+          image: {
+            input_image_used: Boolean(variant?.image?.input_image_used),
+            render_intent: variant?.image?.render_intent || 'Hero image',
+            hero_image_url: variant?.image?.hero_image_url || undefined,
+            hero_image_bucket: variant?.image?.hero_image_bucket || undefined,
+            hero_image_path: variant?.image?.hero_image_path || undefined,
+            final_image_url: variant?.image?.final_image_url || undefined,
+            final_image_bucket: variant?.image?.final_image_bucket || undefined,
+            final_image_path: variant?.image?.final_image_path || undefined,
+            width: variant?.image?.width || undefined,
+            height: variant?.image?.height || undefined,
+            model: variant?.image?.model || undefined,
+            seed: variant?.image?.seed || undefined,
+            prompt_hash: variant?.image?.prompt_hash || undefined,
+            render_version: variant?.image?.render_version || undefined,
+            error: variant?.image?.error || undefined,
+          },
         };
       });
       return {
@@ -734,13 +743,12 @@ export function AdBuilderPage() {
             <div key={step.id} className="flex items-center flex-1">
               <div className="flex flex-col items-center flex-1">
                 <div
-                  className={`w-12 h-12 rounded-full flex items-center justify-center mb-2 transition-all border-2 ${
-                    state.currentStep > step.id
-                      ? 'bg-primary border-primary text-primary-foreground'
-                      : state.currentStep === step.id
+                  className={`w-12 h-12 rounded-full flex items-center justify-center mb-2 transition-all border-2 ${state.currentStep > step.id
+                    ? 'bg-primary border-primary text-primary-foreground'
+                    : state.currentStep === step.id
                       ? 'bg-primary border-primary text-primary-foreground'
                       : 'bg-transparent border-border text-muted-foreground'
-                  }`}
+                    }`}
                 >
                   {state.currentStep > step.id ? (
                     <Check className="w-6 h-6" />
@@ -749,18 +757,16 @@ export function AdBuilderPage() {
                   )}
                 </div>
                 <span
-                  className={`text-sm text-center ${
-                    state.currentStep >= step.id ? 'text-foreground' : 'text-muted-foreground'
-                  }`}
+                  className={`text-sm text-center ${state.currentStep >= step.id ? 'text-foreground' : 'text-muted-foreground'
+                    }`}
                 >
                   {step.name}
                 </span>
               </div>
               {index < steps.length - 1 && (
                 <div
-                  className={`h-0.5 flex-1 mx-2 rounded ${
-                    state.currentStep > step.id ? 'bg-primary' : 'bg-border'
-                  }`}
+                  className={`h-0.5 flex-1 mx-2 rounded ${state.currentStep > step.id ? 'bg-primary' : 'bg-border'
+                    }`}
                 />
               )}
             </div>
@@ -817,318 +823,316 @@ export function AdBuilderPage() {
       {/* Main Content */}
       <div className="w-full max-w-5xl mx-auto">
         <Card className="bg-card border-border p-4 sm:p-6 min-w-0">
-              {/* Step 1: Product & Image */}
-              {state.currentStep === 1 && (
+          {/* Step 1: Product & Image */}
+          {state.currentStep === 1 && (
+            <div>
+              <div className="flex items-center gap-3 mb-6 min-w-0">
+                <div className="w-10 h-10 bg-primary rounded-lg flex items-center justify-center shrink-0">
+                  <Sparkles className="w-6 h-6 text-primary-foreground" />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <h2 className="text-foreground truncate">Produkt & Bild</h2>
+                  <p className="text-muted-foreground text-sm break-words">
+                    Die wichtigsten Infos + optional dein Produktbild.
+                  </p>
+                </div>
+              </div>
+
+              <div className="space-y-6">
                 <div>
-                  <div className="flex items-center gap-3 mb-6 min-w-0">
-                    <div className="w-10 h-10 bg-primary rounded-lg flex items-center justify-center shrink-0">
-                      <Sparkles className="w-6 h-6 text-primary-foreground" />
+                  <Label className="text-foreground mb-2">Brand/Unternehmen</Label>
+                  <Input
+                    value={state.formData.brandName}
+                    onChange={(e) => updateFormData('brandName', e.target.value)}
+                    placeholder="z.B. BlackRuby Performance"
+                    className="bg-input border-border text-foreground w-full max-w-full"
+                  />
+                </div>
+
+                <div>
+                  <Label className="text-foreground mb-2">Produktname *</Label>
+                  <Input
+                    value={state.formData.productName}
+                    onChange={(e) => updateFormData('productName', e.target.value)}
+                    placeholder="z.B. FitMax Pro Supplement"
+                    className="bg-input border-border text-foreground w-full max-w-full"
+                  />
+                </div>
+
+                <div>
+                  <Label className="text-foreground mb-2">Produktbeschreibung *</Label>
+                  <Textarea
+                    value={state.formData.productDescription}
+                    onChange={(e) => updateFormData('productDescription', e.target.value)}
+                    placeholder="Detaillierte Beschreibung Ihres Produkts..."
+                    rows={4}
+                    className="bg-input border-border text-foreground w-full max-w-full"
+                  />
+                </div>
+
+                <div>
+                  <Label className="text-foreground mb-2">Hauptnutzen *</Label>
+                  <Textarea
+                    value={state.formData.uniqueSellingPoint}
+                    onChange={(e) => updateFormData('uniqueSellingPoint', e.target.value)}
+                    placeholder="Die wichtigsten Vorteile Ihres Produkts..."
+                    rows={3}
+                    className="bg-input border-border text-foreground w-full max-w-full"
+                  />
+                </div>
+
+                <div>
+                  <Label className="text-foreground mb-3">Produktbild (optional)</Label>
+                  <ImageDropzone value={imageFile} onChange={setImageFile} />
+                  {hookImageMeta?.path && (
+                    <div className="mt-2 text-xs text-muted-foreground">
+                      Uploaded to storage: <span className="font-medium">{hookImageMeta.path}</span>
                     </div>
-                    <div className="min-w-0 flex-1">
-                      <h2 className="text-foreground truncate">Produkt & Bild</h2>
-                      <p className="text-muted-foreground text-sm break-words">
-                        Die wichtigsten Infos + optional dein Produktbild.
-                      </p>
+                  )}
+                </div>
+
+                <div className="rounded-lg border border-border bg-muted/30 p-4 text-sm text-muted-foreground">
+                  Die Strategie wird jetzt automatisch aus deinem Produkt, deiner Zielgruppe und den
+                  Blueprint‑Daten abgeleitet. Du musst hier nichts mehr auswählen.
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Step 2: Audience & Offer */}
+          {state.currentStep === 2 && (
+            <div>
+              <div className="flex items-center gap-3 mb-6 min-w-0">
+                <div className="w-10 h-10 bg-primary rounded-lg flex items-center justify-center shrink-0">
+                  <Users className="w-6 h-6 text-primary-foreground" />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <h2 className="text-foreground truncate">Zielgruppe & Angebot</h2>
+                  <p className="text-muted-foreground text-sm break-words">
+                    Wer soll die Anzeige sehen und was ist der Kernnutzen?
+                  </p>
+                </div>
+              </div>
+
+              <div className="space-y-6">
+                <div>
+                  <Label className="text-foreground mb-2">Zielgruppe *</Label>
+                  <Input
+                    value={state.formData.targetAudience}
+                    onChange={(e) => updateFormData('targetAudience', e.target.value)}
+                    placeholder="z.B: Fitness-Enthusiasten, 25-45 Jahre"
+                    className="bg-input border-border text-foreground w-full max-w-full"
+                  />
+                </div>
+
+                {/* FIX 5A: Responsive 2-column grid */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <Label className="text-foreground mb-2">Altersbereich</Label>
+                    <Input
+                      value={state.formData.ageRange}
+                      onChange={(e) => updateFormData('ageRange', e.target.value)}
+                      placeholder="25-45"
+                      className="bg-input border-border text-foreground w-full max-w-full"
+                    />
+                  </div>
+                  <div>
+                    <Label className="text-foreground mb-2">Geschlecht</Label>
+                    <Input
+                      placeholder="Alle / Männlich / Weiblich"
+                      className="bg-input border-border text-foreground w-full max-w-full"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <Label className="text-foreground mb-2">Interessen & Hobbies</Label>
+                  <Input
+                    value={state.formData.interests}
+                    onChange={(e) => updateFormData('interests', e.target.value)}
+                    placeholder="Fitness, Gesundheit, Ernährung, Sport"
+                    className="bg-input border-border text-foreground w-full max-w-full"
+                  />
+                </div>
+
+                <div>
+                  <Label className="text-foreground mb-2">Pain Points</Label>
+                  <Textarea
+                    value={state.formData.painPoints}
+                    onChange={(e) => updateFormData('painPoints', e.target.value)}
+                    placeholder="Welche Probleme löst Ihr Produkt?"
+                    rows={3}
+                    className="bg-input border-border text-foreground w-full max-w-full"
+                  />
+                </div>
+
+                <div>
+                  <Label className="text-foreground mb-2">Zusatzhinweise (optional)</Label>
+                  <Textarea
+                    value={state.formData.creativeNotes}
+                    onChange={(e) => updateFormData('creativeNotes', e.target.value)}
+                    placeholder="z.B. Ton: direkt, Fokus auf Vorteil X, keine Rabattversprechen"
+                    rows={3}
+                    className="bg-input border-border text-foreground w-full max-w-full"
+                  />
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Step 3: Generate */}
+          {state.currentStep === 3 && (
+            <div>
+              <div className="flex items-center gap-3 mb-6 min-w-0">
+                <div className="w-10 h-10 bg-primary rounded-lg flex items-center justify-center shrink-0">
+                  <ImageIcon className="w-6 h-6 text-primary-foreground" />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <h2 className="text-foreground truncate">Generieren</h2>
+                  <p className="text-muted-foreground text-sm break-words">
+                    Starte die Generierung. Die Ergebnisse erscheinen im naechsten Schritt.
+                  </p>
+                </div>
+              </div>
+
+              <div className="space-y-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <Label className="text-foreground mb-3">Visual Style</Label>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      {[
+                        { name: 'Modern & Clean', gradient: 'from-blue-500 to-cyan-400' },
+                        { name: 'Bold & Vibrant', gradient: 'from-primary to-orange-500' },
+                        { name: 'Minimalistisch', gradient: 'from-gray-800 to-gray-600' }
+                      ].map((style) => (
+                        <div
+                          key={style.name}
+                          onClick={() => setSelectedVisualStyle(style.name)}
+                          className={`border-2 rounded-lg p-4 text-center cursor-pointer transition-all w-full min-w-0 ${selectedVisualStyle === style.name
+                            ? 'border-primary bg-primary/10'
+                            : 'border-border bg-card hover:border-muted-foreground'
+                            }`}
+                        >
+                          <div className={`w-full h-16 bg-gradient-to-br ${style.gradient} rounded mb-2 relative`}>
+                            {selectedVisualStyle === style.name && (
+                              <div className="absolute inset-0 flex items-center justify-center">
+                                <Check className="w-6 h-6 text-white drop-shadow-lg" />
+                              </div>
+                            )}
+                          </div>
+                          <p className="text-sm text-foreground font-medium truncate">{style.name}</p>
+                        </div>
+                      ))}
                     </div>
                   </div>
 
-                  <div className="space-y-6">
-                    <div>
-                      <Label className="text-foreground mb-2">Brand/Unternehmen</Label>
-                      <Input
-                        value={state.formData.brandName}
-                        onChange={(e) => updateFormData('brandName', e.target.value)}
-                        placeholder="z.B. BlackRuby Performance"
-                        className="bg-input border-border text-foreground w-full max-w-full"
-                      />
-                    </div>
-
-                    <div>
-                      <Label className="text-foreground mb-2">Produktname *</Label>
-                      <Input
-                        value={state.formData.productName}
-                        onChange={(e) => updateFormData('productName', e.target.value)}
-                        placeholder="z.B. FitMax Pro Supplement"
-                        className="bg-input border-border text-foreground w-full max-w-full"
-                      />
-                    </div>
-
-                    <div>
-                      <Label className="text-foreground mb-2">Produktbeschreibung *</Label>
-                      <Textarea
-                        value={state.formData.productDescription}
-                        onChange={(e) => updateFormData('productDescription', e.target.value)}
-                        placeholder="Detaillierte Beschreibung Ihres Produkts..."
-                        rows={4}
-                        className="bg-input border-border text-foreground w-full max-w-full"
-                      />
-                    </div>
-
-                    <div>
-                      <Label className="text-foreground mb-2">Hauptnutzen *</Label>
-                      <Textarea
-                        value={state.formData.uniqueSellingPoint}
-                        onChange={(e) => updateFormData('uniqueSellingPoint', e.target.value)}
-                        placeholder="Die wichtigsten Vorteile Ihres Produkts..."
-                        rows={3}
-                        className="bg-input border-border text-foreground w-full max-w-full"
-                      />
-                    </div>
-
-                    <div>
-                      <Label className="text-foreground mb-3">Produktbild (optional)</Label>
-                      <ImageDropzone value={imageFile} onChange={setImageFile} />
-                      {hookImageMeta?.path && (
-                        <div className="mt-2 text-xs text-muted-foreground">
-                          Uploaded to storage: <span className="font-medium">{hookImageMeta.path}</span>
-                        </div>
+                  <div>
+                    <Label className="text-foreground mb-3">Call-to-Action</Label>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      {['Jetzt kaufen', 'Mehr erfahren', 'Kostenlos testen', 'Angebot sichern'].map(
+                        (cta) => (
+                          <div
+                            key={cta}
+                            onClick={() => setSelectedCTA(cta)}
+                            className={`border-2 rounded-lg p-4 text-center cursor-pointer transition-all w-full min-w-0 ${selectedCTA === cta
+                              ? 'border-primary bg-primary/10'
+                              : 'border-border bg-card hover:border-muted-foreground'
+                              }`}
+                          >
+                            <div className="flex items-center justify-center gap-2">
+                              <p className="text-foreground font-medium truncate">{cta}</p>
+                              {selectedCTA === cta && <Check className="w-5 h-5 text-primary shrink-0" />}
+                            </div>
+                          </div>
+                        )
                       )}
                     </div>
-
-                    <div className="rounded-lg border border-border bg-muted/30 p-4 text-sm text-muted-foreground">
-                      Die Strategie wird jetzt automatisch aus deinem Produkt, deiner Zielgruppe und den
-                      Blueprint‑Daten abgeleitet. Du musst hier nichts mehr auswählen.
-                    </div>
                   </div>
                 </div>
-              )}
 
-              {/* Step 2: Audience & Offer */}
-              {state.currentStep === 2 && (
-                <div>
-                  <div className="flex items-center gap-3 mb-6 min-w-0">
-                    <div className="w-10 h-10 bg-primary rounded-lg flex items-center justify-center shrink-0">
-                      <Users className="w-6 h-6 text-primary-foreground" />
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <h2 className="text-foreground truncate">Zielgruppe & Angebot</h2>
-                      <p className="text-muted-foreground text-sm break-words">
-                        Wer soll die Anzeige sehen und was ist der Kernnutzen?
-                      </p>
-                    </div>
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                  <div className="text-sm text-muted-foreground">
+                    Bereit zur Generierung
                   </div>
-
-                  <div className="space-y-6">
-                    <div>
-                      <Label className="text-foreground mb-2">Zielgruppe *</Label>
-                      <Input
-                        value={state.formData.targetAudience}
-                        onChange={(e) => updateFormData('targetAudience', e.target.value)}
-                        placeholder="z.B: Fitness-Enthusiasten, 25-45 Jahre"
-                        className="bg-input border-border text-foreground w-full max-w-full"
-                      />
-                    </div>
-
-                    {/* FIX 5A: Responsive 2-column grid */}
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                      <div>
-                        <Label className="text-foreground mb-2">Altersbereich</Label>
-                        <Input
-                          value={state.formData.ageRange}
-                          onChange={(e) => updateFormData('ageRange', e.target.value)}
-                          placeholder="25-45"
-                          className="bg-input border-border text-foreground w-full max-w-full"
-                        />
-                      </div>
-                      <div>
-                        <Label className="text-foreground mb-2">Geschlecht</Label>
-                        <Input
-                          placeholder="Alle / Männlich / Weiblich"
-                          className="bg-input border-border text-foreground w-full max-w-full"
-                        />
-                      </div>
-                    </div>
-
-                    <div>
-                      <Label className="text-foreground mb-2">Interessen & Hobbies</Label>
-                      <Input
-                        value={state.formData.interests}
-                        onChange={(e) => updateFormData('interests', e.target.value)}
-                        placeholder="Fitness, Gesundheit, Ernährung, Sport"
-                        className="bg-input border-border text-foreground w-full max-w-full"
-                      />
-                    </div>
-
-                    <div>
-                      <Label className="text-foreground mb-2">Pain Points</Label>
-                      <Textarea
-                        value={state.formData.painPoints}
-                        onChange={(e) => updateFormData('painPoints', e.target.value)}
-                        placeholder="Welche Probleme löst Ihr Produkt?"
-                        rows={3}
-                        className="bg-input border-border text-foreground w-full max-w-full"
-                      />
-                    </div>
-
-                    <div>
-                      <Label className="text-foreground mb-2">Zusatzhinweise (optional)</Label>
-                      <Textarea
-                        value={state.formData.creativeNotes}
-                        onChange={(e) => updateFormData('creativeNotes', e.target.value)}
-                        placeholder="z.B. Ton: direkt, Fokus auf Vorteil X, keine Rabattversprechen"
-                        rows={3}
-                        className="bg-input border-border text-foreground w-full max-w-full"
-                      />
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* Step 3: Generate */}
-              {state.currentStep === 3 && (
-                <div>
-                  <div className="flex items-center gap-3 mb-6 min-w-0">
-                    <div className="w-10 h-10 bg-primary rounded-lg flex items-center justify-center shrink-0">
-                      <ImageIcon className="w-6 h-6 text-primary-foreground" />
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <h2 className="text-foreground truncate">Generieren</h2>
-                      <p className="text-muted-foreground text-sm break-words">
-                        Starte die Generierung. Die Ergebnisse erscheinen im naechsten Schritt.
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="space-y-6">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div>
-                        <Label className="text-foreground mb-3">Visual Style</Label>
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                          {[
-                            { name: 'Modern & Clean', gradient: 'from-blue-500 to-cyan-400' },
-                            { name: 'Bold & Vibrant', gradient: 'from-primary to-orange-500' },
-                            { name: 'Minimalistisch', gradient: 'from-gray-800 to-gray-600' }
-                          ].map((style) => (
-                            <div
-                              key={style.name}
-                              onClick={() => setSelectedVisualStyle(style.name)}
-                              className={`border-2 rounded-lg p-4 text-center cursor-pointer transition-all w-full min-w-0 ${
-                                selectedVisualStyle === style.name
-                                  ? 'border-primary bg-primary/10'
-                                  : 'border-border bg-card hover:border-muted-foreground'
-                              }`}
-                            >
-                              <div className={`w-full h-16 bg-gradient-to-br ${style.gradient} rounded mb-2 relative`}>
-                                {selectedVisualStyle === style.name && (
-                                  <div className="absolute inset-0 flex items-center justify-center">
-                                    <Check className="w-6 h-6 text-white drop-shadow-lg" />
-                                  </div>
-                                )}
-                              </div>
-                              <p className="text-sm text-foreground font-medium truncate">{style.name}</p>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-
-                      <div>
-                        <Label className="text-foreground mb-3">Call-to-Action</Label>
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                          {['Jetzt kaufen', 'Mehr erfahren', 'Kostenlos testen', 'Angebot sichern'].map(
-                            (cta) => (
-                              <div
-                                key={cta}
-                                onClick={() => setSelectedCTA(cta)}
-                                className={`border-2 rounded-lg p-4 text-center cursor-pointer transition-all w-full min-w-0 ${
-                                  selectedCTA === cta
-                                    ? 'border-primary bg-primary/10'
-                                    : 'border-border bg-card hover:border-muted-foreground'
-                                }`}
-                              >
-                                <div className="flex items-center justify-center gap-2">
-                                  <p className="text-foreground font-medium truncate">{cta}</p>
-                                  {selectedCTA === cta && <Check className="w-5 h-5 text-primary shrink-0" />}
-                                </div>
-                              </div>
-                            )
-                          )}
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-                      <div className="text-sm text-muted-foreground">
-                        Bereit zur Generierung
-                      </div>
-                      <Button
-                        onClick={generateCopy}
-                        disabled={!canGenerateCopy || isProcessing}
-                        className="btn-sweep bg-primary hover:bg-primary/90 text-primary-foreground w-full sm:w-auto shadow-lg shadow-primary/20 hover:shadow-primary/40 h-11 px-6 text-base font-semibold hover:scale-[1.02] active:scale-[0.99] cursor-pointer"
-                      >
-                        <Zap className={`w-4 h-4 mr-2 ${isProcessing ? 'animate-pulse' : ''}`} />
-                        {adStatus === 'analyzing' ? 'Analysiere…' : isGeneratingCopy ? 'Generiere…' : 'KI generieren'}
-                      </Button>
-                    </div>
-
-                    {copyError && (
-                      <div className="text-sm text-red-600">{copyError}</div>
-                    )}
-                  </div>
-                </div>
-              )}
-
-              {/* Step 4: Results */}
-              {state.currentStep === 4 && (
-                <div>
-                  <div className="flex items-center gap-3 mb-6 min-w-0">
-                    <div className="w-10 h-10 bg-primary rounded-lg flex items-center justify-center shrink-0">
-                      <Check className="w-6 h-6 text-primary-foreground" />
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <h2 className="text-foreground truncate">Ergebnisse</h2>
-                      <p className="text-muted-foreground text-sm break-words">
-                        Hier findest du die fertigen Creatives und kannst sie speichern.
-                      </p>
-                    </div>
-                  </div>
-
-                  {!displayOutput && (
-                    <div className="rounded-xl border border-dashed border-border bg-card p-6 text-sm text-muted-foreground">
-                      Noch keine Ergebnisse. Geh zur Generierung zurueck und starte eine KI-Erstellung.
-                    </div>
-                  )}
-
-                  {displayOutput && (
-                    <CreativeResults
-                      output={displayOutput}
-                      quality={displayQuality}
-                      onReset={resetAll}
-                    />
-                  )}
-                </div>
-              )}
-
-              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mt-8 pt-6 border-t border-border">
-                <Button
-                  onClick={handleBack}
-                  disabled={state.currentStep === 1}
-                  variant="outline"
-                  className="border-border text-foreground hover:bg-muted w-full sm:w-auto"
-                >
-                  <ChevronLeft className="w-4 h-4 mr-2" />
-                  Zurück
-                </Button>
-                {state.currentStep < steps.length ? (
-                  state.currentStep !== 3 ? (
-                    <Button
-                      onClick={handleNext}
-                      className="bg-primary hover:bg-primary/90 text-primary-foreground w-full sm:w-auto shadow-md shadow-primary/20 hover:shadow-primary/30"
-                    >
-                      {getNextButtonLabel()}
-                      <ChevronRight className="w-4 h-4 ml-2" />
-                    </Button>
-                  ) : null
-                ) : (
                   <Button
-                    onClick={resetAll}
-                    variant="outline"
-                    className="w-full sm:w-auto"
+                    onClick={generateCopy}
+                    disabled={!canGenerateCopy || isProcessing}
+                    className="btn-sweep bg-primary hover:bg-primary/90 text-primary-foreground w-full sm:w-auto shadow-lg shadow-primary/20 hover:shadow-primary/40 h-11 px-6 text-base font-semibold hover:scale-[1.02] active:scale-[0.99] cursor-pointer"
                   >
-                    Neues Briefing
+                    <Zap className={`w-4 h-4 mr-2 ${isProcessing ? 'animate-pulse' : ''}`} />
+                    {adStatus === 'analyzing' ? 'Analysiere…' : isGeneratingCopy ? 'Generiere…' : 'KI generieren'}
                   </Button>
+                </div>
+
+                {copyError && (
+                  <div className="text-sm text-red-600">{copyError}</div>
                 )}
               </div>
-            </Card>
+            </div>
+          )}
+
+          {/* Step 4: Results */}
+          {state.currentStep === 4 && (
+            <div>
+              <div className="flex items-center gap-3 mb-6 min-w-0">
+                <div className="w-10 h-10 bg-primary rounded-lg flex items-center justify-center shrink-0">
+                  <Check className="w-6 h-6 text-primary-foreground" />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <h2 className="text-foreground truncate">Ergebnisse</h2>
+                  <p className="text-muted-foreground text-sm break-words">
+                    Hier findest du die fertigen Creatives und kannst sie speichern.
+                  </p>
+                </div>
+              </div>
+
+              {!displayOutput && (
+                <div className="rounded-xl border border-dashed border-border bg-card p-6 text-sm text-muted-foreground">
+                  Noch keine Ergebnisse. Geh zur Generierung zurueck und starte eine KI-Erstellung.
+                </div>
+              )}
+
+              {displayOutput && (
+                <CreativeResults
+                  output={displayOutput}
+                  quality={displayQuality}
+                  onReset={resetAll}
+                />
+              )}
+            </div>
+          )}
+
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mt-8 pt-6 border-t border-border">
+            <Button
+              onClick={handleBack}
+              disabled={state.currentStep === 1}
+              variant="outline"
+              className="border-border text-foreground hover:bg-muted w-full sm:w-auto"
+            >
+              <ChevronLeft className="w-4 h-4 mr-2" />
+              Zurück
+            </Button>
+            {state.currentStep < steps.length ? (
+              state.currentStep !== 3 ? (
+                <Button
+                  onClick={handleNext}
+                  className="bg-primary hover:bg-primary/90 text-primary-foreground w-full sm:w-auto shadow-md shadow-primary/20 hover:shadow-primary/30"
+                >
+                  {getNextButtonLabel()}
+                  <ChevronRight className="w-4 h-4 ml-2" />
+                </Button>
+              ) : null
+            ) : (
+              <Button
+                onClick={resetAll}
+                variant="outline"
+                className="w-full sm:w-auto"
+              >
+                Neues Briefing
+              </Button>
+            )}
+          </div>
+        </Card>
       </div>
 
       {isProcessing && (
