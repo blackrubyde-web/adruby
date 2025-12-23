@@ -389,6 +389,10 @@ html.perf-lite .transition-all {
 }
 
 /* Apply Animations */
+.animate-rainbow-border {
+  animation: rainbow-border 6s linear infinite;
+}
+
 .animate-gradient-shift {
   background-size: 200% 200%;
 }
