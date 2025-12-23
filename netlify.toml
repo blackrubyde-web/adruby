@@ -6,6 +6,9 @@
   directory = "netlify/functions"
   node_bundler = "esbuild"
 
+[functions.esbuild]
+  format = "cjs"
+
 [[redirects]]
   from = "/api/creative/analyze"
   to = "/.netlify/functions/creative-analyze"
