@@ -21,6 +21,7 @@ import {
   trimResearchContext,
 } from "./_shared/creativePrompts.js";
 import { parseWithRepair } from "./_shared/repair.js";
+import { selectBlueprint } from "./_shared/creativeBlueprints.js";
 import {
   CreativeOutputSchema,
   NormalizedBriefSchema,
@@ -1398,6 +1399,7 @@ export async function handler(event) {
                       creative: renderCreative,
                       strategyBlueprint,
                       researchContext,
+                      blueprint,
                     });
                 const specSchema = outputMode === "pro" ? AD_IMAGE_SPEC_JSON_SCHEMA : IMAGE_SPEC_JSON_SCHEMA;
                 const specRaw = await callOpenAiJson(specPrompt, {
@@ -1687,10 +1689,20 @@ export async function handler(event) {
     const startedAt = Date.now();
     const isOverTimeBudget = () => Date.now() - startedAt > MAX_DURATION_MS;
     logStep("default.start", { jobId: placeholderId });
+    // Select the best blueprint for this brief
+    const blueprint = selectBlueprint(brief);
+    if (blueprint) {
+      logStep("bg.blueprint.selected", {
+        jobId: placeholderId,
+        blueprintId: blueprint.id,
+        label: blueprint.label
+      });
+    }
+
     const prompt = buildGeneratePrompt(brief, hasImage, strategyBlueprint, researchContext, {
       visual_style: visualStyle,
       cta_preference: ctaPreference,
-    });
+    }, blueprint);
 
     const initial = await callOpenAiJson(prompt, {
       responseFormat: CREATIVE_OUTPUT_JSON_SCHEMA_V1,
@@ -1864,6 +1876,7 @@ export async function handler(event) {
                   creative,
                   strategyBlueprint,
                   researchContext,
+                  blueprint,
                 });
             const specSchema = outputMode === "pro" ? AD_IMAGE_SPEC_JSON_SCHEMA : IMAGE_SPEC_JSON_SCHEMA;
             const specRaw = await callOpenAiJson(specPrompt, {

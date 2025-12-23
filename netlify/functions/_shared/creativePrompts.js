@@ -73,6 +73,7 @@ export function buildGeneratePrompt(
   strategyBlueprint,
   researchContext,
   preferences = {},
+  blueprint = null // New parameter
 ) {
   const visualStyle = preferences?.visual_style
     ? `\nPreferred visual style: ${preferences.visual_style}`
@@ -81,27 +82,38 @@ export function buildGeneratePrompt(
     ? `\nPreferred CTA wording: ${preferences.cta_preference}`
     : "";
   const researchBlock = renderResearchContext(researchContext);
+
+  // Blueprint injection
+  const blueprintInstructions = blueprint
+    ? `\nSELECTED BLUEPRINT: "${blueprint.id}" (${blueprint.label})
+       Visual Intent: ${blueprint.visual.intent}
+       Copy Structure: ${blueprint.copy_structure}
+       On-Screen Text: ${blueprint.on_screen_text_guidance}\n`
+    : "";
+
   return `
 You are AdRuby Performance Copywriter for Meta ads.
 Generate high-performing ad copy variations, structured and compliant.
 Return ONLY valid JSON matching CreativeOutput schema. No markdown.
 
-  Constraints:
-  - Output 4-6 creatives. AT LEAST 2 must use "Stop Scrolling" or "Pattern Interrupt" hooks.
-  - Hooks max 80 chars. CTA max 30 chars.
-  - Primary text: Short paragraphs, emojis only if appropriate. Structure: Hook -> Agitate/Value -> Proof -> CTA.
-  - Use brand/product names, NO "Test" or "Produkt" placeholders.
-  - If hasImage is true: Copy MUST reference the visual (e.g. "Look at this results", "See the difference").
-  - Respect funnel stage:
-    - cold: curiosity + mystery + problem.
-    - warm: social proof + comparison.
-    - hot: scarcity + direct offer.
-  - Language must match brief.language.
-  - Tone down claims if high risk.
+${blueprintInstructions}
+
+Constraints:
+- Output 4-6 creatives.
+- Hooks max 80 chars. CTA max 30 chars.
+- FOLLOW THE BLUEPRINT STRUCTURE if provided.
+- Use brand/product names, NO "Test" or "Produkt" placeholders.
+- If hasImage is true OR blueprint relates to visual: Copy MUST reference the visual.
+- Respect funnel stage:
+  - cold: curiosity + mystery + problem.
+  - warm: social proof + comparison.
+  - hot: scarcity + direct offer.
+- Language must match brief.language.
+- If risk_flags include high severity, tone down claims.
 
 Image usage:
 - input_image_used: ${hasImage ? "true" : "false"}
-- render_intent: describe what the image generator should create/edit (short, concrete, non-artsy).
+- render_intent: ${blueprint ? "USE BLUEPRINT VISUAL INTENT: " + blueprint.visual.intent : "Short, concrete visual intent describing the product in a scene"}
 - hero_image_url: null
 - final_image_url: null
 - width: null
@@ -112,8 +124,8 @@ Image usage:
 - render_version: null
 
 Scoring:
-- value 0-100. Be strict. 70+ only if genuinely strong.
-- rationale: 1-2 short sentences, concrete reason.
+- value 0-100.
+- rationale: 1-2 short sentences.
 
 Brief JSON:
 ${JSON.stringify(brief)}
@@ -339,12 +351,21 @@ ${JSON.stringify(priorOutput)}
 `;
 }
 
-export function buildImageSpecPrompt({ brief, creative, strategyBlueprint, researchContext }) {
+export function buildImageSpecPrompt({ brief, creative, strategyBlueprint, researchContext, blueprint = null }) {
   const researchBlock = renderResearchContext(researchContext);
+
+  const blueprintVisual = blueprint ? `
+  BLUEPRINT VISUAL GUIDE:
+  - Intent: ${blueprint.visual.intent}
+  - Negative: ${blueprint.visual.negative_prompt.join(", ")}
+  - Text Overlay Guidance: ${blueprint.on_screen_text_guidance || "None"}
+  ` : "";
 
   return `
 You are a senior Creative Director for paid social ads.
 Return ONLY valid JSON that matches the ImageSpec schema. No markdown, no extra text.
+
+${blueprintVisual}
 
 Goals:
 - Create a hero image concept that stops the scroll.
