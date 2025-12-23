@@ -541,8 +541,11 @@ function sizeForFormat(format) {
   switch (format) {
     case "9:16":
     case "4:5":
-      // DALL-E 3 vertical format
-      return "1024x1792";
+      // DALL-E 3 vertical format (supported sizes are 1024x1024, 1024x1792, 1792x1024 in theory, but API returned error saying supported: '1024x1024', '1024x1536', '1536x1024'.
+      // Wait, standard DALL-E 3 is 1024x1792. But maybe this is DALL-E 2? No, I set it to DALL-E 3.
+      // The error message from user log: "400 Invalid value: '1024x1792'. Supported values are: '1024x1024', '1024x1536', '1536x1024', and 'auto'."
+      // This error message explicitly lists 1024x1536 as supported so I will use that.
+      return "1024x1536";
     case "1:1":
     default:
       return "1024x1024";
@@ -2350,84 +2353,6 @@ function getRetryDelayMs(err, attempt) {
   return clampInt(Math.max(backoffMs, headerDelay, messageDelay) + bufferMs, 300, 120000);
 }
 
-async function callOpenAiJson(prompt, options = {}) {
-  const openai = getOpenAiClient();
-  const model = getOpenAiModel();
-  const useSchema = process.env.USE_JSON_SCHEMA === "1";
-  const responseFormat = options?.responseFormat;
-  const timeoutOverride = options?.timeoutMs;
-  const baseTimeoutMs = clampInt(
-    Number(timeoutOverride ?? process.env.OPENAI_TIMEOUT_MS ?? 150000),
-    5000,
-    180000,
-  );
-  const maxRetries = clampInt(
-    Number(options?.maxRetries ?? process.env.OPENAI_MAX_RETRIES ?? 2),
-    0,
-    4,
-  );
-
-  let lastError;
-  for (let attempt = 0; attempt <= maxRetries; attempt += 1) {
-    const timeoutMs = clampInt(baseTimeoutMs + attempt * 5000, 5000, 180000);
-    try {
-      await waitForOpenAiSlot();
-      const res = await openai.responses.create(
-        {
-          model,
-          input: [
-            {
-              role: "system",
-              content:
-                "Return ONLY valid JSON. No markdown. Follow the schema strictly. Do not add extra keys.",
-            },
-            { role: "user", content: [{ type: "input_text", text: prompt }] },
-          ],
-          temperature: 0.0,
-          ...(useSchema && responseFormat
-            ? {
-              text: {
-                format: {
-                  type: "json_schema",
-                  name: responseFormat?.name || "schema",
-                  schema: responseFormat?.schema || responseFormat,
-                  strict: responseFormat?.strict ?? true,
-                },
-              },
-            }
-            : {}),
-        },
-        {
-          timeout: timeoutMs,
-          maxRetries: 0,
-        },
-      );
-
-      const text = String(res.output_text || "").trim();
-      if (!text) throw new Error("Empty OpenAI response.");
-      return text;
-    } catch (err) {
-      lastError = err;
-      if (isOpenAiTimeoutError(err)) {
-        console.error("[creative-generate] OpenAI request timed out", { timeoutMs, attempt });
-      } else {
-        console.error("[creative-generate] OpenAI request failed", err?.message || err);
-      }
-
-      if (attempt < maxRetries && isRetryableOpenAiError(err)) {
-        const delayMs = getRetryDelayMs(err, attempt);
-        if (Number(err?.status) === 429) {
-          openAiCooldownUntil = Math.max(openAiCooldownUntil, Date.now() + delayMs);
-        }
-        await sleep(delayMs);
-        continue;
-      }
-      throw err;
-    }
-  }
-
-  throw lastError || new Error("OpenAI request failed.");
-}
 
 async function evaluateOutput(brief, output, strategyBlueprint, researchContext) {
   const evalPrompt = buildQualityEvalPrompt({ brief, output, strategyBlueprint, researchContext });
@@ -2442,4 +2367,71 @@ async function evaluateOutput(brief, output, strategyBlueprint, researchContext)
   // Additional local sanity: never claim perfect.
   const satisfaction = Math.max(0, Math.min(100, Math.trunc(repaired.data.satisfaction)));
   return { ...repaired.data, satisfaction };
+}
+
+async function callOpenAiJson(prompt, options = {}) {
+    const openai = getOpenAiClient();
+    const model = getOpenAiModel();
+
+    const timeoutOverride = options?.timeoutMs;
+    const baseTimeoutMs = clampInt(
+        Number(timeoutOverride ?? process.env.OPENAI_TIMEOUT_MS ?? 60000),
+        5000,
+        180000,
+    );
+    const maxRetries = clampInt(
+        Number(options?.maxRetries ?? process.env.OPENAI_MAX_RETRIES ?? 2),
+        0,
+        4,
+    );
+
+    let lastError;
+    for (let attempt = 0; attempt <= maxRetries; attempt += 1) {
+        const timeoutMs = clampInt(baseTimeoutMs + attempt * 5000, 5000, 180000);
+        try {
+            await waitForOpenAiSlot();
+
+            const messages = [
+                {
+                    role: "system",
+                    content: "You are a helpful assistant designed to output valid JSON. Return ONLY the JSON object. Do not include markdown formatting (like ```json).",
+                },
+                {
+                    role: "user",
+                    content: prompt,
+                },
+            ];
+
+            // Use standard JSON mode
+            const completion = await openai.chat.completions.create(
+                {
+                    model,
+                    messages,
+                    temperature: 0.2,
+                    response_format: { type: "json_object" },
+                },
+                {
+                    timeout: timeoutMs,
+                }
+            );
+
+            const content = completion.choices[0]?.message?.content;
+            if (!content) {
+                throw new Error("OpenAI returned empty content");
+            }
+
+            return content;
+
+        } catch (err) {
+            lastError = err;
+            console.warn(`[callOpenAiJson] Attempt ${attempt + 1} failed: ${err.message}`);
+
+            if (attempt < maxRetries) {
+                const delay = 2000 * (attempt + 1);
+                await new Promise((r) => setTimeout(r, delay));
+            }
+        }
+    }
+
+    throw lastError || new Error("Failed to call OpenAI after retries");
 }
