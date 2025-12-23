@@ -7,7 +7,7 @@
   node_bundler = "esbuild"
 
 [functions.esbuild]
-  format = "cjs"
+  format = "esm"
 
 [[redirects]]
   from = "/api/creative/analyze"
