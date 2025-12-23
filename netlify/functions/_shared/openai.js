@@ -24,12 +24,26 @@ export function getOpenAiImageModel() {
 }
 
 async function fetchImageAsBase64(url) {
-  const res = await fetch(url);
-  if (!res.ok) {
-    throw new Error(`Image download failed: ${res.status}`);
+  const controller = new AbortController();
+  const timeoutMs = Number(process.env.OPENAI_IMAGE_FETCH_TIMEOUT_MS || 15000);
+  const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    const res = await fetch(url, { signal: controller.signal });
+    if (!res.ok) {
+      throw new Error(`Image download failed: ${res.status}`);
+    }
+    const arrayBuffer = await res.arrayBuffer();
+    return Buffer.from(arrayBuffer).toString("base64");
+  } finally {
+    clearTimeout(timeoutId);
   }
-  const arrayBuffer = await res.arrayBuffer();
-  return Buffer.from(arrayBuffer).toString("base64");
+}
+
+function withTimeout(promise, ms, label = "timeout") {
+  return Promise.race([
+    promise,
+    new Promise((_, reject) => setTimeout(() => reject(new Error(`${label}: ${ms}ms`)), ms)),
+  ]);
 }
 
 export async function generateHeroImage({
@@ -58,7 +72,12 @@ export async function generateHeroImage({
     params.seed = seed;
   }
 
-  const result = await openai.images.generate(params);
+  const timeoutMs = Number(process.env.OPENAI_IMAGE_TIMEOUT_MS || 90000);
+  const result = await withTimeout(
+    openai.images.generate(params),
+    timeoutMs,
+    "openai_image_generate_timeout",
+  );
   const item = result?.data?.[0];
   if (!item) {
     throw new Error("Image generation returned no data");

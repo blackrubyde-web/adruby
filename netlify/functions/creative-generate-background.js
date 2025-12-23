@@ -511,11 +511,21 @@ const IMAGE_SPEC_TIMEOUT_MS = clampInt(
   5000,
   120000,
 );
+const IMAGE_SPEC_ONLY_FIRST = process.env.CREATIVE_IMAGE_SPEC_ONLY_FIRST !== "0";
+const IMAGE_SPEC_MIN_BUDGET_MS = clampInt(
+  Number.parseInt(process.env.CREATIVE_IMAGE_SPEC_MIN_BUDGET_MS || "70000", 10),
+  10000,
+  120000,
+);
 const IMAGE_TOP_N = clampInt(
   Number.parseInt(process.env.CREATIVE_IMAGE_TOP_N || "2", 10),
   0,
   2,
 );
+const SHOULD_PERSIST_IMAGE_URLS =
+  process.env.CREATIVE_IMAGES_PUBLIC === "1" ||
+  process.env.CREATIVE_PERSIST_SIGNED_URLS !== "0";
+const ALLOW_FALLBACK_IMAGE = process.env.CREATIVE_ALLOW_FALLBACK_IMAGE === "1";
 
 function hashPrompt(prompt) {
   return crypto.createHash("sha256").update(prompt).digest("hex").slice(0, 16);
@@ -644,7 +654,11 @@ function buildProOutputFromV1({
           input_image_used: Boolean(hasImage),
           render_intent: creative.image?.render_intent || "Hero image",
           hero_image_url: creative.image?.hero_image_url ?? null,
+          hero_image_bucket: creative.image?.hero_image_bucket ?? null,
+          hero_image_path: creative.image?.hero_image_path ?? null,
           final_image_url: creative.image?.final_image_url ?? null,
+          final_image_bucket: creative.image?.final_image_bucket ?? null,
+          final_image_path: creative.image?.final_image_path ?? null,
           width: creative.image?.width ?? null,
           height: creative.image?.height ?? null,
           model: creative.image?.model ?? null,
@@ -734,7 +748,11 @@ function buildProOutputFromV2({
           input_image_used: Boolean(hasImage),
           render_intent: variant?.image?.render_intent || "Hero image",
           hero_image_url: variant?.image?.hero_image_url ?? null,
+          hero_image_bucket: variant?.image?.hero_image_bucket ?? null,
+          hero_image_path: variant?.image?.hero_image_path ?? null,
           final_image_url: variant?.image?.final_image_url ?? null,
+          final_image_bucket: variant?.image?.final_image_bucket ?? null,
+          final_image_path: variant?.image?.final_image_path ?? null,
           width: variant?.image?.width ?? null,
           height: variant?.image?.height ?? null,
           model: variant?.image?.model ?? null,
@@ -823,7 +841,11 @@ function normalizeV1OutputImages(output, hasImage) {
           input_image_used: Boolean(hasImage),
           render_intent: image.render_intent || "Hero image",
           hero_image_url: image.hero_image_url ?? null,
+          hero_image_bucket: image.hero_image_bucket ?? null,
+          hero_image_path: image.hero_image_path ?? null,
           final_image_url: image.final_image_url ?? null,
+          final_image_bucket: image.final_image_bucket ?? null,
+          final_image_path: image.final_image_path ?? null,
           width: image.width ?? null,
           height: image.height ?? null,
           model: image.model ?? null,
@@ -849,7 +871,11 @@ function normalizeV2OutputImages(output, hasImage) {
           input_image_used: Boolean(hasImage),
           render_intent: image.render_intent || "Hero image",
           hero_image_url: image.hero_image_url ?? null,
+          hero_image_bucket: image.hero_image_bucket ?? null,
+          hero_image_path: image.hero_image_path ?? null,
           final_image_url: image.final_image_url ?? null,
+          final_image_bucket: image.final_image_bucket ?? null,
+          final_image_path: image.final_image_path ?? null,
           width: image.width ?? null,
           height: image.height ?? null,
           model: image.model ?? null,
@@ -1292,6 +1318,8 @@ export async function handler(event) {
           logStep("mentor.images.start", { jobId: placeholderId, count: mentorTargets.length });
           const imageQuality = process.env.CREATIVE_IMAGE_QUALITY || "auto";
           const inputImageBase64 = await resolveInputImageBase64(imagePath);
+          const imageStartedAt = Date.now();
+          const isOverImageBudget = () => Date.now() - imageStartedAt > MAX_IMAGE_DURATION_MS;
           try {
             if (placeholderId) {
               await supabaseAdmin
@@ -1307,6 +1335,14 @@ export async function handler(event) {
           }
 
           for (let i = 0; i < mentorTargets.length; i += 1) {
+            if (isOverImageBudget()) {
+              logStep("mentor.timeout", {
+                jobId: placeholderId,
+                imageElapsedMs: Date.now() - imageStartedAt,
+                phase: "images",
+              });
+              break;
+            }
             const { variant, index } = mentorTargets[i];
             const renderCreative = {
               format: brief.format,
@@ -1328,42 +1364,62 @@ export async function handler(event) {
 
             let imageSpec = buildFallbackImageSpec(brief, renderCreative);
             let imageError = null;
-            try {
-              const specPrompt =
-                outputMode === "pro"
-                  ? buildImageSpecPromptPro({
-                      brief,
-                      variant: renderCreative,
-                      strategyBlueprint,
-                      researchContext,
-                    })
-                  : buildImageSpecPrompt({
-                      brief,
-                      creative: renderCreative,
-                      strategyBlueprint,
-                      researchContext,
-                    });
-              const specSchema = outputMode === "pro" ? AD_IMAGE_SPEC_JSON_SCHEMA : IMAGE_SPEC_JSON_SCHEMA;
-              const specRaw = await callOpenAiJson(specPrompt, {
-                responseFormat: specSchema,
-                timeoutMs: IMAGE_SPEC_TIMEOUT_MS,
-              });
-              const specParsed = await parseWithRepair({
-                schema: ImageSpecSchema,
-                initial: specRaw,
-                makeRequest: async (instruction) =>
-                  callOpenAiJson(specPrompt + "\n\n" + instruction, {
-                    responseFormat: specSchema,
-                    timeoutMs: IMAGE_SPEC_TIMEOUT_MS,
-                  }),
-              });
-              imageSpec = specParsed.data;
-              imageSpecsByIndex[index] = imageSpec;
-            } catch (err) {
-              logStep("mentor.images.spec.error", {
+            const timeRemainingMs = MAX_IMAGE_DURATION_MS - (Date.now() - imageStartedAt);
+            const shouldUseLLMSpec =
+              (!IMAGE_SPEC_ONLY_FIRST || i === 0) && timeRemainingMs > IMAGE_SPEC_MIN_BUDGET_MS;
+            if (shouldUseLLMSpec) {
+              const specStart = Date.now();
+              logStep("mentor.images.spec.start", { jobId: placeholderId, index });
+              try {
+                const specPrompt =
+                  outputMode === "pro"
+                    ? buildImageSpecPromptPro({
+                        brief,
+                        variant: renderCreative,
+                        strategyBlueprint,
+                        researchContext,
+                      })
+                    : buildImageSpecPrompt({
+                        brief,
+                        creative: renderCreative,
+                        strategyBlueprint,
+                        researchContext,
+                      });
+                const specSchema = outputMode === "pro" ? AD_IMAGE_SPEC_JSON_SCHEMA : IMAGE_SPEC_JSON_SCHEMA;
+                const specRaw = await callOpenAiJson(specPrompt, {
+                  responseFormat: specSchema,
+                  timeoutMs: IMAGE_SPEC_TIMEOUT_MS,
+                  maxRetries: 0,
+                });
+                const specParsed = await parseWithRepair({
+                  schema: ImageSpecSchema,
+                  initial: specRaw,
+                  makeRequest: async (instruction) =>
+                    callOpenAiJson(specPrompt + "\n\n" + instruction, {
+                      responseFormat: specSchema,
+                      timeoutMs: IMAGE_SPEC_TIMEOUT_MS,
+                      maxRetries: 0,
+                    }),
+                });
+                imageSpec = specParsed.data;
+                imageSpecsByIndex[index] = imageSpec;
+              } catch (err) {
+                logStep("mentor.images.spec.error", {
+                  jobId: placeholderId,
+                  index,
+                  error: err?.message || String(err),
+                });
+              }
+              logStep("mentor.images.spec.done", {
                 jobId: placeholderId,
                 index,
-                error: err?.message || String(err),
+                ms: Date.now() - specStart,
+              });
+            } else {
+              logStep("mentor.images.spec.skip", {
+                jobId: placeholderId,
+                index,
+                timeRemainingMs,
               });
             }
             imageSpecsByIndex[index] = imageSpec;
@@ -1375,9 +1431,26 @@ export async function handler(event) {
 
             let heroB64 = null;
             let heroMeta = null;
+            let heroBucket = null;
+            let heroPath = null;
+            const heroStart = Date.now();
+            logStep("mentor.images.hero.start", { jobId: placeholderId, index });
             if (inputImageBase64) {
               heroB64 = inputImageBase64;
               heroMeta = { model: "user_upload" };
+              logStep("mentor.images.hero.done", {
+                jobId: placeholderId,
+                index,
+                ms: Date.now() - heroStart,
+                source: "input",
+              });
+            } else if (hasImage && !ALLOW_FALLBACK_IMAGE) {
+              imageError = imageError || "input_image_unreadable";
+              logStep("mentor.images.hero.skip", {
+                jobId: placeholderId,
+                index,
+                reason: "input_image_unreadable",
+              });
             } else {
               try {
                 const hero = await generateHeroImage({
@@ -1387,6 +1460,12 @@ export async function handler(event) {
                 });
                 heroB64 = hero.b64;
                 heroMeta = hero;
+                logStep("mentor.images.hero.done", {
+                  jobId: placeholderId,
+                  index,
+                  ms: Date.now() - heroStart,
+                  source: "openai",
+                });
               } catch (err) {
                 logStep("mentor.images.hero.error", {
                   jobId: placeholderId,
@@ -1407,7 +1486,10 @@ export async function handler(event) {
                   buffer: Buffer.from(heroB64, "base64"),
                   promptHash,
                 });
-                heroUrl = heroUpload.url;
+                heroBucket = heroUpload.bucket ?? null;
+                heroPath = heroUpload.path ?? null;
+                const heroPreviewUrl = heroUpload.previewUrl ?? heroUpload.url ?? null;
+                heroUrl = SHOULD_PERSIST_IMAGE_URLS ? heroPreviewUrl : null;
               } catch (err) {
                 logStep("mentor.images.hero.upload.error", {
                   jobId: placeholderId,
@@ -1419,9 +1501,13 @@ export async function handler(event) {
             }
 
             let finalUrl = null;
+            let finalBucket = null;
+            let finalPath = null;
             let renderWidth = null;
             let renderHeight = null;
             let renderVersion = null;
+            const renderStart = Date.now();
+            logStep("mentor.images.render.start", { jobId: placeholderId, index });
             try {
               const rendered = await renderAdImage({
                 creative: renderCreative,
@@ -1437,7 +1523,15 @@ export async function handler(event) {
                 buffer: rendered.buffer,
                 promptHash,
               });
-              finalUrl = finalUpload.url;
+              finalBucket = finalUpload.bucket ?? null;
+              finalPath = finalUpload.path ?? null;
+              const finalPreviewUrl = finalUpload.previewUrl ?? finalUpload.url ?? null;
+              finalUrl = SHOULD_PERSIST_IMAGE_URLS ? finalPreviewUrl : null;
+              logStep("mentor.images.render.done", {
+                jobId: placeholderId,
+                index,
+                ms: Date.now() - renderStart,
+              });
             } catch (err) {
               logStep("mentor.images.render.error", {
                 jobId: placeholderId,
@@ -1466,7 +1560,11 @@ export async function handler(event) {
                 input_image_used: Boolean(hasImage),
                 render_intent: renderCreative.image.render_intent || "Hero image",
                 hero_image_url: heroUrl ?? null,
+                hero_image_bucket: heroBucket,
+                hero_image_path: heroPath,
                 final_image_url: finalUrl ?? null,
+                final_image_bucket: finalBucket,
+                final_image_path: finalPath,
                 width: renderWidth ?? null,
                 height: renderHeight ?? null,
                 model: heroMeta?.model ?? null,
@@ -1719,42 +1817,62 @@ export async function handler(event) {
         const { creative, index } = imageTargets[i];
         let imageSpec = buildFallbackImageSpec(brief, creative);
         let imageError = null;
-        try {
-          const specPrompt =
-            outputMode === "pro"
-              ? buildImageSpecPromptPro({
-                  brief,
-                  variant: creative,
-                  strategyBlueprint,
-                  researchContext,
-                })
-              : buildImageSpecPrompt({
-                  brief,
-                  creative,
-                  strategyBlueprint,
-                  researchContext,
-                });
-          const specSchema = outputMode === "pro" ? AD_IMAGE_SPEC_JSON_SCHEMA : IMAGE_SPEC_JSON_SCHEMA;
-          const specRaw = await callOpenAiJson(specPrompt, {
-            responseFormat: specSchema,
-            timeoutMs: IMAGE_SPEC_TIMEOUT_MS,
-          });
-          const specParsed = await parseWithRepair({
-            schema: ImageSpecSchema,
-            initial: specRaw,
-            makeRequest: async (instruction) =>
-              callOpenAiJson(specPrompt + "\n\n" + instruction, {
-                responseFormat: specSchema,
-                timeoutMs: IMAGE_SPEC_TIMEOUT_MS,
-              }),
-          });
-          imageSpec = specParsed.data;
-          imageSpecsByIndex[index] = imageSpec;
-        } catch (err) {
-          logStep("default.images.spec.error", {
+        const timeRemainingMs = MAX_IMAGE_DURATION_MS - (Date.now() - imageStartedAt);
+        const shouldUseLLMSpec =
+          (!IMAGE_SPEC_ONLY_FIRST || i === 0) && timeRemainingMs > IMAGE_SPEC_MIN_BUDGET_MS;
+        if (shouldUseLLMSpec) {
+          const specStart = Date.now();
+          logStep("default.images.spec.start", { jobId: placeholderId, index });
+          try {
+            const specPrompt =
+              outputMode === "pro"
+                ? buildImageSpecPromptPro({
+                    brief,
+                    variant: creative,
+                    strategyBlueprint,
+                    researchContext,
+                  })
+                : buildImageSpecPrompt({
+                    brief,
+                    creative,
+                    strategyBlueprint,
+                    researchContext,
+                  });
+            const specSchema = outputMode === "pro" ? AD_IMAGE_SPEC_JSON_SCHEMA : IMAGE_SPEC_JSON_SCHEMA;
+            const specRaw = await callOpenAiJson(specPrompt, {
+              responseFormat: specSchema,
+              timeoutMs: IMAGE_SPEC_TIMEOUT_MS,
+              maxRetries: 0,
+            });
+            const specParsed = await parseWithRepair({
+              schema: ImageSpecSchema,
+              initial: specRaw,
+              makeRequest: async (instruction) =>
+                callOpenAiJson(specPrompt + "\n\n" + instruction, {
+                  responseFormat: specSchema,
+                  timeoutMs: IMAGE_SPEC_TIMEOUT_MS,
+                  maxRetries: 0,
+                }),
+            });
+            imageSpec = specParsed.data;
+            imageSpecsByIndex[index] = imageSpec;
+          } catch (err) {
+            logStep("default.images.spec.error", {
+              jobId: placeholderId,
+              index,
+              error: err?.message || String(err),
+            });
+          }
+          logStep("default.images.spec.done", {
             jobId: placeholderId,
             index,
-            error: err?.message || String(err),
+            ms: Date.now() - specStart,
+          });
+        } else {
+          logStep("default.images.spec.skip", {
+            jobId: placeholderId,
+            index,
+            timeRemainingMs,
           });
         }
         imageSpecsByIndex[index] = imageSpec;
@@ -1766,9 +1884,26 @@ export async function handler(event) {
 
         let heroB64 = null;
         let heroMeta = null;
+        let heroBucket = null;
+        let heroPath = null;
+        const heroStart = Date.now();
+        logStep("default.images.hero.start", { jobId: placeholderId, index });
         if (inputImageBase64) {
           heroB64 = inputImageBase64;
           heroMeta = { model: "user_upload" };
+          logStep("default.images.hero.done", {
+            jobId: placeholderId,
+            index,
+            ms: Date.now() - heroStart,
+            source: "input",
+          });
+        } else if (hasImage && !ALLOW_FALLBACK_IMAGE) {
+          imageError = imageError || "input_image_unreadable";
+          logStep("default.images.hero.skip", {
+            jobId: placeholderId,
+            index,
+            reason: "input_image_unreadable",
+          });
         } else {
           try {
             const hero = await generateHeroImage({
@@ -1778,6 +1913,12 @@ export async function handler(event) {
             });
             heroB64 = hero.b64;
             heroMeta = hero;
+            logStep("default.images.hero.done", {
+              jobId: placeholderId,
+              index,
+              ms: Date.now() - heroStart,
+              source: "openai",
+            });
           } catch (err) {
             logStep("default.images.hero.error", {
               jobId: placeholderId,
@@ -1798,7 +1939,10 @@ export async function handler(event) {
               buffer: Buffer.from(heroB64, "base64"),
               promptHash,
             });
-            heroUrl = heroUpload.url;
+            heroBucket = heroUpload.bucket ?? null;
+            heroPath = heroUpload.path ?? null;
+            const heroPreviewUrl = heroUpload.previewUrl ?? heroUpload.url ?? null;
+            heroUrl = SHOULD_PERSIST_IMAGE_URLS ? heroPreviewUrl : null;
           } catch (err) {
             logStep("default.images.hero.upload.error", {
               jobId: placeholderId,
@@ -1810,9 +1954,13 @@ export async function handler(event) {
         }
 
         let finalUrl = null;
+        let finalBucket = null;
+        let finalPath = null;
         let renderWidth = null;
         let renderHeight = null;
         let renderVersion = null;
+        const renderStart = Date.now();
+        logStep("default.images.render.start", { jobId: placeholderId, index });
         try {
           const rendered = await renderAdImage({
             creative,
@@ -1828,7 +1976,15 @@ export async function handler(event) {
             buffer: rendered.buffer,
             promptHash,
           });
-          finalUrl = finalUpload.url;
+          finalBucket = finalUpload.bucket ?? null;
+          finalPath = finalUpload.path ?? null;
+          const finalPreviewUrl = finalUpload.previewUrl ?? finalUpload.url ?? null;
+          finalUrl = SHOULD_PERSIST_IMAGE_URLS ? finalPreviewUrl : null;
+          logStep("default.images.render.done", {
+            jobId: placeholderId,
+            index,
+            ms: Date.now() - renderStart,
+          });
         } catch (err) {
           logStep("default.images.render.error", {
             jobId: placeholderId,
@@ -1855,7 +2011,11 @@ export async function handler(event) {
           input_image_used: Boolean(hasImage),
           render_intent: creative.image?.render_intent || "Hero image",
           hero_image_url: heroUrl ?? null,
+          hero_image_bucket: heroBucket,
+          hero_image_path: heroPath,
           final_image_url: finalUrl ?? null,
+          final_image_bucket: finalBucket,
+          final_image_path: finalPath,
           width: renderWidth ?? null,
           height: renderHeight ?? null,
           model: heroMeta?.model ?? null,
@@ -1870,16 +2030,16 @@ export async function handler(event) {
           image: updatedImage,
         };
 
-            try {
-              if (placeholderId) {
-                const pct = Math.min(99, 92 + Math.round(((i + 1) / imageTargets.length) * 6));
-                await supabaseAdmin
-                  .from("generated_creatives")
-                  .update({
-                    progress: pct,
-                    progress_meta: {
-                      phase: "images_progress",
-                      message: `Bild ${i + 1}/${imageTargets.length} fertig`,
+        try {
+          if (placeholderId) {
+            const pct = Math.min(99, 92 + Math.round(((i + 1) / imageTargets.length) * 6));
+            await supabaseAdmin
+              .from("generated_creatives")
+              .update({
+                progress: pct,
+                progress_meta: {
+                  phase: "images_progress",
+                  message: `Bild ${i + 1}/${imageTargets.length} fertig`,
                   done: i + 1,
                   total: imageTargets.length,
                   lastVariantId: creative?.id ?? null,
@@ -2085,7 +2245,11 @@ async function callOpenAiJson(prompt, options = {}) {
     5000,
     180000,
   );
-  const maxRetries = clampInt(Number(process.env.OPENAI_MAX_RETRIES || 2), 0, 4);
+  const maxRetries = clampInt(
+    Number(options?.maxRetries ?? process.env.OPENAI_MAX_RETRIES || 2),
+    0,
+    4,
+  );
 
   let lastError;
   for (let attempt = 0; attempt <= maxRetries; attempt += 1) {

@@ -1,6 +1,10 @@
 import crypto from "crypto";
 import { supabaseAdmin } from "./clients.js";
 
+const IMAGES_PUBLIC = process.env.CREATIVE_IMAGES_PUBLIC === "1";
+const RETURN_PREVIEW_URL = process.env.CREATIVE_RETURN_PREVIEW_URL !== "0";
+const SIGNED_TTL_SEC = Number(process.env.CREATIVE_SIGNED_URL_TTL_SEC || 3600);
+
 function buildPath({ userId, prefix, ext }) {
   const id = crypto.randomUUID();
   const safePrefix = String(prefix || "render").replace(/[^a-z0-9_-]/gi, "");
@@ -24,10 +28,14 @@ async function uploadBuffer({ bucket, path, buffer, contentType }) {
 }
 
 async function resolveUrl({ bucket, path }) {
-  const { data } = supabaseAdmin.storage.from(bucket).getPublicUrl(path);
-  if (data?.publicUrl) return data.publicUrl;
+  if (IMAGES_PUBLIC) {
+    const { data } = supabaseAdmin.storage.from(bucket).getPublicUrl(path);
+    if (data?.publicUrl) return data.publicUrl;
+  }
 
-  const signed = await supabaseAdmin.storage.from(bucket).createSignedUrl(path, 60 * 60);
+  if (!RETURN_PREVIEW_URL) return null;
+
+  const signed = await supabaseAdmin.storage.from(bucket).createSignedUrl(path, SIGNED_TTL_SEC);
   if (signed.error) {
     throw new Error(`Signed URL failed: ${signed.error.message}`);
   }
@@ -57,8 +65,8 @@ export async function uploadHeroImage({ userId, buffer, promptHash }) {
   const fallbackBucket = process.env.CREATIVE_FALLBACK_BUCKET || "creative-inputs";
   const path = buildPath({ userId, prefix: `hero-${promptHash || "img"}`, ext: "png" });
   const upload = await uploadWithFallback({ bucket, fallbackBucket, path, buffer });
-  const url = await resolveUrl({ bucket: upload.bucket, path: upload.path });
-  return { path: upload.path, url, bucket: upload.bucket };
+  const previewUrl = await resolveUrl({ bucket: upload.bucket, path: upload.path });
+  return { path: upload.path, bucket: upload.bucket, previewUrl, url: previewUrl };
 }
 
 export async function uploadRenderedImage({ userId, buffer, promptHash }) {
@@ -66,6 +74,6 @@ export async function uploadRenderedImage({ userId, buffer, promptHash }) {
   const fallbackBucket = process.env.CREATIVE_FALLBACK_BUCKET || "creative-inputs";
   const path = buildPath({ userId, prefix: `render-${promptHash || "img"}`, ext: "png" });
   const upload = await uploadWithFallback({ bucket, fallbackBucket, path, buffer });
-  const url = await resolveUrl({ bucket: upload.bucket, path: upload.path });
-  return { path: upload.path, url, bucket: upload.bucket };
+  const previewUrl = await resolveUrl({ bucket: upload.bucket, path: upload.path });
+  return { path: upload.path, bucket: upload.bucket, previewUrl, url: previewUrl };
 }

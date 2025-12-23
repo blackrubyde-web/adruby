@@ -23,6 +23,27 @@ function getViewport(format) {
   }
 }
 
+function guessMimeFromBase64(b64) {
+  try {
+    const buf = Buffer.from(b64.slice(0, 64), "base64");
+    if (buf.length >= 3 && buf[0] === 0xff && buf[1] === 0xd8 && buf[2] === 0xff) {
+      return "image/jpeg";
+    }
+    if (
+      buf.length >= 4 &&
+      buf[0] === 0x89 &&
+      buf[1] === 0x50 &&
+      buf[2] === 0x4e &&
+      buf[3] === 0x47
+    ) {
+      return "image/png";
+    }
+  } catch {
+    /* ignore */
+  }
+  return "image/png";
+}
+
 function buildHtml({ creative, brandName, format, heroDataUri }) {
   const hook = escapeHtml(creative?.copy?.hook);
   const primary = escapeHtml(creative?.copy?.primary_text);
@@ -209,7 +230,8 @@ function renderTextBlock(lines, x, y, fontSize, lineHeight, color, weight) {
 
 export async function renderAdImage({ creative, brief, format, heroBase64 }) {
   const { width, height } = getViewport(format);
-  const heroDataUri = heroBase64 ? `data:image/png;base64,${heroBase64}` : null;
+  const heroMime = heroBase64 ? guessMimeFromBase64(heroBase64) : null;
+  const heroDataUri = heroBase64 ? `data:${heroMime};base64,${heroBase64}` : null;
   const renderEngine = process.env.CREATIVE_RENDER_ENGINE || "svg";
   const brandName = brief?.brand?.name || "";
 
@@ -227,9 +249,11 @@ export async function renderAdImage({ creative, brief, format, heroBase64 }) {
 
       try {
         const page = await browser.newPage();
+        page.setDefaultTimeout(15000);
+        page.setDefaultNavigationTimeout(15000);
         await page.setViewport({ width, height, deviceScaleFactor: 2 });
-        await page.setContent(html, { waitUntil: "networkidle0" });
-        const buffer = await page.screenshot({ type: "png" });
+        await page.setContent(html, { waitUntil: "domcontentloaded", timeout: 15000 });
+        const buffer = await page.screenshot({ type: "png", timeout: 15000 });
         await page.close();
         return {
           buffer,

@@ -255,13 +255,12 @@ function renderResearchContext(ctx) {
   const trimmed = trimResearchContext(ctx);
   const items = trimmed
     .map((i, idx) => {
-      const lines = [];
-      if (i.page_name) lines.push(`page: ${i.page_name}`);
-      if (i.headline) lines.push(`headline: ${i.headline}`);
-      if (i.primary_text) lines.push(`primary_text: ${i.primary_text}`);
-      if (i.description) lines.push(`description: ${i.description}`);
-      if (!lines.length) return null;
-      return `\n[${idx + 1}] ${lines.join("\n")}`;
+      const page = i.page_name || "—";
+      const headline = i.headline || "—";
+      const primaryText = i.primary_text || "—";
+      const description = i.description || "—";
+      if (page === "—" && headline === "—" && primaryText === "—" && description === "—") return null;
+      return `\n[${idx + 1}] page: ${page}\nheadline: ${headline}\nprimary_text: ${primaryText}\ndescription: ${description}`;
     })
     .filter(Boolean);
   if (!items.length) return "";
