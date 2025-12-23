@@ -4,6 +4,8 @@
 
 [functions]
   directory = "netlify/functions"
+  node_bundler = "esbuild"
+  esbuild_format = "esm"
 
 [[redirects]]
   from = "/api/creative/analyze"
