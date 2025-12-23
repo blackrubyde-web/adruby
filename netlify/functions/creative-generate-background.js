@@ -560,7 +560,8 @@ async function resolveInputImageBase64(imagePath) {
       .createSignedUrl(imagePath, 60 * 10);
     if (signed.error || !signed.data?.signedUrl) return null;
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 10000);
+    // Fix: Increase timeout from 10s to 45s to handle larger images/slower connections reliability
+    const timeoutId = setTimeout(() => controller.abort(), 45000);
     const res = await fetch(signed.data.signedUrl, { signal: controller.signal });
     clearTimeout(timeoutId);
     if (!res.ok) return null;
@@ -2370,68 +2371,68 @@ async function evaluateOutput(brief, output, strategyBlueprint, researchContext)
 }
 
 async function callOpenAiJson(prompt, options = {}) {
-    const openai = getOpenAiClient();
-    const model = getOpenAiModel();
+  const openai = getOpenAiClient();
+  const model = getOpenAiModel();
 
-    const timeoutOverride = options?.timeoutMs;
-    const baseTimeoutMs = clampInt(
-        Number(timeoutOverride ?? process.env.OPENAI_TIMEOUT_MS ?? 60000),
-        5000,
-        180000,
-    );
-    const maxRetries = clampInt(
-        Number(options?.maxRetries ?? process.env.OPENAI_MAX_RETRIES ?? 2),
-        0,
-        4,
-    );
+  const timeoutOverride = options?.timeoutMs;
+  const baseTimeoutMs = clampInt(
+    Number(timeoutOverride ?? process.env.OPENAI_TIMEOUT_MS ?? 60000),
+    5000,
+    180000,
+  );
+  const maxRetries = clampInt(
+    Number(options?.maxRetries ?? process.env.OPENAI_MAX_RETRIES ?? 2),
+    0,
+    4,
+  );
 
-    let lastError;
-    for (let attempt = 0; attempt <= maxRetries; attempt += 1) {
-        const timeoutMs = clampInt(baseTimeoutMs + attempt * 5000, 5000, 180000);
-        try {
-            await waitForOpenAiSlot();
+  let lastError;
+  for (let attempt = 0; attempt <= maxRetries; attempt += 1) {
+    const timeoutMs = clampInt(baseTimeoutMs + attempt * 5000, 5000, 180000);
+    try {
+      await waitForOpenAiSlot();
 
-            const messages = [
-                {
-                    role: "system",
-                    content: "You are a helpful assistant designed to output valid JSON. Return ONLY the JSON object. Do not include markdown formatting (like ```json).",
-                },
-                {
-                    role: "user",
-                    content: prompt,
-                },
-            ];
+      const messages = [
+        {
+          role: "system",
+          content: "You are a helpful assistant designed to output valid JSON. Return ONLY the JSON object. Do not include markdown formatting (like ```json).",
+        },
+        {
+          role: "user",
+          content: prompt,
+        },
+      ];
 
-            // Use standard JSON mode
-            const completion = await openai.chat.completions.create(
-                {
-                    model,
-                    messages,
-                    temperature: 0.2,
-                    response_format: { type: "json_object" },
-                },
-                {
-                    timeout: timeoutMs,
-                }
-            );
-
-            const content = completion.choices[0]?.message?.content;
-            if (!content) {
-                throw new Error("OpenAI returned empty content");
-            }
-
-            return content;
-
-        } catch (err) {
-            lastError = err;
-            console.warn(`[callOpenAiJson] Attempt ${attempt + 1} failed: ${err.message}`);
-
-            if (attempt < maxRetries) {
-                const delay = 2000 * (attempt + 1);
-                await new Promise((r) => setTimeout(r, delay));
-            }
+      // Use standard JSON mode
+      const completion = await openai.chat.completions.create(
+        {
+          model,
+          messages,
+          temperature: 0.2,
+          response_format: { type: "json_object" },
+        },
+        {
+          timeout: timeoutMs,
         }
-    }
+      );
 
-    throw lastError || new Error("Failed to call OpenAI after retries");
+      const content = completion.choices[0]?.message?.content;
+      if (!content) {
+        throw new Error("OpenAI returned empty content");
+      }
+
+      return content;
+
+    } catch (err) {
+      lastError = err;
+      console.warn(`[callOpenAiJson] Attempt ${attempt + 1} failed: ${err.message}`);
+
+      if (attempt < maxRetries) {
+        const delay = 2000 * (attempt + 1);
+        await new Promise((r) => setTimeout(r, delay));
+      }
+    }
+  }
+
+  throw lastError || new Error("Failed to call OpenAI after retries");
 }
