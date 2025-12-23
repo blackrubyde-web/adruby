@@ -2241,12 +2241,12 @@ async function callOpenAiJson(prompt, options = {}) {
   const responseFormat = options?.responseFormat;
   const timeoutOverride = options?.timeoutMs;
   const baseTimeoutMs = clampInt(
-    Number(timeoutOverride ?? process.env.OPENAI_TIMEOUT_MS || 150000),
+    Number(timeoutOverride ?? process.env.OPENAI_TIMEOUT_MS ?? 150000),
     5000,
     180000,
   );
   const maxRetries = clampInt(
-    Number(options?.maxRetries ?? process.env.OPENAI_MAX_RETRIES || 2),
+    Number(options?.maxRetries ?? process.env.OPENAI_MAX_RETRIES ?? 2),
     0,
     4,
   );

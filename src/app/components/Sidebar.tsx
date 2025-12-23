@@ -85,7 +85,7 @@ export const Sidebar = memo(function Sidebar({
         </span>
       </button>
     );
-  }, [currentPage, handleNavigate, showLabels]);
+  }, [currentPage, handleNavigate, showLabels, isMobileOpen]);
 
   return (
     <>
