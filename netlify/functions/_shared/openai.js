@@ -20,7 +20,10 @@ export function getOpenAiModel() {
 }
 
 export function getOpenAiImageModel() {
-  return process.env.CREATIVE_IMAGE_MODEL || "dall-e-3";
+  const model = process.env.CREATIVE_IMAGE_MODEL;
+  // Safety: If the environment variable is set to the deprecated model, force upgrade to DALL-E 3
+  if (model === "gpt-image-1") return "dall-e-3";
+  return model || "dall-e-3";
 }
 
 async function fetchImageAsBase64(url) {
@@ -80,7 +83,7 @@ export async function generateHeroImage({
     size,
     quality: safeQuality,
   };
-  
+
   // DALL-E 3 does not strictly support 'seed' for deterministic generation in the same way 
   // as some other endpoints, but the API accepts it. Not strictly enforced.
   if (typeof seed === "number") {
@@ -89,7 +92,7 @@ export async function generateHeroImage({
 
   // DALL-E 3 requests often take longer, bump timeout default
   const timeoutMs = Number(process.env.OPENAI_IMAGE_TIMEOUT_MS || 120000);
-  
+
   const result = await withTimeout(
     openai.images.generate(params),
     timeoutMs,
