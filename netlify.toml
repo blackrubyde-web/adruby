@@ -7,13 +7,8 @@
   AWS_LAMBDA_JS_RUNTIME = "nodejs18.x"
 
 [functions]
-  directory = "netlify/functions"
-  node_bundler = "esbuild"
-  included_files = ["netlify/functions/package.json"]
-
-[functions.esbuild]
-  format = "cjs"
-  external_node_modules = ["@resvg/resvg-js", "puppeteer-core", "@sparticuz/chromium"]
+  directory = "netlify/functions-build"
+  node_bundler = "zisi"
 
 [[redirects]]
   from = "/api/creative/analyze"
