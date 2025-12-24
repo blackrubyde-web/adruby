@@ -20,10 +20,7 @@ export function getOpenAiModel() {
 }
 
 export function getOpenAiImageModel() {
-  const model = process.env.CREATIVE_IMAGE_MODEL;
-  // Safety: If the environment variable is set to the deprecated model, force upgrade to DALL-E 3
-  if (model === "gpt-image-1") return "dall-e-3";
-  return model || "dall-e-3";
+  return process.env.CREATIVE_IMAGE_MODEL || "dall-e-3";
 }
 
 async function fetchImageAsBase64(url) {
