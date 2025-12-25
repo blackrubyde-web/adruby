@@ -72,8 +72,8 @@ export const Sidebar = memo(function Sidebar({
         key={item.page}
         onClick={() => handleNavigate(item.page)}
         className={`relative w-full flex items-center px-4 py-2.5 rounded-lg transition-[color,background-color,gap] duration-200 ${isActive
-          ? 'bg-sidebar-accent text-sidebar-foreground'
-          : 'text-sidebar-foreground/70 hover:text-sidebar-foreground hover:bg-sidebar-accent/50'
+          ? 'bg-sidebar-accent text-zinc-900 dark:text-sidebar-foreground'
+          : 'text-zinc-600 dark:text-sidebar-foreground/70 hover:text-zinc-900 dark:hover:text-sidebar-foreground hover:bg-zinc-100 dark:hover:bg-sidebar-accent/50'
           } ${showLabels ? 'gap-3 justify-start' : 'gap-0 justify-center'}`}
         title={(!showLabels && !isMobileOpen) ? item.label : undefined}
       >
@@ -112,7 +112,7 @@ export const Sidebar = memo(function Sidebar({
 
       {/* Sidebar */}
       <div
-        className={`${isExpanded ? 'bg-black/90 border-white/10' : 'bg-sidebar border-sidebar-border'} border-r h-screen fixed left-0 top-0 flex flex-col transition-[width,transform] duration-200 z-50
+        className={`${isExpanded ? 'bg-white/95 dark:bg-black/95 border-zinc-200/50 dark:border-white/10' : 'bg-white border-zinc-200 dark:bg-sidebar dark:border-sidebar-border'} border-r h-screen fixed left-0 top-0 flex flex-col transition-[width,transform] duration-200 z-50
           ${isMobileOpen ? 'translate-x-0 w-64' : '-translate-x-full w-64'}
           ${!isMobileOpen ? 'md:translate-x-0' : ''}
           ${!isMobileOpen && !isExpanded ? 'md:w-20' : 'md:w-64'}
@@ -139,7 +139,7 @@ export const Sidebar = memo(function Sidebar({
               <span className="text-primary-foreground font-bold text-sm">AR</span>
             </div>
             {showLabels && (
-              <span className="text-sidebar-foreground font-bold text-lg">
+              <span className="text-zinc-900 dark:text-sidebar-foreground font-bold text-lg">
                 AdRuby
               </span>
             )}
@@ -210,7 +210,7 @@ export const Sidebar = memo(function Sidebar({
         {/* Logout - Always at Bottom */}
         <div className="p-4 border-t border-sidebar-border">
           <button
-            className="w-full flex items-center gap-3 px-4 py-2.5 rounded-lg text-sidebar-foreground/70 hover:text-sidebar-foreground hover:bg-sidebar-accent/50 transition-colors"
+            className="w-full flex items-center gap-3 px-4 py-2.5 rounded-lg text-zinc-600 dark:text-sidebar-foreground/70 hover:text-zinc-900 dark:hover:text-sidebar-foreground hover:bg-zinc-100 dark:hover:bg-sidebar-accent/50 transition-colors"
             title={(!showLabels && !isMobileOpen) ? 'Logout' : undefined}
             onClick={onLogout}
           >
