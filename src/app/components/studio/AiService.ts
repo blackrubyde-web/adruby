@@ -39,7 +39,7 @@ Return ONLY the copy text, no explanations.`;
 
     try {
         // Try OpenAI first
-        const response = await fetch('/api/ai/generate-text', {
+        const response = await fetch('/api/ai-generate-text', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({

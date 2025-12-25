@@ -46,7 +46,7 @@ ${niche ? `Industry: ${niche}` : ''}
 Be direct, use power words, create urgency.`;
 
     try {
-        const response = await fetch('/api/ai/generate-text', {
+        const response = await fetch('/api/ai-generate-text', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({

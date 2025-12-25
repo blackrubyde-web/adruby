@@ -9,7 +9,7 @@ import { runPerformanceAudit, type AuditResult } from './PerformanceAudit';
 import { generateAdContent, createAdFromContent, type GeneratedAdContent } from './TextToAdGenerator';
 import { getAllBrandKits, applyBrandToDocument, type BrandKit } from './BrandKit';
 import { smartResize, FORMAT_PRESETS, type FormatPreset } from './SmartResize';
-import { Layers, Cuboid, Wand2, X, Save, Share2, ShieldCheck, TrendingUp, AlertCircle, CheckCircle2, Download, Image as ImageIcon, Undo2, Redo2, Trash2, Copy, Sparkles, Palette, Maximize2, Loader2 } from 'lucide-react';
+import { Layers, Cuboid, Wand2, X, Save, Share2, ShieldCheck, TrendingUp, AlertCircle, CheckCircle2, Download, Image as ImageIcon, Undo2, Redo2, Trash2, Copy, Sparkles, Palette, Maximize2, Loader2, Hand, MousePointer2 } from 'lucide-react';
 import type { AdDocument, StudioLayer } from '../../types/studio';
 
 const MOCK_DOC: AdDocument = {
@@ -119,6 +119,11 @@ export const EditorLayout = ({ onClose, onSave }: EditorLayoutProps) => {
     const [selectedLayerId, setSelectedLayerId] = useState<string | undefined>();
     const [activeTab, setActiveTab] = useState<'layers' | 'assets' | 'remix'>('layers');
     const [variants, setVariants] = useState<AdDocument[]>([]);
+
+    // Tool State
+    const [activeTool, setActiveTool] = useState<'select' | 'hand'>('select');
+    const [viewPos, setViewPos] = useState({ x: 0, y: 0 });
+
     const [showVariantModal, setShowVariantModal] = useState(false);
     const [isMultiverseMode, setIsMultiverseMode] = useState(false);
     const [isPreviewMode, setIsPreviewMode] = useState(false);
@@ -435,6 +440,23 @@ export const EditorLayout = ({ onClose, onSave }: EditorLayoutProps) => {
                     <button onClick={onClose} className="p-2 hover:bg-muted rounded-full transition-colors text-muted-foreground hover:text-foreground">
                         <X className="w-5 h-5" />
                     </button>
+                    {/* Tool Toggle */}
+                    <div className="flex items-center bg-muted rounded-lg p-1 border border-border h-9">
+                        <button
+                            onClick={() => setActiveTool('select')}
+                            className={`p-1.5 rounded-md transition-all ${activeTool === 'select' ? 'bg-background text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'}`}
+                            title="Select Tool (V)"
+                        >
+                            <MousePointer2 className="w-4 h-4" />
+                        </button>
+                        <button
+                            onClick={() => setActiveTool('hand')}
+                            className={`p-1.5 rounded-md transition-all ${activeTool === 'hand' ? 'bg-background text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'}`}
+                            title="Hand Tool (H) - Pan Canvas"
+                        >
+                            <Hand className="w-4 h-4" />
+                        </button>
+                    </div>
                     <div className="h-8 w-px bg-border" />
                     <div className="flex flex-col">
                         <h1 className="font-bold text-sm tracking-tight">{doc.name}</h1>
@@ -547,11 +569,21 @@ export const EditorLayout = ({ onClose, onSave }: EditorLayoutProps) => {
                 </div>
 
                 {/* Center Canvas Area */}
-                <main className={`flex-1 relative overflow-auto flex items-center justify-center transition-colors duration-500 ${isPreviewMode ? 'bg-white' : 'bg-zinc-950'}`}>
+                <main className={`flex-1 relative overflow-hidden flex items-center justify-center transition-colors duration-500 ${isPreviewMode ? 'bg-white' : 'bg-zinc-950'}`}>
 
                     {!isMultiverseMode && !isPreviewMode && (
                         <div className="shadow-[0_0_100px_-20px_rgba(0,0,0,0.5)] border border-white/5 rounded-sm overflow-hidden animate-in fade-in zoom-in-95 duration-500">
-                            <CanvasStage ref={canvasRef} doc={doc} scale={scale} selectedLayerId={selectedLayerId} onLayerSelect={handleSelectLayer} onLayerUpdate={handleLayerUpdate} />
+                            <CanvasStage
+                                ref={canvasRef}
+                                doc={doc}
+                                scale={scale}
+                                selectedLayerId={selectedLayerId}
+                                onLayerSelect={handleSelectLayer}
+                                onLayerUpdate={handleLayerUpdate}
+                                isHandMode={activeTool === 'hand'}
+                                viewPos={viewPos}
+                                onViewChange={setViewPos}
+                            />
                         </div>
                     )}
 
@@ -562,7 +594,7 @@ export const EditorLayout = ({ onClose, onSave }: EditorLayoutProps) => {
                             <div className="flex flex-col gap-4">
                                 <span className="text-[10px] font-black uppercase tracking-widest text-white/40 text-center">Instagram Post</span>
                                 <div className="shadow-2xl border border-white/5 rounded-sm overflow-hidden scale-[0.4] origin-top">
-                                    <CanvasStage doc={doc} scale={1} selectedLayerId={undefined} onLayerSelect={() => { }} onLayerUpdate={() => { }} />
+                                    <CanvasStage doc={doc} scale={1} preview={true} selectedLayerId={undefined} onLayerSelect={() => { }} onLayerUpdate={() => { }} />
                                 </div>
                             </div>
                             {/* 9:16 Story */}
@@ -573,6 +605,7 @@ export const EditorLayout = ({ onClose, onSave }: EditorLayoutProps) => {
                                     <CanvasStage
                                         doc={{ ...doc, width: 1080, height: 1920 }}
                                         scale={1}
+                                        preview={true}
                                         selectedLayerId={undefined}
                                         onLayerSelect={() => { }}
                                         onLayerUpdate={() => { }}
@@ -586,6 +619,7 @@ export const EditorLayout = ({ onClose, onSave }: EditorLayoutProps) => {
                                     <CanvasStage
                                         doc={{ ...doc, width: 1200, height: 628 }}
                                         scale={1}
+                                        preview={true}
                                         selectedLayerId={undefined}
                                         onLayerSelect={() => { }}
                                         onLayerUpdate={() => { }}
@@ -623,7 +657,7 @@ export const EditorLayout = ({ onClose, onSave }: EditorLayoutProps) => {
                             {/* THE AD CANVAS */}
                             <div className="w-full aspect-square border-b border-zinc-100 relative overflow-hidden">
                                 <div className="absolute inset-0 origin-top-left" style={{ transform: `scale(${375 / doc.width})` }}>
-                                    <CanvasStage doc={doc} scale={1} selectedLayerId={undefined} onLayerSelect={() => { }} onLayerUpdate={() => { }} />
+                                    <CanvasStage doc={doc} scale={1} preview={true} selectedLayerId={undefined} onLayerSelect={() => { }} onLayerUpdate={() => { }} />
                                 </div>
                             </div>
 

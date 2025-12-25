@@ -94,9 +94,13 @@ interface CanvasStageProps {
     selectedLayerId?: string;
     onLayerSelect?: (id: string) => void;
     onLayerUpdate?: (id: string, attrs: Partial<StudioLayer>) => void;
+    isHandMode?: boolean;
+    viewPos?: { x: number, y: number };
+    onViewChange?: (pos: { x: number, y: number }) => void;
+    preview?: boolean;
 }
 
-export const CanvasStage = forwardRef<CanvasStageHandle, CanvasStageProps>(({ doc, scale = 1, selectedLayerId, onLayerSelect, onLayerUpdate }, ref) => {
+export const CanvasStage = forwardRef<CanvasStageHandle, CanvasStageProps>(({ doc, scale = 1, selectedLayerId, onLayerSelect, onLayerUpdate, isHandMode = false, viewPos = { x: 0, y: 0 }, onViewChange, preview = false }, ref) => {
     const sortedLayers = [...doc.layers].sort((a, b) => a.zIndex - b.zIndex);
     const trRef = useRef<any>(null);
     const stageRef = useRef<any>(null);
@@ -107,17 +111,29 @@ export const CanvasStage = forwardRef<CanvasStageHandle, CanvasStageProps>(({ do
             if (!stageRef.current) return undefined;
             // Temporarily hide transformer for export
             if (trRef.current) trRef.current.nodes([]);
+
+            // Reset position for export to capture everything correctly regardless of view pan
+            const oldX = stageRef.current.x();
+            const oldY = stageRef.current.y();
+            stageRef.current.x(0);
+            stageRef.current.y(0);
+
             const dataURL = stageRef.current.toDataURL({
                 mimeType: format === 'jpeg' ? 'image/jpeg' : 'image/png',
                 quality,
                 pixelRatio: 2 // High resolution export
             });
+
+            // Restore position
+            stageRef.current.x(oldX);
+            stageRef.current.y(oldY);
+
             return dataURL;
         }
     }), []);
 
     useEffect(() => {
-        if (!selectedLayerId || !trRef.current) return;
+        if (!selectedLayerId || !trRef.current || isHandMode || preview) return; // Don't show transformer in hand mode or preview
         const stage = trRef.current.getStage();
         const selectedNode = stage.findOne('.' + selectedLayerId);
         if (selectedNode) {
@@ -126,10 +142,53 @@ export const CanvasStage = forwardRef<CanvasStageHandle, CanvasStageProps>(({ do
         } else {
             trRef.current.nodes([]);
         }
-    }, [selectedLayerId, sortedLayers]);
+    }, [selectedLayerId, sortedLayers, isHandMode, preview]);
+
+    if (preview) {
+        return (
+            <div style={{ width: doc.width * scale, height: doc.height * scale }}>
+                <Stage
+                    ref={stageRef}
+                    width={doc.width * scale}
+                    height={doc.height * scale}
+                    scaleX={scale}
+                    scaleY={scale}
+                    listening={false}
+                >
+                    <Layer>
+                        <Rect width={doc.width} height={doc.height} fill={doc.backgroundColor} />
+                    </Layer>
+                    <Layer>
+                        {sortedLayers.map((layer) => {
+                            if (!layer.visible) return null;
+                            return (
+                                <Group
+                                    key={layer.id}
+                                    name={layer.id}
+                                    x={layer.x}
+                                    y={layer.y}
+                                    width={layer.width}
+                                    height={layer.height}
+                                    rotation={layer.rotation}
+                                >
+                                    {layer.type === 'text' ? (
+                                        <TextItem layer={layer as TextLayer} />
+                                    ) : (layer.type === 'cta') ? (
+                                        <CtaItem layer={layer as CtaLayer} />
+                                    ) : (
+                                        <URLImage layer={layer as ImageLayer} />
+                                    )}
+                                </Group>
+                            );
+                        })}
+                    </Layer>
+                </Stage>
+            </div>
+        );
+    }
 
     return (
-        <div className="flex items-center justify-center bg-zinc-900/5 dark:bg-zinc-900/50 p-8 overflow-auto h-full w-full">
+        <div className={`flex items-center justify-center bg-zinc-900/5 dark:bg-zinc-900/50 p-8 overflow-hidden h-full w-full ${isHandMode ? 'cursor-grab active:cursor-grabbing' : ''}`}>
             <div
                 className="shadow-2xl ring-1 ring-black/5"
                 style={{
@@ -143,16 +202,25 @@ export const CanvasStage = forwardRef<CanvasStageHandle, CanvasStageProps>(({ do
                     height={doc.height * scale}
                     scaleX={scale}
                     scaleY={scale}
+                    draggable={isHandMode}
+                    x={viewPos.x}
+                    y={viewPos.y}
+                    onDragEnd={(e) => {
+                        if (isHandMode) {
+                            onViewChange?.({ x: e.target.x(), y: e.target.y() });
+                        }
+                    }}
                     onMouseDown={(e) => {
+                        if (isHandMode) return;
                         const clickedOnEmpty = e.target === e.target.getStage();
                         if (clickedOnEmpty) onLayerSelect?.('');
                     }}
                 >
-                    <Layer>
+                    <Layer listening={!isHandMode}>
                         <Rect width={doc.width} height={doc.height} fill={doc.backgroundColor} />
                     </Layer>
 
-                    <Layer>
+                    <Layer listening={!isHandMode}>
                         {sortedLayers.map((layer) => {
                             if (!layer.visible) return null;
                             return (
@@ -164,7 +232,7 @@ export const CanvasStage = forwardRef<CanvasStageHandle, CanvasStageProps>(({ do
                                     width={layer.width}
                                     height={layer.height}
                                     rotation={layer.rotation}
-                                    draggable={!layer.locked}
+                                    draggable={!layer.locked && !isHandMode}
                                     onClick={(e) => {
                                         e.cancelBubble = true;
                                         onLayerSelect?.(layer.id);
