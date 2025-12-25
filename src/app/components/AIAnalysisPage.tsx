@@ -364,7 +364,7 @@ export function AIAnalysisPage() {
     });
 
     setCampaigns(next);
-  }, [metaCampaigns, assignmentMap]);
+  }, [metaCampaigns, assignmentMap, buildAiAnalysis]);
 
   useEffect(() => {
     let cancelled = false;

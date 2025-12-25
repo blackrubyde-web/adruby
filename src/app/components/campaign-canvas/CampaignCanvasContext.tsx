@@ -140,8 +140,8 @@ export function CampaignCanvasProvider({ children }: { children: ReactNode }) {
     const [drafts, setDrafts] = useState<DraftData[]>([]);
 
     // Canvas state
-    const [nodes, setNodes, onNodesChange] = useNodesState<CampaignCanvasNodeData>(createInitialNodes());
-    const [edges, setEdges, onEdgesChange] = useEdgesState([]);
+    const [nodes, setNodes, onNodesChange] = useNodesState<Node<CampaignCanvasNodeData>>(createInitialNodes());
+    const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>([]);
     const [viewport, setViewport] = useState<Viewport>({ x: 0, y: 0, zoom: 1 });
 
     // Selection
@@ -253,7 +253,7 @@ export function CampaignCanvasProvider({ children }: { children: ReactNode }) {
             ...connection,
             animated: true,
             style: { strokeWidth: 2 }
-        }, eds));
+        } as Edge, eds));
         setIsDirty(true);
     }, [nodes, edges, setEdges, pushHistory]);
 

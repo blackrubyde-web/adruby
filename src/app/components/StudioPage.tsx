@@ -38,7 +38,6 @@ export const StudioPage = memo(function StudioPage() {
             {/* The Overlay is actually the whole page when open */}
             <div className="flex-1 bg-zinc-950 flex flex-col h-full relative">
                 <EditorLayout onClose={handleClose} onSave={(doc) => {
-                    console.log("Saving Ad:", doc);
                     handleClose();
                 }} />
             </div>

@@ -1,5 +1,5 @@
 import { memo, useState, useEffect } from 'react';
-import { Image, Type, Target, Layers, Search, ChevronDown, ChevronRight, GripVertical, Sparkles, Zap, Brain } from 'lucide-react';
+import { Image, Search, ChevronDown, ChevronRight, GripVertical, Sparkles, Zap, Brain } from 'lucide-react';
 import { useCampaignCanvas } from './CampaignCanvasContext';
 import type { DraggableAsset } from './types';
 import { supabase } from '../../lib/supabaseClient';
@@ -15,7 +15,7 @@ interface AssetSection {
 
 // Default hooks library (can be expanded)
 const DEFAULT_HOOKS: DraggableAsset[] = [
-    { id: 'hook-problem', type: 'hook', name: 'Problem-Agitate-Solve', thumbnail: undefined, data: { template: 'problem', description: 'Start with a relatable problem, agitate it, then present solution' } },
+    { id: 'hook-problem', type: 'hook', name: 'Problem-Agitate-Solve', thumbnail: undefined, data: { template: 'problem', description: 'Start with a relatable problem, agitate it, then solution' } },
     { id: 'hook-question', type: 'hook', name: 'Power Question', thumbnail: undefined, data: { template: 'question', description: 'Start with an intriguing question that sparks curiosity' } },
     { id: 'hook-shocking', type: 'hook', name: 'Shocking Stat', thumbnail: undefined, data: { template: 'stat', description: 'Lead with a surprising statistic' } },
     { id: 'hook-storytime', type: 'hook', name: 'Story Opening', thumbnail: undefined, data: { template: 'story', description: 'Begin with a personal or customer story' } },
@@ -55,8 +55,8 @@ export const AssetSidebar = memo(function AssetSidebar() {
                 if (error) throw error;
 
                 const creatives: DraggableAsset[] = (data || []).map((row) => {
-                    const outputs = row.outputs as Record<string, any> | null;
-                    const inputs = row.inputs as Record<string, any> | null;
+                    const outputs = row.outputs as Record<string, unknown> | null;
+                    const inputs = row.inputs as Record<string, unknown> | null;
                     return {
                         id: row.id,
                         type: 'creative' as const,

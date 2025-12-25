@@ -21,7 +21,7 @@ import { toast } from 'sonner';
 import { PageShell, HeroHeader, Card, Chip } from './layout';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { useAffiliate } from '../contexts/AffiliateContext';
-import { useAuthState } from '../contexts/AuthContext';
+
 
 interface EarningsData {
   date: string;
