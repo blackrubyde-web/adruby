@@ -218,13 +218,7 @@ export function CreativeLibraryPage() {
     })();
   }, [creatives]);
 
-  // Bulk selection handlers
-  const toggleSelection = useCallback((id: string) => {
-    setSelectionMode(true);
-    setSelectedIds(prev =>
-      prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]
-    );
-  }, []);
+
 
   const clearSelection = useCallback(() => {
     setSelectedIds([]);
@@ -889,8 +883,8 @@ export function CreativeLibraryPage() {
           <button
             onClick={() => selectionMode ? clearSelection() : setSelectionMode(true)}
             className={`px-4 py-2 rounded-lg text-sm font-medium flex items-center gap-2 transition-all ${selectionMode
-                ? 'bg-primary/10 text-primary border border-primary/30'
-                : 'bg-muted text-muted-foreground hover:bg-muted/80'
+              ? 'bg-primary/10 text-primary border border-primary/30'
+              : 'bg-muted text-muted-foreground hover:bg-muted/80'
               }`}
           >
             <CheckSquare className="w-4 h-4" />

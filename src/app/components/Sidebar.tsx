@@ -1,5 +1,5 @@
 import { memo, useCallback, useState } from 'react';
-import { BarChart3, Target, Layers, Brain, Settings, LogOut, X, BarChart2, Gift, Sparkles, BookOpen, Palette, Users, Shield, type LucideIcon } from 'lucide-react';
+import { BarChart3, Target, Layers, Brain, Settings, LogOut, X, BarChart2, Gift, Sparkles, BookOpen, Palette, Shield, type LucideIcon } from 'lucide-react';
 import { PageType } from '../App';
 import { useAdmin } from '../contexts/AdminContext';
 

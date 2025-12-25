@@ -27,9 +27,8 @@ export default defineConfig({
           if (id.includes('src') && id.includes('creative')) return 'creative';
 
           if (id.includes('node_modules')) {
-            // React core - split into its own chunk for better caching
-            if (id.includes('react-dom')) return 'vendor-react-dom';
-            if (id.includes('/react/') || id.includes('react-is') || id.includes('scheduler')) return 'vendor-react';
+            // React core - keep together to avoid initialization issues
+            if (id.includes('react-dom') || id.includes('/react/') || id.includes('react-is') || id.includes('scheduler') || id.includes('prop-types')) return 'vendor-react';
 
             // React Flow - heavy library for canvas builder
             if (id.includes('@xyflow') || id.includes('reactflow')) return 'vendor-reactflow';

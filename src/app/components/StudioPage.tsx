@@ -1,6 +1,6 @@
 "use client";
 import { memo, useState } from 'react';
-import { Palette, X, ArrowLeft } from 'lucide-react';
+import { Palette } from 'lucide-react';
 import { EditorLayout } from './studio/EditorLayout';
 
 export const StudioPage = memo(function StudioPage() {

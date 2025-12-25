@@ -1,5 +1,5 @@
 import { memo, useState } from 'react';
-import { Layers, ArrowLeft } from 'lucide-react';
+import { Layers } from 'lucide-react';
 import { CampaignCanvasLayout } from './campaign-canvas';
 
 export const CampaignCanvasPage = memo(function CampaignCanvasPage() {
