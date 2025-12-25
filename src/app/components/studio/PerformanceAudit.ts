@@ -7,7 +7,7 @@ export interface AuditResult {
     criticalIssues: string[];
 }
 
-export const runPerformanceAudit = (doc: AdDocument): AuditResult => {
+export const performAudit = (doc: AdDocument): AuditResult => {
     const result: AuditResult = {
         score: 100,
         positives: [],
