@@ -573,10 +573,10 @@ export const EditorLayout = ({ onClose, onSave }: EditorLayoutProps) => {
                 </div>
 
                 {/* Center Canvas Area */}
-                <main className={`flex-1 relative overflow-hidden flex items-center justify-center transition-colors duration-500 ${isPreviewMode ? 'bg-white' : 'bg-zinc-950'}`}>
+                <main className={`flex-1 relative overflow-hidden flex items-center justify-center transition-colors duration-500 ${isPreviewMode ? 'bg-white' : 'bg-zinc-100/50 dark:bg-zinc-950'}`}>
 
                     {!isMultiverseMode && !isPreviewMode && (
-                        <div className="shadow-[0_0_100px_-20px_rgba(0,0,0,0.5)] border border-white/5 rounded-sm overflow-hidden animate-in fade-in zoom-in-95 duration-500">
+                        <div className="shadow-2xl shadow-black/5 dark:shadow-[0_0_100px_-20px_rgba(0,0,0,0.5)] border border-zinc-200 dark:border-white/5 rounded-sm overflow-hidden animate-in fade-in zoom-in-95 duration-500">
                             <CanvasStage
                                 ref={canvasRef}
                                 doc={doc}
@@ -596,8 +596,8 @@ export const EditorLayout = ({ onClose, onSave }: EditorLayoutProps) => {
                         <div className="flex items-center gap-12 p-20 animate-in slide-in-from-bottom-10 fade-in duration-700">
                             {/* 1:1 Post */}
                             <div className="flex flex-col gap-4">
-                                <span className="text-[10px] font-black uppercase tracking-widest text-white/40 text-center">Instagram Post</span>
-                                <div className="shadow-2xl border border-white/5 rounded-sm overflow-hidden scale-[0.4] origin-top">
+                                <span className="text-[10px] font-black uppercase tracking-widest text-zinc-500 dark:text-white/40 text-center">Instagram Post</span>
+                                <div className="shadow-2xl border border-zinc-200 dark:border-white/5 rounded-sm overflow-hidden scale-[0.4] origin-top">
                                     <CanvasStage doc={doc} scale={1} preview={true} selectedLayerId={undefined} onLayerSelect={() => { }} onLayerUpdate={() => { }} />
                                 </div>
                             </div>
