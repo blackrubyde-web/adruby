@@ -37,7 +37,7 @@ export const StudioPage = memo(function StudioPage() {
         <div className="fixed inset-0 z-[9999] bg-background text-foreground flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-500">
             {/* The Overlay is actually the whole page when open */}
             <div className="flex-1 bg-zinc-950 flex flex-col h-full relative">
-                <EditorLayout onClose={handleClose} onSave={(doc) => {
+                <EditorLayout onClose={handleClose} onSave={() => {
                     handleClose();
                 }} />
             </div>

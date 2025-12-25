@@ -55,8 +55,10 @@ export const AssetSidebar = memo(function AssetSidebar() {
                 if (error) throw error;
 
                 const creatives: DraggableAsset[] = (data || []).map((row) => {
-                    const outputs = row.outputs as Record<string, unknown> | null;
-                    const inputs = row.inputs as Record<string, unknown> | null;
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                    const outputs = row.outputs as any;
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                    const inputs = row.inputs as any;
                     return {
                         id: row.id,
                         type: 'creative' as const,
@@ -169,7 +171,6 @@ export const AssetSidebar = memo(function AssetSidebar() {
             }
         } else if (asset.type === 'hook' && selectedNode?.data.type === 'ad') {
             // Apply hook template to ad
-            const hookData = asset.data as any;
             const currentConfig = (selectedNode.data as any).config;
             updateNodeData(selectedNode.id, {
                 ...selectedNode.data,

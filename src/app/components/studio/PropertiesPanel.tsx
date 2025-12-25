@@ -49,6 +49,24 @@ export const PropertiesPanel = ({ layer, onChange, onGenerate }: PropertiesPanel
             </div>
 
             <div className="p-4 space-y-6 pb-20">
+                {/* Image Actions */}
+                {(layer.type === 'product' || layer.type === 'background') && (
+                    <div className="space-y-3">
+                        <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground flex items-center gap-1.5">
+                            <Sparkles className="w-3 h-3" /> AI Tools
+                        </label>
+                        {onGenerate && (
+                            <button
+                                onClick={() => onGenerate(layer.id, 'bg')}
+                                className="w-full flex items-center justify-center gap-2 py-2.5 text-xs font-bold bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 shadow-lg shadow-indigo-500/20 transition-all"
+                            >
+                                <Sparkles className="w-4 h-4 fill-white" />
+                                Magic Cutout
+                            </button>
+                        )}
+                    </div>
+                )}
+
                 {/* 1. Content Section (Text) */}
                 {isText && (
                     <div className="space-y-3">
@@ -67,15 +85,6 @@ export const PropertiesPanel = ({ layer, onChange, onGenerate }: PropertiesPanel
                             >
                                 <Sparkles className="w-4 h-4 fill-white" />
                                 Rewrite with AI
-                            </button>
-                        )}
-                        {(onGenerate && (layer.type === 'product' || layer.type === 'background')) && (
-                            <button
-                                onClick={() => onGenerate(layer.id, 'bg')}
-                                className="w-full flex items-center justify-center gap-2 py-2.5 text-xs font-bold bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 shadow-lg shadow-indigo-500/20 transition-all"
-                            >
-                                <Sparkles className="w-4 h-4 fill-white" />
-                                Magic Cutout
                             </button>
                         )}
                     </div>

@@ -220,7 +220,7 @@ export const EditorLayout = ({ onClose, onSave }: EditorLayoutProps) => {
         const newLayer: StudioLayer = {
             ...preset,
             id: `layer_${Date.now()}`,
-            name: preset.type === 'cta' ? 'New Button' : (preset.type === 'image' ? 'New Image' : 'New Text'),
+            name: preset.type === 'cta' ? 'New Button' : (preset.type === 'text' ? 'New Text' : 'New Image'),
             visible: true,
             locked: false,
             x: doc.width / 2 - (preset.width || 200) / 2,
