@@ -14,7 +14,7 @@ import type { AdDocument, StudioLayer } from '../../types/studio';
 
 const MOCK_DOC: AdDocument = {
     id: "doc_001",
-    name: "Minecraft Fox - Gaming Desk Setup",
+    name: "Modern Workspace Setup",
     format: "1:1",
     width: 1080,
     height: 1080,
@@ -28,7 +28,7 @@ const MOCK_DOC: AdDocument = {
         {
             id: "bg_01",
             type: "background",
-            name: "Gaming Room Background",
+            name: "Workspace Background",
             visible: true,
             locked: true,
             x: 0,
@@ -38,14 +38,14 @@ const MOCK_DOC: AdDocument = {
             rotation: 0,
             opacity: 1,
             zIndex: 0,
-            src: "https://images.unsplash.com/photo-1593305841991-05c297ba4575?q=80&w=2857&auto=format&fit=crop",
+            src: "https://images.unsplash.com/photo-1497215728101-856f4ea42174?q=80&w=2857&auto=format&fit=crop",
             fit: "cover",
             ai: { provider: "openai", task: "generate_background", createdAt: new Date().toISOString() }
         },
         {
             id: "prod_01",
             type: "product",
-            name: "Fox Lamp",
+            name: "Desk Lamp",
             visible: true,
             locked: false,
             x: 240,
@@ -55,7 +55,7 @@ const MOCK_DOC: AdDocument = {
             rotation: 0,
             opacity: 1,
             zIndex: 10,
-            src: "https://minecraft-merch.com/wp-content/uploads/2021/04/fox-light.jpg",
+            src: "https://images.unsplash.com/photo-1534073828943-f801091a7d58?q=80&w=2857&auto=format&fit=crop",
             fit: "contain"
         },
         {
@@ -71,7 +71,7 @@ const MOCK_DOC: AdDocument = {
             rotation: 0,
             opacity: 1,
             zIndex: 20,
-            text: "Level Up Your Setup",
+            text: "Elevate Your Workspace",
             fontFamily: "Inter",
             fontWeight: 800,
             fontSize: 80,
@@ -126,7 +126,11 @@ export const EditorLayout = ({ onClose, onSave }: EditorLayoutProps) => {
 
     const [showVariantModal, setShowVariantModal] = useState(false);
     const [isMultiverseMode, setIsMultiverseMode] = useState(false);
+
+    // Mockup State
     const [isPreviewMode, setIsPreviewMode] = useState(false);
+    const [mockupType, setMockupType] = useState<'feed' | 'story'>('feed');
+
     const [auditResult, setAuditResult] = useState<AuditResult | null>(null);
     const [showAuditModal, setShowAuditModal] = useState(false);
     const [showExportModal, setShowExportModal] = useState(false);
@@ -631,49 +635,121 @@ export const EditorLayout = ({ onClose, onSave }: EditorLayoutProps) => {
 
                     {/* SOCIAL MOCKUP VIEW */}
                     {isPreviewMode && (
-                        <div className="relative w-[375px] h-[812px] bg-white rounded-[50px] shadow-[0_0_0_12px_#111,0_0_0_15px_#222,0_30px_60px_rgba(0,0,0,0.3)] border-[8px] border-zinc-900 overflow-hidden animate-in zoom-in-90 fade-in duration-500">
-                            {/* Status Bar */}
-                            <div className="h-10 bg-white flex items-center justify-between px-8 pt-4">
-                                <span className="text-[14px] font-bold">9:41</span>
-                                <div className="flex gap-1.5">
-                                    <div className="w-4 h-4 rounded-full border border-black" />
-                                    <div className="w-5 h-2.5 rounded-[3px] border border-black bg-black" />
-                                </div>
+                        <div className="relative animate-in zoom-in-90 fade-in duration-500 flex flex-col items-center">
+
+                            {/* Format Toggle */}
+                            <div className="absolute -top-16 flex gap-2 bg-zinc-900 border border-zinc-800 p-1 rounded-lg z-50">
+                                <button
+                                    onClick={() => setMockupType('feed')}
+                                    className={`px-4 py-1.5 rounded-md text-xs font-bold transition-all ${mockupType === 'feed' ? 'bg-white text-black' : 'text-zinc-500 hover:text-white'}`}
+                                >
+                                    Feed Post
+                                </button>
+                                <button
+                                    onClick={() => setMockupType('story')}
+                                    className={`px-4 py-1.5 rounded-md text-xs font-bold transition-all ${mockupType === 'story' ? 'bg-white text-black' : 'text-zinc-500 hover:text-white'}`}
+                                >
+                                    Story
+                                </button>
                             </div>
 
-                            {/* IG Feed Header */}
-                            <div className="p-3 border-b border-zinc-100 flex items-center gap-3">
-                                <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-yellow-400 to-purple-600 p-[1.5px]">
-                                    <div className="w-full h-full rounded-full bg-white p-[1.5px]">
-                                        <div className="w-full h-full rounded-full bg-zinc-200" />
+                            <div className="relative w-[375px] h-[812px] bg-white rounded-[50px] shadow-[0_0_0_12px_#111,0_0_0_15px_#222,0_30px_60px_rgba(0,0,0,0.3)] border-[8px] border-zinc-900 overflow-hidden">
+                                {/* Status Bar */}
+                                <div className="h-10 bg-white flex items-center justify-between px-8 pt-4 z-20 relative">
+                                    <span className="text-[14px] font-bold">9:41</span>
+                                    <div className="flex gap-1.5">
+                                        <div className="w-4 h-4 rounded-full border border-black" />
+                                        <div className="w-5 h-2.5 rounded-[3px] border border-black bg-black" />
                                     </div>
                                 </div>
-                                <div>
-                                    <div className="text-[12px] font-bold">adruby_official</div>
-                                    <div className="text-[10px] text-zinc-500 leading-none">Sponsored</div>
-                                </div>
-                            </div>
 
-                            {/* THE AD CANVAS */}
-                            <div className="w-full aspect-square border-b border-zinc-100 relative overflow-hidden">
-                                <div className="absolute inset-0 origin-top-left" style={{ transform: `scale(${375 / doc.width})` }}>
-                                    <CanvasStage doc={doc} scale={1} preview={true} selectedLayerId={undefined} onLayerSelect={() => { }} onLayerUpdate={() => { }} />
-                                </div>
-                            </div>
+                                {mockupType === 'feed' && (
+                                    <>
+                                        {/* IG Feed Header */}
+                                        <div className="p-3 border-b border-zinc-100 flex items-center gap-3">
+                                            <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-yellow-400 to-purple-600 p-[1.5px]">
+                                                <div className="w-full h-full rounded-full bg-white p-[1.5px]">
+                                                    <div className="w-full h-full rounded-full bg-zinc-200" />
+                                                </div>
+                                            </div>
+                                            <div>
+                                                <div className="text-[12px] font-bold">adruby_official</div>
+                                                <div className="text-[10px] text-zinc-500 leading-none">Sponsored</div>
+                                            </div>
+                                        </div>
 
-                            {/* Feed Footer */}
-                            <div className="p-4 space-y-3">
-                                <div className="flex items-center justify-between">
-                                    <div className="flex gap-4">
-                                        <div className="w-6 h-6 border-2 border-zinc-800 rounded-full" />
-                                        <div className="w-6 h-6 border-2 border-zinc-800 rounded-full" />
+                                        {/* THE AD CANVAS - CENTERED */}
+                                        <div className="w-full aspect-square bg-zinc-50 relative overflow-hidden flex items-center justify-center">
+                                            {/* Centered Container for Transform */}
+                                            <div style={{
+                                                width: doc.width,
+                                                height: doc.height,
+                                                transform: `scale(${375 / doc.width})`,
+                                                transformOrigin: 'center center'
+                                            }}>
+                                                <CanvasStage doc={doc} scale={1} preview={true} selectedLayerId={undefined} onLayerSelect={() => { }} onLayerUpdate={() => { }} />
+                                            </div>
+                                        </div>
+
+                                        {/* Feed Footer */}
+                                        <div className="p-4 space-y-3 bg-white relative z-10">
+                                            <div className="flex items-center justify-between">
+                                                <div className="flex gap-4">
+                                                    <div className="w-6 h-6 border-2 border-zinc-800 rounded-full" />
+                                                    <div className="w-6 h-6 border-2 border-zinc-800 rounded-full" />
+                                                </div>
+                                                <div className="w-6 h-6 border-2 border-zinc-800 rounded-md" />
+                                            </div>
+                                            <div className="text-[12px]"><b>1,248 likes</b></div>
+                                            <div className="text-[11px] leading-tight">
+                                                <b>adruby_official</b> Level up your creative game today with our new AI powered studio...
+                                            </div>
+                                        </div>
+                                    </>
+                                )}
+
+                                {mockupType === 'story' && (
+                                    <div className="absolute inset-0 bg-black">
+                                        {/* Story Header */}
+                                        <div className="absolute top-12 left-0 right-0 z-20 flex items-center justify-between px-4">
+                                            <div className="flex items-center gap-2">
+                                                <div className="w-8 h-8 rounded-full bg-zinc-200 border border-white/20" />
+                                                <span className="text-white text-xs font-bold shadow-black drop-shadow-md">adruby_official 12h</span>
+                                            </div>
+                                            <div className="w-8 h-8 rounded-full bg-white/10 backdrop-blur-sm" />
+                                        </div>
+
+                                        {/* STORY CANVAS - FULLSCREEN CENTERED */}
+                                        <div className="absolute inset-0 flex items-center justify-center">
+                                            <div style={{
+                                                width: doc.width,
+                                                height: doc.height,
+                                                transform: `scale(${375 / doc.width})`,
+                                                transformOrigin: 'center center'
+                                            }}>
+                                                <CanvasStage
+                                                    doc={doc} // Use actual doc for now, ideally resize to 9:16
+                                                    scale={1}
+                                                    preview={true}
+                                                    selectedLayerId={undefined}
+                                                    onLayerSelect={() => { }}
+                                                    onLayerUpdate={() => { }}
+                                                />
+                                            </div>
+                                        </div>
+
+                                        {/* Story Footer */}
+                                        <div className="absolute bottom-8 left-4 right-4 z-20 flex gap-3">
+                                            <div className="h-10 flex-1 rounded-full border border-white/30 bg-black/20 backdrop-blur-md px-4 flex items-center text-white/50 text-xs">
+                                                Send message...
+                                            </div>
+                                            <div className="w-10 h-10 rounded-full border border-white/30 flex items-center justify-center text-white">
+                                                ♥
+                                            </div>
+                                        </div>
                                     </div>
-                                    <div className="w-6 h-6 border-2 border-zinc-800 rounded-md" />
-                                </div>
-                                <div className="text-[12px]"><b>1,248 likes</b></div>
-                                <div className="text-[11px] leading-tight">
-                                    <b>adruby_official</b> Level up your creative game today with our new AI powered studio...
-                                </div>
+                                )}
+
                             </div>
                         </div>
                     )}
