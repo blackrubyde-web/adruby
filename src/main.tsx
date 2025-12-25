@@ -9,8 +9,17 @@ if (env.sentryDsn) {
   Sentry.init({ dsn: env.sentryDsn, tracesSampleRate: 0.1 });
 }
 
+import { DndProvider } from 'react-dnd';
+import { HTML5Backend } from 'react-dnd-html5-backend';
+
+import { GlobalErrorBoundary } from './app/components/GlobalErrorBoundary';
+
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
-    <App />
+    <GlobalErrorBoundary>
+      <DndProvider backend={HTML5Backend}>
+        <App />
+      </DndProvider>
+    </GlobalErrorBoundary>
   </React.StrictMode>
 );

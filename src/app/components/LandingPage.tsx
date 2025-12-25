@@ -180,9 +180,9 @@ export function LandingPage({ onGetStarted, onLogin }: LandingPageProps) {
       {/* ============================================
           NAVIGATION
           ============================================ */}
-      <GlobalNav 
+      <GlobalNav
         currentPage="home"
-        onNavigate={() => {}}
+        onNavigate={() => { }}
         onSignIn={onLogin}
         onGetStarted={onGetStarted}
       />
@@ -191,7 +191,7 @@ export function LandingPage({ onGetStarted, onLogin }: LandingPageProps) {
           HERO - PRODUCT FIRST (AdCreative.ai STYLE)
           ============================================ */}
       <section className="relative pt-28 pb-20 sm:pb-32 overflow-hidden bg-gradient-to-b from-background to-muted/20">
-        
+
         {/* Marketing Container - Centered */}
         <div className="max-w-4xl mx-auto px-6">
           {/* Countdown Banner */}
@@ -227,15 +227,17 @@ export function LandingPage({ onGetStarted, onLogin }: LandingPageProps) {
             </div>
           </div>
 
-          {/* Main Headline */}
+          {/* Main Headline - Benefit Driven (Video Tip #1) */}
           <div className="text-center mb-6 animate-fade-in-up delay-200">
-            <h1 className="text-5xl sm:text-6xl lg:text-7xl font-bold leading-tight mb-5">
-              <span className="text-foreground">#1 AI ad generator</span>
+            <h1 className="text-5xl sm:text-6xl lg:text-7xl font-extrabold leading-tight mb-6 tracking-tight">
+              <span className="text-foreground">Stop Wasting Ad Spend.</span>
               <br />
-              <span className="text-foreground">for Facebook & Instagram</span>
+              <span className="bg-clip-text text-transparent bg-gradient-to-r from-primary via-purple-500 to-pink-500 pb-2">
+                Get High-ROAS Ads in Seconds.
+              </span>
             </h1>
             <p className="text-xl sm:text-2xl text-muted-foreground max-w-2xl mx-auto leading-relaxed">
-              Generate high-converting ad creatives in seconds with AI
+              AdRuby doesn't just "make ads" — it analyzes what converts to generate winning hooks, copy, and designs that drive <span className="text-foreground font-semibold">3x higher ROAS</span>.
             </p>
           </div>
 
@@ -243,10 +245,13 @@ export function LandingPage({ onGetStarted, onLogin }: LandingPageProps) {
           <div className="flex flex-col items-center gap-4 mb-12 animate-fade-in-up delay-300">
             <button
               onClick={onGetStarted}
-              className="button-spring w-full sm:w-auto px-10 py-4 bg-primary text-white rounded-2xl font-bold text-lg hover:bg-primary/90 transition-all shadow-xl hover:shadow-2xl flex items-center justify-center gap-2"
+              className="button-spring relative w-full sm:w-auto px-10 py-4 bg-primary text-white rounded-2xl font-bold text-lg hover:bg-primary/90 transition-all shadow-xl hover:shadow-2xl flex flex-col items-center justify-center gap-0.5 group"
             >
-              Generate Your First Ad
-              <Sparkles className="w-5 h-5" />
+              <div className="flex items-center gap-2">
+                Start Generating For Free
+                <Sparkles className="w-5 h-5 group-hover:rotate-12 transition-transform" />
+              </div>
+              <span className="text-[10px] font-medium opacity-80 uppercase tracking-wide">No credit card required</span>
             </button>
             <button
               onClick={onLogin}
@@ -279,20 +284,21 @@ export function LandingPage({ onGetStarted, onLogin }: LandingPageProps) {
             <p className="text-sm font-semibold text-muted-foreground mb-6 uppercase tracking-wide">
               Trusted by leading brands worldwide
             </p>
-            <div className="flex flex-wrap items-center justify-center gap-8 sm:gap-12 opacity-60 grayscale">
-              {/* Mock Brand Logos - Using Text for simplicity */}
-              <div className="text-2xl font-bold text-foreground/80">Shopify</div>
-              <div className="text-2xl font-bold text-foreground/80">Nike</div>
-              <div className="text-2xl font-bold text-foreground/80">Adidas</div>
-              <div className="text-2xl font-bold text-foreground/80">IKEA</div>
-              <div className="text-2xl font-bold text-foreground/80">Samsung</div>
+
+            <div className="flex flex-wrap items-center justify-center gap-8 sm:gap-16 opacity-50 grayscale transition-all hover:grayscale-0 hover:opacity-80">
+              {/* Trust Signals */}
+              <div className="text-xl font-bold font-mono">Shopify</div>
+              <div className="text-xl font-bold font-serif italic">Vogue</div>
+              <div className="text-xl font-bold tracking-widest">Forbes</div>
+              <div className="text-xl font-bold font-sans">TechCrunch</div>
+              <div className="text-xl font-bold uppercase tracking-wide">Inc.5000</div>
             </div>
           </div>
 
-          {/* Floating Mockups - Simplified for now */}
-          <div className="mt-16 relative h-80 animate-fade-in-up delay-500">
+          {/* Dashboard Mockup - Main Hero Image */}
+          <div className="mt-16 relative animate-fade-in-up delay-500 rounded-2xl overflow-hidden shadow-2xl border border-border/40 group">
             {/* Confetti Background Effect */}
-            <div className="absolute inset-0 opacity-30 pointer-events-none">
+            <div className="absolute inset-0 opacity-30 pointer-events-none z-0">
               {[...Array(20)].map((_, i) => (
                 <div
                   key={i}
@@ -307,44 +313,21 @@ export function LandingPage({ onGetStarted, onLogin }: LandingPageProps) {
               ))}
             </div>
 
-            {/* Mock Ad Previews - Floating */}
-            <div className="absolute top-0 left-1/4 w-64 bg-white rounded-xl shadow-2xl border border-border/40 overflow-hidden transform -rotate-6 hover:rotate-0 transition-transform duration-500">
-              <div className="p-3 border-b border-border/40 flex items-center gap-2">
-                <div className="w-8 h-8 rounded-full bg-gradient-to-br from-primary to-purple-600 flex items-center justify-center">
-                  <Sparkles className="w-4 h-4 text-white" />
-                </div>
-                <div>
-                  <div className="text-xs font-semibold">AdRuby AI</div>
-                  <div className="text-[10px] text-muted-foreground">Sponsored</div>
-                </div>
-              </div>
-              <div className="p-3 text-xs">Transform your fitness business with AI-powered ads...</div>
-              <div className="aspect-square bg-gradient-to-br from-blue-500/20 to-purple-500/20" />
-              <div className="p-3 border-t border-border/40">
-                <div className="text-xs font-bold mb-2">Get 50% Off Today</div>
-                <div className="py-1.5 bg-primary text-white rounded text-xs font-semibold text-center">
-                  Shop Now
-                </div>
-              </div>
-            </div>
+            <div className="relative z-10 bg-background/50 backdrop-blur-sm p-2 rounded-2xl">
+              <img
+                src="/images/mockups/dashboard.png"
+                alt="AdRuby Dashboard Interface"
+                className="w-full h-auto rounded-xl shadow-2xl transform transition-transform duration-700 group-hover:scale-[1.01]"
+              />
 
-            <div className="absolute top-10 right-1/4 w-64 bg-white rounded-xl shadow-2xl border border-border/40 overflow-hidden transform rotate-6 hover:rotate-0 transition-transform duration-500">
-              <div className="p-3 border-b border-border/40 flex items-center gap-2">
-                <div className="w-8 h-8 rounded-full bg-gradient-to-br from-green-500 to-emerald-600 flex items-center justify-center">
-                  <TrendingUp className="w-4 h-4 text-white" />
-                </div>
-                <div>
-                  <div className="text-xs font-semibold">Your Brand</div>
-                  <div className="text-[10px] text-muted-foreground">Sponsored</div>
-                </div>
+              {/* Floating Element: Wizard Preview */}
+              <div className="hidden lg:block absolute -right-12 -bottom-12 w-2/5 rounded-xl shadow-2xl border-4 border-background overflow-hidden transform rotate-[-3deg] group-hover:rotate-0 transition-all duration-500">
+                <img src="/images/mockups/adwizard.png" alt="AI Ad Wizard" className="w-full h-auto" />
               </div>
-              <div className="p-3 text-xs">Join 10,000+ customers who love our products...</div>
-              <div className="aspect-square bg-gradient-to-br from-green-500/20 to-blue-500/20" />
-              <div className="p-3 border-t border-border/40">
-                <div className="text-xs font-bold mb-2">Limited Time Offer</div>
-                <div className="py-1.5 bg-green-600 text-white rounded text-xs font-semibold text-center">
-                  Learn More
-                </div>
+
+              {/* Floating Element: Mobile Preview */}
+              <div className="hidden lg:block absolute -left-8 bottom-12 w-1/5 rounded-[2rem] shadow-2xl border-4 border-background overflow-hidden transform rotate-[6deg] group-hover:rotate-0 transition-all duration-500">
+                <img src="/images/mockups/mobile.png" alt="AdRuby Mobile App" className="w-full h-auto" />
               </div>
             </div>
           </div>
@@ -366,8 +349,10 @@ export function LandingPage({ onGetStarted, onLogin }: LandingPageProps) {
             </p>
           </div>
 
-          {/* Horizontal Pipeline */}
-          <div className="workflow-pipeline max-w-5xl mx-auto">
+          {/* Horizontal Pipeline - Stacked on Mobile */}
+          <div className="workflow-pipeline max-w-5xl mx-auto flex flex-col md:flex-row gap-4 relative">
+            {/* Mobile Connecting Line (Vertical) */}
+            <div className="absolute left-6 top-6 bottom-6 w-0.5 bg-gradient-to-b from-blue-500 via-purple-500 to-green-500 md:hidden -z-10 opacity-30"></div>
             {/* Step 1 */}
             <div className="workflow-step landing-card-hover">
               <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-500 to-cyan-500 flex items-center justify-center mb-4">
@@ -556,9 +541,8 @@ export function LandingPage({ onGetStarted, onLogin }: LandingPageProps) {
                   <button
                     key={index}
                     onClick={() => setCurrentAdIndex(index)}
-                    className={`h-1.5 rounded-full transition-all ${
-                      index === currentAdIndex ? 'w-6 bg-primary' : 'w-1.5 bg-border hover:bg-primary/50'
-                    }`}
+                    className={`h-1.5 rounded-full transition-all ${index === currentAdIndex ? 'w-6 bg-primary' : 'w-1.5 bg-border hover:bg-primary/50'
+                      }`}
                   />
                 ))}
               </div>
@@ -796,6 +780,19 @@ export function LandingPage({ onGetStarted, onLogin }: LandingPageProps) {
       <SEOContentSection />
 
       {/* ============================================
+          STICKY MOBILE CTA
+          ============================================ */}
+      <div className="fixed bottom-0 left-0 right-0 p-4 bg-background/80 backdrop-blur-xl border-t border-border z-50 md:hidden animate-in slide-in-from-bottom">
+        <button
+          onClick={onGetStarted}
+          className="w-full py-3 bg-primary text-white rounded-xl font-bold text-lg shadow-lg flex items-center justify-center gap-2"
+        >
+          Start Free Trial
+          <ArrowRight className="w-5 h-5" />
+        </button>
+      </div>
+
+      {/* ============================================
           FAQ
           ============================================ */}
       <section className={tokens.sectionSpacing}>
@@ -812,9 +809,8 @@ export function LandingPage({ onGetStarted, onLogin }: LandingPageProps) {
                 <div className="flex items-center justify-between">
                   <h3 className="font-semibold">{faq.question}</h3>
                   <ChevronDown
-                    className={`w-5 h-5 text-muted-foreground transition-transform ${
-                      openFaqIndex === index ? 'rotate-180' : ''
-                    }`}
+                    className={`w-5 h-5 text-muted-foreground transition-transform ${openFaqIndex === index ? 'rotate-180' : ''
+                      }`}
                   />
                 </div>
                 {openFaqIndex === index && (

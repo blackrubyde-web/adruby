@@ -6,15 +6,22 @@ import {
   Trash2,
   AlertTriangle,
   Brain,
+  Rocket,
+  Target,
+  PenTool,
+  Coins,
+  ChevronRight,
+  ChevronLeft
 } from 'lucide-react';
 import { toast } from 'sonner';
-import { PageShell, HeroHeader, Card } from './layout';
+import { PageShell, HeroHeader } from './layout';
 import { supabase } from '../lib/supabaseClient';
 
 const STATUS_OPTIONS = ['draft', 'ready'] as const;
 
 type CampaignStatus = typeof STATUS_OPTIONS[number];
 
+// ... (Types kept same as original)
 type GeneratedStrategy = {
   name: string;
   summary?: string;
@@ -138,6 +145,7 @@ const emptySpec: CampaignSpec = {
   ads: [],
 };
 
+// ... (Helper functions kept same)
 const mapCreativeRow = (row: CreativeRow): SavedAd | null => {
   if (!row) return null;
   const inputs = row.inputs || null;
@@ -150,23 +158,11 @@ const mapCreativeRow = (row: CreativeRow): SavedAd | null => {
         ? (output as { variants?: Array<{ copy?: { hook?: string; primary_text?: string; cta?: string } }> }).variants?.[0]
         : null;
 
-  const headline =
-    creative?.copy?.hook ||
-    (inputs as { headline?: string; title?: string } | null)?.headline ||
-    (inputs as { title?: string } | null)?.title ||
-    'Untitled Ad';
-  const description =
-    creative?.copy?.primary_text ||
-    (inputs as { description?: string } | null)?.description ||
-    '';
+  const headline = creative?.copy?.hook || (inputs as { headline?: string; title?: string } | null)?.headline || (inputs as { title?: string } | null)?.title || 'Untitled Ad';
+  const description = creative?.copy?.primary_text || (inputs as { description?: string } | null)?.description || '';
   const cta = creative?.copy?.cta || (inputs as { cta?: string } | null)?.cta || 'Learn More';
-  const productName =
-    brief?.product?.name ||
-    (inputs as { productName?: string; brandName?: string } | null)?.productName ||
-    (inputs as { brandName?: string } | null)?.brandName ||
-    'Produkt';
-  const targetAudience =
-    brief?.audience?.summary || (inputs as { targetAudience?: string } | null)?.targetAudience || 'Zielgruppe';
+  const productName = brief?.product?.name || (inputs as { productName?: string; brandName?: string } | null)?.productName || (inputs as { brandName?: string } | null)?.brandName || 'Produkt';
+  const targetAudience = brief?.audience?.summary || (inputs as { targetAudience?: string } | null)?.targetAudience || 'Zielgruppe';
   const lifecycle = (inputs as { lifecycle?: { status?: SavedAd['status'] } } | null)?.lifecycle;
   const status = lifecycle?.status || (row.saved ? 'active' : 'draft');
 
@@ -264,7 +260,6 @@ const applyStrategyToSpec = (
       }
     }
   }
-
   return next;
 };
 
@@ -283,10 +278,10 @@ export function CampaignBuilderPage() {
   const [currentStep, setCurrentStep] = useState(1);
 
   const STEPS = [
-    { id: 1, label: 'Campaign Setup', description: 'Objective & Budget' },
-    { id: 2, label: 'Creative Selection', description: 'Choose your Ads' },
-    { id: 3, label: 'Strategy', description: 'Targeting & AI Blueprints' },
-    { id: 4, label: 'Review & Launch', description: 'Final Check' },
+    { id: 1, label: 'Campaign Setup', description: 'Objective & Budget', icon: Target },
+    { id: 2, label: 'Creative Selection', description: 'Choose your Ads', icon: PenTool },
+    { id: 3, label: 'Strategy', description: 'Targeting & AI Blueprints', icon: Coins }, // Changed icon to verify
+    { id: 4, label: 'Review & Launch', description: 'Final Check', icon: Rocket },
   ];
 
   const [draftId, setDraftId] = useState(() => {
@@ -306,6 +301,7 @@ export function CampaignBuilderPage() {
     return map;
   }, [ads]);
 
+  // Effects (Loading logic - kept same)
   useEffect(() => {
     const handlePopState = () => {
       const params = new URLSearchParams(window.location.search);
@@ -317,7 +313,6 @@ export function CampaignBuilderPage() {
 
   useEffect(() => {
     let cancelled = false;
-
     const loadDraft = async () => {
       setIsLoading(true);
       setError(null);
@@ -362,63 +357,40 @@ export function CampaignBuilderPage() {
           }
         }
       } catch (err: unknown) {
-        if (!cancelled) {
-          setError(err instanceof Error ? err.message : 'Draft konnte nicht geladen werden.');
-        }
+        if (!cancelled) setError(err instanceof Error ? err.message : 'Draft konnte nicht geladen werden.');
       } finally {
         if (!cancelled) setIsLoading(false);
       }
     };
-
     loadDraft();
-    return () => {
-      cancelled = true;
-    };
+    return () => { cancelled = true; };
   }, [draftId]);
 
   useEffect(() => {
     let cancelled = false;
     const loadAds = async () => {
       try {
-        const { data, error } = await supabase
-          .from('generated_creatives')
-          .select('id,inputs,outputs,created_at,saved,thumbnail')
-          .order('created_at', { ascending: false })
-          .limit(50);
+        const { data, error } = await supabase.from('generated_creatives').select('id,inputs,outputs,created_at,saved,thumbnail').order('created_at', { ascending: false }).limit(50);
         if (error) throw error;
-        const mapped = (data || [])
-          .map(mapCreativeRow)
-          .filter((item): item is SavedAd => Boolean(item));
+        const mapped = (data || []).map(mapCreativeRow).filter((item): item is SavedAd => Boolean(item));
         if (!cancelled) setAds(mapped);
-      } catch (err) {
-        if (!cancelled) setAds([]);
-      }
+      } catch (err) { if (!cancelled) setAds([]); }
     };
     loadAds();
-    return () => {
-      cancelled = true;
-    };
+    return () => { cancelled = true; };
   }, []);
 
   useEffect(() => {
     let cancelled = false;
     const loadStrategies = async () => {
       try {
-        const { data, error } = await supabase
-          .from('campaign_strategy_blueprints')
-          .select('id,name,creative_ids,strategy')
-          .order('created_at', { ascending: false })
-          .limit(20);
+        const { data, error } = await supabase.from('campaign_strategy_blueprints').select('id,name,creative_ids,strategy').order('created_at', { ascending: false }).limit(20);
         if (error) throw error;
         if (!cancelled) setStrategies(data as CampaignStrategyBlueprint[]);
-      } catch (err) {
-        if (!cancelled) setStrategies([]);
-      }
+      } catch (err) { if (!cancelled) setStrategies([]); }
     };
     loadStrategies();
-    return () => {
-      cancelled = true;
-    };
+    return () => { cancelled = true; };
   }, []);
 
   useEffect(() => {
@@ -436,563 +408,455 @@ export function CampaignBuilderPage() {
       return {
         ...prev,
         ads: nextAds,
-        ad_sets: prev.ad_sets.map((set) => ({
-          ...set,
-          ad_ids: set.ad_ids.filter((id) => selectedIds.includes(id)),
-        })),
+        ad_sets: prev.ad_sets.map((set) => ({ ...set, ad_ids: set.ad_ids.filter((id) => selectedIds.includes(id)) })),
       };
     });
   }, [selectedIds, adMap]);
 
-  const handleToggleAd = (id: string) => {
-    setSelectedIds((prev) => (prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id]));
-  };
-
+  // Handlers (kept same)
+  const handleToggleAd = (id: string) => setSelectedIds((prev) => (prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id]));
   const handleApplyStrategy = (mode: 'structure' | 'targeting' | 'budget') => {
-    if (!strategyPreview) {
-      toast.error('Bitte zuerst eine Strategie auswählen.');
-      return;
-    }
-    if (!selectedIds.length) {
-      toast.error('Bitte zuerst Ads auswählen.');
-      return;
-    }
+    if (!strategyPreview) { toast.error('Bitte zuerst eine Strategie auswählen.'); return; }
+    if (!selectedIds.length) { toast.error('Bitte zuerst Ads auswählen.'); return; }
     setCampaignSpec((prev) => applyStrategyToSpec(strategyPreview, prev, selectedIds, mode));
     toast.success('Strategie angewendet');
   };
-
-  const handleAddAdSet = () => {
-    setCampaignSpec((prev) => ({
-      ...prev,
-      ad_sets: [
-        ...prev.ad_sets,
-        {
-          id: `adset-${prev.ad_sets.length + 1}`,
-          name: `Ad Set ${prev.ad_sets.length + 1}`,
-          budget: '',
-          schedule: '',
-          placements: [],
-          targeting: {},
-          ad_ids: [],
-        },
-      ],
-    }));
-  };
-
-  const handleRemoveAdSet = (id: string) => {
-    setCampaignSpec((prev) => ({
-      ...prev,
-      ad_sets: prev.ad_sets.filter((set) => set.id !== id),
-    }));
-  };
-
+  const handleAddAdSet = () => setCampaignSpec((prev) => ({ ...prev, ad_sets: [...prev.ad_sets, { id: `adset-${prev.ad_sets.length + 1}`, name: `Ad Set ${prev.ad_sets.length + 1}`, budget: '', schedule: '', placements: [], targeting: {}, ad_ids: [] }] }));
+  const handleRemoveAdSet = (id: string) => setCampaignSpec((prev) => ({ ...prev, ad_sets: prev.ad_sets.filter((set) => set.id !== id) }));
   const handleSaveDraft = async (status?: CampaignStatus) => {
     if (!draft?.id) return;
     setIsSaving(true);
     try {
-      const { error } = await supabase
-        .from('campaign_drafts')
-        .update({
-          name: campaignSpec.campaign.name || draft.name || 'Kampagne',
-          creative_ids: selectedIds,
-          strategy_blueprint_id: selectedStrategyId,
-          campaign_spec: campaignSpec,
-          status: status || draft.status,
-        })
-        .eq('id', draft.id);
+      const { error } = await supabase.from('campaign_drafts').update({ name: campaignSpec.campaign.name || draft.name || 'Kampagne', creative_ids: selectedIds, strategy_blueprint_id: selectedStrategyId, campaign_spec: campaignSpec, status: status || draft.status }).eq('id', draft.id);
       if (error) throw error;
       setDraft((prev) => (prev ? { ...prev, status: status || prev.status } : prev));
       toast.success(status === 'ready' ? 'Kampagne als Ready markiert' : 'Draft gespeichert');
-    } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : 'Draft konnte nicht gespeichert werden.';
-      toast.error(message);
-    } finally {
-      setIsSaving(false);
-    }
+    } catch (err: unknown) { toast.error(err instanceof Error ? err.message : 'Draft konnte nicht gespeichert werden.'); } finally { setIsSaving(false); }
   };
-
   const checks = [
     { label: 'Mindestens eine Ad ausgewählt', ok: selectedIds.length > 0 },
     { label: 'Objective gesetzt', ok: Boolean(campaignSpec.campaign.objective) },
     { label: 'Budget gesetzt', ok: Boolean(campaignSpec.campaign.daily_budget) },
     { label: 'Ad Sets vorhanden', ok: campaignSpec.ad_sets.length > 0 },
-    {
-      label: 'Ad Sets haben Ads zugewiesen',
-      ok: campaignSpec.ad_sets.length > 0 && campaignSpec.ad_sets.every((set) => set.ad_ids.length > 0),
-    },
+    { label: 'Ad Sets haben Ads zugewiesen', ok: campaignSpec.ad_sets.length > 0 && campaignSpec.ad_sets.every((set) => set.ad_ids.length > 0) },
   ];
+  const handleNext = () => { if (currentStep < 4) setCurrentStep(c => c + 1); };
+  const handleBack = () => { if (currentStep > 1) setCurrentStep(c => c - 1); };
 
-
-  const handleNext = () => {
-    if (currentStep < 4) setCurrentStep(c => c + 1);
-  };
-
-  const handleBack = () => {
-    if (currentStep > 1) setCurrentStep(c => c - 1);
-  };
-
-
-
+  // --- UI RENDER (Premium Overhaul) ---
   return (
     <PageShell>
-      <HeroHeader
-        title="Kampagnen-Builder"
-        subtitle="Bau deine Kampagne Schritt für Schritt, starte aus Strategien oder Drafts."
-      />
-
-      {/* Stepper UI */}
-      <div className="mb-8">
-        <div className="flex items-center justify-between relative">
-          <div className="absolute left-0 top-1/2 -translate-y-1/2 w-full h-1 bg-muted -z-10 rounded-full" />
-          <div
-            className="absolute left-0 top-1/2 -translate-y-1/2 h-1 bg-primary transition-all duration-300 -z-10 rounded-full"
-            style={{ width: `${((currentStep - 1) / (STEPS.length - 1)) * 100}%` }}
-          />
-
-          {STEPS.map((step) => {
-            const isActive = currentStep >= step.id;
-            const isCurrent = currentStep === step.id;
-
-            return (
-              <div key={step.id} className="flex flex-col items-center gap-2 bg-background px-2">
-                <div
-                  className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold border-2 transition-colors ${isActive
-                    ? 'bg-primary border-primary text-primary-foreground'
-                    : 'bg-muted border-muted-foreground/30 text-muted-foreground'
-                    }`}
-                >
-                  {isActive ? <CheckCircle2 className="w-5 h-5" /> : step.id}
-                </div>
-                <div className={`text-xs font-medium text-center ${isCurrent ? 'text-foreground' : 'text-muted-foreground'}`}>
-                  {step.label}
-                </div>
-              </div>
-            );
-          })}
+      <div className="relative min-h-screen pb-20">
+        {/* Background Gradients */}
+        <div className="absolute inset-0 pointer-events-none overflow-hidden">
+          <div className="absolute top-0 right-0 w-[800px] h-[800px] bg-indigo-500/10 rounded-full blur-[120px] mix-blend-screen" />
+          <div className="absolute bottom-0 left-0 w-[600px] h-[600px] bg-fuchsia-500/10 rounded-full blur-[100px] mix-blend-screen" />
         </div>
-      </div>
 
-      {error && <Card className="p-4 border border-red-500/30 bg-red-500/5 text-red-600">{error}</Card>}
-      {isLoading && <Card className="p-4 text-sm text-muted-foreground">Lade Kampagnen-Draft…</Card>}
+        <HeroHeader
+          title="Kampagnen-Builder"
+          subtitle="Bau deine Kampagne Schritt für Schritt, starte aus Strategien oder Drafts."
+        />
 
-      {!isLoading && draft && (
-        <div className="space-y-6">
+        {/* Stepper UI - Premium */}
+        <div className="mb-12 max-w-5xl mx-auto px-4">
+          <div className="flex items-center justify-between relative bg-black/20 backdrop-blur-xl p-4 rounded-3xl border border-white/5 shadow-xl">
+            {/* Progress Bar Background */}
+            <div className="absolute left-16 right-16 top-1/2 -translate-y-1/2 h-1 bg-white/5 rounded-full -z-10" />
 
-          {/* STEP 1: CAMPAIGN DETAILS */}
-          {currentStep === 1 && (
-            <Card className="p-6 flex flex-col gap-4 animate-in fade-in slide-in-from-right-4 duration-300">
-              <div className="flex items-center justify-between">
-                <div>
-                  <div className="text-lg font-semibold text-foreground">Kampagne starten</div>
-                  <div className="text-sm text-muted-foreground">Lege die Basis-Daten für deine Kampagne fest.</div>
-                </div>
-                <select
-                  value={draft.status}
-                  onChange={(e) => setDraft((prev) => (prev ? { ...prev, status: e.target.value as CampaignStatus } : prev))}
-                  className="w-40 px-3 py-1.5 bg-muted/40 border border-border/50 rounded-lg text-sm"
-                >
-                  {STATUS_OPTIONS.map((option) => (
-                    <option key={option} value={option}>{option}</option>
-                  ))}
-                </select>
-              </div>
+            {/* Active Progress Bar */}
+            <div
+              className="absolute left-16 top-1/2 -translate-y-1/2 h-1 bg-gradient-to-r from-violet-500 to-fuchsia-500 transition-all duration-500 ease-out -z-10 rounded-full shadow-[0_0_20px_rgba(167,139,250,0.5)]"
+              style={{ width: `calc(${((currentStep - 1) / (STEPS.length - 1)) * 100}% - 8rem)` }}
+            />
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
-                <div>
-                  <label className="block text-sm font-semibold text-foreground mb-2">Campaign Name</label>
-                  <input
-                    value={campaignSpec.campaign.name || ''}
-                    onChange={(e) =>
-                      setCampaignSpec((prev) => ({
-                        ...prev,
-                        campaign: { ...prev.campaign, name: e.target.value },
-                      }))
-                    }
-                    className="w-full px-4 py-2.5 bg-muted/40 border border-border/50 rounded-xl text-foreground focus:ring-2 focus:ring-primary/20 focus:border-primary/50 transition-all outline-none"
-                    placeholder="z.B. Sommer Sale 2025"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-semibold text-foreground mb-2">Daily Budget</label>
-                  <input
-                    value={campaignSpec.campaign.daily_budget || ''}
-                    onChange={(e) =>
-                      setCampaignSpec((prev) => ({
-                        ...prev,
-                        campaign: { ...prev.campaign, daily_budget: e.target.value },
-                      }))
-                    }
-                    className="w-full px-4 py-2.5 bg-muted/40 border border-border/50 rounded-xl text-foreground focus:ring-2 focus:ring-primary/20 focus:border-primary/50 transition-all outline-none"
-                    placeholder="z.B. €50.00"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-semibold text-foreground mb-2">Objective</label>
-                  <select
-                    value={campaignSpec.campaign.objective || 'OUTCOME_SALES'}
-                    onChange={(e) =>
-                      setCampaignSpec((prev) => ({
-                        ...prev,
-                        campaign: { ...prev.campaign, objective: e.target.value },
-                      }))
-                    }
-                    className="w-full px-4 py-2.5 bg-muted/40 border border-border/50 rounded-xl text-foreground focus:ring-2 focus:ring-primary/20 focus:border-primary/50 transition-all outline-none"
+            {STEPS.map((step) => {
+              const isActive = currentStep >= step.id;
+              const isCurrent = currentStep === step.id;
+              const Icon = step.icon;
+
+              return (
+                <div key={step.id} className="flex flex-col items-center gap-3 relative z-10">
+                  <div
+                    className={`w-12 h-12 rounded-2xl flex items-center justify-center transition-all duration-500 ${isActive
+                        ? 'bg-gradient-to-br from-violet-500 to-fuchsia-600 text-white shadow-[0_0_30px_rgba(167,139,250,0.4)] scale-110'
+                        : 'bg-zinc-900 border border-white/10 text-muted-foreground'
+                      }`}
                   >
-                    <option value="OUTCOME_SALES">Sales</option>
-                    <option value="OUTCOME_LEADS">Leads</option>
-                    <option value="OUTCOME_TRAFFIC">Traffic</option>
-                    <option value="OUTCOME_AWARENESS">Awareness</option>
-                    <option value="OUTCOME_ENGAGEMENT">Engagement</option>
-                    <option value="OUTCOME_APP_PROMOTION">App Promotion</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-sm font-semibold text-foreground mb-2">Bid Strategy</label>
-                  <select
-                    value={campaignSpec.campaign.bid_strategy || 'LOWEST_COST_WITHOUT_CAP'}
-                    onChange={(e) =>
-                      setCampaignSpec((prev) => ({
-                        ...prev,
-                        campaign: { ...prev.campaign, bid_strategy: e.target.value },
-                      }))
-                    }
-                    className="w-full px-4 py-2.5 bg-muted/40 border border-border/50 rounded-xl text-foreground focus:ring-2 focus:ring-primary/20 focus:border-primary/50 transition-all outline-none"
-                  >
-                    <option value="LOWEST_COST_WITHOUT_CAP">Lowest Cost (Auto)</option>
-                    <option value="COST_CAP">Cost Cap</option>
-                    <option value="BID_CAP">Bid Cap</option>
-                  </select>
-                </div>
-              </div>
-            </Card>
-          )}
-
-          {/* STEP 2: SELECT ADS */}
-          {currentStep === 2 && (
-            <Card className="p-6 animate-in fade-in slide-in-from-right-4 duration-300">
-              <div className="flex items-start justify-between mb-6">
-                <div>
-                  <div className="text-lg font-semibold text-foreground">Ads auswählen</div>
-                  <div className="text-sm text-muted-foreground">Wähle die Creatives für deine Kampagne.</div>
-                </div>
-                <div className="bg-primary/10 text-primary px-3 py-1 rounded-full text-xs font-bold">
-                  {selectedIds.length} ausgewählt
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-h-[600px] overflow-y-auto pr-2">
-                {ads.length === 0 ? (
-                  <div className="col-span-2 text-center py-12 text-muted-foreground border-2 border-dashed border-border/50 rounded-xl">
-                    <Sparkles className="w-8 h-8 mx-auto mb-2 opacity-20" />
-                    <p>Keine gespeicherten Ads gefunden.</p>
-                    <p className="text-xs">Erstelle zuerst Creatives im Studio oder Generator.</p>
+                    {isActive && !isCurrent ? <CheckCircle2 className="w-6 h-6" /> : <Icon className="w-5 h-5" />}
                   </div>
-                ) : (
-                  ads.map((ad) => (
-                    <div
-                      key={ad.id}
-                      onClick={() => handleToggleAd(ad.id)}
-                      className={`
-                        relative group p-4 rounded-xl border-2 transition-all cursor-pointer hover:shadow-md
-                        ${selectedIds.includes(ad.id)
-                          ? 'border-primary bg-primary/5'
-                          : 'border-transparent bg-muted/30 hover:bg-muted/50 hover:border-border'}
-                      `}
-                    >
-                      <div className="absolute top-4 right-4">
-                        <div className={`
-                          w-5 h-5 rounded-full border-2 flex items-center justify-center transition-colors
-                          ${selectedIds.includes(ad.id) ? 'bg-primary border-primary' : 'border-muted-foreground/30'}
-                        `}>
-                          {selectedIds.includes(ad.id) && <CheckCircle2 className="w-3.5 h-3.5 text-white" />}
+                  <div className={`text-xs font-bold uppercase tracking-widest text-center transition-colors duration-300 ${isCurrent ? 'text-white' : 'text-muted-foreground'}`}>
+                    {step.label}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        {error && (
+          <div className="max-w-5xl mx-auto px-4 mb-8">
+            <div className="p-4 border border-red-500/30 bg-red-500/10 text-red-400 rounded-2xl flex items-center gap-3">
+              <AlertTriangle className="w-5 h-5" />
+              {error}
+            </div>
+          </div>
+        )}
+
+        {isLoading && (
+          <div className="max-w-5xl mx-auto px-4 text-center py-20">
+            <div className="w-16 h-16 border-4 border-primary/30 border-t-primary rounded-full animate-spin mx-auto mb-4" />
+            <p className="text-muted-foreground font-medium animate-pulse">Lade Kampagnen-Draft…</p>
+          </div>
+        )}
+
+        {!isLoading && draft && (
+          <div className="max-w-5xl mx-auto px-4 space-y-8">
+
+            {/* Content Card */}
+            <div className="bg-zinc-900/60 backdrop-blur-2xl border border-white/10 rounded-[40px] shadow-2xl overflow-hidden min-h-[500px] flex flex-col relative">
+
+              {/* Step Content */}
+              <div className="p-8 md:p-12 flex-1">
+                {/* STEP 1: CAMPAIGN DETAILS */}
+                {currentStep === 1 && (
+                  <div className="animate-in fade-in slide-in-from-right-8 duration-500">
+                    <div className="flex items-start justify-between mb-8">
+                      <div>
+                        <h2 className="text-3xl font-black tracking-tight bg-gradient-to-br from-white to-white/60 bg-clip-text text-transparent">Kampagne starten</h2>
+                        <p className="text-muted-foreground mt-2 text-lg">Lege die Basis-Daten für deine Kampagne fest.</p>
+                      </div>
+                      <select
+                        value={draft.status}
+                        onChange={(e) => setDraft((prev) => (prev ? { ...prev, status: e.target.value as CampaignStatus } : prev))}
+                        className="px-4 py-2 bg-black/20 border border-white/10 rounded-xl text-sm font-medium focus:ring-2 focus:ring-primary/50 outline-none hover:bg-black/30 transition-colors"
+                      >
+                        {STATUS_OPTIONS.map((option) => (
+                          <option key={option} value={option} className="bg-zinc-900">{option.toUpperCase()}</option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                      <div className="space-y-6">
+                        <div className="space-y-2">
+                          <label className="text-sm font-bold uppercase tracking-widest text-muted-foreground ml-1">Campaign Name</label>
+                          <input
+                            value={campaignSpec.campaign.name || ''}
+                            onChange={(e) => setCampaignSpec((prev) => ({ ...prev, campaign: { ...prev.campaign, name: e.target.value } }))}
+                            className="w-full px-5 py-4 bg-black/20 border border-white/10 rounded-2xl text-white placeholder:text-white/20 focus:ring-2 focus:ring-primary/50 outline-none transition-all focus:bg-black/40"
+                            placeholder="z.B. Sommer Sale 2025"
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <label className="text-sm font-bold uppercase tracking-widest text-muted-foreground ml-1">Daily Budget</label>
+                          <div className="relative">
+                            <span className="absolute left-5 top-1/2 -translate-y-1/2 text-muted-foreground font-bold">€</span>
+                            <input
+                              value={campaignSpec.campaign.daily_budget || ''}
+                              onChange={(e) => setCampaignSpec((prev) => ({ ...prev, campaign: { ...prev.campaign, daily_budget: e.target.value } }))}
+                              className="w-full pl-10 pr-5 py-4 bg-black/20 border border-white/10 rounded-2xl text-white placeholder:text-white/20 focus:ring-2 focus:ring-primary/50 outline-none transition-all focus:bg-black/40"
+                              placeholder="50.00"
+                            />
+                          </div>
+                        </div>
+                      </div>
+                      <div className="space-y-6">
+                        <div className="space-y-2">
+                          <label className="text-sm font-bold uppercase tracking-widest text-muted-foreground ml-1">Objective</label>
+                          <select
+                            value={campaignSpec.campaign.objective || 'OUTCOME_SALES'}
+                            onChange={(e) => setCampaignSpec((prev) => ({ ...prev, campaign: { ...prev.campaign, objective: e.target.value } }))}
+                            className="w-full px-5 py-4 bg-black/20 border border-white/10 rounded-2xl text-white focus:ring-2 focus:ring-primary/50 outline-none transition-all hover:bg-black/30 appearance-none"
+                          >
+                            <option value="OUTCOME_SALES" className="bg-zinc-900">Sales</option>
+                            <option value="OUTCOME_LEADS" className="bg-zinc-900">Leads</option>
+                            <option value="OUTCOME_TRAFFIC" className="bg-zinc-900">Traffic</option>
+                            <option value="OUTCOME_AWARENESS" className="bg-zinc-900">Awareness</option>
+                          </select>
+                        </div>
+                        <div className="space-y-2">
+                          <label className="text-sm font-bold uppercase tracking-widest text-muted-foreground ml-1">Bid Strategy</label>
+                          <select
+                            value={campaignSpec.campaign.bid_strategy || 'LOWEST_COST_WITHOUT_CAP'}
+                            onChange={(e) => setCampaignSpec((prev) => ({ ...prev, campaign: { ...prev.campaign, bid_strategy: e.target.value } }))}
+                            className="w-full px-5 py-4 bg-black/20 border border-white/10 rounded-2xl text-white focus:ring-2 focus:ring-primary/50 outline-none transition-all hover:bg-black/30 appearance-none"
+                          >
+                            <option value="LOWEST_COST_WITHOUT_CAP" className="bg-zinc-900">Lowest Cost (Auto)</option>
+                            <option value="COST_CAP" className="bg-zinc-900">Cost Cap</option>
+                            <option value="BID_CAP" className="bg-zinc-900">Bid Cap</option>
+                          </select>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* STEP 2: SELECT ADS */}
+                {currentStep === 2 && (
+                  <div className="animate-in fade-in slide-in-from-right-8 duration-500">
+                    <div className="flex items-center justify-between mb-8">
+                      <div>
+                        <h2 className="text-3xl font-black tracking-tight bg-gradient-to-br from-white to-white/60 bg-clip-text text-transparent">Ads auswählen</h2>
+                        <p className="text-muted-foreground mt-2 text-lg">Wähle die High-Performer aus deiner Library.</p>
+                      </div>
+                      <div className="px-4 py-2 bg-primary/20 border border-primary/30 rounded-xl text-primary font-bold shadow-[0_0_20px_rgba(167,139,250,0.2)]">
+                        {selectedIds.length} ausgewählt
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-h-[500px] overflow-y-auto pr-2 custom-scrollbar">
+                      {ads.length === 0 ? (
+                        <div className="col-span-2 py-20 flex flex-col items-center justify-center text-muted-foreground border-2 border-dashed border-white/5 rounded-3xl bg-white/5">
+                          <Sparkles className="w-12 h-12 mb-4 opacity-20" />
+                          <p className="font-medium">Keine gespeicherten Ads gefunden.</p>
+                        </div>
+                      ) : (
+                        ads.map((ad) => (
+                          <div
+                            key={ad.id}
+                            onClick={() => handleToggleAd(ad.id)}
+                            className={`
+                                                relative group p-4 rounded-3xl border-2 transition-all duration-300 cursor-pointer overflow-hidden
+                                                ${selectedIds.includes(ad.id)
+                                ? 'border-primary bg-primary/10 shadow-[0_0_30px_rgba(167,139,250,0.15)]'
+                                : 'border-transparent bg-black/20 hover:bg-black/40 hover:border-white/10'}
+                                            `}
+                          >
+                            <div className="flex gap-5 items-center">
+                              {ad.thumbnail ? (
+                                <img src={ad.thumbnail} className="w-20 h-20 rounded-2xl object-cover shadow-lg" alt="" />
+                              ) : (
+                                <div className="w-20 h-20 rounded-2xl bg-white/5 flex items-center justify-center">
+                                  <Sparkles className="w-6 h-6 opacity-20" />
+                                </div>
+                              )}
+                              <div className="flex-1 min-w-0">
+                                <h3 className="font-bold text-white truncate">{ad.name}</h3>
+                                <p className="text-xs text-muted-foreground mt-1 truncate">{ad.productName}</p>
+
+                                {selectedStrategy?.creative_ids?.includes(ad.id) && (
+                                  <div className="mt-2 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-500 text-[10px] font-bold uppercase tracking-wide">
+                                    <Sparkles className="w-3 h-3" /> Strategie Match
+                                  </div>
+                                )}
+                              </div>
+                              <div className={`
+                                                    w-8 h-8 rounded-full border-2 flex items-center justify-center transition-all duration-300
+                                                    ${selectedIds.includes(ad.id) ? 'bg-primary border-primary scale-110' : 'border-white/10 group-hover:border-white/30'}
+                                                `}>
+                                {selectedIds.includes(ad.id) && <CheckCircle2 className="w-4 h-4 text-white" />}
+                              </div>
+                            </div>
+                          </div>
+                        ))
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {/* STEP 3: STRATEGY */}
+                {currentStep === 3 && (
+                  <div className="animate-in fade-in slide-in-from-right-8 duration-500">
+                    <div className="mb-8">
+                      <h2 className="text-3xl font-black tracking-tight bg-gradient-to-br from-white to-white/60 bg-clip-text text-transparent">Strategie anwenden</h2>
+                      <p className="text-muted-foreground mt-2 text-lg">Nutze eine KI-generierte Strategie für Targeting & Struktur.</p>
+                    </div>
+
+                    <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+                      {/* Left: Blueprints List */}
+                      <div className="lg:col-span-4 space-y-4">
+                        <h3 className="text-sm font-bold uppercase tracking-widest text-muted-foreground ml-1">Blueprints</h3>
+                        <div className="space-y-3 max-h-[400px] overflow-y-auto pr-2 custom-scrollbar">
+                          {strategies.map((strategy) => (
+                            <button
+                              key={strategy.id}
+                              onClick={() => setSelectedStrategyId(strategy.id)}
+                              className={`
+                                                    w-full p-4 rounded-2xl border text-left transition-all duration-300
+                                                    ${selectedStrategyId === strategy.id
+                                  ? 'border-primary bg-primary/10 shadow-[0_0_20px_rgba(167,139,250,0.1)]'
+                                  : 'border-white/5 bg-black/20 hover:bg-black/40 hover:border-white/10'}
+                                                `}
+                            >
+                              <div className="flex items-center gap-3">
+                                <div className={`p-2 rounded-lg ${selectedStrategyId === strategy.id ? 'bg-primary text-white' : 'bg-white/5 text-muted-foreground'}`}>
+                                  <Brain className="w-4 h-4" />
+                                </div>
+                                <span className={`font-medium text-sm ${selectedStrategyId === strategy.id ? 'text-white' : 'text-muted-foreground'}`}>
+                                  {strategy.name || 'Unbenannte Strategie'}
+                                </span>
+                              </div>
+                            </button>
+                          ))}
                         </div>
                       </div>
 
-                      <div className="flex gap-4">
-                        {ad.thumbnail ? (
-                          <img src={ad.thumbnail} className="w-20 h-20 rounded-lg object-cover bg-muted" alt="" />
-                        ) : (
-                          <div className="w-20 h-20 rounded-lg bg-muted flex items-center justify-center text-xs text-muted-foreground">
-                            No Img
-                          </div>
-                        )}
-                        <div className="flex-1 pr-6">
-                          <div className="font-semibold text-foreground line-clamp-1">{ad.name}</div>
-                          <div className="text-xs text-muted-foreground mb-2">{ad.productName}</div>
-                          <div className="text-xs text-foreground/80 line-clamp-2 mb-2">{ad.description}</div>
+                      {/* Right: Preview */}
+                      <div className="lg:col-span-8">
+                        <div className="h-full bg-black/40 border border-white/10 rounded-3xl p-8 relative overflow-hidden group">
+                          {strategyPreview ? (
+                            <div className="space-y-6 relative z-10">
+                              <div className="flex items-center gap-3 mb-6">
+                                <div className="p-2.5 bg-emerald-500/20 rounded-xl text-emerald-500">
+                                  <Sparkles className="w-5 h-5" />
+                                </div>
+                                <h3 className="text-xl font-bold text-white">Strategie-Details</h3>
+                              </div>
 
-                          {selectedStrategy?.creative_ids?.includes(ad.id) && (
-                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 text-[10px] font-bold uppercase tracking-wide">
-                              <Sparkles className="w-3 h-3" /> Strategie Match
-                            </span>
+                              <div className="prose prose-invert">
+                                <p className="text-gray-300 leading-relaxed">{strategyPreview.summary || 'Keine Zusammenfassung verfügbar.'}</p>
+                              </div>
+
+                              <div className="flex flex-wrap gap-2">
+                                {(strategyPreview.recommendations || []).map((rec, idx) => (
+                                  <span key={idx} className="px-3 py-1.5 bg-white/5 border border-white/10 rounded-lg text-xs font-medium text-emerald-400">
+                                    {rec}
+                                  </span>
+                                ))}
+                              </div>
+
+                              <div className="pt-6 border-t border-white/10 grid grid-cols-2 gap-4">
+                                <button
+                                  onClick={() => handleApplyStrategy('structure')}
+                                  className="col-span-2 py-3 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl font-bold text-sm shadow-lg shadow-emerald-500/20 transition-all hover:scale-[1.02]"
+                                >
+                                  Komplette Struktur übernehmen
+                                </button>
+                                <button onClick={() => handleApplyStrategy('targeting')} className="py-3 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl text-sm font-bold transition-all">
+                                  Nur Targeting
+                                </button>
+                                <button onClick={() => handleApplyStrategy('budget')} className="py-3 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl text-sm font-bold transition-all">
+                                  Nur Budget
+                                </button>
+                              </div>
+                            </div>
+                          ) : (
+                            <div className="h-full flex flex-col items-center justify-center text-muted-foreground/50">
+                              <Brain className="w-16 h-16 mb-4 opacity-10" />
+                              <p>Wähle links eine Strategie aus.</p>
+                            </div>
                           )}
                         </div>
                       </div>
                     </div>
-                  ))
-                )}
-              </div>
-            </Card>
-          )}
-
-          {/* STEP 3: STRATEGY */}
-          {currentStep === 3 && (
-            <Card className="p-6 animate-in fade-in slide-in-from-right-4 duration-300">
-              <div className="flex items-start justify-between mb-6">
-                <div>
-                  <div className="text-lg font-semibold text-foreground">Strategie anwenden</div>
-                  <div className="text-sm text-muted-foreground">Nutze eine KI-Strategie für Targeting & Struktur.</div>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                <div>
-                  <label className="block text-sm font-semibold text-foreground mb-2">Wähle einen Blueprint</label>
-                  <div className="space-y-3 max-h-[400px] overflow-y-auto pr-2">
-                    {strategies.length === 0 && (
-                      <div className="text-sm text-muted-foreground italic">Keine Strategien verfügbar.</div>
-                    )}
-                    {strategies.map((strategy) => (
-                      <div
-                        key={strategy.id}
-                        onClick={() => setSelectedStrategyId(strategy.id)}
-                        className={`
-                          p-3 rounded-xl border cursor-pointer transition-all
-                          ${selectedStrategyId === strategy.id
-                            ? 'border-primary bg-primary/5 ring-1 ring-primary/20'
-                            : 'border-border/40 bg-muted/20 hover:bg-muted/40'}
-                        `}
-                      >
-                        <div className="flex items-center gap-2 font-medium text-sm">
-                          <Brain className={`w-4 h-4 ${selectedStrategyId === strategy.id ? 'text-primary' : 'text-muted-foreground'}`} />
-                          {strategy.name || 'Unbenannte Strategie'}
-                        </div>
-                      </div>
-                    ))}
                   </div>
-                </div>
+                )}
 
-                <div className="space-y-6">
-                  {/* Strategy Preview Panel */}
-                  <div className="p-5 rounded-2xl bg-muted/30 border border-border/50 h-full">
-                    {strategyPreview ? (
-                      <>
-                        <div className="flex items-center gap-2 mb-4">
-                          <Sparkles className="w-5 h-5 text-primary" />
-                          <h3 className="font-semibold">Strategie-Details</h3>
-                        </div>
+                {/* STEP 4: REVIEW */}
+                {currentStep === 4 && (
+                  <div className="animate-in fade-in slide-in-from-right-8 duration-500">
+                    <div className="flex items-center justify-between mb-8">
+                      <div>
+                        <h2 className="text-3xl font-black tracking-tight bg-gradient-to-br from-white to-white/60 bg-clip-text text-transparent">Ready to Launch?</h2>
+                        <p className="text-muted-foreground mt-2 text-lg">Final Review deiner Kampagnen-Struktur.</p>
+                      </div>
+                      <button onClick={handleAddAdSet} className="px-4 py-2 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl text-sm font-bold transition-all flex items-center gap-2">
+                        <Plus className="w-4 h-4" /> Add Ad Set
+                      </button>
+                    </div>
 
-                        <div className="space-y-4">
-                          <div>
-                            <div className="text-xs uppercase text-muted-foreground font-bold mb-1">Zusammenfassung</div>
-                            <p className="text-sm text-foreground/80 leading-relaxed">{strategyPreview.summary || 'Keine Zusammenfassung verfügbar.'}</p>
-                          </div>
-
-                          <div>
-                            <div className="text-xs uppercase text-muted-foreground font-bold mb-2">Empfehlungen</div>
-                            <div className="flex flex-wrap gap-2">
-                              {(strategyPreview.recommendations || []).map((rec, idx) => (
-                                <span key={idx} className="px-2.5 py-1 bg-background border border-border rounded-md text-xs text-muted-foreground">
-                                  {rec}
-                                </span>
-                              ))}
+                    <div className="space-y-4 mb-8">
+                      {campaignSpec.ad_sets.map((set, idx) => (
+                        <div key={set.id} className="p-6 rounded-3xl border border-white/5 bg-black/20 hover:bg-black/30 transition-all group">
+                          <div className="flex items-center justify-between mb-4">
+                            <div className="flex items-center gap-4">
+                              <span className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center text-sm font-bold">{idx + 1}</span>
+                              <input
+                                value={set.name || ''}
+                                onChange={(e) => setCampaignSpec(prev => ({ ...prev, ad_sets: prev.ad_sets.map(s => s.id === set.id ? { ...s, name: e.target.value } : s) }))}
+                                className="bg-transparent border-none text-lg font-bold text-white focus:ring-0 p-0 w-64"
+                              />
                             </div>
-                          </div>
-
-                          <div className="pt-4 mt-4 border-t border-border/50 grid grid-cols-1 gap-3">
-                            <button
-                              onClick={() => handleApplyStrategy('structure')}
-                              className="w-full py-2 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:opacity-90 transition-opacity"
-                            >
-                              Struktur übernehmen (AdSets)
+                            <button onClick={() => handleRemoveAdSet(set.id)} className="p-2 hover:bg-red-500/20 rounded-full text-muted-foreground hover:text-red-500 transition-colors">
+                              <Trash2 className="w-5 h-5" />
                             </button>
-                            <div className="grid grid-cols-2 gap-3">
-                              <button
-                                onClick={() => handleApplyStrategy('targeting')}
-                                className="py-2 bg-muted hover:bg-muted/80 text-foreground border border-border/50 rounded-lg text-sm font-medium transition-colors"
-                              >
-                                Targeting
-                              </button>
-                              <button
-                                onClick={() => handleApplyStrategy('budget')}
-                                className="py-2 bg-muted hover:bg-muted/80 text-foreground border border-border/50 rounded-lg text-sm font-medium transition-colors"
-                              >
-                                Budget
-                              </button>
+                          </div>
+
+                          <div className="grid grid-cols-2 gap-6 pl-12">
+                            <div>
+                              <label className="text-xs font-bold uppercase tracking-widest text-muted-foreground mb-1 block">Budget</label>
+                              <input
+                                value={set.budget || ''}
+                                onChange={(e) => setCampaignSpec(prev => ({ ...prev, ad_sets: prev.ad_sets.map(s => s.id === set.id ? { ...s, budget: e.target.value } : s) }))}
+                                className="bg-white/5 border border-white/5 rounded-lg px-3 py-1.5 text-sm w-full"
+                              />
+                            </div>
+                            <div>
+                              <label className="text-xs font-bold uppercase tracking-widest text-muted-foreground mb-1 block">Assigned Ads</label>
+                              <div className="flex flex-wrap gap-2">
+                                {set.ad_ids.map(id => (
+                                  <span key={id} className="px-2 py-1 bg-white/5 rounded text-xs text-muted-foreground border border-white/5">
+                                    {adMap.get(id)?.name || 'Ad'}
+                                  </span>
+                                ))}
+                                {set.ad_ids.length === 0 && <span className="text-xs text-red-400">Keine Ads!</span>}
+                              </div>
                             </div>
                           </div>
                         </div>
-                      </>
-                    ) : (
-                      <div className="h-full flex flex-col items-center justify-center text-muted-foreground text-center p-4">
-                        <Brain className="w-10 h-10 mb-3 opacity-20" />
-                        <p className="text-sm">Wähle links eine Strategie aus, um Details zu sehen.</p>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </div>
-            </Card>
-          )}
+                      ))}
+                    </div>
 
-          {/* STEP 4: REVIEW & LAUNCH */}
-          {currentStep === 4 && (
-            <Card className="p-6 animate-in fade-in slide-in-from-right-4 duration-300">
-              <div className="flex items-start justify-between mb-6">
-                <div>
-                  <div className="text-lg font-semibold text-foreground">Review & Launch</div>
-                  <div className="text-sm text-muted-foreground">Überprüfe deine Kampagnen-Struktur und veröffentliche sie.</div>
-                </div>
-                <button
-                  onClick={handleAddAdSet}
-                  className="px-3 py-2 bg-muted hover:bg-muted/80 rounded-lg text-xs font-semibold flex items-center gap-2"
-                >
-                  <Plus className="w-4 h-4" />
-                  Add Ad Set
-                </button>
-              </div>
-
-              <div className="space-y-4 mb-8">
-                {campaignSpec.ad_sets.length === 0 ? (
-                  <div className="p-8 text-center border-2 border-dashed border-border/50 rounded-xl text-muted-foreground">
-                    Noch keine Ad Sets angelegt. Gehe zurück zu Schritt 3.
-                  </div>
-                ) : (
-                  campaignSpec.ad_sets.map((set, idx) => (
-                    <div key={set.id} className="p-4 rounded-xl border border-border/30 bg-muted/10">
-                      <div className="flex items-center justify-between mb-3">
-                        <div className="font-semibold text-sm flex items-center gap-2">
-                          <span className="w-6 h-6 rounded-full bg-muted flex items-center justify-center text-xs">{idx + 1}</span>
-                          <span className="text-foreground">{set.name}</span>
-                        </div>
-                        <button onClick={() => handleRemoveAdSet(set.id)} className="text-muted-foreground hover:text-red-500 transition-colors">
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-                      </div>
-
-                      <div className="grid grid-cols-2 gap-4 text-sm pl-8">
-                        <div>
-                          <span className="text-muted-foreground text-xs block mb-1">Budget</span>
-                          <div className="font-medium">{set.budget || '-'}</div>
-                        </div>
-                        <div>
-                          <span className="text-muted-foreground text-xs block mb-1">Targeting</span>
-                          <div className="font-medium text-xs text-foreground/80 truncate">
-                            {Object.values(set.targeting || {}).filter(Boolean).join(', ') || 'Auto'}
+                    <div className="p-6 rounded-2xl bg-white/5 border border-white/5">
+                      <h3 className="text-sm font-bold uppercase tracking-widest text-muted-foreground mb-4">Preflight Checklist</h3>
+                      <div className="grid grid-cols-2 gap-4">
+                        {checks.map((check, idx) => (
+                          <div key={idx} className="flex items-center gap-3">
+                            <div className={`p-1 rounded-full ${check.ok ? 'bg-emerald-500/20 text-emerald-500' : 'bg-amber-500/20 text-amber-500'}`}>
+                              {check.ok ? <CheckCircle2 className="w-3 h-3" /> : <AlertTriangle className="w-3 h-3" />}
+                            </div>
+                            <span className={`text-sm ${check.ok ? 'text-white' : 'text-muted-foreground'}`}>{check.label}</span>
                           </div>
-                        </div>
-                        <div className="col-span-2">
-                          <span className="text-muted-foreground text-xs block mb-1">Ads ({set.ad_ids.length})</span>
-                          <div className="flex gap-2 flex-wrap">
-                            {set.ad_ids.map(id => {
-                              const ad = adMap.get(id);
-                              return ad ? (
-                                <span key={id} className="px-2 py-0.5 rounded bg-background border border-border/50 text-[10px] text-muted-foreground">
-                                  {ad.name}
-                                </span>
-                              ) : null;
-                            })}
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Expanded Editing (AdSet Details) */}
-                      <div className="mt-4 pt-4 border-t border-border/20 grid grid-cols-2 gap-4">
-                        <div>
-                          <label className="text-xs text-muted-foreground mb-1 block">Name</label>
-                          <input
-                            value={set.name || ''}
-                            onChange={(e) =>
-                              setCampaignSpec((prev) => ({
-                                ...prev,
-                                ad_sets: prev.ad_sets.map((item) =>
-                                  item.id === set.id ? { ...item, name: e.target.value } : item
-                                ),
-                              }))
-                            }
-                            className="w-full px-2 py-1 bg-muted/20 border border-border/50 rounded text-sm"
-                          />
-                        </div>
-                        <div>
-                          <label className="text-xs text-muted-foreground mb-1 block">Budget</label>
-                          <input
-                            value={set.budget || ''}
-                            onChange={(e) =>
-                              setCampaignSpec((prev) => ({
-                                ...prev,
-                                ad_sets: prev.ad_sets.map((item) =>
-                                  item.id === set.id ? { ...item, budget: e.target.value } : item
-                                ),
-                              }))
-                            }
-                            className="w-full px-2 py-1 bg-muted/20 border border-border/50 rounded text-sm"
-                          />
-                        </div>
+                        ))}
                       </div>
                     </div>
-                  ))
+                  </div>
                 )}
               </div>
 
-              <div className="p-4 rounded-xl bg-muted/10 mb-4">
-                <h3 className="text-sm font-semibold mb-3">Preflight Checks</h3>
-                <div className="space-y-2">
-                  {checks.map((check, idx) => (
-                    <div key={idx} className="flex items-center gap-2 text-sm">
-                      {check.ok ? (
-                        <CheckCircle2 className="w-4 h-4 text-emerald-500" />
-                      ) : (
-                        <AlertTriangle className="w-4 h-4 text-amber-500" />
-                      )}
-                      <span className={check.ok ? 'text-foreground' : 'text-muted-foreground'}>{check.label}</span>
-                    </div>
-                  ))}
+              {/* Footer Controls */}
+              <div className="p-6 md:p-8 border-t border-white/10 bg-black/20 flex items-center justify-between">
+                <button
+                  onClick={handleBack}
+                  disabled={currentStep === 1}
+                  className="px-6 py-3 rounded-2xl font-bold text-sm transition-all hover:bg-white/5 disabled:opacity-0 flex items-center gap-2"
+                >
+                  <ChevronLeft className="w-4 h-4" /> Zurück
+                </button>
+
+                <div className="flex gap-4">
+                  <button
+                    onClick={() => handleSaveDraft()}
+                    disabled={isSaving}
+                    className="px-6 py-3 rounded-2xl border-2 border-white/10 hover:bg-white/5 font-bold text-sm transition-all text-muted-foreground hover:text-white"
+                  >
+                    {isSaving ? 'Speichere...' : 'Als Draft speichern'}
+                  </button>
+
+                  {currentStep < 4 ? (
+                    <button
+                      onClick={handleNext}
+                      className="px-8 py-3 rounded-2xl bg-gradient-to-r from-violet-600 to-indigo-600 text-white font-bold text-sm hover:scale-[1.02] shadow-[0_0_20px_rgba(139,92,246,0.3)] transition-all flex items-center gap-2"
+                    >
+                      Weiter <ChevronRight className="w-4 h-4" />
+                    </button>
+                  ) : (
+                    <button
+                      onClick={() => handleSaveDraft('ready')}
+                      className="px-8 py-3 rounded-2xl bg-gradient-to-r from-emerald-500 to-teal-500 text-white font-bold text-sm hover:scale-[1.02] shadow-[0_0_20px_rgba(16,185,129,0.3)] transition-all flex items-center gap-2"
+                    >
+                      <Rocket className="w-4 h-4" />
+                      Kampagne Starten
+                    </button>
+                  )}
                 </div>
               </div>
 
-            </Card>
-          )}
-
-          {/* Navigation Bar */}
-          <div className="flex items-center justify-between pt-6 border-t border-border mt-8">
-            <button
-              onClick={handleBack}
-              disabled={currentStep === 1}
-              className="px-6 py-2.5 rounded-xl font-medium text-sm transition-colors hover:bg-muted disabled:opacity-0"
-            >
-              Zurück
-            </button>
-            <div className="flex gap-3">
-              <button
-                onClick={() => handleSaveDraft()}
-                disabled={isSaving}
-                className="px-6 py-2.5 rounded-xl border border-border hover:bg-muted font-medium text-sm transition-all"
-              >
-                {isSaving ? 'Speichere...' : 'Als Draft speichern'}
-              </button>
-
-              {currentStep < 4 ? (
-                <button
-                  onClick={handleNext}
-                  className="px-8 py-2.5 rounded-xl bg-primary text-primary-foreground font-semibold text-sm hover:opacity-90 shadow-lg shadow-primary/20 transition-all"
-                >
-                  Weiter
-                </button>
-              ) : (
-                <button
-                  onClick={() => handleSaveDraft('ready')}
-                  className="px-8 py-2.5 rounded-xl bg-gradient-to-r from-emerald-500 to-emerald-600 text-white font-semibold text-sm hover:opacity-90 shadow-lg shadow-emerald-500/20 transition-all flex items-center gap-2"
-                >
-                  <CheckCircle2 className="w-4 h-4" />
-                  Kampagne veröffentlichen
-                </button>
-              )}
             </div>
           </div>
-
-        </div>
-      )}
+        )}
+      </div>
     </PageShell>
   );
 }
-

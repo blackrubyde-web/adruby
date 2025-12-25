@@ -111,6 +111,46 @@ function generateFallbackContent(description: string, style: string): GeneratedA
     };
 }
 
+// Image candidates for different niches
+const NICHE_IMAGES: Record<string, string[]> = {
+    fitness: [
+        'https://images.unsplash.com/photo-1534438327276-14e5300c3a48?q=80&w=1080&auto=format&fit=crop',
+        'https://images.unsplash.com/photo-1517836357463-d25dfeac3438?q=80&w=1080&auto=format&fit=crop',
+        'https://images.unsplash.com/photo-1599058945522-28d584b6f0ff?q=80&w=1080&auto=format&fit=crop'
+    ],
+    food: [
+        'https://images.unsplash.com/photo-1504674900247-0877df9cc836?q=80&w=1080&auto=format&fit=crop',
+        'https://images.unsplash.com/photo-1555939594-58d7cb561ad1?q=80&w=1080&auto=format&fit=crop'
+    ],
+    saas: [
+        'https://images.unsplash.com/photo-1519389950473-47ba0277781c?q=80&w=1080&auto=format&fit=crop',
+        'https://images.unsplash.com/photo-1460925895917-afdab827c52f?q=80&w=1080&auto=format&fit=crop'
+    ],
+    ecommerce: [
+        'https://images.unsplash.com/photo-1441986300917-64674bd600d8?q=80&w=1080&auto=format&fit=crop',
+        'https://images.unsplash.com/photo-1523275335684-37898b6baf30?q=80&w=1080&auto=format&fit=crop'
+    ],
+    coach: [
+        'https://images.unsplash.com/photo-1517245386807-bb43f82c33c4?q=80&w=1080&auto=format&fit=crop',
+        'https://images.unsplash.com/photo-1521737604893-d14cc237f11d?q=80&w=1080&auto=format&fit=crop'
+    ],
+    realestate: [
+        'https://images.unsplash.com/photo-1560518883-ce09059eeffa?q=80&w=1080&auto=format&fit=crop'
+    ],
+    event: [
+        'https://images.unsplash.com/photo-1492684223066-81342ee5ff30?q=80&w=1080&auto=format&fit=crop'
+    ],
+    finance: [
+        'https://images.unsplash.com/photo-1579532537598-459ecdaf39cc?q=80&w=1080&auto=format&fit=crop'
+    ],
+    craft: [
+        'https://images.unsplash.com/photo-1581092921461-eab62e97a782?q=80&w=1080&auto=format&fit=crop'
+    ],
+    job: [
+        'https://images.unsplash.com/photo-1521791136064-7986c2920216?q=80&w=1080&auto=format&fit=crop'
+    ]
+};
+
 // Create a complete AdDocument from generated content
 export function createAdFromContent(
     content: GeneratedAdContent,
@@ -118,7 +158,6 @@ export function createAdFromContent(
 ): Partial<AdDocument> {
     const { width, height } = format;
     const isVertical = height > width;
-    const isHorizontal = width > height;
 
     // Calculate responsive positions
     const padding = Math.min(width, height) * 0.08;
@@ -126,7 +165,51 @@ export function createAdFromContent(
     const subheadlineY = headlineY + (isVertical ? 140 : 100);
     const ctaY = isVertical ? height * 0.75 : height * 0.7;
 
+    // Select background image based on niche
+    const nicheImages = NICHE_IMAGES[content.suggestedNiche] || NICHE_IMAGES.ecommerce;
+    const randomImage = nicheImages[Math.floor(Math.random() * nicheImages.length)];
+
     const layers: Partial<StudioLayer>[] = [
+        // Background Image
+        {
+            id: `bg_${Date.now()}`,
+            type: 'product',
+            name: 'Background',
+            x: 0,
+            y: 0,
+            width: width,
+            height: height,
+            src: randomImage,
+            visible: true,
+            locked: true,
+            zIndex: 0,
+            rotation: 0,
+            opacity: 1 // Full opacity image
+        },
+        // Dark Overlay for readability
+        {
+            id: `overlay_${Date.now()}`,
+            type: 'cta', // Using rect as overlay (hack reusing cta type or could assume background shape)
+            // But we don't have a 'shape' type exposed easily here, but we can use a "cta" style block without text or use the background color
+            // Actually, let's use a CTA layer as a dimmer.
+            name: 'Dimmer',
+            x: 0,
+            y: 0,
+            width: width,
+            height: height,
+            text: '',
+            fontSize: 0,
+            fontWeight: 400,
+            fontFamily: 'Inter',
+            color: 'transparent',
+            bgColor: '#000000',
+            radius: 0,
+            visible: true,
+            locked: true,
+            zIndex: 1,
+            rotation: 0,
+            opacity: 0.6 // 60% dark overlay
+        },
         // Headline
         {
             id: `headline_${Date.now()}`,
@@ -140,7 +223,7 @@ export function createAdFromContent(
             fontSize: isVertical ? 72 : 64,
             fontWeight: 900,
             fontFamily: 'Inter',
-            color: content.suggestedColors.primary,
+            color: '#FFFFFF', // Always white on dark overlay
             align: 'center',
             visible: true,
             locked: false,
@@ -163,13 +246,13 @@ export function createAdFromContent(
             fontSize: 24,
             fontWeight: 500,
             fontFamily: 'Inter',
-            color: content.suggestedColors.primary,
+            color: '#EEEEEE',
             align: 'center',
             visible: true,
             locked: false,
             zIndex: 11,
             rotation: 0,
-            opacity: 0.7,
+            opacity: 0.9,
             lineHeight: 1.3,
             letterSpacing: 0
         },

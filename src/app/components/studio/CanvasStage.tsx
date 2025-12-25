@@ -15,14 +15,28 @@ const URLImage = ({ layer }: { layer: ImageLayer }) => {
     const [image] = useImage(layer.src, 'anonymous');
 
     return (
-        <KonvaImage
-            image={image}
-            x={0}
-            y={0}
-            width={layer.width}
-            height={layer.height}
-            opacity={layer.opacity}
-        />
+        <>
+            <KonvaImage
+                image={image}
+                x={0}
+                y={0}
+                width={layer.width}
+                height={layer.height}
+                opacity={layer.opacity}
+            />
+            {layer.tint && (
+                <Rect
+                    x={0}
+                    y={0}
+                    width={layer.width}
+                    height={layer.height}
+                    fill={layer.tint}
+                    opacity={0.3}
+                    listening={false}
+                    globalCompositeOperation="source-atop"
+                />
+            )}
+        </>
     );
 };
 
@@ -33,11 +47,13 @@ const TextItem = ({ layer }: { layer: TextLayer }) => {
             x={0}
             y={0}
             width={layer.width}
+            height={layer.height}
             fontSize={layer.fontSize}
             fontFamily={layer.fontFamily}
             fontStyle={`${layer.fontWeight >= 700 ? 'bold' : 'normal'} ${layer.fontStyle || ''}`.trim()}
             fill={layer.color}
             align={layer.align}
+            verticalAlign="top"
             opacity={layer.opacity}
             lineHeight={layer.lineHeight}
             letterSpacing={layer.letterSpacing}
@@ -45,6 +61,8 @@ const TextItem = ({ layer }: { layer: TextLayer }) => {
             shadowBlur={layer.shadowBlur}
             shadowOffsetX={layer.shadowOffsetX}
             shadowOffsetY={layer.shadowOffsetY}
+            wrap="word"
+            ellipsis={true}
         />
     );
 };

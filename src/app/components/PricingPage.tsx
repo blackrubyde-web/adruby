@@ -36,7 +36,7 @@ export function PricingPage({ onNavigate, onSignIn, onGetStarted }: PricingPageP
       period: 'month',
       description: 'For marketers scaling campaigns',
       credits: '1,000 credits/month',
-      badge: 'Most popular',
+      badge: 'Best for Facebook Ads',
       features: [
         'Everything in Starter',
         'Unlimited ad variations',
@@ -113,9 +113,9 @@ export function PricingPage({ onNavigate, onSignIn, onGetStarted }: PricingPageP
               Start free. Upgrade when you're ready.
             </p>
             <div className="flex flex-wrap gap-2 justify-center">
-            <Chip icon={<Sparkles className="w-3 h-3" />}>7-day free trial</Chip>
-            <Chip icon={<Zap className="w-3 h-3" />}>No credit card</Chip>
-            <Chip icon={<Check className="w-3 h-3" />}>Cancel anytime</Chip>
+              <Chip icon={<Sparkles className="w-3 h-3" />}>7-day free trial</Chip>
+              <Chip icon={<Zap className="w-3 h-3" />}>No credit card</Chip>
+              <Chip icon={<Check className="w-3 h-3" />}>Cancel anytime</Chip>
             </div>
           </div>
         </PageContainer>
@@ -128,11 +128,10 @@ export function PricingPage({ onNavigate, onSignIn, onGetStarted }: PricingPageP
             {plans.map((plan) => (
               <Card
                 key={plan.id}
-                className={`relative ${
-                  plan.isPrimary
+                className={`relative ${plan.isPrimary
                     ? 'border-2 border-primary shadow-xl scale-105 bg-gradient-to-br from-primary/5 to-purple-500/5'
                     : ''
-                }`}
+                  }`}
               >
                 {plan.badge && (
                   <div className="absolute -top-3 left-1/2 -translate-x-1/2">
@@ -165,11 +164,10 @@ export function PricingPage({ onNavigate, onSignIn, onGetStarted }: PricingPageP
 
                 <button
                   onClick={onGetStarted}
-                  className={`w-full py-3 rounded-xl font-semibold transition-all ${
-                    plan.isPrimary
+                  className={`w-full py-3 rounded-xl font-semibold transition-all ${plan.isPrimary
                       ? 'bg-primary text-white hover:bg-primary/90 hover:shadow-xl'
                       : 'bg-muted text-foreground hover:bg-muted/80'
-                  }`}
+                    }`}
                 >
                   {plan.cta}
                 </button>
@@ -309,9 +307,8 @@ export function PricingPage({ onNavigate, onSignIn, onGetStarted }: PricingPageP
                       <span className="font-semibold">{faq.question}</span>
                     </div>
                     <ChevronDown
-                      className={`w-5 h-5 text-muted-foreground transition-transform ${
-                        openFaqIndex === index ? 'rotate-180' : ''
-                      }`}
+                      className={`w-5 h-5 text-muted-foreground transition-transform ${openFaqIndex === index ? 'rotate-180' : ''
+                        }`}
                     />
                   </button>
 

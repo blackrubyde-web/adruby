@@ -4,6 +4,7 @@ import { requireUserId } from "./_shared/auth.js";
 import { requireActiveSubscription } from "./_shared/entitlements.js";
 import { supabaseAdmin } from "./_shared/clients.js";
 import { NormalizedBriefSchema } from "./_shared/creativeSchemas.js";
+import { assertAndConsumeCredits } from "./_shared/credits.js";
 
 function getAuthHeader(headers) {
   if (!headers) return null;
@@ -56,6 +57,16 @@ export async function handler(event) {
       console.warn("[creative-generate] Entitlement check failed", { userId });
     }
     return entitlement.response;
+  }
+
+  // Deduct credits for generation
+  try {
+    await assertAndConsumeCredits(userId, "creative_generate", 10);
+  } catch (err) {
+    if (process.env.DEBUG_FUNCTIONS === "1") {
+      console.warn("[creative-generate] Credit consumption failed", { userId, error: err?.message });
+    }
+    return badRequest(err?.message || "Insufficient credits", 402);
   }
 
   let body;

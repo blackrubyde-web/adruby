@@ -488,5 +488,118 @@ export const AD_TEMPLATES: AdTemplate[] = [
                 { id: 'cta', type: 'cta', name: 'Register CTA', x: 80, y: 600, width: 350, height: 75, visible: true, locked: false, zIndex: 20, text: 'REGISTER FOR FREE', fontSize: 20, fontWeight: 800, fontFamily: 'Inter', color: '#FFFFFF', bgColor: '#b45309', radius: 0, rotation: 0, opacity: 1, lineHeight: 1 } as any
             ]
         }
+    },
+
+    // ========================================
+    // PREMIUM TEMPLATES - FACEBOOK AD LIBRARY INSPIRED
+    // ========================================
+
+    // --- UGC TESTIMONIAL STYLE ---
+    {
+        id: 'tpl_ugc_01',
+        name: 'UGC Testimonial',
+        niche: 'ecommerce',
+        document: {
+            backgroundColor: '#f8fafc',
+            layers: [
+                { id: 'bg', type: 'background', name: 'Customer Photo', x: 0, y: 0, width: 1080, height: 700, visible: true, locked: true, zIndex: 0, src: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?q=80&w=2787&auto=format&fit=crop', opacity: 1, rotation: 0, fit: 'cover' } as any,
+                { id: 'quote_box', type: 'overlay', name: 'Quote Background', x: 0, y: 650, width: 1080, height: 430, visible: true, locked: true, zIndex: 5, src: '', opacity: 1, rotation: 0, fit: 'cover' } as any,
+                { id: 'stars', type: 'text', name: 'Star Rating', x: 60, y: 700, width: 400, height: 50, visible: true, locked: false, zIndex: 10, text: '⭐⭐⭐⭐⭐', fontSize: 36, fontWeight: 400, fontFamily: 'Inter', color: '#facc15', align: 'left', rotation: 0, opacity: 1, lineHeight: 1 } as any,
+                { id: 'quote', type: 'text', name: 'Testimonial', x: 60, y: 760, width: 960, height: 200, visible: true, locked: false, zIndex: 10, text: '"This completely changed my routine. I can\'t imagine life without it anymore!"', fontSize: 36, fontWeight: 500, fontFamily: 'Inter', fontStyle: 'italic', color: '#1e293b', align: 'left', rotation: 0, opacity: 1, lineHeight: 1.3 } as any,
+                { id: 'name', type: 'text', name: 'Customer Name', x: 60, y: 950, width: 400, height: 40, visible: true, locked: false, zIndex: 10, text: '— Sarah M., verified buyer', fontSize: 20, fontWeight: 600, fontFamily: 'Inter', color: '#64748b', align: 'left', rotation: 0, opacity: 1, lineHeight: 1 } as any,
+                { id: 'cta', type: 'cta', name: 'Shop CTA', x: 700, y: 950, width: 320, height: 70, visible: true, locked: false, zIndex: 20, text: 'SHOP NOW →', fontSize: 20, fontWeight: 800, fontFamily: 'Inter', color: '#FFFFFF', bgColor: '#0f172a', radius: 8, rotation: 0, opacity: 1, lineHeight: 1 } as any
+            ]
+        }
+    },
+
+    // --- PROBLEM-SOLUTION STYLE ---
+    {
+        id: 'tpl_problem_solution',
+        name: 'Problem → Solution',
+        niche: 'ecommerce',
+        document: {
+            backgroundColor: '#ffffff',
+            layers: [
+                { id: 'problem_side', type: 'overlay', name: 'Problem Side', x: 0, y: 0, width: 540, height: 1080, visible: true, locked: true, zIndex: 0, src: '', opacity: 1, rotation: 0, fit: 'cover' } as any,
+                { id: 'solution_side', type: 'overlay', name: 'Solution Side', x: 540, y: 0, width: 540, height: 1080, visible: true, locked: true, zIndex: 0, src: '', opacity: 1, rotation: 0, fit: 'cover' } as any,
+                { id: 'problem_icon', type: 'text', name: 'Problem Emoji', x: 150, y: 250, width: 240, height: 200, visible: true, locked: false, zIndex: 10, text: '😫', fontSize: 150, fontWeight: 400, fontFamily: 'Inter', color: '#000000', align: 'center', rotation: 0, opacity: 1, lineHeight: 1 } as any,
+                { id: 'solution_icon', type: 'text', name: 'Solution Emoji', x: 690, y: 250, width: 240, height: 200, visible: true, locked: false, zIndex: 10, text: '🥳', fontSize: 150, fontWeight: 400, fontFamily: 'Inter', color: '#000000', align: 'center', rotation: 0, opacity: 1, lineHeight: 1 } as any,
+                { id: 'problem_text', type: 'text', name: 'Problem Text', x: 40, y: 480, width: 460, height: 300, visible: true, locked: false, zIndex: 10, text: 'Tired of\nwasting money\non products\nthat don\'t work?', fontSize: 40, fontWeight: 700, fontFamily: 'Inter', color: '#dc2626', align: 'center', rotation: 0, opacity: 1, lineHeight: 1.2 } as any,
+                { id: 'solution_text', type: 'text', name: 'Solution Text', x: 580, y: 480, width: 460, height: 300, visible: true, locked: false, zIndex: 10, text: 'Finally,\na solution\nthat actually\nworks.', fontSize: 40, fontWeight: 700, fontFamily: 'Inter', color: '#16a34a', align: 'center', rotation: 0, opacity: 1, lineHeight: 1.2 } as any,
+                { id: 'cta', type: 'cta', name: 'CTA', x: 290, y: 900, width: 500, height: 100, visible: true, locked: false, zIndex: 20, text: 'TRY IT RISK-FREE', fontSize: 32, fontWeight: 900, fontFamily: 'Inter', color: '#FFFFFF', bgColor: '#16a34a', radius: 16, rotation: 0, opacity: 1, lineHeight: 1 } as any
+            ]
+        }
+    },
+
+    // --- FEATURE SPOTLIGHT STYLE ---
+    {
+        id: 'tpl_feature_spotlight',
+        name: 'Feature Spotlight',
+        niche: 'saas',
+        document: {
+            backgroundColor: '#0f172a',
+            layers: [
+                { id: 'product', type: 'background', name: 'Product Image', x: 290, y: 100, width: 500, height: 500, visible: true, locked: false, zIndex: 5, src: 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?q=80&w=2940&auto=format&fit=crop', opacity: 1, rotation: 0, fit: 'contain' } as any,
+                { id: 'feature1', type: 'cta', name: 'Feature 1', x: 60, y: 650, width: 300, height: 80, visible: true, locked: false, zIndex: 10, text: '🚀 10x Faster', fontSize: 24, fontWeight: 800, fontFamily: 'Inter', color: '#FFFFFF', bgColor: 'rgba(59,130,246,0.3)', radius: 16, rotation: 0, opacity: 1, lineHeight: 1 } as any,
+                { id: 'feature2', type: 'cta', name: 'Feature 2', x: 390, y: 650, width: 300, height: 80, visible: true, locked: false, zIndex: 10, text: '✨ AI-Powered', fontSize: 24, fontWeight: 800, fontFamily: 'Inter', color: '#FFFFFF', bgColor: 'rgba(147,51,234,0.3)', radius: 16, rotation: 0, opacity: 1, lineHeight: 1 } as any,
+                { id: 'feature3', type: 'cta', name: 'Feature 3', x: 720, y: 650, width: 300, height: 80, visible: true, locked: false, zIndex: 10, text: '🔒 Enterprise', fontSize: 24, fontWeight: 800, fontFamily: 'Inter', color: '#FFFFFF', bgColor: 'rgba(16,185,129,0.3)', radius: 16, rotation: 0, opacity: 1, lineHeight: 1 } as any,
+                { id: 'headline', type: 'text', name: 'Headline', x: 60, y: 780, width: 960, height: 120, visible: true, locked: false, zIndex: 10, text: 'The Future of\nProductivity', fontSize: 72, fontWeight: 900, fontFamily: 'Inter', color: '#FFFFFF', align: 'center', rotation: 0, opacity: 1, lineHeight: 1.0, letterSpacing: -3 } as any,
+                { id: 'cta', type: 'cta', name: 'CTA', x: 340, y: 940, width: 400, height: 80, visible: true, locked: false, zIndex: 20, text: 'Start Free Trial', fontSize: 26, fontWeight: 700, fontFamily: 'Inter', color: '#0f172a', bgColor: '#FFFFFF', radius: 12, rotation: 0, opacity: 1, lineHeight: 1 } as any
+            ]
+        }
+    },
+
+    // --- BOLD HEADLINE STYLE (Magic Spoon inspired) ---
+    {
+        id: 'tpl_bold_headline',
+        name: 'Bold Statement',
+        niche: 'ecommerce',
+        document: {
+            backgroundColor: '#fef3c7',
+            layers: [
+                { id: 'product', type: 'background', name: 'Product', x: 200, y: 350, width: 680, height: 680, visible: true, locked: false, zIndex: 5, src: 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?q=80&w=2940&auto=format&fit=crop', opacity: 1, rotation: 0, fit: 'contain' } as any,
+                { id: 'line1', type: 'text', name: 'Line 1', x: 60, y: 80, width: 960, height: 80, visible: true, locked: false, zIndex: 10, text: 'LESS SUGAR.', fontSize: 72, fontWeight: 900, fontFamily: 'Inter', color: '#0f172a', align: 'center', rotation: 0, opacity: 1, lineHeight: 1, letterSpacing: -2 } as any,
+                { id: 'line2', type: 'text', name: 'Line 2', x: 60, y: 160, width: 960, height: 80, visible: true, locked: false, zIndex: 10, text: 'MORE FLAVOR.', fontSize: 72, fontWeight: 900, fontFamily: 'Inter', color: '#dc2626', align: 'center', rotation: 0, opacity: 1, lineHeight: 1, letterSpacing: -2 } as any,
+                { id: 'line3', type: 'text', name: 'Line 3', x: 60, y: 240, width: 960, height: 80, visible: true, locked: false, zIndex: 10, text: 'ALL THE FUN.', fontSize: 72, fontWeight: 900, fontFamily: 'Inter', color: '#2563eb', align: 'center', rotation: 0, opacity: 1, lineHeight: 1, letterSpacing: -2 } as any,
+                { id: 'cta', type: 'cta', name: 'CTA', x: 340, y: 950, width: 400, height: 80, visible: true, locked: false, zIndex: 20, text: 'GET YOURS NOW', fontSize: 24, fontWeight: 900, fontFamily: 'Inter', color: '#FFFFFF', bgColor: '#0f172a', radius: 50, rotation: 0, opacity: 1, lineHeight: 1 } as any
+            ]
+        }
+    },
+
+    // --- SOCIAL PROOF / TRUST STYLE ---
+    {
+        id: 'tpl_social_proof',
+        name: 'Social Proof',
+        niche: 'ecommerce',
+        document: {
+            backgroundColor: '#f0fdf4',
+            layers: [
+                { id: 'product', type: 'background', name: 'Product', x: 290, y: 200, width: 500, height: 500, visible: true, locked: false, zIndex: 5, src: 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?q=80&w=2940&auto=format&fit=crop', opacity: 1, rotation: 0, fit: 'contain' } as any,
+                { id: 'badge', type: 'cta', name: 'Bestseller Badge', x: 365, y: 60, width: 350, height: 70, visible: true, locked: false, zIndex: 15, text: '⭐ #1 BESTSELLER', fontSize: 28, fontWeight: 900, fontFamily: 'Inter', color: '#000000', bgColor: '#fde047', radius: 50, rotation: 0, opacity: 1, lineHeight: 1 } as any,
+                { id: 'reviews', type: 'text', name: 'Reviews', x: 200, y: 720, width: 680, height: 80, visible: true, locked: false, zIndex: 10, text: '⭐⭐⭐⭐⭐ 4.9 • 12,847 Reviews', fontSize: 32, fontWeight: 700, fontFamily: 'Inter', color: '#16a34a', align: 'center', rotation: 0, opacity: 1, lineHeight: 1 } as any,
+                { id: 'trust1', type: 'cta', name: 'Trust Badge 1', x: 80, y: 820, width: 280, height: 50, visible: true, locked: false, zIndex: 10, text: '✅ Free Shipping', fontSize: 18, fontWeight: 700, fontFamily: 'Inter', color: '#16a34a', bgColor: '#dcfce7', radius: 25, rotation: 0, opacity: 1, lineHeight: 1 } as any,
+                { id: 'trust2', type: 'cta', name: 'Trust Badge 2', x: 400, y: 820, width: 280, height: 50, visible: true, locked: false, zIndex: 10, text: '✅ 30-Day Returns', fontSize: 18, fontWeight: 700, fontFamily: 'Inter', color: '#16a34a', bgColor: '#dcfce7', radius: 25, rotation: 0, opacity: 1, lineHeight: 1 } as any,
+                { id: 'trust3', type: 'cta', name: 'Trust Badge 3', x: 720, y: 820, width: 280, height: 50, visible: true, locked: false, zIndex: 10, text: '✅ Secure Payment', fontSize: 18, fontWeight: 700, fontFamily: 'Inter', color: '#16a34a', bgColor: '#dcfce7', radius: 25, rotation: 0, opacity: 1, lineHeight: 1 } as any,
+                { id: 'cta', type: 'cta', name: 'CTA', x: 290, y: 920, width: 500, height: 90, visible: true, locked: false, zIndex: 20, text: 'CLAIM 50% OFF →', fontSize: 28, fontWeight: 900, fontFamily: 'Inter', color: '#FFFFFF', bgColor: '#16a34a', radius: 16, rotation: 0, opacity: 1, lineHeight: 1 } as any
+            ]
+        }
+    },
+
+    // --- LIMITED TIME OFFER STYLE ---
+    {
+        id: 'tpl_limited_offer',
+        name: 'Flash Sale',
+        niche: 'ecommerce',
+        document: {
+            backgroundColor: '#dc2626',
+            layers: [
+                { id: 'timer_badge', type: 'cta', name: 'Timer', x: 290, y: 60, width: 500, height: 70, visible: true, locked: false, zIndex: 15, text: '⏰ ENDS IN 2 HOURS', fontSize: 28, fontWeight: 900, fontFamily: 'Inter', color: '#dc2626', bgColor: '#FFFFFF', radius: 50, rotation: 0, opacity: 1, lineHeight: 1 } as any,
+                { id: 'discount', type: 'text', name: 'Discount', x: 60, y: 300, width: 960, height: 300, visible: true, locked: false, zIndex: 10, text: '70%\nOFF', fontSize: 200, fontWeight: 900, fontFamily: 'Inter', color: '#FFFFFF', align: 'center', rotation: 0, opacity: 1, lineHeight: 0.85, letterSpacing: -10 } as any,
+                { id: 'subtitle', type: 'text', name: 'Subtitle', x: 140, y: 680, width: 800, height: 60, visible: true, locked: false, zIndex: 10, text: 'Our biggest sale ever. Don\'t miss out.', fontSize: 32, fontWeight: 500, fontFamily: 'Inter', color: '#fecaca', align: 'center', rotation: 0, opacity: 1, lineHeight: 1 } as any,
+                { id: 'code', type: 'cta', name: 'Code', x: 290, y: 780, width: 500, height: 80, visible: true, locked: false, zIndex: 15, text: 'USE CODE: FLASH70', fontSize: 28, fontWeight: 800, fontFamily: 'Inter', color: '#0f172a', bgColor: '#fde047', radius: 8, rotation: 0, opacity: 1, lineHeight: 1 } as any,
+                { id: 'cta', type: 'cta', name: 'CTA', x: 240, y: 910, width: 600, height: 100, visible: true, locked: false, zIndex: 20, text: 'SHOP NOW', fontSize: 40, fontWeight: 900, fontFamily: 'Inter', color: '#dc2626', bgColor: '#FFFFFF', radius: 16, rotation: 0, opacity: 1, lineHeight: 1 } as any
+            ]
+        }
     }
 ];
+

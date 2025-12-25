@@ -9,7 +9,8 @@ export type LayerType =
     | "overlay"
     | "text"
     | "cta"
-    | "logo";
+    | "logo"
+    | "shape"; // Added shape
 
 export type AiProvenance = {
     provider: "adcreative" | "openai" | "other";
@@ -32,28 +33,31 @@ export type LayerBase = {
     height: number;
     rotation: number;
     opacity: number;
-    zIndex: number;
+    zIndex?: number; // Optional
     ai?: AiProvenance;
 };
 
 export type ImageLayer = LayerBase & {
-    type: "background" | "product" | "overlay" | "logo";
+    type: "background" | "product" | "overlay" | "logo" | "image"; // Added image
     src: string;              // url
-    fit: "cover" | "contain";
+    fit?: "cover" | "contain"; // Optional
     maskRadius?: number;      // for pill masks etc.
+    tint?: string;            // hex color for style adaptation
 };
 
 export type TextLayer = LayerBase & {
     type: "text";
     text: string;
     fontFamily: "Inter" | "Roboto" | "System" | "Playfair Display" | "Montserrat" | "Oswald" | "Pacifico" | "Outfit" | string;
-    fontWeight: 400 | 500 | 600 | 700 | 800 | 900;
+    fontWeight: 400 | 500 | 600 | 700 | 800 | 900 | string; // Allow string for flexibility
     fontSize: number;
     fontStyle?: "normal" | "italic";
-    lineHeight: number;
-    letterSpacing: number;
-    color: string;            // hex or token
-    align: "left" | "center" | "right";
+    lineHeight?: number;
+    letterSpacing?: number;
+    fill: string;            // hex or token (renamed from color to match Konva/common usage if needed, or keep color) - Adapter code uses fill
+    color?: string;          // Compatibility alias
+    textAlign?: "left" | "center" | "right"; // Renamed from align
+    align?: "left" | "center" | "right"; // Compatibility alias
     maxChars?: number;
 
     // Shadow Props
@@ -63,16 +67,24 @@ export type TextLayer = LayerBase & {
     shadowOffsetY?: number;
 };
 
+export type ShapeLayer = LayerBase & {
+    type: "shape";
+    fill: string;
+    stroke?: string;
+    strokeWidth?: number;
+    cornerRadius?: number;
+}
+
 export type CtaLayer = LayerBase & {
     type: "cta";
     text: string;
-    fontFamily: "Inter" | "Roboto" | "System" | "Playfair Display" | string; // Added Playfair and string
+    fontFamily: "Inter" | "Roboto" | "System" | "Playfair Display" | string;
     fontSize: number;
     fontWeight: number;
-    fontStyle?: "normal" | "italic"; // Added
+    fontStyle?: "normal" | "italic";
     lineHeight: number;
-    letterSpacing?: number; // Added
-    color: string; // Text color
+    letterSpacing?: number;
+    color: string;
 
     // Shadow Props
     shadowColor?: string;
@@ -81,7 +93,7 @@ export type CtaLayer = LayerBase & {
     shadowOffsetY?: number;
 
     // Button specific
-    bgColor?: string; // Optional for text-only
+    bgColor?: string;
     borderColor?: string;
     borderWidth?: number;
     radius?: number;
@@ -89,18 +101,26 @@ export type CtaLayer = LayerBase & {
     paddingY?: number;
 };
 
-export type StudioLayer = ImageLayer | TextLayer | CtaLayer;
+export type StudioLayer = ImageLayer | TextLayer | CtaLayer | ShapeLayer;
+
+export type BrandKit = {
+    id: string;
+    name: string;
+    colors: { primary: string; secondary: string; accent: string;[key: string]: string };
+    fonts: { heading: string; body: string;[key: string]: string };
+    logo: string;
+};
 
 export type AdDocument = {
     id: string;
     name: string;
-    format: AdFormat;
+    format?: AdFormat; // Optional
     width: number;
     height: number;
-    safeArea: { top: number; right: number; bottom: number; left: number };
+    safeArea?: { top: number; right: number; bottom: number; left: number }; // Optional
     backgroundColor: string;
     layers: StudioLayer[];
-    meta: {
+    meta?: { // Optional
         goal: "conversion" | "awareness" | "launch";
         contextPreset?: "gaming_desk" | "bedroom" | "studio" | "lifestyle";
         mood?: "cozy_warm" | "clean_neutral" | "dramatic" | "bright";
