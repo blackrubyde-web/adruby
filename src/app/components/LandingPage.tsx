@@ -295,6 +295,7 @@ export function LandingPage({ onGetStarted, onLogin }: LandingPageProps) {
             </div>
           </div>
 
+
           {/* Dashboard Mockup - Main Hero Image */}
           <div className="mt-16 relative animate-fade-in-up delay-500 rounded-2xl overflow-hidden shadow-2xl border border-border/40 group">
             {/* Confetti Background Effect */}
