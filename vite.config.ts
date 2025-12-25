@@ -16,7 +16,7 @@ export default defineConfig({
       '@': path.resolve(__dirname, './src'),
     },
   },
-  // Conservative vendor splitting to reduce initial bundle size
+  // Aggressive vendor splitting to reduce initial bundle size
   build: {
     rollupOptions: {
       output: {
@@ -27,14 +27,43 @@ export default defineConfig({
           if (id.includes('src') && id.includes('creative')) return 'creative';
 
           if (id.includes('node_modules')) {
+            // React core - split into its own chunk for better caching
+            if (id.includes('react-dom')) return 'vendor-react-dom';
+            if (id.includes('/react/') || id.includes('react-is') || id.includes('scheduler')) return 'vendor-react';
+
+            // React Flow - heavy library for canvas builder
+            if (id.includes('@xyflow') || id.includes('reactflow')) return 'vendor-reactflow';
+
+            // Animation libraries
+            if (id.includes('framer-motion') || id.includes('motion')) return 'vendor-motion';
+
+            // Date/Time utilities
+            if (id.includes('date-fns') || id.includes('dayjs') || id.includes('moment')) return 'vendor-date';
+
+            // Form libraries
+            if (id.includes('react-hook-form') || id.includes('zod') || id.includes('@hookform')) return 'vendor-forms';
+
+            // Supabase
             if (id.includes('@supabase') || id.includes('supabase-js')) return 'vendor-supabase';
-            // Isolate known heavy UI/layout libs (they often include CSS)
+
+            // UI/layout libs
             if (id.includes('react-grid-layout') || id.includes('react-resizable') || id.includes('react-slick') || id.includes('slick-carousel')) return 'vendor-layout';
-            if (id.includes('@mui') || id.includes('@mui/material') || id.includes('@mui/icons-material')) return 'vendor-mui';
-            if (id.includes('recharts')) return 'vendor-charts';
+            if (id.includes('react-window') || id.includes('react-virtualized')) return 'vendor-virtual';
+
+            // Charts
+            if (id.includes('recharts') || id.includes('d3')) return 'vendor-charts';
+
+            // Icons
             if (id.includes('lucide-react')) return 'vendor-icons';
+
+            // Radix UI components
             if (id.includes('@radix-ui')) return 'vendor-radix';
-            return 'vendor';
+
+            // Markdown/Editor
+            if (id.includes('marked') || id.includes('highlight') || id.includes('prism')) return 'vendor-markdown';
+
+            // Catch remaining smaller deps
+            return 'vendor-misc';
           }
         },
       },

@@ -42,3 +42,9 @@ export const methodNotAllowed = (allowed = 'GET,POST,OPTIONS') =>
     headers: { Allow: allowed },
     body: JSON.stringify({ error: 'Method not allowed' })
   });
+
+export const forbidden = (message = 'Forbidden') =>
+  withCors({
+    statusCode: 403,
+    body: JSON.stringify({ error: message })
+  });

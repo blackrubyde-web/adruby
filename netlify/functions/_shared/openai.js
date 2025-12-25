@@ -90,23 +90,49 @@ export async function generateHeroImage({
   // DALL-E 3 requests often take longer, bump timeout default
   const timeoutMs = Number(process.env.OPENAI_IMAGE_TIMEOUT_MS || 120000);
 
-  const result = await withTimeout(
-    openai.images.generate(params),
-    timeoutMs,
-    "openai_image_generate_timeout",
-  );
+  let result;
+  try {
+    result = await withTimeout(
+      openai.images.generate(params),
+      timeoutMs,
+      "openai_image_generate_timeout",
+    );
+  } catch (err) {
+    // FALLBACK LOGIC
+    console.warn(`[OpenAI] Image generation with model '${model}' failed: ${err.message}. Retrying with fallback 'dall-e-3'...`);
+
+    // If the primary model was already dall-e-3, re-throw to avoid infinite loop or useless retry
+    if (model === "dall-e-3") throw err;
+
+    // Retry with DALL-E 3
+    params.model = "dall-e-3";
+    // DALL-E 3 requires standard or hd quality
+    params.quality = "standard";
+    // DALL-E 3 sizes are strictly 1024x1024, 1024x1792, 1792x1024. 
+    // If original size was invalid for D3 (e.g. 512x512), force 1024x1024.
+    if (params.size !== "1024x1024" && params.size !== "1024x1792" && params.size !== "1792x1024") {
+      params.size = "1024x1024";
+    }
+
+    result = await withTimeout(
+      openai.images.generate(params),
+      timeoutMs,
+      "openai_image_generate_timeout_fallback",
+    );
+  }
+
   const item = result?.data?.[0];
   if (!item) {
     throw new Error("Image generation returned no data");
   }
 
   if (item.b64_json) {
-    return { b64: item.b64_json, model, seed };
+    return { b64: item.b64_json, model: params.model, seed }; // Return actual model used
   }
 
   if (item.url) {
     const b64 = await fetchImageAsBase64(item.url);
-    return { b64, model, seed };
+    return { b64, model: params.model, seed };
   }
 
   throw new Error("Image generation returned no usable output");

@@ -323,6 +323,7 @@ export const CreativeVariantProSchema = z
             error: z.string().nullable().optional(),
           })
           .strict(),
+        premium_directive: z.any().optional(), // Holds the complex PremiumAdSchema JSON
       })
       .strict(),
     quality: QualityEvalProSchema,
@@ -792,6 +793,7 @@ export const CREATIVE_OUTPUT_PRO_JSON_SCHEMA = {
                     render_version: { type: ["string", "null"] },
                   },
                 },
+                premium_directive: { type: ["object", "null"] },
               },
             },
             quality: {
@@ -1181,3 +1183,107 @@ export const STRATEGY_PLAN_JSON_SCHEMA = {
     },
   },
 };
+
+// --- Premium Ad Schema (Rendering Directive) ---
+
+export const PremiumLayerBaseSchema = z.object({
+  id: z.string(),
+  position: z.object({
+    anchor: z.enum(["topLeft", "topRight", "bottomLeft", "bottomRight", "center", "topCenter", "bottomCenter"]).optional(),
+    x: z.number(),
+    y: z.number()
+  }).optional(),
+  size: z.object({ w: z.number(), h: z.number() }).optional(),
+  rotation: z.number().optional(),
+  opacity: z.number().optional()
+});
+
+export const PremiumTextLayerSchema = PremiumLayerBaseSchema.extend({
+  type: z.literal("text"),
+  content: z.string(),
+  styleRef: z.string().optional(),
+  color: z.string().optional(),
+  maxWidth: z.number().optional(),
+  align: z.enum(["left", "center", "right"]).optional()
+});
+
+export const PremiumImageLayerSchema = PremiumLayerBaseSchema.extend({
+  type: z.literal("image"),
+  ref: z.string().optional(),
+  src: z.string().optional(),
+  fit: z.enum(["contain", "cover", "fill"]).optional(),
+  effects: z.array(
+    z.union([
+      z.object({ type: z.literal("shadow"), color: z.string(), blur: z.number(), x: z.number().optional(), y: z.number().optional() }),
+      z.object({ type: z.literal("remove_background") }), // New effect
+      z.any() // Legacy/Flexible fallback
+    ])
+  ).optional()
+});
+
+export const PremiumShapeLayerSchema = PremiumLayerBaseSchema.extend({
+  type: z.literal("shape"),
+  shape: z.enum(["rect", "ellipse", "path"]),
+  fill: z.string().optional(),
+  blur: z.number().optional(),
+  stroke: z.object({ color: z.string(), width: z.number() }).optional()
+});
+
+export const PremiumCardLayerSchema = PremiumLayerBaseSchema.extend({
+  type: z.literal("card"),
+  fill: z.string().optional(),
+  radius: z.union([z.number(), z.string()]).optional(),
+  shadow: z.string().optional(),
+  stroke: z.object({ color: z.string(), width: z.number() }).optional(),
+  children: z.array(z.any()).optional()
+});
+
+export const PremiumGroupLayerSchema = PremiumLayerBaseSchema.extend({
+  type: z.literal("group"),
+  children: z.array(z.any()).optional()
+});
+
+export const PremiumButtonLayerSchema = PremiumLayerBaseSchema.extend({
+  type: z.literal("button"),
+  text: z.object({
+    content: z.string(),
+    style: z.record(z.any()).optional(),
+    color: z.string().optional()
+  }),
+  fill: z.any().optional(),
+  radius: z.union([z.number(), z.string()]).optional(),
+  shadow: z.any().optional()
+});
+
+export const PremiumLayerSchema = z.union([
+  PremiumTextLayerSchema,
+  PremiumImageLayerSchema,
+  PremiumShapeLayerSchema,
+  PremiumCardLayerSchema,
+  PremiumGroupLayerSchema,
+  PremiumButtonLayerSchema,
+  z.object({ type: z.literal("background"), fill: z.any(), noise: z.any().optional() }),
+  z.object({ type: z.literal("bullet"), icon: z.any(), text: z.string(), textStyleRef: z.string().optional(), textColor: z.string().optional() })
+]);
+
+export const PremiumAdSchema = z.object({
+  specVersion: z.literal("1.0"),
+  templateId: z.string().optional(),
+  name: z.string().optional(),
+  format: z.object({
+    platform: z.string(),
+    aspectRatio: z.string(),
+    size: z.object({ w: z.number(), h: z.number() }),
+    safeArea: z.object({ padTop: z.number(), padRight: z.number(), padBottom: z.number(), padLeft: z.number() }).optional()
+  }),
+  tokens: z.object({
+    colors: z.record(z.string()),
+    radius: z.record(z.union([z.number(), z.string()])).optional(),
+    shadow: z.record(z.any()).optional(),
+    type: z.record(z.any()).optional()
+  }).optional(),
+  theme: z.any().optional(), // Legacy support
+  layers: z.array(z.any()),
+  bindings: z.record(z.any()).optional(),
+  resolvedValues: z.record(z.any()).optional()
+});

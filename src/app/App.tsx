@@ -42,6 +42,8 @@ import { Sparkles } from 'lucide-react';
 import { toast } from 'sonner';
 import { Toaster } from './components/ui/sonner';
 import { AuthProvider, useAuthActions, useAuthState } from './contexts/AuthContext';
+import { AffiliateProvider } from './contexts/AffiliateContext';
+import { AdminProvider } from './contexts/AdminContext';
 
 const REDIRECT_GUARD_KEY = 'adruby_last_redirect';
 const AUTH_HOLD_KEY = 'adruby_hold_auth_redirect';
@@ -67,29 +69,32 @@ function allowRedirect(pathname: string) {
 }
 
 // Page type - Extended with auth pages
-export type PageType = 
-  | 'landing' 
+export type PageType =
+  | 'landing'
   | 'features'
   | 'pricing'
-  | 'login' 
-  | 'register' 
-  | 'auth-processing' 
-  | 'payment-verification' 
-  | 'payment-success' 
+  | 'login'
+  | 'register'
+  | 'auth-processing'
+  | 'payment-verification'
+  | 'payment-success'
   | 'payment-cancelled'
-  | 'dashboard' 
-  | 'analytics' 
-  | 'adbuilder' 
+  | 'dashboard'
+  | 'analytics'
+  | 'adbuilder'
   | 'creative-builder'
   | 'library'
-  | 'strategies' 
-  | 'campaigns' 
+  | 'strategies'
+  | 'campaigns'
   | 'campaign-builder'
-  | 'aianalysis' 
-  | 'settings' 
-  | 'affiliate' 
-  | 'profile' 
-  | 'help';
+  | 'aianalysis'
+  | 'settings'
+  | 'affiliate'
+  | 'profile'
+  | 'help'
+  | 'studio'
+  | 'admin'
+  | 'campaign-canvas';
 
 const PAGE_PATHS: Record<PageType, string> = {
   landing: '/',
@@ -114,6 +119,9 @@ const PAGE_PATHS: Record<PageType, string> = {
   affiliate: '/affiliate',
   profile: '/profile',
   help: '/help',
+  studio: '/studio',
+  admin: '/admin',
+  'campaign-canvas': '/campaign-canvas',
 };
 
 const PUBLIC_PAGES = new Set<PageType>([
@@ -336,6 +344,31 @@ const DashboardPageContent = memo(function DashboardPageContent({
           <Footer />
         </div>
       );
+    case 'studio':
+      return (
+        <div className="min-h-screen bg-background flex flex-col">
+          <Suspense fallback={pageFallback}>
+            <LazyStudioPage />
+          </Suspense>
+        </div>
+      );
+    case 'admin':
+      return (
+        <div className="pt-16 min-h-screen">
+          <Suspense fallback={pageFallback}>
+            <LazyAdminDashboardPage />
+          </Suspense>
+          <Footer />
+        </div>
+      );
+    case 'campaign-canvas':
+      return (
+        <div className="min-h-screen bg-background flex flex-col">
+          <Suspense fallback={pageFallback}>
+            <LazyCampaignCanvasPage />
+          </Suspense>
+        </div>
+      );
     default:
       return null;
   }
@@ -349,6 +382,15 @@ const LazyAnalyticsPage = lazy(() =>
 );
 const LazyAIAnalysisPage = lazy(() =>
   import('./components/AIAnalysisPage').then((mod) => ({ default: mod.AIAnalysisPage }))
+);
+const LazyStudioPage = lazy(() =>
+  import('./components/StudioPage').then((mod) => ({ default: mod.StudioPage }))
+);
+const LazyAdminDashboardPage = lazy(() =>
+  import('./components/AdminDashboardPage').then((mod) => ({ default: mod.AdminDashboardPage }))
+);
+const LazyCampaignCanvasPage = lazy(() =>
+  import('./components/CampaignCanvasPage').then((mod) => ({ default: mod.CampaignCanvasPage }))
 );
 
 function AppContent() {
@@ -561,203 +603,203 @@ function AppContent() {
   return (
     <div className="min-h-screen w-full max-w-[100vw] overflow-x-hidden">
       {/* Auth Pages - Full Screen, No Sidebar/Header */}
-      {(currentPage === 'landing' || 
+      {(currentPage === 'landing' ||
         currentPage === 'features' ||
         currentPage === 'pricing' ||
-        currentPage === 'login' || 
-        currentPage === 'register' || 
-        currentPage === 'auth-processing' || 
-        currentPage === 'payment-verification' || 
-        currentPage === 'payment-success' || 
+        currentPage === 'login' ||
+        currentPage === 'register' ||
+        currentPage === 'auth-processing' ||
+        currentPage === 'payment-verification' ||
+        currentPage === 'payment-success' ||
         currentPage === 'payment-cancelled') && (
-        <Suspense fallback={pageFallback}>
-          <>
-            {currentPage === 'landing' && (
-              <LandingPage 
-                onGetStarted={() => go('register')}
-                onLogin={() => go('login')}
-              />
-            )}
+          <Suspense fallback={pageFallback}>
+            <>
+              {currentPage === 'landing' && (
+                <LandingPage
+                  onGetStarted={() => go('register')}
+                  onLogin={() => go('login')}
+                />
+              )}
 
-            {currentPage === 'features' && (
-              <FeaturesPage
-                onNavigate={(page) => go(page as PageType)}
-                onSignIn={() => go('login')}
-                onGetStarted={() => go('register')}
-              />
-            )}
+              {currentPage === 'features' && (
+                <FeaturesPage
+                  onNavigate={(page) => go(page as PageType)}
+                  onSignIn={() => go('login')}
+                  onGetStarted={() => go('register')}
+                />
+              )}
 
-            {currentPage === 'pricing' && (
-              <PricingPage
-                onNavigate={(page) => go(page as PageType)}
-                onSignIn={() => go('login')}
-                onGetStarted={() => go('register')}
-              />
-            )}
+              {currentPage === 'pricing' && (
+                <PricingPage
+                  onNavigate={(page) => go(page as PageType)}
+                  onSignIn={() => go('login')}
+                  onGetStarted={() => go('register')}
+                />
+              )}
 
-            {currentPage === 'login' && (
-              <LoginPage
-                authError={authError}
-                isAuthReady={isAuthReady}
-                onGoogleLogin={() => handleGoogleLogin()}
-                onEmailLogin={async (email, password) => {
-                  const redirectPath =
-                    safeRedirectPath(new URLSearchParams(window.location.search).get('redirect')) ||
-                    PAGE_PATHS.dashboard;
-                  try {
-                    await signInWithEmail(email, password);
-                    go(pageFromPathname(new URL(redirectPath, window.location.origin).pathname), {
-                      replace: true
-                    });
-                  } catch (err: unknown) {
-                    const message = err instanceof Error ? err.message : 'Login failed';
-                    toast.error(message);
-                  }
-                }}
-                onNavigateToRegister={() => {
-                  const redirectPath = safeRedirectPath(new URLSearchParams(window.location.search).get('redirect'));
-                  go('register', { query: { redirect: redirectPath || undefined } });
-                }}
-                onForgotPassword={async (email) => {
-                  if (!email) {
-                    toast.info('Enter your email address first');
-                    return;
-                  }
-                  try {
-                    await resetPassword(email);
-                    toast.success('Password reset email sent');
-                  } catch (err: unknown) {
-                    const message = err instanceof Error ? err.message : 'Failed to send reset email';
-                    toast.error(message);
-                  }
-                }}
-              />
-            )}
-
-            {currentPage === 'register' && (
-              <RegisterPage
-                onGoogleRegister={async () => {
-                  const redirectPath =
-                    safeRedirectPath(new URLSearchParams(window.location.search).get('redirect')) ||
-                    PAGE_PATHS.dashboard;
-                  try {
-                    await signInWithGoogle(redirectPath);
-                  } catch (err: unknown) {
-                    const message = err instanceof Error ? err.message : 'Google login failed';
-                    toast.error(message);
-                  }
-                }}
-                onEmailRegister={async (name, email, password) => {
-                  try {
-                    const result = await signUpWithEmail(name, email, password);
-                    if (result === 'needs_confirmation') {
-                      toast.success('Account created. Please confirm your email, then sign in.');
+              {currentPage === 'login' && (
+                <LoginPage
+                  authError={authError}
+                  isAuthReady={isAuthReady}
+                  onGoogleLogin={() => handleGoogleLogin()}
+                  onEmailLogin={async (email, password) => {
+                    const redirectPath =
+                      safeRedirectPath(new URLSearchParams(window.location.search).get('redirect')) ||
+                      PAGE_PATHS.dashboard;
+                    try {
+                      await signInWithEmail(email, password);
+                      go(pageFromPathname(new URL(redirectPath, window.location.origin).pathname), {
+                        replace: true
+                      });
+                    } catch (err: unknown) {
+                      const message = err instanceof Error ? err.message : 'Login failed';
+                      toast.error(message);
                     }
-                    return result;
-                  } catch (err: unknown) {
-                    const message = err instanceof Error ? err.message : 'Registration failed';
-                    toast.error(message);
-                    throw err;
-                  }
-                }}
-                onNavigateToLogin={() => {
-                  sessionStorage.removeItem(AUTH_HOLD_KEY);
-                  const redirectPath = safeRedirectPath(new URLSearchParams(window.location.search).get('redirect'));
-                  go('login', { query: { redirect: redirectPath || undefined } });
-                }}
-                onProceedToPayment={() => {
-                  sessionStorage.removeItem(AUTH_HOLD_KEY);
-                  go('settings', { query: { tab: 'billing' } });
-                }}
-              />
-            )}
+                  }}
+                  onNavigateToRegister={() => {
+                    const redirectPath = safeRedirectPath(new URLSearchParams(window.location.search).get('redirect'));
+                    go('register', { query: { redirect: redirectPath || undefined } });
+                  }}
+                  onForgotPassword={async (email) => {
+                    if (!email) {
+                      toast.info('Enter your email address first');
+                      return;
+                    }
+                    try {
+                      await resetPassword(email);
+                      toast.success('Password reset email sent');
+                    } catch (err: unknown) {
+                      const message = err instanceof Error ? err.message : 'Failed to send reset email';
+                      toast.error(message);
+                    }
+                  }}
+                />
+              )}
 
-            {currentPage === 'auth-processing' && (
-              <AuthProcessingPage
-                message="Logging you in..."
-                onComplete={handleAuthComplete}
-              />
-            )}
+              {currentPage === 'register' && (
+                <RegisterPage
+                  onGoogleRegister={async () => {
+                    const redirectPath =
+                      safeRedirectPath(new URLSearchParams(window.location.search).get('redirect')) ||
+                      PAGE_PATHS.dashboard;
+                    try {
+                      await signInWithGoogle(redirectPath);
+                    } catch (err: unknown) {
+                      const message = err instanceof Error ? err.message : 'Google login failed';
+                      toast.error(message);
+                    }
+                  }}
+                  onEmailRegister={async (name, email, password) => {
+                    try {
+                      const result = await signUpWithEmail(name, email, password);
+                      if (result === 'needs_confirmation') {
+                        toast.success('Account created. Please confirm your email, then sign in.');
+                      }
+                      return result;
+                    } catch (err: unknown) {
+                      const message = err instanceof Error ? err.message : 'Registration failed';
+                      toast.error(message);
+                      throw err;
+                    }
+                  }}
+                  onNavigateToLogin={() => {
+                    sessionStorage.removeItem(AUTH_HOLD_KEY);
+                    const redirectPath = safeRedirectPath(new URLSearchParams(window.location.search).get('redirect'));
+                    go('login', { query: { redirect: redirectPath || undefined } });
+                  }}
+                  onProceedToPayment={() => {
+                    sessionStorage.removeItem(AUTH_HOLD_KEY);
+                    go('settings', { query: { tab: 'billing' } });
+                  }}
+                />
+              )}
 
-            {currentPage === 'payment-verification' && (
-              <PaymentVerificationPage
-                sessionId={new URLSearchParams(window.location.search).get('session_id') ?? undefined}
-                onVerificationSuccess={() => go('payment-success', { replace: true })}
-                onVerificationError={() => go('payment-cancelled', { replace: true })}
-                onGoHome={() => go('landing', { replace: true })}
-                onLogout={async () => {
-                  await signOut().catch(() => undefined);
-                  go('login', { replace: true });
-                }}
-              />
-            )}
+              {currentPage === 'auth-processing' && (
+                <AuthProcessingPage
+                  message="Logging you in..."
+                  onComplete={handleAuthComplete}
+                />
+              )}
 
-            {currentPage === 'payment-success' && (
-              <PaymentSuccessPage
-                onGoToDashboard={() => go('dashboard', { replace: true })}
-              />
-            )}
+              {currentPage === 'payment-verification' && (
+                <PaymentVerificationPage
+                  sessionId={new URLSearchParams(window.location.search).get('session_id') ?? undefined}
+                  onVerificationSuccess={() => go('payment-success', { replace: true })}
+                  onVerificationError={() => go('payment-cancelled', { replace: true })}
+                  onGoHome={() => go('landing', { replace: true })}
+                  onLogout={async () => {
+                    await signOut().catch(() => undefined);
+                    go('login', { replace: true });
+                  }}
+                />
+              )}
 
-            {currentPage === 'payment-cancelled' && (
-              <PaymentCancelledPage
-                onRetryCheckout={() => go('settings', { query: { tab: 'billing' } })}
-                onViewPricing={() => go('pricing')}
-                onGoHome={() => go('landing')}
-              />
-            )}
-          </>
-        </Suspense>
-      )}
+              {currentPage === 'payment-success' && (
+                <PaymentSuccessPage
+                  onGoToDashboard={() => go('dashboard', { replace: true })}
+                />
+              )}
+
+              {currentPage === 'payment-cancelled' && (
+                <PaymentCancelledPage
+                  onRetryCheckout={() => go('settings', { query: { tab: 'billing' } })}
+                  onViewPricing={() => go('pricing')}
+                  onGoHome={() => go('landing')}
+                />
+              )}
+            </>
+          </Suspense>
+        )}
 
       {/* Dashboard Pages - With Sidebar/Header */}
-      {currentPage !== 'landing' && 
-       currentPage !== 'features' &&
-       currentPage !== 'pricing' &&
-       currentPage !== 'login' && 
-       currentPage !== 'register' && 
-       currentPage !== 'auth-processing' && 
-       currentPage !== 'payment-verification' && 
-       currentPage !== 'payment-success' && 
-       currentPage !== 'payment-cancelled' && (
-      <div className="flex min-h-screen" style={{ background: 'var(--background-gradient)' }}>
-        {/* Sidebar */}
-        <Sidebar 
-          isCollapsed={isSidebarCollapsed} 
-          onToggle={setIsSidebarCollapsed}
-          currentPage={currentPage}
-          onNavigate={handleSidebarNavigate}
-          isMobileOpen={isMobileSidebarOpen}
-          onMobileClose={() => setIsMobileSidebarOpen(false)}
-          onLogout={async () => {
-            await signOut().catch(() => undefined);
-            go('landing', { replace: true });
-          }}
-        />
+      {currentPage !== 'landing' &&
+        currentPage !== 'features' &&
+        currentPage !== 'pricing' &&
+        currentPage !== 'login' &&
+        currentPage !== 'register' &&
+        currentPage !== 'auth-processing' &&
+        currentPage !== 'payment-verification' &&
+        currentPage !== 'payment-success' &&
+        currentPage !== 'payment-cancelled' && (
+          <div className="flex min-h-screen" style={{ background: 'var(--background-gradient)' }}>
+            {/* Sidebar */}
+            <Sidebar
+              isCollapsed={isSidebarCollapsed}
+              onToggle={setIsSidebarCollapsed}
+              currentPage={currentPage}
+              onNavigate={handleSidebarNavigate}
+              isMobileOpen={isMobileSidebarOpen}
+              onMobileClose={() => setIsMobileSidebarOpen(false)}
+              onLogout={async () => {
+                await signOut().catch(() => undefined);
+                go('landing', { replace: true });
+              }}
+            />
 
-          {/* Main Content */}
-        <div 
-          className={`flex-1 transition-[margin-left] duration-300 md:ml-0 ${isMobileSidebarOpen ? 'pointer-events-none' : ''}`}
-          style={{ marginLeft: isDesktop ? `${sidebarWidth}px` : '0' }}
-        >
-          {/* Header */}
-          <Header 
-            sidebarWidth={isDesktop ? sidebarWidth : 0} 
-            onToggleMobileSidebar={handleToggleMobileSidebar}
-            onNavigate={go}
-            currentCredits={profile?.credits ?? undefined}
-            avatarUrl={profile?.avatar_url ?? null}
-            displayName={profile?.full_name ?? null}
-            email={profile?.email ?? user?.email ?? null}
-          />
+            {/* Main Content */}
+            <div
+              className={`flex-1 transition-[margin-left] duration-300 md:ml-0 ${isMobileSidebarOpen ? 'pointer-events-none' : ''}`}
+              style={{ marginLeft: isDesktop ? `${sidebarWidth}px` : '0' }}
+            >
+              {/* Header */}
+              <Header
+                sidebarWidth={isDesktop ? sidebarWidth : 0}
+                onToggleMobileSidebar={handleToggleMobileSidebar}
+                onNavigate={go}
+                currentCredits={profile?.credits ?? undefined}
+                avatarUrl={profile?.avatar_url ?? null}
+                displayName={profile?.full_name ?? null}
+                email={profile?.email ?? user?.email ?? null}
+              />
 
-          <DashboardPageContent
-            currentPage={currentPage}
-            pageFallback={pageFallback}
-            onNavigate={handleNavigate}
-          />
-        </div>
-      </div>
-      )}
+              <DashboardPageContent
+                currentPage={currentPage}
+                pageFallback={pageFallback}
+                onNavigate={handleNavigate}
+              />
+            </div>
+          </div>
+        )}
     </div>
   );
 }
@@ -766,8 +808,12 @@ export default function App() {
   return (
     <ThemeProvider>
       <AuthProvider>
-        <Toaster />
-        <AppContent />
+        <AffiliateProvider>
+          <AdminProvider>
+            <Toaster />
+            <AppContent />
+          </AdminProvider>
+        </AffiliateProvider>
       </AuthProvider>
     </ThemeProvider>
   );

@@ -20,6 +20,10 @@ export type UserProfile = {
   payment_verified?: boolean | null;
   onboarding_completed?: boolean | null;
   verification_method?: string | null;
+  // Affiliate fields
+  is_affiliate?: boolean | null;
+  referred_by_code?: string | null;
+  signup_bonus_credits_applied?: boolean | null;
 };
 
 type AuthStateValue = {
@@ -100,7 +104,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           'trial_ends_at',
           'payment_verified',
           'onboarding_completed',
-          'verification_method'
+          'verification_method',
+          'is_affiliate',
+          'referred_by_code',
+          'signup_bonus_credits_applied'
         ].join(',')
       )
       .eq('id', userId)

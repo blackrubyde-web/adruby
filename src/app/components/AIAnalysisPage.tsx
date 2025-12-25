@@ -110,6 +110,43 @@ export function AIAnalysisPage() {
   const syncControllerRef = useRef<AbortController | null>(null);
   const [assignmentMap, setAssignmentMap] = useState<Record<string, string | null>>({});
   const [applyingActions, setApplyingActions] = useState<Record<string, boolean>>({});
+  const [isApplying, setIsApplying] = useState(false);
+  const [aiAnalysisCache, setAiAnalysisCache] = useState<Record<string, AIAnalysis>>({});
+  const [aiPowered, setAiPowered] = useState(false);
+
+  // Helper to apply AI recommendations to Meta
+  const applyRecommendations = async () => {
+    if (!Object.keys(aiAnalysisCache).length) return;
+    setIsApplying(true);
+    try {
+      const { data } = await supabase.auth.getSession();
+      const token = data.session?.access_token;
+      if (!token) {
+        toast.error('Bitte zuerst anmelden.');
+        return;
+      }
+      const res = await fetch('/api/ai-campaign-apply', {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ analyses: Object.values(aiAnalysisCache) }),
+      });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json?.error || 'Apply failed');
+      toast.success('Empfohlene Änderungen wurden auf Meta angewendet.');
+    } catch (err) {
+      console.error('[AIAnalysisPage] Apply error:', err);
+      toast.error(err instanceof Error ? err.message : 'Apply fehlgeschlagen');
+    } finally {
+      setIsApplying(false);
+    }
+  };
+
+  const [isAnalyzingAI, setIsAnalyzingAI] = useState(false);
+  const [aiAnalysisCache, setAiAnalysisCache] = useState<Record<string, AIAnalysis>>({});
+  const [aiPowered, setAiPowered] = useState(false);
 
   const { strategies } = useStrategies();
 
@@ -120,6 +157,79 @@ export function AIAnalysisPage() {
 
   const { campaigns: metaCampaigns, loading: campaignsLoading, error: campaignsError, refresh: refreshCampaigns } = useMetaCampaigns();
   const { data: analyticsData, loading: analyticsLoading, error: analyticsError } = useAnalyticsData(timeRange, false, 'meta', refreshTick);
+
+  // Call AI analysis endpoint for real GPT-4 powered insights
+  const runAIAnalysis = async (campaignsToAnalyze: typeof metaCampaigns) => {
+    if (!campaignsToAnalyze?.length) return;
+
+    setIsAnalyzingAI(true);
+    try {
+      const apiBase = String(import.meta.env.VITE_API_BASE_URL || '').replace(/\/$/, '');
+      const apiUrl = apiBase ? `${apiBase}/api/ai-campaign-analyze` : '/api/ai-campaign-analyze';
+      const { data } = await supabase.auth.getSession();
+      const token = data.session?.access_token;
+
+      if (!token) {
+        toast.error('Bitte zuerst anmelden.');
+        return;
+      }
+
+      // Get active strategy if any
+      const activeStrategy = strategies.find(s =>
+        campaignsToAnalyze.some(c => c.strategyId === s.id)
+      );
+
+      const res = await fetch(apiUrl, {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          campaigns: campaignsToAnalyze.map(c => ({
+            id: c.id,
+            name: c.name,
+            status: c.status,
+            spend: c.spend,
+            revenue: c.revenue,
+            roas: c.roas,
+            ctr: c.ctr,
+            conversions: c.conversions,
+            impressions: c.impressions,
+            cpc: c.clicks > 0 ? c.spend / c.clicks : 0,
+          })),
+          strategy: activeStrategy ? {
+            name: activeStrategy.title,
+            description: activeStrategy.briefSummary,
+          } : null
+        }),
+      });
+
+      const json = await res.json();
+      if (!res.ok) throw new Error(json?.error || 'AI Analysis failed');
+
+      // Cache the AI analyses
+      const cache: Record<string, AIAnalysis> = {};
+      (json.analyses || []).forEach((analysis: AIAnalysis & { campaignId?: string }) => {
+        if (analysis.campaignId) {
+          cache[analysis.campaignId] = analysis;
+        }
+      });
+      setAiAnalysisCache(cache);
+      setAiPowered(json.meta?.aiPowered ?? false);
+
+      if (json.meta?.aiPowered) {
+        toast.success(`AI Analyse abgeschlossen (${json.analyses?.length || 0} Kampagnen)`);
+      } else {
+        toast.info('Fallback-Analyse verwendet (OpenAI nicht konfiguriert)');
+      }
+    } catch (err) {
+      console.error('[AIAnalysisPage] AI analysis failed:', err);
+      toast.error(err instanceof Error ? err.message : 'AI Analyse fehlgeschlagen');
+    } finally {
+      setIsAnalyzingAI(false);
+    }
+  };
 
   const normalizeStatus = (status: string | null | undefined): 'active' | 'paused' | 'learning' => {
     const value = String(status || '').toLowerCase();
@@ -135,7 +245,25 @@ export function AIAnalysisPage() {
     return Math.max(20, Math.min(100, Math.round(roasScore + ctrScore + convScore)));
   };
 
-  const buildAiAnalysis = (id: string, metrics: { roas: number; ctr: number; conversions: number; spend: number }) => {
+  const buildAiAnalysis = (id: string, campaignId: string, metrics: { roas: number; ctr: number; conversions: number; spend: number }): AIAnalysis => {
+    // Use cached AI analysis if available (from GPT-4 endpoint)
+    const cached = aiAnalysisCache[campaignId];
+    if (cached) {
+      return {
+        id: cached.id || id,
+        recommendation: cached.recommendation,
+        confidence: cached.confidence,
+        reason: cached.reason,
+        expectedImpact: cached.expectedImpact,
+        details: cached.details || [
+          `ROAS: ${metrics.roas.toFixed(2)}x`,
+          `CTR: ${metrics.ctr.toFixed(2)}%`,
+          `Conversions: ${metrics.conversions}`,
+        ]
+      };
+    }
+
+    // Fallback to rule-based analysis
     let recommendation: AIRecommendation = 'increase';
     if (metrics.roas >= 4 && metrics.ctr >= 2.5) recommendation = 'duplicate';
     if (metrics.roas < 1) recommendation = 'kill';
@@ -175,7 +303,7 @@ export function AIAnalysisPage() {
       const cpc = clicks > 0 ? spend / clicks : 0;
 
       const performanceScore = buildPerformanceScore({ roas, ctr, conversions });
-      const aiAnalysis = buildAiAnalysis(`analysis-${campaign.id}`, { roas, ctr, conversions, spend });
+      const aiAnalysis = buildAiAnalysis(`analysis-${campaign.id}`, campaign.id, { roas, ctr, conversions, spend });
       const campaignStrategyId = campaign.strategyId || null;
       const adSetKey = `adset:${campaign.id}-adset`;
       const adKey = `ad:${campaign.id}-ad`;
@@ -357,14 +485,14 @@ export function AIAnalysisPage() {
       prev.map((campaign) =>
         campaign.id === campaignId
           ? {
-              ...campaign,
+            ...campaign,
+            status,
+            adSets: campaign.adSets.map((adSet) => ({
+              ...adSet,
               status,
-              adSets: campaign.adSets.map((adSet) => ({
-                ...adSet,
-                status,
-                ads: adSet.ads.map((ad) => ({ ...ad, status })),
-              })),
-            }
+              ads: adSet.ads.map((ad) => ({ ...ad, status })),
+            })),
+          }
           : campaign
       )
     );
@@ -382,11 +510,11 @@ export function AIAnalysisPage() {
     setCampaigns(campaigns.map(c =>
       c.id === campaignId
         ? {
-            ...c,
-            adSets: c.adSets.map(as =>
-              as.id === adSetId ? { ...as, expanded: !as.expanded } : as
-            )
-          }
+          ...c,
+          adSets: c.adSets.map(as =>
+            as.id === adSetId ? { ...as, expanded: !as.expanded } : as
+          )
+        }
         : c
     ));
   };
@@ -657,6 +785,20 @@ export function AIAnalysisPage() {
               <Download className="w-4 h-4" />
               <span>Export Report</span>
             </button>
+            <button
+              onClick={() => runAIAnalysis(metaCampaigns)}
+              disabled={isAnalyzingAI}
+              className="px-5 py-2.5 bg-blue-600 text-white rounded-xl hover:bg-blue-700 disabled:opacity-50 flex items-center gap-2"
+            >
+              {isAnalyzingAI ? 'Analyzing…' : 'Run AI Analysis'}
+            </button>
+            <button
+              onClick={applyRecommendations}
+              disabled={isApplying || !Object.keys(aiAnalysisCache).length}
+              className="px-5 py-2.5 bg-green-600 text-white rounded-xl hover:bg-green-700 disabled:opacity-50 flex items-center gap-2"
+            >
+              {isApplying ? 'Applying…' : 'Apply Recommendations'}
+            </button>
           </>
         }
       />
@@ -714,11 +856,10 @@ export function AIAnalysisPage() {
 
               <button
                 onClick={() => setShowAIPanel(!showAIPanel)}
-                className={`w-full sm:w-auto px-4 py-2.5 rounded-xl font-semibold transition-all flex items-center justify-center gap-2 ${
-                  showAIPanel
-                    ? 'bg-primary text-primary-foreground shadow-lg shadow-primary/30'
-                    : 'bg-muted hover:bg-muted/80'
-                }`}
+                className={`w-full sm:w-auto px-4 py-2.5 rounded-xl font-semibold transition-all flex items-center justify-center gap-2 ${showAIPanel
+                  ? 'bg-primary text-primary-foreground shadow-lg shadow-primary/30'
+                  : 'bg-muted hover:bg-muted/80'
+                  }`}
               >
                 <Brain className="w-5 h-5" />
                 AI Panel
@@ -799,105 +940,105 @@ export function AIAnalysisPage() {
                       </div>
                     </div>
 
-                  {/* Ad Sets (if expanded) */}
-                  {campaign.expanded && campaign.adSets.map((adSet) => (
-                    <div key={adSet.id}>
-                      <div className="bg-muted/10 hover:bg-muted/20 transition-colors">
-                        <div className="p-4 pl-12">
-                          <div className="grid grid-cols-12 gap-4 items-center text-sm">
-                            <div className="col-span-3 flex items-center gap-2">
-                              <button
-                                onClick={() => toggleAdSet(campaign.id, adSet.id)}
-                                className="p-1 hover:bg-muted/50 rounded transition-colors"
-                              >
-                                {adSet.expanded ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
-                              </button>
-                              <Users className="w-4 h-4 text-blue-500" />
-                              <span className="font-medium text-foreground">{adSet.name}</span>
-                            </div>
-                            <div className="col-span-1 flex justify-center">
-                              <span className={`px-2 py-1 rounded-full text-xs font-semibold ${getStatusColor(adSet.status)}`}>
-                                {adSet.status}
-                              </span>
-                            </div>
-                            <div className="col-span-1 text-right font-mono text-muted-foreground">{(adSet.impressions / 1000000).toFixed(2)}M</div>
-                            <div className="col-span-1 text-right font-mono text-muted-foreground">{adSet.ctr.toFixed(2)}%</div>
-                            <div className="col-span-1 text-right font-mono text-muted-foreground">€{adSet.cpc.toFixed(2)}</div>
-                            <div className="col-span-1 text-right font-mono text-muted-foreground">{adSet.conversions}</div>
-                            <div className="col-span-1 text-right font-mono text-muted-foreground">€{(adSet.spend / 1000).toFixed(1)}K</div>
-                            <div className="col-span-1 text-right font-mono font-bold text-muted-foreground">{adSet.roas.toFixed(2)}x</div>
-                            <div className="col-span-1 flex justify-center">
-                              <span className={`font-bold ${getPerformanceColor(adSet.performanceScore)}`}>
-                                {adSet.performanceScore}
-                              </span>
-                            </div>
-                            <div className="col-span-1 flex justify-center">
-                              <select
-                                value={adSet.strategyId || campaign.strategyId || ''}
-                                onChange={(e) => handleStrategyChange(adSet.id, e.target.value, 'adset')}
-                                className="px-2 py-1 bg-muted/50 border border-border/50 rounded text-xs focus:outline-none focus:ring-1 focus:ring-primary/50"
-                              >
-                                <option value="">Inherit</option>
-                                {strategies.map(s => (
-                                  <option key={s.id} value={s.id}>{s.title}</option>
-                                ))}
-                              </select>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Ads (if expanded) */}
-                      {adSet.expanded && adSet.ads.map((ad) => {
-                        const recStyle = getRecommendationStyle(ad.aiAnalysis.recommendation);
-                        
-                        return (
-                          <div key={ad.id} className="bg-muted/5 hover:bg-muted/15 transition-colors border-l-4" style={{ borderColor: recStyle.color }}>
-                            <div className="p-4 pl-20">
-                              <div className="grid grid-cols-12 gap-4 items-center text-sm">
-                                <div className="col-span-3 flex items-center gap-2">
-                                  <Activity className="w-4 h-4 text-green-500" />
-                                  <span className="text-foreground">{ad.name}</span>
-                                  <div className={`px-2 py-1 rounded-full text-xs font-semibold flex items-center gap-1 ${recStyle.bg} border ${recStyle.border}`} style={{ color: recStyle.color }}>
-                                    {recStyle.icon}
-                                    {recStyle.label}
-                                  </div>
-                                </div>
-                                <div className="col-span-1 flex justify-center">
-                                  <span className={`px-2 py-1 rounded-full text-xs font-semibold ${getStatusColor(ad.status)}`}>
-                                    {ad.status}
-                                  </span>
-                                </div>
-                                <div className="col-span-1 text-right font-mono text-muted-foreground">{(ad.impressions / 1000).toFixed(0)}K</div>
-                                <div className="col-span-1 text-right font-mono text-muted-foreground">{ad.ctr.toFixed(2)}%</div>
-                                <div className="col-span-1 text-right font-mono text-muted-foreground">€{ad.cpc.toFixed(2)}</div>
-                                <div className="col-span-1 text-right font-mono text-muted-foreground">{ad.conversions}</div>
-                                <div className="col-span-1 text-right font-mono text-muted-foreground">€{(ad.spend / 1000).toFixed(1)}K</div>
-                                <div className="col-span-1 text-right font-mono font-bold text-muted-foreground">{ad.roas.toFixed(2)}x</div>
-                                <div className="col-span-1 flex justify-center">
-                                  <span className={`font-bold ${getPerformanceColor(ad.performanceScore)}`}>
-                                    {ad.performanceScore}
-                                  </span>
-                                </div>
-                                <div className="col-span-1 flex justify-center">
-                                  <select
-                                    value={ad.strategyId || adSet.strategyId || campaign.strategyId || ''}
-                                    onChange={(e) => handleStrategyChange(ad.id, e.target.value, 'ad')}
-                                    className="px-2 py-1 bg-muted/50 border border-border/50 rounded text-xs focus:outline-none focus:ring-1 focus:ring-primary/50"
-                                  >
-                                    <option value="">Inherit</option>
-                                    {strategies.map(s => (
-                                      <option key={s.id} value={s.id}>{s.title}</option>
-                                    ))}
-                                  </select>
-                                </div>
+                    {/* Ad Sets (if expanded) */}
+                    {campaign.expanded && campaign.adSets.map((adSet) => (
+                      <div key={adSet.id}>
+                        <div className="bg-muted/10 hover:bg-muted/20 transition-colors">
+                          <div className="p-4 pl-12">
+                            <div className="grid grid-cols-12 gap-4 items-center text-sm">
+                              <div className="col-span-3 flex items-center gap-2">
+                                <button
+                                  onClick={() => toggleAdSet(campaign.id, adSet.id)}
+                                  className="p-1 hover:bg-muted/50 rounded transition-colors"
+                                >
+                                  {adSet.expanded ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
+                                </button>
+                                <Users className="w-4 h-4 text-blue-500" />
+                                <span className="font-medium text-foreground">{adSet.name}</span>
+                              </div>
+                              <div className="col-span-1 flex justify-center">
+                                <span className={`px-2 py-1 rounded-full text-xs font-semibold ${getStatusColor(adSet.status)}`}>
+                                  {adSet.status}
+                                </span>
+                              </div>
+                              <div className="col-span-1 text-right font-mono text-muted-foreground">{(adSet.impressions / 1000000).toFixed(2)}M</div>
+                              <div className="col-span-1 text-right font-mono text-muted-foreground">{adSet.ctr.toFixed(2)}%</div>
+                              <div className="col-span-1 text-right font-mono text-muted-foreground">€{adSet.cpc.toFixed(2)}</div>
+                              <div className="col-span-1 text-right font-mono text-muted-foreground">{adSet.conversions}</div>
+                              <div className="col-span-1 text-right font-mono text-muted-foreground">€{(adSet.spend / 1000).toFixed(1)}K</div>
+                              <div className="col-span-1 text-right font-mono font-bold text-muted-foreground">{adSet.roas.toFixed(2)}x</div>
+                              <div className="col-span-1 flex justify-center">
+                                <span className={`font-bold ${getPerformanceColor(adSet.performanceScore)}`}>
+                                  {adSet.performanceScore}
+                                </span>
+                              </div>
+                              <div className="col-span-1 flex justify-center">
+                                <select
+                                  value={adSet.strategyId || campaign.strategyId || ''}
+                                  onChange={(e) => handleStrategyChange(adSet.id, e.target.value, 'adset')}
+                                  className="px-2 py-1 bg-muted/50 border border-border/50 rounded text-xs focus:outline-none focus:ring-1 focus:ring-primary/50"
+                                >
+                                  <option value="">Inherit</option>
+                                  {strategies.map(s => (
+                                    <option key={s.id} value={s.id}>{s.title}</option>
+                                  ))}
+                                </select>
                               </div>
                             </div>
                           </div>
-                        );
-                      })}
-                    </div>
-                  ))}
+                        </div>
+
+                        {/* Ads (if expanded) */}
+                        {adSet.expanded && adSet.ads.map((ad) => {
+                          const recStyle = getRecommendationStyle(ad.aiAnalysis.recommendation);
+
+                          return (
+                            <div key={ad.id} className="bg-muted/5 hover:bg-muted/15 transition-colors border-l-4" style={{ borderColor: recStyle.color }}>
+                              <div className="p-4 pl-20">
+                                <div className="grid grid-cols-12 gap-4 items-center text-sm">
+                                  <div className="col-span-3 flex items-center gap-2">
+                                    <Activity className="w-4 h-4 text-green-500" />
+                                    <span className="text-foreground">{ad.name}</span>
+                                    <div className={`px-2 py-1 rounded-full text-xs font-semibold flex items-center gap-1 ${recStyle.bg} border ${recStyle.border}`} style={{ color: recStyle.color }}>
+                                      {recStyle.icon}
+                                      {recStyle.label}
+                                    </div>
+                                  </div>
+                                  <div className="col-span-1 flex justify-center">
+                                    <span className={`px-2 py-1 rounded-full text-xs font-semibold ${getStatusColor(ad.status)}`}>
+                                      {ad.status}
+                                    </span>
+                                  </div>
+                                  <div className="col-span-1 text-right font-mono text-muted-foreground">{(ad.impressions / 1000).toFixed(0)}K</div>
+                                  <div className="col-span-1 text-right font-mono text-muted-foreground">{ad.ctr.toFixed(2)}%</div>
+                                  <div className="col-span-1 text-right font-mono text-muted-foreground">€{ad.cpc.toFixed(2)}</div>
+                                  <div className="col-span-1 text-right font-mono text-muted-foreground">{ad.conversions}</div>
+                                  <div className="col-span-1 text-right font-mono text-muted-foreground">€{(ad.spend / 1000).toFixed(1)}K</div>
+                                  <div className="col-span-1 text-right font-mono font-bold text-muted-foreground">{ad.roas.toFixed(2)}x</div>
+                                  <div className="col-span-1 flex justify-center">
+                                    <span className={`font-bold ${getPerformanceColor(ad.performanceScore)}`}>
+                                      {ad.performanceScore}
+                                    </span>
+                                  </div>
+                                  <div className="col-span-1 flex justify-center">
+                                    <select
+                                      value={ad.strategyId || adSet.strategyId || campaign.strategyId || ''}
+                                      onChange={(e) => handleStrategyChange(ad.id, e.target.value, 'ad')}
+                                      className="px-2 py-1 bg-muted/50 border border-border/50 rounded text-xs focus:outline-none focus:ring-1 focus:ring-primary/50"
+                                    >
+                                      <option value="">Inherit</option>
+                                      {strategies.map(s => (
+                                        <option key={s.id} value={s.id}>{s.title}</option>
+                                      ))}
+                                    </select>
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    ))}
                   </div>
                 ))}
               </div>
@@ -913,127 +1054,127 @@ export function AIAnalysisPage() {
             ) : (
               filteredCampaigns.map((campaign) => (
                 <Card key={campaign.id} className="overflow-hidden p-0">
-                <div className="p-4">
-                  <div className="flex items-start gap-3 min-w-0">
-                    <button
-                      onClick={() => toggleCampaign(campaign.id)}
-                      className="p-1 hover:bg-muted/50 rounded shrink-0"
-                    >
-                      {campaign.expanded ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
-                    </button>
+                  <div className="p-4">
+                    <div className="flex items-start gap-3 min-w-0">
+                      <button
+                        onClick={() => toggleCampaign(campaign.id)}
+                        className="p-1 hover:bg-muted/50 rounded shrink-0"
+                      >
+                        {campaign.expanded ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
+                      </button>
 
-                    <div className="min-w-0 flex-1">
-                      <div className="flex items-center gap-2 min-w-0">
-                        <Target className="w-4 h-4 text-primary shrink-0" />
-                        <div className="font-semibold text-foreground truncate">{campaign.name}</div>
-                      </div>
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-2 min-w-0">
+                          <Target className="w-4 h-4 text-primary shrink-0" />
+                          <div className="font-semibold text-foreground truncate">{campaign.name}</div>
+                        </div>
 
-                      <div className="mt-2 flex flex-wrap gap-2">
-                        <span className={`px-2 py-1 rounded-full text-xs font-semibold ${getStatusColor(campaign.status)}`}>
-                          {campaign.status}
-                        </span>
-                        <span className="text-xs text-muted-foreground">Impr: <span className="text-foreground font-mono">{(campaign.impressions/1000000).toFixed(2)}M</span></span>
-                        <span className="text-xs text-muted-foreground">CTR: <span className="text-foreground font-mono">{campaign.ctr.toFixed(2)}%</span></span>
-                        <span className="text-xs text-muted-foreground">ROAS: <span className="text-foreground font-mono font-bold">{campaign.roas.toFixed(2)}x</span></span>
-                        <span className="text-xs text-muted-foreground">Spend: <span className="text-foreground font-mono">€{(campaign.spend/1000).toFixed(1)}K</span></span>
-                      </div>
+                        <div className="mt-2 flex flex-wrap gap-2">
+                          <span className={`px-2 py-1 rounded-full text-xs font-semibold ${getStatusColor(campaign.status)}`}>
+                            {campaign.status}
+                          </span>
+                          <span className="text-xs text-muted-foreground">Impr: <span className="text-foreground font-mono">{(campaign.impressions / 1000000).toFixed(2)}M</span></span>
+                          <span className="text-xs text-muted-foreground">CTR: <span className="text-foreground font-mono">{campaign.ctr.toFixed(2)}%</span></span>
+                          <span className="text-xs text-muted-foreground">ROAS: <span className="text-foreground font-mono font-bold">{campaign.roas.toFixed(2)}x</span></span>
+                          <span className="text-xs text-muted-foreground">Spend: <span className="text-foreground font-mono">€{(campaign.spend / 1000).toFixed(1)}K</span></span>
+                        </div>
 
-                      <div className="mt-3">
-                        <select
-                          value={campaign.strategyId || ''}
-                          onChange={(e) => handleStrategyChange(campaign.id, e.target.value, 'campaign')}
-                          className="w-full px-3 py-2 bg-muted/50 border border-border/50 rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-primary/50"
-                        >
-                          <option value="">No Strategy</option>
-                          {strategies.map(s => <option key={s.id} value={s.id}>{s.title}</option>)}
-                        </select>
+                        <div className="mt-3">
+                          <select
+                            value={campaign.strategyId || ''}
+                            onChange={(e) => handleStrategyChange(campaign.id, e.target.value, 'campaign')}
+                            className="w-full px-3 py-2 bg-muted/50 border border-border/50 rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-primary/50"
+                          >
+                            <option value="">No Strategy</option>
+                            {strategies.map(s => <option key={s.id} value={s.id}>{s.title}</option>)}
+                          </select>
+                        </div>
                       </div>
                     </div>
                   </div>
-                </div>
 
-                {/* Expanded: AdSets/Ads as Cards */}
-                {campaign.expanded && (
-                  <div className="border-t border-border/30">
-                    {campaign.adSets.map((adSet) => (
-                      <div key={adSet.id} className="p-4 border-b border-border/20">
-                        <div className="flex items-start gap-3 min-w-0">
-                          <button
-                            onClick={() => toggleAdSet(campaign.id, adSet.id)}
-                            className="p-1 hover:bg-muted/50 rounded shrink-0"
-                          >
-                            {adSet.expanded ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
-                          </button>
+                  {/* Expanded: AdSets/Ads as Cards */}
+                  {campaign.expanded && (
+                    <div className="border-t border-border/30">
+                      {campaign.adSets.map((adSet) => (
+                        <div key={adSet.id} className="p-4 border-b border-border/20">
+                          <div className="flex items-start gap-3 min-w-0">
+                            <button
+                              onClick={() => toggleAdSet(campaign.id, adSet.id)}
+                              className="p-1 hover:bg-muted/50 rounded shrink-0"
+                            >
+                              {adSet.expanded ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
+                            </button>
 
-                          <div className="min-w-0 flex-1">
-                            <div className="flex items-center gap-2 min-w-0">
-                              <Users className="w-4 h-4 text-blue-500 shrink-0" />
-                              <div className="font-medium text-foreground truncate">{adSet.name}</div>
-                            </div>
+                            <div className="min-w-0 flex-1">
+                              <div className="flex items-center gap-2 min-w-0">
+                                <Users className="w-4 h-4 text-blue-500 shrink-0" />
+                                <div className="font-medium text-foreground truncate">{adSet.name}</div>
+                              </div>
 
-                            <div className="mt-2 flex flex-wrap gap-2">
-                              <span className={`px-2 py-1 rounded-full text-xs font-semibold ${getStatusColor(adSet.status)}`}>
-                                {adSet.status}
-                              </span>
-                              <span className="text-xs text-muted-foreground">ROAS: <span className="text-foreground font-mono font-bold">{adSet.roas.toFixed(2)}x</span></span>
-                              <span className="text-xs text-muted-foreground">Spend: <span className="text-foreground font-mono">€{(adSet.spend/1000).toFixed(1)}K</span></span>
-                            </div>
+                              <div className="mt-2 flex flex-wrap gap-2">
+                                <span className={`px-2 py-1 rounded-full text-xs font-semibold ${getStatusColor(adSet.status)}`}>
+                                  {adSet.status}
+                                </span>
+                                <span className="text-xs text-muted-foreground">ROAS: <span className="text-foreground font-mono font-bold">{adSet.roas.toFixed(2)}x</span></span>
+                                <span className="text-xs text-muted-foreground">Spend: <span className="text-foreground font-mono">€{(adSet.spend / 1000).toFixed(1)}K</span></span>
+                              </div>
 
-                            <div className="mt-3">
-                              <select
-                                value={adSet.strategyId || campaign.strategyId || ''}
-                                onChange={(e) => handleStrategyChange(adSet.id, e.target.value, 'adset')}
-                                className="w-full px-3 py-2 bg-muted/50 border border-border/50 rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-primary/50"
-                              >
-                                <option value="">Inherit</option>
-                                {strategies.map(s => <option key={s.id} value={s.id}>{s.title}</option>)}
-                              </select>
-                            </div>
+                              <div className="mt-3">
+                                <select
+                                  value={adSet.strategyId || campaign.strategyId || ''}
+                                  onChange={(e) => handleStrategyChange(adSet.id, e.target.value, 'adset')}
+                                  className="w-full px-3 py-2 bg-muted/50 border border-border/50 rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-primary/50"
+                                >
+                                  <option value="">Inherit</option>
+                                  {strategies.map(s => <option key={s.id} value={s.id}>{s.title}</option>)}
+                                </select>
+                              </div>
 
-                            {adSet.expanded && (
-                              <div className="mt-3 space-y-2">
-                                {adSet.ads.map((ad) => {
-                                  const recStyle = getRecommendationStyle(ad.aiAnalysis.recommendation);
-                                  return (
-                                    <div key={ad.id} className="rounded-xl border border-border/40 bg-muted/10 p-3">
-                                      <div className="flex items-start gap-2 min-w-0">
-                                        <Activity className="w-4 h-4 text-green-500 shrink-0 mt-0.5" />
-                                        <div className="min-w-0 flex-1">
-                                          <div className="font-medium text-foreground truncate">{ad.name}</div>
-                                          <div className="mt-1 flex flex-wrap gap-2 text-xs">
-                                            <span className={`px-2 py-1 rounded-full ${getStatusColor(ad.status)}`}>{ad.status}</span>
-                                            <span className="text-muted-foreground">CTR <span className="text-foreground font-mono">{ad.ctr.toFixed(2)}%</span></span>
-                                            <span className="text-muted-foreground">ROAS <span className="text-foreground font-mono font-bold">{ad.roas.toFixed(2)}x</span></span>
+                              {adSet.expanded && (
+                                <div className="mt-3 space-y-2">
+                                  {adSet.ads.map((ad) => {
+                                    const recStyle = getRecommendationStyle(ad.aiAnalysis.recommendation);
+                                    return (
+                                      <div key={ad.id} className="rounded-xl border border-border/40 bg-muted/10 p-3">
+                                        <div className="flex items-start gap-2 min-w-0">
+                                          <Activity className="w-4 h-4 text-green-500 shrink-0 mt-0.5" />
+                                          <div className="min-w-0 flex-1">
+                                            <div className="font-medium text-foreground truncate">{ad.name}</div>
+                                            <div className="mt-1 flex flex-wrap gap-2 text-xs">
+                                              <span className={`px-2 py-1 rounded-full ${getStatusColor(ad.status)}`}>{ad.status}</span>
+                                              <span className="text-muted-foreground">CTR <span className="text-foreground font-mono">{ad.ctr.toFixed(2)}%</span></span>
+                                              <span className="text-muted-foreground">ROAS <span className="text-foreground font-mono font-bold">{ad.roas.toFixed(2)}x</span></span>
+                                            </div>
+                                            <div className="mt-2">
+                                              <select
+                                                value={ad.strategyId || adSet.strategyId || campaign.strategyId || ''}
+                                                onChange={(e) => handleStrategyChange(ad.id, e.target.value, 'ad')}
+                                                className="w-full px-3 py-2 bg-muted/50 border border-border/50 rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-primary/50"
+                                              >
+                                                <option value="">Inherit</option>
+                                                {strategies.map(s => <option key={s.id} value={s.id}>{s.title}</option>)}
+                                              </select>
+                                            </div>
                                           </div>
-                                          <div className="mt-2">
-                                            <select
-                                              value={ad.strategyId || adSet.strategyId || campaign.strategyId || ''}
-                                              onChange={(e) => handleStrategyChange(ad.id, e.target.value, 'ad')}
-                                              className="w-full px-3 py-2 bg-muted/50 border border-border/50 rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-primary/50"
-                                            >
-                                              <option value="">Inherit</option>
-                                              {strategies.map(s => <option key={s.id} value={s.id}>{s.title}</option>)}
-                                            </select>
-                                          </div>
-                                        </div>
 
-                                        <div className="shrink-0">
-                                          <span className={`text-xs font-semibold px-2 py-1 rounded-full border ${recStyle.border} ${recStyle.bg}`} style={{ color: recStyle.color }}>
-                                            {recStyle.label}
-                                          </span>
+                                          <div className="shrink-0">
+                                            <span className={`text-xs font-semibold px-2 py-1 rounded-full border ${recStyle.border} ${recStyle.bg}`} style={{ color: recStyle.color }}>
+                                              {recStyle.label}
+                                            </span>
+                                          </div>
                                         </div>
                                       </div>
-                                    </div>
-                                  );
-                                })}
-                              </div>
-                            )}
+                                    );
+                                  })}
+                                </div>
+                              )}
+                            </div>
                           </div>
                         </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
+                      ))}
+                    </div>
+                  )}
                 </Card>
               ))
             )}
@@ -1047,288 +1188,288 @@ export function AIAnalysisPage() {
             <div className="lg:hidden mt-4 w-full max-w-full min-w-0">
               <Card className="overflow-hidden p-0">
                 <details className="overflow-hidden">
-                <summary className="px-4 py-3 cursor-pointer flex items-center justify-between">
-                  <span className="font-semibold text-foreground flex items-center gap-2">
-                    <Brain className="w-5 h-5 text-primary" />
-                    AI Recommendations
-                  </span>
-                  <span className="text-xs text-muted-foreground">Tap to view</span>
-                </summary>
-                <div className="p-4 border-t border-border/30 space-y-4">
-                  {/* Panel Content - Summary Cards */}
-                  <div className="grid grid-cols-2 gap-3">
-                    <div className="backdrop-blur-xl bg-red-500/10 rounded-xl border border-red-500/30 p-4">
-                      <div className="flex items-center justify-between mb-2">
-                        <Trash2 className="w-5 h-5 text-red-500" />
-                        <span className="text-2xl font-bold text-red-500">{killAds.length}</span>
-                      </div>
-                      <div className="text-xs font-semibold text-red-500">Kill Ads</div>
-                    </div>
-
-                    <div className="backdrop-blur-xl bg-green-500/10 rounded-xl border border-green-500/30 p-4">
-                      <div className="flex items-center justify-between mb-2">
-                        <Copy className="w-5 h-5 text-green-500" />
-                        <span className="text-2xl font-bold text-green-500">{duplicateAds.length}</span>
-                      </div>
-                      <div className="text-xs font-semibold text-green-500">Duplicate</div>
-                    </div>
-
-                    <div className="backdrop-blur-xl bg-blue-500/10 rounded-xl border border-blue-500/30 p-4">
-                      <div className="flex items-center justify-between mb-2">
-                        <TrendingUp className="w-5 h-5 text-blue-500" />
-                        <span className="text-2xl font-bold text-blue-500">{increaseAds.length}</span>
-                      </div>
-                      <div className="text-xs font-semibold text-blue-500">Increase</div>
-                    </div>
-
-                    <div className="backdrop-blur-xl bg-orange-500/10 rounded-xl border border-orange-500/30 p-4">
-                      <div className="flex items-center justify-between mb-2">
-                        <TrendingDown className="w-5 h-5 text-orange-500" />
-                        <span className="text-2xl font-bold text-orange-500">{decreaseAds.length}</span>
-                      </div>
-                      <div className="text-xs font-semibold text-orange-500">Decrease</div>
-                    </div>
-                  </div>
-
-                  {/* Recommendations List */}
-                  <div className="space-y-3">
-                    {allRecommendations.map(({ ad, campaign, adSet }) => {
-                      const recStyle = getRecommendationStyle(ad.aiAnalysis.recommendation);
-                      const actionKey = `${ad.campaignId}:${recStyle.action}`;
-                      const isApplying = Boolean(applyingActions[actionKey]);
-                      const isLinked = isMetaLinkedCampaignId(ad.campaignId);
-                      const isDisabled = isApplying || !isLinked;
-                      
-                      return (
-                        <div
-                          key={ad.id}
-                          className={`backdrop-blur-xl bg-card/60 rounded-xl border-2 ${recStyle.border} shadow-xl overflow-hidden`}
-                        >
-                          <div className="p-4">
-                            {/* Header */}
-                            <div className="flex items-start gap-3 mb-3">
-                              <div className={`p-2 ${recStyle.bg} rounded-lg flex-shrink-0`} style={{ color: recStyle.color }}>
-                                {recStyle.icon}
-                              </div>
-                              <div className="flex-1 min-w-0">
-                                <div className="font-bold text-foreground text-sm mb-1 truncate">{ad.name}</div>
-                                <div className="text-xs text-muted-foreground truncate">
-                                  {campaign} → {adSet}
-                                </div>
-                              </div>
-                            </div>
-
-                            {/* Recommendation */}
-                            <div className="mb-3">
-                              <div className="text-xs font-semibold mb-1" style={{ color: recStyle.color }}>
-                                {recStyle.label}
-                              </div>
-                              <div className="text-xs text-muted-foreground leading-relaxed">
-                                {ad.aiAnalysis.reason}
-                              </div>
-                            </div>
-
-                            {/* Impact */}
-                            <div className="mb-3 p-2 bg-muted/30 rounded-lg">
-                              <div className="text-xs text-muted-foreground mb-1">Expected Impact</div>
-                              <div className="text-sm font-bold text-foreground">{ad.aiAnalysis.expectedImpact}</div>
-                            </div>
-
-                            {/* Confidence */}
-                            <div className="mb-3">
-                              <div className="flex items-center justify-between text-xs mb-1">
-                                <span className="text-muted-foreground">AI Confidence</span>
-                                <span className="font-bold" style={{ color: recStyle.color }}>{ad.aiAnalysis.confidence}%</span>
-                              </div>
-                              <div className="h-1.5 bg-muted rounded-full overflow-hidden">
-                                <div
-                                  className="h-full rounded-full transition-all duration-1000"
-                                  style={{
-                                    width: `${ad.aiAnalysis.confidence}%`,
-                                    backgroundColor: recStyle.color
-                                  }}
-                                />
-                              </div>
-                            </div>
-
-                            {/* Details */}
-                            <div className="mb-3 space-y-1">
-                              {ad.aiAnalysis.details.slice(0, 2).map((detail, idx) => (
-                                <div key={idx} className="flex items-start gap-1 text-xs text-muted-foreground">
-                                  <CheckCircle2 className="w-3 h-3 flex-shrink-0 mt-0.5" style={{ color: recStyle.color }} />
-                                  <span className="leading-tight">{detail}</span>
-                                </div>
-                              ))}
-                            </div>
-
-                            {/* Action Button */}
-                            <button
-                              onClick={() => handleAIAction(recStyle, ad)}
-                              disabled={isDisabled}
-                              title={isLinked ? '' : 'Nicht mit Meta verknüpft. Bitte Sync ausführen.'}
-                              className={`w-full px-4 py-2 rounded-lg font-semibold text-sm transition-all shadow-lg ${isDisabled ? 'opacity-70 cursor-not-allowed' : ''}`}
-                              style={{
-                                backgroundColor: recStyle.color,
-                                color: 'white'
-                              }}
-                            >
-                              {isApplying ? 'Wird angewendet...' : recStyle.actionLabel}
-                            </button>
-                          </div>
+                  <summary className="px-4 py-3 cursor-pointer flex items-center justify-between">
+                    <span className="font-semibold text-foreground flex items-center gap-2">
+                      <Brain className="w-5 h-5 text-primary" />
+                      AI Recommendations
+                    </span>
+                    <span className="text-xs text-muted-foreground">Tap to view</span>
+                  </summary>
+                  <div className="p-4 border-t border-border/30 space-y-4">
+                    {/* Panel Content - Summary Cards */}
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="backdrop-blur-xl bg-red-500/10 rounded-xl border border-red-500/30 p-4">
+                        <div className="flex items-center justify-between mb-2">
+                          <Trash2 className="w-5 h-5 text-red-500" />
+                          <span className="text-2xl font-bold text-red-500">{killAds.length}</span>
                         </div>
-                      );
-                    })}
+                        <div className="text-xs font-semibold text-red-500">Kill Ads</div>
+                      </div>
+
+                      <div className="backdrop-blur-xl bg-green-500/10 rounded-xl border border-green-500/30 p-4">
+                        <div className="flex items-center justify-between mb-2">
+                          <Copy className="w-5 h-5 text-green-500" />
+                          <span className="text-2xl font-bold text-green-500">{duplicateAds.length}</span>
+                        </div>
+                        <div className="text-xs font-semibold text-green-500">Duplicate</div>
+                      </div>
+
+                      <div className="backdrop-blur-xl bg-blue-500/10 rounded-xl border border-blue-500/30 p-4">
+                        <div className="flex items-center justify-between mb-2">
+                          <TrendingUp className="w-5 h-5 text-blue-500" />
+                          <span className="text-2xl font-bold text-blue-500">{increaseAds.length}</span>
+                        </div>
+                        <div className="text-xs font-semibold text-blue-500">Increase</div>
+                      </div>
+
+                      <div className="backdrop-blur-xl bg-orange-500/10 rounded-xl border border-orange-500/30 p-4">
+                        <div className="flex items-center justify-between mb-2">
+                          <TrendingDown className="w-5 h-5 text-orange-500" />
+                          <span className="text-2xl font-bold text-orange-500">{decreaseAds.length}</span>
+                        </div>
+                        <div className="text-xs font-semibold text-orange-500">Decrease</div>
+                      </div>
+                    </div>
+
+                    {/* Recommendations List */}
+                    <div className="space-y-3">
+                      {allRecommendations.map(({ ad, campaign, adSet }) => {
+                        const recStyle = getRecommendationStyle(ad.aiAnalysis.recommendation);
+                        const actionKey = `${ad.campaignId}:${recStyle.action}`;
+                        const isApplying = Boolean(applyingActions[actionKey]);
+                        const isLinked = isMetaLinkedCampaignId(ad.campaignId);
+                        const isDisabled = isApplying || !isLinked;
+
+                        return (
+                          <div
+                            key={ad.id}
+                            className={`backdrop-blur-xl bg-card/60 rounded-xl border-2 ${recStyle.border} shadow-xl overflow-hidden`}
+                          >
+                            <div className="p-4">
+                              {/* Header */}
+                              <div className="flex items-start gap-3 mb-3">
+                                <div className={`p-2 ${recStyle.bg} rounded-lg flex-shrink-0`} style={{ color: recStyle.color }}>
+                                  {recStyle.icon}
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                  <div className="font-bold text-foreground text-sm mb-1 truncate">{ad.name}</div>
+                                  <div className="text-xs text-muted-foreground truncate">
+                                    {campaign} → {adSet}
+                                  </div>
+                                </div>
+                              </div>
+
+                              {/* Recommendation */}
+                              <div className="mb-3">
+                                <div className="text-xs font-semibold mb-1" style={{ color: recStyle.color }}>
+                                  {recStyle.label}
+                                </div>
+                                <div className="text-xs text-muted-foreground leading-relaxed">
+                                  {ad.aiAnalysis.reason}
+                                </div>
+                              </div>
+
+                              {/* Impact */}
+                              <div className="mb-3 p-2 bg-muted/30 rounded-lg">
+                                <div className="text-xs text-muted-foreground mb-1">Expected Impact</div>
+                                <div className="text-sm font-bold text-foreground">{ad.aiAnalysis.expectedImpact}</div>
+                              </div>
+
+                              {/* Confidence */}
+                              <div className="mb-3">
+                                <div className="flex items-center justify-between text-xs mb-1">
+                                  <span className="text-muted-foreground">AI Confidence</span>
+                                  <span className="font-bold" style={{ color: recStyle.color }}>{ad.aiAnalysis.confidence}%</span>
+                                </div>
+                                <div className="h-1.5 bg-muted rounded-full overflow-hidden">
+                                  <div
+                                    className="h-full rounded-full transition-all duration-1000"
+                                    style={{
+                                      width: `${ad.aiAnalysis.confidence}%`,
+                                      backgroundColor: recStyle.color
+                                    }}
+                                  />
+                                </div>
+                              </div>
+
+                              {/* Details */}
+                              <div className="mb-3 space-y-1">
+                                {ad.aiAnalysis.details.slice(0, 2).map((detail, idx) => (
+                                  <div key={idx} className="flex items-start gap-1 text-xs text-muted-foreground">
+                                    <CheckCircle2 className="w-3 h-3 flex-shrink-0 mt-0.5" style={{ color: recStyle.color }} />
+                                    <span className="leading-tight">{detail}</span>
+                                  </div>
+                                ))}
+                              </div>
+
+                              {/* Action Button */}
+                              <button
+                                onClick={() => handleAIAction(recStyle, ad)}
+                                disabled={isDisabled}
+                                title={isLinked ? '' : 'Nicht mit Meta verknüpft. Bitte Sync ausführen.'}
+                                className={`w-full px-4 py-2 rounded-lg font-semibold text-sm transition-all shadow-lg ${isDisabled ? 'opacity-70 cursor-not-allowed' : ''}`}
+                                style={{
+                                  backgroundColor: recStyle.color,
+                                  color: 'white'
+                                }}
+                              >
+                                {isApplying ? 'Wird angewendet...' : recStyle.actionLabel}
+                              </button>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
                   </div>
-                </div>
-              </details>
+                </details>
               </Card>
             </div>
 
             {/* Desktop: Sidebar (unchanged) */}
             <div className="hidden lg:block w-[380px] flex-shrink-0 space-y-4 sticky top-24 h-fit max-h-[calc(100vh-8rem)] overflow-y-auto">
-            {/* Panel Header */}
-            <Card className="bg-gradient-to-br from-primary/10 to-card border-primary/30 p-6">
-              <div className="flex items-center gap-3 mb-3">
-                <div className="p-3 bg-primary/20 rounded-xl">
-                  <Brain className="w-6 h-6 text-primary" />
+              {/* Panel Header */}
+              <Card className="bg-gradient-to-br from-primary/10 to-card border-primary/30 p-6">
+                <div className="flex items-center gap-3 mb-3">
+                  <div className="p-3 bg-primary/20 rounded-xl">
+                    <Brain className="w-6 h-6 text-primary" />
+                  </div>
+                  <div>
+                    <h3 className="font-bold text-foreground">AI Recommendations</h3>
+                    <p className="text-xs text-muted-foreground">Real-time analysis</p>
+                  </div>
                 </div>
-                <div>
-                  <h3 className="font-bold text-foreground">AI Recommendations</h3>
-                  <p className="text-xs text-muted-foreground">Real-time analysis</p>
+                <div className="flex items-center gap-2 text-xs">
+                  <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
+                  <span className="text-muted-foreground">Updated 30 seconds ago</span>
                 </div>
-              </div>
-              <div className="flex items-center gap-2 text-xs">
-                <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
-                <span className="text-muted-foreground">Updated 30 seconds ago</span>
-              </div>
-            </Card>
+              </Card>
 
-            {/* Summary Cards */}
-            <div className="grid grid-cols-2 gap-3">
-              <div className="backdrop-blur-xl bg-red-500/10 rounded-xl border border-red-500/30 p-4">
-                <div className="flex items-center justify-between mb-2">
-                  <Trash2 className="w-5 h-5 text-red-500" />
-                  <span className="text-2xl font-bold text-red-500">{killAds.length}</span>
+              {/* Summary Cards */}
+              <div className="grid grid-cols-2 gap-3">
+                <div className="backdrop-blur-xl bg-red-500/10 rounded-xl border border-red-500/30 p-4">
+                  <div className="flex items-center justify-between mb-2">
+                    <Trash2 className="w-5 h-5 text-red-500" />
+                    <span className="text-2xl font-bold text-red-500">{killAds.length}</span>
+                  </div>
+                  <div className="text-xs font-semibold text-red-500">Kill Ads</div>
                 </div>
-                <div className="text-xs font-semibold text-red-500">Kill Ads</div>
+
+                <div className="backdrop-blur-xl bg-green-500/10 rounded-xl border border-green-500/30 p-4">
+                  <div className="flex items-center justify-between mb-2">
+                    <Copy className="w-5 h-5 text-green-500" />
+                    <span className="text-2xl font-bold text-green-500">{duplicateAds.length}</span>
+                  </div>
+                  <div className="text-xs font-semibold text-green-500">Duplicate</div>
+                </div>
+
+                <div className="backdrop-blur-xl bg-blue-500/10 rounded-xl border border-blue-500/30 p-4">
+                  <div className="flex items-center justify-between mb-2">
+                    <TrendingUp className="w-5 h-5 text-blue-500" />
+                    <span className="text-2xl font-bold text-blue-500">{increaseAds.length}</span>
+                  </div>
+                  <div className="text-xs font-semibold text-blue-500">Increase</div>
+                </div>
+
+                <div className="backdrop-blur-xl bg-orange-500/10 rounded-xl border border-orange-500/30 p-4">
+                  <div className="flex items-center justify-between mb-2">
+                    <TrendingDown className="w-5 h-5 text-orange-500" />
+                    <span className="text-2xl font-bold text-orange-500">{decreaseAds.length}</span>
+                  </div>
+                  <div className="text-xs font-semibold text-orange-500">Decrease</div>
+                </div>
               </div>
 
-              <div className="backdrop-blur-xl bg-green-500/10 rounded-xl border border-green-500/30 p-4">
-                <div className="flex items-center justify-between mb-2">
-                  <Copy className="w-5 h-5 text-green-500" />
-                  <span className="text-2xl font-bold text-green-500">{duplicateAds.length}</span>
-                </div>
-                <div className="text-xs font-semibold text-green-500">Duplicate</div>
-              </div>
+              {/* Recommendations List */}
+              <div className="space-y-3">
+                {allRecommendations.map(({ ad, campaign, adSet }) => {
+                  const recStyle = getRecommendationStyle(ad.aiAnalysis.recommendation);
+                  const actionKey = `${ad.campaignId}:${recStyle.action}`;
+                  const isApplying = Boolean(applyingActions[actionKey]);
+                  const isLinked = isMetaLinkedCampaignId(ad.campaignId);
+                  const isDisabled = isApplying || !isLinked;
 
-              <div className="backdrop-blur-xl bg-blue-500/10 rounded-xl border border-blue-500/30 p-4">
-                <div className="flex items-center justify-between mb-2">
-                  <TrendingUp className="w-5 h-5 text-blue-500" />
-                  <span className="text-2xl font-bold text-blue-500">{increaseAds.length}</span>
-                </div>
-                <div className="text-xs font-semibold text-blue-500">Increase</div>
-              </div>
-
-              <div className="backdrop-blur-xl bg-orange-500/10 rounded-xl border border-orange-500/30 p-4">
-                <div className="flex items-center justify-between mb-2">
-                  <TrendingDown className="w-5 h-5 text-orange-500" />
-                  <span className="text-2xl font-bold text-orange-500">{decreaseAds.length}</span>
-                </div>
-                <div className="text-xs font-semibold text-orange-500">Decrease</div>
-              </div>
-            </div>
-
-            {/* Recommendations List */}
-            <div className="space-y-3">
-              {allRecommendations.map(({ ad, campaign, adSet }) => {
-                const recStyle = getRecommendationStyle(ad.aiAnalysis.recommendation);
-                const actionKey = `${ad.campaignId}:${recStyle.action}`;
-                const isApplying = Boolean(applyingActions[actionKey]);
-                const isLinked = isMetaLinkedCampaignId(ad.campaignId);
-                const isDisabled = isApplying || !isLinked;
-                
-                return (
-                  <Card
-                    key={ad.id}
-                    className={`border-2 ${recStyle.border} overflow-hidden hover:scale-105 transition-all p-0`}
-                  >
-                    <div className="p-4">
-                      {/* Header */}
-                      <div className="flex items-start gap-3 mb-3">
-                        <div className={`p-2 ${recStyle.bg} rounded-lg flex-shrink-0`} style={{ color: recStyle.color }}>
-                          {recStyle.icon}
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <div className="font-bold text-foreground text-sm mb-1 truncate">{ad.name}</div>
-                          <div className="text-xs text-muted-foreground truncate">
-                            {campaign} → {adSet}
+                  return (
+                    <Card
+                      key={ad.id}
+                      className={`border-2 ${recStyle.border} overflow-hidden hover:scale-105 transition-all p-0`}
+                    >
+                      <div className="p-4">
+                        {/* Header */}
+                        <div className="flex items-start gap-3 mb-3">
+                          <div className={`p-2 ${recStyle.bg} rounded-lg flex-shrink-0`} style={{ color: recStyle.color }}>
+                            {recStyle.icon}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <div className="font-bold text-foreground text-sm mb-1 truncate">{ad.name}</div>
+                            <div className="text-xs text-muted-foreground truncate">
+                              {campaign} → {adSet}
+                            </div>
                           </div>
                         </div>
-                      </div>
 
-                      {/* Recommendation */}
-                      <div className="mb-3">
-                        <div className="text-xs font-semibold mb-1" style={{ color: recStyle.color }}>
-                          {recStyle.label}
-                        </div>
-                        <div className="text-xs text-muted-foreground leading-relaxed">
-                          {ad.aiAnalysis.reason}
-                        </div>
-                      </div>
-
-                      {/* Impact */}
-                      <div className="mb-3 p-2 bg-muted/30 rounded-lg">
-                        <div className="text-xs text-muted-foreground mb-1">Expected Impact</div>
-                        <div className="text-sm font-bold text-foreground">{ad.aiAnalysis.expectedImpact}</div>
-                      </div>
-
-                      {/* Confidence */}
-                      <div className="mb-3">
-                        <div className="flex items-center justify-between text-xs mb-1">
-                          <span className="text-muted-foreground">AI Confidence</span>
-                          <span className="font-bold" style={{ color: recStyle.color }}>{ad.aiAnalysis.confidence}%</span>
-                        </div>
-                        <div className="h-1.5 bg-muted rounded-full overflow-hidden">
-                          <div
-                            className="h-full rounded-full transition-all duration-1000"
-                            style={{
-                              width: `${ad.aiAnalysis.confidence}%`,
-                              backgroundColor: recStyle.color
-                            }}
-                          />
-                        </div>
-                      </div>
-
-                      {/* Details */}
-                      <div className="mb-3 space-y-1">
-                        {ad.aiAnalysis.details.slice(0, 2).map((detail, idx) => (
-                          <div key={idx} className="flex items-start gap-1 text-xs text-muted-foreground">
-                            <CheckCircle2 className="w-3 h-3 flex-shrink-0 mt-0.5" style={{ color: recStyle.color }} />
-                            <span className="leading-tight">{detail}</span>
+                        {/* Recommendation */}
+                        <div className="mb-3">
+                          <div className="text-xs font-semibold mb-1" style={{ color: recStyle.color }}>
+                            {recStyle.label}
                           </div>
-                        ))}
-                      </div>
+                          <div className="text-xs text-muted-foreground leading-relaxed">
+                            {ad.aiAnalysis.reason}
+                          </div>
+                        </div>
 
-                      {/* Action Button */}
-                      <button
-                        onClick={() => handleAIAction(recStyle, ad)}
-                        disabled={isDisabled}
-                        title={isLinked ? '' : 'Nicht mit Meta verknüpft. Bitte Sync ausführen.'}
-                        className={`w-full px-4 py-2 rounded-lg font-semibold text-sm transition-all hover:scale-105 shadow-lg ${isDisabled ? 'opacity-70 cursor-not-allowed' : ''}`}
-                        style={{
-                          backgroundColor: recStyle.color,
-                          color: 'white'
-                        }}
-                      >
-                        {isApplying ? 'Wird angewendet...' : recStyle.actionLabel}
-                      </button>
-                    </div>
-                  </Card>
-                );
-              })}
+                        {/* Impact */}
+                        <div className="mb-3 p-2 bg-muted/30 rounded-lg">
+                          <div className="text-xs text-muted-foreground mb-1">Expected Impact</div>
+                          <div className="text-sm font-bold text-foreground">{ad.aiAnalysis.expectedImpact}</div>
+                        </div>
+
+                        {/* Confidence */}
+                        <div className="mb-3">
+                          <div className="flex items-center justify-between text-xs mb-1">
+                            <span className="text-muted-foreground">AI Confidence</span>
+                            <span className="font-bold" style={{ color: recStyle.color }}>{ad.aiAnalysis.confidence}%</span>
+                          </div>
+                          <div className="h-1.5 bg-muted rounded-full overflow-hidden">
+                            <div
+                              className="h-full rounded-full transition-all duration-1000"
+                              style={{
+                                width: `${ad.aiAnalysis.confidence}%`,
+                                backgroundColor: recStyle.color
+                              }}
+                            />
+                          </div>
+                        </div>
+
+                        {/* Details */}
+                        <div className="mb-3 space-y-1">
+                          {ad.aiAnalysis.details.slice(0, 2).map((detail, idx) => (
+                            <div key={idx} className="flex items-start gap-1 text-xs text-muted-foreground">
+                              <CheckCircle2 className="w-3 h-3 flex-shrink-0 mt-0.5" style={{ color: recStyle.color }} />
+                              <span className="leading-tight">{detail}</span>
+                            </div>
+                          ))}
+                        </div>
+
+                        {/* Action Button */}
+                        <button
+                          onClick={() => handleAIAction(recStyle, ad)}
+                          disabled={isDisabled}
+                          title={isLinked ? '' : 'Nicht mit Meta verknüpft. Bitte Sync ausführen.'}
+                          className={`w-full px-4 py-2 rounded-lg font-semibold text-sm transition-all hover:scale-105 shadow-lg ${isDisabled ? 'opacity-70 cursor-not-allowed' : ''}`}
+                          style={{
+                            backgroundColor: recStyle.color,
+                            color: 'white'
+                          }}
+                        >
+                          {isApplying ? 'Wird angewendet...' : recStyle.actionLabel}
+                        </button>
+                      </div>
+                    </Card>
+                  );
+                })}
+              </div>
             </div>
-          </div>
-        </>
+          </>
         )}
       </div>
     </PageShell>

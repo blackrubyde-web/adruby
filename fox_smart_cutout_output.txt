@@ -1,0 +1,46 @@
+🚀 Starting LED Fox Ad Generation (Smart Cutout Simulation - AUTO_EXTRACT)...
+📸 Input Image: /Users/home/.gemini/antigravity/brain/c49f8301-5d0c-499f-8511-124d0f49b91d/uploaded_image_1766551526947.jpg
+🔧 Building Premium Directive Prompt...
+🧠 Sending to AI...
+
+✅ Generated Premium Ad Directive:
+{
+  "templateId": "P20_C_SMART_CUTOUT_DEMO",
+  "layers": [
+    {
+      "type": "IMAGE",
+      "content": {
+        "src": "file:///Users/home/.gemini/antigravity/brain/c49f8301-5d0c-499f-8511-124d0f49b91d/uploaded_image_1766551526947.jpg"
+      }
+    },
+    {
+      "type": "SMART_CUTOUT",
+      "bindingName": "PRODUCT_IMG"
+    },
+    {
+      "type": "TEXT",
+      "content": {
+        "text": "Level Up Your Setup 🦊"
+      }
+    },
+    {
+      "type": "TEXT",
+      "content": {
+        "text": "The ultimate cozy companion."
+      }
+    },
+    {
+      "type": "CTA",
+      "bindingName": "CTA",
+      "content": {
+        "text": "Shop Now"
+      }
+    }
+  ],
+  "resolvedValues": {
+    "FEATURE": "Show the product glowing",
+    "PRODUCT_IMG": "file:///Users/home/.gemini/antigravity/brain/c49f8301-5d0c-499f-8511-124d0f49b91d/uploaded_image_1766551526947.jpg",
+    "BADGE": "",
+    "CTA": "Shop Now"
+  }
+}

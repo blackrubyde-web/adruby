@@ -1,0 +1,71 @@
+🚀 Starting LED Fox Ad Generation (User Upload Simulation - COMPOSED)...
+📸 Input Image: /Users/home/.gemini/antigravity/brain/c49f8301-5d0c-499f-8511-124d0f49b91d/uploaded_image_1766551526947.jpg
+🔧 Building Premium Directive Prompt...
+🧠 Sending to AI...
+
+✅ Generated Premium Ad Directive:
+{
+  "templateId": "P20_B_DROP_VIRAL_COMPOSED",
+  "layers": [
+    {
+      "type": "base",
+      "properties": {
+        "background_color": "#ffffff"
+      }
+    },
+    {
+      "type": "image",
+      "properties": {
+        "src": "file:///Users/home/.gemini/antigravity/brain/c49f8301-5d0c-499f-8511-124d0f49b91d/uploaded_image_1766551526947.jpg",
+        "blend_mode": "normal"
+      }
+    },
+    {
+      "type": "badge",
+      "properties": {
+        "text": "Glowing Feature",
+        "color": "#ff9800",
+        "position": "top-right"
+      }
+    },
+    {
+      "type": "text",
+      "properties": {
+        "content": "Level Up Your Setup 🦊",
+        "font_size": 24,
+        "color": "#000000",
+        "align": "center",
+        "position": "top"
+      }
+    },
+    {
+      "type": "text",
+      "properties": {
+        "content": "The ultimate cozy companion.",
+        "font_size": 18,
+        "color": "#333333",
+        "align": "center",
+        "position": "middle"
+      }
+    },
+    {
+      "type": "button",
+      "properties": {
+        "text": "Shop Now",
+        "background_color": "#ff5722",
+        "color": "#ffffff",
+        "rounded": true,
+        "align": "center",
+        "position": "bottom"
+      }
+    }
+  ],
+  "resolvedValues": {
+    "PRODUCT_IMG": "file:///Users/home/.gemini/antigravity/brain/c49f8301-5d0c-499f-8511-124d0f49b91d/uploaded_image_1766551526947.jpg",
+    "FEATURE": "Glowing Feature",
+    "BADGE": "Glowing Feature",
+    "CTA": "Shop Now"
+  }
+}
+
+✨ SUCCESS: User image was correctly bound to PRODUCT_IMG.

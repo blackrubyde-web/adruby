@@ -1,0 +1,106 @@
+{
+    "specVersion": "1.0",
+    "templateId": "P20_DROP_VIRAL_HOOK",
+    "name": "Dropshipping: Viral Feature",
+    "resolvedValues": {
+        "FEATURE": "3D HOLOGRAPHIC DISPLAY",
+        "PRODUCT_IMG": "https://cdn.adruby.com/demo/holo-watch.png",
+        "BADGE": "VIRAL 2024",
+        "CTA": "SHOP NOW"
+    },
+    "layers": [
+        {
+            "id": "bg",
+            "type": "background",
+            "fill": {
+                "type": "solid",
+                "color": "#FFFFFF"
+            }
+        },
+        {
+            "id": "prod",
+            "type": "image",
+            "src": "https://cdn.adruby.com/demo/holo-watch.png",
+            "fit": "contain",
+            "size": {
+                "w": 800,
+                "h": 800
+            },
+            "position": {
+                "x": 140,
+                "y": 100
+            }
+        },
+        {
+            "id": "fBadge",
+            "type": "badge",
+            "position": {
+                "x": 40,
+                "y": 40
+            },
+            "padding": {
+                "x": 30,
+                "y": 15
+            },
+            "fill": "#FFD700",
+            "text": {
+                "content": "VIRAL 2024",
+                "color": "#000000",
+                "style": {
+                    "size": 32,
+                    "weight": 900
+                }
+            }
+        },
+        {
+            "id": "footer",
+            "type": "card",
+            "position": {
+                "x": 0,
+                "y": 900
+            },
+            "size": {
+                "w": 1080,
+                "h": 180
+            },
+            "fill": "#000000",
+            "children": [
+                {
+                    "id": "txt",
+                    "type": "text",
+                    "content": "3D HOLOGRAPHIC DISPLAY",
+                    "style": {
+                        "size": 48,
+                        "weight": 900
+                    },
+                    "color": "#FFFFFF",
+                    "position": {
+                        "x": 40,
+                        "y": 65
+                    }
+                },
+                {
+                    "id": "cta",
+                    "type": "button",
+                    "position": {
+                        "x": 740,
+                        "y": 45
+                    },
+                    "size": {
+                        "w": 300,
+                        "h": 90
+                    },
+                    "fill": "#FFD700",
+                    "text": {
+                        "content": "SHOP NOW",
+                        "color": "#000000",
+                        "style": {
+                            "size": 28,
+                            "weight": 900
+                        }
+                    }
+                }
+            ]
+        }
+    ]
+}

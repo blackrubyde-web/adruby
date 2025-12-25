@@ -19,6 +19,7 @@ import {
   buildImageSpecPromptPro,
   buildImagePromptFromSpec,
   trimResearchContext,
+  buildPremiumDirectivePrompt, // Premium
 } from "./_shared/creativePrompts.js";
 import { parseWithRepair } from "./_shared/repair.js";
 import { selectBlueprint } from "./_shared/creativeBlueprints.js";
@@ -32,6 +33,7 @@ import {
   BatchQualityEvalV2Schema,
   ImageSpecSchema,
   AD_IMAGE_SPEC_JSON_SCHEMA,
+  PremiumAdSchema, // Premium
 } from "./_shared/creativeSchemas.js";
 import { applySanityFilter } from "./_shared/creativeQuality.js";
 import { renderAdImage } from "./_shared/renderAdImage.js";
@@ -644,6 +646,7 @@ function buildProOutputFromV1({
   strategyId,
   strategyBlueprint,
   imageSpecsByIndex,
+  premiumDirectivesByIndex, // New
   hasImage,
 }) {
   const variants = output.creatives.map((creative, idx) => {
@@ -662,6 +665,7 @@ function buildProOutputFromV1({
       },
       visual: {
         image_spec: imageSpecsByIndex?.[idx] ?? null,
+        premium_directive: premiumDirectivesByIndex?.[idx] ?? null, // Map Premium Directive
         image: {
           input_image_used: Boolean(hasImage),
           render_intent: creative.image?.render_intent || "Hero image",
@@ -728,6 +732,7 @@ function buildProOutputFromV2({
   strategyId,
   strategyBlueprint,
   imageSpecsByIndex,
+  premiumDirectivesByIndex,
   hasImage,
 }) {
   const variants = output.variants.map((variant, idx) => {
@@ -756,6 +761,7 @@ function buildProOutputFromV2({
       },
       visual: {
         image_spec: imageSpecsByIndex?.[idx] ?? null,
+        premium_directive: premiumDirectivesByIndex?.[idx] ?? null,
         image: {
           input_image_used: Boolean(hasImage),
           render_intent: variant?.image?.render_intent || "Hero image",
@@ -1319,6 +1325,8 @@ export async function handler(event) {
         }
 
         const scoredMap = new Map(scored.map((s) => [s.index, s.score]));
+        const imageSpecsByIndex = {};
+        const premiumDirectivesByIndex = {};
         const mentorTargets = IMAGE_TOP_N
           ? scored.slice(0, IMAGE_TOP_N).map((s) => ({ index: s.index, variant: s.variant }))
           : variants.map((variant, index) => ({ index, variant }));
@@ -1431,6 +1439,7 @@ export async function handler(event) {
                 index,
                 ms: Date.now() - specStart,
               });
+              imageSpecsByIndex[index] = imageSpec;
             } else {
               logStep("mentor.images.spec.skip", {
                 jobId: placeholderId,
@@ -1439,6 +1448,8 @@ export async function handler(event) {
               });
             }
             imageSpecsByIndex[index] = imageSpec;
+
+            // [MOVED] Premium Rendering Directive will be generated AFTER image logic
 
             const imagePrompt = buildImagePromptFromSpec(imageSpec);
             const promptHash = hashPrompt(imagePrompt);
@@ -1523,6 +1534,30 @@ export async function handler(event) {
                   error: err?.message || String(err),
                 });
                 imageError = `hero_upload_failed: ${err?.message || String(err)}`;
+              }
+            }
+
+            // --- Premium Rendering Directive (Now with Image URL) ---
+            if (blueprint?.render_mode === 'premium') {
+              try {
+                logStep("mentor.premium.start", { jobId: placeholderId, index });
+                // Pass the real heroUrl (or input image) to the prompts
+                const imageUrlForDirective = heroUrl || heroPath || "https://placeholder.com/img.png";
+                const premiumPrompt = buildPremiumDirectivePrompt({
+                  brief,
+                  creative: renderCreative,
+                  blueprint,
+                  imageUrl: imageUrlForDirective
+                });
+                const premiumRaw = await callOpenAiJson(premiumPrompt, { timeoutMs: 30000 });
+                const premiumParsed = await parseWithRepair({
+                  schema: PremiumAdSchema,
+                  initial: premiumRaw,
+                  makeRequest: async (instruction) => callOpenAiJson(premiumPrompt + "\n\n" + instruction, { timeoutMs: 30000 }),
+                });
+                premiumDirectivesByIndex[index] = premiumParsed.data;
+              } catch (err) {
+                console.warn("Premium Directive failed:", err);
               }
             }
 
@@ -1639,6 +1674,7 @@ export async function handler(event) {
               strategyId: strategyId || null,
               strategyBlueprint,
               imageSpecsByIndex,
+              premiumDirectivesByIndex,
               hasImage,
             })
             : { ...v2output, variants };
@@ -1795,6 +1831,7 @@ export async function handler(event) {
           strategyId: strategyId || null,
           strategyBlueprint,
           imageSpecsByIndex,
+          premiumDirectivesByIndex,
           hasImage,
         })
         : best;
@@ -1818,6 +1855,8 @@ export async function handler(event) {
     }
 
     const inputImageBase64 = await resolveInputImageBase64(imagePath);
+    const imageSpecsByIndex = {};
+    const premiumDirectivesByIndex = {};
     const imageTargets = pickCreativesForImages(best.creatives);
     let imagesTotal = imageTargets.length;
     let imagesDone = 0;
@@ -1916,6 +1955,23 @@ export async function handler(event) {
           });
         }
         imageSpecsByIndex[index] = imageSpec;
+
+        // --- Premium Rendering Directive ---
+        if (blueprint?.render_mode === 'premium') {
+          try {
+            logStep("default.premium.start", { jobId: placeholderId, index });
+            const premiumPrompt = buildPremiumDirectivePrompt({ brief, creative, blueprint });
+            const premiumRaw = await callOpenAiJson(premiumPrompt, { timeoutMs: 30000 });
+            const premiumParsed = await parseWithRepair({
+              schema: PremiumAdSchema,
+              initial: premiumRaw,
+              makeRequest: async (instruction) => callOpenAiJson(premiumPrompt + "\n\n" + instruction, { timeoutMs: 30000 }),
+            });
+            premiumDirectivesByIndex[index] = premiumParsed.data;
+          } catch (err) {
+            console.warn("Premium Directive failed:", err);
+          }
+        }
 
         const imagePrompt = buildImagePromptFromSpec(imageSpec);
         const promptHash = hashPrompt(imagePrompt);
@@ -2195,6 +2251,7 @@ export async function handler(event) {
           strategyId: strategyId || null,
           strategyBlueprint,
           imageSpecsByIndex,
+          premiumDirectivesByIndex,
           hasImage,
         })
         : best;

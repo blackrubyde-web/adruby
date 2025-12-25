@@ -1,4 +1,4 @@
-import { ImageIcon, Upload, Search, Eye, Download, Trash2, Star, Grid3x3, List, Video, FileText, Copy, Edit2, MousePointerClick, TrendingUp } from 'lucide-react';
+import { ImageIcon, Upload, Search, Eye, Download, Trash2, Star, Grid3x3, List, Video, FileText, Copy, Edit2, MousePointerClick, TrendingUp, CheckSquare } from 'lucide-react';
 import { toast } from 'sonner';
 import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type ChangeEvent } from 'react';
 import { FixedSizeGrid } from 'react-window';
@@ -49,6 +49,11 @@ export function CreativeLibraryPage() {
       return new Set<string>();
     }
   });
+
+  // Bulk selection
+  const [selectionMode, setSelectionMode] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
@@ -163,7 +168,7 @@ export function CreativeLibraryPage() {
   const filteredCreatives = useMemo(() => {
     return creatives.filter(creative => {
       const matchesSearch = creative.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                           creative.tags.some(tag => tag.toLowerCase().includes(searchQuery.toLowerCase()));
+        creative.tags.some(tag => tag.toLowerCase().includes(searchQuery.toLowerCase()));
       const matchesType = selectedType === 'all' || creative.type === selectedType;
       return matchesSearch && matchesType;
     });
@@ -182,7 +187,7 @@ export function CreativeLibraryPage() {
   }, [creatives]);
 
   const handleToggleFavorite = useCallback((id: string) => {
-    setCreatives(prev => prev.map(c => 
+    setCreatives(prev => prev.map(c =>
       c.id === id ? { ...c, isFavorite: !c.isFavorite } : c
     ));
     setFavoriteIds(prev => {
@@ -205,12 +210,54 @@ export function CreativeLibraryPage() {
         const { error } = await supabase.from('generated_creatives').delete().eq('id', id);
         if (error) throw error;
         setCreatives(prev => prev.filter(c => c.id !== id));
+        setSelectedIds(prev => prev.filter(i => i !== id));
         toast.success(`Deleted "${creative?.name}"`);
       } catch (err: unknown) {
         toast.error(err instanceof Error ? err.message : 'Delete failed');
       }
     })();
   }, [creatives]);
+
+  // Bulk selection handlers
+  const toggleSelection = useCallback((id: string) => {
+    setSelectionMode(true);
+    setSelectedIds(prev =>
+      prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]
+    );
+  }, []);
+
+  const clearSelection = useCallback(() => {
+    setSelectedIds([]);
+    setSelectionMode(false);
+  }, []);
+
+  const selectAll = useCallback(() => {
+    setSelectionMode(true);
+    setSelectedIds(filteredCreatives.map(c => c.id));
+  }, [filteredCreatives]);
+
+  const handleBulkDelete = useCallback(async () => {
+    if (selectedIds.length === 0) return;
+    if (!confirm(`${selectedIds.length} Creatives wirklich löschen?`)) return;
+
+    setIsDeleting(true);
+    try {
+      const { error } = await supabase
+        .from('generated_creatives')
+        .delete()
+        .in('id', selectedIds);
+
+      if (error) throw error;
+
+      setCreatives(prev => prev.filter(c => !selectedIds.includes(c.id)));
+      toast.success(`${selectedIds.length} Creatives gelöscht`);
+      clearSelection();
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : 'Bulk delete failed');
+    } finally {
+      setIsDeleting(false);
+    }
+  }, [selectedIds, clearSelection]);
 
   const handleDuplicate = useCallback((id: string) => {
     (async () => {
@@ -810,11 +857,10 @@ export function CreativeLibraryPage() {
               <button
                 key={type}
                 onClick={() => setSelectedType(type)}
-                className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
-                  selectedType === type
-                    ? 'bg-primary text-primary-foreground'
-                    : 'bg-muted text-muted-foreground hover:bg-muted/80'
-                }`}
+                className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${selectedType === type
+                  ? 'bg-primary text-primary-foreground'
+                  : 'bg-muted text-muted-foreground hover:bg-muted/80'
+                  }`}
               >
                 {type === 'all' ? 'All' : type.charAt(0).toUpperCase() + type.slice(1)}
               </button>
@@ -825,25 +871,75 @@ export function CreativeLibraryPage() {
           <div className="flex items-center gap-1 bg-muted rounded-lg p-1">
             <button
               onClick={() => setViewMode('grid')}
-              className={`p-2 rounded transition-colors ${
-                viewMode === 'grid' ? 'bg-card shadow-sm' : 'hover:bg-card/50'
-              }`}
+              className={`p-2 rounded transition-colors ${viewMode === 'grid' ? 'bg-card shadow-sm' : 'hover:bg-card/50'
+                }`}
             >
               <Grid3x3 className="w-4 h-4 text-foreground" />
             </button>
             <button
               onClick={() => setViewMode('list')}
-              className={`p-2 rounded transition-colors ${
-                viewMode === 'list' ? 'bg-card shadow-sm' : 'hover:bg-card/50'
-              }`}
+              className={`p-2 rounded transition-colors ${viewMode === 'list' ? 'bg-card shadow-sm' : 'hover:bg-card/50'
+                }`}
             >
               <List className="w-4 h-4 text-foreground" />
             </button>
           </div>
+
+          {/* Selection Mode Toggle */}
+          <button
+            onClick={() => selectionMode ? clearSelection() : setSelectionMode(true)}
+            className={`px-4 py-2 rounded-lg text-sm font-medium flex items-center gap-2 transition-all ${selectionMode
+                ? 'bg-primary/10 text-primary border border-primary/30'
+                : 'bg-muted text-muted-foreground hover:bg-muted/80'
+              }`}
+          >
+            <CheckSquare className="w-4 h-4" />
+            {selectionMode ? `${selectedIds.length} ausgewählt` : 'Auswählen'}
+          </button>
         </div>
       </div>
 
-      {/* Creatives Grid/List */}
+      {/* Selection Bar */}
+      {selectedIds.length > 0 && (
+        <div className="sticky top-20 z-20 p-4 rounded-xl border border-red-500/30 bg-red-500/5 flex items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-red-500/10 flex items-center justify-center">
+              <Trash2 className="w-5 h-5 text-red-500" />
+            </div>
+            <div>
+              <div className="text-sm font-semibold text-foreground">
+                {selectedIds.length} Creatives ausgewählt
+              </div>
+              <div className="text-xs text-muted-foreground">
+                Bulk-Aktionen verfügbar
+              </div>
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={selectAll}
+              className="px-3 py-2 bg-muted hover:bg-muted/80 border border-border rounded-lg text-xs font-semibold"
+            >
+              Alle auswählen ({filteredCreatives.length})
+            </button>
+            <button
+              onClick={clearSelection}
+              className="px-3 py-2 bg-muted hover:bg-muted/80 border border-border rounded-lg text-xs font-semibold"
+            >
+              Auswahl aufheben
+            </button>
+            <button
+              onClick={handleBulkDelete}
+              disabled={isDeleting}
+              className="px-4 py-2 bg-red-500 text-white rounded-lg text-xs font-semibold hover:bg-red-600 transition-colors disabled:opacity-50"
+            >
+              {isDeleting ? 'Löschen...' : `${selectedIds.length} löschen`}
+            </button>
+          </div>
+        </div>
+      )}
+
+
       {viewMode === 'grid' ? (
         <div ref={gridRef} className="w-full">
           {gridWidth > 0 && (

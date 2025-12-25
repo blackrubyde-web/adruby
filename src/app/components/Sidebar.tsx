@@ -1,6 +1,7 @@
 import { memo, useCallback, useState } from 'react';
-import { BarChart3, Target, Layers, Brain, Settings, LogOut, X, BarChart2, Gift, Sparkles, BookOpen, type LucideIcon } from 'lucide-react';
+import { BarChart3, Target, Layers, Brain, Settings, LogOut, X, BarChart2, Gift, Sparkles, BookOpen, Palette, Users, Shield, type LucideIcon } from 'lucide-react';
 import { PageType } from '../App';
+import { useAdmin } from '../contexts/AdminContext';
 
 interface SidebarProps {
   isCollapsed?: boolean;
@@ -20,6 +21,7 @@ type NavItem = {
 
 const CORE_WORKFLOW: NavItem[] = [
   { icon: BarChart3, label: 'Dashboard', page: 'dashboard' },
+  { icon: Palette, label: 'Studio (Beta)', page: 'studio' }, // New Studio Link
   { icon: BarChart2, label: 'Analytics', page: 'analytics' },
   { icon: Sparkles, label: 'Creative Generator Pro', page: 'adbuilder' },
   { icon: BookOpen, label: 'Creative Library', page: 'library' },
@@ -33,6 +35,10 @@ const ACCOUNT_ITEMS: NavItem[] = [
   { icon: Gift, label: 'Affiliate', page: 'affiliate' },
 ];
 
+const ADMIN_ITEMS: NavItem[] = [
+  { icon: Shield, label: 'Admin', page: 'admin' },
+];
+
 export const Sidebar = memo(function Sidebar({
   isCollapsed = false,
   onToggle,
@@ -42,6 +48,7 @@ export const Sidebar = memo(function Sidebar({
   onMobileClose,
   onLogout
 }: SidebarProps) {
+  const { isAdmin, isCheckingRole } = useAdmin();
   const [isHovering, setIsHovering] = useState(false);
   const isExpanded = Boolean(isMobileOpen || !isCollapsed || isHovering);
   const showLabels = isExpanded;
@@ -59,23 +66,22 @@ export const Sidebar = memo(function Sidebar({
     const labelVisibility = showLabels
       ? "opacity-100 translate-x-0 max-w-[160px]"
       : "opacity-0 translate-x-1 max-w-0";
-    
+
     return (
       <button
         key={item.page}
         onClick={() => handleNavigate(item.page)}
-        className={`relative w-full flex items-center px-4 py-2.5 rounded-lg transition-[color,background-color,gap] duration-200 ${
-          isActive
-            ? 'bg-sidebar-accent text-sidebar-foreground'
-            : 'text-sidebar-foreground/70 hover:text-sidebar-foreground hover:bg-sidebar-accent/50'
-        } ${showLabels ? 'gap-3 justify-start' : 'gap-0 justify-center'}`}
+        className={`relative w-full flex items-center px-4 py-2.5 rounded-lg transition-[color,background-color,gap] duration-200 ${isActive
+          ? 'bg-sidebar-accent text-sidebar-foreground'
+          : 'text-sidebar-foreground/70 hover:text-sidebar-foreground hover:bg-sidebar-accent/50'
+          } ${showLabels ? 'gap-3 justify-start' : 'gap-0 justify-center'}`}
         title={(!showLabels && !isMobileOpen) ? item.label : undefined}
       >
         {/* Left Accent Bar - Only on Active */}
         {isActive && (
           <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-6 bg-primary rounded-r" />
         )}
-        
+
         <item.icon className="w-5 h-5 flex-shrink-0" />
         <span
           className={`flex-1 text-left text-sm leading-5 ${isActive ? 'font-semibold' : 'font-medium'} transition-[opacity,transform,max-width] duration-200 ease-out overflow-hidden whitespace-nowrap ${labelVisibility}`}
@@ -91,7 +97,7 @@ export const Sidebar = memo(function Sidebar({
     <>
       {/* Mobile Overlay */}
       {isMobileOpen && (
-        <div 
+        <div
           className="fixed inset-0 bg-black/60 z-40 md:hidden"
           onClick={onMobileClose}
         />
@@ -105,7 +111,7 @@ export const Sidebar = memo(function Sidebar({
       )}
 
       {/* Sidebar */}
-      <div 
+      <div
         className={`${isExpanded ? 'bg-black/90 border-white/10' : 'bg-sidebar border-sidebar-border'} border-r h-screen fixed left-0 top-0 flex flex-col transition-[width,transform] duration-200 z-50
           ${isMobileOpen ? 'translate-x-0 w-64' : '-translate-x-full w-64'}
           ${!isMobileOpen ? 'md:translate-x-0' : ''}
@@ -119,7 +125,7 @@ export const Sidebar = memo(function Sidebar({
         }}
       >
         {/* Logo Area with Hover Trigger */}
-        <div 
+        <div
           className="flex items-center justify-between p-4 border-b border-sidebar-border"
           onClick={() => {
             if (!isMobileOpen) {
@@ -180,11 +186,30 @@ export const Sidebar = memo(function Sidebar({
               {ACCOUNT_ITEMS.map(renderNavButton)}
             </div>
           </div>
+
+          {/* GROUP 3: Admin (only if admin) */}
+          {isAdmin && !isCheckingRole && (
+            <>
+              <div className="border-t border-sidebar-border my-4" />
+              <div>
+                {showLabels && (
+                  <div className="px-4 mb-2">
+                    <span className="text-xs font-semibold text-sidebar-foreground/50 uppercase tracking-wider">
+                      Admin
+                    </span>
+                  </div>
+                )}
+                <div className="space-y-1">
+                  {ADMIN_ITEMS.map(renderNavButton)}
+                </div>
+              </div>
+            </>
+          )}
         </nav>
 
         {/* Logout - Always at Bottom */}
         <div className="p-4 border-t border-sidebar-border">
-          <button 
+          <button
             className="w-full flex items-center gap-3 px-4 py-2.5 rounded-lg text-sidebar-foreground/70 hover:text-sidebar-foreground hover:bg-sidebar-accent/50 transition-colors"
             title={(!showLabels && !isMobileOpen) ? 'Logout' : undefined}
             onClick={onLogout}

@@ -405,11 +405,11 @@ Render style: ${style.render_style || "clean commercial"}.
 Realism: ${style.realism_level || "high"}.
 
 Rules:
-- Text IS allowed if it makes the ad look real/finished (props, packaging, or simple overlay).
+- Text IS allowed ONLY on packaging/props. Do NOT add floating text, overlaid text, or watermarks.
 - No complex gibberish text.
 - No watermarks.
 - Avoid: ${(safety || []).join(", ") || "none"}.
-- Negative prompt: ${(negatives || []).join(", ") || "none"}.
+- Negative prompt: ${(negatives || []).join(", ") || "none"}, text, watermark, typography, letters, overlay.
 `.trim();
 }
 
@@ -551,3 +551,104 @@ ${notesBlock}
 ${blueprintBlock}
 `;
 }
+
+// --- Premium Directive Generation ---
+
+import { PREMIUM_AD_TEMPLATES } from "./premiumTemplates.js";
+import { PREMIUM_THEMES } from "./creativeThemes.js"; // Import Themes
+
+export function buildPremiumDirectivePrompt({ brief, creative, blueprint, imageUrl }) {
+  // 1. Filter templates (same as before)
+  const templatesBrief = PREMIUM_AD_TEMPLATES.map(t => ({
+    id: t.templateId,
+    name: t.name,
+    industry: t.industry,
+    bindings: Object.keys(t.bindings || {})
+  }));
+
+  // 2. Prepare Theme List
+  const themesBrief = PREMIUM_THEMES.map(t => ({
+    id: t.id,
+    name: t.name,
+    tags: t.tags
+  }));
+
+
+  const inputImageInstruction = imageUrl
+    ? `IMPORTANT: The user has provided/generated a specific image asset: "${imageUrl}"
+    
+    *** SMART IMAGE ANALYSIS ***
+    You must decide how best to utilize this image based on the industry and template style:
+    
+    STRATEGY A: FULL BACKGROUND (Best for Real Estate, Travel, Interior Design)
+    - Use the image as the 'background' layer.
+    - Set 'fit': 'cover'.
+    - Do NOT remove background.
+    
+    STRATEGY B: CONTAINED PRODUCT (Best for Fashion, Art, Catalogs)
+    - Use the image in a standard image layer frame.
+    - Set 'fit': 'cover' or 'contain' depending on frame.
+    - Do NOT remove background.
+    
+    STRATEGY C: SMART CUTOUT / EXTRACTION (Best for Gadgets, Tech, E-Com)
+    - Add { "type": "remove_background" } to effects.
+    
+    STRATEGY D: SAFETY / BAD IMAGE RESCUE (Use if image is low-res, amateur, or bad aspect ratio)
+    - TemplateId must contain 'SAFETY' or 'BLUR'.
+    - Used to hide pixelation by blurring the background copy.
+    
+    STRATEGY E: SPLIT VIEW (Use for Text-Heavy or Story format)
+    - TemplateId must contain 'SPLIT'.
+    
+    DECISION LOGIC:
+    1. QUALITY CHECK: If the image seems low-quality/amateur -> FORCE STRATEGY D.
+    2. INDUSTRY CHECK:
+       - Tech/Gadgets -> STRATEGY C
+       - Fashion -> STRATEGY B
+       - Travel/RealEstate -> STRATEGY A
+    `
+    : `Note: Use a placeholder or relevant stock URL for the product image if none is provided.`;
+
+  return `
+You are a master Ad Architect. Your task is to select the BEST template AND the BEST theme from our Library.
+
+PREMIUM TEMPLATES (Structure):
+${JSON.stringify(templatesBrief, null, 2)}
+
+PREMIUM THEMES (Design/Skin):
+${JSON.stringify(themesBrief, null, 2)}
+
+BLUEPRINT INTENT: ${blueprint.label} - ${blueprint.visual.intent}
+
+VARIANT COPY:
+Hook: ${creative.copy.hook}
+Primary Text: ${creative.copy.primary_text}
+CTA: ${creative.copy.cta}
+
+${inputImageInstruction}
+
+INSTRUCTIONS:
+1. SELECT TEMPLATE: Choose the templateId based on industry/intent.
+2. SELECT THEME: Choose a themeId that matches the brand vibe (e.g. Cyber for Tech, Organic for Food).
+3. HYDRATE: Create a resolved "Premium Ad Directive" JSON.
+4. MERGE TOKENS: 
+   - You MUST output the 'tokens' object from the Selected Theme. 
+   - This theme 'tokens' will OVERRIDE the default tokens in the template.
+   - This effectively "skins" the layout with the new colors/fonts.
+   - If the theme array doesn't have a good match, fall back to the template's default tokens.
+5. LAYERS: Output the full 'layers' array from the template, ensuring text layers reference 'colors.text' or 'colors.accent' correctly.
+6. COMPLIANCE: Return ONLY valid JSON.
+
+OUTPUT STRUCTURE:
+{
+  "specVersion": "1.0",
+  "templateId": "SELECTED_ID",
+  "name": "TEMPLATE_NAME",
+  "format": { ... from template ... },
+  "tokens": { ... from template ... },
+  "layers": [ ... with resolved placeholders ... ],
+  "resolvedValues": { ... key/value pairs ... }
+}
+`;
+}
+
