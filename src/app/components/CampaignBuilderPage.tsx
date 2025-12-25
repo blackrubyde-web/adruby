@@ -5,6 +5,7 @@ import {
   Sparkles,
   Trash2,
   AlertTriangle,
+  Brain,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { PageShell, HeroHeader, Card } from './layout';
