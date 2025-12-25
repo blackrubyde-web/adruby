@@ -44,11 +44,11 @@ export const LayerPanel = ({ layers, selectedId, onSelect, onToggleVisibility, o
                                 {layer.type === 'text' || layer.type === 'cta' ? <Type className="w-4 h-4 opacity-70" /> : <ImageIcon className="w-4 h-4 opacity-70" />}
                             </div>
 
-                            <span className={`flex-1 truncate text-xs ${isSelected ? 'font-bold' : 'font-medium'}`}>
+                            <span className={`flex-1 text-xs break-words leading-tight pr-14 ${isSelected ? 'font-bold' : 'font-medium'}`}>
                                 {layer.name}
                             </span>
 
-                            <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <div className="absolute right-3 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity bg-card/80 backdrop-blur-sm rounded-lg p-0.5 shadow-sm border border-border">
                                 {onDuplicate && (
                                     <button
                                         onClick={(e) => { e.stopPropagation(); onDuplicate(layer.id); }}

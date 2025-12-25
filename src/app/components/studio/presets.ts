@@ -320,6 +320,53 @@ export const AD_TEMPLATES: AdTemplate[] = [
             ]
         }
     },
+    // --- COMMERCE ---
+    {
+        id: 'tpl_ecom_01',
+        name: 'Summer Sale',
+        niche: 'ecommerce',
+        document: {
+            backgroundColor: '#ffffff',
+            layers: [
+                { id: 'bg', type: 'background', name: 'Product BG', x: 0, y: 0, width: 1080, height: 1080, visible: true, locked: true, zIndex: 0, src: 'https://images.unsplash.com/photo-1523381210434-271e8be1f52b?q=80&w=2940&auto=format&fit=crop', opacity: 1, rotation: 0, fit: 'cover' } as any,
+                { id: 'overlay', type: 'overlay', name: 'White Overlay', x: 140, y: 140, width: 800, height: 800, visible: true, locked: false, zIndex: 5, src: '', opacity: 0.9, rotation: 0, fit: 'cover' } as any, // White box using empty src + opacity? tricky, or maybe just a shape. studio mostly supports images/text/cta. 
+                // Let's assume overlay type works or just use text/cta for now.
+                { id: 'title', type: 'text', name: 'Sale Title', x: 190, y: 300, width: 700, height: 200, visible: true, locked: false, zIndex: 10, text: 'SUMMER\nSALE', fontSize: 90, fontWeight: 900, fontFamily: 'Playfair Display', color: '#000000', align: 'center', rotation: 0, opacity: 1, lineHeight: 0.9, letterSpacing: -2 } as any,
+                { id: 'badge', type: 'cta', name: 'Discount', x: 415, y: 520, width: 250, height: 60, visible: true, locked: false, zIndex: 15, text: 'UP TO 50% OFF', fontSize: 20, fontWeight: 800, fontFamily: 'Inter', color: '#ffffff', bgColor: '#ef4444', radius: 50, rotation: 0, opacity: 1, lineHeight: 1 } as any,
+                { id: 'cta', type: 'cta', name: 'Shop CTA', x: 390, y: 700, width: 300, height: 70, visible: true, locked: false, zIndex: 20, text: 'SHOP NOW', fontSize: 18, fontWeight: 700, fontFamily: 'Inter', color: '#000000', bgColor: '#FFFFFF', borderColor: '#000000', borderWidth: 2, radius: 0, rotation: 0, opacity: 1, lineHeight: 1 } as any
+            ]
+        }
+    },
+    // --- COACHING ---
+    {
+        id: 'tpl_coach_01',
+        name: 'Webinar Invite',
+        niche: 'coach',
+        document: {
+            backgroundColor: '#fdf4ff',
+            layers: [
+                { id: 'bg', type: 'background', name: 'Portrait', x: 0, y: 0, width: 1080, height: 1080, visible: true, locked: true, zIndex: 0, src: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?q=80&w=2776&auto=format&fit=crop', opacity: 0.8, rotation: 0, fit: 'cover' } as any,
+                { id: 'title', type: 'text', name: 'Headline', x: 60, y: 650, width: 900, height: 200, visible: true, locked: false, zIndex: 10, text: 'Master Your\nMindset.', fontSize: 80, fontWeight: 400, fontFamily: 'Playfair Display', fontStyle: 'italic', color: '#FFFFFF', align: 'left', rotation: 0, opacity: 1, lineHeight: 0.9, letterSpacing: -1, shadowColor: '#000000', shadowBlur: 20 } as any,
+                { id: 'badge', type: 'cta', name: 'Live Badge', x: 60, y: 580, width: 180, height: 40, visible: true, locked: false, zIndex: 15, text: '🔴 LIVE WEBINAR', fontSize: 14, fontWeight: 700, fontFamily: 'Inter', color: '#FFFFFF', bgColor: '#db2777', radius: 20, rotation: 0, opacity: 1, lineHeight: 1 } as any,
+                { id: 'cta', type: 'cta', name: 'Sign Up', x: 60, y: 900, width: 320, height: 70, visible: true, locked: false, zIndex: 20, text: 'SAVE YOUR SEAT', fontSize: 18, fontWeight: 800, fontFamily: 'Inter', color: '#000000', bgColor: '#FFFFFF', radius: 4, rotation: 0, opacity: 1, lineHeight: 1 } as any
+            ]
+        }
+    },
+    // --- JOB ---
+    {
+        id: 'tpl_job_01',
+        name: 'Hiring Ad',
+        niche: 'job',
+        document: {
+            backgroundColor: '#111827',
+            layers: [
+                { id: 'bg', type: 'background', name: 'Office', x: 0, y: 0, width: 1080, height: 1080, visible: true, locked: true, zIndex: 0, src: 'https://images.unsplash.com/photo-1497215728101-856f4ea42174?q=80&w=2940&auto=format&fit=crop', opacity: 0.3, rotation: 0, fit: 'cover' } as any,
+                { id: 'title', type: 'text', name: 'Headline', x: 90, y: 200, width: 900, height: 200, visible: true, locked: false, zIndex: 10, text: 'WE ARE\nHIRING', fontSize: 110, fontWeight: 900, fontFamily: 'Inter', color: '#FFFFFF', align: 'center', rotation: 0, opacity: 1, lineHeight: 0.85, letterSpacing: -4 } as any,
+                { id: 'role', type: 'text', name: 'Roles', x: 240, y: 500, width: 600, height: 200, visible: true, locked: false, zIndex: 10, text: '• Senior Designer\n• Frontend Dev\n• Product Manager', fontSize: 32, fontWeight: 600, fontFamily: 'Inter', color: '#9ca3af', align: 'left', rotation: 0, opacity: 1, lineHeight: 1.6, letterSpacing: 0 } as any,
+                { id: 'cta', type: 'cta', name: 'Apply', x: 390, y: 850, width: 300, height: 75, visible: true, locked: false, zIndex: 20, text: 'APPLY NOW', fontSize: 20, fontWeight: 800, fontFamily: 'Inter', color: '#FFFFFF', bgColor: '#16a34a', radius: 50, rotation: 0, opacity: 1, lineHeight: 1 } as any
+            ]
+        }
+    },
     // --- FINANCE ---
     {
         id: 'tpl_finance_01',

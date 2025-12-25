@@ -239,25 +239,41 @@ export const AssetsPanel = ({ onAddLayer, onApplyTemplate }: AssetsPanelProps) =
                         );
                     })
                 ) : (
-                    <div className="grid grid-cols-1 gap-4">
-                        {AD_TEMPLATES.map(tpl => (
-                            <button
-                                key={tpl.id}
-                                onClick={() => onApplyTemplate(tpl.document)}
-                                className="group relative aspect-square rounded-2xl border border-border overflow-hidden hover:border-primary transition-all text-left"
-                            >
-                                <div className="absolute inset-0 bg-zinc-900 flex items-center justify-center p-4">
-                                    <div className="w-full h-full bg-zinc-800 rounded shadow-2xl overflow-hidden flex items-center justify-center text-[8px] font-black text-white/20 uppercase tracking-[5px]">
-                                        {tpl.niche} Layout
+                    <div className="space-y-8">
+                        {categories.map(cat => {
+                            const items = AD_TEMPLATES.filter(t => t.niche === cat.id);
+                            if (items.length === 0) return null;
+                            const Icon = cat.icon;
+
+                            return (
+                                <div key={cat.id} className="space-y-4">
+                                    <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground flex items-center gap-2">
+                                        <Icon className="w-3.5 h-3.5" /> {cat.label}
+                                    </label>
+                                    <div className="grid grid-cols-2 gap-3">
+                                        {items.map(tpl => (
+                                            <button
+                                                key={tpl.id}
+                                                onClick={() => onApplyTemplate(tpl.document)}
+                                                className="group relative aspect-square rounded-2xl border border-border overflow-hidden hover:border-primary transition-all text-left"
+                                            >
+                                                <div className="absolute inset-0 bg-zinc-900 flex items-center justify-center p-4">
+                                                    {/* If we have a preview image, eventually use it here. For now abstract layout. */}
+                                                    <div className="w-full h-full bg-zinc-800 rounded shadow-2xl overflow-hidden flex items-center justify-center text-[8px] font-black text-white/20 uppercase tracking-[5px]">
+                                                        {tpl.niche}
+                                                    </div>
+                                                </div>
+                                                <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent opacity-100 transition-all" />
+                                                <div className="absolute bottom-3 left-3 right-3 text-white">
+                                                    <p className="text-[10px] font-black uppercase tracking-tighter leading-tight">{tpl.name}</p>
+                                                    <p className="text-[8px] opacity-60 uppercase mt-0.5 font-bold text-primary">Template</p>
+                                                </div>
+                                            </button>
+                                        ))}
                                     </div>
                                 </div>
-                                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-100 group-hover:from-primary/80 transition-all" />
-                                <div className="absolute bottom-3 left-3 right-3 text-white">
-                                    <p className="text-[10px] font-black uppercase tracking-tighter">{tpl.name}</p>
-                                    <p className="text-[8px] opacity-60 uppercase">{tpl.niche}</p>
-                                </div>
-                            </button>
-                        ))}
+                            );
+                        })}
                     </div>
                 )}
             </div>

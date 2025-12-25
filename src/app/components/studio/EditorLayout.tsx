@@ -442,12 +442,12 @@ export const EditorLayout = ({ onClose, onSave }: EditorLayoutProps) => {
                     </div>
                 </div>
 
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-2">
                     {/* Premium Toggles */}
-                    <div className="flex items-center bg-muted rounded-xl p-1 mr-2 border border-border">
+                    <div className="flex items-center bg-muted rounded-lg p-1 mr-2 border border-border h-9">
                         <button
                             onClick={() => setIsMultiverseMode(!isMultiverseMode)}
-                            className={`px-3 py-1.5 text-[10px] font-bold rounded-lg transition-all ${isMultiverseMode ? 'bg-indigo-600 text-white shadow-lg' : 'text-muted-foreground hover:text-foreground'}`}
+                            className={`px-3 h-full text-[10px] font-bold rounded-md transition-all flex items-center ${isMultiverseMode ? 'bg-indigo-600 text-white shadow-sm' : 'text-muted-foreground hover:text-foreground'}`}
                         >
                             Multiverse
                         </button>
@@ -456,18 +456,18 @@ export const EditorLayout = ({ onClose, onSave }: EditorLayoutProps) => {
                                 setIsPreviewMode(!isPreviewMode);
                                 if (!isPreviewMode) setIsMultiverseMode(false); // Disable multiverse in mockup
                             }}
-                            className={`px-3 py-1.5 text-[10px] font-bold rounded-lg transition-all ${isPreviewMode ? 'bg-primary text-primary-foreground shadow-lg' : 'text-muted-foreground hover:text-foreground'}`}
+                            className={`px-3 h-full text-[10px] font-bold rounded-md transition-all flex items-center ${isPreviewMode ? 'bg-primary text-primary-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'}`}
                         >
                             Mockup
                         </button>
                     </div>
 
                     {/* Undo/Redo */}
-                    <div className="flex items-center gap-1 bg-muted rounded-lg p-1 border border-border">
+                    <div className="flex items-center gap-1 bg-muted rounded-lg p-1 border border-border h-9">
                         <button
                             onClick={handleUndo}
                             disabled={historyIndex <= 0}
-                            className={`p-2 rounded-md transition-all ${historyIndex > 0 ? 'hover:bg-background text-foreground' : 'text-muted-foreground/40 cursor-not-allowed'}`}
+                            className={`px-2 h-full rounded-md transition-all flex items-center justify-center ${historyIndex > 0 ? 'hover:bg-background text-foreground' : 'text-muted-foreground/40 cursor-not-allowed'}`}
                             title="Undo (Ctrl+Z)"
                         >
                             <Undo2 className="w-4 h-4" />
@@ -475,7 +475,7 @@ export const EditorLayout = ({ onClose, onSave }: EditorLayoutProps) => {
                         <button
                             onClick={handleRedo}
                             disabled={historyIndex >= history.length - 1}
-                            className={`p-2 rounded-md transition-all ${historyIndex < history.length - 1 ? 'hover:bg-background text-foreground' : 'text-muted-foreground/40 cursor-not-allowed'}`}
+                            className={`px-2 h-full rounded-md transition-all flex items-center justify-center ${historyIndex < history.length - 1 ? 'hover:bg-background text-foreground' : 'text-muted-foreground/40 cursor-not-allowed'}`}
                             title="Redo (Ctrl+Y)"
                         >
                             <Redo2 className="w-4 h-4" />
@@ -484,7 +484,7 @@ export const EditorLayout = ({ onClose, onSave }: EditorLayoutProps) => {
 
                     <button
                         onClick={handleAudit}
-                        className="flex items-center gap-2 px-4 py-2 text-xs font-bold bg-muted hover:bg-muted/80 text-foreground rounded-lg transition-all border border-border group"
+                        className="flex items-center gap-2 px-4 h-9 text-xs font-bold bg-muted hover:bg-muted/80 text-foreground rounded-lg transition-all border border-border group"
                     >
                         <ShieldCheck className="w-4 h-4 text-emerald-500 group-hover:scale-110 transition-transform" />
                         AI Audit
@@ -493,33 +493,33 @@ export const EditorLayout = ({ onClose, onSave }: EditorLayoutProps) => {
                     {/* PREMIUM FEATURE BUTTONS */}
                     <button
                         onClick={() => setShowTextToAdModal(true)}
-                        className="flex items-center gap-2 px-4 py-2 text-xs font-bold bg-gradient-to-r from-violet-500 to-fuchsia-500 text-white rounded-lg hover:shadow-lg hover:shadow-fuchsia-500/30 transition-all"
+                        className="flex items-center gap-2 px-4 h-9 text-xs font-bold bg-gradient-to-r from-violet-500 to-fuchsia-500 text-white rounded-lg hover:shadow-lg hover:shadow-fuchsia-500/30 transition-all"
                     >
                         <Sparkles className="w-4 h-4" /> Text→Ad
                     </button>
                     <button
                         onClick={() => setShowBrandModal(true)}
-                        className="flex items-center gap-2 px-4 py-2 text-xs font-bold bg-muted hover:bg-muted/80 text-foreground rounded-lg transition-all border border-border group"
+                        className="flex items-center gap-2 px-4 h-9 text-xs font-bold bg-muted hover:bg-muted/80 text-foreground rounded-lg transition-all border border-border group"
                     >
                         <Palette className="w-4 h-4 text-amber-500 group-hover:scale-110 transition-transform" /> Brand
                     </button>
                     <button
                         onClick={() => setShowResizeModal(true)}
-                        className="flex items-center gap-2 px-4 py-2 text-xs font-bold bg-muted hover:bg-muted/80 text-foreground rounded-lg transition-all border border-border group"
+                        className="flex items-center gap-2 px-4 h-9 text-xs font-bold bg-muted hover:bg-muted/80 text-foreground rounded-lg transition-all border border-border group"
                     >
                         <Maximize2 className="w-4 h-4 text-cyan-500 group-hover:scale-110 transition-transform" /> Resize
                     </button>
 
-                    <button className="flex items-center gap-2 px-4 py-2 text-xs font-semibold bg-muted hover:bg-muted/80 rounded-lg transition-all border border-border">
+                    <button className="flex items-center gap-2 px-4 h-9 text-xs font-semibold bg-muted hover:bg-muted/80 rounded-lg transition-all border border-border">
                         <Share2 className="w-4 h-4" /> Share
                     </button>
                     <button
                         onClick={() => setShowExportModal(true)}
-                        className="flex items-center gap-2 px-5 py-2 text-xs font-bold bg-gradient-to-r from-indigo-500 to-purple-600 text-white rounded-lg hover:shadow-lg hover:shadow-purple-500/30 transition-all"
+                        className="flex items-center gap-2 px-5 h-9 text-xs font-bold bg-gradient-to-r from-indigo-500 to-purple-600 text-white rounded-lg hover:shadow-lg hover:shadow-purple-500/30 transition-all"
                     >
                         <Download className="w-4 h-4" /> Export
                     </button>
-                    <button onClick={() => onSave?.(doc)} className="flex items-center gap-2 px-6 py-2 text-xs font-bold bg-primary text-primary-foreground rounded-lg hover:shadow-lg hover:shadow-primary/20 transition-all">
+                    <button onClick={() => onSave?.(doc)} className="flex items-center gap-2 px-6 h-9 text-xs font-bold bg-primary text-primary-foreground rounded-lg hover:shadow-lg hover:shadow-primary/20 transition-all">
                         <Save className="w-4 h-4" /> Save Ad
                     </button>
                 </div>
