@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState } from 'react';
 import {
     Users,
     Gift,
@@ -8,7 +8,6 @@ import {
     RefreshCw,
     Check,
     X,
-    Plus,
     ChevronLeft,
     ChevronRight,
     CreditCard,
@@ -18,7 +17,6 @@ import {
     AlertCircle,
     Loader2,
     Shield,
-    ExternalLink,
     Copy
 } from 'lucide-react';
 import { useAdmin } from '../contexts/AdminContext';
@@ -209,8 +207,8 @@ export function AdminDashboardPage() {
                         key={tab.id}
                         onClick={() => setActiveTab(tab.id)}
                         className={`flex items-center gap-2 px-4 py-2 rounded-xl font-medium transition-colors whitespace-nowrap ${activeTab === tab.id
-                                ? 'bg-primary text-primary-foreground'
-                                : 'bg-card text-muted-foreground hover:text-foreground hover:bg-muted'
+                            ? 'bg-primary text-primary-foreground'
+                            : 'bg-card text-muted-foreground hover:text-foreground hover:bg-muted'
                             }`}
                     >
                         <tab.icon className="w-4 h-4" />

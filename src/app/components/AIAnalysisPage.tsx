@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState, useCallback } from 'react';
 import {
   Brain,
   ChevronDown,
@@ -145,8 +145,6 @@ export function AIAnalysisPage() {
   };
 
   const [isAnalyzingAI, setIsAnalyzingAI] = useState(false);
-  const [aiAnalysisCache, setAiAnalysisCache] = useState<Record<string, AIAnalysis>>({});
-  const [aiPowered, setAiPowered] = useState(false);
 
   const { strategies } = useStrategies();
 
@@ -200,7 +198,7 @@ export function AIAnalysisPage() {
           })),
           strategy: activeStrategy ? {
             name: activeStrategy.title,
-            description: activeStrategy.briefSummary,
+            description: activeStrategy.raw_content_markdown,
           } : null
         }),
       });
@@ -245,7 +243,7 @@ export function AIAnalysisPage() {
     return Math.max(20, Math.min(100, Math.round(roasScore + ctrScore + convScore)));
   };
 
-  const buildAiAnalysis = (id: string, campaignId: string, metrics: { roas: number; ctr: number; conversions: number; spend: number }): AIAnalysis => {
+  const buildAiAnalysis = useCallback((id: string, campaignId: string, metrics: { roas: number; ctr: number; conversions: number; spend: number }): AIAnalysis => {
     // Use cached AI analysis if available (from GPT-4 endpoint)
     const cached = aiAnalysisCache[campaignId];
     if (cached) {
@@ -289,7 +287,7 @@ export function AIAnalysisPage() {
         `Conversions: ${metrics.conversions}`,
       ]
     } satisfies AIAnalysis;
-  };
+  }, [aiAnalysisCache]);
 
   useEffect(() => {
     const next = (metaCampaigns || []).map((campaign) => {
@@ -767,6 +765,7 @@ export function AIAnalysisPage() {
             <Chip>€{(totalRevenue / 1000).toFixed(1)}K Revenue</Chip>
             <Chip>{totalRoas.toFixed(2)}x ROAS</Chip>
             <Chip>{allRecommendations.length} AI Insights</Chip>
+            {aiPowered && <Chip variant="neutral" icon={<Brain className="w-3 h-3" />}>GPT-4o Powered</Chip>}
           </>
         }
         actions={
