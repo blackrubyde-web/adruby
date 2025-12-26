@@ -616,10 +616,104 @@ Generate this EXACT JSON structure:
                                 </p>
                             </div>
 
-                            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 h-[500px]">
-                                {/* TODO: Add Preview Panel content here */}
-                                <div className="lg:col-span-12 text-center text-muted-foreground">
-                                    Preview wird geladen...
+                            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 h-[500px] overflow-y-auto">
+                                {/* Left: Simplified Ad Preview */}
+                                <div className="lg:col-span-7 space-y-4">
+                                    <div className="aspect-square rounded-2xl overflow-hidden border-2 border-border shadow-2xl" style={{ backgroundColor: generatedDoc.backgroundColor }}>
+                                        <div className="relative w-full h-full p-16 flex flex-col">
+                                            {/* Headline */}
+                                            <h2 className="text-6xl font-black leading-tight mb-auto" style={{
+                                                color: formData.tone === 'minimal' ? '#000000' : '#ffffff'
+                                            }}>
+                                                {generatedHooks.headlines[selectedHookIndex]}
+                                            </h2>
+
+                                            {/* Description */}
+                                            <p className="text-2xl mb-8" style={{
+                                                color: formData.tone === 'minimal' ? '#333333' : '#e0e0e0'
+                                            }}>
+                                                {generatedHooks.descriptions[Math.min(selectedHookIndex, generatedHooks.descriptions.length - 1)]}
+                                            </p>
+
+                                            {/* CTA Button */}
+                                            <div className="px-12 py-6 bg-black dark:bg-white text-white dark:text-black rounded-full text-2xl font-bold shadow-2xl inline-block self-start">
+                                                {generatedHooks.ctas[Math.min(selectedHookIndex, generatedHooks.ctas.length - 1)]}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Right: Hooks Panel */}
+                                <div className="lg:col-span-5 space-y-6 overflow-y-auto pr-2">
+                                    {/* Headlines */}
+                                    <div className="space-y-3">
+                                        <h4 className="text-sm font-bold uppercase tracking-widest text-muted-foreground flex items-center gap-2">
+                                            <Zap className="w-4 h-4 text-rose-500" />
+                                            Headlines ({generatedHooks.headlines.length})
+                                        </h4>
+                                        <div className="space-y-2">
+                                            {generatedHooks.headlines.map((headline, i) => (
+                                                <button
+                                                    key={i}
+                                                    onClick={() => setSelectedHookIndex(i)}
+                                                    className={`w-full text-left p-3 rounded-xl border-2 transition-all duration-200 ${selectedHookIndex === i
+                                                            ? 'border-primary bg-primary/5 dark:bg-primary/10 ring-2 ring-primary/20'
+                                                            : 'border-border hover:border-primary/50 bg-muted/30 dark:bg-muted/10'
+                                                        }`}
+                                                >
+                                                    <div className="flex items-start gap-2">
+                                                        <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 mt-0.5 ${selectedHookIndex === i
+                                                                ? 'border-primary bg-primary'
+                                                                : 'border-border bg-background'
+                                                            }`}>
+                                                            {selectedHookIndex === i && (
+                                                                <Check className="w-3 h-3 text-white" />
+                                                            )}
+                                                        </div>
+                                                        <span className="text-sm font-medium text-foreground leading-relaxed">
+                                                            {headline}
+                                                        </span>
+                                                    </div>
+                                                </button>
+                                            ))}
+                                        </div>
+                                    </div>
+
+                                    {/* Descriptions */}
+                                    <div className="space-y-3">
+                                        <h4 className="text-sm font-bold uppercase tracking-widest text-muted-foreground flex items-center gap-2">
+                                            <Sparkles className="w-4 h-4 text-amber-500" />
+                                            Beschreibungen ({generatedHooks.descriptions.length})
+                                        </h4>
+                                        <div className="space-y-2">
+                                            {generatedHooks.descriptions.map((desc, i) => (
+                                                <div
+                                                    key={i}
+                                                    className="p-3 rounded-lg border border-border bg-muted/20 text-xs text-muted-foreground leading-relaxed"
+                                                >
+                                                    {desc}
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+
+                                    {/* CTAs */}
+                                    <div className="space-y-3">
+                                        <h4 className="text-sm font-bold uppercase tracking-widest text-muted-foreground flex items-center gap-2">
+                                            <Check className="w-4 h-4 text-emerald-500" />
+                                            CTAs ({generatedHooks.ctas.length})
+                                        </h4>
+                                        <div className="flex flex-wrap gap-2">
+                                            {generatedHooks.ctas.map((cta, i) => (
+                                                <div
+                                                    key={i}
+                                                    className="px-4 py-2 rounded-full bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 text-xs font-bold"
+                                                >
+                                                    {cta}
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
 
