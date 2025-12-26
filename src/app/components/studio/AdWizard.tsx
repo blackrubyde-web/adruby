@@ -210,11 +210,11 @@ export const AdWizard = ({ isOpen, onClose, onComplete }: AdWizardProps) => {
             />
 
             {/* Content Card */}
-            <div className={`relative w-full max-w-3xl mx-4 rounded-3xl shadow-2xl overflow-hidden max-h-[90vh] flex flex-col transition-all duration-500 transform border border-border bg-background ${isExiting ? 'scale-95 translate-y-8' : 'scale-100 translate-y-0'}`}>
+            <div className={`relative w-full max-w-3xl mx-4 rounded-3xl shadow-2xl overflow-hidden h-[90vh] flex flex-col transition-all duration-500 transform border border-border bg-background ${isExiting ? 'scale-95 translate-y-8' : 'scale-100 translate-y-0'}`}>
 
                 {/* Header */}
-                <div className="p-6 md:p-8 border-b border-border shrink-0">
-                    <div className="flex items-center justify-between mb-6">
+                <div className="p-4 md:p-6 border-b border-border shrink-0">
+                    <div className="flex items-center justify-between mb-4">
                         <div className="flex items-center gap-3">
                             <div className="w-10 h-10 md:w-12 md:h-12 rounded-2xl bg-primary/10 dark:bg-primary/20 border border-primary/20 flex items-center justify-center">
                                 <Sparkles className="w-5 h-5 md:w-6 md:h-6 text-primary" />
@@ -266,7 +266,7 @@ export const AdWizard = ({ isOpen, onClose, onComplete }: AdWizardProps) => {
                 </div>
 
                 {/* Content Area */}
-                <div className="p-6 md:p-8 overflow-y-auto flex-1">
+                <div className="p-4 md:p-6 overflow-y-auto flex-1">
                     {/* Step 1: Product Info */}
                     {step === 1 && (
                         <div className="grid grid-cols-1 md:grid-cols-12 gap-6 md:gap-8 animate-in slide-in-from-right-8 fade-in duration-500">
@@ -386,10 +386,10 @@ export const AdWizard = ({ isOpen, onClose, onComplete }: AdWizardProps) => {
                             {isGenerating ? (
                                 <div className="relative text-center space-y-6">
                                     {/* Pulsing Orb */}
-                                    <div className="w-32 h-32 md:w-48 md:h-48 rounded-full bg-gradient-to-r from-primary to-purple-600 blur-[60px] md:blur-[80px] animate-pulse opacity-50 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" />
+                                    <div className="w-32 h-32 md:w-48 md:h-48 rounded-full bg-gradient-to-r from-primary to-red-600 blur-[60px] md:blur-[80px] animate-pulse opacity-50 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" />
                                     <div className="relative w-24 h-24 md:w-32 md:h-32 mx-auto mb-6 md:mb-8">
                                         <div className="absolute inset-0 rounded-full border-4 border-border border-t-primary animate-spin" style={{ animationDuration: '3s' }} />
-                                        <div className="absolute inset-0 rounded-full border-4 border-border border-b-purple-500 animate-spin" style={{ animationDuration: '2s', animationDirection: 'reverse' }} />
+                                        <div className="absolute inset-0 rounded-full border-4 border-border border-b-red-500 animate-spin" style={{ animationDuration: '2s', animationDirection: 'reverse' }} />
                                         <div className="absolute inset-0 flex items-center justify-center">
                                             <Zap className="w-8 h-8 md:w-10 md:h-10 text-primary drop-shadow-[0_0_15px_rgba(var(--primary),0.5)] animate-pulse" />
                                         </div>
@@ -465,7 +465,7 @@ export const AdWizard = ({ isOpen, onClose, onComplete }: AdWizardProps) => {
                         <button
                             onClick={handleGenerate}
                             disabled={isGenerating}
-                            className="flex items-center gap-2 md:gap-3 px-6 md:px-8 py-2.5 md:py-3 bg-gradient-to-r from-primary to-purple-600 text-white rounded-xl font-bold text-sm md:text-base hover:shadow-lg hover:shadow-primary/30 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                            className="flex items-center gap-2 md:gap-3 px-6 md:px-8 py-2.5 md:py-3 bg-gradient-to-r from-primary to-red-600 text-white rounded-xl font-bold text-sm md:text-base hover:shadow-lg hover:shadow-primary/30 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                             {isGenerating ? (
                                 <>
