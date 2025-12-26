@@ -2,9 +2,13 @@
 -- Description: Stores daily Meta Ads insights and performance metrics
 -- 
 -- Usage: Run this in Supabase SQL Editor
+-- NOTE: This will DROP the existing table if it exists (safe for development)
 
--- Create table if not exists
-CREATE TABLE IF NOT EXISTS meta_insights_daily (
+-- Drop existing table if structure is wrong
+DROP TABLE IF EXISTS meta_insights_daily CASCADE;
+
+-- Create table
+CREATE TABLE meta_insights_daily (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
     
@@ -35,11 +39,7 @@ CREATE TABLE IF NOT EXISTS meta_insights_daily (
     
     -- Timestamps
     created_at TIMESTAMPTZ DEFAULT now(),
-    updated_at TIMESTAMPTZ DEFAULT now(),
-    
-    -- Unique constraint to prevent duplicates
-    CONSTRAINT unique_meta_insight_daily 
-        UNIQUE (user_id, ad_account_id, date, campaign_id, adset_id, ad_id)
+    updated_at TIMESTAMPTZ DEFAULT now()
 );
 
 -- Create indexes for performance
@@ -59,6 +59,19 @@ CREATE INDEX IF NOT EXISTS idx_meta_insights_campaign
 -- Composite index for common queries
 CREATE INDEX IF NOT EXISTS idx_meta_insights_user_date 
     ON meta_insights_daily(user_id, date DESC);
+
+-- Add unique constraint separately (to avoid column reference issues)
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_constraint 
+        WHERE conname = 'unique_meta_insight_daily'
+    ) THEN
+        ALTER TABLE meta_insights_daily
+        ADD CONSTRAINT unique_meta_insight_daily
+        UNIQUE (user_id, ad_account_id, date, campaign_id, adset_id, ad_id);
+    END IF;
+END $$;
 
 -- Enable Row Level Security
 ALTER TABLE meta_insights_daily ENABLE ROW LEVEL SECURITY;
