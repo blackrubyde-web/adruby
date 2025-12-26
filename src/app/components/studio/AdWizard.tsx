@@ -9,10 +9,12 @@ interface AdWizardProps {
     onComplete: (document: AdDocument) => void;
 }
 
+// Form data structure (from old AdBuilder)
 interface FormData {
     brandName: string;
     productName: string;
     productDescription: string;
+    imageEnhancementPrompt: string;
     tone: 'professional' | 'playful' | 'bold' | 'luxury' | 'minimal';
 }
 
@@ -40,6 +42,7 @@ export const AdWizard = ({ isOpen, onClose, onComplete }: AdWizardProps) => {
         brandName: '',
         productName: '',
         productDescription: '',
+        imageEnhancementPrompt: '',
         tone: 'professional',
     });
     const [isGenerating, setIsGenerating] = useState(false);
@@ -230,6 +233,7 @@ export const AdWizard = ({ isOpen, onClose, onComplete }: AdWizardProps) => {
                 brandName: '',
                 productName: '',
                 productDescription: '',
+                imageEnhancementPrompt: '',
                 tone: 'professional',
             });
             setIsExiting(false);
@@ -380,6 +384,27 @@ export const AdWizard = ({ isOpen, onClose, onComplete }: AdWizardProps) => {
                                         className="w-full bg-muted/50 dark:bg-muted/30 border border-border rounded-xl px-4 md:px-5 py-3 md:py-4 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-transparent transition-all hover:bg-muted/70 dark:hover:bg-muted/50 resize-none"
                                     />
                                 </div>
+
+                                {/* AI Image Enhancement - Only show if image uploaded */}
+                                {uploadedImage && (
+                                    <div className="space-y-2 group relative">
+                                        <label className="text-xs font-bold uppercase tracking-widest text-muted-foreground group-focus-within:text-primary transition-colors flex items-center gap-2">
+                                            <Sparkles className="w-3.5 h-3.5 text-primary" />
+                                            KI Bild-Verbesserung (Optional)
+                                        </label>
+                                        <textarea
+                                            value={formData.imageEnhancementPrompt}
+                                            onChange={(e) => updateField('imageEnhancementPrompt', e.target.value)}
+                                            placeholder="z.B. 'Entferne Hintergrund, füge professionellen Studio-Hintergrund hinzu, verbessere Beleuchtung und Farben für Premium-Look'"
+                                            rows={3}
+                                            className="w-full bg-gradient-to-br from-primary/5 to-red-500/5 dark:from-primary/10 dark:to-red-500/10 border border-primary/30 rounded-xl px-4 md:px-5 py-3 md:py-4 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-transparent transition-all hover:border-primary/50 resize-none"
+                                        />
+                                        <p className="text-[10px] text-muted-foreground flex items-center gap-1.5">
+                                            <Sparkles className="w-3 h-3" />
+                                            Die KI optimiert dein Bild für professionelle Ad-Qualität
+                                        </p>
+                                    </div>
+                                )}
                             </div>
                         </div>
                     )}
