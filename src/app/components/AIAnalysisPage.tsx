@@ -23,6 +23,8 @@ import { useMetaCampaigns } from '../hooks/useMetaCampaigns';
 import { useStrategies } from '../hooks/useStrategies';
 import { useAnalyticsData } from '../hooks/useAnalyticsData';
 import { applyMetaAction } from '../lib/api/meta';
+import { PerformanceHeatmap } from './ai/PerformanceHeatmap';
+import { StreamingAnalysis } from './ai/StreamingAnalysis';
 
 type AIRecommendation = 'kill' | 'duplicate' | 'increase' | 'decrease';
 
@@ -113,6 +115,7 @@ export function AIAnalysisPage() {
   const [isApplying, setIsApplying] = useState(false);
   const [aiAnalysisCache, setAiAnalysisCache] = useState<Record<string, AIAnalysis>>({});
   const [aiPowered, setAiPowered] = useState(false);
+  const [showHeatmap, setShowHeatmap] = useState(true);
 
   // Helper to apply AI recommendations to Meta
   const applyRecommendations = async () => {
