@@ -96,7 +96,7 @@ const getToneBackgroundGuidance = (tone: string): string => {
  * Call GPT-4 Vision to analyze image and generate DALL-E prompt
  */
 async function analyzeImageWithVision(req: EnhancementRequest): Promise<{ dallePrompt: string; analysisNotes: string }> {
-    const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
+    const OPENAI_API_KEY = import.meta.env.VITE_OPENAI_API_KEY || process.env.OPENAI_API_KEY;
 
     if (!OPENAI_API_KEY) {
         throw new Error('OpenAI API key not configured');
@@ -167,7 +167,7 @@ async function analyzeImageWithVision(req: EnhancementRequest): Promise<{ dalleP
  * Generate enhanced image with DALL-E 3
  */
 async function generateWithDALLE3(prompt: string): Promise<string> {
-    const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
+    const OPENAI_API_KEY = import.meta.env.VITE_OPENAI_API_KEY || process.env.OPENAI_API_KEY;
 
     const response = await fetch('https://api.openai.com/v1/images/generations', {
         method: 'POST',
