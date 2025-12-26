@@ -10,21 +10,31 @@ interface AdWizardProps {
     onComplete: (document: AdDocument) => void;
 }
 
-// Form data structure (from old AdBuilder)
+// Form data structure
 interface FormData {
     brandName: string;
     productName: string;
     productDescription: string;
     imageEnhancementPrompt: string;
+    painPoints: string;
+    usps: string;
+    targetAudience: string;
     tone: 'professional' | 'playful' | 'bold' | 'luxury' | 'minimal';
 }
 
-type WizardStep = 1 | 2 | 3;
+interface GeneratedHooks {
+    headlines: string[];
+    descriptions: string[];
+    ctas: string[];
+}
+
+type WizardStep = 1 | 2 | 3 | 4;
 
 const STEPS = [
     { id: 1, name: 'Produkt', icon: Sparkles },
     { id: 2, name: 'Stil', icon: Wand2 },
-    { id: 3, name: 'Erstellen', icon: Zap },
+    { id: 3, name: 'Copy', icon: Zap },
+    { id: 4, name: 'Vorschau', icon: Check },
 ];
 
 const TONE_OPTIONS = [
@@ -44,9 +54,15 @@ export const AdWizard = ({ isOpen, onClose, onComplete }: AdWizardProps) => {
         productName: '',
         productDescription: '',
         imageEnhancementPrompt: '',
+        painPoints: '',
+        usps: '',
+        targetAudience: '',
         tone: 'professional',
     });
     const [isGenerating, setIsGenerating] = useState(false);
+    const [generatedHooks, setGeneratedHooks] = useState<GeneratedHooks | null>(null);
+    const [selectedHookIndex, setSelectedHookIndex] = useState(0);
+    const [generatedDoc, setGeneratedDoc] = useState<AdDocument | null>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
 
     const updateField = (field: keyof FormData, value: string) => {
@@ -256,6 +272,9 @@ export const AdWizard = ({ isOpen, onClose, onComplete }: AdWizardProps) => {
                 productName: '',
                 productDescription: '',
                 imageEnhancementPrompt: '',
+                painPoints: '',
+                usps: '',
+                targetAudience: '',
                 tone: 'professional',
             });
             setIsExiting(false);
