@@ -91,22 +91,60 @@ export const AdWizard = ({ isOpen, onClose, onComplete }: AdWizardProps) => {
             height: 1080,
             backgroundColor: formData.tone === 'minimal' ? '#ffffff' : '#000000',
             layers: [
-                // Background/Product Image
-                ...(uploadedImage ? [{
-                    id: `bg-${Date.now()}`,
-                    type: 'product' as const,
-                    name: 'Product Image',
-                    x: 0,
-                    y: 0,
-                    width: 1080,
-                    height: 1080,
-                    rotation: 0,
-                    opacity: 1,
-                    locked: false,
-                    visible: true,
-                    src: uploadedImage,
-                    fit: 'cover' as const
-                }] : []),
+                // Professional Image Setup: Background Blur + Product Focus
+                ...(uploadedImage ? [
+                    // Layer 1: Blurred Background
+                    {
+                        id: `bg-blur-${Date.now()}`,
+                        type: 'background',
+                        name: 'Background Blur',
+                        x: 0,
+                        y: 0,
+                        width: 1080,
+                        height: 1080,
+                        rotation: 0,
+                        opacity: 0.3,
+                        locked: false,
+                        visible: true,
+                        src: uploadedImage,
+                        fit: 'cover',
+                        blur: 40
+                    },
+                    // Layer 2: Gradient Overlay
+                    {
+                        id: `overlay-${Date.now()}`,
+                        type: 'overlay',
+                        name: 'Gradient Overlay',
+                        x: 0,
+                        y: 0,
+                        width: 1080,
+                        height: 1080,
+                        rotation: 0,
+                        opacity: 0.6,
+                        locked: false,
+                        visible: true,
+                        fill: formData.tone === 'minimal' ? '#ffffff' : '#000000'
+                    },
+                    // Layer 3: Product Image (Centered & Framed)
+                    {
+                        id: `product-${Date.now()}`,
+                        type: 'product',
+                        name: 'Product Image',
+                        x: 140,
+                        y: 400,
+                        width: 800,
+                        height: 500,
+                        rotation: 0,
+                        opacity: 1,
+                        locked: false,
+                        visible: true,
+                        src: uploadedImage,
+                        fit: 'contain',
+                        shadowColor: 'rgba(0,0,0,0.3)',
+                        shadowBlur: 30,
+                        shadowOffsetY: 10
+                    }
+                ] : []),
                 // Headline
                 {
                     id: `text-${Date.now()}`,
@@ -175,7 +213,7 @@ export const AdWizard = ({ isOpen, onClose, onComplete }: AdWizardProps) => {
                     shadowBlur: 15,
                     shadowOffsetY: 5
                 }
-            ] as StudioLayer[]
+            ] as any as StudioLayer[]
         };
 
         setIsGenerating(false);
