@@ -180,7 +180,7 @@ export const AdWizard = ({ isOpen, onClose, onComplete }: AdWizardProps) => {
 
         setIsGenerating(false);
         onComplete(doc);
-        handleClose();
+        // Parent (StudioPage) handles view transition, don't close here
     };
 
     const handleClose = () => {
