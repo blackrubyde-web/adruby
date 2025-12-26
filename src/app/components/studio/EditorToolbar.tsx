@@ -53,8 +53,8 @@ export const EditorToolbar: React.FC<EditorToolbarProps> = ({
 
     return (
         <div className="h-14 md:h-16 border-b border-border/50 flex items-center justify-between px-3 md:px-6 bg-background dark:bg-gradient-to-r dark:from-card dark:via-card dark:to-card/95 backdrop-blur-xl z-30 shrink-0 shadow-sm">
-            {/* Left Section */}
-            <div className="flex items-center gap-2 md:gap-4 flex-1 min-w-0">
+            {/* Left Section - Minimal */}
+            <div className="flex items-center gap-3 md:gap-4">
                 <button
                     onClick={onClose}
                     className="p-2 hover:bg-red-500/10 hover:text-red-500 rounded-lg transition-all text-muted-foreground shrink-0"
@@ -63,43 +63,30 @@ export const EditorToolbar: React.FC<EditorToolbarProps> = ({
                     <X className="w-4 h-4 md:w-5 md:h-5" />
                 </button>
 
-                {/* Tool Toggle - Responsive */}
-                <div className="hidden sm:flex items-center bg-muted/50 dark:bg-muted/50 backdrop-blur-sm rounded-lg p-0.5 border border-border/50 h-9">
+                {/* Undo/Redo */}
+                <div className="flex items-center gap-1 bg-muted dark:bg-muted rounded-lg p-0.5 border border-border h-9">
                     <button
-                        onClick={() => setActiveTool('select')}
-                        className={`px-2 md:px-3 h-full rounded-md transition-all flex items-center gap-1.5 ${activeTool === 'select'
-                                ? 'bg-background dark:bg-background text-foreground shadow-sm'
-                                : 'text-muted-foreground hover:text-foreground'
+                        onClick={onUndo}
+                        disabled={historyIndex <= 0}
+                        className={`px-2 h-full rounded-md transition-all ${historyIndex > 0
+                                ? 'hover:bg-background dark:hover:bg-background text-foreground'
+                                : 'text-muted-foreground/40 cursor-not-allowed'
                             }`}
-                        title="Auswahl (V)"
+                        title="Rückgängig (⌘Z)"
                     >
-                        <MousePointer2 className="w-3.5 h-3.5 md:w-4 md:h-4" />
-                        <span className="text-[9px] md:text-[10px] font-bold uppercase hidden md:inline">Auswahl</span>
+                        <Undo2 className="w-4 h-4" />
                     </button>
                     <button
-                        onClick={() => setActiveTool('hand')}
-                        className={`px-2 md:px-3 h-full rounded-md transition-all flex items-center gap-1.5 ${activeTool === 'hand'
-                                ? 'bg-background dark:bg-background text-foreground shadow-sm'
-                                : 'text-muted-foreground hover:text-foreground'
+                        onClick={onRedo}
+                        disabled={historyIndex >= historyLength - 1}
+                        className={`px-2 h-full rounded-md transition-all ${historyIndex < historyLength - 1
+                                ? 'hover:bg-background dark:hover:bg-background text-foreground'
+                                : 'text-muted-foreground/40 cursor-not-allowed'
                             }`}
-                        title="Hand (H)"
+                        title="Wiederholen (⌘⇧Z)"
                     >
-                        <Hand className="w-3.5 h-3.5 md:w-4 md:h-4" />
-                        <span className="text-[9px] md:text-[10px] font-bold uppercase hidden md:inline">Bewegen</span>
+                        <Redo2 className="w-4 h-4" />
                     </button>
-                </div>
-
-                <div className="hidden md:block h-8 w-px bg-border/50" />
-
-                {/* Document Info - Responsive */}
-                <div className="flex flex-col min-w-0 flex-1 md:flex-initial">
-                    <h1 className="font-bold text-xs md:text-sm tracking-tight truncate">{doc.name}</h1>
-                    <div className="flex items-center gap-1.5 md:gap-2">
-                        <span className="text-[8px] md:text-[9px] text-muted-foreground uppercase font-bold bg-gradient-to-r from-primary/20 to-purple-500/20 dark:from-primary/20 dark:to-purple-500/20 text-primary px-1.5 md:px-2 py-0.5 rounded-full">
-                            Studio Pro
-                        </span>
-                        <span className="text-[8px] md:text-[9px] text-muted-foreground hidden sm:inline">{doc.width}×{doc.height}</span>
-                    </div>
                 </div>
             </div>
 
@@ -127,32 +114,6 @@ export const EditorToolbar: React.FC<EditorToolbarProps> = ({
                             }`}
                     >
                         Mockup
-                    </button>
-                </div>
-
-                {/* Undo/Redo */}
-                <div className="flex items-center gap-1 bg-muted dark:bg-muted rounded-lg p-0.5 border border-border h-9">
-                    <button
-                        onClick={onUndo}
-                        disabled={historyIndex <= 0}
-                        className={`px-2 h-full rounded-md transition-all ${historyIndex > 0
-                                ? 'hover:bg-background dark:hover:bg-background text-foreground'
-                                : 'text-muted-foreground/40 cursor-not-allowed'
-                            }`}
-                        title="Rückgängig (⌘Z)"
-                    >
-                        <Undo2 className="w-4 h-4" />
-                    </button>
-                    <button
-                        onClick={onRedo}
-                        disabled={historyIndex >= historyLength - 1}
-                        className={`px-2 h-full rounded-md transition-all ${historyIndex < historyLength - 1
-                                ? 'hover:bg-background dark:hover:bg-background text-foreground'
-                                : 'text-muted-foreground/40 cursor-not-allowed'
-                            }`}
-                        title="Wiederholen (⌘⇧Z)"
-                    >
-                        <Redo2 className="w-4 h-4" />
                     </button>
                 </div>
 
@@ -226,30 +187,6 @@ export const EditorToolbar: React.FC<EditorToolbarProps> = ({
 
             {/* Right Section - Mobile/Tablet */}
             <div className="flex lg:hidden items-center gap-2">
-                {/* Undo/Redo - Always visible */}
-                <div className="flex items-center gap-0.5 bg-muted dark:bg-muted rounded-lg p-0.5 border border-border h-9">
-                    <button
-                        onClick={onUndo}
-                        disabled={historyIndex <= 0}
-                        className={`px-2 h-full rounded-md transition-all ${historyIndex > 0
-                                ? 'hover:bg-background dark:hover:bg-background text-foreground'
-                                : 'text-muted-foreground/40 cursor-not-allowed'
-                            }`}
-                    >
-                        <Undo2 className="w-4 h-4" />
-                    </button>
-                    <button
-                        onClick={onRedo}
-                        disabled={historyIndex >= historyLength - 1}
-                        className={`px-2 h-full rounded-md transition-all ${historyIndex < historyLength - 1
-                                ? 'hover:bg-background dark:hover:bg-background text-foreground'
-                                : 'text-muted-foreground/40 cursor-not-allowed'
-                            }`}
-                    >
-                        <Redo2 className="w-4 h-4" />
-                    </button>
-                </div>
-
                 {/* Save Button - Always visible */}
                 <button
                     onClick={() => onSave?.(doc)}

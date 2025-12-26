@@ -2,6 +2,7 @@ import { useState, useRef, useCallback } from 'react';
 import { Upload, Sparkles, ArrowRight, X, Wand2, Check, Zap, Image as ImageIcon, Loader2 } from 'lucide-react';
 import { AD_TEMPLATES } from './presets';
 import type { AdDocument, StudioLayer } from '../../types/studio';
+import { enhanceProductImage } from '../../lib/api/ai-image-enhancement';
 
 interface AdWizardProps {
     isOpen: boolean;
@@ -82,146 +83,167 @@ export const AdWizard = ({ isOpen, onClose, onComplete }: AdWizardProps) => {
     const handleGenerate = async () => {
         setIsGenerating(true);
 
-        // Simulate AI generation
-        await new Promise(resolve => setTimeout(resolve, 2500));
+        try {
+            // PREMIUM AI IMAGE ENHANCEMENT
+            let finalImage = uploadedImage;
 
-        // Create a simple ad document
-        const selectedTone = TONE_OPTIONS.find(t => t.id === formData.tone);
-        const doc: AdDocument = {
-            id: `ad-${Date.now()}`,
-            name: `${formData.brandName || formData.productName} Ad`,
-            width: 1080,
-            height: 1080,
-            backgroundColor: formData.tone === 'minimal' ? '#ffffff' : '#000000',
-            layers: [
-                // Professional Image Setup: Background Blur + Product Focus
-                ...(uploadedImage ? [
-                    // Layer 1: Blurred Background
+            if (uploadedImage && formData.imageEnhancementPrompt.trim()) {
+                console.log('🎨 Starting PREMIUM AI image enhancement...');
+
+                const enhancementResult = await enhanceProductImage({
+                    imageBase64: uploadedImage,
+                    userPrompt: formData.imageEnhancementPrompt,
+                    productName: formData.productName,
+                    brandName: formData.brandName,
+                    tone: formData.tone
+                });
+
+                finalImage = enhancementResult.enhancedImageUrl;
+                console.log('✅ Premium image generated:', enhancementResult.analysisNotes);
+            }
+
+            // Create ad document
+            const selectedTone = TONE_OPTIONS.find(t => t.id === formData.tone);
+            const doc: AdDocument = {
+                id: `ad-${Date.now()}`,
+                name: `${formData.brandName || formData.productName} Ad`,
+                width: 1080,
+                height: 1080,
+                backgroundColor: formData.tone === 'minimal' ? '#ffffff' : '#000000',
+                layers: [
+                    // Professional Image Setup: Background Blur + Product Focus
+                    ...(finalImage ? [
+                        // Layer 1: Blurred Background
+                        {
+                            id: `bg-blur-${Date.now()}`,
+                            type: 'background',
+                            name: 'Background Blur',
+                            x: 0,
+                            y: 0,
+                            width: 1080,
+                            height: 1080,
+                            rotation: 0,
+                            opacity: 0.3,
+                            locked: false,
+                            visible: true,
+                            src: finalImage,
+                            fit: 'cover',
+                            blur: 40
+                        },
+                        // Layer 2: Gradient Overlay
+                        {
+                            id: `overlay-${Date.now()}`,
+                            type: 'overlay',
+                            name: 'Gradient Overlay',
+                            x: 0,
+                            y: 0,
+                            width: 1080,
+                            height: 1080,
+                            rotation: 0,
+                            opacity: 0.6,
+                            locked: false,
+                            visible: true,
+                            fill: formData.tone === 'minimal' ? '#ffffff' : '#000000'
+                        },
+                        // Layer 3: Product Image (Centered & Framed)
+                        {
+                            id: `product-${Date.now()}`,
+                            type: 'product',
+                            name: 'Product Image',
+                            x: 140,
+                            y: 400,
+                            width: 800,
+                            height: 500,
+                            rotation: 0,
+                            opacity: 1,
+                            locked: false,
+                            visible: true,
+                            src: finalImage,
+                            fit: 'contain',
+                            shadowColor: 'rgba(0,0,0,0.3)',
+                            shadowBlur: 30,
+                            shadowOffsetY: 10
+                        }
+                    ] : []),
+                    // Headline
                     {
-                        id: `bg-blur-${Date.now()}`,
-                        type: 'background',
-                        name: 'Background Blur',
-                        x: 0,
-                        y: 0,
-                        width: 1080,
-                        height: 1080,
-                        rotation: 0,
-                        opacity: 0.3,
-                        locked: false,
-                        visible: true,
-                        src: uploadedImage,
-                        fit: 'cover',
-                        blur: 40
-                    },
-                    // Layer 2: Gradient Overlay
-                    {
-                        id: `overlay-${Date.now()}`,
-                        type: 'overlay',
-                        name: 'Gradient Overlay',
-                        x: 0,
-                        y: 0,
-                        width: 1080,
-                        height: 1080,
-                        rotation: 0,
-                        opacity: 0.6,
-                        locked: false,
-                        visible: true,
-                        fill: formData.tone === 'minimal' ? '#ffffff' : '#000000'
-                    },
-                    // Layer 3: Product Image (Centered & Framed)
-                    {
-                        id: `product-${Date.now()}`,
-                        type: 'product',
-                        name: 'Product Image',
-                        x: 140,
-                        y: 400,
-                        width: 800,
-                        height: 500,
+                        id: `text-${Date.now()}`,
+                        type: 'text' as const,
+                        name: 'Headline',
+                        x: 80,
+                        y: 150,
+                        width: 920,
+                        height: 200,
                         rotation: 0,
                         opacity: 1,
                         locked: false,
                         visible: true,
-                        src: uploadedImage,
-                        fit: 'contain',
+                        text: formData.productName.toUpperCase(),
+                        fontSize: 96,
+                        fontFamily: 'Inter',
+                        fontWeight: '900',
+                        color: formData.tone === 'minimal' ? '#000000' : '#ffffff',
+                        align: 'left',
+                        lineHeight: 1.1,
+                        shadowColor: formData.tone === 'minimal' ? 'transparent' : 'rgba(0,0,0,0.5)',
+                        shadowBlur: 20
+                    },
+                    // Description
+                    ...(formData.productDescription ? [{
+                        id: `desc-${Date.now()}`,
+                        type: 'text' as const,
+                        name: 'Description',
+                        x: 80,
+                        y: 400,
+                        width: 920,
+                        height: 150,
+                        rotation: 0,
+                        opacity: 1,
+                        locked: false,
+                        visible: true,
+                        text: formData.productDescription,
+                        fontSize: 32,
+                        fontFamily: 'Inter',
+                        fontWeight: '400',
+                        color: formData.tone === 'minimal' ? '#333333' : '#e0e0e0',
+                        align: 'left',
+                        lineHeight: 1.4
+                    }] : []),
+                    // CTA Button
+                    {
+                        id: `cta-${Date.now()}`,
+                        type: 'cta' as const,
+                        name: 'CTA',
+                        x: 80,
+                        y: 880,
+                        width: 400,
+                        height: 100,
+                        rotation: 0,
+                        opacity: 1,
+                        locked: false,
+                        visible: true,
+                        text: 'JETZT ENTDECKEN',
+                        fontSize: 24,
+                        fontFamily: 'Inter',
+                        fontWeight: '700',
+                        color: '#ffffff',
+                        bgColor: formData.tone === 'luxury' ? '#d4af37' : '#000000',
+                        radius: 50,
                         shadowColor: 'rgba(0,0,0,0.3)',
-                        shadowBlur: 30,
-                        shadowOffsetY: 10
+                        shadowBlur: 15,
+                        shadowOffsetY: 5
                     }
-                ] : []),
-                // Headline
-                {
-                    id: `text-${Date.now()}`,
-                    type: 'text' as const,
-                    name: 'Headline',
-                    x: 80,
-                    y: 150,
-                    width: 920,
-                    height: 200,
-                    rotation: 0,
-                    opacity: 1,
-                    locked: false,
-                    visible: true,
-                    text: formData.productName.toUpperCase(),
-                    fontSize: 96,
-                    fontFamily: 'Inter',
-                    fontWeight: '900',
-                    color: formData.tone === 'minimal' ? '#000000' : '#ffffff',
-                    align: 'left',
-                    lineHeight: 1.1,
-                    shadowColor: formData.tone === 'minimal' ? 'transparent' : 'rgba(0,0,0,0.5)',
-                    shadowBlur: 20
-                },
-                // Description
-                ...(formData.productDescription ? [{
-                    id: `desc-${Date.now()}`,
-                    type: 'text' as const,
-                    name: 'Description',
-                    x: 80,
-                    y: 400,
-                    width: 920,
-                    height: 150,
-                    rotation: 0,
-                    opacity: 1,
-                    locked: false,
-                    visible: true,
-                    text: formData.productDescription,
-                    fontSize: 32,
-                    fontFamily: 'Inter',
-                    fontWeight: '400',
-                    color: formData.tone === 'minimal' ? '#333333' : '#e0e0e0',
-                    align: 'left',
-                    lineHeight: 1.4
-                }] : []),
-                // CTA Button
-                {
-                    id: `cta-${Date.now()}`,
-                    type: 'cta' as const,
-                    name: 'CTA',
-                    x: 80,
-                    y: 880,
-                    width: 400,
-                    height: 100,
-                    rotation: 0,
-                    opacity: 1,
-                    locked: false,
-                    visible: true,
-                    text: 'JETZT ENTDECKEN',
-                    fontSize: 24,
-                    fontFamily: 'Inter',
-                    fontWeight: '700',
-                    color: '#ffffff',
-                    bgColor: formData.tone === 'luxury' ? '#d4af37' : '#000000',
-                    radius: 50,
-                    shadowColor: 'rgba(0,0,0,0.3)',
-                    shadowBlur: 15,
-                    shadowOffsetY: 5
-                }
-            ] as any as StudioLayer[]
-        };
+                ] as any as StudioLayer[]
+            };
 
-        setIsGenerating(false);
-        onComplete(doc);
-        // Parent (StudioPage) handles view transition, don't close here
+            setIsGenerating(false);
+            onComplete(doc);
+            // Parent (StudioPage) handles view transition
+        } catch (error) {
+            console.error('❌ Ad generation failed:', error);
+            setIsGenerating(false);
+            alert(`Fehler bei der Ad-Generierung: ${error instanceof Error ? error.message : 'Unbekannter Fehler. Bitte prüfe deine OpenAI API Key.'}`);
+        }
     };
 
     const handleClose = () => {
