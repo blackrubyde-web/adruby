@@ -83,9 +83,10 @@ export const AdWizard = ({ isOpen, onClose, onComplete }: AdWizardProps) => {
 
     const canProceedToStep2 = formData.productName.trim().length > 0;
     const canProceedToStep3 = canProceedToStep2 && formData.tone;
+    const canProceedToStep4 = canProceedToStep3; // Step 3 fields are optional
 
     const goNext = () => {
-        if (step < 3) {
+        if (step < 4) {
             setStep(prev => (prev + 1) as WizardStep);
         }
     };
@@ -484,8 +485,75 @@ export const AdWizard = ({ isOpen, onClose, onComplete }: AdWizardProps) => {
                         </div>
                     )}
 
-                    {/* Step 3: Generate */}
+                    {/* Step 3: Copy & Hooks */}
                     {step === 3 && (
+                        <div className="space-y-6 md:space-y-8 animate-in slide-in-from-right-8 fade-in duration-500">
+                            <div className="text-center space-y-2 mb-8">
+                                <h3 className="text-2xl md:text-3xl font-black text-foreground tracking-tight">
+                                    Beschreibe dein Produkt <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary to-red-600">genauer</span>
+                                </h3>
+                                <p className="text-sm md:text-base text-muted-foreground">
+                                    Die KI erstellt daraus perfekte Headlines, Beschreibungen & CTAs
+                                </p>
+                            </div>
+
+                            <div className="space-y-6">
+                                {/* Pain Points */}
+                                <div className="space-y-3 group">
+                                    <label className="flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-muted-foreground group-focus-within:text-primary transition-colors">
+                                        <Zap className="w-4 h-4 text-rose-500" />
+                                        Welche Probleme löst dein Produkt?
+                                    </label>
+                                    <textarea
+                                        value={formData.painPoints}
+                                        onChange={(e) => updateField('painPoints', e.target.value)}
+                                        placeholder="z.B. 'Zeitverschwendung bei manueller Dateneingabe, hohe Fehlerquote, komplizierte Tools'"
+                                        rows={3}
+                                        className="w-full bg-muted/50 dark:bg-muted/30 border border-border rounded-xl px-4 md:px-5 py-3 md:py-4 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-transparent transition-all hover:bg-muted/70 dark:hover:bg-muted/50 resize-none text-sm"
+                                    />
+                                </div>
+
+                                {/* USPs */}
+                                <div className="space-y-3 group">
+                                    <label className="flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-muted-foreground group-focus-within:text-primary transition-colors">
+                                        <Sparkles className="w-4 h-4 text-amber-500" />
+                                        Was macht dein Produkt einzigartig?
+                                    </label>
+                                    <textarea
+                                        value={formData.usps}
+                                        onChange={(e) => updateField('usps', e.target.value)}
+                                        placeholder="z.B. '10x schneller als Konkurrenz, KI-powered, 99.9% Genauigkeit, keine Vorkenntnisse nötig'"
+                                        rows={3}
+                                        className="w-full bg-muted/50 dark:bg-muted/30 border border-border rounded-xl px-4 md:px-5 py-3 md:py-4 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-transparent transition-all hover:bg-muted/70 dark:hover:bg-muted/50 resize-none text-sm"
+                                    />
+                                </div>
+
+                                {/* Target Audience */}
+                                <div className="space-y-3 group">
+                                    <label className="flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-muted-foreground group-focus-within:text-primary transition-colors">
+                                        <Check className="w-4 h-4 text-emerald-500" />
+                                        Wer ist deine Zielgruppe?
+                                    </label>
+                                    <input
+                                        value={formData.targetAudience}
+                                        onChange={(e) => updateField('targetAudience', e.target.value)}
+                                        placeholder="z.B. 'Marketing Manager in B2B SaaS, 25-45 Jahre, technik-affin'"
+                                        className="w-full bg-muted/50 dark:bg-muted/30 border border-border rounded-xl px-4 md:px-5 py-3 md:py-4 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-transparent transition-all hover:bg-muted/70 dark:hover:bg-muted/50 text-sm"
+                                    />
+                                </div>
+
+                                <div className="pt-2 flex items-center gap-3 p-4 bg-gradient-to-br from-cyan-50/50 to-blue-50/50 dark:from-cyan-950/20 dark:to-blue-950/20 border border-cyan-200/50 dark:border-cyan-800/30 rounded-xl">
+                                    <Sparkles className="w-5 h-5 text-cyan-500 shrink-0" />
+                                    <p className="text-xs text-cyan-900 dark:text-cyan-100">
+                                        Je detaillierter deine Angaben, desto bessere Headlines und Texte generiert die KI!
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Step 4: Generate */}
+                    {step === 4 && (
                         <div className="py-8 md:py-12 flex flex-col items-center justify-center min-h-[300px] md:min-h-[400px] animate-in fade-in duration-700 space-y-6 md:space-y-8">
                             {isGenerating ? (
                                 <div className="relative text-center space-y-6">
