@@ -21,8 +21,9 @@ import {
 } from 'lucide-react';
 import { useAdmin } from '../contexts/AdminContext';
 import { toast } from 'sonner';
+import { PartnerApplicationsTab } from './admin/PartnerApplicationsTab';
 
-type AdminTab = 'overview' | 'users' | 'affiliates' | 'payouts';
+type AdminTab = 'overview' | 'users' | 'affiliates' | 'payouts' | 'partners';
 
 export function AdminDashboardPage() {
     const {
@@ -106,6 +107,7 @@ export function AdminDashboardPage() {
         { id: 'users', label: 'Users', icon: Users },
         { id: 'affiliates', label: 'Affiliates', icon: Gift },
         { id: 'payouts', label: 'Payouts', icon: DollarSign },
+        { id: 'partners', label: 'Partners', icon: UserPlus },
     ];
 
     // Pending payouts count
@@ -599,6 +601,9 @@ export function AdminDashboardPage() {
                     </div>
                 </div>
             )}
+
+            {/* Partners Tab */}
+            {activeTab === 'partners' && <PartnerApplicationsTab />}
 
             {/* Credit Edit Modal */}
             {creditModalUser && (
