@@ -1,5 +1,6 @@
 import { useState, useRef, useCallback } from 'react';
 import { Upload, Sparkles, ArrowRight, X, Wand2, Check, Zap, Image as ImageIcon, Loader2 } from 'lucide-react';
+import { toast } from 'sonner';
 import { AD_TEMPLATES } from './presets';
 import type { AdDocument, StudioLayer } from '../../types/studio';
 import { enhanceProductImage } from '../../lib/api/ai-image-enhancement';
@@ -60,6 +61,7 @@ export const AdWizard = ({ isOpen, onClose, onComplete }: AdWizardProps) => {
         tone: 'professional',
     });
     const [isGenerating, setIsGenerating] = useState(false);
+    const [loadingStep, setLoadingStep] = useState<'idle' | 'image' | 'hooks' | 'creating'>('idle');
     const [generatedHooks, setGeneratedHooks] = useState<GeneratedHooks | null>(null);
     const [selectedHookIndex, setSelectedHookIndex] = useState(0);
     const [generatedDoc, setGeneratedDoc] = useState<AdDocument | null>(null);
@@ -72,11 +74,28 @@ export const AdWizard = ({ isOpen, onClose, onComplete }: AdWizardProps) => {
     const handleFileUpload = useCallback((files: FileList | null) => {
         if (!files?.[0]) return;
         const file = files[0];
-        if (!file.type.startsWith('image/')) return;
+
+        // File type validation
+        if (!file.type.startsWith('image/')) {
+            toast.error('Nur Bilder erlaubt (JPG, PNG, WebP)');
+            return;
+        }
+
+        // File size validation (5MB max)
+        const maxSizeBytes = 5 * 1024 * 1024; // 5MB
+        if (file.size > maxSizeBytes) {
+            const sizeMB = (file.size / (1024 * 1024)).toFixed(1);
+            toast.error(`Bild zu groß! (${sizeMB}MB). Max 5MB erlaubt.`);
+            return;
+        }
 
         const reader = new FileReader();
         reader.onload = (e) => {
             setUploadedImage(e.target?.result as string);
+            toast.success('Bild erfolgreich hochgeladen');
+        };
+        reader.onerror = () => {
+            toast.error('Fehler beim Laden des Bildes');
         };
         reader.readAsDataURL(file);
     }, []);
@@ -99,6 +118,7 @@ export const AdWizard = ({ isOpen, onClose, onComplete }: AdWizardProps) => {
 
     const handleGenerate = async () => {
         setIsGenerating(true);
+        setLoadingStep('image');
 
         try {
             // PREMIUM AI IMAGE ENHANCEMENT
@@ -106,21 +126,31 @@ export const AdWizard = ({ isOpen, onClose, onComplete }: AdWizardProps) => {
 
             if (uploadedImage && formData.imageEnhancementPrompt.trim()) {
                 console.log('🎨 Starting PREMIUM AI image enhancement...');
+                toast.info('Analysiere Bild...');
 
-                const enhancementResult = await enhanceProductImage({
-                    imageBase64: uploadedImage,
-                    userPrompt: formData.imageEnhancementPrompt,
-                    productName: formData.productName,
-                    brandName: formData.brandName,
-                    tone: formData.tone
-                });
+                try {
+                    const enhancementResult = await enhanceProductImage({
+                        imageBase64: uploadedImage,
+                        userPrompt: formData.imageEnhancementPrompt,
+                        productName: formData.productName,
+                        brandName: formData.brandName,
+                        tone: formData.tone
+                    });
 
-                finalImage = enhancementResult.enhancedImageUrl;
-                console.log('✅ Premium image generated:', enhancementResult.analysisNotes);
+                    finalImage = enhancementResult.enhancedImageUrl;
+                    console.log('✅ Premium image generated:', enhancementResult.analysisNotes);
+                } catch (imageError: any) {
+                    console.error('Image enhancement failed:', imageError);
+                    toast.warning('Bild-Verbesserung übersprungen. Nutze Original-Bild.');
+                    // Continue with original image instead of failing completely
+                }
             }
 
             // HOOK GENERATION - Premium Ad Copy
+            setLoadingStep('hooks');
             console.log('✍️ Generating premium ad hooks...');
+            toast.info('Generiere Premium Hooks...');
+
             const hookPrompt = `You are an ELITE copywriter for premium advertising. Generate high-converting ad copy.
 
 PRODUCT CONTEXT:
@@ -161,14 +191,32 @@ Generate this EXACT JSON structure:
             });
 
             if (!hooksResponse.ok) {
-                throw new Error('Hook generation failed');
+                const errorData = await hooksResponse.json().catch(() => ({}));
+
+                // Specific error handling
+                if (hooksResponse.status === 401) {
+                    throw new Error('API_KEY_MISSING');
+                } else if (hooksResponse.status === 429) {
+                    throw new Error('RATE_LIMIT');
+                } else {
+                    throw new Error(errorData.error?.message || 'Hook generation failed');
+                }
             }
 
             const hooksData = await hooksResponse.json();
             const hooks: GeneratedHooks = JSON.parse(hooksData.choices[0].message.content);
+
+            // Validate hooks
+            if (!hooks.headlines?.length || hooks.headlines.length === 0) {
+                throw new Error('EMPTY_HOOKS');
+            }
+
             setGeneratedHooks(hooks);
             console.log('✅ Premium hooks generated:', hooks.headlines.length, 'headlines');
 
+            // CREATE AD DOCUMENT
+            setLoadingStep('creating');
+            toast.info('Erstelle Ad...');
             // Create ad document
             const selectedTone = TONE_OPTIONS.find(t => t.id === formData.tone);
             const doc: AdDocument = {
@@ -310,7 +358,22 @@ Generate this EXACT JSON structure:
         } catch (error) {
             console.error('❌ Ad generation failed:', error);
             setIsGenerating(false);
-            alert(`Fehler bei der Ad-Generierung: ${error instanceof Error ? error.message : 'Unbekannter Fehler. Bitte prüfe deine OpenAI API Key.'}`);
+            setLoadingStep('idle');
+
+            // Specific error messages
+            const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+
+            if (errorMessage === 'API_KEY_MISSING') {
+                toast.error('OpenAI API Key fehlt! Bitte in Netlify ENV setzen: VITE_OPENAI_API_KEY');
+            } else if (errorMessage === 'RATE_LIMIT') {
+                toast.error('Zu viele Anfragen! Bitte warte 1 Minute und versuche es erneut.');
+            } else if (errorMessage === 'EMPTY_HOOKS') {
+                toast.error('KI konnte keine Hooks generieren. Bitte füge mehr Details hinzu.');
+            } else if (errorMessage.includes('network') || errorMessage.includes('fetch')) {
+                toast.error('Netzwerk-Fehler. Bitte Internetverbindung prüfen.');
+            } else {
+                toast.error(`Ad-Generierung fehlgeschlagen: ${errorMessage.substring(0, 100)}`);
+            }
         }
     };
 
@@ -560,6 +623,7 @@ Generate this EXACT JSON structure:
                                         onChange={(e) => updateField('painPoints', e.target.value)}
                                         placeholder="z.B. 'Zeitverschwendung bei manueller Dateneingabe, hohe Fehlerquote, komplizierte Tools'"
                                         rows={3}
+                                        maxLength={500}
                                         className="w-full bg-muted/50 dark:bg-muted/30 border border-border rounded-xl px-4 md:px-5 py-3 md:py-4 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-transparent transition-all hover:bg-muted/70 dark:hover:bg-muted/50 resize-none text-sm"
                                     />
                                 </div>
@@ -575,6 +639,7 @@ Generate this EXACT JSON structure:
                                         onChange={(e) => updateField('usps', e.target.value)}
                                         placeholder="z.B. '10x schneller als Konkurrenz, KI-powered, 99.9% Genauigkeit, keine Vorkenntnisse nötig'"
                                         rows={3}
+                                        maxLength={500}
                                         className="w-full bg-muted/50 dark:bg-muted/30 border border-border rounded-xl px-4 md:px-5 py-3 md:py-4 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-transparent transition-all hover:bg-muted/70 dark:hover:bg-muted/50 resize-none text-sm"
                                     />
                                 </div>
@@ -589,6 +654,7 @@ Generate this EXACT JSON structure:
                                         value={formData.targetAudience}
                                         onChange={(e) => updateField('targetAudience', e.target.value)}
                                         placeholder="z.B. 'Marketing Manager in B2B SaaS, 25-45 Jahre, technik-affin'"
+                                        maxLength={200}
                                         className="w-full bg-muted/50 dark:bg-muted/30 border border-border rounded-xl px-4 md:px-5 py-3 md:py-4 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-transparent transition-all hover:bg-muted/70 dark:hover:bg-muted/50 text-sm"
                                     />
                                 </div>
@@ -745,7 +811,10 @@ Generate this EXACT JSON structure:
                                     <div className="text-center space-y-2">
                                         <h3 className="text-xl md:text-2xl font-black text-foreground tracking-tight">Erstelle deine Ad...</h3>
                                         <p className="text-sm md:text-base text-muted-foreground font-medium animate-pulse">
-                                            KI generiert perfekte Layouts & Texte
+                                            {loadingStep === 'image' && 'Analysiere & verbessere Bild...'}
+                                            {loadingStep === 'hooks' && 'Generiere Headlines & Texte...'}
+                                            {loadingStep === 'creating' && 'Erstelle finales Ad-Design...'}
+                                            {loadingStep === 'idle' && 'KI generiert perfekte Layouts & Texte'}
                                         </p>
                                     </div>
                                 </div>
