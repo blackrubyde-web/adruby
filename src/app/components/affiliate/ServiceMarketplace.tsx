@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Plus, Edit, Trash2, Check, X, Loader2, MessageSquare } from 'lucide-react';
 import { supabase } from '../../lib/supabaseClient';
 import { toast } from 'sonner';
+import { ServiceCreationModal } from './ServiceCreationModal';
 
 interface Service {
     id: string;
@@ -201,10 +202,23 @@ export function ServiceMarketplace() {
                 ))}
 
                 {services.length === 0 && (
-                    <div className="col-span-2 text-center py-12 text-muted-foreground">
-                        <MessageSquare className="w-12 h-12 mx-auto mb-3 opacity-50" />
-                        <p>Noch keine Services erstellt</p>
-                        <p className="text-sm">Biete deinen Referrals Premium-Support an!</p>
+                    <div className="col-span-2 text-center py-12">
+                        <div className="max-w-sm mx-auto">
+                            <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
+                                <MessageSquare className="w-8 h-8 text-primary" />
+                            </div>
+                            <h3 className="text-lg font-semibold mb-2">Noch keine Services</h3>
+                            <p className="text-sm text-muted-foreground mb-6">
+                                Erstelle deinen ersten Service und biete deinen Referrals Premium-Support an!
+                            </p>
+                            <button
+                                onClick={() => setShowCreateModal(true)}
+                                className="px-6 py-3 bg-primary text-primary-foreground rounded-xl font-medium hover:bg-primary/90 inline-flex items-center gap-2"
+                            >
+                                <Plus className="w-4 h-4" />
+                                Ersten Service erstellen
+                            </button>
+                        </div>
                     </div>
                 )}
             </div>
@@ -294,6 +308,17 @@ export function ServiceMarketplace() {
                         )}
                     </div>
                 </div>
+            )}
+
+            {/* Service Creation Modal */}
+            {showCreateModal && (
+                <ServiceCreationModal
+                    onClose={() => setShowCreateModal(false)}
+                    onSuccess={() => {
+                        setShowCreateModal(false);
+                        loadData();
+                    }}
+                />
             )}
         </div>
     );

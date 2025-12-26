@@ -19,6 +19,7 @@ import { useOverview } from '../hooks/useOverview';
 import { PageShell, HeroHeader, Card, Chip } from './layout';
 import { useAuthActions, useAuthState } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabaseClient';
+import { ReferralServicesWidget } from './referral/ReferralServicesWidget';
 
 const LazySpendRevenueChart = lazy(() =>
   import('./SpendRevenueChart').then((mod) => ({ default: mod.SpendRevenueChart }))
@@ -58,10 +59,10 @@ export function OverviewPage({ onNavigate }: OverviewPageProps) {
   const { refreshProfile } = useAuthActions();
   const [isEditingGoals, setIsEditingGoals] = useState(false);
   const [isSavingGoals, setIsSavingGoals] = useState(false);
-  
+
   // Fetch data with hook
   const { data, loading, error } = useOverview(dateFilter, channelFilter);
-  
+
   // Checklist State - will be synced with API data when available
   const [checklistSteps, setChecklistSteps] = useState<ChecklistStep[]>([
     {
@@ -379,7 +380,7 @@ export function OverviewPage({ onNavigate }: OverviewPageProps) {
           <Card key={index} className="p-5 hover:-translate-y-0.5 transition-all duration-300">
             {/* Accent Line */}
             <div className="absolute inset-x-0 top-0 h-[2px] rounded-t-xl bg-primary/40" />
-            
+
             {/* Content */}
             <div className="flex items-start justify-between">
               <div className="flex-1">
@@ -389,9 +390,8 @@ export function OverviewPage({ onNavigate }: OverviewPageProps) {
                 </div>
                 <div className="flex items-center gap-2 text-xs">
                   <span
-                    className={`flex items-center gap-1 font-medium ${
-                      kpi.isPositive ? 'text-green-600' : 'text-muted-foreground'
-                    }`}
+                    className={`flex items-center gap-1 font-medium ${kpi.isPositive ? 'text-green-600' : 'text-muted-foreground'
+                      }`}
                   >
                     {kpi.isPositive ? (
                       <TrendingUp className="w-3 h-3" />
@@ -427,7 +427,7 @@ export function OverviewPage({ onNavigate }: OverviewPageProps) {
             />
           </Suspense>
         </div>
-        
+
         {/* ROAS Trend - 1/3 width */}
         <div className="lg:col-span-1">
           <Suspense fallback={<ChartPlaceholder title="Loading ROAS trend" />}>
@@ -441,6 +441,9 @@ export function OverviewPage({ onNavigate }: OverviewPageProps) {
           </Suspense>
         </div>
       </div>
+
+      {/* Referral Services Widget - Only shows if user was referred */}
+      <ReferralServicesWidget />
 
       {/* Action Center */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-5 mb-6 sm:mb-8">
@@ -473,13 +476,12 @@ export function OverviewPage({ onNavigate }: OverviewPageProps) {
                     <div className="flex items-center gap-2 mb-1">
                       <span className="text-sm font-semibold text-foreground">{item.title}</span>
                       <span
-                        className={`rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase ${
-                          item.priority === 'high'
-                            ? 'bg-red-500/10 text-red-500 border border-red-500/20'
-                            : item.priority === 'medium'
-                              ? 'bg-amber-500/10 text-amber-500 border border-amber-500/20'
-                              : 'bg-green-500/10 text-green-500 border border-green-500/20'
-                        }`}
+                        className={`rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase ${item.priority === 'high'
+                          ? 'bg-red-500/10 text-red-500 border border-red-500/20'
+                          : item.priority === 'medium'
+                            ? 'bg-amber-500/10 text-amber-500 border border-amber-500/20'
+                            : 'bg-green-500/10 text-green-500 border border-green-500/20'
+                          }`}
                       >
                         {item.priority}
                       </span>
@@ -590,11 +592,10 @@ export function OverviewPage({ onNavigate }: OverviewPageProps) {
           {checklistSteps.map((step) => (
             <div
               key={step.id}
-              className={`flex items-start gap-3 p-4 rounded-xl border transition-all duration-300 hover:-translate-y-0.5 ${
-                step.completed
-                  ? 'bg-muted/30 border-border/50'
-                  : 'bg-background border-border hover:border-border/80'
-              }`}
+              className={`flex items-start gap-3 p-4 rounded-xl border transition-all duration-300 hover:-translate-y-0.5 ${step.completed
+                ? 'bg-muted/30 border-border/50'
+                : 'bg-background border-border hover:border-border/80'
+                }`}
             >
               {/* Checkbox */}
               <div className="pt-0.5 shrink-0">
@@ -608,18 +609,17 @@ export function OverviewPage({ onNavigate }: OverviewPageProps) {
               {/* Content */}
               <div className="flex-1 min-w-0">
                 <div
-                  className={`font-semibold tracking-tight mb-0.5 ${
-                    step.completed
-                      ? 'text-muted-foreground line-through'
-                      : 'text-foreground'
-                  }`}
+                  className={`font-semibold tracking-tight mb-0.5 ${step.completed
+                    ? 'text-muted-foreground line-through'
+                    : 'text-foreground'
+                    }`}
                 >
                   {step.title}
                 </div>
                 <div className="text-xs text-muted-foreground mb-3">
                   {step.description}
                 </div>
-                
+
                 {/* Action Button */}
                 {!step.completed && (
                   <button
@@ -658,7 +658,7 @@ export function OverviewPage({ onNavigate }: OverviewPageProps) {
               <div className="text-lg font-semibold tracking-tight text-foreground mb-2">
                 {topCampaign.name}
               </div>
-              
+
               {/* Visual Element: ROAS Badge */}
               <div className="flex items-center gap-2 mb-3">
                 <span className="px-2 py-1 rounded-full text-xs bg-green-500/10 text-green-600 border border-green-500/20 font-medium">
@@ -720,7 +720,7 @@ export function OverviewPage({ onNavigate }: OverviewPageProps) {
               <div className="text-lg font-semibold tracking-tight text-foreground mb-2">
                 {bestCreative.name}
               </div>
-              
+
               {/* Visual Element: AI Badge + Progress */}
               <div className="flex items-center gap-2 mb-3">
                 <span className="px-2 py-1 rounded-full text-xs bg-primary/10 text-primary border border-primary/15 font-medium">
