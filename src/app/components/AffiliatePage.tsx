@@ -21,6 +21,7 @@ import { toast } from 'sonner';
 import { PageShell, HeroHeader, Card, Chip } from './layout';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { useAffiliate } from '../contexts/AffiliateContext';
+import { supabase } from '../lib/supabaseClient';
 
 
 interface EarningsData {
@@ -49,17 +50,23 @@ export function AffiliatePage() {
   const [payoutMethod, setPayoutMethod] = useState<string>('paypal');
   const [isRequestingPayout, setIsRequestingPayout] = useState(false);
 
-  // Generate chart data based on timeRange
+  // Fetch real earnings data based on timeRange
   useEffect(() => {
-    const days = timeRange === '7d' ? 7 : timeRange === '30d' ? 30 : 90;
-    const mockData: EarningsData[] = Array.from({ length: days }, (_, i) => ({
-      date: timeRange === 'all'
-        ? `Day ${i + 1}`
-        : String(i + 1).padStart(2, '0'),
-      earnings: Math.floor(Math.random() * 30) + 10
-    }));
-    setChartData(mockData);
-  }, [timeRange]); // Added timeRange dependency
+    const loadEarnings = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const days = timeRange === '7d' ? 7 : timeRange === '30d' ? 30 : 90;
+
+      // Import helper function
+      const { fetchAffiliateEarnings } = await import('../lib/affiliateHelpers');
+      const earnings = await fetchAffiliateEarnings(user.id, days);
+
+      setChartData(earnings);
+    };
+
+    loadEarnings();
+  }, [timeRange]);
 
   // Calculate stats from context
   const affiliateStats = useMemo(() => ({
