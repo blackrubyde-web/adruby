@@ -67,8 +67,14 @@ export function useOverview(range: 'today' | '7d' | '30d', channel: string) {
 
     run();
 
+    // Auto-refresh every 5 minutes (respects cache)
+    const refreshInterval = setInterval(() => {
+      run();
+    }, 1000 * 60 * 5); // 5 minutes
+
     return () => {
       cancelled = true;
+      clearInterval(refreshInterval);
     };
   }, [range, channel]);
 
