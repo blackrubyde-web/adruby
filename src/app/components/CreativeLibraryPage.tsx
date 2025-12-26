@@ -147,13 +147,27 @@ export function CreativeLibraryPage() {
           .order('created_at', { ascending: false })
           .limit(50);
 
-        if (error) throw error;
+        if (error) {
+          // Specific error messages for common issues
+          if (error.code === 'PGRST116' || error.message.includes('relation') || error.message.includes('does not exist')) {
+            throw new Error('Tabelle "generated_creatives" existiert nicht. Bitte Supabase Migration ausführen.');
+          } else if (error.code === '42501' || error.message.includes('permission') || error.message.includes('RLS')) {
+            throw new Error('Keine Berechtigung. Bitte RLS Policies für "generated_creatives" prüfen.');
+          }
+          throw error;
+        }
+
         const mapped = (data || []).map((row) => mapCreativeRow(row, favoriteIds));
         if (mounted) setCreatives(mapped);
       } catch (err: unknown) {
         if (mounted) {
-          setLoadError(err instanceof Error ? err.message : 'Failed to load creatives');
+          const errorMessage = err instanceof Error ? err.message : 'Failed to load creatives';
+          console.error('CreativeLibrary load error:', errorMessage, err);
+          setLoadError(errorMessage);
           setCreatives([]);
+
+          // Show toast for user feedback
+          toast.error(errorMessage);
         }
       } finally {
         if (mounted) setIsLoading(false);
