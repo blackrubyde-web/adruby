@@ -49,14 +49,17 @@ export function AffiliatePage() {
   const [payoutMethod, setPayoutMethod] = useState<string>('paypal');
   const [isRequestingPayout, setIsRequestingPayout] = useState(false);
 
-  // Generate mock chart data based on stats
+  // Generate chart data based on timeRange
   useEffect(() => {
-    const mockData: EarningsData[] = Array.from({ length: 30 }, (_, i) => ({
-      date: String(i + 1).padStart(2, '0'),
+    const days = timeRange === '7d' ? 7 : timeRange === '30d' ? 30 : 90;
+    const mockData: EarningsData[] = Array.from({ length: days }, (_, i) => ({
+      date: timeRange === 'all'
+        ? `Day ${i + 1}`
+        : String(i + 1).padStart(2, '0'),
       earnings: Math.floor(Math.random() * 30) + 10
     }));
     setChartData(mockData);
-  }, [stats]);
+  }, [timeRange]); // Added timeRange dependency
 
   // Calculate stats from context
   const affiliateStats = useMemo(() => ({
