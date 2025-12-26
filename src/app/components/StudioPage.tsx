@@ -3,6 +3,7 @@ import { memo, useState } from 'react';
 import { Palette } from 'lucide-react';
 import { EditorLayout } from './studio/EditorLayout';
 import { creativeSaveToLibrary } from '../lib/api/creative';
+import { AdDocument, StudioLayer, TextLayer, ImageLayer } from '../types/studio';
 
 export const StudioPage = memo(function StudioPage() {
     const [isLaunchOpen, setIsLaunchOpen] = useState(true);
@@ -14,30 +15,30 @@ export const StudioPage = memo(function StudioPage() {
         // For now, we'll just toggle the state
     };
 
-    const handleSave = async (doc: any) => {
+    const handleSave = async (doc: AdDocument) => {
         try {
             // Transform AdDocument to a format compatible with CampaignBuilder/SavedAd
             // We extract text content from layers to populate the 'creative' fields
-            const headlineLayer = doc.layers.find((l: any) => l.type === 'text' && (l.name.toLowerCase().includes('headline') || l.fontSize > 40));
-            const descLayer = doc.layers.find((l: any) => l.type === 'text' && l.id !== headlineLayer?.id);
-            const ctaLayer = doc.layers.find((l: any) => l.type === 'cta');
-            const imageLayer = doc.layers.find((l: any) => l.type === 'product' || l.type === 'background');
+            const headlineLayer = doc.layers.find((l: StudioLayer) => l.type === 'text' && (l.name.toLowerCase().includes('headline') || (l as TextLayer).fontSize > 40));
+            const descLayer = doc.layers.find((l: StudioLayer) => l.type === 'text' && l.id !== headlineLayer?.id);
+            const ctaLayer = doc.layers.find((l: StudioLayer) => l.type === 'cta' || l.name.toLowerCase().includes('cta'));
+            const imageLayer = doc.layers.find((l: StudioLayer) => l.type === 'product' || l.type === 'background');
 
             const payload = {
                 createdFrom: 'studio',
                 lifecycle: { status: 'active' },
                 productName: doc.name || 'AdRuby Design',
                 targetAudience: doc.meta?.mood || 'General',
-                headline: headlineLayer?.text || 'New Creative',
-                description: descLayer?.text || '',
-                cta: ctaLayer?.text || 'Learn More',
+                headline: (headlineLayer as TextLayer)?.text || 'New Creative',
+                description: (descLayer as TextLayer)?.text || '',
+                cta: (ctaLayer as TextLayer)?.text || 'Learn More',
                 // Mock creative structure for compatibility
                 copy: {
-                    hook: headlineLayer?.text || 'New Creative',
-                    primary_text: descLayer?.text || '',
-                    cta: ctaLayer?.text || 'Learn More',
+                    hook: (headlineLayer as TextLayer)?.text || 'New Creative',
+                    primary_text: (descLayer as TextLayer)?.text || '',
+                    cta: (ctaLayer as TextLayer)?.text || 'Learn More',
                 },
-                thumbnail: imageLayer?.src || null,
+                thumbnail: (imageLayer as ImageLayer)?.src || null,
                 doc_snapshot: doc // Save the full studio doc for re-editing if needed later
             };
 

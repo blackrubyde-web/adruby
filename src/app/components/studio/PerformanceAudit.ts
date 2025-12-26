@@ -60,12 +60,12 @@ export const performAudit = (doc: AdDocument): AuditResult => {
     }
 
     // --- 4. Safe Area Violations ---
-    const violations = layers.some(l => (
-        l.x < doc.safeArea.left ||
-        l.y < doc.safeArea.top ||
-        (l.x + l.width) > (doc.width - doc.safeArea.right) ||
-        (l.y + l.height) > (doc.height - doc.safeArea.bottom)
-    ));
+    const violations = doc.safeArea ? layers.some(l => (
+        l.x < doc.safeArea!.left ||
+        l.y < doc.safeArea!.top ||
+        (l.x + l.width) > (doc.width - doc.safeArea!.right) ||
+        (l.y + l.height) > (doc.height - doc.safeArea!.bottom)
+    )) : false;
 
     if (violations) {
         result.score -= 15;

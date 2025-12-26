@@ -1,7 +1,7 @@
 import { memo, useState, useEffect } from 'react';
 import { Image, Search, ChevronDown, ChevronRight, GripVertical, Sparkles, Zap, Brain } from 'lucide-react';
 import { useCampaignCanvas } from './CampaignCanvasContext';
-import type { DraggableAsset } from './types';
+import type { DraggableAsset, CampaignCanvasNodeData, AdSetNodeData, AdNodeData } from './types';
 import { supabase } from '../../lib/supabaseClient';
 
 interface AssetSection {
@@ -55,14 +55,14 @@ export const AssetSidebar = memo(function AssetSidebar() {
                 if (error) throw error;
 
                 const creatives: DraggableAsset[] = (data || []).map((row) => {
-                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                    const outputs = row.outputs as any;
-                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                    const inputs = row.inputs as any;
+                    const outputs = row.outputs as Record<string, unknown>;
+                    const inputs = row.inputs as Record<string, unknown>;
+                    const brief = outputs?.brief as Record<string, unknown> | undefined;
+                    const product = brief?.product as Record<string, unknown> | undefined;
                     return {
                         id: row.id,
                         type: 'creative' as const,
-                        name: outputs?.brief?.product?.name || inputs?.productName || 'Creative',
+                        name: (product?.name as string) || (inputs?.productName as string) || 'Creative',
                         thumbnail: row.thumbnail || undefined,
                         data: { outputs, inputs },
                     };
@@ -147,7 +147,7 @@ export const AssetSidebar = memo(function AssetSidebar() {
                 updateNodeData(selectedNode.id, {
                     ...selectedNode.data,
                     creative: { id: asset.id, thumbnail: asset.thumbnail, name: asset.name }
-                } as any);
+                } as CampaignCanvasNodeData);
             } else {
                 // Find first adset
                 const firstAdSet = nodes.find((n) => n.data.type === 'adset');
@@ -155,31 +155,31 @@ export const AssetSidebar = memo(function AssetSidebar() {
             }
         } else if (asset.type === 'strategy' && selectedNode?.data.type === 'adset') {
             // Apply strategy targeting to selected adset
-            const strategyData = asset.data as any;
+            const strategyData = asset.data as Record<string, unknown> & { targeting?: Record<string, unknown> };
             if (strategyData.targeting) {
-                const currentConfig = (selectedNode.data as any).config;
+                const adsetData = selectedNode.data as AdSetNodeData;
                 updateNodeData(selectedNode.id, {
-                    ...selectedNode.data,
+                    ...adsetData,
                     config: {
-                        ...currentConfig,
+                        ...adsetData.config,
                         targeting: {
-                            ...currentConfig.targeting,
+                            ...adsetData.config.targeting,
                             ...strategyData.targeting,
                         }
                     }
-                } as any);
+                } as CampaignCanvasNodeData);
             }
         } else if (asset.type === 'hook' && selectedNode?.data.type === 'ad') {
             // Apply hook template to ad
-            const currentConfig = (selectedNode.data as any).config;
+            const adData = selectedNode.data as AdNodeData;
             updateNodeData(selectedNode.id, {
-                ...selectedNode.data,
+                ...adData,
                 config: {
-                    ...currentConfig,
+                    ...adData.config,
                     hookId: asset.id,
                     // Could auto-generate text based on hook template here
                 }
-            } as any);
+            } as CampaignCanvasNodeData);
         }
     };
 
@@ -264,8 +264,8 @@ export const AssetSidebar = memo(function AssetSidebar() {
                                             <div className="flex-1 min-w-0">
                                                 <p className="text-xs font-medium truncate">{asset.name}</p>
                                                 <p className="text-[10px] text-muted-foreground truncate">
-                                                    {asset.type === 'hook' && (asset.data as any)?.description}
-                                                    {asset.type === 'strategy' && (asset.data as any)?.description}
+                                                    {asset.type === 'hook' && (asset.data as Record<string, unknown> & { description?: string })?.description}
+                                                    {asset.type === 'strategy' && (asset.data as Record<string, unknown> & { description?: string })?.description}
                                                     {asset.type === 'creative' && 'Creative'}
                                                 </p>
                                             </div>

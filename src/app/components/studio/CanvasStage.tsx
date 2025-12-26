@@ -50,7 +50,7 @@ const TextItem = ({ layer }: { layer: TextLayer }) => {
             height={layer.height}
             fontSize={layer.fontSize}
             fontFamily={layer.fontFamily}
-            fontStyle={`${layer.fontWeight >= 700 ? 'bold' : 'normal'} ${layer.fontStyle || ''}`.trim()}
+            fontStyle={`${(typeof layer.fontWeight === 'number' && Number(layer.fontWeight) >= 700) || layer.fontWeight === 'bold' ? 'bold' : 'normal'} ${layer.fontStyle || ''}`.trim()}
             fill={layer.color}
             align={layer.align}
             verticalAlign="top"
@@ -94,7 +94,7 @@ const CtaItem = ({ layer }: { layer: CtaLayer }) => {
                 height={height}
                 fontSize={fontSize}
                 fontFamily={fontFamily}
-                fontStyle={`${fontWeight >= 700 ? 'bold' : 'normal'} ${fontStyle || ''}`.trim()}
+                fontStyle={`${Number(fontWeight) >= 700 ? 'bold' : 'normal'} ${fontStyle || ''}`.trim()}
                 fill={color}
                 align="center"
                 verticalAlign="middle"
@@ -119,7 +119,7 @@ interface CanvasStageProps {
 }
 
 export const CanvasStage = forwardRef<CanvasStageHandle, CanvasStageProps>(({ doc, scale = 1, selectedLayerId, onLayerSelect, onLayerUpdate, isHandMode = false, viewPos = { x: 0, y: 0 }, onViewChange, preview = false }, ref) => {
-    const sortedLayers = [...doc.layers].sort((a, b) => a.zIndex - b.zIndex);
+    const sortedLayers = [...doc.layers].sort((a, b) => (a.zIndex ?? 0) - (b.zIndex ?? 0));
     const trRef = useRef<any>(null);
     const stageRef = useRef<any>(null);
 
@@ -305,16 +305,18 @@ export const CanvasStage = forwardRef<CanvasStageHandle, CanvasStageProps>(({ do
                     </Layer>
 
                     <Layer listening={false}>
-                        <Rect
-                            x={doc.safeArea.left}
-                            y={doc.safeArea.top}
-                            width={doc.width - doc.safeArea.left - doc.safeArea.right}
-                            height={doc.height - doc.safeArea.top - doc.safeArea.bottom}
-                            stroke="cyan"
-                            strokeWidth={1}
-                            dash={[10, 10]}
-                            opacity={0.3}
-                        />
+                        {doc.safeArea && doc.safeArea.left !== undefined && doc.safeArea.top !== undefined && doc.safeArea.right !== undefined && doc.safeArea.bottom !== undefined && (
+                            <Rect
+                                x={doc.safeArea.left}
+                                y={doc.safeArea.top}
+                                width={doc.width - doc.safeArea.left - doc.safeArea.right}
+                                height={doc.height - doc.safeArea.top - doc.safeArea.bottom}
+                                stroke="cyan"
+                                strokeWidth={1}
+                                dash={[10, 10]}
+                                opacity={0.3}
+                            />
+                        )}
                     </Layer>
                 </Stage>
             </div>

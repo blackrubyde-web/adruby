@@ -3,5 +3,6 @@ export type {
   CreativeOutputV1,
   CreativeOutputPro,
   CreativeOutputV2,
+  CreativeV2Variant,
   NormalizedBrief,
 } from "./schemas";

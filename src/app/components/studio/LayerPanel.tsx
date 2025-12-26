@@ -178,7 +178,7 @@ const SortableLayer = ({ layer, index, selectedId, moveLayer, onSelect, onToggle
 };
 
 export const LayerPanel = ({ layers, selectedId, onSelect, onToggleVisibility, onToggleLock, onGenerate, onDelete, onDuplicate, onReorder }: LayerPanelProps) => {
-    const displayLayers = [...layers].sort((a, b) => b.zIndex - a.zIndex);
+    const displayLayers = [...layers].sort((a, b) => (b.zIndex || 0) - (a.zIndex || 0));
 
     return (
         <div className="flex flex-col h-full overflow-hidden">

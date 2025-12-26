@@ -254,3 +254,4 @@ export type CreativeOutput = z.infer<typeof CreativeOutputSchema>;
 export type CreativeOutputV1 = z.infer<typeof CreativeOutputV1Schema>;
 export type CreativeOutputPro = z.infer<typeof CreativeOutputProSchema>;
 export type CreativeOutputV2 = z.infer<typeof CreativeOutputV2Schema>;
+export type CreativeV2Variant = z.infer<typeof CreativeVariantProSchema>;
