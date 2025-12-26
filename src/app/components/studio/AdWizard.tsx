@@ -180,7 +180,7 @@ Generate this EXACT JSON structure:
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${process.env.VITE_OPENAI_API_KEY || process.env.OPENAI_API_KEY}`
+                    'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`
                 },
                 body: JSON.stringify({
                     model: 'gpt-4o',
@@ -364,7 +364,7 @@ Generate this EXACT JSON structure:
             const errorMessage = error instanceof Error ? error.message : 'Unknown error';
 
             if (errorMessage === 'API_KEY_MISSING') {
-                toast.error('OpenAI API Key fehlt! Bitte in Netlify ENV setzen: VITE_OPENAI_API_KEY');
+                toast.error('OpenAI API Key fehlt! Bitte in Netlify ENV setzen: OPENAI_API_KEY');
             } else if (errorMessage === 'RATE_LIMIT') {
                 toast.error('Zu viele Anfragen! Bitte warte 1 Minute und versuche es erneut.');
             } else if (errorMessage === 'EMPTY_HOOKS') {
