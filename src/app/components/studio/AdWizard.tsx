@@ -119,6 +119,56 @@ export const AdWizard = ({ isOpen, onClose, onComplete }: AdWizardProps) => {
                 console.log('✅ Premium image generated:', enhancementResult.analysisNotes);
             }
 
+            // HOOK GENERATION - Premium Ad Copy
+            console.log('✍️ Generating premium ad hooks...');
+            const hookPrompt = `You are an ELITE copywriter for premium advertising. Generate high-converting ad copy.
+
+PRODUCT CONTEXT:
+- Product: ${formData.productName}
+${formData.brandName ? `- Brand: ${formData.brandName}` : ''}
+- Description: ${formData.productDescription || 'N/A'}
+- Pain Points: ${formData.painPoints || 'N/A'}
+- Unique Selling Points: ${formData.usps || 'N/A'}
+- Target Audience: ${formData.targetAudience || 'General public'}
+- Tone: ${formData.tone}
+
+REQUIREMENTS:
+- Headlines: 10 attention-grabbing, conversion-optimized headlines (max 8 words each)
+- Descriptions: 5 compelling short descriptions that highlight benefits (max 12 words each)
+- CTAs: 5 action-oriented call-to-actions (max 3 words each)
+
+Make it PREMIUM, ${formData.tone}, and irresistible. Focus on emotional triggers and value propositions.
+
+Generate this EXACT JSON structure:
+{
+  "headlines": ["headline 1", "headline 2", ...],
+  "descriptions": ["description 1", "description 2", ...],
+  "ctas": ["CTA 1", "CTA 2", ...]
+}`;
+
+            const hooksResponse = await fetch('https://api.openai.com/v1/chat/completions', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${process.env.VITE_OPENAI_API_KEY || process.env.OPENAI_API_KEY}`
+                },
+                body: JSON.stringify({
+                    model: 'gpt-4o',
+                    messages: [{ role: 'user', content: hookPrompt }],
+                    temperature: 0.9,
+                    response_format: { type: 'json_object' }
+                })
+            });
+
+            if (!hooksResponse.ok) {
+                throw new Error('Hook generation failed');
+            }
+
+            const hooksData = await hooksResponse.json();
+            const hooks: GeneratedHooks = JSON.parse(hooksData.choices[0].message.content);
+            setGeneratedHooks(hooks);
+            console.log('✅ Premium hooks generated:', hooks.headlines.length, 'headlines');
+
             // Create ad document
             const selectedTone = TONE_OPTIONS.find(t => t.id === formData.tone);
             const doc: AdDocument = {
@@ -195,7 +245,7 @@ export const AdWizard = ({ isOpen, onClose, onComplete }: AdWizardProps) => {
                         opacity: 1,
                         locked: false,
                         visible: true,
-                        text: formData.productName.toUpperCase(),
+                        text: hooks.headlines[0],
                         fontSize: 96,
                         fontFamily: 'Inter',
                         fontWeight: '900',
@@ -253,9 +303,10 @@ export const AdWizard = ({ isOpen, onClose, onComplete }: AdWizardProps) => {
                 ] as any as StudioLayer[]
             };
 
+            setGeneratedDoc(doc);
             setIsGenerating(false);
-            onComplete(doc);
-            // Parent (StudioPage) handles view transition
+            setStep(4); // Go to preview instead of directly to canvas
+            // Parent (StudioPage) handles view transition after preview
         } catch (error) {
             console.error('❌ Ad generation failed:', error);
             setIsGenerating(false);
