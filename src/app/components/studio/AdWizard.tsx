@@ -176,13 +176,13 @@ Generate this EXACT JSON structure:
   "ctas": ["CTA 1", "CTA 2", ...]
 }`;
 
-            const hooksResponse = await fetch('https://api.openai.com/v1/chat/completions', {
+            const hooksResponse = await fetch('/.netlify/functions/openai-proxy', {
                 method: 'POST',
                 headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${import.meta.env.VITE_OPENAI_API_KEY || process.env.OPENAI_API_KEY}`
+                    'Content-Type': 'application/json'
                 },
                 body: JSON.stringify({
+                    endpoint: 'chat/completions',
                     model: 'gpt-4o',
                     messages: [{ role: 'user', content: hookPrompt }],
                     temperature: 0.9,
