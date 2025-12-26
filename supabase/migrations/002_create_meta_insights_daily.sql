@@ -129,7 +129,16 @@ BEGIN
     END IF;
 END $$;
 
--- Add trigger for updated_at (reuse function from previous migration)
+-- Create updated_at trigger function (if not exists from migration 001)
+CREATE OR REPLACE FUNCTION update_updated_at_column()
+RETURNS TRIGGER AS $$
+BEGIN
+    NEW.updated_at = now();
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Add trigger for updated_at
 DROP TRIGGER IF EXISTS update_meta_insights_daily_updated_at ON meta_insights_daily;
 CREATE TRIGGER update_meta_insights_daily_updated_at
     BEFORE UPDATE ON meta_insights_daily
