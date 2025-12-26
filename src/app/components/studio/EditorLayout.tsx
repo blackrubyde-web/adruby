@@ -423,7 +423,7 @@ export const EditorLayout: React.FC<EditorLayoutProps> = ({ onClose, initialDoc,
 
 
     return (
-        <div className="h-screen w-full bg-background flex flex-col overflow-hidden font-sans text-foreground">
+        <div className="h-screen w-full bg-background dark:bg-background flex flex-col overflow-hidden font-sans text-foreground">
 
             <EditorToolbar
                 doc={doc}
