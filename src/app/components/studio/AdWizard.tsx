@@ -603,8 +603,39 @@ Generate this EXACT JSON structure:
                         </div>
                     )}
 
-                    {/* Step 4: Generate */}
-                    {step === 4 && (
+                    {/* Step 4: Preview & Hook Selection */}
+                    {step === 4 && generatedDoc && generatedHooks ? (
+                        <div className="py-4 md:py-6 space-y-6 animate-in fade-in duration-500 h-full overflow-hidden">
+                            <div className="text-center space-y-1 mb-4">
+                                <h3 className="text-xl md:text-2xl font-black text-foreground flex items-center justify-center gap-3">
+                                    <Sparkles className="w-6 h-6 text-primary" />
+                                    Deine Ad ist fertig!
+                                </h3>
+                                <p className="text-sm text-muted-foreground">
+                                    Wähle die besten Hooks für deine Kampagne
+                                </p>
+                            </div>
+
+                            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 h-[500px]">
+                                {/* TODO: Add Preview Panel content here */}
+                                <div className="lg:col-span-12 text-center text-muted-foreground">
+                                    Preview wird geladen...
+                                </div>
+                            </div>
+
+                            {/* Action Button */}
+                            <div className="flex justify-center pt-4">
+                                <button
+                                    onClick={() => onComplete(generatedDoc)}
+                                    className="flex items-center gap-3 px-8 py-4 bg-gradient-to-r from-primary to-red-600 text-white rounded-xl font-bold text-base hover:shadow-lg hover:shadow-primary/30 transition-all group"
+                                >
+                                    <span>Zur Bearbeitung im Canvas</span>
+                                    <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                                </button>
+                            </div>
+                        </div>
+                    ) : step === 4 ? (
+                        // Loading state while generating
                         <div className="py-8 md:py-12 flex flex-col items-center justify-center min-h-[300px] md:min-h-[400px] animate-in fade-in duration-700 space-y-6 md:space-y-8">
                             {isGenerating ? (
                                 <div className="relative text-center space-y-6">
@@ -662,7 +693,7 @@ Generate this EXACT JSON structure:
                                 </div>
                             )}
                         </div>
-                    )}
+                    ) : null}
                 </div>
 
                 {/* Footer */}
