@@ -10,13 +10,11 @@ const supabase = createClient(supabaseUrl, supabaseKey);
 export async function POST(request: Request) {
     try {
         const body = await request.json();
-        const { imageUrl, productName, userId } = body;
+        const { imageUrl, productName, userId } = body as { imageUrl: string; productName?: string; userId?: string };
 
         if (!imageUrl) {
             return NextResponse.json({ error: 'Missing imageUrl' }, { status: 400 });
         }
-
-        console.log(`[API] Processing image for ${productName || 'unknown'}...`);
 
         // 1. Fetch image from OpenAI (Server-side, no CORS)
         const response = await fetch(imageUrl);
@@ -26,7 +24,6 @@ export async function POST(request: Request) {
         const imageBuffer = await response.arrayBuffer();
 
         // 2. Upload to Supabase Storage
-        // Generate unique filename
         const cleanName = productName?.replace(/[^a-z0-9]/gi, '_').toLowerCase() || 'processed';
         const filename = `${userId || 'anon'}/${Date.now()}-${cleanName}.png`;
 
@@ -39,7 +36,6 @@ export async function POST(request: Request) {
             });
 
         if (uploadError) {
-            console.error('Supabase Upload Error:', uploadError);
             throw new Error(`Upload to storage failed: ${uploadError.message}`);
         }
 
@@ -55,10 +51,10 @@ export async function POST(request: Request) {
             path: data.path
         });
 
-    } catch (error: any) {
-        console.error('[API] Image Processing Failed:', error);
+    } catch (error: unknown) {
+        const errorMessage = error instanceof Error ? error.message : 'Internal processing error';
         return NextResponse.json(
-            { error: error.message || 'Internal processing error' },
+            { error: errorMessage },
             { status: 500 }
         );
     }
