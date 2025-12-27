@@ -118,6 +118,93 @@ export const AdWizard = ({ isOpen, onClose, onComplete }: AdWizardProps) => {
     };
 
     const handleGenerate = async () => {
+        if (!canGenerateAd) return;
+
+        setIsGenerating(true);
+        setLoadingMessage('Starte Premium AI Ad Generation...');
+        setGeneratedDoc(null);
+        setGeneratedHooks(null);
+
+        try {
+            // Import premium AI generator
+            const { generatePremiumAd } = await import('../../lib/ai/premium-ad-generator');
+
+            const { productName, brandName, productDescription, painPoints, usps, targetAudience, tone } = formData;
+
+            // Prepare user prompt from form data
+            const userPrompt = [
+                productDescription && `Description: ${productDescription}`,
+                painPoints && `Pain Points: ${painPoints}`,
+                usps && `USPs: ${usps}`,
+                targetAudience && `Target: ${targetAudience}`
+            ].filter(Boolean).join('. ');
+
+            // Get uploaded image if exists
+            let finalImage = uploadedImage;
+
+            // RUN PREMIUM AI 5-STAGE PIPELINE
+            console.log('🚀 Starting Premium AI Pipeline...');
+
+            const result = await generatePremiumAd(
+                {
+                    productName,
+                    brandName,
+                    userPrompt: userPrompt || 'Create high-converting Meta ad',
+                    tone,
+                    imageBase64: uploadedImage,
+                    enhanceImage: formData.enhanceImage
+                },
+                (stage, message) => {
+                    // Progress callback
+                    const stageNames = [
+                        'Analyzing strategy',
+                        'Selecting template',
+                        'Generating copy',
+                        'Composing layout',
+                        'Processing image'
+                    ];
+                    setLoadingMessage(`${stageNames[stage - 1]}...`);
+                    console.log(`Stage ${stage}/5: ${message}`);
+                }
+            );
+
+            console.log('✅ Premium AI Ad Generated!');
+            console.log('📊 Strategic Profile:', result.strategicProfile);
+            console.log('✍️  Premium Copy:', result.premiumCopy);
+            console.log('🎨 Template:', result.template.name);
+
+            // Set generated document
+            setGeneratedDoc(result.adDocument);
+
+            // Set hooks for display (if needed elsewhere)
+            setGeneratedHooks({
+                headlines: [result.premiumCopy.headline],
+                descriptions: [result.premiumCopy.description],
+                ctas: [result.premiumCopy.cta]
+            });
+
+            toast.success('Premium Ad erstellt! 🎉');
+
+        } catch (error: any) {
+            console.error('Premium AI generation failed:', error);
+            toast.error(`Generierung fehlgeschlagen: ${error.message || 'Unbekannter Fehler'}`);
+
+            // Fallback to basic generation if premium fails
+            try {
+                console.log('Falling back to basic generation...');
+                // Keep the existing basic generation as fallback
+                await handleBasicGenerate();
+            } catch (fallbackError) {
+                console.error('Fallback also failed:', fallbackError);
+            }
+        } finally {
+            setIsGenerating(false);
+            setLoadingMessage('');
+        }
+    };
+
+    // Fallback: Basic generation (old logic)
+    const handleBasicGenerate = async () => {
         setIsGenerating(true);
         setLoadingStep('image');
 
@@ -149,10 +236,6 @@ export const AdWizard = ({ isOpen, onClose, onComplete }: AdWizardProps) => {
 
             // HOOK GENERATION - Premium Ad Copy
             setLoadingStep('hooks');
-
-            // ... (keep existing imports)
-
-            // Inside handleGenerate:
 
             console.log('✍️ Generating premium ad hooks...');
             toast.info('Generiere Premium Hooks...');
