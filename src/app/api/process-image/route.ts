@@ -1,7 +1,6 @@
-import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 
-// Initialize Supabase Client (Prefer Service Role for robust uploads, fallback to Anon)
+// Initialize Supabase Client
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
 
@@ -13,17 +12,17 @@ export async function POST(request: Request) {
         const { imageUrl, productName, userId } = body as { imageUrl: string; productName?: string; userId?: string };
 
         if (!imageUrl) {
-            return NextResponse.json({ error: 'Missing imageUrl' }, { status: 400 });
+            return Response.json({ error: 'Missing imageUrl' }, { status: 400 });
         }
 
-        // 1. Fetch image from OpenAI (Server-side, no CORS)
+        // 1. Fetch from OpenAI
         const response = await fetch(imageUrl);
         if (!response.ok) {
             throw new Error(`Failed to download image: ${response.statusText}`);
         }
         const imageBuffer = await response.arrayBuffer();
 
-        // 2. Upload to Supabase Storage
+        // 2. Upload to Supabase
         const cleanName = productName?.replace(/[^a-z0-9]/gi, '_').toLowerCase() || 'processed';
         const filename = `${userId || 'anon'}/${Date.now()}-${cleanName}.png`;
 
@@ -39,13 +38,13 @@ export async function POST(request: Request) {
             throw new Error(`Upload to storage failed: ${uploadError.message}`);
         }
 
-        // 3. Get Public URL
+        // 3. Get URL
         const { data: { publicUrl } } = supabase
             .storage
             .from('ad-images')
             .getPublicUrl(filename);
 
-        return NextResponse.json({
+        return Response.json({
             success: true,
             publicUrl,
             path: data.path
@@ -53,7 +52,7 @@ export async function POST(request: Request) {
 
     } catch (error: unknown) {
         const errorMessage = error instanceof Error ? error.message : 'Internal processing error';
-        return NextResponse.json(
+        return Response.json(
             { error: errorMessage },
             { status: 500 }
         );
