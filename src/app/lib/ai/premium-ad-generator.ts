@@ -58,17 +58,17 @@ export async function generatePremiumAd(
         });
 
         // STAGE 5: Intelligent Image Processing (via Backend Edge Function)
-        onProgress?.(5, 'Processing image (Quality takes time: ~30s)...');
+        onProgress?.(5, 'Processing image (Quality takes time: ~1-2 min)...');
         let processedImage: string | undefined;
 
         try {
-            // Safe Race: Give DALL-E 3 enough time (60s), but protect against eternal hangs.
+            // Safe Race: Give DALL-E 3 generous time (120s), protecting against eternal hangs.
             const timeoutPromise = new Promise<string | undefined>((resolve, reject) => {
                 setTimeout(() => {
-                    // Start logging warning at 60s
-                    console.warn('⚠️ Image processing pending > 60s');
+                    // Start logging warning at 120s
+                    console.warn('⚠️ Image processing pending > 120s');
                     resolve(params.imageBase64);
-                }, 60000);
+                }, 120000);
             });
 
             const processingPromise = processImage({
