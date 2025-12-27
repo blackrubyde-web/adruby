@@ -1,7 +1,7 @@
 import { memo } from 'react';
-import { Settings, Target, Users, DollarSign, Clock, MapPin, Image, Type, Link2, Sparkles, AlertTriangle, CheckCircle2, Info } from 'lucide-react';
+import { Settings, Target, Users, DollarSign, MapPin, Image, Type, Link2, Sparkles, AlertTriangle, CheckCircle2, Info } from 'lucide-react';
 import { useCampaignCanvas } from './CampaignCanvasContext';
-import type { CampaignNodeData, AdSetNodeData, AdNodeData, CampaignObjective, BidStrategy } from './types';
+import type { AdSetNodeData, AdNodeData, CampaignObjective, BidStrategy } from './types';
 
 const OBJECTIVES: { value: CampaignObjective; label: string; icon: string }[] = [
     { value: 'CONVERSIONS', label: 'Conversions', icon: '🎯' },
@@ -370,8 +370,8 @@ const AIAnalysisPanel = memo(function AIAnalysisPanel() {
                         <div
                             key={warning.id}
                             className={`p-2 rounded-lg text-xs flex items-start gap-2 ${warning.severity === 'error' ? 'bg-red-500/10 text-red-400' :
-                                    warning.severity === 'warning' ? 'bg-yellow-500/10 text-yellow-400' :
-                                        'bg-blue-500/10 text-blue-400'
+                                warning.severity === 'warning' ? 'bg-yellow-500/10 text-yellow-400' :
+                                    'bg-blue-500/10 text-blue-400'
                                 }`}
                         >
                             {warning.severity === 'error' ? <AlertTriangle className="w-3.5 h-3.5 mt-0.5 flex-shrink-0" /> :

@@ -10,7 +10,7 @@ import '@xyflow/react/dist/style.css';
 import './canvas-styles.css';
 import {
     X, Save, Sparkles, Play, Loader2, Undo2, Redo2,
-    Plus, FolderOpen, Trash2, Copy, Clock, Check,
+    Plus, FolderOpen, Trash2, Check, Clock,
     ChevronDown, PanelLeftClose, PanelRightClose,
     Zap, MousePointer, Layers, ArrowRight, PartyPopper, Upload, Eye
 } from 'lucide-react';
@@ -18,13 +18,13 @@ import { CampaignCanvasProvider, useCampaignCanvas } from './CampaignCanvasConte
 import { CampaignNode, AdSetNode, AdNode } from './nodes';
 import { AssetSidebar } from './AssetSidebar';
 import { PropertiesPanel } from './PropertiesPanel';
-import type { DraggableAsset } from './types';
+import type { DraggableAsset, CampaignCanvasNodeData } from './types';
 
 // Register custom node types
 const nodeTypes: NodeTypes = {
-    campaign: CampaignNode as any,
-    adset: AdSetNode as any,
-    ad: AdNode as any,
+    campaign: CampaignNode,
+    adset: AdSetNode,
+    ad: AdNode,
 };
 
 interface CampaignCanvasLayoutProps {
@@ -260,7 +260,7 @@ function CanvasContent({ onClose }: CampaignCanvasLayoutProps) {
     }, [exportToMeta]);
 
     // Handle node selection
-    const handleNodeClick = useCallback((_: React.MouseEvent, node: any) => {
+    const handleNodeClick = useCallback((_: React.MouseEvent, node: { id: string }) => {
         setSelectedNodeId(node.id);
     }, [setSelectedNodeId]);
 
@@ -533,13 +533,13 @@ function CanvasContent({ onClose }: CampaignCanvasLayoutProps) {
                     {isCanvasEmpty && !isLoading && <EmptyCanvasState />}
 
                     <ReactFlow
-                        nodes={nodes as any}
+                        nodes={nodes}
                         edges={edges}
                         nodeTypes={nodeTypes}
                         onNodesChange={onNodesChange}
                         onEdgesChange={onEdgesChange}
                         onConnect={onConnect}
-                        onNodeClick={handleNodeClick as any}
+                        onNodeClick={handleNodeClick}
                         onPaneClick={handlePaneClick}
                         fitView
                         fitViewOptions={{ padding: 0.2 }}
@@ -570,7 +570,7 @@ function CanvasContent({ onClose }: CampaignCanvasLayoutProps) {
                         <Controls className="!rounded-2xl !overflow-hidden" />
                         <MiniMap
                             nodeColor={(node) => {
-                                switch ((node.data as any)?.type) {
+                                switch ((node.data as CampaignCanvasNodeData)?.type) {
                                     case 'campaign': return '#6366f1';
                                     case 'adset': return '#3b82f6';
                                     case 'ad': return '#22c55e';

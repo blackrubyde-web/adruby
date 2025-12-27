@@ -20,9 +20,7 @@ export function AutopilotActivityLog() {
     const [isLoading, setIsLoading] = useState(true);
     const [filter, setFilter] = useState<'all' | 'applied' | 'pending' | 'failed'>('all');
 
-    useEffect(() => {
-        loadActions();
-    }, [loadActions]);
+    // useEffect moved below loadActions definition
 
     const loadActions = useCallback(async () => {
         setIsLoading(true);
@@ -52,6 +50,10 @@ export function AutopilotActivityLog() {
             setIsLoading(false);
         }
     }, [filter]);
+
+    useEffect(() => {
+        loadActions();
+    }, [loadActions]);
 
     const handleUndo = async (actionId: string) => {
         if (!window.confirm('Undo this action? This will attempt to restore the previous state.')) {
