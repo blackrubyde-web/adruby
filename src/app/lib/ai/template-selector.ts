@@ -10,7 +10,7 @@ export function selectTemplate(profile: StrategicProfile, tone: string): any {
     console.log('🎨 Stage 2: Template Selection...');
 
     // Get recommended template
-    let templateId = profile.recommendedTemplate;
+    const templateId = profile.recommendedTemplate;
 
     // Map to actual template IDs from presets.ts
     const templateMap: Record<string, string> = {
