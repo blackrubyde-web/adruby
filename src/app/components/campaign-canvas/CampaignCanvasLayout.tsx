@@ -38,26 +38,26 @@ const OnboardingOverlay = memo(function OnboardingOverlay({ onComplete }: { onCo
     const steps = [
         {
             icon: Layers,
-            title: 'Willkommen zum Visual Campaign Builder',
-            description: 'Baue deine Meta-Kampagnen visuell mit Drag & Drop. Jede Kampagne besteht aus Ad Sets und Ads.',
+            title: 'Visual Builder',
+            description: 'Baue Kampagnen visuell per Drag & Drop. Einfach, schnell & übersichtlich.',
             highlight: 'center',
         },
         {
             icon: MousePointer,
-            title: 'Kampagnenstruktur aufbauen',
-            description: 'Klicke "Add Ad Set" auf der Campaign-Node, dann "Add Ad" auf den Ad Sets.',
+            title: 'Struktur anlegen',
+            description: 'Füge Ad Sets & Ads mit einem Klick hinzu. Alles an einem Ort.',
             highlight: 'canvas',
         },
         {
             icon: Zap,
-            title: 'Assets per Drag & Drop',
-            description: 'Ziehe Creatives, Hooks und Strategien aus der linken Sidebar auf deine Nodes.',
+            title: 'Assets nutzen',
+            description: 'Ziehe Creatives & Hooks direkt aus der Sidebar auf deine Ads.',
             highlight: 'left',
         },
         {
             icon: Sparkles,
-            title: 'AI-Optimierung nutzen',
-            description: 'Klicke "AI Review" für intelligente Vorschläge zur Verbesserung deiner Kampagne.',
+            title: 'AI Optimierung',
+            description: 'Lass die KI deine Kampagne analysieren und verbessern.',
             highlight: 'right',
         },
     ];
@@ -66,48 +66,56 @@ const OnboardingOverlay = memo(function OnboardingOverlay({ onComplete }: { onCo
     const isLast = step === steps.length - 1;
 
     return (
-        <div className="fixed inset-0 z-[10000] bg-black/80 backdrop-blur-sm flex items-center justify-center animate-in fade-in duration-300">
-            <div className="max-w-lg w-full mx-4">
-                {/* Progress dots */}
-                <div className="flex justify-center gap-2 mb-6">
-                    {steps.map((_, i) => (
-                        <div
-                            key={i}
-                            className={`w-2 h-2 rounded-full transition-all ${i === step ? 'w-8 bg-primary' : i < step ? 'bg-primary/50' : 'bg-white/20'
-                                }`}
-                        />
-                    ))}
-                </div>
+        <div className="fixed inset-0 z-[10000] bg-black/60 backdrop-blur-sm flex items-center justify-center animate-in fade-in duration-300">
+            <div className="max-w-md w-full mx-6">
+                <div className="relative bg-zinc-950/40 backdrop-blur-2xl border border-white/10 rounded-2xl p-6 shadow-2xl ring-1 ring-black/5 overflow-hidden">
+                    {/* Background Gradient Blob */}
+                    <div className="absolute top-0 left-1/2 -translate-x-1/2 w-64 h-32 bg-primary/20 blur-[80px] rounded-full pointer-events-none opacity-50" />
 
-                {/* Card */}
-                <div className="bg-card/95 backdrop-blur-xl border border-border/50 rounded-3xl p-8 shadow-2xl">
-                    <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-primary/20 to-purple-500/20 flex items-center justify-center mb-6 mx-auto">
-                        <currentStep.icon className="w-8 h-8 text-primary" />
+                    {/* Progress dots */}
+                    <div className="relative flex justify-center gap-1.5 mb-8">
+                        {steps.map((_, i) => (
+                            <div
+                                key={i}
+                                className={`h-1 rounded-full transition-all duration-300 ${i === step ? 'w-6 bg-primary shadow-lg shadow-primary/25' : 'w-1.5 bg-white/10'
+                                    }`}
+                            />
+                        ))}
                     </div>
 
-                    <h2 className="text-2xl font-bold text-center mb-3">{currentStep.title}</h2>
-                    <p className="text-muted-foreground text-center mb-8">{currentStep.description}</p>
+                    {/* Icon */}
+                    <div className="relative w-12 h-12 mx-auto mb-5 rounded-xl bg-gradient-to-tr from-white/5 to-white/0 border border-white/10 flex items-center justify-center shadow-inner group">
+                        <div className="absolute inset-0 bg-primary/20 blur-xl opacity-0 group-hover:opacity-100 transition-opacity" />
+                        <currentStep.icon className="w-5 h-5 text-primary relative z-10" />
+                    </div>
 
-                    <div className="flex gap-3">
+                    {/* Text */}
+                    <div className="text-center space-y-2 mb-8 relative z-10">
+                        <h2 className="text-lg font-bold tracking-tight text-white">{currentStep.title}</h2>
+                        <p className="text-sm text-muted-foreground leading-relaxed px-4">{currentStep.description}</p>
+                    </div>
+
+                    {/* Actions */}
+                    <div className="flex gap-3 relative z-10">
                         <button
                             onClick={onComplete}
-                            className="flex-1 py-3 bg-muted hover:bg-muted/80 rounded-xl text-sm font-medium transition-colors"
+                            className="flex-1 h-10 text-xs font-medium text-muted-foreground hover:text-white hover:bg-white/5 rounded-xl transition-colors"
                         >
                             Überspringen
                         </button>
                         <button
                             onClick={() => isLast ? onComplete() : setStep(s => s + 1)}
-                            className="flex-1 py-3 bg-primary hover:bg-primary/90 text-primary-foreground rounded-xl text-sm font-medium transition-colors flex items-center justify-center gap-2"
+                            className="flex-1 h-10 bg-primary hover:bg-primary/90 text-primary-foreground rounded-xl text-xs font-bold transition-all shadow-lg shadow-primary/20 flex items-center justify-center gap-2"
                         >
                             {isLast ? (
                                 <>
                                     Los geht's
-                                    <PartyPopper className="w-4 h-4" />
+                                    <PartyPopper className="w-3.5 h-3.5" />
                                 </>
                             ) : (
                                 <>
                                     Weiter
-                                    <ArrowRight className="w-4 h-4" />
+                                    <ArrowRight className="w-3.5 h-3.5" />
                                 </>
                             )}
                         </button>
