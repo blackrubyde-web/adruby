@@ -118,20 +118,26 @@ export const AdWizard = ({ isOpen, onClose, onComplete }: AdWizardProps) => {
     };
 
     const handleGenerate = async () => {
+        console.log('🎯 handleGenerate called!'); // DEBUG
+
         // Basic validation - ensure product name exists
         if (!formData.productName.trim()) {
+            console.error('❌ Validation failed: No product name');
             toast.error('Bitte Produktname eingeben');
             return;
         }
 
+        console.log('✅ Validation passed, starting generation...');
         setIsGenerating(true);
-        setLoadingStep('hooks'); // Use existing state
+        setLoadingStep('hooks');
         setGeneratedDoc(null);
         setGeneratedHooks(null);
 
         try {
+            console.log('📦 Importing premium-ad-generator...');
             // Import premium AI generator
             const { generatePremiumAd } = await import('../../lib/ai/premium-ad-generator');
+            console.log('✅ Import successful!');
 
             const { productName, brandName, productDescription, painPoints, usps, targetAudience, tone } = formData;
 
@@ -143,8 +149,7 @@ export const AdWizard = ({ isOpen, onClose, onComplete }: AdWizardProps) => {
                 targetAudience && `Target: ${targetAudience}`
             ].filter(Boolean).join('. ');
 
-            // Get uploaded image if exists
-            let finalImage = uploadedImage;
+            console.log('📋 Form data:', { productName, brandName, tone, userPrompt });
 
             // RUN PREMIUM AI 5-STAGE PIPELINE
             console.log('🚀 Starting Premium AI Pipeline...');
@@ -191,21 +196,13 @@ export const AdWizard = ({ isOpen, onClose, onComplete }: AdWizardProps) => {
             toast.success('Premium Ad erstellt! 🎉');
 
         } catch (error: any) {
-            console.error('Premium AI generation failed:', error);
+            console.error('❌ Premium AI generation failed:', error);
+            console.error('Error stack:', error.stack);
             toast.error(`Generierung fehlgeschlagen: ${error.message || 'Unbekannter Fehler'}`);
-
-            // Fallback to basic generation if premium fails
-            try {
-                console.log('Falling back to basic generation...');
-                toast.info('Versuche Standard-Generierung...');
-                // Keep the existing basic generation as fallback
-                await handleBasicGenerate();
-            } catch (fallbackError) {
-                console.error('Fallback also failed:', fallbackError);
-            }
         } finally {
             setIsGenerating(false);
             setLoadingStep('idle');
+            console.log('🏁 Generation finished');
         }
     };
 
