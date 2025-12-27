@@ -4,6 +4,9 @@ import { toast } from 'sonner';
 import { supabase } from '../../lib/supabaseClient';
 import {
     type CampaignCanvasNodeData,
+    type CampaignNodeData,
+    type AdSetNodeData,
+    type AdNodeData,
     type AIAnalysisResult,
     type DraggableAsset,
     DEFAULT_CAMPAIGN_CONFIG,
@@ -698,13 +701,13 @@ export function CampaignCanvasProvider({ children }: { children: ReactNode }) {
 
             // Check for empty campaigns
             campaignNodes.forEach(campaign => {
-                const childAdSets = adSetNodes.filter(as => (as.data as any).parentId === campaign.id);
+                const childAdSets = adSetNodes.filter(as => (as.data as AdSetNodeData).parentId === campaign.id);
                 if (childAdSets.length === 0) {
                     warnings.push({
                         id: `warning-empty-campaign-${campaign.id}`,
                         severity: 'error',
                         title: 'Leere Campaign',
-                        description: `"${(campaign.data as any).config?.name}" hat keine Ad Sets.`,
+                        description: `"${(campaign.data as CampaignNodeData).config?.name}" hat keine Ad Sets.`,
                         affectedNodes: [campaign.id],
                     });
                 }
@@ -712,13 +715,13 @@ export function CampaignCanvasProvider({ children }: { children: ReactNode }) {
 
             // Check for empty ad sets
             adSetNodes.forEach((adset) => {
-                const adsInSet = adNodes.filter((ad) => (ad.data as any).parentId === adset.id);
+                const adsInSet = adNodes.filter((ad) => (ad.data as AdNodeData).parentId === adset.id);
                 if (adsInSet.length === 0) {
                     warnings.push({
                         id: `warning-${adset.id}`,
                         severity: 'warning',
                         title: 'Leeres Ad Set',
-                        description: `"${(adset.data as any).config?.name}" hat keine Ads.`,
+                        description: `"${(adset.data as AdSetNodeData).config?.name}" hat keine Ads.`,
                         affectedNodes: [adset.id],
                     });
                 }
@@ -726,12 +729,12 @@ export function CampaignCanvasProvider({ children }: { children: ReactNode }) {
 
             // Check for missing creatives
             adNodes.forEach((ad) => {
-                if (!(ad.data as any).creative?.id) {
+                if (!(ad.data as AdNodeData).creative?.id) {
                     warnings.push({
                         id: `warning-creative-${ad.id}`,
                         severity: 'info',
                         title: 'Fehlendes Creative',
-                        description: `"${(ad.data as any).config?.name}" braucht ein Creative.`,
+                        description: `"${(ad.data as AdNodeData).config?.name}" braucht ein Creative.`,
                         affectedNodes: [ad.id],
                     });
                 }
@@ -739,8 +742,8 @@ export function CampaignCanvasProvider({ children }: { children: ReactNode }) {
 
             // Audience overlap check (mock)
             if (adSetNodes.length >= 2) {
-                const firstTargeting = (adSetNodes[0].data as any).config?.targeting;
-                const secondTargeting = (adSetNodes[1].data as any).config?.targeting;
+                const firstTargeting = (adSetNodes[0].data as AdSetNodeData).config?.targeting;
+                const secondTargeting = (adSetNodes[1].data as AdSetNodeData).config?.targeting;
                 if (firstTargeting && secondTargeting) {
                     const sameLocations = firstTargeting?.locations?.join() === secondTargeting?.locations?.join();
                     const sameAge = firstTargeting?.ageMin === secondTargeting?.ageMin && firstTargeting?.ageMax === secondTargeting?.ageMax;
@@ -767,7 +770,7 @@ export function CampaignCanvasProvider({ children }: { children: ReactNode }) {
                 });
             }
 
-            if (adNodes.length > 0 && adNodes.every(ad => !(ad.data as any).config?.headline)) {
+            if (adNodes.length > 0 && adNodes.every(ad => !(ad.data as AdNodeData).config?.headline)) {
                 suggestions.push({
                     id: 'suggest-headlines',
                     type: 'creative',
@@ -804,27 +807,27 @@ export function CampaignCanvasProvider({ children }: { children: ReactNode }) {
 
             // Build structure for each campaign
             for (const campaign of campaignNodes) {
-                const config = (campaign.data as any).config;
+                const config = (campaign.data as CampaignNodeData).config;
                 const adSets = nodes
-                    .filter(n => n.data.type === 'adset' && (n.data as any).parentId === campaign.id)
+                    .filter(n => n.data.type === 'adset' && (n.data as AdSetNodeData).parentId === campaign.id)
                     .map(adset => {
-                        const asConfig = (adset.data as any).config;
+                        const asConfig = (adset.data as AdSetNodeData).config;
                         const ads = nodes
-                            .filter(n => n.data.type === 'ad' && (n.data as any).parentId === adset.id)
+                            .filter(n => n.data.type === 'ad' && (n.data as AdNodeData).parentId === adset.id)
                             .map(ad => ({
-                                name: (ad.data as any).config?.name,
-                                headline: (ad.data as any).config?.headline,
-                                primaryText: (ad.data as any).config?.primaryText,
-                                cta: (ad.data as any).config?.cta,
-                                destinationUrl: (ad.data as any).config?.destinationUrl,
-                                creativeId: (ad.data as any).creative?.id,
+                                name: (ad.data as AdNodeData).config?.name,
+                                headline: (ad.data as AdNodeData).config?.headline,
+                                primaryText: (ad.data as AdNodeData).config?.primaryText,
+                                cta: (ad.data as AdNodeData).config?.cta,
+                                destinationUrl: (ad.data as AdNodeData).config?.destinationUrl,
+                                creativeId: (ad.data as AdNodeData).creative?.id,
                             }));
 
                         return {
                             name: asConfig?.name,
                             targeting: asConfig?.targeting,
                             optimizationGoal: asConfig?.optimizationGoal,
-                            dailyBudget: asConfig?.dailyBudget,
+                            dailyBudget: asConfig?.budget,
                             ads,
                         };
                     });

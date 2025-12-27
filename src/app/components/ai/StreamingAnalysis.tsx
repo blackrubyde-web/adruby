@@ -13,6 +13,59 @@ export function StreamingAnalysis({ campaigns, onComplete, isAnalyzing }: Stream
     const [isStreaming, setIsStreaming] = useState(false);
 
     useEffect(() => {
+        const startStreaming = async () => {
+            if (!campaigns.length) return;
+
+            setIsStreaming(true);
+            setStreamingText('');
+
+            try {
+                const response = await fetch('/api/ai-analyze-stream', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ campaigns })
+                });
+
+                if (!response.body) throw new Error('No response body');
+
+                const reader = response.body.getReader();
+                const decoder = new TextDecoder();
+                let buffer = '';
+
+                let done = false;
+                while (!done) {
+                    const { done: streamDone, value } = await reader.read();
+                    done = streamDone;
+
+                    if (done) break;
+
+                    const chunk = decoder.decode(value, { stream: true });
+                    buffer += chunk;
+
+                    // Update streaming text
+                    setStreamingText(prev => prev + chunk);
+
+                    // Check for campaign markers
+                    const campaignMatch = chunk.match(/\[CAMPAIGN:(\d+)\]/);
+                    if (campaignMatch) {
+                        setCurrentCampaign(parseInt(campaignMatch[1]));
+                    }
+                }
+
+                // Parse final result
+                try {
+                    const result = JSON.parse(buffer);
+                    onComplete(result.analyses || []);
+                } catch (e) {
+                    console.error('Failed to parse streaming result:', e);
+                }
+            } catch (error) {
+                console.error('Streaming error:', error);
+            } finally {
+                setIsStreaming(false);
+            }
+        };
+
         if (!isAnalyzing) {
             setStreamingText('');
             setCurrentCampaign(0);
@@ -20,60 +73,8 @@ export function StreamingAnalysis({ campaigns, onComplete, isAnalyzing }: Stream
         } else {
             startStreaming();
         }
-    }, [isAnalyzing]);
+    }, [isAnalyzing, campaigns, onComplete]);
 
-    const startStreaming = async () => {
-        if (!campaigns.length) return;
-
-        setIsStreaming(true);
-        setStreamingText('');
-
-        try {
-            const response = await fetch('/api/ai-analyze-stream', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ campaigns })
-            });
-
-            if (!response.body) throw new Error('No response body');
-
-            const reader = response.body.getReader();
-            const decoder = new TextDecoder();
-            let buffer = '';
-
-            let done = false;
-            while (!done) {
-                const { done: streamDone, value } = await reader.read();
-                done = streamDone;
-
-                if (done) break;
-
-                const chunk = decoder.decode(value, { stream: true });
-                buffer += chunk;
-
-                // Update streaming text
-                setStreamingText(prev => prev + chunk);
-
-                // Check for campaign markers
-                const campaignMatch = chunk.match(/\[CAMPAIGN:(\d+)\]/);
-                if (campaignMatch) {
-                    setCurrentCampaign(parseInt(campaignMatch[1]));
-                }
-            }
-
-            // Parse final result
-            try {
-                const result = JSON.parse(buffer);
-                onComplete(result.analyses || []);
-            } catch (e) {
-                console.error('Failed to parse streaming result:', e);
-            }
-        } catch (error) {
-            console.error('Streaming error:', error);
-        } finally {
-            setIsStreaming(false);
-        }
-    };
 
     if (!isAnalyzing) return null;
 

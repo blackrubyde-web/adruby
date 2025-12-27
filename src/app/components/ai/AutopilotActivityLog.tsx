@@ -22,7 +22,7 @@ export function AutopilotActivityLog() {
 
     useEffect(() => {
         loadActions();
-    }, [filter]);
+    }, [loadActions]);
 
     const loadActions = useCallback(async () => {
         setIsLoading(true);
