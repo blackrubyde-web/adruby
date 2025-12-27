@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Card } from '../layout';
 import { Zap, Activity, Clock, AlertTriangle, TrendingUp, TrendingDown, PowerOff, Shield, CheckCircle2 } from 'lucide-react';
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
+import { supabase } from '../../lib/supabaseClient';
 
 type Log = {
     id: string;
@@ -27,7 +27,6 @@ const ACTION_CONFIG: Record<string, { icon: any, color: string, label: string }>
 export function AutopilotActivityFeed() {
     const [logs, setLogs] = useState<Log[]>([]);
     const [isLoading, setIsLoading] = useState(true);
-    const supabase = createClientComponentClient();
 
     const fetchLogs = async () => {
         try {
