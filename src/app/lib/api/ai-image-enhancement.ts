@@ -209,14 +209,16 @@ export async function enhanceProductImage(req: EnhancementRequest): Promise<Enha
     console.log('✅ Premium image generated from OpenAI');
 
     // Step 3: Upload to Supabase Storage via Backend Edge Function (Solves CORS)
+    // We use 'openai-proxy' because it's already deployed and we merged the logic there
     console.log('💾 Uploading to Supabase Storage (Server-side)...');
 
-    // Call our new Edge Function that handles the fetch + upload server-side
-    const { data: uploadData, error: uploadError } = await supabase.functions.invoke('process-image', {
+    const { data: uploadData, error: uploadError } = await supabase.functions.invoke('openai-proxy', {
         body: {
-            imageUrl: openAIImageUrl,
-            productName: req.productName,
-            userId: (await supabase.auth.getUser()).data.user?.id
+            processParams: {
+                imageUrl: openAIImageUrl,
+                productName: req.productName,
+                userId: (await supabase.auth.getUser()).data.user?.id
+            }
         }
     });
 
