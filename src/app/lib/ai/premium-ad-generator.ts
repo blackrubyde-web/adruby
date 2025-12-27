@@ -24,7 +24,7 @@ export interface PremiumAdResult {
     strategicProfile: StrategicProfile;
     premiumCopy: PremiumCopy;
     template: any;
-    processedImage?: string;
+    processedImages?: { original: string; background?: string };
 }
 
 export async function generatePremiumAd(
@@ -58,16 +58,16 @@ export async function generatePremiumAd(
         });
 
         // STAGE 5: Intelligent Image Processing (via Backend Edge Function)
-        onProgress?.(5, 'Processing image (Quality takes time: ~1-2 min)...');
-        let processedImage: string | undefined;
+        onProgress?.(5, 'Processing image (Generating Scene)...');
+
+        let processedImages: { original: string; background?: string } | undefined;
 
         try {
-            // Safe Race: Give DALL-E 3 generous time (120s), protecting against eternal hangs.
-            const timeoutPromise = new Promise<string | undefined>((resolve, reject) => {
+            // Safe Race: Give DALL-E 3 generous time (120s)
+            const timeoutPromise = new Promise<{ original: string; background?: string } | undefined>((resolve) => {
                 setTimeout(() => {
-                    // Start logging warning at 120s
                     console.warn('⚠️ Image processing pending > 120s');
-                    resolve(params.imageBase64);
+                    resolve({ original: params.imageBase64 || '' });
                 }, 120000);
             });
 
@@ -79,12 +79,11 @@ export async function generatePremiumAd(
             });
 
             // Race the real process against the timeout
-            processedImage = await Promise.race([processingPromise, timeoutPromise]);
+            processedImages = await Promise.race([processingPromise, timeoutPromise]);
 
         } catch (imageError: any) {
             console.error('❌ Premium Image Failed:', imageError);
-            // Only fallback on CRITICAL error, but log it loudly.
-            processedImage = params.imageBase64;
+            processedImages = { original: params.imageBase64 || '' };
         }
 
         // STAGE 4: Layout Composition (after image processing)
@@ -92,9 +91,11 @@ export async function generatePremiumAd(
         const adDocument = composeLayout({
             template,
             copy: premiumCopy,
-            productImage: processedImage,
+            productImage: processedImages?.original,
+            backgroundImage: processedImages?.background,
             brandName: params.brandName,
-            productName: params.productName
+            productName: params.productName,
+            visualIdentity: strategicProfile.visualIdentity
         });
 
         console.log('✅ Premium ad generation complete!');
@@ -104,7 +105,7 @@ export async function generatePremiumAd(
             strategicProfile,
             premiumCopy,
             template,
-            processedImage
+            processedImages
         };
 
     } catch (error) {

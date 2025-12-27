@@ -11,7 +11,7 @@ export async function processImage(params: {
     productName: string;
     tone: string;
     shouldEnhance: boolean;
-}): Promise<string | undefined> {
+}): Promise<{ original: string; background?: string } | undefined> {
     console.log('🖼️ Stage 5: Intelligent Image Processing...');
 
     if (!params.imageBase64) {
@@ -19,81 +19,37 @@ export async function processImage(params: {
         return undefined;
     }
 
-    // Decision: Should we enhance this image?
+    // Default: Return original only
+    const result = { original: params.imageBase64 };
+
+    // Decision: Should we generate a background?
     if (!params.shouldEnhance) {
         console.log('⏭️  User opted out of enhancement');
-        return params.imageBase64;
+        return result;
     }
 
     try {
-        // Analyze image and determine best processing approach
-        const analysisPrompt = `Analyze this product image and recommend processing:
+        console.log('✨ Generating Premium Background Scene...');
 
-Product: ${params.productName}
-Tone: ${params.tone}
+        // Import dynamically to avoid circular deps if any (though here it's fine)
+        const { generateBackgroundScene } = await import('../api/ai-image-enhancement');
 
-Should we:
-A) Remove background and add studio backdrop (product photography)
-B) Keep background, enhance lighting only (lifestyle/UGC)
-C) Keep as-is, minimal enhancement (already professional)
-
-Return ONLY: A, B, or C`;
-
-        const { data: analysisData, error: analysisError } = await supabase.functions.invoke('openai-proxy', {
-            body: {
-                endpoint: 'chat/completions',
-                model: 'gpt-4o',
-                messages: [{
-                    role: 'user',
-                    content: [
-                        { type: 'text', text: analysisPrompt },
-                        {
-                            type: 'image_url',
-                            image_url: {
-                                url: params.imageBase64.startsWith('data:')
-                                    ? params.imageBase64
-                                    : `data:image/jpeg;base64,${params.imageBase64}`,
-                                detail: 'low'
-                            }
-                        }
-                    ]
-                }],
-                max_tokens: 10,
-                temperature: 0.3
-            }
+        const bgResult = await generateBackgroundScene({
+            imageBase64: params.imageBase64,
+            userPrompt: 'Generate a matching premium background',
+            productName: params.productName,
+            tone: params.tone as any
         });
 
-        if (analysisError) {
-            console.warn('Image analysis failed, using as-is:', analysisError);
-            return params.imageBase64;
-        }
-
-        const decision = analysisData.choices[0]?.message?.content?.trim();
-        console.log('📋 Image processing decision:', decision);
-
-        // Apply decision
-        if (decision === 'A' || decision === 'B') {
-            // Enhance with DALL-E 3
-            console.log('✨ Enhancing image with AI...');
-            const enhanced = await enhanceProductImage({
-                imageBase64: params.imageBase64,
-                userPrompt: decision === 'A'
-                    ? 'Remove background, add professional studio backdrop with premium lighting'
-                    : 'Keep background, enhance lighting and colors for premium look',
-                productName: params.productName,
-                tone: params.tone as any
-            });
-
-            return enhanced.enhancedImageUrl;
-        } else {
-            // Keep as-is
-            console.log('✅ Image looks good, keeping as-is');
-            return params.imageBase64;
-        }
+        console.log('✅ Background generated:', bgResult.backgroundImageUrl);
+        return {
+            original: params.imageBase64,
+            background: bgResult.backgroundImageUrl
+        };
 
     } catch (error) {
         console.error('Image processing error:', error);
-        // Fallback: return original
-        return params.imageBase64;
+        // Fallback: return original only
+        return result;
     }
 }

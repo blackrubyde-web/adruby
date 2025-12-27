@@ -10,8 +10,16 @@ export function composeLayout(params: {
     template: any;
     copy: PremiumCopy;
     productImage?: string;
+    backgroundImage?: string;
     brandName?: string;
     productName?: string;
+    visualIdentity?: {
+        primaryColor: string;
+        accentColor: string;
+        backgroundColor: string;
+        textColor: string;
+        fontStyle: string;
+    };
 }): AdDocument {
     console.log('🎨 Stage 4: Layout Composition...');
 
@@ -40,9 +48,63 @@ export function composeLayout(params: {
             newLayer.text = params.copy.cta;
         }
 
-        // Replace product image if provided
+        // COMPOSITE STRATEGY:
+        // 1. Background Layer -> Gets generated Background Scene
+        if (params.backgroundImage && (layer.type === 'background' || layer.name?.toLowerCase().includes('bg'))) {
+            newLayer.src = params.backgroundImage;
+            newLayer.opacity = 1; // Ensure full visibility
+        }
+
+        // 2. Product Layer -> Gets ORIGINAL Product Image
         if (params.productImage && (layer.name?.toLowerCase().includes('product') || layer.type === 'product' || layer.name?.toLowerCase().includes('customer'))) {
             newLayer.src = params.productImage;
+            // Best effort fit
+            newLayer.fit = 'contain';
+        }
+
+        // Apply Dynamic Styling
+        if (params.visualIdentity) {
+            const { primaryColor, accentColor, textColor, fontStyle } = params.visualIdentity;
+
+            // Update fonts based on style
+            if (newLayer.type === 'text' || newLayer.type === 'cta') {
+                if (fontStyle === 'bold') newLayer.fontFamily = 'Oswald';
+                else if (fontStyle === 'elegant') newLayer.fontFamily = 'Playfair Display';
+                else if (fontStyle === 'handwritten') newLayer.fontFamily = 'Caveat';
+                else newLayer.fontFamily = 'Inter';
+            }
+
+            // Update Colors
+            if (newLayer.type === 'text') {
+                // Headlines get primary or text color
+                if (layer.name?.toLowerCase().includes('headline')) {
+                    newLayer.color = textColor;
+                } else {
+                    newLayer.color = textColor;
+                    // Adjust opacity for subtitles
+                    if (layer.name?.toLowerCase().includes('description')) {
+                        newLayer.opacity = 0.9;
+                    }
+                }
+            }
+
+            if (newLayer.type === 'cta') {
+                // CTAs get accent or primary color
+                if (layer.name?.toLowerCase().includes('cta') || layer.text?.includes('→')) {
+                    newLayer.bgColor = accentColor;
+                    // Contrast check simplistic: if accent is dark, text white, else black
+                    // optimized for common safe hexes, else default to white/black based on brightness logic could be added here
+                    // keeping it simple: most generic accents are bright/bold, so white text usually works or black.
+                    // Let's stick to what the template had OR force white/black if we knew brightness.
+                    // For now, let's trust the AI picked a good combo or keep template default text color if it was white/black.
+                    newLayer.color = '#FFFFFF'; // defaulting to white text on buttons for safety
+                    if (['#ffffff', '#fff', '#fefefe'].includes(accentColor.toLowerCase())) newLayer.color = '#000000';
+                } else {
+                    // Badges etc
+                    newLayer.bgColor = primaryColor;
+                    newLayer.color = '#FFFFFF';
+                }
+            }
         }
 
         return newLayer;
@@ -53,7 +115,7 @@ export function composeLayout(params: {
         name: `${params.brandName || params.productName} - Premium Ad`,
         width: baseDoc.width || 1080,
         height: baseDoc.height || 1080,
-        backgroundColor: baseDoc.backgroundColor || '#000000',
+        backgroundColor: params.visualIdentity?.backgroundColor || baseDoc.backgroundColor || '#000000',
         layers: layers
     };
 

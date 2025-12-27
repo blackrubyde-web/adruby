@@ -274,18 +274,18 @@ export const PropertiesPanel = ({ layer, onChange, onGenerate, onAdapt, onGenera
 
             {/* AI MAGIC MODAL */}
             {showAIModal && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
-                    <div className="bg-card w-full max-w-md mx-4 rounded-3xl shadow-2xl border border-border overflow-hidden animate-in zoom-in-95 duration-300">
+                <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm animate-in fade-in duration-200 p-4">
+                    <div className="bg-card w-full max-w-sm rounded-3xl shadow-2xl border border-border overflow-hidden animate-in zoom-in-95 duration-300 flex flex-col max-h-[90vh]">
                         {/* Modal Header */}
-                        <div className="p-6 border-b border-border bg-gradient-to-r from-violet-500/10 to-fuchsia-500/10">
+                        <div className="p-5 border-b border-border bg-gradient-to-r from-violet-500/10 to-fuchsia-500/10 shrink-0">
                             <div className="flex items-center justify-between">
                                 <div className="flex items-center gap-3">
-                                    <div className="p-3 rounded-2xl bg-gradient-to-br from-violet-500 to-fuchsia-500">
-                                        <Wand2 className="w-6 h-6 text-white" />
+                                    <div className="p-2.5 rounded-2xl bg-gradient-to-br from-violet-500 to-fuchsia-500 shadow-lg shadow-violet-500/20">
+                                        <Wand2 className="w-5 h-5 text-white" />
                                     </div>
                                     <div>
-                                        <h2 className="text-lg font-bold">AI Magic</h2>
-                                        <p className="text-sm text-muted-foreground">Was möchtest du verbessern?</p>
+                                        <h2 className="text-base font-bold">AI Magic</h2>
+                                        <p className="text-xs text-muted-foreground">Wähle eine Aktion</p>
                                     </div>
                                 </div>
                                 <button onClick={() => setShowAIModal(false)} className="p-2 hover:bg-muted rounded-xl transition-colors">
@@ -295,67 +295,76 @@ export const PropertiesPanel = ({ layer, onChange, onGenerate, onAdapt, onGenera
                         </div>
 
                         {/* Modal Content */}
-                        <div className="p-6 space-y-4">
+                        <div className="p-5 overflow-y-auto">
                             {isProcessing ? (
-                                <div className="py-12 text-center">
+                                <div className="py-8 text-center">
                                     <Loader2 className="w-10 h-10 animate-spin mx-auto text-violet-500 mb-4" />
-                                    <p className="text-sm text-muted-foreground">AI arbeitet...</p>
+                                    <p className="text-sm text-muted-foreground font-medium">AI arbeitet...</p>
                                 </div>
                             ) : (
                                 <>
                                     {isImage && (
-                                        <>
-                                            <div className="space-y-2">
-                                                <span className="text-sm font-bold">Szene generieren</span>
+                                        <div className="space-y-5">
+                                            <div className="space-y-3">
+                                                <span className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Szene generieren</span>
                                                 <div className="grid grid-cols-2 gap-2">
                                                     {SCENE_PRESETS.map(preset => (
                                                         <button
                                                             key={preset.id}
                                                             onClick={() => handleAIAction('scene', { prompt: preset.prompt })}
-                                                            className="p-4 rounded-xl border-2 border-border hover:border-violet-500 hover:bg-violet-500/5 transition-all text-left"
+                                                            className="p-3 rounded-xl border border-border hover:border-violet-500 hover:bg-violet-500/5 transition-all text-left flex flex-col gap-1 group"
                                                         >
-                                                            <span className="text-lg">{preset.label.split(' ')[0]}</span>
-                                                            <span className="block text-sm font-medium">{preset.label.split(' ')[1]}</span>
+                                                            <span className="text-xl group-hover:scale-110 transition-transform duration-300 origin-left">{preset.label.split(' ')[0]}</span>
+                                                            <span className="text-xs font-medium text-foreground">{preset.label.split(' ')[1]}</span>
                                                         </button>
                                                     ))}
                                                 </div>
                                             </div>
 
-                                            <div className="border-t border-border pt-4 space-y-2">
-                                                <button
-                                                    onClick={() => handleAIAction('cutout')}
-                                                    className="w-full p-4 rounded-xl border-2 border-border hover:border-indigo-500 hover:bg-indigo-500/5 transition-all text-left flex items-center gap-4"
-                                                >
-                                                    <span className="text-2xl">✂️</span>
-                                                    <div>
-                                                        <span className="text-sm font-bold block">Freistellen</span>
-                                                        <span className="text-xs text-muted-foreground">Hintergrund entfernen</span>
-                                                    </div>
-                                                </button>
-                                                <button
-                                                    onClick={() => handleAIAction('enhance')}
-                                                    className="w-full p-4 rounded-xl border-2 border-border hover:border-emerald-500 hover:bg-emerald-500/5 transition-all text-left flex items-center gap-4"
-                                                >
-                                                    <span className="text-2xl">✨</span>
-                                                    <div>
-                                                        <span className="text-sm font-bold block">Verbessern</span>
-                                                        <span className="text-xs text-muted-foreground">Qualität optimieren</span>
-                                                    </div>
-                                                </button>
+                                            <div className="space-y-3">
+                                                <span className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Bearbeiten</span>
+                                                <div className="grid grid-cols-2 gap-3">
+                                                    <button
+                                                        onClick={() => handleAIAction('cutout')}
+                                                        className="p-3 rounded-xl border border-border hover:border-indigo-500 hover:bg-indigo-500/5 transition-all text-left group"
+                                                    >
+                                                        <div className="mb-2 w-8 h-8 rounded-lg bg-indigo-500/10 flex items-center justify-center text-indigo-500 group-hover:scale-110 transition-transform">
+                                                            <span className="text-lg">✂️</span>
+                                                        </div>
+                                                        <div>
+                                                            <span className="text-sm font-bold block">Freistellen</span>
+                                                            <span className="text-[10px] text-muted-foreground">Hintergrund entfernen</span>
+                                                        </div>
+                                                    </button>
+                                                    <button
+                                                        onClick={() => handleAIAction('enhance')}
+                                                        className="p-3 rounded-xl border border-border hover:border-emerald-500 hover:bg-emerald-500/5 transition-all text-left group"
+                                                    >
+                                                        <div className="mb-2 w-8 h-8 rounded-lg bg-emerald-500/10 flex items-center justify-center text-emerald-500 group-hover:scale-110 transition-transform">
+                                                            <span className="text-lg">✨</span>
+                                                        </div>
+                                                        <div>
+                                                            <span className="text-sm font-bold block">Detail-Fix</span>
+                                                            <span className="text-[10px] text-muted-foreground">Qualität maximieren</span>
+                                                        </div>
+                                                    </button>
+                                                </div>
                                             </div>
-                                        </>
+                                        </div>
                                     )}
 
                                     {isText && (
                                         <div className="space-y-3">
                                             <button
                                                 onClick={() => handleAIAction('rewrite')}
-                                                className="w-full p-5 rounded-xl border-2 border-border hover:border-purple-500 hover:bg-purple-500/5 transition-all text-left flex items-center gap-4"
+                                                className="w-full p-4 rounded-xl border border-border hover:border-purple-500 hover:bg-purple-500/5 transition-all text-left flex items-center gap-4 group"
                                             >
-                                                <span className="text-3xl">✍️</span>
+                                                <div className="w-10 h-10 rounded-xl bg-purple-500/10 flex items-center justify-center text-2xl group-hover:scale-110 transition-transform">
+                                                    ✍️
+                                                </div>
                                                 <div>
-                                                    <span className="text-base font-bold block">Text umschreiben</span>
-                                                    <span className="text-sm text-muted-foreground">AI generiert besseren Ad-Copy</span>
+                                                    <span className="text-sm font-bold block">Text umschreiben</span>
+                                                    <span className="text-xs text-muted-foreground">AI generiert Varianten</span>
                                                 </div>
                                             </button>
                                         </div>

@@ -20,6 +20,11 @@ interface EnhancementResult {
     analysisNotes: string;
 }
 
+interface BackgroundResult {
+    backgroundImageUrl: string;
+    analysisNotes: string;
+}
+
 /**
  * MASTER PROMPT SYSTEM
  * This prompt is engineered to extract MAXIMUM quality from GPT-4 Vision
@@ -81,6 +86,37 @@ Your prompt should be so detailed that DALL-E 3 has NO CHOICE but to generate a 
 };
 
 /**
+ * BACKGROUND GENERATION PROMPT SYSTEM (Composite Strategy)
+ * Generates an EMPTY scene for the product to be placed into.
+ */
+const generateBackgroundVisionPrompt = (req: EnhancementRequest): string => {
+    return `You are an expert set designer for premium product photography.
+
+YOUR MISSION: Analyze this product image and create a DALL-E 3 prompt to generate a PERFECT BACKGROUND SCENE for this specific product to be placed into later.
+
+PRODUCT CONTEXT:
+- Product: ${req.productName}
+- Brand: ${req.brandName || 'N/A'}
+- Tone: ${req.tone}
+
+ANALYSIS:
+1. Identify the optimal setting for this product (e.g., marble counter for cosmetics, tech desk for gadgets).
+2. Determine the best lighting to match the product's likely perspective.
+3. Choose colors that perfectly complement the product (complementary or monochromatic).
+
+CRITICAL INSTRUCTION:
+The generated image must be an EMPTY SCENE. Do NOT include the product. The product will be photoshopped in later.
+- Center of the image must be "empty" or have a "landing spot" (podium, flat surface, open air) for the product.
+- Perspective must match a standard product shot (front view or slight angle).
+
+FORMAT YOUR RESPONSE AS JSON:
+{
+  "dallePrompt": "Detailed DALL-E 3 prompt for an EMPTY BACKGROUND SCENE...",
+  "analysisNotes": "Brief strategy"
+}`;
+};
+
+/**
  * Tone-specific background guidance (PREMIUM LEVEL)
  */
 const getToneBackgroundGuidance = (tone: string): string => {
@@ -106,16 +142,11 @@ async function analyzeImageWithVision(req: EnhancementRequest): Promise<{ dalleP
                 {
                     role: 'user',
                     content: [
-                        {
-                            type: 'text',
-                            text: generateVisionAnalysisPrompt(req)
-                        },
+                        { type: 'text', text: generateVisionAnalysisPrompt(req) },
                         {
                             type: 'image_url',
                             image_url: {
-                                url: req.imageBase64.startsWith('data:')
-                                    ? req.imageBase64
-                                    : `data:image/jpeg;base64,${req.imageBase64}`,
+                                url: req.imageBase64.startsWith('data:') ? req.imageBase64 : `data:image/jpeg;base64,${req.imageBase64}`,
                                 detail: 'high'
                             }
                         }
@@ -127,29 +158,53 @@ async function analyzeImageWithVision(req: EnhancementRequest): Promise<{ dalleP
         }
     });
 
-    if (error) {
-        throw new Error(`GPT-4 Vision failed: ${error.message || 'Unknown error'}`);
-    }
-
+    if (error) throw new Error(error.message);
     const content = data.choices[0]?.message?.content;
+    if (!content) throw new Error('No response');
 
-    if (!content) {
-        throw new Error('No response from GPT-4 Vision');
-    }
-
-    // Parse JSON response
     try {
-        const parsed = JSON.parse(content);
-        return {
-            dallePrompt: parsed.dallePrompt,
-            analysisNotes: parsed.analysisNotes
-        };
+        return JSON.parse(content);
     } catch (e) {
-        // Fallback if GPT didn't return JSON
-        return {
-            dallePrompt: content,
-            analysisNotes: 'AI-enhanced product visualization'
-        };
+        return { dallePrompt: content, analysisNotes: 'Auto-generated background' };
+    }
+}
+
+/**
+ * Analyze image to generate BACKGROUND ONLY prompt
+ */
+async function analyzeForBackground(req: EnhancementRequest): Promise<{ dallePrompt: string; analysisNotes: string }> {
+    const { data, error } = await supabase.functions.invoke('openai-proxy', {
+        body: {
+            endpoint: 'chat/completions',
+            model: 'gpt-4o',
+            messages: [
+                {
+                    role: 'user',
+                    content: [
+                        { type: 'text', text: generateBackgroundVisionPrompt(req) },
+                        {
+                            type: 'image_url',
+                            image_url: {
+                                url: req.imageBase64.startsWith('data:') ? req.imageBase64 : `data:image/jpeg;base64,${req.imageBase64}`,
+                                detail: 'low'
+                            }
+                        }
+                    ]
+                }
+            ],
+            max_tokens: 1000,
+            temperature: 0.7
+        }
+    });
+
+    if (error) throw new Error(`GPT-4 Vision failed: ${error.message}`);
+    const content = data.choices[0]?.message?.content;
+    if (!content) throw new Error('No response from GPT-4 Vision');
+
+    try {
+        return JSON.parse(content);
+    } catch (e) {
+        return { dallePrompt: content, analysisNotes: 'Background generation strategy' };
     }
 }
 
@@ -252,6 +307,42 @@ export async function enhanceProductImage(req: EnhancementRequest): Promise<Enha
 
     return {
         enhancedImageUrl: permanentImageUrl,
+        analysisNotes
+    };
+}
+
+/**
+ * Generate a BACKGROUND SCENE only (for composite ads)
+ */
+export async function generateBackgroundScene(req: EnhancementRequest): Promise<BackgroundResult> {
+    console.log('🎭 Generating BACKGROUND SCENE (Composite Mode)...');
+
+    // 1. Analyze to get Background Prompt
+    const { dallePrompt, analysisNotes } = await analyzeForBackground(req);
+
+    // 2. Generate Background with DALL-E 3
+    // Explicitly add negative prompt instruction in the prompt text itself as DALL-E 3 via API doesn't support neg parameters well
+    const bgPrompt = `EMPTY BACKGROUND SCENE for product photography. ${dallePrompt}. NO TEXT. NO PRODUCTS. EMPTY CENTER.`;
+    const openAIImageUrl = await generateWithDALLE3(bgPrompt);
+
+    // 3. Upload
+    const response = await fetch('/api/process-image', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            processParams: {
+                imageUrl: openAIImageUrl,
+                productName: `${req.productName}-bg`,
+                userId: (await supabase.auth.getUser()).data.user?.id
+            }
+        })
+    });
+
+    if (!response.ok) throw new Error('Backend bg upload failed');
+    const uploadData = await response.json();
+
+    return {
+        backgroundImageUrl: uploadData.publicUrl,
         analysisNotes
     };
 }

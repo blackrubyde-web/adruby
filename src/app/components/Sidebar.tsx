@@ -1,5 +1,5 @@
 import { memo, useCallback, useState } from 'react';
-import { BarChart3, Target, Layers, Brain, Settings, LogOut, X, BarChart2, Gift, Sparkles, BookOpen, Palette, Shield, type LucideIcon } from 'lucide-react';
+import { BarChart3, Target, Layers, Brain, Settings, LogOut, X, BarChart2, Gift, BookOpen, Palette, Shield, type LucideIcon } from 'lucide-react';
 import { PageType } from '../App';
 import { useAdmin } from '../contexts/AdminContext';
 
@@ -21,9 +21,8 @@ type NavItem = {
 
 const CORE_WORKFLOW: NavItem[] = [
   { icon: BarChart3, label: 'Dashboard', page: 'dashboard' },
-  { icon: Palette, label: 'Studio (Beta)', page: 'studio' }, // New Studio Link
+  { icon: Palette, label: 'Creative Studio', page: 'studio' },
   { icon: BarChart2, label: 'Analytics', page: 'analytics' },
-  { icon: Sparkles, label: 'Creative Generator Pro', page: 'adbuilder' },
   { icon: BookOpen, label: 'Creative Library', page: 'library' },
   { icon: Target, label: 'Strategies', page: 'strategies' },
   { icon: Layers, label: 'Campaigns', page: 'campaigns' },

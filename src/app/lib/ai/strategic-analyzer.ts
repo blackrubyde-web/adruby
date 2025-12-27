@@ -14,6 +14,13 @@ export interface StrategicProfile {
     recommendedTemplate: string;
     keyBenefits: string[];
     competitiveAdvantage: string;
+    visualIdentity: {
+        primaryColor: string;
+        accentColor: string;
+        backgroundColor: string;
+        textColor: string;
+        fontStyle: 'modern' | 'bold' | 'elegant' | 'handwritten' | 'minimal';
+    };
 }
 
 export async function analyzeStrategy(params: {
@@ -56,6 +63,12 @@ ANALYZE:
 
 7. Key Benefits (3-5 bullet points)
 8. Competitive Advantage (1 sentence unique selling point)
+9. Visual Identity (CRITICAL for aesthetic):
+    - primaryColor: Hex code matching brand/emotion
+    - accentColor: High contrast hex code for CTAs
+    - backgroundColor: Hex code (can be dark or light depending on tone)
+    - textColor: Readable hex code on background
+    - fontStyle: 'modern' (Inter), 'bold' (Oswald), 'elegant' (Playfair), 'handwritten' (Caveat), or 'minimal'
 
 CRITICAL: Choose template based on:
 - Use "ugc_testimonial" or "social_proof_max" for products needing trust
@@ -74,7 +87,14 @@ Return ONLY valid JSON:
   "conversionGoal": "goal",
   "recommendedTemplate": "template_id",
   "keyBenefits": ["benefit 1", "benefit 2", "benefit 3"],
-  "competitiveAdvantage": "why this is better than competitors"
+  "competitiveAdvantage": "why this is better than competitors",
+  "visualIdentity": {
+    "primaryColor": "#hex",
+    "accentColor": "#hex",
+    "backgroundColor": "#hex",
+    "textColor": "#hex",
+    "fontStyle": "modern"
+  }
 }`;
 
     const { data, error } = await supabase.functions.invoke('openai-proxy', {

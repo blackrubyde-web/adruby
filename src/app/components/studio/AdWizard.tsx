@@ -1,10 +1,11 @@
-import { useState, useRef, useCallback } from 'react';
+import { useState, useRef, useCallback, useEffect } from 'react';
 import { supabase } from '../../lib/supabaseClient';
 import { Upload, Sparkles, ArrowRight, X, Wand2, Check, Zap, Image as ImageIcon, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { AD_TEMPLATES } from './presets';
 import type { AdDocument, StudioLayer } from '../../types/studio';
 import { enhanceProductImage } from '../../lib/api/ai-image-enhancement';
+import { removeBackground, blobToBase64 } from '../../lib/ai/bg-removal';
 
 interface AdWizardProps {
     isOpen: boolean;
@@ -62,11 +63,82 @@ export const AdWizard = ({ isOpen, onClose, onComplete }: AdWizardProps) => {
         tone: 'professional',
     });
     const [isGenerating, setIsGenerating] = useState(false);
+    const [isRemovingBg, setIsRemovingBg] = useState(false); // New state for BG removal loading
     const [loadingStep, setLoadingStep] = useState<'idle' | 'image' | 'hooks' | 'creating'>('idle');
     const [generatedHooks, setGeneratedHooks] = useState<GeneratedHooks | null>(null);
     const [selectedHookIndex, setSelectedHookIndex] = useState(0);
     const [generatedDoc, setGeneratedDoc] = useState<AdDocument | null>(null);
+    const [showResumeDialog, setShowResumeDialog] = useState(false); // Draft Dialog
     const fileInputRef = useRef<HTMLInputElement>(null);
+
+    // Draft Persistence Key
+    const DRAFT_KEY = 'adruby_wizard_draft';
+
+    // 1. Initial Check for Draft
+    useEffect(() => {
+        if (isOpen) {
+            const savedDraft = localStorage.getItem(DRAFT_KEY);
+            if (savedDraft) {
+                try {
+                    const parsed = JSON.parse(savedDraft);
+                    // Only ask if there is meaningful data
+                    if (parsed.step > 1 || parsed.formData.productName) {
+                        setShowResumeDialog(true);
+                    }
+                } catch (e) {
+                    console.log('Invalid draft found');
+                }
+            }
+        }
+    }, [isOpen]);
+
+    // 2. Auto-Save Draft on Change
+    useEffect(() => {
+        if (isOpen && (formData.productName || step > 1)) {
+            const draftData = {
+                step,
+                formData,
+                uploadedImage, // Note: image string might be large, be careful. For basic MVP it's fine.
+                timestamp: Date.now()
+            };
+            localStorage.setItem(DRAFT_KEY, JSON.stringify(draftData));
+        }
+    }, [formData, step, uploadedImage, isOpen]);
+
+    // 3. Clear Draft on Complete
+    const clearDraft = () => {
+        localStorage.removeItem(DRAFT_KEY);
+        setStep(1);
+        setUploadedImage(null);
+        setFormData({
+            brandName: '',
+            productName: '',
+            productDescription: '',
+            imageEnhancementPrompt: '',
+            painPoints: '',
+            usps: '',
+            targetAudience: '',
+            tone: 'professional',
+        });
+    };
+
+    const handleResumeDraft = () => {
+        const savedDraft = localStorage.getItem(DRAFT_KEY);
+        if (savedDraft) {
+            const parsed = JSON.parse(savedDraft);
+            setFormData(parsed.formData);
+            setStep(parsed.step as WizardStep);
+            if (parsed.uploadedImage) setUploadedImage(parsed.uploadedImage);
+            toast.success('Entwurf wiederhergestellt!');
+        }
+        setShowResumeDialog(false);
+    };
+
+    const handleDiscardDraft = () => {
+        clearDraft();
+        setShowResumeDialog(false);
+    };
+
 
     const updateField = (field: keyof FormData, value: string) => {
         setFormData(prev => ({ ...prev, [field]: value }));
@@ -100,6 +172,30 @@ export const AdWizard = ({ isOpen, onClose, onComplete }: AdWizardProps) => {
         };
         reader.readAsDataURL(file);
     }, []);
+
+    const handleRemoveBackground = async () => {
+        if (!uploadedImage) return;
+
+        try {
+            setIsRemovingBg(true);
+            toast.info('Entferne Hintergrund... (Das kann kurz dauern)');
+
+            // Call the client-side background removal service
+            const bgRemovedBlob = await removeBackground(uploadedImage);
+
+            // Convert back to base64 for display
+            const bgRemovedBase64 = await blobToBase64(bgRemovedBlob);
+
+            setUploadedImage(bgRemovedBase64);
+            toast.success('Hintergrund erfolgreich entfernt! ✂️');
+
+        } catch (error) {
+            console.error('BG Removal Error:', error);
+            toast.error('Hintergrund-Entfernung fehlgeschlagen');
+        } finally {
+            setIsRemovingBg(false);
+        }
+    };
 
     const canProceedToStep2 = formData.productName.trim().length > 0;
     const canProceedToStep3 = canProceedToStep2 && formData.tone;
@@ -486,6 +582,38 @@ Generate this EXACT JSON structure:
                 onClick={handleClose}
             />
 
+            {/* Resume Draft Dialog */}
+            {showResumeDialog && (
+                <div className="absolute inset-0 z-[60] flex items-center justify-center bg-black/50 backdrop-blur-sm animate-in fade-in">
+                    <div className="bg-card w-full max-w-sm p-6 rounded-2xl shadow-xl border border-border animate-in zoom-in-95">
+                        <div className="text-center space-y-4">
+                            <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center mx-auto text-primary">
+                                <Sparkles className="w-6 h-6" />
+                            </div>
+                            <div>
+                                <h3 className="font-bold text-lg">Entwurf gefunden</h3>
+                                <p className="text-sm text-muted-foreground">Möchtest du an deinem letzten Ad-Entwurf weiterarbeiten?</p>
+                            </div>
+                            <div className="flex gap-3 pt-2">
+                                <button
+                                    onClick={handleDiscardDraft}
+                                    className="flex-1 py-2 rounded-xl text-sm font-bold text-muted-foreground hover:bg-muted transition-colors"
+                                >
+                                    Verwerfen
+                                </button>
+                                <button
+                                    onClick={handleResumeDraft}
+                                    className="flex-1 py-2 rounded-xl text-sm font-bold bg-primary text-primary-foreground hover:bg-primary/90 transition-colors shadow-lg shadow-primary/20"
+                                >
+                                    Weiterarbeiten
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+
             {/* Content Card */}
             <div className={`relative w-full max-w-2xl mx-4 rounded-3xl shadow-2xl overflow-hidden max-h-[85vh] flex flex-col transition-all duration-500 transform border border-border bg-background z-50 ${isExiting ? 'scale-95 translate-y-8' : 'scale-100 translate-y-0'}`}>
 
@@ -578,6 +706,29 @@ Generate this EXACT JSON structure:
                                         </div>
                                     )}
                                 </div>
+
+                                {/* Background Removal Button */}
+                                {uploadedImage && (
+                                    <button
+                                        onClick={handleRemoveBackground}
+                                        disabled={isRemovingBg}
+                                        className="w-full py-3 rounded-xl border border-dashed border-primary/30 hover:border-primary/60 hover:bg-primary/5 text-primary text-sm font-bold transition-all flex items-center justify-center gap-2 group disabled:opacity-50 disabled:cursor-not-allowed"
+                                    >
+                                        {isRemovingBg ? (
+                                            <>
+                                                <Loader2 className="w-4 h-4 animate-spin" />
+                                                Entferne Hintergrund...
+                                            </>
+                                        ) : (
+                                            <>
+                                                <div className="p-1 rounded bg-primary/10 text-primary group-hover:bg-primary group-hover:text-white transition-colors">
+                                                    <Wand2 className="w-3.5 h-3.5" />
+                                                </div>
+                                                Hintergrund entfernen (KI)
+                                            </>
+                                        )}
+                                    </button>
+                                )}
                             </div>
 
                             {/* Right: Inputs */}
@@ -762,26 +913,60 @@ Generate this EXACT JSON structure:
                             </div>
 
                             <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 h-[500px] overflow-y-auto">
-                                {/* Left: Simplified Ad Preview */}
+                                {/* Left: Simplified Ad Preview (With Image Support) */}
                                 <div className="lg:col-span-7 space-y-4">
-                                    <div className="aspect-square rounded-2xl overflow-hidden border-2 border-border shadow-2xl" style={{ backgroundColor: generatedDoc.backgroundColor }}>
-                                        <div className="relative w-full h-full p-16 flex flex-col">
+                                    <div className="aspect-square rounded-2xl overflow-hidden border-2 border-border shadow-2xl relative" style={{ backgroundColor: generatedDoc.backgroundColor }}>
+                                        {/* Render Image Layers First */}
+                                        {generatedDoc.layers
+                                            .filter(l => (l.type === 'product' || l.type === 'background') && (l as any).src)
+                                            .map((layer: any) => (
+                                                <img
+                                                    key={layer.id}
+                                                    src={layer.src}
+                                                    alt={layer.name}
+                                                    className="absolute"
+                                                    style={{
+                                                        left: `${(layer.x / generatedDoc.width) * 100}%`,
+                                                        top: `${(layer.y / generatedDoc.height) * 100}%`,
+                                                        width: `${(layer.width / generatedDoc.width) * 100}%`,
+                                                        height: `${(layer.height / generatedDoc.height) * 100}%`,
+                                                        objectFit: layer.type === 'background' ? 'cover' : 'contain',
+                                                        opacity: layer.opacity,
+                                                        transform: `rotate(${layer.rotation}deg)`
+                                                    }}
+                                                />
+                                            ))}
+                                        {/* Overlay Layer if exists */}
+                                        {generatedDoc.layers.filter(l => l.type === 'overlay').map((layer: any) => (
+                                            <div
+                                                key={layer.id}
+                                                className="absolute inset-0 pointer-events-none"
+                                                style={{
+                                                    backgroundColor: layer.fill,
+                                                    opacity: layer.opacity
+                                                }}
+                                            />
+                                        ))}
+
+                                        <div className="relative w-full h-full p-16 flex flex-col z-20">
                                             {/* Headline */}
-                                            <h2 className="text-6xl font-black leading-tight mb-auto" style={{
-                                                color: formData.tone === 'minimal' ? '#000000' : '#ffffff'
+                                            <h2 className="text-5xl md:text-6xl font-black leading-tight mb-auto drop-shadow-lg" style={{
+                                                color: formData.tone === 'minimal' ? '#000000' : '#ffffff',
+                                                textShadow: formData.tone !== 'minimal' ? '0 2px 10px rgba(0,0,0,0.5)' : 'none'
                                             }}>
                                                 {generatedHooks.headlines[selectedHookIndex]}
                                             </h2>
 
                                             {/* Description */}
-                                            <p className="text-2xl mb-8" style={{
-                                                color: formData.tone === 'minimal' ? '#333333' : '#e0e0e0'
+                                            <p className="text-xl md:text-2xl mb-8 drop-shadow-md font-medium" style={{
+                                                color: formData.tone === 'minimal' ? '#333333' : '#e0e0e0',
+                                                textShadow: formData.tone !== 'minimal' ? '0 2px 5px rgba(0,0,0,0.5)' : 'none'
                                             }}>
                                                 {generatedHooks.descriptions[Math.min(selectedHookIndex, generatedHooks.descriptions.length - 1)]}
                                             </p>
 
                                             {/* CTA Button */}
-                                            <div className="px-12 py-6 bg-black dark:bg-white text-white dark:text-black rounded-full text-2xl font-bold shadow-2xl inline-block self-start">
+                                            <div className="px-10 py-5 bg-black dark:bg-white text-white dark:text-black rounded-full text-xl md:text-2xl font-bold shadow-2xl inline-block self-start hover:scale-105 transition-transform duration-300">
                                                 {generatedHooks.ctas[Math.min(selectedHookIndex, generatedHooks.ctas.length - 1)]}
                                             </div>
                                         </div>
@@ -959,7 +1144,10 @@ Generate this EXACT JSON structure:
                         </button>
                     ) : generatedDoc ? (
                         <button
-                            onClick={() => onComplete(generatedDoc)}
+                            onClick={() => {
+                                onComplete(generatedDoc);
+                                clearDraft();
+                            }}
                             className="flex items-center gap-2 md:gap-3 px-6 md:px-8 py-2.5 md:py-3 bg-gradient-to-r from-emerald-600 to-emerald-700 text-white rounded-xl font-bold text-sm md:text-base hover:shadow-lg hover:shadow-emerald-500/30 transition-all"
                         >
                             <span>Im Editor Bearbeiten</span>
