@@ -23,8 +23,6 @@ import { useMetaCampaigns } from '../hooks/useMetaCampaigns';
 import { useStrategies } from '../hooks/useStrategies';
 import { useAnalyticsData } from '../hooks/useAnalyticsData';
 import { applyMetaAction } from '../lib/api/meta';
-import { PerformanceHeatmap } from './ai/PerformanceHeatmap';
-import { StreamingAnalysis } from './ai/StreamingAnalysis';
 
 type AIRecommendation = 'kill' | 'duplicate' | 'increase' | 'decrease';
 
@@ -115,7 +113,6 @@ export function AIAnalysisPage() {
   const [isApplying, setIsApplying] = useState(false);
   const [aiAnalysisCache, setAiAnalysisCache] = useState<Record<string, AIAnalysis>>({});
   const [aiPowered, setAiPowered] = useState(false);
-  const [showHeatmap, setShowHeatmap] = useState(true);
 
   // Helper to apply AI recommendations to Meta
   const applyRecommendations = async () => {
@@ -269,10 +266,11 @@ export function AIAnalysisPage() {
     // Fallback to rule-based analysis (Strategy-Aware)
     const strategy = strategies.find(s => s.id === strategyId);
     // Use defaults if no strategy config
-    const pauseThreshold = (strategy?.autopilot_config as any)?.pause_threshold_roas ?? 1.0;
-    const scaleThreshold = (strategy?.autopilot_config as any)?.scale_threshold_roas ?? 4.0;
+    const autopilotConfig = strategy?.autopilot_config as Record<string, unknown> | undefined;
+    const pauseThreshold = (autopilotConfig?.pause_threshold_roas as number) ?? 1.0;
+    const scaleThreshold = (autopilotConfig?.scale_threshold_roas as number) ?? 4.0;
     // Note: scale_threshold might be higher in config (e.g. target * 1.2). Default check:
-    const targetRoas = (strategy?.autopilot_config as any)?.target_roas ?? 3.0;
+    const targetRoas = (autopilotConfig?.target_roas as number) ?? 3.0;
 
     let recommendation: AIRecommendation = 'increase';
 
@@ -320,6 +318,7 @@ export function AIAnalysisPage() {
       const roas = Number(campaign.roas || 0);
       const conversions = Number(campaign.conversions || 0);
       const cpc = clicks > 0 ? spend / clicks : 0;
+      const performanceScore = buildPerformanceScore({ roas, ctr, conversions });
 
       const campaignStrategyId = campaign.strategyId || null;
       const aiAnalysis = buildAiAnalysis(`analysis-${campaign.id}`, campaign.id, { roas, ctr, conversions, spend }, campaignStrategyId);

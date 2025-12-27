@@ -112,13 +112,13 @@ export function AdBuilderPage() {
   const [selectedStrategyId, setSelectedStrategyId] = useState<string | null>(null);
   const [showStrategyWizard, setShowStrategyWizard] = useState(false);
 
-  const handleStrategySelect = (id: string, strategy: StrategyBlueprint) => {
+  const handleStrategySelect = (id: string, _strategy: StrategyBlueprint) => {
     setSelectedStrategyId(id);
     // You might want to update form data based on strategy here if needed
     // e.g. set industry or tone based on strategy
   };
 
-  const handleCreateStrategy = async (data: any) => {
+  const handleCreateStrategy = async (data: { name: string; industry_type: string; target_roas: number; max_daily_budget: number; scale_speed: string; risk_tolerance: string }) => {
     try {
       // Save new strategy blueprint
       const { error } = await supabase.from('strategy_blueprints').insert({

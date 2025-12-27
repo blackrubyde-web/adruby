@@ -477,7 +477,7 @@ export function CampaignBuilderPage() {
         };
 
         toast.loading("Deploying to Meta...");
-        // @ts-ignore - Payload type match relies on backend leniency for MVP
+        // @ts-expect-error - Payload type match relies on backend leniency for MVP
         await createCampaign(payload);
         toast.dismiss();
         toast.success("Kampagne erfolgreich auf Meta gestartet! 🚀");
