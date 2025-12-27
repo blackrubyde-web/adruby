@@ -118,7 +118,11 @@ export const AdWizard = ({ isOpen, onClose, onComplete }: AdWizardProps) => {
     };
 
     const handleGenerate = async () => {
-        if (!canGenerateAd) return;
+        // Basic validation - ensure product name exists
+        if (!formData.productName.trim()) {
+            toast.error('Bitte Produktname eingeben');
+            return;
+        }
 
         setIsGenerating(true);
         setLoadingMessage('Starte Premium AI Ad Generation...');
