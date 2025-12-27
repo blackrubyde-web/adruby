@@ -233,36 +233,38 @@ export function CampaignsPage() {
       </div>
 
       {/* Filters and Search */}
-      <Card className="p-6">
-        <div className="flex items-center gap-4">
+      {/* Filters and Search - Premium Design */}
+      <div className="bg-card border border-border rounded-xl p-4">
+        <div className="flex flex-col md:flex-row items-center justify-between gap-4">
           {/* Search */}
-          <div className="flex-1 relative">
-            <Search className="w-5 h-5 text-muted-foreground absolute left-3 top-1/2 -translate-y-1/2" />
+          <div className="flex-1 relative w-full">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
             <input
               type="text"
               placeholder="Search campaigns..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-10 pr-4 py-2.5 bg-background/50 border border-border/50 rounded-xl focus:outline-none focus:border-primary/50 transition-colors text-foreground placeholder:text-muted-foreground"
+              className="w-full pl-10 pr-4 py-2 bg-input border border-border rounded-lg text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all placeholder:text-muted-foreground"
             />
           </div>
 
-          {/* Status Filter */}
-          <div className="flex items-center gap-2">
-            <Filter className="w-5 h-5 text-muted-foreground" />
-            <select
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value as StatusFilter)}
-              className="px-4 py-2.5 bg-background/50 border border-border/50 rounded-xl focus:outline-none focus:border-primary/50 transition-colors text-foreground cursor-pointer"
-            >
-              <option value="all">All Status</option>
-              <option value="active">Active</option>
-              <option value="paused">Paused</option>
-              <option value="completed">Completed</option>
-            </select>
+          {/* Status Filter Tabs */}
+          <div className="flex items-center gap-1 bg-muted/50 p-1 rounded-lg">
+            {(['all', 'active', 'paused', 'completed'] as const).map((status) => (
+              <button
+                key={status}
+                onClick={() => setStatusFilter(status)}
+                className={`px-3 py-1.5 rounded-md text-xs font-medium transition-all ${statusFilter === status
+                  ? 'bg-background text-foreground shadow-sm'
+                  : 'text-muted-foreground hover:text-foreground hover:bg-background/50'
+                  }`}
+              >
+                {status === 'all' ? 'All' : status.charAt(0).toUpperCase() + status.slice(1)}
+              </button>
+            ))}
           </div>
         </div>
-      </Card>
+      </div>
 
       {error && (
         <Card className="p-4 border border-red-500/30 bg-red-500/5 text-red-500">
@@ -297,7 +299,7 @@ export function CampaignsPage() {
               {filteredCampaigns.map((campaign) => {
                 const normalizedStatus = normalizeStatus(campaign.status);
                 return (
-                  <tr 
+                  <tr
                     key={campaign.id}
                     className="border-b border-border/20 hover:bg-muted/5 transition-colors group"
                   >
@@ -310,14 +312,13 @@ export function CampaignsPage() {
                       </div>
                     </td>
                     <td className="p-4">
-                      <span 
-                        className={`px-3 py-1 rounded-full text-xs font-medium inline-flex items-center gap-1.5 ${
-                          normalizedStatus === 'active'
+                      <span
+                        className={`px-3 py-1 rounded-full text-xs font-medium inline-flex items-center gap-1.5 ${normalizedStatus === 'active'
                             ? 'bg-green-500/20 text-green-500'
                             : normalizedStatus === 'paused'
-                            ? 'bg-orange-500/20 text-orange-500'
-                            : 'bg-muted/50 text-muted-foreground'
-                        }`}
+                              ? 'bg-orange-500/20 text-orange-500'
+                              : 'bg-muted/50 text-muted-foreground'
+                          }`}
                       >
                         <div className="w-1.5 h-1.5 rounded-full bg-current" />
                         {normalizedStatus}
@@ -351,7 +352,7 @@ export function CampaignsPage() {
                     <td className="p-4">
                       <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                         {normalizedStatus === 'active' ? (
-                          <button 
+                          <button
                             onClick={() => handleAction(campaign, 'pause')}
                             disabled={isBusy(campaign.id, 'pause')}
                             className="p-2 hover:bg-muted rounded-lg transition-colors disabled:opacity-50"
@@ -360,7 +361,7 @@ export function CampaignsPage() {
                             <Pause className="w-4 h-4 text-muted-foreground hover:text-primary" />
                           </button>
                         ) : normalizedStatus === 'paused' ? (
-                          <button 
+                          <button
                             onClick={() => handleAction(campaign, 'resume')}
                             disabled={isBusy(campaign.id, 'resume')}
                             className="p-2 hover:bg-muted rounded-lg transition-colors disabled:opacity-50"
@@ -369,7 +370,7 @@ export function CampaignsPage() {
                             <Play className="w-4 h-4 text-muted-foreground hover:text-primary" />
                           </button>
                         ) : null}
-                        <button 
+                        <button
                           onClick={() => handleAction(campaign, 'duplicate')}
                           disabled={isBusy(campaign.id, 'duplicate')}
                           className="p-2 hover:bg-muted rounded-lg transition-colors disabled:opacity-50"
@@ -377,7 +378,7 @@ export function CampaignsPage() {
                         >
                           <Copy className="w-4 h-4 text-muted-foreground hover:text-primary" />
                         </button>
-                        <button 
+                        <button
                           onClick={() => handleAction(campaign, 'delete')}
                           disabled={isBusy(campaign.id, 'delete')}
                           className="p-2 hover:bg-muted rounded-lg transition-colors disabled:opacity-50"
@@ -385,7 +386,7 @@ export function CampaignsPage() {
                         >
                           <Trash2 className="w-4 h-4 text-muted-foreground hover:text-primary" />
                         </button>
-                        <button 
+                        <button
                           onClick={() => openMetaCampaign(campaign.id)}
                           className="p-2 hover:bg-muted rounded-lg transition-colors"
                           title="View in Meta"

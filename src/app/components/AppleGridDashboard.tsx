@@ -3,8 +3,8 @@
 import { useRef, useState, useEffect } from 'react';
 import GridLayout, { type Layout, type LayoutItem } from 'react-grid-layout/legacy';
 import 'react-grid-layout/css/styles.css';
-import { 
-  Plus, Eye, MousePointerClick, DollarSign, Target, 
+import {
+  Plus, Eye, MousePointerClick, DollarSign, Target,
   Zap, Gauge, Activity, Users, BarChart3, Calendar,
   ArrowUpRight, Brain, Sparkles, X, Check, ChevronRight, TrendingDown
 } from 'lucide-react';
@@ -136,7 +136,7 @@ const WIDGET_TEMPLATES: WidgetTemplate[] = [
     minSize: { w: 2, h: 2 },
     recommendedSize: { w: 2, h: 2 },
   },
-  
+
   // Performance
   {
     id: 'performance-score',
@@ -381,7 +381,7 @@ interface AppleGridDashboardProps {
   accountId?: string;
 }
 
-export function AppleGridDashboard({ 
+export function AppleGridDashboard({
   onAddWidgetClick: _onAddWidgetClick,
   range: _range = '7d',
   compare: _compare = false,
@@ -393,7 +393,7 @@ export function AppleGridDashboard({
 }: AppleGridDashboardProps) {
   const storageKey = `appleLayout_v2:${accountId}`;
   const widgetsKey = `appleWidgets_v2:${accountId}`;
-  
+
   const [widgets, setWidgets] = useState<DashboardWidget[]>(() => {
     if (typeof window === 'undefined') return INITIAL_WIDGETS;
     const saved = localStorage.getItem(widgetsKey);
@@ -476,7 +476,7 @@ export function AppleGridDashboard({
 
     // Find position
     const maxY = layout.length > 0 ? Math.max(...layout.map(l => l.y + l.h)) : 0;
-    
+
     const newLayoutItem: RGLLayout = {
       i: layoutId,
       x: 0,
@@ -496,8 +496,8 @@ export function AppleGridDashboard({
   };
 
   const categories = ['All', ...Array.from(new Set(WIDGET_TEMPLATES.map(w => w.category)))];
-  const filteredTemplates = selectedCategory === 'All' 
-    ? WIDGET_TEMPLATES 
+  const filteredTemplates = selectedCategory === 'All'
+    ? WIDGET_TEMPLATES
     : WIDGET_TEMPLATES.filter(w => w.category === selectedCategory);
 
   return (
@@ -517,7 +517,7 @@ export function AppleGridDashboard({
         </button>
       </div>
 
-      <div className="w-full h-full relative">
+      <div className="w-full h-full relative group/dashboard">
         <style>{`
           .react-grid-layout {
             position: relative;
@@ -545,11 +545,214 @@ export function AppleGridDashboard({
           }
         `}</style>
 
+        {/* Widget Gallery Modal - NOW CONTAINED & ABSOLUTE */}
+        {isGalleryOpen && !selectedTemplate && (
+          <div className="absolute inset-0 z-50 flex items-center justify-center bg-background/60 backdrop-blur-md animate-in fade-in duration-200 rounded-3xl p-4">
+            <div className="bg-card/95 backdrop-blur-xl border border-border/50 rounded-3xl shadow-2xl w-full h-full max-w-none flex flex-col overflow-hidden animate-in zoom-in-95 duration-200">
+              <div className="px-6 py-4 border-b border-border/30">
+                <div className="flex items-center justify-between gap-4">
+                  <div className="min-w-0">
+                    <h2 className="text-2xl font-bold text-foreground mb-1">Widget Gallery</h2>
+                    <p className="text-xs text-muted-foreground truncate">{WIDGET_TEMPLATES.length} premium widgets available</p>
+                  </div>
+
+                  {/* Categories */}
+                  <div className="flex-1 overflow-x-auto no-scrollbar flex items-center justify-center gap-2 px-4">
+                    {categories.map((category) => (
+                      <button
+                        key={category}
+                        onClick={() => setSelectedCategory(category)}
+                        className={`px-4 py-2 rounded-xl text-xs font-bold transition-all whitespace-nowrap ${selectedCategory === category
+                            ? 'bg-primary text-primary-foreground shadow-md shadow-primary/20'
+                            : 'bg-muted/50 text-muted-foreground hover:bg-muted'
+                          }`}
+                      >
+                        {category}
+                      </button>
+                    ))}
+                  </div>
+
+                  <button
+                    onClick={() => setIsGalleryOpen(false)}
+                    className="p-2 hover:bg-muted/50 rounded-xl transition-all flex-shrink-0"
+                  >
+                    <X className="w-5 h-5 text-muted-foreground" />
+                  </button>
+                </div>
+              </div>
+
+              <div className="p-6 overflow-y-auto flex-1">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                  {filteredTemplates.map((template) => (
+                    <button
+                      key={template.id}
+                      onClick={() => handleTemplateSelect(template)}
+                      className="group relative bg-card/40 hover:bg-card/60 border border-border/30 hover:border-primary/50 rounded-2xl transition-all overflow-hidden hover:scale-[1.02] hover:shadow-xl text-left flex flex-col h-full"
+                    >
+                      <div className="p-4 flex flex-col h-full">
+                        <div className="flex items-start gap-3 mb-3">
+                          <div className="p-2.5 bg-primary/10 rounded-xl text-primary flex-shrink-0 group-hover:bg-primary/20 transition-colors">
+                            {template.icon}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <h3 className="font-bold text-foreground text-sm truncate">{template.name}</h3>
+                            <p className="text-[10px] text-muted-foreground line-clamp-2 mt-0.5 leading-relaxed">{template.description}</p>
+                          </div>
+                        </div>
+
+                        <div className="mt-auto pt-3 border-t border-border/30 flex items-center justify-between">
+                          <div className="flex flex-wrap gap-1">
+                            {template.availableSizes.slice(0, 2).map(sizeId => (
+                              <span key={sizeId} className="px-1.5 py-0.5 bg-muted/50 rounded-md text-[10px] font-medium text-muted-foreground">
+                                {WIDGET_SIZES.find(s => s.id === sizeId)?.label}
+                              </span>
+                            ))}
+                            {template.availableSizes.length > 2 && (
+                              <span className="px-1.5 py-0.5 bg-muted/50 rounded-md text-[10px] font-medium text-muted-foreground">+{template.availableSizes.length - 2}</span>
+                            )}
+                          </div>
+                          <ChevronRight className="w-4 h-4 text-muted-foreground group-hover:text-primary group-hover:translate-x-0.5 transition-all" />
+                        </div>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Customization Modal - NOW CONTAINED & ABSOLUTE */}
+        {isGalleryOpen && selectedTemplate && (
+          <div className="absolute inset-0 z-50 flex items-center justify-center bg-background/60 backdrop-blur-md animate-in fade-in duration-200 rounded-3xl p-4">
+            <div className="bg-card/95 backdrop-blur-xl border border-border/50 rounded-3xl shadow-2xl w-full h-full max-w-none flex flex-col overflow-hidden animate-in zoom-in-95 duration-200">
+              <div className="px-6 py-4 border-b border-border/30">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <button
+                      onClick={() => setSelectedTemplate(null)}
+                      className="p-2 hover:bg-muted/50 rounded-xl transition-all"
+                      title="Back to gallery"
+                    >
+                      <ArrowUpRight className="w-5 h-5 text-muted-foreground rotate-180" />
+                    </button>
+                    <div>
+                      <h2 className="text-2xl font-bold text-foreground">Customize</h2>
+                      <p className="text-xs text-muted-foreground">{selectedTemplate.name}</p>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => {
+                      setIsGalleryOpen(false);
+                      setSelectedTemplate(null);
+                    }}
+                    className="p-2 hover:bg-muted/50 rounded-xl transition-all"
+                  >
+                    <X className="w-5 h-5 text-muted-foreground" />
+                  </button>
+                </div>
+              </div>
+
+              <div className="p-8 overflow-y-auto flex-1">
+                <div className="max-w-4xl mx-auto space-y-8">
+                  {/* Size Selection */}
+                  <div>
+                    <h3 className="text-lg font-bold text-foreground mb-3 flex items-center gap-2">
+                      <div className="w-6 h-6 bg-primary/20 rounded-lg flex items-center justify-center text-primary text-xs font-bold">1</div>
+                      Size
+                    </h3>
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                      {selectedTemplate.availableSizes.map(sizeId => {
+                        const size = WIDGET_SIZES.find(s => s.id === sizeId);
+                        if (!size) return null;
+
+                        return (
+                          <button
+                            key={sizeId}
+                            onClick={() => setCustomization({ ...customization, size: sizeId })}
+                            className={`p-4 rounded-xl border transition-all text-left ${customization.size === sizeId
+                                ? 'border-primary bg-primary/5 shadow-lg shadow-primary/10 ring-1 ring-primary'
+                                : 'border-border/40 bg-card/40 hover:bg-card hover:border-border/80'
+                              }`}
+                          >
+                            <div className="font-bold text-foreground text-sm mb-1">{size.label}</div>
+                            <div className="text-xs text-muted-foreground">{size.w}×{size.h}</div>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  {/* Design Selection */}
+                  {selectedTemplate.supportsDesigns && (
+                    <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 delay-100">
+                      <h3 className="text-lg font-bold text-foreground mb-3 flex items-center gap-2">
+                        <div className="w-6 h-6 bg-primary/20 rounded-lg flex items-center justify-center text-primary text-xs font-bold">2</div>
+                        Style
+                      </h3>
+                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                        {DESIGN_VARIANTS.map(design => (
+                          <button
+                            key={design.id}
+                            onClick={() => setCustomization({ ...customization, design: design.id })}
+                            className={`p-4 rounded-xl border transition-all text-left ${customization.design === design.id
+                                ? 'border-primary bg-primary/5 shadow-lg shadow-primary/10 ring-1 ring-primary'
+                                : 'border-border/40 bg-card/40 hover:bg-card hover:border-border/80'
+                              }`}
+                          >
+                            <div className="font-bold text-foreground text-sm mb-1">{design.name}</div>
+                            <div className="text-xs text-muted-foreground truncate">{design.description}</div>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Color Selection */}
+                  {selectedTemplate.supportsColors && (
+                    <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 delay-200">
+                      <h3 className="text-lg font-bold text-foreground mb-3 flex items-center gap-2">
+                        <div className="w-6 h-6 bg-primary/20 rounded-lg flex items-center justify-center text-primary text-xs font-bold">3</div>
+                        Theme
+                      </h3>
+                      <div className="flex flex-wrap gap-3">
+                        {COLOR_THEMES.map(color => (
+                          <button
+                            key={color.id}
+                            onClick={() => setCustomization({ ...customization, color: color.id })}
+                            className={`w-12 h-12 rounded-xl border-2 transition-all hover:scale-105 bg-gradient-to-br ${color.primary} to-transparent flex items-center justify-center ${customization.color === color.id
+                                ? 'border-foreground shadow-lg scale-105'
+                                : 'border-transparent opacity-70 hover:opacity-100'
+                              }`}
+                          >
+                            {customization.color === color.id && <Check className="w-5 h-5 text-foreground drop-shadow-md" />}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="pt-4 animate-in fade-in slide-in-from-bottom-4 duration-500 delay-300">
+                    <button
+                      onClick={handleAddWidget}
+                      disabled={!customization.size}
+                      className="w-full py-4 bg-primary text-primary-foreground rounded-xl font-bold text-lg hover:scale-[1.01] transition-all shadow-xl shadow-primary/20 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 flex items-center justify-center gap-2"
+                    >
+                      <Plus className="w-5 h-5" />
+                      Add Widget
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
         <GridLayout
           className="layout"
           layout={layout}
           cols={4}
-          rowHeight={170}
+          rowHeight={160}
           width={Math.min(windowWidth > 768 ? windowWidth - 120 : windowWidth - 40, 1400)}
           onLayoutChange={handleLayoutChange}
           isDraggable={true}
@@ -564,12 +767,12 @@ export function AppleGridDashboard({
             if (!template) return null;
 
             return (
-              <div key={widget.layoutId} className="relative group">
+              <div key={widget.layoutId} className="relative group/widget">
                 <button
                   onClick={() => handleRemoveWidget(widget.layoutId)}
-                  className="absolute -top-3 -right-3 z-20 w-8 h-8 bg-red-500 hover:bg-red-600 text-white rounded-full opacity-0 group-hover:opacity-100 transition-all shadow-xl flex items-center justify-center"
+                  className="absolute -top-2 -right-2 z-20 w-6 h-6 bg-background border border-border text-muted-foreground hover:text-red-500 hover:border-red-500 rounded-full opacity-0 group-hover/widget:opacity-100 transition-all shadow-sm flex items-center justify-center"
                 >
-                  <X className="w-4 h-4" />
+                  <X className="w-3 h-3" />
                 </button>
                 <div className="widget-content">
                   <WidgetRenderer
@@ -587,222 +790,7 @@ export function AppleGridDashboard({
         </GridLayout>
       </div>
 
-      {/* Widget Gallery Modal */}
-      {isGalleryOpen && !selectedTemplate && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-md animate-in fade-in duration-200 p-4">
-          <div className="bg-card/95 backdrop-blur-xl border border-border/50 rounded-3xl shadow-2xl w-full max-w-7xl max-h-[92vh] overflow-hidden animate-in zoom-in-95 duration-200">
-            <div className="px-8 py-6 border-b border-border/30 bg-gradient-to-r from-primary/10 to-transparent">
-              <div className="flex items-center justify-between mb-6">
-                <div>
-                  <h2 className="text-3xl font-bold text-foreground mb-2">Widget Gallery</h2>
-                  <p className="text-sm text-muted-foreground">{WIDGET_TEMPLATES.length} premium widgets available</p>
-                </div>
-                <button
-                  onClick={() => setIsGalleryOpen(false)}
-                  className="p-3 hover:bg-muted/50 rounded-xl transition-all"
-                >
-                  <X className="w-6 h-6 text-muted-foreground" />
-                </button>
-              </div>
 
-              <div className="flex gap-2 overflow-x-auto pb-2">
-                {categories.map((category) => (
-                  <button
-                    key={category}
-                    onClick={() => setSelectedCategory(category)}
-                    className={`px-6 py-2.5 rounded-xl text-sm font-bold transition-all whitespace-nowrap ${
-                      selectedCategory === category
-                        ? 'bg-primary text-primary-foreground shadow-lg shadow-primary/30'
-                        : 'bg-muted/50 text-muted-foreground hover:bg-muted'
-                    }`}
-                  >
-                    {category}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            <div className="p-8 overflow-y-auto max-h-[calc(92vh-11rem)]">
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {filteredTemplates.map((template) => (
-                  <button
-                    key={template.id}
-                    onClick={() => handleTemplateSelect(template)}
-                    className="group relative bg-card/40 hover:bg-card/60 border-2 border-border/30 hover:border-primary/50 rounded-3xl transition-all overflow-hidden hover:scale-[1.02] hover:shadow-2xl"
-                  >
-                    {/* LIVE PREVIEW */}
-                    <div className="aspect-[4/3] p-4 bg-gradient-to-br from-background/50 to-transparent overflow-hidden">
-                      <div className="w-full h-full scale-[0.75] origin-center">
-                        <WidgetPreview template={template} />
-                      </div>
-                    </div>
-
-                    <div className="p-5 border-t border-border/30 bg-background/70 backdrop-blur-sm">
-                      <div className="flex items-start gap-3 mb-3">
-                        <div className="p-3 bg-primary/20 rounded-xl text-primary flex-shrink-0">
-                          {template.icon}
-                        </div>
-                        <div className="flex-1 text-left">
-                          <h3 className="font-bold text-foreground mb-1">{template.name}</h3>
-                          <p className="text-xs text-muted-foreground line-clamp-2">{template.description}</p>
-                        </div>
-                      </div>
-                      <div className="flex items-center justify-between">
-                        <div className="flex gap-1.5">
-                          {template.availableSizes.slice(0, 3).map(sizeId => (
-                            <span key={sizeId} className="px-2 py-1 bg-muted/80 rounded-lg text-xs font-semibold text-foreground">
-                              {WIDGET_SIZES.find(s => s.id === sizeId)?.label}
-                            </span>
-                          ))}
-                        </div>
-                        <ChevronRight className="w-5 h-5 text-primary group-hover:translate-x-1 transition-transform" />
-                      </div>
-                    </div>
-                  </button>
-                ))}
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Customization Modal */}
-      {isGalleryOpen && selectedTemplate && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-md animate-in fade-in duration-200 p-4">
-          <div className="bg-card/95 backdrop-blur-xl border border-border/50 rounded-3xl shadow-2xl w-full max-w-5xl max-h-[92vh] overflow-hidden animate-in zoom-in-95 duration-200">
-            <div className="px-8 py-6 border-b border-border/30 bg-gradient-to-r from-primary/10 to-transparent">
-              <div className="flex items-center justify-between">
-                <div>
-                  <button
-                    onClick={() => setSelectedTemplate(null)}
-                    className="text-sm text-muted-foreground hover:text-foreground mb-2 flex items-center gap-1 font-medium"
-                  >
-                    ← Back to gallery
-                  </button>
-                  <h2 className="text-3xl font-bold text-foreground mb-1">Customize Widget</h2>
-                  <p className="text-sm text-muted-foreground">{selectedTemplate.name}</p>
-                </div>
-                <button
-                  onClick={() => {
-                    setIsGalleryOpen(false);
-                    setSelectedTemplate(null);
-                  }}
-                  className="p-3 hover:bg-muted/50 rounded-xl transition-all"
-                >
-                  <X className="w-6 h-6 text-muted-foreground" />
-                </button>
-              </div>
-            </div>
-
-            <div className="p-8 overflow-y-auto max-h-[calc(92vh-10rem)]">
-              {/* Size Selection */}
-              <div className="mb-8">
-                <h3 className="text-xl font-bold text-foreground mb-4 flex items-center gap-3">
-                  <span className="w-10 h-10 bg-primary/20 rounded-xl flex items-center justify-center text-primary text-lg font-bold">1</span>
-                  Choose Size
-                </h3>
-                <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-                  {selectedTemplate.availableSizes.map(sizeId => {
-                    const size = WIDGET_SIZES.find(s => s.id === sizeId);
-                    if (!size) return null;
-
-                    return (
-                      <button
-                        key={sizeId}
-                        onClick={() => setCustomization({ ...customization, size: sizeId })}
-                        className={`p-6 rounded-2xl border-2 transition-all ${
-                          customization.size === sizeId
-                            ? 'border-primary bg-primary/10 scale-105 shadow-xl shadow-primary/20'
-                            : 'border-border/30 bg-muted/20 hover:bg-muted/40'
-                        }`}
-                      >
-                        <div className="font-bold text-foreground text-lg mb-2">{size.label}</div>
-                        <div className="text-sm text-muted-foreground mb-3">{size.w}×{size.h}</div>
-                        {customization.size === sizeId && (
-                          <div className="flex items-center justify-center gap-1 text-primary text-sm font-bold">
-                            <Check className="w-4 h-4" />
-                            Selected
-                          </div>
-                        )}
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-
-              {/* Design Selection */}
-              {selectedTemplate.supportsDesigns && (
-                <div className="mb-8">
-                  <h3 className="text-xl font-bold text-foreground mb-4 flex items-center gap-3">
-                    <span className="w-10 h-10 bg-primary/20 rounded-xl flex items-center justify-center text-primary text-lg font-bold">2</span>
-                    Choose Design
-                  </h3>
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                    {DESIGN_VARIANTS.map(design => (
-                      <button
-                        key={design.id}
-                        onClick={() => setCustomization({ ...customization, design: design.id })}
-                        className={`p-6 rounded-2xl border-2 transition-all ${
-                          customization.design === design.id
-                            ? 'border-primary bg-primary/10 scale-105 shadow-xl shadow-primary/20'
-                            : 'border-border/30 bg-muted/20 hover:bg-muted/40'
-                        }`}
-                      >
-                        <div className="font-bold text-foreground mb-1">{design.name}</div>
-                        <div className="text-xs text-muted-foreground mb-3">{design.description}</div>
-                        {customization.design === design.id && (
-                          <div className="flex items-center justify-center gap-1 text-primary text-xs font-bold">
-                            <Check className="w-3 h-3" />
-                            Selected
-                          </div>
-                        )}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {/* Color Selection */}
-              {selectedTemplate.supportsColors && (
-                <div className="mb-8">
-                  <h3 className="text-xl font-bold text-foreground mb-4 flex items-center gap-3">
-                    <span className="w-10 h-10 bg-primary/20 rounded-xl flex items-center justify-center text-primary text-lg font-bold">3</span>
-                    Choose Color
-                  </h3>
-                  <div className="grid grid-cols-4 md:grid-cols-8 gap-4">
-                    {COLOR_THEMES.map(color => (
-                      <button
-                        key={color.id}
-                        onClick={() => setCustomization({ ...customization, color: color.id })}
-                        className={`aspect-square rounded-2xl border-4 transition-all hover:scale-110 bg-gradient-to-br ${color.primary} to-transparent ${
-                          customization.color === color.id
-                            ? 'border-foreground scale-110 shadow-2xl'
-                            : 'border-transparent'
-                        }`}
-                      >
-                        {customization.color === color.id && (
-                          <div className="w-full h-full flex items-center justify-center">
-                            <Check className="w-8 h-8 text-foreground drop-shadow-lg" />
-                          </div>
-                        )}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {/* Add Button */}
-              <button
-                onClick={handleAddWidget}
-                disabled={!customization.size}
-                className="w-full py-5 bg-primary text-primary-foreground rounded-2xl font-bold text-xl hover:scale-[1.02] transition-all shadow-xl shadow-primary/30 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
-              >
-                Add to Dashboard
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </>
   );
 }
@@ -881,10 +869,10 @@ function WidgetRenderer({
   // ========================================================================
   if (template.component === 'stat') {
     const statMap: Record<string, { key: keyof Omit<AnalyticsData['summary'], 'deltas'>; label: string; icon: React.ReactNode }> = {
-      'stat-impressions': { key: 'impressions', label: 'Impressions', icon: <Eye className="w-7 h-7" /> },
-      'stat-clicks': { key: 'clicks', label: 'Clicks', icon: <MousePointerClick className="w-7 h-7" /> },
-      'stat-ctr': { key: 'ctr', label: 'Click Rate', icon: <Target className="w-7 h-7" /> },
-      'stat-roas': { key: 'roas', label: 'ROAS', icon: <DollarSign className="w-7 h-7" /> },
+      'stat-impressions': { key: 'impressions', label: 'Impressions', icon: <Eye className="w-5 h-5" /> },
+      'stat-clicks': { key: 'clicks', label: 'Clicks', icon: <MousePointerClick className="w-5 h-5" /> },
+      'stat-ctr': { key: 'ctr', label: 'Click Rate', icon: <Target className="w-5 h-5" /> },
+      'stat-roas': { key: 'roas', label: 'ROAS', icon: <DollarSign className="w-5 h-5" /> },
     };
 
     const def = statMap[template.id];
@@ -900,35 +888,37 @@ function WidgetRenderer({
     // Format value
     const valueText = rawValue == null ? '—' :
       (def.key === 'spend' || def.key === 'revenue') ? `€${(rawNum / 1000).toFixed(1)}K` :
-      def.key === 'ctr' ? `${rawNum.toFixed(2)}%` :
-      def.key === 'roas' ? `${rawNum.toFixed(2)}x` :
-      def.key === 'cpa' ? `€${rawNum.toFixed(2)}` :
-      new Intl.NumberFormat('de-DE').format(rawNum);
+        def.key === 'ctr' ? `${rawNum.toFixed(2)}%` :
+          def.key === 'roas' ? `${rawNum.toFixed(2)}x` :
+            def.key === 'cpa' ? `€${rawNum.toFixed(2)}` :
+              new Intl.NumberFormat('de-DE').format(rawNum);
 
     // Format trend
     const trendText = delta == null ? '—' : `${deltaNum >= 0 ? '+' : ''}${Math.round(deltaNum * 100)}%`;
     const isPositive = delta != null && deltaNum >= 0;
 
     return (
-      <div className={`w-full h-full p-6 bg-gradient-to-br ${colorTheme.primary} to-transparent backdrop-blur-xl border ${colorTheme.border} rounded-3xl flex flex-col justify-between shadow-xl overflow-hidden`}>
-        <div className="flex items-start justify-between mb-4">
-          <div className="flex items-center gap-3">
-            <div className={`p-3 ${colorTheme.bg} rounded-2xl ${colorTheme.icon}`}>
-              {def.icon}
+    return (
+      <div className={`w-full h-full p-4 bg-gradient-to-br ${colorTheme.primary} to-transparent backdrop-blur-xl border ${colorTheme.border} rounded-3xl flex flex-col justify-between shadow-sm overflow-hidden group`}>
+        <div className="flex items-start justify-between mb-2">
+          <div className="flex items-center gap-2">
+            <div className={`p-2.5 ${colorTheme.bg} rounded-xl ${colorTheme.icon} group-hover:scale-110 transition-transform`}>
+              {React.cloneElement(def.icon as React.ReactElement, { className: "w-5 h-5" })}
             </div>
-            <div className="text-sm text-muted-foreground font-medium">{def.label}</div>
+            <div className="text-xs text-muted-foreground font-semibold">{def.label}</div>
           </div>
           {delta != null && (
-            <div className={`flex items-center gap-1 px-3 py-1.5 ${isPositive ? 'bg-green-500/20' : 'bg-red-500/20'} rounded-full`}>
-              {isPositive ? <ArrowUpRight className="w-4 h-4 text-green-400" /> : <TrendingDown className="w-4 h-4 text-red-400" />}
-              <span className={`text-sm font-bold ${isPositive ? 'text-green-400' : 'text-red-400'}`}>{trendText}</span>
+            <div className={`flex items-center gap-1 px-2 py-1 ${isPositive ? 'bg-green-500/10' : 'bg-red-500/10'} rounded-lg`}>
+              {isPositive ? <ArrowUpRight className="w-3 h-3 text-green-500" /> : <TrendingDown className="w-3 h-3 text-red-500" />}
+              <span className={`text-xs font-bold ${isPositive ? 'text-green-500' : 'text-red-500'}`}>{trendText}</span>
             </div>
           )}
         </div>
         <div className="mt-auto">
-          <div className="text-4xl font-bold text-foreground">{valueText}</div>
+          <div className="text-2xl font-bold text-foreground tracking-tight">{valueText}</div>
         </div>
       </div>
+    );
     );
   }
 
@@ -1059,7 +1049,7 @@ function WidgetRenderer({
 
     const points = isPreview ? mockPoints : (data?.timeseries?.current ?? []);
     const metric: keyof TimeseriesPoint = 'revenue';
-    
+
     const state = getWidgetState({
       loading,
       data: points.length > 0 ? points : null,
@@ -1191,7 +1181,7 @@ function WidgetRenderer({
         <div className="flex-1 space-y-2.5 overflow-hidden">
           {active.length > 0 ? (
             active.map((campaign) => {
-              const usedPct = campaign.budget 
+              const usedPct = campaign.budget
                 ? Math.round(((campaign.budgetUsed ?? campaign.spend) / campaign.budget) * 100)
                 : Math.round((campaign.spend / 15000) * 100);
 

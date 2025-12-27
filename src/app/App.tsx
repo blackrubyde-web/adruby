@@ -81,8 +81,7 @@ export type PageType =
   | 'payment-cancelled'
   | 'dashboard'
   | 'analytics'
-  | 'adbuilder'
-  | 'creative-builder'
+
   | 'library'
   | 'strategies'
   | 'campaigns'
@@ -108,8 +107,7 @@ const PAGE_PATHS: Record<PageType, string> = {
   'payment-cancelled': '/payment-cancelled',
   dashboard: '/dashboard',
   analytics: '/analytics',
-  adbuilder: '/adbuilder',
-  'creative-builder': '/dashboard/creative-builder/new',
+
   library: '/library',
   strategies: '/strategies',
   campaigns: '/campaigns',
@@ -325,16 +323,7 @@ const DashboardPageContent = memo(function DashboardPageContent({
           <Footer />
         </div>
       );
-    case 'adbuilder':
-    case 'creative-builder':
-      return (
-        <div className="pt-16 min-h-screen">
-          <Suspense fallback={pageFallback}>
-            <LazyAdBuilderPage />
-          </Suspense>
-          <Footer />
-        </div>
-      );
+
     case 'library':
       return (
         <div className="pt-16 min-h-screen">
@@ -374,9 +363,7 @@ const DashboardPageContent = memo(function DashboardPageContent({
   }
 });
 
-const LazyAdBuilderPage = lazy(() =>
-  import('./components/AdBuilderPage').then((mod) => ({ default: mod.AdBuilderPage }))
-);
+
 const LazyAnalyticsPage = lazy(() =>
   import('./components/AnalyticsPage').then((mod) => ({ default: mod.AnalyticsPage }))
 );

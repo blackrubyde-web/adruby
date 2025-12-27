@@ -14,6 +14,7 @@ import {
   ChevronLeft
 } from 'lucide-react';
 import { toast } from 'sonner';
+import { memo } from 'react';
 import { PageShell, HeroHeader } from './layout';
 import { supabase } from '../lib/supabaseClient';
 import { StrategySelector } from './studio/StrategySelector';
@@ -266,6 +267,39 @@ const applyStrategyToSpec = (
   return next;
 };
 
+const AdSelectionCard = memo(({ ad, isSelected, onToggle }: { ad: SavedAd; isSelected: boolean; onToggle: (id: string) => void }) => (
+  <div
+    onClick={() => onToggle(ad.id)}
+    className={`
+      relative group p-4 rounded-3xl border-2 transition-all duration-300 cursor-pointer overflow-hidden
+      ${isSelected
+        ? 'border-primary bg-primary/10 shadow-[0_0_30px_rgba(167,139,250,0.15)]'
+        : 'border-transparent bg-muted/40 hover:bg-muted/60 hover:border-border'}
+    `}
+  >
+    <div className="flex gap-5 items-center">
+      {ad.thumbnail ? (
+        <img src={ad.thumbnail} className="w-20 h-20 rounded-2xl object-cover shadow-lg" alt="" />
+      ) : (
+        <div className="w-20 h-20 rounded-2xl bg-muted border border-border flex items-center justify-center">
+          <Sparkles className="w-6 h-6 opacity-40" />
+        </div>
+      )}
+      <div className="flex-1 min-w-0">
+        <h3 className="font-bold text-foreground truncate">{ad.name}</h3>
+        <p className="text-xs text-muted-foreground mt-1 truncate">{ad.productName}</p>
+      </div>
+      <div className={`
+          w-8 h-8 rounded-full border-2 flex items-center justify-center transition-all duration-300
+          ${isSelected ? 'bg-primary border-primary scale-110' : 'border-border group-hover:border-primary/50'}
+      `}>
+        {isSelected && <CheckCircle2 className="w-4 h-4 text-white" />}
+      </div>
+    </div>
+  </div>
+));
+AdSelectionCard.displayName = 'AdSelectionCard';
+
 export function CampaignBuilderPage() {
   const [draft, setDraft] = useState<CampaignDraftRow | null>(null);
   const [campaignSpec, setCampaignSpec] = useState<CampaignSpec>(emptySpec);
@@ -402,25 +436,8 @@ export function CampaignBuilderPage() {
 
   // Removed manual loadStrategies effect as we use useStrategies hook now
 
-  useEffect(() => {
-    setCampaignSpec((prev) => {
-      const nextAds = selectedIds.map((id) => {
-        const ad = adMap.get(id);
-        return {
-          creative_id: id,
-          name: ad?.name || 'Ad',
-          headline: ad?.headline || '',
-          primary_text: ad?.description || '',
-          cta: ad?.cta || '',
-        };
-      });
-      return {
-        ...prev,
-        ads: nextAds,
-        ad_sets: prev.ad_sets.map((set) => ({ ...set, ad_ids: set.ad_ids.filter((id) => selectedIds.includes(id)) })),
-      };
-    });
-  }, [selectedIds, adMap]);
+  // Removed expensive useEffect that synced selectedIds to campaignSpec on every render.
+  // Now we sync only when needed (navigation or save).
 
   // Handlers (kept same)
   const handleToggleAd = (id: string) => setSelectedIds((prev) => (prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id]));
@@ -494,13 +511,39 @@ export function CampaignBuilderPage() {
     { label: 'Ad Sets vorhanden', ok: campaignSpec.ad_sets.length > 0 },
     { label: 'Ad Sets haben Ads zugewiesen', ok: campaignSpec.ad_sets.length > 0 && campaignSpec.ad_sets.every((set) => set.ad_ids.length > 0) },
   ];
-  const handleNext = () => { if (currentStep < 4) setCurrentStep(c => c + 1); };
+  const syncAdsToSpec = () => {
+    setCampaignSpec((prev) => {
+      const nextAds = selectedIds.map((id) => {
+        const ad = adMap.get(id);
+        return {
+          creative_id: id,
+          name: ad?.name || 'Ad',
+          headline: ad?.headline || '',
+          primary_text: ad?.description || '',
+          cta: ad?.cta || '',
+        };
+      });
+      const validIds = new Set(selectedIds);
+      return {
+        ...prev,
+        ads: nextAds,
+        ad_sets: prev.ad_sets.map((set) => ({ ...set, ad_ids: set.ad_ids.filter((id) => validIds.has(id)) })),
+      };
+    });
+  };
+
+  const handleNext = () => {
+    if (currentStep === 2) {
+      syncAdsToSpec();
+    }
+    if (currentStep < 4) setCurrentStep(c => c + 1);
+  };
   const handleBack = () => { if (currentStep > 1) setCurrentStep(c => c - 1); };
 
   // --- UI RENDER (Premium Overhaul) ---
   return (
     <PageShell>
-      <div className="relative min-h-screen pb-20">
+      <div className="relative min-h-screen pb-10">
         {/* Background Gradients */}
         <div className="absolute inset-0 pointer-events-none overflow-hidden">
           <div className="absolute top-0 right-0 w-[800px] h-[800px] bg-indigo-500/10 rounded-full blur-[120px] mix-blend-screen" />
@@ -513,18 +556,18 @@ export function CampaignBuilderPage() {
         />
 
         {/* SIMULATION MODE BANNER */}
-        <div className="max-w-5xl mx-auto px-4 mb-6">
-          <div className="bg-orange-500/10 border border-orange-500/20 text-orange-200 p-3 rounded-xl flex items-center justify-center gap-3 backdrop-blur-sm shadow-[0_0_20px_rgba(249,115,22,0.1)]">
-            <AlertTriangle className="w-5 h-5 text-orange-500 animate-pulse" />
-            <span className="font-semibold text-sm">
-              <strong className="text-orange-500">DEMO MODE:</strong> Campaigns are simulated. No budget will be spent on Meta.
+        <div className="max-w-5xl mx-auto px-4 mb-4">
+          <div className="bg-orange-500/10 border border-orange-500/20 text-orange-200 p-2 rounded-xl flex items-center justify-center gap-3 backdrop-blur-sm shadow-[0_0_20px_rgba(249,115,22,0.1)]">
+            <AlertTriangle className="w-4 h-4 text-orange-500 animate-pulse" />
+            <span className="font-semibold text-xs">
+              <strong className="text-orange-500">DEMO MODE:</strong> Campaigns are simulated.
             </span>
           </div>
         </div>
 
         {/* Stepper UI - Premium */}
-        <div className="mb-12 max-w-5xl mx-auto px-4">
-          <div className="flex items-center justify-between relative bg-black/20 backdrop-blur-xl p-4 rounded-3xl border border-white/5 shadow-xl">
+        <div className="mb-8 max-w-5xl mx-auto px-4">
+          <div className="flex items-center justify-between relative bg-card/40 backdrop-blur-xl p-4 rounded-3xl border border-border shadow-xl">
             {/* Progress Bar Background */}
             <div className="absolute left-16 right-16 top-1/2 -translate-y-1/2 h-1 bg-white/5 rounded-full -z-10" />
 
@@ -544,12 +587,12 @@ export function CampaignBuilderPage() {
                   <div
                     className={`w-12 h-12 rounded-2xl flex items-center justify-center transition-all duration-500 ${isActive
                       ? 'bg-gradient-to-br from-violet-500 to-fuchsia-600 text-white shadow-[0_0_30px_rgba(167,139,250,0.4)] scale-110'
-                      : 'bg-zinc-900 border border-white/10 text-muted-foreground'
+                      : 'bg-muted border border-border text-muted-foreground'
                       }`}
                   >
                     {isActive && !isCurrent ? <CheckCircle2 className="w-6 h-6" /> : <Icon className="w-5 h-5" />}
                   </div>
-                  <div className={`text-xs font-bold uppercase tracking-widest text-center transition-colors duration-300 ${isCurrent ? 'text-white' : 'text-muted-foreground'}`}>
+                  <div className={`text-xs font-bold uppercase tracking-widest text-center transition-colors duration-300 ${isCurrent ? 'text-foreground' : 'text-muted-foreground'}`}>
                     {step.label}
                   </div>
                 </div>
@@ -578,7 +621,7 @@ export function CampaignBuilderPage() {
           <div className="max-w-5xl mx-auto px-4 space-y-8">
 
             {/* Content Card */}
-            <div className="bg-zinc-900/60 backdrop-blur-2xl border border-white/10 rounded-[40px] shadow-2xl overflow-hidden min-h-[500px] flex flex-col relative">
+            <div className="bg-card/60 backdrop-blur-2xl border border-border rounded-[40px] shadow-2xl overflow-hidden min-h-[500px] flex flex-col relative">
 
               {/* Step Content */}
               <div className="p-8 md:p-12 flex-1">
@@ -593,10 +636,10 @@ export function CampaignBuilderPage() {
                       <select
                         value={draft.status}
                         onChange={(e) => setDraft((prev) => (prev ? { ...prev, status: e.target.value as CampaignStatus } : prev))}
-                        className="px-4 py-2 bg-black/20 border border-white/10 rounded-xl text-sm font-medium focus:ring-2 focus:ring-primary/50 outline-none hover:bg-black/30 transition-colors"
+                        className="px-4 py-2 bg-muted/50 border border-border rounded-xl text-sm font-medium focus:ring-2 focus:ring-primary/50 outline-none hover:bg-muted transition-colors text-foreground"
                       >
                         {STATUS_OPTIONS.map((option) => (
-                          <option key={option} value={option} className="bg-zinc-900">{option.toUpperCase()}</option>
+                          <option key={option} value={option} className="bg-popover text-popover-foreground">{option.toUpperCase()}</option>
                         ))}
                       </select>
                     </div>
@@ -608,7 +651,7 @@ export function CampaignBuilderPage() {
                           <input
                             value={campaignSpec.campaign.name || ''}
                             onChange={(e) => setCampaignSpec((prev) => ({ ...prev, campaign: { ...prev.campaign, name: e.target.value } }))}
-                            className="w-full px-5 py-4 bg-black/20 border border-white/10 rounded-2xl text-white placeholder:text-white/20 focus:ring-2 focus:ring-primary/50 outline-none transition-all focus:bg-black/40"
+                            className="w-full px-5 py-4 bg-muted/30 border border-border rounded-2xl text-foreground placeholder:text-muted-foreground/50 focus:ring-2 focus:ring-primary/50 outline-none transition-all focus:bg-muted/50"
                             placeholder="z.B. Sommer Sale 2025"
                           />
                         </div>
@@ -619,7 +662,7 @@ export function CampaignBuilderPage() {
                             <input
                               value={campaignSpec.campaign.daily_budget || ''}
                               onChange={(e) => setCampaignSpec((prev) => ({ ...prev, campaign: { ...prev.campaign, daily_budget: e.target.value } }))}
-                              className="w-full pl-10 pr-5 py-4 bg-black/20 border border-white/10 rounded-2xl text-white placeholder:text-white/20 focus:ring-2 focus:ring-primary/50 outline-none transition-all focus:bg-black/40"
+                              className="w-full pl-10 pr-5 py-4 bg-muted/30 border border-border rounded-2xl text-foreground placeholder:text-muted-foreground/50 focus:ring-2 focus:ring-primary/50 outline-none transition-all focus:bg-muted/50"
                               placeholder="50.00"
                             />
                           </div>
@@ -631,12 +674,12 @@ export function CampaignBuilderPage() {
                           <select
                             value={campaignSpec.campaign.objective || 'OUTCOME_SALES'}
                             onChange={(e) => setCampaignSpec((prev) => ({ ...prev, campaign: { ...prev.campaign, objective: e.target.value } }))}
-                            className="w-full px-5 py-4 bg-black/20 border border-white/10 rounded-2xl text-white focus:ring-2 focus:ring-primary/50 outline-none transition-all hover:bg-black/30 appearance-none"
+                            className="w-full px-5 py-4 bg-muted/30 border border-border rounded-2xl text-foreground focus:ring-2 focus:ring-primary/50 outline-none transition-all hover:bg-muted/50 appearance-none"
                           >
-                            <option value="OUTCOME_SALES" className="bg-zinc-900">Sales</option>
-                            <option value="OUTCOME_LEADS" className="bg-zinc-900">Leads</option>
-                            <option value="OUTCOME_TRAFFIC" className="bg-zinc-900">Traffic</option>
-                            <option value="OUTCOME_AWARENESS" className="bg-zinc-900">Awareness</option>
+                            <option value="OUTCOME_SALES" className="bg-popover text-popover-foreground">Sales</option>
+                            <option value="OUTCOME_LEADS" className="bg-popover text-popover-foreground">Leads</option>
+                            <option value="OUTCOME_TRAFFIC" className="bg-popover text-popover-foreground">Traffic</option>
+                            <option value="OUTCOME_AWARENESS" className="bg-popover text-popover-foreground">Awareness</option>
                           </select>
                         </div>
                         <div className="space-y-2">
@@ -644,11 +687,11 @@ export function CampaignBuilderPage() {
                           <select
                             value={campaignSpec.campaign.bid_strategy || 'LOWEST_COST_WITHOUT_CAP'}
                             onChange={(e) => setCampaignSpec((prev) => ({ ...prev, campaign: { ...prev.campaign, bid_strategy: e.target.value } }))}
-                            className="w-full px-5 py-4 bg-black/20 border border-white/10 rounded-2xl text-white focus:ring-2 focus:ring-primary/50 outline-none transition-all hover:bg-black/30 appearance-none"
+                            className="w-full px-5 py-4 bg-muted/30 border border-border rounded-2xl text-foreground focus:ring-2 focus:ring-primary/50 outline-none transition-all hover:bg-muted/50 appearance-none"
                           >
-                            <option value="LOWEST_COST_WITHOUT_CAP" className="bg-zinc-900">Lowest Cost (Auto)</option>
-                            <option value="COST_CAP" className="bg-zinc-900">Cost Cap</option>
-                            <option value="BID_CAP" className="bg-zinc-900">Bid Cap</option>
+                            <option value="LOWEST_COST_WITHOUT_CAP" className="bg-popover text-popover-foreground">Lowest Cost (Auto)</option>
+                            <option value="COST_CAP" className="bg-popover text-popover-foreground">Cost Cap</option>
+                            <option value="BID_CAP" className="bg-popover text-popover-foreground">Bid Cap</option>
                           </select>
                         </div>
                       </div>
@@ -661,7 +704,7 @@ export function CampaignBuilderPage() {
                   <div className="animate-in fade-in slide-in-from-right-8 duration-500">
                     <div className="flex items-center justify-between mb-8">
                       <div>
-                        <h2 className="text-3xl font-black tracking-tight bg-gradient-to-br from-white to-white/60 bg-clip-text text-transparent">Ads auswählen</h2>
+                        <h2 className="text-3xl font-black tracking-tight text-foreground bg-clip-text">Ads auswählen</h2>
                         <p className="text-muted-foreground mt-2 text-lg">Wähle die High-Performer aus deiner Library.</p>
                       </div>
                       <div className="px-4 py-2 bg-primary/20 border border-primary/30 rounded-xl text-primary font-bold shadow-[0_0_20px_rgba(167,139,250,0.2)]">
@@ -671,48 +714,18 @@ export function CampaignBuilderPage() {
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-h-[500px] overflow-y-auto pr-2 custom-scrollbar">
                       {ads.length === 0 ? (
-                        <div className="col-span-2 py-20 flex flex-col items-center justify-center text-muted-foreground border-2 border-dashed border-white/5 rounded-3xl bg-white/5">
-                          <Sparkles className="w-12 h-12 mb-4 opacity-20" />
+                        <div className="col-span-2 py-20 flex flex-col items-center justify-center text-muted-foreground border-2 border-dashed border-border rounded-3xl bg-muted/20">
+                          <Sparkles className="w-12 h-12 mb-4 opacity-50" />
                           <p className="font-medium">Keine gespeicherten Ads gefunden.</p>
                         </div>
                       ) : (
                         ads.map((ad) => (
-                          <div
+                          <AdSelectionCard
                             key={ad.id}
-                            onClick={() => handleToggleAd(ad.id)}
-                            className={`
-                                                relative group p-4 rounded-3xl border-2 transition-all duration-300 cursor-pointer overflow-hidden
-                                                ${selectedIds.includes(ad.id)
-                                ? 'border-primary bg-primary/10 shadow-[0_0_30px_rgba(167,139,250,0.15)]'
-                                : 'border-transparent bg-black/20 hover:bg-black/40 hover:border-white/10'}
-                                            `}
-                          >
-                            <div className="flex gap-5 items-center">
-                              {ad.thumbnail ? (
-                                <img src={ad.thumbnail} className="w-20 h-20 rounded-2xl object-cover shadow-lg" alt="" />
-                              ) : (
-                                <div className="w-20 h-20 rounded-2xl bg-white/5 flex items-center justify-center">
-                                  <Sparkles className="w-6 h-6 opacity-20" />
-                                </div>
-                              )}
-                              <div className="flex-1 min-w-0">
-                                <h3 className="font-bold text-white truncate">{ad.name}</h3>
-                                <p className="text-xs text-muted-foreground mt-1 truncate">{ad.productName}</p>
-
-                                {false && (
-                                  <div className="mt-2 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-500 text-[10px] font-bold uppercase tracking-wide">
-                                    <Sparkles className="w-3 h-3" /> Strategie Match
-                                  </div>
-                                )}
-                              </div>
-                              <div className={`
-                                                    w-8 h-8 rounded-full border-2 flex items-center justify-center transition-all duration-300
-                                                    ${selectedIds.includes(ad.id) ? 'bg-primary border-primary scale-110' : 'border-white/10 group-hover:border-white/30'}
-                                                `}>
-                                {selectedIds.includes(ad.id) && <CheckCircle2 className="w-4 h-4 text-white" />}
-                              </div>
-                            </div>
-                          </div>
+                            ad={ad}
+                            isSelected={selectedIds.includes(ad.id)}
+                            onToggle={handleToggleAd}
+                          />
                         ))
                       )}
                     </div>
@@ -741,169 +754,168 @@ export function CampaignBuilderPage() {
 
                       {/* Right: Preview */}
                       <div className="lg:col-span-8">
-                        <div className="h-full bg-black/40 border border-white/10 rounded-3xl p-8 relative overflow-hidden group">
+                        <div className="h-full bg-card/60 border border-border rounded-3xl p-8 relative overflow-hidden group">
                           {strategyPreview ? (
                             <div className="space-y-6 relative z-10">
                               <div className="flex items-center gap-3 mb-6">
                                 <div className="p-2.5 bg-emerald-500/20 rounded-xl text-emerald-500">
                                   <Sparkles className="w-5 h-5" />
                                 </div>
-                                <h3 className="text-xl font-bold text-white">Strategie-Details</h3>
+                                <h3 className="text-xl font-bold text-foreground">Strategie-Details</h3>
                               </div>
 
-                              <div className="prose prose-invert">
-                                <p className="text-gray-300 leading-relaxed">{strategyPreview.summary || 'Keine Zusammenfassung verfügbar.'}</p>
+                              <div className="prose prose-invert dark:prose-invert prose-stone">
+                                <p className="text-muted-foreground leading-relaxed">{strategyPreview.summary || 'Keine Zusammenfassung verfügbar.'}</p>
                               </div>
 
                               <div className="flex flex-wrap gap-2">
                                 {(strategyPreview.recommendations || []).map((rec, idx) => (
-                                  <span key={idx} className="px-3 py-1.5 bg-white/5 border border-white/10 rounded-lg text-xs font-medium text-emerald-400">
+                                  <span key={idx} className="px-3 py-1.5 bg-muted border border-border rounded-lg text-xs font-medium text-emerald-500">
                                     {rec}
                                   </span>
                                 ))}
                               </div>
 
-                              <div className="pt-6 border-t border-white/10 grid grid-cols-2 gap-4">
-                                <button
-                                  onClick={() => handleApplyStrategy('structure')}
-                                  className="col-span-2 py-3 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl font-bold text-sm shadow-lg shadow-emerald-500/20 transition-all hover:scale-[1.02]"
-                                >
-                                  Komplette Struktur übernehmen
-                                </button>
-                                <button onClick={() => handleApplyStrategy('targeting')} className="py-3 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl text-sm font-bold transition-all">
-                                  Nur Targeting
-                                </button>
-                                <button onClick={() => handleApplyStrategy('budget')} className="py-3 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl text-sm font-bold transition-all">
-                                  Nur Budget
-                                </button>
-                              </div>
+                              <button
+                                onClick={() => handleApplyStrategy('structure')}
+                                className="col-span-2 py-3 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl font-bold text-sm shadow-lg shadow-emerald-500/20 transition-all hover:scale-[1.02]"
+                              >
+                                Komplette Struktur übernehmen
+                              </button>
+                              <button onClick={() => handleApplyStrategy('targeting')} className="py-3 bg-muted hover:bg-muted/80 border border-border rounded-xl text-sm font-bold transition-all text-foreground">
+                                Nur Targeting
+                              </button>
+                              <button onClick={() => handleApplyStrategy('budget')} className="py-3 bg-muted hover:bg-muted/80 border border-border rounded-xl text-sm font-bold transition-all text-foreground">
+                                Nur Budget
+                              </button>
                             </div>
-                          ) : (
-                            <div className="h-full flex flex-col items-center justify-center text-muted-foreground/50">
-                              <Brain className="w-16 h-16 mb-4 opacity-10" />
-                              <p>Wähle links eine Strategie aus.</p>
                             </div>
-                          )}
+                        ) : (
+                        <div className="h-full flex flex-col items-center justify-center text-muted-foreground/50">
+                          <Brain className="w-16 h-16 mb-4 opacity-10" />
+                          <p>Wähle links eine Strategie aus.</p>
                         </div>
+                          )}
                       </div>
                     </div>
                   </div>
+                  </div>
                 )}
 
-                {/* STEP 4: REVIEW */}
-                {currentStep === 4 && (
-                  <div className="animate-in fade-in slide-in-from-right-8 duration-500">
-                    <div className="flex items-center justify-between mb-8">
-                      <div>
-                        <h2 className="text-3xl font-black tracking-tight bg-gradient-to-br from-white to-white/60 bg-clip-text text-transparent">Ready to Launch?</h2>
-                        <p className="text-muted-foreground mt-2 text-lg">Final Review deiner Kampagnen-Struktur.</p>
-                      </div>
-                      <button onClick={handleAddAdSet} className="px-4 py-2 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl text-sm font-bold transition-all flex items-center gap-2">
-                        <Plus className="w-4 h-4" /> Add Ad Set
-                      </button>
+              {/* STEP 4: REVIEW */}
+              {currentStep === 4 && (
+                <div className="animate-in fade-in slide-in-from-right-8 duration-500">
+                  <div className="flex items-center justify-between mb-8">
+                    <div>
+                      <h2 className="text-3xl font-black tracking-tight text-foreground bg-clip-text">Ready to Launch?</h2>
+                      <p className="text-muted-foreground mt-2 text-lg">Final Review deiner Kampagnen-Struktur.</p>
                     </div>
+                    <button onClick={handleAddAdSet} className="px-4 py-2 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl text-sm font-bold transition-all flex items-center gap-2">
+                      <Plus className="w-4 h-4" /> Add Ad Set
+                    </button>
+                  </div>
 
-                    <div className="space-y-4 mb-8">
-                      {campaignSpec.ad_sets.map((set, idx) => (
-                        <div key={set.id} className="p-6 rounded-3xl border border-white/5 bg-black/20 hover:bg-black/30 transition-all group">
-                          <div className="flex items-center justify-between mb-4">
-                            <div className="flex items-center gap-4">
-                              <span className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center text-sm font-bold">{idx + 1}</span>
-                              <input
-                                value={set.name || ''}
-                                onChange={(e) => setCampaignSpec(prev => ({ ...prev, ad_sets: prev.ad_sets.map(s => s.id === set.id ? { ...s, name: e.target.value } : s) }))}
-                                className="bg-transparent border-none text-lg font-bold text-white focus:ring-0 p-0 w-64"
-                              />
-                            </div>
-                            <button onClick={() => handleRemoveAdSet(set.id)} className="p-2 hover:bg-red-500/20 rounded-full text-muted-foreground hover:text-red-500 transition-colors">
-                              <Trash2 className="w-5 h-5" />
-                            </button>
+                  <div className="space-y-4 mb-8">
+                    {campaignSpec.ad_sets.map((set, idx) => (
+                      <div key={set.id} className="p-6 rounded-3xl border border-white/5 bg-black/20 hover:bg-black/30 transition-all group">
+                        <div className="flex items-center justify-between mb-4">
+                          <div className="flex items-center gap-4">
+                            <span className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center text-sm font-bold">{idx + 1}</span>
+                            <input
+                              value={set.name || ''}
+                              onChange={(e) => setCampaignSpec(prev => ({ ...prev, ad_sets: prev.ad_sets.map(s => s.id === set.id ? { ...s, name: e.target.value } : s) }))}
+                              className="bg-transparent border-none text-lg font-bold text-white focus:ring-0 p-0 w-64"
+                            />
                           </div>
+                          <button onClick={() => handleRemoveAdSet(set.id)} className="p-2 hover:bg-red-500/20 rounded-full text-muted-foreground hover:text-red-500 transition-colors">
+                            <Trash2 className="w-5 h-5" />
+                          </button>
+                        </div>
 
-                          <div className="grid grid-cols-2 gap-6 pl-12">
-                            <div>
-                              <label className="text-xs font-bold uppercase tracking-widest text-muted-foreground mb-1 block">Budget</label>
-                              <input
-                                value={set.budget || ''}
-                                onChange={(e) => setCampaignSpec(prev => ({ ...prev, ad_sets: prev.ad_sets.map(s => s.id === set.id ? { ...s, budget: e.target.value } : s) }))}
-                                className="bg-white/5 border border-white/5 rounded-lg px-3 py-1.5 text-sm w-full"
-                              />
-                            </div>
-                            <div>
-                              <label className="text-xs font-bold uppercase tracking-widest text-muted-foreground mb-1 block">Assigned Ads</label>
-                              <div className="flex flex-wrap gap-2">
-                                {set.ad_ids.map(id => (
-                                  <span key={id} className="px-2 py-1 bg-white/5 rounded text-xs text-muted-foreground border border-white/5">
-                                    {adMap.get(id)?.name || 'Ad'}
-                                  </span>
-                                ))}
-                                {set.ad_ids.length === 0 && <span className="text-xs text-red-400">Keine Ads!</span>}
-                              </div>
+                        <div className="grid grid-cols-2 gap-6 pl-12">
+                          <div>
+                            <label className="text-xs font-bold uppercase tracking-widest text-muted-foreground mb-1 block">Budget</label>
+                            <input
+                              value={set.budget || ''}
+                              onChange={(e) => setCampaignSpec(prev => ({ ...prev, ad_sets: prev.ad_sets.map(s => s.id === set.id ? { ...s, budget: e.target.value } : s) }))}
+                              className="bg-white/5 border border-white/5 rounded-lg px-3 py-1.5 text-sm w-full"
+                            />
+                          </div>
+                          <div>
+                            <label className="text-xs font-bold uppercase tracking-widest text-muted-foreground mb-1 block">Assigned Ads</label>
+                            <div className="flex flex-wrap gap-2">
+                              {set.ad_ids.map(id => (
+                                <span key={id} className="px-2 py-1 bg-white/5 rounded text-xs text-muted-foreground border border-white/5">
+                                  {adMap.get(id)?.name || 'Ad'}
+                                </span>
+                              ))}
+                              {set.ad_ids.length === 0 && <span className="text-xs text-red-400">Keine Ads!</span>}
                             </div>
                           </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+
+                  <div className="p-6 rounded-2xl bg-white/5 border border-white/5">
+                    <h3 className="text-sm font-bold uppercase tracking-widest text-muted-foreground mb-4">Preflight Checklist</h3>
+                    <div className="grid grid-cols-2 gap-4">
+                      {checks.map((check, idx) => (
+                        <div key={idx} className="flex items-center gap-3">
+                          <div className={`p-1 rounded-full ${check.ok ? 'bg-emerald-500/20 text-emerald-500' : 'bg-amber-500/20 text-amber-500'}`}>
+                            {check.ok ? <CheckCircle2 className="w-3 h-3" /> : <AlertTriangle className="w-3 h-3" />}
+                          </div>
+                          <span className={`text-sm ${check.ok ? 'text-white' : 'text-muted-foreground'}`}>{check.label}</span>
                         </div>
                       ))}
                     </div>
-
-                    <div className="p-6 rounded-2xl bg-white/5 border border-white/5">
-                      <h3 className="text-sm font-bold uppercase tracking-widest text-muted-foreground mb-4">Preflight Checklist</h3>
-                      <div className="grid grid-cols-2 gap-4">
-                        {checks.map((check, idx) => (
-                          <div key={idx} className="flex items-center gap-3">
-                            <div className={`p-1 rounded-full ${check.ok ? 'bg-emerald-500/20 text-emerald-500' : 'bg-amber-500/20 text-amber-500'}`}>
-                              {check.ok ? <CheckCircle2 className="w-3 h-3" /> : <AlertTriangle className="w-3 h-3" />}
-                            </div>
-                            <span className={`text-sm ${check.ok ? 'text-white' : 'text-muted-foreground'}`}>{check.label}</span>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
                   </div>
-                )}
-              </div>
+                </div>
+              )}
+            </div>
 
-              {/* Footer Controls */}
-              <div className="p-6 md:p-8 border-t border-white/10 bg-black/20 flex items-center justify-between">
+            {/* Footer Controls */}
+            <div className="p-6 md:p-8 border-t border-white/10 bg-black/20 flex items-center justify-between">
+              <button
+                onClick={handleBack}
+                disabled={currentStep === 1}
+                className="px-6 py-3 rounded-2xl font-bold text-sm transition-all hover:bg-white/5 disabled:opacity-0 flex items-center gap-2"
+              >
+                <ChevronLeft className="w-4 h-4" /> Zurück
+              </button>
+
+              <div className="flex gap-4">
                 <button
-                  onClick={handleBack}
-                  disabled={currentStep === 1}
-                  className="px-6 py-3 rounded-2xl font-bold text-sm transition-all hover:bg-white/5 disabled:opacity-0 flex items-center gap-2"
+                  onClick={() => handleSaveDraft()}
+                  disabled={isSaving}
+                  className="px-6 py-3 rounded-2xl border-2 border-white/10 hover:bg-white/5 font-bold text-sm transition-all text-muted-foreground hover:text-white"
                 >
-                  <ChevronLeft className="w-4 h-4" /> Zurück
+                  {isSaving ? 'Speichere...' : 'Als Draft speichern'}
                 </button>
 
-                <div className="flex gap-4">
+                {currentStep < 4 ? (
                   <button
-                    onClick={() => handleSaveDraft()}
-                    disabled={isSaving}
-                    className="px-6 py-3 rounded-2xl border-2 border-white/10 hover:bg-white/5 font-bold text-sm transition-all text-muted-foreground hover:text-white"
+                    onClick={handleNext}
+                    className="px-8 py-3 rounded-2xl bg-gradient-to-r from-violet-600 to-indigo-600 text-white font-bold text-sm hover:scale-[1.02] shadow-[0_0_20px_rgba(139,92,246,0.3)] transition-all flex items-center gap-2"
                   >
-                    {isSaving ? 'Speichere...' : 'Als Draft speichern'}
+                    Weiter <ChevronRight className="w-4 h-4" />
                   </button>
-
-                  {currentStep < 4 ? (
-                    <button
-                      onClick={handleNext}
-                      className="px-8 py-3 rounded-2xl bg-gradient-to-r from-violet-600 to-indigo-600 text-white font-bold text-sm hover:scale-[1.02] shadow-[0_0_20px_rgba(139,92,246,0.3)] transition-all flex items-center gap-2"
-                    >
-                      Weiter <ChevronRight className="w-4 h-4" />
-                    </button>
-                  ) : (
-                    <button
-                      onClick={() => handleSaveDraft('ready')}
-                      className="px-8 py-3 rounded-2xl bg-gradient-to-r from-emerald-500 to-teal-500 text-white font-bold text-sm hover:scale-[1.02] shadow-[0_0_20px_rgba(16,185,129,0.3)] transition-all flex items-center gap-2"
-                    >
-                      <Rocket className="w-4 h-4" />
-                      Kampagne Starten
-                    </button>
-                  )}
-                </div>
+                ) : (
+                  <button
+                    onClick={() => handleSaveDraft('ready')}
+                    className="px-8 py-3 rounded-2xl bg-gradient-to-r from-emerald-500 to-teal-500 text-white font-bold text-sm hover:scale-[1.02] shadow-[0_0_20px_rgba(16,185,129,0.3)] transition-all flex items-center gap-2"
+                  >
+                    <Rocket className="w-4 h-4" />
+                    Kampagne Starten
+                  </button>
+                )}
               </div>
-
             </div>
+
+          </div>
           </div>
         )}
-      </div>
-    </PageShell>
+    </div>
+    </PageShell >
   );
 }

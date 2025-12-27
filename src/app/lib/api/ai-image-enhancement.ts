@@ -1,3 +1,5 @@
+import { supabase } from '../supabaseClient';
+
 /**
  * AI IMAGE ENHANCEMENT SERVICE
  * Premium-Level Image Processing using GPT-4 Vision + DALL-E 3
@@ -96,12 +98,8 @@ const getToneBackgroundGuidance = (tone: string): string => {
  * Call GPT-4 Vision to analyze image and generate DALL-E prompt
  */
 async function analyzeImageWithVision(req: EnhancementRequest): Promise<{ dallePrompt: string; analysisNotes: string }> {
-    const response = await fetch('/.netlify/functions/openai-proxy', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
+    const { data, error } = await supabase.functions.invoke('openai-proxy', {
+        body: {
             endpoint: 'chat/completions',
             model: 'gpt-4o',
             messages: [
@@ -126,15 +124,13 @@ async function analyzeImageWithVision(req: EnhancementRequest): Promise<{ dalleP
             ],
             max_tokens: 1000,
             temperature: 0.7
-        })
+        }
     });
 
-    if (!response.ok) {
-        const error = await response.json();
-        throw new Error(`GPT-4 Vision failed: ${error.error?.message || 'Unknown error'}`);
+    if (error) {
+        throw new Error(`GPT-4 Vision failed: ${error.message || 'Unknown error'}`);
     }
 
-    const data = await response.json();
     const content = data.choices[0]?.message?.content;
 
     if (!content) {
@@ -161,12 +157,8 @@ async function analyzeImageWithVision(req: EnhancementRequest): Promise<{ dalleP
  * Generate enhanced image with DALL-E 3
  */
 async function generateWithDALLE3(prompt: string): Promise<string> {
-    const response = await fetch('/.netlify/functions/openai-proxy', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
+    const { data, error } = await supabase.functions.invoke('openai-proxy', {
+        body: {
             endpoint: 'images/generations',
             model: 'dall-e-3',
             prompt: `PREMIUM ADVERTISING PRODUCT PHOTOGRAPHY: ${prompt}
@@ -183,15 +175,13 @@ CRITICAL TECHNICAL REQUIREMENTS:
             size: '1024x1024',
             quality: 'hd',
             style: 'vivid'
-        })
+        }
     });
 
-    if (!response.ok) {
-        const error = await response.json();
-        throw new Error(`DALL-E 3 failed: ${error.error?.message || 'Unknown error'}`);
+    if (error) {
+        throw new Error(`DALL-E 3 failed: ${error.message || 'Unknown error'}`);
     }
 
-    const data = await response.json();
     const imageUrl = data.data[0]?.url;
 
     if (!imageUrl) {

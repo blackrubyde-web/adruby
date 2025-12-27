@@ -1,4 +1,5 @@
 import { useState, useRef, useCallback } from 'react';
+import { supabase } from '../../lib/supabaseClient';
 import { Upload, Sparkles, ArrowRight, X, Wand2, Check, Zap, Image as ImageIcon, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { AD_TEMPLATES } from './presets';
@@ -148,6 +149,11 @@ export const AdWizard = ({ isOpen, onClose, onComplete }: AdWizardProps) => {
 
             // HOOK GENERATION - Premium Ad Copy
             setLoadingStep('hooks');
+
+            // ... (keep existing imports)
+
+            // Inside handleGenerate:
+
             console.log('✍️ Generating premium ad hooks...');
             toast.info('Generiere Premium Hooks...');
 
@@ -176,34 +182,21 @@ Generate this EXACT JSON structure:
   "ctas": ["CTA 1", "CTA 2", ...]
 }`;
 
-            const hooksResponse = await fetch('/.netlify/functions/openai-proxy', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
+            const { data: hooksData, error: hooksError } = await supabase.functions.invoke('openai-proxy', {
+                body: {
                     endpoint: 'chat/completions',
                     model: 'gpt-4o',
                     messages: [{ role: 'user', content: hookPrompt }],
                     temperature: 0.9,
                     response_format: { type: 'json_object' }
-                })
+                }
             });
 
-            if (!hooksResponse.ok) {
-                const errorData = await hooksResponse.json().catch(() => ({}));
-
-                // Specific error handling
-                if (hooksResponse.status === 401) {
-                    throw new Error('API_KEY_MISSING');
-                } else if (hooksResponse.status === 429) {
-                    throw new Error('RATE_LIMIT');
-                } else {
-                    throw new Error(errorData.error?.message || 'Hook generation failed');
-                }
+            if (hooksError) {
+                console.error('Hook generation error:', hooksError);
+                throw new Error(hooksError.message || 'Hook generation failed');
             }
 
-            const hooksData = await hooksResponse.json();
             const hooks: GeneratedHooks = JSON.parse(hooksData.choices[0].message.content);
 
             // Validate hooks

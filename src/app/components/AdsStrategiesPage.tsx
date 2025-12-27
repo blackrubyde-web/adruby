@@ -708,12 +708,6 @@ export function AdsStrategiesPage() {
             Create and manage your reusable Ad Strategies. These blueprints drive the Autopilot's decisions.
           </p>
         </div>
-        <button
-          onClick={() => setShowStrategyWizard(true)}
-          className="px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 shadow-lg shadow-primary/20 transition-all hover:scale-105"
-        >
-          + New Strategy
-        </button>
       </div>
 
       {strategiesLoading ? (
@@ -807,40 +801,52 @@ export function AdsStrategiesPage() {
           </div>
 
           {/* Filters & Search */}
-          <Card className="p-6">
-            <div className="flex items-center gap-4">
-              <div className="flex-1 relative">
-                <Search className="w-5 h-5 text-muted-foreground absolute left-3 top-1/2 -translate-y-1/2" />
+          {/* Filters & Search - Premium Design */}
+          <div className="bg-card border border-border rounded-xl p-4 mb-6">
+            <div className="flex flex-col md:flex-row items-center justify-between gap-4">
+              {/* Search */}
+              <div className="flex-1 relative w-full">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                 <input
                   type="text"
-                  placeholder="Search ads..."
+                  placeholder="Search ads by name, product or content..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2.5 bg-background/50 border border-border/50 rounded-xl focus:outline-none focus:border-primary/50 transition-colors text-foreground placeholder:text-muted-foreground"
+                  className="w-full pl-10 pr-4 py-2 bg-input border border-border rounded-lg text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all placeholder:text-muted-foreground"
                 />
               </div>
-              <div className="flex items-center gap-2">
-                <Filter className="w-5 h-5 text-muted-foreground" />
-                <select
-                  value={statusFilter}
-                  onChange={(e) => setStatusFilter(e.target.value as StatusFilter)}
-                  className="px-4 py-2.5 bg-background/50 border border-border/50 rounded-xl focus:outline-none focus:border-primary/50 transition-colors text-foreground cursor-pointer"
+
+              <div className="flex items-center gap-2 w-full md:w-auto overflow-x-auto pb-2 md:pb-0">
+                {/* Status Filter as Tabs */}
+                <div className="flex items-center gap-1 bg-muted/50 p-1 rounded-lg">
+                  {(['all', 'active', 'paused', 'draft'] as const).map((status) => (
+                    <button
+                      key={status}
+                      onClick={() => setStatusFilter(status)}
+                      className={`px-3 py-1.5 rounded-md text-xs font-medium transition-all ${statusFilter === status
+                        ? 'bg-background text-foreground shadow-sm'
+                        : 'text-muted-foreground hover:text-foreground hover:bg-background/50'
+                        }`}
+                    >
+                      {status === 'all' ? 'All' : status.charAt(0).toUpperCase() + status.slice(1)}
+                    </button>
+                  ))}
+                </div>
+
+                {/* Selection Toggle */}
+                <button
+                  onClick={() => (selectionMode ? clearSelection() : setSelectionMode(true))}
+                  className={`px-4 py-2 rounded-lg text-sm font-medium flex items-center gap-2 transition-all whitespace-nowrap ${selectionMode
+                    ? 'bg-primary/10 text-primary border border-primary/30'
+                    : 'bg-muted text-muted-foreground hover:bg-muted/80'
+                    }`}
                 >
-                  <option value="all">All Status</option>
-                  <option value="active">Active</option>
-                  <option value="paused">Paused</option>
-                  <option value="draft">Draft</option>
-                </select>
+                  <CheckSquare className="w-4 h-4" />
+                  {selectionMode ? 'Auswahl aktiv' : 'Auswählen'}
+                </button>
               </div>
-              <button
-                onClick={() => (selectionMode ? clearSelection() : setSelectionMode(true))}
-                className="px-4 py-2.5 bg-muted hover:bg-muted/80 border border-border/50 rounded-xl text-sm font-semibold flex items-center gap-2"
-              >
-                <CheckSquare className="w-4 h-4" />
-                {selectionMode ? 'Selection aktiv' : 'Ads auswählen'}
-              </button>
             </div>
-          </Card>
+          </div>
 
           {selectedIds.length > 0 && (
             <Card className="sticky top-20 z-20 p-4 border border-primary/30 bg-primary/5 flex flex-col md:flex-row md:items-center md:justify-between gap-3">
