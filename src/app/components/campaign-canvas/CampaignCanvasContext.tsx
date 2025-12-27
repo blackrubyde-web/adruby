@@ -742,8 +742,8 @@ export function CampaignCanvasProvider({ children }: { children: ReactNode }) {
                 const firstTargeting = (adSetNodes[0].data as any).config?.targeting;
                 const secondTargeting = (adSetNodes[1].data as any).config?.targeting;
                 if (firstTargeting && secondTargeting) {
-                    const sameLocations = firstTargeting.locations?.join() === secondTargeting.locations?.join();
-                    const sameAge = firstTargeting.ageMin === secondTargeting.ageMin && firstTargeting.ageMax === secondTargeting.ageMax;
+                    const sameLocations = firstTargeting?.locations?.join() === secondTargeting?.locations?.join();
+                    const sameAge = firstTargeting?.ageMin === secondTargeting?.ageMin && firstTargeting?.ageMax === secondTargeting?.ageMax;
                     if (sameLocations && sameAge) {
                         warnings.push({
                             id: 'warning-audience-overlap',
