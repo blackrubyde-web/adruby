@@ -58,16 +58,28 @@ export async function generatePremiumAd(
         });
 
         // STAGE 5: Intelligent Image Processing (via Backend Edge Function)
-        onProgress?.(5, 'Processing image...');
+        onProgress?.(5, 'Processing image (15s timeout)...');
         let processedImage: string | undefined;
 
         try {
-            processedImage = await processImage({
+            // Safe Race: If Image Processing > 15s, return original immediately.
+            const timeoutPromise = new Promise<string | undefined>((resolve) => {
+                setTimeout(() => {
+                    console.warn('⚠️ Image processing timed out (>15s), skipping.');
+                    resolve(params.imageBase64);
+                }, 15000);
+            });
+
+            const processingPromise = processImage({
                 imageBase64: params.imageBase64,
                 productName: params.productName,
                 tone: params.tone,
                 shouldEnhance: params.enhanceImage !== false
             });
+
+            // Race the real process against the timeout
+            processedImage = await Promise.race([processingPromise, timeoutPromise]);
+
         } catch (imageError: any) {
             console.warn('⚠️ Image processing failed, continuing with original:', imageError.message);
             // Even with backend fix, we keep fallback just in case of other errors (timeout, quota)
