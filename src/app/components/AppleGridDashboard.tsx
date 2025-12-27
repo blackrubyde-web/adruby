@@ -563,8 +563,8 @@ export function AppleGridDashboard({
                         key={category}
                         onClick={() => setSelectedCategory(category)}
                         className={`px-4 py-2 rounded-xl text-xs font-bold transition-all whitespace-nowrap ${selectedCategory === category
-                            ? 'bg-primary text-primary-foreground shadow-md shadow-primary/20'
-                            : 'bg-muted/50 text-muted-foreground hover:bg-muted'
+                          ? 'bg-primary text-primary-foreground shadow-md shadow-primary/20'
+                          : 'bg-muted/50 text-muted-foreground hover:bg-muted'
                           }`}
                       >
                         {category}
@@ -671,8 +671,8 @@ export function AppleGridDashboard({
                             key={sizeId}
                             onClick={() => setCustomization({ ...customization, size: sizeId })}
                             className={`p-4 rounded-xl border transition-all text-left ${customization.size === sizeId
-                                ? 'border-primary bg-primary/5 shadow-lg shadow-primary/10 ring-1 ring-primary'
-                                : 'border-border/40 bg-card/40 hover:bg-card hover:border-border/80'
+                              ? 'border-primary bg-primary/5 shadow-lg shadow-primary/10 ring-1 ring-primary'
+                              : 'border-border/40 bg-card/40 hover:bg-card hover:border-border/80'
                               }`}
                           >
                             <div className="font-bold text-foreground text-sm mb-1">{size.label}</div>
@@ -696,8 +696,8 @@ export function AppleGridDashboard({
                             key={design.id}
                             onClick={() => setCustomization({ ...customization, design: design.id })}
                             className={`p-4 rounded-xl border transition-all text-left ${customization.design === design.id
-                                ? 'border-primary bg-primary/5 shadow-lg shadow-primary/10 ring-1 ring-primary'
-                                : 'border-border/40 bg-card/40 hover:bg-card hover:border-border/80'
+                              ? 'border-primary bg-primary/5 shadow-lg shadow-primary/10 ring-1 ring-primary'
+                              : 'border-border/40 bg-card/40 hover:bg-card hover:border-border/80'
                               }`}
                           >
                             <div className="font-bold text-foreground text-sm mb-1">{design.name}</div>
@@ -721,8 +721,8 @@ export function AppleGridDashboard({
                             key={color.id}
                             onClick={() => setCustomization({ ...customization, color: color.id })}
                             className={`w-12 h-12 rounded-xl border-2 transition-all hover:scale-105 bg-gradient-to-br ${color.primary} to-transparent flex items-center justify-center ${customization.color === color.id
-                                ? 'border-foreground shadow-lg scale-105'
-                                : 'border-transparent opacity-70 hover:opacity-100'
+                              ? 'border-foreground shadow-lg scale-105'
+                              : 'border-transparent opacity-70 hover:opacity-100'
                               }`}
                           >
                             {customization.color === color.id && <Check className="w-5 h-5 text-foreground drop-shadow-md" />}
@@ -898,7 +898,6 @@ function WidgetRenderer({
     const isPositive = delta != null && deltaNum >= 0;
 
     return (
-    return (
       <div className={`w-full h-full p-4 bg-gradient-to-br ${colorTheme.primary} to-transparent backdrop-blur-xl border ${colorTheme.border} rounded-3xl flex flex-col justify-between shadow-sm overflow-hidden group`}>
         <div className="flex items-start justify-between mb-2">
           <div className="flex items-center gap-2">
@@ -918,7 +917,6 @@ function WidgetRenderer({
           <div className="text-2xl font-bold text-foreground tracking-tight">{valueText}</div>
         </div>
       </div>
-    );
     );
   }
 
