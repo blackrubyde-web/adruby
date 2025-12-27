@@ -125,7 +125,7 @@ export const AdWizard = ({ isOpen, onClose, onComplete }: AdWizardProps) => {
         }
 
         setIsGenerating(true);
-        setLoadingMessage('Starte Premium AI Ad Generation...');
+        setLoadingStep('hooks'); // Use existing state
         setGeneratedDoc(null);
         setGeneratedHooks(null);
 
@@ -148,6 +148,7 @@ export const AdWizard = ({ isOpen, onClose, onComplete }: AdWizardProps) => {
 
             // RUN PREMIUM AI 5-STAGE PIPELINE
             console.log('🚀 Starting Premium AI Pipeline...');
+            toast.info('Starte Premium AI Pipeline...');
 
             const result = await generatePremiumAd(
                 {
@@ -161,14 +162,14 @@ export const AdWizard = ({ isOpen, onClose, onComplete }: AdWizardProps) => {
                 (stage, message) => {
                     // Progress callback
                     const stageNames = [
-                        'Analyzing strategy',
-                        'Selecting template',
-                        'Generating copy',
-                        'Composing layout',
-                        'Processing image'
+                        'Analysiere Strategie',
+                        'Wähle Template',
+                        'Generiere Copy',
+                        'Erstelle Layout',
+                        'Verarbeite Bild'
                     ];
-                    setLoadingMessage(`${stageNames[stage - 1]}...`);
                     console.log(`Stage ${stage}/5: ${message}`);
+                    toast.info(`${stageNames[stage - 1]}...`);
                 }
             );
 
@@ -196,6 +197,7 @@ export const AdWizard = ({ isOpen, onClose, onComplete }: AdWizardProps) => {
             // Fallback to basic generation if premium fails
             try {
                 console.log('Falling back to basic generation...');
+                toast.info('Versuche Standard-Generierung...');
                 // Keep the existing basic generation as fallback
                 await handleBasicGenerate();
             } catch (fallbackError) {
@@ -203,7 +205,7 @@ export const AdWizard = ({ isOpen, onClose, onComplete }: AdWizardProps) => {
             }
         } finally {
             setIsGenerating(false);
-            setLoadingMessage('');
+            setLoadingStep('idle');
         }
     };
 
