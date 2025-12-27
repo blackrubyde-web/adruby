@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react';
 import { TrendingUp, Calculator, Target, AlertCircle, Sparkles } from 'lucide-react';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Area, AreaChart } from 'recharts';
+import { Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Area, AreaChart } from 'recharts';
 
 interface Campaign {
     id: string;
@@ -104,10 +104,10 @@ export function PredictiveAnalytics({ campaign }: Props) {
                 {forecasts.map(forecast => (
                     <button
                         key={forecast.scenario}
-                        onClick={() => setSelectedScenario(forecast.scenario as any)}
+                        onClick={() => setSelectedScenario(forecast.scenario as 'conservative' | 'moderate' | 'aggressive')}
                         className={`p-4 rounded-xl border-2 transition-all ${selectedScenario === forecast.scenario
-                                ? 'border-primary bg-primary/5'
-                                : 'border-border hover:border-primary/50'
+                            ? 'border-primary bg-primary/5'
+                            : 'border-border hover:border-primary/50'
                             }`}
                     >
                         <p className="font-semibold capitalize mb-1">{forecast.scenario}</p>

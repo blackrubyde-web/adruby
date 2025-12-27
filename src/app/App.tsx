@@ -121,6 +121,7 @@ const PAGE_PATHS: Record<PageType, string> = {
   studio: '/studio',
   admin: '/admin',
   'campaign-canvas': '/campaign-canvas',
+  adbuilder: '/adbuilder',
 };
 
 const PUBLIC_PAGES = new Set<PageType>([

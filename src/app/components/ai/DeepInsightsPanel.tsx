@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Brain, TrendingUp, TrendingDown, AlertTriangle, CheckCircle, Target, Users, Zap, Lightbulb } from 'lucide-react';
+import { Brain, TrendingDown, AlertTriangle, CheckCircle, Zap, Lightbulb } from 'lucide-react';
 
 interface Campaign {
     id: string;

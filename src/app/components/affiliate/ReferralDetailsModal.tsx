@@ -34,55 +34,55 @@ export function ReferralDetailsModal({ referralId, onClose }: Props) {
     const [isLoading, setIsLoading] = useState(true);
 
     useEffect(() => {
+        const loadReferralDetails = async () => {
+            setIsLoading(true);
+            try {
+                // Fetch referral user data
+                const { data: userData, error: userError } = await supabase
+                    .from('user_profiles')
+                    .select('*')
+                    .eq('id', referralId)
+                    .single();
+
+                if (userError) throw userError;
+
+                // TODO: Fetch credit purchase history from payments table when available
+                // For now, mock data
+                const mockCreditHistory: CreditPurchase[] = [
+                    {
+                        id: '1',
+                        amount: 9.99,
+                        credits: 100,
+                        date: new Date().toISOString(),
+                        method: 'Stripe'
+                    }
+                ];
+
+                const totalCredits = mockCreditHistory.reduce((sum, p) => sum + p.credits, 0);
+                const totalSpent = mockCreditHistory.reduce((sum, p) => sum + p.amount, 0);
+
+                setDetails({
+                    id: userData.id,
+                    user_name: userData.full_name || 'Anonymous',
+                    user_email: userData.email,
+                    status: userData.payment_verified ? 'paid' : userData.trial_status === 'active' ? 'trial' : 'registered',
+                    created_at: userData.created_at,
+                    total_credits_purchased: totalCredits,
+                    lifetime_value: totalSpent,
+                    last_active: userData.updated_at,
+                    conversion_rate: userData.payment_verified ? 100 : 0,
+                    credit_history: mockCreditHistory
+                });
+            } catch (err) {
+                console.error('Failed to load referral details:', err);
+                toast.error('Failed to load details');
+            } finally {
+                setIsLoading(false);
+            }
+        };
+
         loadReferralDetails();
     }, [referralId]);
-
-    const loadReferralDetails = async () => {
-        setIsLoading(true);
-        try {
-            // Fetch referral user data
-            const { data: userData, error: userError } = await supabase
-                .from('user_profiles')
-                .select('*')
-                .eq('id', referralId)
-                .single();
-
-            if (userError) throw userError;
-
-            // TODO: Fetch credit purchase history from payments table when available
-            // For now, mock data
-            const mockCreditHistory: CreditPurchase[] = [
-                {
-                    id: '1',
-                    amount: 9.99,
-                    credits: 100,
-                    date: new Date().toISOString(),
-                    method: 'Stripe'
-                }
-            ];
-
-            const totalCredits = mockCreditHistory.reduce((sum, p) => sum + p.credits, 0);
-            const totalSpent = mockCreditHistory.reduce((sum, p) => sum + p.amount, 0);
-
-            setDetails({
-                id: userData.id,
-                user_name: userData.full_name || 'Anonymous',
-                user_email: userData.email,
-                status: userData.payment_verified ? 'paid' : userData.trial_status === 'active' ? 'trial' : 'registered',
-                created_at: userData.created_at,
-                total_credits_purchased: totalCredits,
-                lifetime_value: totalSpent,
-                last_active: userData.updated_at,
-                conversion_rate: userData.payment_verified ? 100 : 0,
-                credit_history: mockCreditHistory
-            });
-        } catch (err) {
-            console.error('Failed to load referral details:', err);
-            toast.error('Failed to load details');
-        } finally {
-            setIsLoading(false);
-        }
-    };
 
     if (isLoading) {
         return (

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Plus, Edit, Trash2, Check, X, Loader2, MessageSquare } from 'lucide-react';
+import { Plus, Edit, Trash2, X, Loader2, MessageSquare } from 'lucide-react';
 import { supabase } from '../../lib/supabaseClient';
 import { toast } from 'sonner';
 import { ServiceCreationModal } from './ServiceCreationModal';
@@ -64,7 +64,14 @@ export function ServiceMarketplace() {
 
             if (requestsError) throw requestsError;
 
-            const formattedRequests = (requestsData || []).map((r: any) => ({
+            const formattedRequests = (requestsData || []).map((r: {
+                id: string;
+                service_id: string;
+                requester?: { full_name?: string; email?: string } | null;
+                message: string;
+                status: string;
+                created_at: string;
+            }) => ({
                 id: r.id,
                 service_id: r.service_id,
                 requester_name: r.requester?.full_name || 'Anonymous',

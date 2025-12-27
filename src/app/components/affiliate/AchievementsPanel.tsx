@@ -20,7 +20,6 @@ interface Achievement {
 export function AchievementsPanel() {
     const [achievements, setAchievements] = useState<Achievement[]>([]);
     const [isLoading, setIsLoading] = useState(true);
-    const [stats, setStats] = useState({ earnings: 0, referrals: 0, conversions: 0 });
 
     useEffect(() => {
         loadAchievements();
@@ -54,11 +53,7 @@ export function AchievementsPanel() {
                 .eq('referred_by_affiliate_id', user.id)
                 .eq('payment_verified', true);
 
-            setStats({
-                earnings: totalEarnings,
-                referrals: referralsCount || 0,
-                conversions: conversionsCount || 0
-            });
+
 
             // Load all achievements
             const { data: allAchievements, error: achievementsError } = await supabase
@@ -177,8 +172,8 @@ export function AchievementsPanel() {
                     <div
                         key={achievement.id}
                         className={`relative bg-card border rounded-xl p-5 transition-all ${achievement.unlocked
-                                ? 'border-primary shadow-lg shadow-primary/20'
-                                : 'border-border opacity-60'
+                            ? 'border-primary shadow-lg shadow-primary/20'
+                            : 'border-border opacity-60'
                             }`}
                     >
                         {/* Tier Badge */}

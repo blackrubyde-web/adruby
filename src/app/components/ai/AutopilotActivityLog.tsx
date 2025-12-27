@@ -24,7 +24,7 @@ export function AutopilotActivityLog() {
         loadActions();
     }, [filter]);
 
-    const loadActions = async () => {
+    const loadActions = useCallback(async () => {
         setIsLoading(true);
         try {
             const { data: { user } } = await supabase.auth.getUser();
@@ -51,7 +51,7 @@ export function AutopilotActivityLog() {
         } finally {
             setIsLoading(false);
         }
-    };
+    }, [filter]);
 
     const handleUndo = async (actionId: string) => {
         if (!window.confirm('Undo this action? This will attempt to restore the previous state.')) {
@@ -168,8 +168,8 @@ export function AutopilotActivityLog() {
                             key={f}
                             onClick={() => setFilter(f)}
                             className={`px-3 py-1 rounded-lg text-sm font-medium transition-colors ${filter === f
-                                    ? 'bg-primary text-primary-foreground'
-                                    : 'bg-muted hover:bg-muted/80'
+                                ? 'bg-primary text-primary-foreground'
+                                : 'bg-muted hover:bg-muted/80'
                                 }`}
                         >
                             {f.charAt(0).toUpperCase() + f.slice(1)}
