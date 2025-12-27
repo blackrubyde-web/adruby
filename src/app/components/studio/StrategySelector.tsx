@@ -78,60 +78,63 @@ export function StrategySelector({
                             key={strategy.id}
                             onClick={() => onSelect(strategy.id, strategy)}
                             className={`
-                relative group cursor-pointer rounded-xl p-4 border-2 transition-all duration-200
-                ${isSelected
-                                    ? 'border-primary bg-primary/5 shadow-md'
-                                    : 'border-border bg-card hover:border-primary/50 hover:bg-muted/50'
+                                relative group cursor-pointer rounded-2xl p-5 border transition-all duration-300 overflow-hidden
+                                ${isSelected
+                                    ? 'border-primary/50 bg-primary/10 shadow-[0_0_30px_rgba(124,58,237,0.15)] backdrop-blur-sm'
+                                    : 'border-white/5 bg-white/5 hover:bg-white/10 hover:border-white/10 hover:shadow-xl hover:-translate-y-1'
                                 }
-              `}>
+                            `}>
 
-                            {/* Selection Checkmark */}
+                            {/* Premium Glow Effect (Active State) */}
+                            {isSelected && (
+                                <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-transparent to-transparent opacity-50 pointer-events-none" />
+                            )}
+
+                            {/* Selection Checkmark with Premium Pulse */}
                             <div className={`
-                absolute top-3 right-3 w-5 h-5 rounded-full flex items-center justify-center border transition-all
-                ${isSelected
-                                    ? 'bg-primary border-primary text-primary-foreground scale-100'
-                                    : 'border-muted-foreground/30 text-transparent scale-90 group-hover:border-primary/50'
+                                absolute top-4 right-4 w-6 h-6 rounded-full flex items-center justify-center border transition-all duration-300 z-10
+                                ${isSelected
+                                    ? 'bg-primary border-primary text-white scale-100 shadow-[0_0_10px_rgba(124,58,237,0.5)]'
+                                    : 'border-white/20 text-transparent scale-90 group-hover:border-white/40'
                                 }
-              `}>
+                            `}>
                                 <CheckCircle2 className="w-3.5 h-3.5" />
                             </div>
 
-                            {/* Recommended Badge */}
+                            {/* Recommended Badge (Gradient) */}
                             {isRecommended && (
-                                <div className="absolute -top-2.5 left-4 px-2 py-0.5 bg-gradient-to-r from-amber-500 to-orange-500 text-[10px] font-bold text-white rounded-full shadow-sm">
-                                    RECOMMENDED
+                                <div className="absolute -top-px left-6 px-3 py-1 bg-gradient-to-r from-amber-500 to-orange-600 text-[10px] font-bold text-white uppercase tracking-wider rounded-b-lg shadow-lg z-20">
+                                    Recommended
                                 </div>
                             )}
 
-                            <div className="flex items-start gap-3">
+                            <div className="flex items-start gap-4 relative z-10">
                                 <div className={`
-                  p-2 rounded-lg border shadow-sm
-                  ${isSelected ? 'bg-background border-primary/20' : 'bg-muted/50 border-transparent'}
-                `}>
+                                    p-3 rounded-xl border shadow-inner transition-colors duration-300
+                                    ${isSelected ? 'bg-background/50 border-primary/20' : 'bg-black/20 border-white/5'}
+                                `}>
                                     {getStrategyIcon(config)}
                                 </div>
 
-                                <div className="flex-1 min-w-0">
-                                    <h4 className={`text-sm font-bold truncate ${isSelected ? 'text-primary' : 'text-foreground'}`}>
+                                <div className="flex-1 min-w-0 pt-0.5">
+                                    <h4 className={`text-base font-bold truncate transition-colors ${isSelected ? 'text-white' : 'text-gray-200 group-hover:text-white'}`}>
                                         {strategy.title}
                                     </h4>
 
                                     {config ? (
-                                        <div className="flex flex-wrap gap-x-3 gap-y-1 mt-1.5">
-                                            <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                                                <span className="w-1.5 h-1.5 rounded-full bg-blue-500" />
-                                                ROAS {Number(config.target_roas).toFixed(1)}x
+                                        <div className="flex flex-wrap gap-2 mt-2">
+                                            <div className="flex items-center gap-1.5 px-2 py-1 rounded-md bg-white/5 border border-white/5 text-xs text-muted-foreground">
+                                                <DollarSign className="w-3 h-3 text-blue-400" />
+                                                <span className="font-medium text-gray-300">ROAS {Number(config.target_roas).toFixed(1)}x</span>
                                             </div>
-                                            <div className="flex items-center gap-1 text-xs text-muted-foreground capitalize">
-                                                <span className={`w-1.5 h-1.5 rounded-full ${config.risk_tolerance === 'high' ? 'bg-orange-500' :
-                                                        config.risk_tolerance === 'low' ? 'bg-green-500' : 'bg-yellow-500'
-                                                    }`} />
-                                                {config.scale_speed}
+                                            <div className="flex items-center gap-1.5 px-2 py-1 rounded-md bg-white/5 border border-white/5 text-xs text-muted-foreground capitalize">
+                                                <Zap className={`w-3 h-3 ${config.scale_speed === 'aggressive' ? 'text-orange-400' : 'text-yellow-400'}`} />
+                                                <span className="font-medium text-gray-300">{config.scale_speed}</span>
                                             </div>
                                         </div>
                                     ) : (
-                                        <p className="text-xs text-muted-foreground mt-1">
-                                            No autopilot config
+                                        <p className="text-xs text-muted-foreground mt-2 italic">
+                                            Not configured
                                         </p>
                                     )}
                                 </div>
@@ -144,13 +147,13 @@ export function StrategySelector({
                 {!strategies.length && (
                     <div
                         onClick={onCreateNew}
-                        className="flex flex-col items-center justify-center p-6 border-2 border-dashed border-border rounded-xl bg-muted/20 hover:bg-muted/40 cursor-pointer transition-colors"
+                        className="group flex flex-col items-center justify-center p-8 border border-dashed border-white/10 rounded-2xl bg-white/5 hover:bg-white/10 hover:border-primary/30 cursor-pointer transition-all duration-300"
                     >
-                        <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center mb-2">
-                            <Plus className="w-5 h-5 text-muted-foreground" />
+                        <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mb-3 group-hover:scale-110 group-hover:bg-primary/20 transition-all shadow-[0_0_15px_rgba(124,58,237,0.1)]">
+                            <Plus className="w-5 h-5 text-primary" />
                         </div>
-                        <span className="text-sm font-medium text-foreground">Create First Strategy</span>
-                        <span className="text-xs text-muted-foreground mt-1">Configure your master plan</span>
+                        <span className="text-sm font-bold text-gray-200 group-hover:text-white">Create First Strategy</span>
+                        <span className="text-xs text-muted-foreground mt-1">Initialize your master blueprint</span>
                     </div>
                 )}
             </div>

@@ -25,15 +25,19 @@ import { toast } from 'sonner';
 import CreativeResults from './creative-builder/CreativeResults';
 import ImageDropzone from './creative-builder/ImageDropzone';
 import { supabase } from '../lib/supabaseClient';
+import { StrategySelector } from './studio/StrategySelector';
+import { StrategyWizard } from './studio/StrategyWizard';
+import { useStrategies, type StrategyBlueprint } from '../hooks/useStrategies';
 
 const DRAFT_KEY = 'ad_ruby_ad_builder_draft';
 const DRAFT_SKIP_KEY = 'ad_ruby_skip_draft_restore';
 
 const steps = [
-  { id: 1, name: 'Produkt & Bild', icon: Sparkles },
-  { id: 2, name: 'Zielgruppe & Angebot', icon: Users },
-  { id: 3, name: 'Generieren', icon: ImageIcon },
-  { id: 4, name: 'Ergebnisse', icon: Check },
+  { id: 1, name: 'Strategy', icon: Zap },
+  { id: 2, name: 'Produkt & Bild', icon: Sparkles },
+  { id: 3, name: 'Zielgruppe & Angebot', icon: Users },
+  { id: 4, name: 'Generieren', icon: ImageIcon },
+  { id: 5, name: 'Ergebnisse', icon: Check },
 ];
 
 type PendingDraft = {
@@ -46,6 +50,10 @@ type PendingDraft = {
   draftId: string | null;
   updatedAt: string | null;
 };
+
+// ... (keep existing CreativeV2Variant type)
+
+
 type CreativeV2Variant = {
   id?: string;
   format?: string;
@@ -99,6 +107,52 @@ export function AdBuilderPage() {
   const [generatedCopy, setGeneratedCopy] = useState<{ headline: string, description: string, cta: string }[]>([]);
   const [selectedCopy, setSelectedCopy] = useState<number | null>(null);
   const [selectedVisualStyle, setSelectedVisualStyle] = useState<string | null>(null);
+  // Strategy State
+  const { strategies, loading: strategiesLoading, refreshStrategies } = useStrategies();
+  const [selectedStrategyId, setSelectedStrategyId] = useState<string | null>(null);
+  const [showStrategyWizard, setShowStrategyWizard] = useState(false);
+
+  const handleStrategySelect = (id: string, strategy: StrategyBlueprint) => {
+    setSelectedStrategyId(id);
+    // You might want to update form data based on strategy here if needed
+    // e.g. set industry or tone based on strategy
+  };
+
+  const handleCreateStrategy = async (data: any) => {
+    try {
+      // Save new strategy blueprint
+      const { error } = await supabase.from('strategy_blueprints').insert({
+        title: data.name,
+        category: 'custom', // or drive from wizard
+        industry_type: data.industry_type,
+        autopilot_config: {
+          enabled: true,
+          target_roas: data.target_roas,
+          max_daily_budget: data.max_daily_budget,
+          scale_speed: data.scale_speed, // mapped from risk in wizard
+          risk_tolerance: data.risk_tolerance,
+          // Defaults for others
+          pause_threshold_roas: 1.0,
+          scale_threshold_roas: data.target_roas * 1.2,
+          max_budget_increase_pct: 0.2,
+          min_conversions_required: 10
+        },
+        raw_content_markdown: `Strategy: ${data.name}\nIndustry: ${data.industry_type}\nRisk: ${data.risk_tolerance}`, // Placeholder content
+        metadata: {
+          created_via: 'ad_builder_wizard'
+        }
+      });
+
+      if (error) throw error;
+
+      toast.success("Master Strategy Created!");
+      refreshStrategies();
+      setShowStrategyWizard(false);
+    } catch (e: any) {
+      toast.error("Failed to create strategy: " + e.message);
+    }
+  };
+
   const [selectedCTA, setSelectedCTA] = useState<string | null>(null);
   const maxStep = steps.length;
   const normalizeStep = useCallback((step: number | null | undefined) => {
@@ -603,9 +657,10 @@ export function AdBuilderPage() {
   };
 
   const getNextButtonLabel = () => {
-    if (state.currentStep === 1) return 'Weiter zu Zielgruppe';
-    if (state.currentStep === 2) return 'Weiter zur Generierung';
-    if (state.currentStep === 3) return 'Weiter zu Ergebnissen';
+    if (state.currentStep === 1) return 'Weiter zu Produkt';
+    if (state.currentStep === 2) return 'Weiter zu Zielgruppe';
+    if (state.currentStep === 3) return 'Weiter zur Generierung';
+    if (state.currentStep === 4) return 'Weiter zu Ergebnissen';
     return 'Weiter';
   };
 
@@ -638,7 +693,10 @@ export function AdBuilderPage() {
     fd.append('language', 'de');
     fd.append('format', '4:5');
     fd.append('inspiration', inspirationParts.join('\n\n'));
-    // Strategy is auto-determined server-side; no manual strategyId here.
+    // Strategy is auto-determined server-side; no manual strategyId here. -> UPDATED
+    if (selectedStrategyId) {
+      fd.append('strategyId', selectedStrategyId);
+    }
     if (imageFile) {
       fd.append('image', imageFile);
     }
@@ -823,8 +881,34 @@ export function AdBuilderPage() {
       {/* Main Content */}
       <div className="w-full max-w-5xl mx-auto">
         <Card className="bg-card border-border p-4 sm:p-6 min-w-0">
-          {/* Step 1: Product & Image */}
+          {/* Step 1: Strategy */}
           {state.currentStep === 1 && (
+            <div className="space-y-6 animate-in slide-in-from-right-4 duration-300">
+              <div className="bg-gradient-to-br from-primary/5 to-transparent p-6 rounded-2xl border border-primary/10">
+                <h2 className="text-xl font-bold mb-2">Define Your Master Strategy</h2>
+                <p className="text-muted-foreground mb-6">
+                  Choose a strategy to guide the AI&apos;s creativity and the Autopilot&apos;s budget decisions.
+                </p>
+
+                {strategiesLoading ? (
+                  <div className="space-y-3">
+                    {[1, 2, 3].map(i => <div key={i} className="h-24 bg-muted animate-pulse rounded-xl" />)}
+                  </div>
+                ) : (
+                  <StrategySelector
+                    strategies={strategies}
+                    selectedId={selectedStrategyId}
+                    onSelect={handleStrategySelect}
+                    onCreateNew={() => setShowStrategyWizard(true)}
+                    recommendedGoal="scaling"
+                  />
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Step 2: Product & Image */}
+          {state.currentStep === 2 && (
             <div>
               <div className="flex items-center gap-3 mb-6 min-w-0">
                 <div className="w-10 h-10 bg-primary rounded-lg flex items-center justify-center shrink-0">
@@ -899,8 +983,8 @@ export function AdBuilderPage() {
             </div>
           )}
 
-          {/* Step 2: Audience & Offer */}
-          {state.currentStep === 2 && (
+          {/* Step 3: Audience & Offer */}
+          {state.currentStep === 3 && (
             <div>
               <div className="flex items-center gap-3 mb-6 min-w-0">
                 <div className="w-10 h-10 bg-primary rounded-lg flex items-center justify-center shrink-0">
@@ -980,8 +1064,8 @@ export function AdBuilderPage() {
             </div>
           )}
 
-          {/* Step 3: Generate */}
-          {state.currentStep === 3 && (
+          {/* Step 4: Generate */}
+          {state.currentStep === 4 && (
             <div>
               <div className="flex items-center gap-3 mb-6 min-w-0">
                 <div className="w-10 h-10 bg-primary rounded-lg flex items-center justify-center shrink-0">
@@ -1071,8 +1155,8 @@ export function AdBuilderPage() {
             </div>
           )}
 
-          {/* Step 4: Results */}
-          {state.currentStep === 4 && (
+          {/* Step 5: Results */}
+          {state.currentStep === 5 && (
             <div>
               <div className="flex items-center gap-3 mb-6 min-w-0">
                 <div className="w-10 h-10 bg-primary rounded-lg flex items-center justify-center shrink-0">
@@ -1113,9 +1197,10 @@ export function AdBuilderPage() {
               Zurück
             </Button>
             {state.currentStep < steps.length ? (
-              state.currentStep !== 3 ? (
+              state.currentStep !== 4 ? (
                 <Button
                   onClick={handleNext}
+                  disabled={state.currentStep === 1 && !selectedStrategyId}
                   className="bg-primary hover:bg-primary/90 text-primary-foreground w-full sm:w-auto shadow-md shadow-primary/20 hover:shadow-primary/30"
                 >
                   {getNextButtonLabel()}
@@ -1167,6 +1252,12 @@ export function AdBuilderPage() {
             </div>
           </div>
         </div>
+      )}
+      {showStrategyWizard && (
+        <StrategyWizard
+          onComplete={handleCreateStrategy}
+          onCancel={() => setShowStrategyWizard(false)}
+        />
       )}
     </PageShell>
   );

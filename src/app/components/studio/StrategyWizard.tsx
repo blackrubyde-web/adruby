@@ -39,8 +39,11 @@ export function StrategyWizard({ onComplete, onCancel }: StrategyWizardProps) {
     };
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm p-4 animate-in fade-in zoom-in duration-200">
-            <Card className="w-full max-w-2xl overflow-hidden border-2 border-primary/20 shadow-2xl">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-md p-4 animate-in fade-in duration-300">
+            <Card className="w-full max-w-2xl overflow-hidden border border-white/10 shadow-[0_0_50px_rgba(0,0,0,0.5)] bg-[#0A0A0A] relative">
+                {/* Background Glow */}
+                <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-primary/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2 pointer-events-none" />
+
                 {/* Header */}
                 <div className="p-6 border-b border-border bg-muted/30">
                     <div className="flex items-center justify-between mb-6">
@@ -61,10 +64,10 @@ export function StrategyWizard({ onComplete, onCancel }: StrategyWizardProps) {
                     {/* Progress Bar */}
                     <div className="flex items-center gap-2">
                         {STEPS.map((s) => (
-                            <div key={s.id} className="flex-1 h-1.5 rounded-full bg-border overflow-hidden">
+                            <div key={s.id} className="flex-1 h-1 bg-white/5 rounded-full overflow-hidden">
                                 <div
-                                    className={`h-full transition-all duration-300 ${s.id <= step ? 'bg-primary' : 'bg-transparent'}`}
-                                    style={{ width: s.id < step ? '100%' : s.id === step ? '50%' : '0%' }}
+                                    className={`h-full transition-all duration-500 ease-out ${s.id <= step ? 'bg-gradient-to-r from-primary to-purple-400 shadow-[0_0_10px_rgba(124,58,237,0.5)]' : 'bg-transparent'}`}
+                                    style={{ width: s.id < step ? '100%' : s.id === step ? '100%' : '0%' }}
                                 />
                             </div>
                         ))}
@@ -98,15 +101,15 @@ export function StrategyWizard({ onComplete, onCancel }: StrategyWizardProps) {
                                             key={ind.id}
                                             onClick={() => setData({ ...data, industry_type: ind.id })}
                                             className={`
-                        p-4 rounded-xl border-2 cursor-pointer transition-all flex items-center justify-between
+                        p-4 rounded-xl border cursor-pointer transition-all duration-300 flex items-center justify-between group
                         ${data.industry_type === ind.id
-                                                    ? 'border-primary bg-primary/5'
-                                                    : 'border-border hover:border-primary/50'
+                                                    ? 'border-primary bg-primary/10 shadow-[0_0_15px_rgba(124,58,237,0.15)]'
+                                                    : 'border-white/5 bg-white/5 hover:bg-white/10 hover:border-white/10'
                                                 }
                       `}
                                         >
-                                            <span className="font-medium">{ind.label}</span>
-                                            {data.industry_type === ind.id && <Check className="w-4 h-4 text-primary" />}
+                                            <span className={`font-medium transition-colors ${data.industry_type === ind.id ? 'text-white' : 'text-gray-400 group-hover:text-gray-200'}`}>{ind.label}</span>
+                                            {data.industry_type === ind.id && <Check className="w-4 h-4 text-primary drop-shadow-[0_0_8px_rgba(124,58,237,0.8)]" />}
                                         </div>
                                     ))}
                                 </div>

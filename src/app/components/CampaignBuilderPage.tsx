@@ -16,6 +16,9 @@ import {
 import { toast } from 'sonner';
 import { PageShell, HeroHeader } from './layout';
 import { supabase } from '../lib/supabaseClient';
+import { StrategySelector } from './studio/StrategySelector';
+import { useStrategies, type StrategyBlueprint } from '../hooks/useStrategies';
+import { createCampaign } from '../lib/api/meta';
 
 const STATUS_OPTIONS = ['draft', 'ready'] as const;
 
@@ -268,7 +271,10 @@ export function CampaignBuilderPage() {
   const [campaignSpec, setCampaignSpec] = useState<CampaignSpec>(emptySpec);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [ads, setAds] = useState<SavedAd[]>([]);
-  const [strategies, setStrategies] = useState<CampaignStrategyBlueprint[]>([]);
+
+  // Unified Strategy Data
+  const { strategies, loading: strategiesLoading } = useStrategies();
+
   const [selectedStrategyId, setSelectedStrategyId] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
@@ -293,7 +299,21 @@ export function CampaignBuilderPage() {
     () => strategies.find((s) => s.id === selectedStrategyId) || null,
     [strategies, selectedStrategyId]
   );
-  const strategyPreview = selectedStrategy?.strategy ?? campaignSpec.strategy_snapshot ?? null;
+
+  // Adapter to convert StrategyBlueprint to the old GeneratedStrategy shape for preview if needed
+  // In a full refactor, we would update the preview component to handle Blueprint directly.
+  const strategyPreview = useMemo(() => {
+    if (!selectedStrategy) return campaignSpec.strategy_snapshot ?? null;
+    // Basic mapping for preview - in production this would be more robust
+    return {
+      name: selectedStrategy.title,
+      summary: selectedStrategy.raw_content_markdown,
+      recommendations: ["Autopilot Enabled", `Target ROAS: ${selectedStrategy.autopilot_config?.target_roas}x`, `Risk: ${selectedStrategy.autopilot_config?.risk_tolerance}`],
+      budget: { daily: `${selectedStrategy.autopilot_config?.max_daily_budget || 50}` },
+      // Mock targeting for now as it's not fully in blueprint yet
+      targeting: { locations: ['Germany', 'Austria', 'Switzerland'], interests: ['Marketing', 'SaaS'] }
+    } as GeneratedStrategy;
+  }, [selectedStrategy, campaignSpec.strategy_snapshot]);
 
   const adMap = useMemo(() => {
     const map = new Map<string, SavedAd>();
@@ -380,18 +400,7 @@ export function CampaignBuilderPage() {
     return () => { cancelled = true; };
   }, []);
 
-  useEffect(() => {
-    let cancelled = false;
-    const loadStrategies = async () => {
-      try {
-        const { data, error } = await supabase.from('campaign_strategy_blueprints').select('id,name,creative_ids,strategy').order('created_at', { ascending: false }).limit(20);
-        if (error) throw error;
-        if (!cancelled) setStrategies(data as CampaignStrategyBlueprint[]);
-      } catch (err) { if (!cancelled) setStrategies([]); }
-    };
-    loadStrategies();
-    return () => { cancelled = true; };
-  }, []);
+  // Removed manual loadStrategies effect as we use useStrategies hook now
 
   useEffect(() => {
     setCampaignSpec((prev) => {
@@ -427,10 +436,55 @@ export function CampaignBuilderPage() {
     if (!draft?.id) return;
     setIsSaving(true);
     try {
+      // 1. Save locally first
       const { error } = await supabase.from('campaign_drafts').update({ name: campaignSpec.campaign.name || draft.name || 'Kampagne', creative_ids: selectedIds, strategy_blueprint_id: selectedStrategyId, campaign_spec: campaignSpec, status: status || draft.status }).eq('id', draft.id);
       if (error) throw error;
       setDraft((prev) => (prev ? { ...prev, status: status || prev.status } : prev));
-      toast.success(status === 'ready' ? 'Kampagne als Ready markiert' : 'Draft gespeichert');
+
+      // 2. If Launching ('ready'), call Meta API
+      if (status === 'ready') {
+        const payload = {
+          name: campaignSpec.campaign.name || 'New Campaign',
+          objective: campaignSpec.campaign.objective || 'OUTCOME_SALES',
+          status: 'ACTIVE',
+          daily_budget: parseFloat(campaignSpec.campaign.daily_budget || '0') * 100, // cents
+          bid_strategy: campaignSpec.campaign.bid_strategy,
+          ad_sets: campaignSpec.ad_sets.map(set => ({
+            name: set.name || 'Ad Set',
+            daily_budget: set.budget ? parseFloat(set.budget.replace(/[^0-9.]/g, '')) * 100 : undefined,
+            status: 'ACTIVE',
+            targeting: {
+              geo_locations: { countries: ['DE'] }, // Default for MVP
+              age_min: 18,
+              age_max: 65,
+            },
+            ads: set.ad_ids.map(adId => {
+              const adSpec = campaignSpec.ads.find(a => a.creative_id === adId);
+              const savedAd = adMap.get(adId);
+              return {
+                name: adSpec?.name || 'Ad',
+                creative_id: adId,
+                status: 'ACTIVE',
+                creative: {
+                  headline: adSpec?.headline || savedAd?.headline || '',
+                  primary_text: adSpec?.primary_text || savedAd?.description || '',
+                  call_to_action: adSpec?.cta || savedAd?.cta || 'LEARN_MORE',
+                  image_url: savedAd?.thumbnail || undefined
+                }
+              };
+            })
+          }))
+        };
+
+        toast.loading("Deploying to Meta...");
+        // @ts-ignore - Payload type match relies on backend leniency for MVP
+        await createCampaign(payload);
+        toast.dismiss();
+        toast.success("Kampagne erfolgreich auf Meta gestartet! 🚀");
+        // Redirect or show success modal here
+      } else {
+        toast.success('Draft gespeichert');
+      }
     } catch (err: unknown) { toast.error(err instanceof Error ? err.message : 'Draft konnte nicht gespeichert werden.'); } finally { setIsSaving(false); }
   };
   const checks = [
@@ -458,6 +512,16 @@ export function CampaignBuilderPage() {
           subtitle="Bau deine Kampagne Schritt für Schritt, starte aus Strategien oder Drafts."
         />
 
+        {/* SIMULATION MODE BANNER */}
+        <div className="max-w-5xl mx-auto px-4 mb-6">
+          <div className="bg-orange-500/10 border border-orange-500/20 text-orange-200 p-3 rounded-xl flex items-center justify-center gap-3 backdrop-blur-sm shadow-[0_0_20px_rgba(249,115,22,0.1)]">
+            <AlertTriangle className="w-5 h-5 text-orange-500 animate-pulse" />
+            <span className="font-semibold text-sm">
+              <strong className="text-orange-500">DEMO MODE:</strong> Campaigns are simulated. No budget will be spent on Meta.
+            </span>
+          </div>
+        </div>
+
         {/* Stepper UI - Premium */}
         <div className="mb-12 max-w-5xl mx-auto px-4">
           <div className="flex items-center justify-between relative bg-black/20 backdrop-blur-xl p-4 rounded-3xl border border-white/5 shadow-xl">
@@ -479,8 +543,8 @@ export function CampaignBuilderPage() {
                 <div key={step.id} className="flex flex-col items-center gap-3 relative z-10">
                   <div
                     className={`w-12 h-12 rounded-2xl flex items-center justify-center transition-all duration-500 ${isActive
-                        ? 'bg-gradient-to-br from-violet-500 to-fuchsia-600 text-white shadow-[0_0_30px_rgba(167,139,250,0.4)] scale-110'
-                        : 'bg-zinc-900 border border-white/10 text-muted-foreground'
+                      ? 'bg-gradient-to-br from-violet-500 to-fuchsia-600 text-white shadow-[0_0_30px_rgba(167,139,250,0.4)] scale-110'
+                      : 'bg-zinc-900 border border-white/10 text-muted-foreground'
                       }`}
                   >
                     {isActive && !isCurrent ? <CheckCircle2 className="w-6 h-6" /> : <Icon className="w-5 h-5" />}
@@ -635,7 +699,7 @@ export function CampaignBuilderPage() {
                                 <h3 className="font-bold text-white truncate">{ad.name}</h3>
                                 <p className="text-xs text-muted-foreground mt-1 truncate">{ad.productName}</p>
 
-                                {selectedStrategy?.creative_ids?.includes(ad.id) && (
+                                {false && (
                                   <div className="mt-2 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-500 text-[10px] font-bold uppercase tracking-wide">
                                     <Sparkles className="w-3 h-3" /> Strategie Match
                                   </div>
@@ -666,30 +730,13 @@ export function CampaignBuilderPage() {
                     <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
                       {/* Left: Blueprints List */}
                       <div className="lg:col-span-4 space-y-4">
-                        <h3 className="text-sm font-bold uppercase tracking-widest text-muted-foreground ml-1">Blueprints</h3>
-                        <div className="space-y-3 max-h-[400px] overflow-y-auto pr-2 custom-scrollbar">
-                          {strategies.map((strategy) => (
-                            <button
-                              key={strategy.id}
-                              onClick={() => setSelectedStrategyId(strategy.id)}
-                              className={`
-                                                    w-full p-4 rounded-2xl border text-left transition-all duration-300
-                                                    ${selectedStrategyId === strategy.id
-                                  ? 'border-primary bg-primary/10 shadow-[0_0_20px_rgba(167,139,250,0.1)]'
-                                  : 'border-white/5 bg-black/20 hover:bg-black/40 hover:border-white/10'}
-                                                `}
-                            >
-                              <div className="flex items-center gap-3">
-                                <div className={`p-2 rounded-lg ${selectedStrategyId === strategy.id ? 'bg-primary text-white' : 'bg-white/5 text-muted-foreground'}`}>
-                                  <Brain className="w-4 h-4" />
-                                </div>
-                                <span className={`font-medium text-sm ${selectedStrategyId === strategy.id ? 'text-white' : 'text-muted-foreground'}`}>
-                                  {strategy.name || 'Unbenannte Strategie'}
-                                </span>
-                              </div>
-                            </button>
-                          ))}
-                        </div>
+                        <StrategySelector
+                          strategies={strategies}
+                          selectedId={selectedStrategyId}
+                          onSelect={(id) => setSelectedStrategyId(id)}
+                          onCreateNew={() => { }} // Wizard not needed here contextually, or could open modal
+                          recommendedGoal="scaling"
+                        />
                       </div>
 
                       {/* Right: Preview */}

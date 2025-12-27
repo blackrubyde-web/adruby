@@ -202,6 +202,8 @@ export function AIAnalysisPage() {
           strategy: activeStrategy ? {
             name: activeStrategy.title,
             description: activeStrategy.raw_content_markdown,
+            autopilot_config: activeStrategy.autopilot_config,
+            industry_type: activeStrategy.industry_type,
           } : null
         }),
       });
@@ -246,7 +248,7 @@ export function AIAnalysisPage() {
     return Math.max(20, Math.min(100, Math.round(roasScore + ctrScore + convScore)));
   };
 
-  const buildAiAnalysis = useCallback((id: string, campaignId: string, metrics: { roas: number; ctr: number; conversions: number; spend: number }): AIAnalysis => {
+  const buildAiAnalysis = useCallback((id: string, campaignId: string, metrics: { roas: number; ctr: number; conversions: number; spend: number }, strategyId?: string | null): AIAnalysis => {
     // Use cached AI analysis if available (from GPT-4 endpoint)
     const cached = aiAnalysisCache[campaignId];
     if (cached) {
@@ -264,18 +266,34 @@ export function AIAnalysisPage() {
       };
     }
 
-    // Fallback to rule-based analysis
-    let recommendation: AIRecommendation = 'increase';
-    if (metrics.roas >= 4 && metrics.ctr >= 2.5) recommendation = 'duplicate';
-    if (metrics.roas < 1) recommendation = 'kill';
-    if (metrics.roas >= 1 && metrics.roas < 2) recommendation = 'decrease';
+    // Fallback to rule-based analysis (Strategy-Aware)
+    const strategy = strategies.find(s => s.id === strategyId);
+    // Use defaults if no strategy config
+    const pauseThreshold = (strategy?.autopilot_config as any)?.pause_threshold_roas ?? 1.0;
+    const scaleThreshold = (strategy?.autopilot_config as any)?.scale_threshold_roas ?? 4.0;
+    // Note: scale_threshold might be higher in config (e.g. target * 1.2). Default check:
+    const targetRoas = (strategy?.autopilot_config as any)?.target_roas ?? 3.0;
 
+    let recommendation: AIRecommendation = 'increase';
+
+    // Scale Logic
+    if (metrics.roas >= targetRoas && metrics.ctr >= 2.0) recommendation = 'duplicate';
+    if (metrics.roas >= scaleThreshold) recommendation = 'duplicate'; // Strong scale
+
+    // Kill Logic
+    if (metrics.roas < pauseThreshold) recommendation = 'kill';
+
+    // Decrease/Manage Logic
+    if (metrics.roas >= pauseThreshold && metrics.roas < targetRoas * 0.8) recommendation = 'decrease';
+
+    // Confidence calculation (simplified)
     const confidence = Math.max(60, Math.min(95, Math.round(50 + metrics.roas * 8 + metrics.ctr * 3)));
+
     const reasonMap: Record<AIRecommendation, string> = {
-      duplicate: 'Starke ROAS und CTR. Skalierung empfohlen.',
+      duplicate: `Starke Performance (ROAS > ${targetRoas}). Skalierung empfohlen.`,
       increase: 'Solide Performance. Budget kann vorsichtig erhöht werden.',
-      decrease: 'ROAS unter Ziel. Budget reduzieren und Creatives testen.',
-      kill: 'Performance deutlich unter Ziel. Pause empfohlen.'
+      decrease: `ROAS unter Ziel (${targetRoas}). Budget reduzieren.`,
+      kill: `Performance unter Minimum (ROAS < ${pauseThreshold}). Pause empfohlen.`
     };
 
     return {
@@ -283,14 +301,14 @@ export function AIAnalysisPage() {
       recommendation,
       confidence,
       reason: reasonMap[recommendation],
-      expectedImpact: recommendation === 'duplicate' ? '+30-50% Umsatzpotenzial bei gleichbleibender Effizienz' : 'Performance-Optimierung durch Budget-Anpassung',
+      expectedImpact: recommendation === 'duplicate' ? '+30-50% Umsatzpotenzial' : 'Budget-Optimierung',
       details: [
         `ROAS: ${metrics.roas.toFixed(2)}x`,
         `CTR: ${metrics.ctr.toFixed(2)}%`,
         `Conversions: ${metrics.conversions}`,
       ]
     } satisfies AIAnalysis;
-  }, [aiAnalysisCache]);
+  }, [aiAnalysisCache, strategies]);
 
   useEffect(() => {
     const next = (metaCampaigns || []).map((campaign) => {
@@ -303,9 +321,8 @@ export function AIAnalysisPage() {
       const conversions = Number(campaign.conversions || 0);
       const cpc = clicks > 0 ? spend / clicks : 0;
 
-      const performanceScore = buildPerformanceScore({ roas, ctr, conversions });
-      const aiAnalysis = buildAiAnalysis(`analysis-${campaign.id}`, campaign.id, { roas, ctr, conversions, spend });
       const campaignStrategyId = campaign.strategyId || null;
+      const aiAnalysis = buildAiAnalysis(`analysis-${campaign.id}`, campaign.id, { roas, ctr, conversions, spend }, campaignStrategyId);
       const adSetKey = `adset:${campaign.id}-adset`;
       const adKey = `ad:${campaign.id}-ad`;
       const adSetStrategyId = assignmentMap[adSetKey] ?? campaignStrategyId;
