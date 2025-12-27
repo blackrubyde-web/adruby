@@ -487,7 +487,7 @@ Generate this EXACT JSON structure:
             />
 
             {/* Content Card */}
-            <div className={`relative w-full max-w-3xl mx-4 rounded-3xl shadow-2xl overflow-hidden h-[90vh] flex flex-col transition-all duration-500 transform border border-border bg-background ${isExiting ? 'scale-95 translate-y-8' : 'scale-100 translate-y-0'}`}>
+            <div className={`relative w-full max-w-2xl mx-4 rounded-3xl shadow-2xl overflow-hidden max-h-[85vh] flex flex-col transition-all duration-500 transform border border-border bg-background z-50 ${isExiting ? 'scale-95 translate-y-8' : 'scale-100 translate-y-0'}`}>
 
                 {/* Header */}
                 <div className="p-4 md:p-6 border-b border-border shrink-0">
