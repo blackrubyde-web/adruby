@@ -393,7 +393,7 @@ Generate this EXACT JSON structure:
     if (!isOpen) return null;
 
     return (
-        <div className={`fixed inset-0 z-50 flex items-center justify-center transition-all duration-300 ${isExiting ? 'opacity-0' : 'opacity-100'}`}>
+        <div className={`absolute inset-0 z-50 flex items-center justify-center transition-all duration-300 ${isExiting ? 'opacity-0' : 'opacity-100'}`}>
             {/* Backdrop */}
             <div
                 className="absolute inset-0 bg-black/60 dark:bg-black/80 backdrop-blur-xl"
@@ -782,7 +782,7 @@ Generate this EXACT JSON structure:
                                     onClick={() => onComplete(generatedDoc)}
                                     className="flex items-center gap-3 px-8 py-4 bg-gradient-to-r from-primary to-red-600 text-white rounded-xl font-bold text-base hover:shadow-lg hover:shadow-primary/30 transition-all group"
                                 >
-                                    <span>Zur Bearbeitung im Canvas</span>
+                                    <span>Im Editor Bearbeiten</span>
                                     <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
                                 </button>
                             </div>
@@ -870,6 +870,14 @@ Generate this EXACT JSON structure:
                         >
                             Weiter
                             <ArrowRight className="w-4 h-4 md:w-5 md:h-5 group-hover:translate-x-1 transition-transform" />
+                        </button>
+                    ) : generatedDoc ? (
+                        <button
+                            onClick={() => onComplete(generatedDoc)}
+                            className="flex items-center gap-2 md:gap-3 px-6 md:px-8 py-2.5 md:py-3 bg-gradient-to-r from-emerald-600 to-emerald-700 text-white rounded-xl font-bold text-sm md:text-base hover:shadow-lg hover:shadow-emerald-500/30 transition-all"
+                        >
+                            <span>Im Editor Bearbeiten</span>
+                            <ArrowRight className="w-4 h-4 md:w-5 md:h-5" />
                         </button>
                     ) : (
                         <button

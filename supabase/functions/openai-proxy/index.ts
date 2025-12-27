@@ -11,7 +11,8 @@ serve(async (req) => {
     }
 
     try {
-        const { endpoint, method = 'POST', body, headers } = await req.json();
+        const requestData = await req.json();
+        const { endpoint, method = 'POST', headers: customHeaders, ...openaiParams } = requestData;
 
         if (!endpoint) {
             throw new Error('Missing endpoint');
@@ -24,26 +25,46 @@ serve(async (req) => {
 
         const url = `https://api.openai.com/v1/${endpoint}`;
 
+        console.log(`[OpenAI Proxy] ${method} ${url}`);
+        console.log('[OpenAI Proxy] Params:', JSON.stringify(openaiParams, null, 2));
+
         const response = await fetch(url, {
             method,
             headers: {
                 'Authorization': `Bearer ${apiKey}`,
                 'Content-Type': 'application/json',
-                ...headers,
+                ...customHeaders,
             },
-            body: JSON.stringify(body),
+            body: JSON.stringify(openaiParams),
         });
 
         const data = await response.json();
 
+        if (!response.ok) {
+            console.error('[OpenAI Proxy] Error:', response.status, data);
+            return new Response(JSON.stringify({
+                error: data.error?.message || 'OpenAI API request failed',
+                details: data
+            }), {
+                headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+                status: response.status,
+            });
+        }
+
+        console.log('[OpenAI Proxy] Success');
+
         return new Response(JSON.stringify(data), {
             headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-            status: response.status,
+            status: 200,
         });
     } catch (error) {
-        return new Response(JSON.stringify({ error: error.message }), {
+        console.error('[OpenAI Proxy] Exception:', error);
+        return new Response(JSON.stringify({
+            error: error.message || 'Internal server error',
+            stack: error.stack
+        }), {
             headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-            status: 400,
+            status: 500,
         });
     }
 });
