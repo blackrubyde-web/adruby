@@ -57,22 +57,11 @@ export async function generatePremiumAd(
             tone: params.tone
         });
 
-        // STAGE 5: Intelligent Image Processing (before layout to get final URL)
-        onProgress?.(5, 'Processing image...');
-        let processedImage: string | undefined;
-
-        try {
-            processedImage = await processImage({
-                imageBase64: params.imageBase64,
-                productName: params.productName,
-                tone: params.tone,
-                shouldEnhance: params.enhanceImage !== false
-            });
-        } catch (imageError: any) {
-            console.warn('⚠️ Image processing failed, continuing with original:', imageError.message);
-            // Use original image if processing fails (CORS, storage issues, etc.)
-            processedImage = params.imageBase64;
-        }
+        // STAGE 5: Intelligent Image Processing (TEMPORARILY DISABLED - CORS issues)
+        // TODO: Move to backend edge function to avoid CORS
+        onProgress?.(5, 'Using original image...');
+        const processedImage = params.imageBase64; // Use original image directly
+        console.log('⏭️  Image processing skipped (CORS issue - needs backend implementation)');
 
         // STAGE 4: Layout Composition (after image processing)
         onProgress?.(4, 'Composing premium layout...');
