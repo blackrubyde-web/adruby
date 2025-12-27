@@ -43,7 +43,7 @@ export function AutomatedRulesManager() {
                 <Shield className="w-4 h-4 text-red-500 mt-0.5" />
                 <div>
                   <div className="text-xs font-bold text-foreground">Soft Kill Protection</div>
-                  <p className="text-[10px] text-muted-foreground">Pauses ads with high spend (>1.5x CPA) and 0 sales.</p>
+                  <p className="text-[10px] text-muted-foreground">Pauses ads with high spend ({'>'}1.5x CPA) and 0 sales.</p>
                 </div>
               </div>
               <div className="flex items-start gap-3 p-2 rounded-lg bg-background/50 border border-border/50">
