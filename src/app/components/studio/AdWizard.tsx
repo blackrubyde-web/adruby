@@ -967,7 +967,11 @@ Generate this EXACT JSON structure:
                         </button>
                     ) : (
                         <button
-                            onClick={handleGenerate}
+                            onClick={() => {
+                                console.log('🔴 BUTTON CLICKED! Step 4 Generate Button');
+                                console.log('Button state:', { isGenerating, step, hasProductName: !!formData.productName });
+                                handleGenerate();
+                            }}
                             disabled={isGenerating}
                             className="flex items-center gap-2 md:gap-3 px-6 md:px-8 py-2.5 md:py-3 bg-gradient-to-r from-primary to-red-600 text-white rounded-xl font-bold text-sm md:text-base hover:shadow-lg hover:shadow-primary/30 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                         >
