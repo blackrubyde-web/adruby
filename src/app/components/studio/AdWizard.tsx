@@ -161,8 +161,8 @@ export const AdWizard = ({ isOpen, onClose, onComplete }: AdWizardProps) => {
                     brandName,
                     userPrompt: userPrompt || 'Create high-converting Meta ad',
                     tone,
-                    imageBase64: uploadedImage,
-                    enhanceImage: formData.enhanceImage
+                    imageBase64: uploadedImage || undefined, // Convert null to undefined
+                    enhanceImage: true // Always enhance for now
                 },
                 (stage, message) => {
                     // Progress callback
