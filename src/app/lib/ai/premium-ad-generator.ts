@@ -58,16 +58,17 @@ export async function generatePremiumAd(
         });
 
         // STAGE 5: Intelligent Image Processing (via Backend Edge Function)
-        onProgress?.(5, 'Processing image (15s timeout)...');
+        onProgress?.(5, 'Processing image (Quality takes time: ~30s)...');
         let processedImage: string | undefined;
 
         try {
-            // Safe Race: If Image Processing > 15s, return original immediately.
-            const timeoutPromise = new Promise<string | undefined>((resolve) => {
+            // Safe Race: Give DALL-E 3 enough time (60s), but protect against eternal hangs.
+            const timeoutPromise = new Promise<string | undefined>((resolve, reject) => {
                 setTimeout(() => {
-                    console.warn('⚠️ Image processing timed out (>15s), skipping.');
+                    // Start logging warning at 60s
+                    console.warn('⚠️ Image processing pending > 60s');
                     resolve(params.imageBase64);
-                }, 15000);
+                }, 60000);
             });
 
             const processingPromise = processImage({
@@ -81,8 +82,8 @@ export async function generatePremiumAd(
             processedImage = await Promise.race([processingPromise, timeoutPromise]);
 
         } catch (imageError: any) {
-            console.warn('⚠️ Image processing failed, continuing with original:', imageError.message);
-            // Even with backend fix, we keep fallback just in case of other errors (timeout, quota)
+            console.error('❌ Premium Image Failed:', imageError);
+            // Only fallback on CRITICAL error, but log it loudly.
             processedImage = params.imageBase64;
         }
 
