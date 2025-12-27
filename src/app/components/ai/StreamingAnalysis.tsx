@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Brain, Loader2, Sparkles } from 'lucide-react';
 
 interface StreamingAnalysisProps {
-    campaigns: any[];
+    campaigns: unknown[];
     onComplete: (analyses: unknown[]) => void;
     isAnalyzing: boolean;
 }

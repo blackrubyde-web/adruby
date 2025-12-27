@@ -24,7 +24,7 @@ export async function removeBackground(imageSrc: File | Blob | string, onProgres
     try {
         // Dynamic import from CDN
         // validation for types is skipped as we are importing from a URL
-        // @ts-expect-error
+        // @ts-expect-error: CDN import external module
         const imglyRemoveBackground = (await import('https://cdn.jsdelivr.net/npm/@imgly/background-removal@1.0.4/+esm')).default;
 
         // Configuration

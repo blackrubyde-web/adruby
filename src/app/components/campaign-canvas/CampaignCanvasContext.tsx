@@ -701,7 +701,7 @@ export function CampaignCanvasProvider({ children }: { children: ReactNode }) {
 
             // Check for empty campaigns
             campaignNodes.forEach(campaign => {
-                const childAdSets = adSetNodes.filter(as => (as.data as AdSetNodeData).parentId === campaign.id);
+                const childAdSets = adSetNodes.filter(adSetNode => (adSetNode.data as AdSetNodeData).parentId === campaign.id);
                 if (childAdSets.length === 0) {
                     warnings.push({
                         id: `warning-empty-campaign-${campaign.id}`,
