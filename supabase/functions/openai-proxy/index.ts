@@ -58,8 +58,12 @@ serve(async (req) => {
         // -----------------------------------------------------
         // OLD: Standard OpenAI Proxy Logic
         // -----------------------------------------------------
+        // -----------------------------------------------------
+        // OLD: Standard OpenAI Proxy Logic
+        // -----------------------------------------------------
         const { endpoint, method = 'POST', headers: customHeaders, ...openaiParams } = requestData;
 
+        // ONLY Validate endpoint if NOT processing image
         if (!endpoint) {
             throw new Error('Missing endpoint');
         }
