@@ -208,33 +208,39 @@ export async function enhanceProductImage(req: EnhancementRequest): Promise<Enha
     const openAIImageUrl = await generateWithDALLE3(dallePrompt);
     console.log('✅ Premium image generated from OpenAI');
 
-    // Step 3: Upload to Supabase Storage via Backend Edge Function (Solves CORS)
-    // We use 'openai-proxy' because it's already deployed and we merged the logic there
-    console.log('💾 Uploading to Supabase Storage (Server-side)...');
+    // Step 3: Upload to Supabase Storage via Next.js API Route (Solves CORS & Deployment issues)
+    console.log('💾 Uploading to Supabase Storage (via Next.js Proxy)...');
 
-    const { data: uploadData, error: uploadError } = await supabase.functions.invoke('openai-proxy', {
-        body: {
-            processParams: {
+    try {
+        const userId = (await supabase.auth.getUser()).data.user?.id;
+
+        const response = await fetch('/api/process-image', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
                 imageUrl: openAIImageUrl,
                 productName: req.productName,
-                userId: (await supabase.auth.getUser()).data.user?.id
-            }
+                userId
+            })
+        });
+
+        if (!response.ok) {
+            const errData = await response.json().catch(() => ({}));
+            throw new Error(errData.error || `API returned ${response.status}`);
         }
-    });
 
-    if (uploadError) {
-        throw new Error(`Backend image processing failed: ${uploadError.message}`);
+        const data = await response.json();
+        const permanentImageUrl = data.publicUrl;
+
+        console.log('✅ Image permanently stored at:', permanentImageUrl);
+
+        return {
+            enhancedImageUrl: permanentImageUrl,
+            analysisNotes
+        };
+    } catch (apiError: any) {
+        throw new Error(`Backend image processing failed: ${apiError.message}`);
     }
-
-    if (!uploadData?.publicUrl) {
-        throw new Error('Backend did not return public URL');
-    }
-
-    const permanentImageUrl = uploadData.publicUrl;
-    console.log('✅ Image permanently stored at:', permanentImageUrl);
-
-    return {
-        enhancedImageUrl: permanentImageUrl,
-        analysisNotes
-    };
 }
