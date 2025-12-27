@@ -1,6 +1,6 @@
 'use client';
 
-import { useRef, useState, useEffect } from 'react';
+import React, { useRef, useState, useEffect } from 'react';
 import GridLayout, { type Layout, type LayoutItem } from 'react-grid-layout/legacy';
 import 'react-grid-layout/css/styles.css';
 import {
@@ -796,27 +796,7 @@ export function AppleGridDashboard({
 }
 
 // Widget Preview Component (for gallery)
-function WidgetPreview({ template }: { template: WidgetTemplate }) {
-  // Return a simplified preview based on template
-  const previewWidget: DashboardWidget = {
-    layoutId: 'preview',
-    templateId: template.id,
-    size: template.defaultSize,
-    color: 'blue',
-    design: 'gradient',
-  };
 
-  return (
-    <WidgetRenderer
-      widget={previewWidget}
-      template={template}
-      data={null}
-      loading={false}
-      error={null}
-      isPreview
-    />
-  );
-}
 
 // Widget Renderer Component - DATA AWARE
 function WidgetRenderer({

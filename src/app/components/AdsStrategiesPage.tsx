@@ -1,4 +1,4 @@
-import { Target, Search, Filter, Sparkles, Brain, DollarSign, Users, Zap, CheckCircle2, Play, Pause, Copy, Trash2, Eye, CheckSquare, Layers } from 'lucide-react';
+import { Target, Search, Sparkles, Brain, DollarSign, Users, Zap, CheckCircle2, Play, Pause, Copy, Trash2, Eye, CheckSquare, Layers } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { toast } from 'sonner';
 import { StrategyViewModal } from './StrategyViewModal';
@@ -9,7 +9,7 @@ import { generateStrategyPlan } from '../lib/api/creative';
 import { generateCampaignStrategyPlan } from '../lib/api/strategy';
 import { StrategySelector } from './studio/StrategySelector';
 import { StrategyWizard } from './studio/StrategyWizard';
-import { useStrategies, type StrategyBlueprint } from '../hooks/useStrategies';
+import { useStrategies } from '../hooks/useStrategies';
 
 type GeneratedStrategy = {
   schema_version?: string;
@@ -664,7 +664,14 @@ export function AdsStrategiesPage() {
     toast.success(`Ad ${newStatus === 'active' ? 'activated' : 'paused'}`);
   };
 
-  const handleCreateMasterStrategy = async (data: any) => {
+  const handleCreateMasterStrategy = async (data: {
+    name: string;
+    industry_type: string;
+    target_roas: number;
+    max_daily_budget: number;
+    scale_speed: string;
+    risk_tolerance: string
+  }) => {
     try {
       const { error } = await supabase.from('strategy_blueprints').insert({
         title: data.name,
@@ -691,8 +698,9 @@ export function AdsStrategiesPage() {
       toast.success("Master Strategy Created!");
       refreshStrategies();
       setShowStrategyWizard(false);
-    } catch (e: any) {
-      toast.error("Failed to create strategy: " + e.message);
+    } catch (e: unknown) {
+      const errorMessage = e instanceof Error ? e.message : 'Unknown error';
+      toast.error("Failed to create strategy: " + errorMessage);
     }
   };
 

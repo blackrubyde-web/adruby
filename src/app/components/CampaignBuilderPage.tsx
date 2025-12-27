@@ -18,7 +18,7 @@ import { memo } from 'react';
 import { PageShell, HeroHeader } from './layout';
 import { supabase } from '../lib/supabaseClient';
 import { StrategySelector } from './studio/StrategySelector';
-import { useStrategies, type StrategyBlueprint } from '../hooks/useStrategies';
+import { useStrategies } from '../hooks/useStrategies';
 import { createCampaign } from '../lib/api/meta';
 
 const STATUS_OPTIONS = ['draft', 'ready'] as const;
@@ -114,12 +114,7 @@ type CampaignDraftRow = {
   created_at?: string | null;
 };
 
-type CampaignStrategyBlueprint = {
-  id: string;
-  name: string | null;
-  creative_ids: string[];
-  strategy: GeneratedStrategy;
-};
+
 
 type CreativeRow = {
   id: string;
@@ -307,7 +302,7 @@ export function CampaignBuilderPage() {
   const [ads, setAds] = useState<SavedAd[]>([]);
 
   // Unified Strategy Data
-  const { strategies, loading: strategiesLoading } = useStrategies();
+  const { strategies } = useStrategies();
 
   const [selectedStrategyId, setSelectedStrategyId] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);

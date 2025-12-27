@@ -1,4 +1,4 @@
-import { Search, Filter, MoreVertical, Play, Pause, Copy, Trash2, TrendingUp, TrendingDown } from 'lucide-react';
+import { Search, MoreVertical, Play, Pause, Copy, Trash2, TrendingUp, TrendingDown } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { toast } from 'sonner';
 import { PageShell, HeroHeader, Card, Chip } from './layout';
@@ -314,10 +314,10 @@ export function CampaignsPage() {
                     <td className="p-4">
                       <span
                         className={`px-3 py-1 rounded-full text-xs font-medium inline-flex items-center gap-1.5 ${normalizedStatus === 'active'
-                            ? 'bg-green-500/20 text-green-500'
-                            : normalizedStatus === 'paused'
-                              ? 'bg-orange-500/20 text-orange-500'
-                              : 'bg-muted/50 text-muted-foreground'
+                          ? 'bg-green-500/20 text-green-500'
+                          : normalizedStatus === 'paused'
+                            ? 'bg-orange-500/20 text-orange-500'
+                            : 'bg-muted/50 text-muted-foreground'
                           }`}
                       >
                         <div className="w-1.5 h-1.5 rounded-full bg-current" />

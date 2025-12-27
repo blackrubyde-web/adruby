@@ -93,6 +93,7 @@ export type PageType =
   | 'help'
   | 'studio'
   | 'admin'
+  | 'adbuilder'
   | 'campaign-canvas';
 
 const PAGE_PATHS: Record<PageType, string> = {
