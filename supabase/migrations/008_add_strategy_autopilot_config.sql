@@ -1,8 +1,12 @@
--- Strategy-Driven Autopilot - Schema Enhancement
+-- Strategy-Driven Autopilot - Unified Schema Enhancement
 -- Migration: 008_add_strategy_autopilot_config.sql
 
--- Add autopilot_config column to strategies table
-ALTER TABLE strategies 
+-- ============================================
+-- 1. Alter Strategy Blueprints (The Master Table)
+-- ============================================
+
+-- Add unified columns to strategy_blueprints table
+ALTER TABLE strategy_blueprints 
 ADD COLUMN IF NOT EXISTS autopilot_config JSONB DEFAULT '{
   "enabled": false,
   "target_roas": 3.0,
@@ -14,10 +18,12 @@ ADD COLUMN IF NOT EXISTS autopilot_config JSONB DEFAULT '{
   "max_budget_increase_pct": 0.3,
   "min_conversions_required": 10,
   "creative_rotation_days": 7
-}'::jsonb;
+}'::jsonb,
+ADD COLUMN IF NOT EXISTS industry_type TEXT, -- e.g. 'ecommerce', 'saas', 'local', 'info'
+ADD COLUMN IF NOT EXISTS target_audience_definition JSONB DEFAULT '{}'::jsonb; -- breakdown of audience
 
 -- ============================================
--- Strategy Template Functions
+-- 2. Strategy Template Functions (Updated)
 -- ============================================
 
 -- Conservative Testing Template
@@ -97,7 +103,7 @@ END;
 $$ LANGUAGE plpgsql;
 
 -- ============================================
--- Validation Function
+-- 3. Validation Function
 -- ============================================
 CREATE OR REPLACE FUNCTION validate_autopilot_config(config JSONB)
 RETURNS BOOLEAN AS $$
@@ -156,7 +162,7 @@ END;
 $$ LANGUAGE plpgsql;
 
 -- ============================================
--- Trigger for Validation
+-- 4. Trigger for Validation (Updated Target)
 -- ============================================
 CREATE OR REPLACE FUNCTION validate_strategy_autopilot_config()
 RETURNS TRIGGER AS $$
@@ -168,14 +174,17 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+-- Drop trigger if exists on wrong table? No, just create strict one here
+DROP TRIGGER IF EXISTS validate_autopilot_config_trigger ON strategy_blueprints;
+
 CREATE TRIGGER validate_autopilot_config_trigger
-  BEFORE INSERT OR UPDATE ON strategies
+  BEFORE INSERT OR UPDATE ON strategy_blueprints
   FOR EACH ROW
   WHEN (NEW.autopilot_config IS NOT NULL)
   EXECUTE FUNCTION validate_strategy_autopilot_config();
 
 -- ============================================
--- Helper Functions
+-- 5. Helper Functions (Scaling Logic)
 -- ============================================
 
 -- Get scale percentage based on speed and max
@@ -200,6 +209,7 @@ END;
 $$ LANGUAGE plpgsql;
 
 -- Check if campaign should be scaled based on strategy
+-- Accepts a strategy_config JSONB from strategy_blueprints
 CREATE OR REPLACE FUNCTION should_scale_campaign(
   campaign_roas NUMERIC,
   campaign_conversions INTEGER,
@@ -287,7 +297,10 @@ $$ LANGUAGE plpgsql;
 -- ============================================
 -- Comments
 -- ============================================
-COMMENT ON COLUMN strategies.autopilot_config IS 'Autopilot configuration for strategy-driven campaign optimization';
+COMMENT ON COLUMN strategy_blueprints.autopilot_config IS 'Unified Autopilot configuration for strategy-driven optimization';
+COMMENT ON COLUMN strategy_blueprints.industry_type IS 'Target industry (e.g., Ecommerce, SaaS) for context-aware AI generation';
+COMMENT ON COLUMN strategy_blueprints.target_audience_definition IS 'Structured audience definition for the strategy';
+
 COMMENT ON FUNCTION get_conservative_autopilot_config() IS 'Returns conservative autopilot template config';
 COMMENT ON FUNCTION get_aggressive_autopilot_config() IS 'Returns aggressive autopilot template config';
 COMMENT ON FUNCTION get_profit_autopilot_config() IS 'Returns profit maximization autopilot template config';
