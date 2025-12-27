@@ -1,12 +1,13 @@
 -- Migration: Fix Admin RPC Errors and Missing Columns
 -- Description: Ensures all required columns for Admin Dashboard exist and RPCs are synced.
 
--- 1. Fix affiliate_payouts (Missing payout_method)
+-- 1. Fix affiliate_payouts (Ensure payout_reference exists)
 DO $$ 
 BEGIN
     IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'affiliate_payouts') THEN
         ALTER TABLE affiliate_payouts 
-        ADD COLUMN IF NOT EXISTS payout_method VARCHAR(50) DEFAULT 'paypal';
+        ADD COLUMN IF NOT EXISTS payout_method VARCHAR(50) DEFAULT 'paypal',
+        ADD COLUMN IF NOT EXISTS payout_reference VARCHAR(255);
     END IF;
 END $$;
 
