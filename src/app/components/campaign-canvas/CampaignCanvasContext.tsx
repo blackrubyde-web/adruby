@@ -1,5 +1,5 @@
 import { createContext, useContext, useState, useCallback, useMemo, useEffect, useRef, type ReactNode } from 'react';
-import { useNodesState, useEdgesState, addEdge, type Node, type Edge, type Connection, type Viewport } from '@xyflow/react';
+import { useNodesState, useEdgesState, addEdge, type Node, type Edge, type Connection, type Viewport, type OnNodesChange, type OnEdgesChange } from '@xyflow/react';
 import { toast } from 'sonner';
 import { supabase } from '../../lib/supabaseClient';
 import {
@@ -42,8 +42,8 @@ interface CampaignCanvasContextValue {
     edges: Edge[];
     setNodes: React.Dispatch<React.SetStateAction<Node<CampaignCanvasNodeData>[]>>;
     setEdges: React.Dispatch<React.SetStateAction<Edge[]>>;
-    onNodesChange: (changes: any) => void;
-    onEdgesChange: (changes: any) => void;
+    onNodesChange: OnNodesChange<Node<CampaignCanvasNodeData>>;
+    onEdgesChange: OnEdgesChange<Edge>;
     onConnect: (connection: Connection) => void;
     viewport: Viewport;
     setViewport: (vp: Viewport) => void;
@@ -292,7 +292,7 @@ export function CampaignCanvasProvider({ children }: { children: ReactNode }) {
         }
 
         pushHistory();
-        const siblingCount = nodes.filter(n => n.data.type === 'adset' && (n.data as any).parentId === parentId).length;
+        const siblingCount = nodes.filter(n => n.data.type === 'adset' && n.data.parentId === parentId).length;
         const id = generateNodeId('adset');
 
         const newNode: Node<CampaignCanvasNodeData> = {
@@ -331,7 +331,7 @@ export function CampaignCanvasProvider({ children }: { children: ReactNode }) {
         }
 
         pushHistory();
-        const siblingCount = nodes.filter(n => n.data.type === 'ad' && (n.data as any).parentId === parentId).length;
+        const siblingCount = nodes.filter(n => n.data.type === 'ad' && n.data.parentId === parentId).length;
         const id = generateNodeId('ad');
 
         const newNode: Node<CampaignCanvasNodeData> = {
@@ -391,7 +391,8 @@ export function CampaignCanvasProvider({ children }: { children: ReactNode }) {
         while (changed) {
             changed = false;
             nodes.forEach((n) => {
-                if ((n.data as any).parentId && nodesToDelete.has((n.data as any).parentId) && !nodesToDelete.has(n.id)) {
+                const data = n.data;
+                if ((data.type === 'adset' || data.type === 'ad') && data.parentId && nodesToDelete.has(data.parentId) && !nodesToDelete.has(n.id)) {
                     nodesToDelete.add(n.id);
                     changed = true;
                 }
@@ -423,18 +424,19 @@ export function CampaignCanvasProvider({ children }: { children: ReactNode }) {
             data: {
                 ...nodeToDuplicate.data,
                 config: {
-                    ...(nodeToDuplicate.data as any).config,
-                    name: `${(nodeToDuplicate.data as any).config?.name || 'Copy'} (Copy)`
+                    ...nodeToDuplicate.data.config,
+                    name: `${nodeToDuplicate.data.config?.name || 'Copy'} (Copy)`
                 }
             } as CampaignCanvasNodeData,
         };
 
         // If it has a parent, create edge to same parent
         const newEdges: Edge[] = [];
-        if ((nodeToDuplicate.data as any).parentId) {
+        const nodeData = nodeToDuplicate.data;
+        if ((nodeData.type === 'adset' || nodeData.type === 'ad') && nodeData.parentId) {
             newEdges.push({
-                id: `edge-${(nodeToDuplicate.data as any).parentId}-${newId}`,
-                source: (nodeToDuplicate.data as any).parentId,
+                id: `edge-${nodeData.parentId}-${newId}`,
+                source: nodeData.parentId,
                 target: newId,
                 animated: true,
                 style: { strokeWidth: 2 },

@@ -3,7 +3,7 @@ import { Brain, Loader2, Sparkles } from 'lucide-react';
 
 interface StreamingAnalysisProps {
     campaigns: any[];
-    onComplete: (analyses: any[]) => void;
+    onComplete: (analyses: unknown[]) => void;
     isAnalyzing: boolean;
 }
 
@@ -17,6 +17,8 @@ export function StreamingAnalysis({ campaigns, onComplete, isAnalyzing }: Stream
             setStreamingText('');
             setCurrentCampaign(0);
             setIsStreaming(false);
+        } else {
+            startStreaming();
         }
     }, [isAnalyzing]);
 
@@ -39,8 +41,10 @@ export function StreamingAnalysis({ campaigns, onComplete, isAnalyzing }: Stream
             const decoder = new TextDecoder();
             let buffer = '';
 
-            while (true) {
-                const { done, value } = await reader.read();
+            let done = false;
+            while (!done) {
+                const { done: streamDone, value } = await reader.read();
+                done = streamDone;
 
                 if (done) break;
 
