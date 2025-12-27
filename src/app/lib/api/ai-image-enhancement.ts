@@ -208,10 +208,27 @@ export async function enhanceProductImage(req: EnhancementRequest): Promise<Enha
     const openAIImageUrl = await generateWithDALLE3(dallePrompt);
     console.log('✅ Premium image generated from OpenAI');
 
-    // Step 3: Upload to Supabase Storage (fixes CORS + makes permanent)
-    console.log('💾 Uploading to Supabase Storage...');
-    const { uploadImageToStorage } = await import('./storage');
-    const permanentImageUrl = await uploadImageToStorage(openAIImageUrl);
+    // Step 3: Upload to Supabase Storage via Backend Edge Function (Solves CORS)
+    console.log('💾 Uploading to Supabase Storage (Server-side)...');
+
+    // Call our new Edge Function that handles the fetch + upload server-side
+    const { data: uploadData, error: uploadError } = await supabase.functions.invoke('process-image', {
+        body: {
+            imageUrl: openAIImageUrl,
+            productName: req.productName,
+            userId: (await supabase.auth.getUser()).data.user?.id
+        }
+    });
+
+    if (uploadError) {
+        throw new Error(`Backend image processing failed: ${uploadError.message}`);
+    }
+
+    if (!uploadData?.publicUrl) {
+        throw new Error('Backend did not return public URL');
+    }
+
+    const permanentImageUrl = uploadData.publicUrl;
     console.log('✅ Image permanently stored at:', permanentImageUrl);
 
     return {
