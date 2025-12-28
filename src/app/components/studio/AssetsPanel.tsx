@@ -1,5 +1,5 @@
 import { useState, useRef } from 'react';
-import { Search, Type, Square, Tag, ShoppingBag, MessageCircle, Laptop, Hammer, Users, Layout, Sparkles, Home, UtensilsCrossed, Dumbbell, PartyPopper, Landmark, Upload, Image as ImageIcon, X } from 'lucide-react';
+import { Search, Type, Square, Tag, ShoppingBag, Laptop, Hammer, Users, Layout, Sparkles, Home, UtensilsCrossed, Dumbbell, PartyPopper, Landmark, Upload, Image as ImageIcon, X } from 'lucide-react';
 import { MODULE_PRESETS, AD_TEMPLATES } from './presets';
 import type { StudioLayer, AdDocument } from '../../types/studio';
 

@@ -1,8 +1,9 @@
 "use client";
-import React, { useRef, useEffect, forwardRef, useImperativeHandle } from 'react';
+import { useRef, useEffect, forwardRef, useImperativeHandle } from 'react';
 import { Stage, Layer, Image as KonvaImage, Text, Rect, Group, Transformer } from 'react-konva';
+import type Konva from 'konva';
 import useImage from 'use-image';
-import type { AdDocument, StudioLayer, ImageLayer, TextLayer, CtaLayer } from '../../types/studio';
+import type { AdDocument, StudioLayer, ImageLayer, TextLayer, CtaLayer, ShapeLayer } from '../../types/studio';
 
 export interface CanvasStageHandle {
     exportToDataURL: (format?: 'png' | 'jpeg', quality?: number) => string | undefined;
@@ -115,7 +116,7 @@ const CtaItem = ({ layer }: { layer: CtaLayer }) => {
     );
 };
 
-const ShapeItem = ({ layer }: { layer: any }) => {
+const ShapeItem = ({ layer }: { layer: ShapeLayer }) => {
     return (
         <Rect
             x={0}
@@ -141,8 +142,8 @@ export const CanvasStage = forwardRef<CanvasStageHandle, CanvasStageProps>(funct
     { doc, scale, viewPos = { x: 0, y: 0 }, selectedLayerId, isHandMode, preview, onLayerSelect, onLayerUpdate, onViewChange },
     ref
 ) {
-    const trRef = useRef<any>(null);
-    const stageRef = useRef<any>(null);
+    const trRef = useRef<Konva.Transformer>(null);
+    const stageRef = useRef<Konva.Stage>(null);
 
     const sortedLayers = [...doc.layers].sort((a, b) => (a.zIndex ?? 0) - (b.zIndex ?? 0));
 
@@ -175,13 +176,17 @@ export const CanvasStage = forwardRef<CanvasStageHandle, CanvasStageProps>(funct
 
     useEffect(() => {
         if (!selectedLayerId || !trRef.current || isHandMode || preview) return;
-        const stage = trRef.current.getStage();
+        const transformer = trRef.current;
+        const stage = transformer.getStage();
+        if (!stage) return;
+
         const selectedNode = stage.findOne('.' + selectedLayerId);
         if (selectedNode) {
-            trRef.current.nodes([selectedNode]);
-            trRef.current.getLayer().batchDraw();
+            transformer.nodes([selectedNode]);
+            const transformerLayer = transformer.getLayer();
+            if (transformerLayer) transformerLayer.batchDraw();
         } else {
-            trRef.current.nodes([]);
+            transformer.nodes([]);
         }
     }, [selectedLayerId, sortedLayers, isHandMode, preview]);
 

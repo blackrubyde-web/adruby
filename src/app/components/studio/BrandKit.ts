@@ -1,5 +1,6 @@
 // Brand Kit - Store and apply brand identity
 // Includes logo, colors, fonts
+import type { AdDocument, StudioLayer, TextLayer, CtaLayer } from '../../types/studio';
 
 export interface BrandKit {
     id: string;
@@ -105,24 +106,24 @@ export const DEFAULT_BRAND_KITS: BrandKit[] = [
 
 // Apply brand kit to an AdDocument
 export function applyBrandToDocument(
-    doc: any,
+    doc: AdDocument,
     brand: BrandKit
-): any {
+): AdDocument {
     return {
         ...doc,
         backgroundColor: brand.colors.background,
-        layers: doc.layers.map((layer: any) => {
+        layers: doc.layers.map((layer: StudioLayer) => {
             const newLayer = { ...layer };
 
             if (layer.type === 'text') {
-                newLayer.color = brand.colors.text;
-                newLayer.fontFamily = brand.fonts.heading;
+                (newLayer as TextLayer).color = brand.colors.text;
+                (newLayer as TextLayer).fontFamily = brand.fonts.heading;
             }
 
             if (layer.type === 'cta') {
-                newLayer.bgColor = brand.colors.primary;
-                newLayer.color = brand.colors.background === '#ffffff' || brand.colors.background === '#f0fdf4' ? '#ffffff' : '#ffffff';
-                newLayer.fontFamily = brand.fonts.body;
+                (newLayer as CtaLayer).bgColor = brand.colors.primary;
+                (newLayer as CtaLayer).color = brand.colors.background === '#ffffff' || brand.colors.background === '#f0fdf4' ? '#ffffff' : '#ffffff';
+                (newLayer as CtaLayer).fontFamily = brand.fonts.body;
             }
 
             return newLayer;

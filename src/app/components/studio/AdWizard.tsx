@@ -2,7 +2,7 @@ import { useState, useRef, useCallback, useEffect } from 'react';
 import { supabase } from '../../lib/supabaseClient';
 import { Upload, Sparkles, ArrowRight, X, Wand2, Check, Zap, Image as Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
-import type { AdDocument, StudioLayer, ImageLayer, TextLayer, CtaLayer } from '../../types/studio';
+import type { AdDocument, StudioLayer, ImageLayer } from '../../types/studio';
 import { enhanceProductImage } from '../../lib/api/ai-image-enhancement';
 import { removeBackground, blobToBase64 } from '../../lib/ai/bg-removal';
 

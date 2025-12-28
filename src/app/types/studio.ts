@@ -75,6 +75,10 @@ export type ShapeLayer = LayerBase & {
     stroke?: string;
     strokeWidth?: number;
     cornerRadius?: number;
+    shadowColor?: string;
+    shadowBlur?: number;
+    shadowOffsetX?: number;
+    shadowOffsetY?: number;
 }
 
 export type CtaLayer = LayerBase & {
