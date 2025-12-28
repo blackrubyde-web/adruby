@@ -7,6 +7,7 @@ import { composeLayout } from './layout-composer';
 import { processImage } from './image-processor';
 import { scoreAdQuality } from './vision-qa';
 import type { AdDocument } from '../../types/studio';
+import { removeBackground, blobToBase64 } from './bg-removal';
 
 /**
  * PREMIUM AD GENERATOR
@@ -122,8 +123,23 @@ export async function generatePremiumAd(
                 }, 120000);
             });
 
+            // NEW: Automatic Background Removal (Cutout)
+            onProgress?.(4, 'Removing background (Precision Cutout)...');
+            let cutoutBase64 = params.imageBase64;
+
+            if (params.imageBase64 && params.enhanceImage !== false) {
+                try {
+                    const blob = await removeBackground(params.imageBase64);
+                    cutoutBase64 = await blobToBase64(blob);
+                    console.log('✂️ Cutout generated successfully');
+                } catch (e) {
+                    console.warn('⚠️ Background removal failed, using original:', e);
+                }
+            }
+
             const processingPromise = processImage({
-                imageBase64: params.imageBase64,
+                imageBase64: params.imageBase64, // Original for context (legacy/reference)
+                cutoutBase64: cutoutBase64,      // NEW: Explicit Cutout
                 productName: params.productName,
                 tone: params.tone,
                 designVibe: strategicProfile.designSystem.vibe,

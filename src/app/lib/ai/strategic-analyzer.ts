@@ -1,4 +1,5 @@
 import { supabase } from '../supabaseClient';
+import { invokeOpenAIProxy } from '../api/proxyClient';
 
 /**
  * STAGE 1: STRATEGIC ANALYZER
@@ -96,14 +97,12 @@ JSON Only. No markdown.
   "recommendedTemplate": "..."
 }`;
 
-    const { data, error } = await supabase.functions.invoke('openai-proxy', {
-        body: {
-            endpoint: 'chat/completions',
-            model: 'gpt-4o',
-            messages: [{ role: 'user', content: analysisPrompt }],
-            temperature: 0.7,
-            response_format: { type: 'json_object' }
-        }
+    const { data, error } = await invokeOpenAIProxy({
+        endpoint: 'chat/completions',
+        model: 'gpt-4o',
+        messages: [{ role: 'user', content: analysisPrompt }],
+        temperature: 0.7,
+        response_format: { type: 'json_object' }
     });
 
     if (error) {

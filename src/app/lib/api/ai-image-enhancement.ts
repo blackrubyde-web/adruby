@@ -1,4 +1,5 @@
 import { supabase } from '../supabaseClient';
+import { invokeOpenAIProxy } from './proxyClient';
 
 /**
  * AI IMAGE ENHANCEMENT SERVICE
@@ -134,28 +135,26 @@ const getToneBackgroundGuidance = (tone: string): string => {
  * Call GPT-4 Vision to analyze image and generate DALL-E prompt
  */
 async function analyzeImageWithVision(req: EnhancementRequest): Promise<{ dallePrompt: string; analysisNotes: string }> {
-    const { data, error } = await supabase.functions.invoke('openai-proxy', {
-        body: {
-            endpoint: 'chat/completions',
-            model: 'gpt-4o',
-            messages: [
-                {
-                    role: 'user',
-                    content: [
-                        { type: 'text', text: generateVisionAnalysisPrompt(req) },
-                        {
-                            type: 'image_url',
-                            image_url: {
-                                url: req.imageBase64.startsWith('data:') ? req.imageBase64 : `data:image/jpeg;base64,${req.imageBase64}`,
-                                detail: 'high'
-                            }
+    const { data, error } = await invokeOpenAIProxy({
+        endpoint: 'chat/completions',
+        model: 'gpt-4o',
+        messages: [
+            {
+                role: 'user',
+                content: [
+                    { type: 'text', text: generateVisionAnalysisPrompt(req) },
+                    {
+                        type: 'image_url',
+                        image_url: {
+                            url: req.imageBase64.startsWith('data:') ? req.imageBase64 : `data:image/jpeg;base64,${req.imageBase64}`,
+                            detail: 'high'
                         }
-                    ]
-                }
-            ],
-            max_tokens: 1000,
-            temperature: 0.7
-        }
+                    }
+                ]
+            }
+        ],
+        max_tokens: 1000,
+        temperature: 0.7
     });
 
     if (error) throw new Error(error.message);
@@ -173,28 +172,26 @@ async function analyzeImageWithVision(req: EnhancementRequest): Promise<{ dalleP
  * Analyze image to generate BACKGROUND ONLY prompt
  */
 async function analyzeForBackground(req: EnhancementRequest): Promise<{ dallePrompt: string; analysisNotes: string }> {
-    const { data, error } = await supabase.functions.invoke('openai-proxy', {
-        body: {
-            endpoint: 'chat/completions',
-            model: 'gpt-4o',
-            messages: [
-                {
-                    role: 'user',
-                    content: [
-                        { type: 'text', text: generateBackgroundVisionPrompt(req) },
-                        {
-                            type: 'image_url',
-                            image_url: {
-                                url: req.imageBase64.startsWith('data:') ? req.imageBase64 : `data:image/jpeg;base64,${req.imageBase64}`,
-                                detail: 'low'
-                            }
+    const { data, error } = await invokeOpenAIProxy({
+        endpoint: 'chat/completions',
+        model: 'gpt-4o',
+        messages: [
+            {
+                role: 'user',
+                content: [
+                    { type: 'text', text: generateBackgroundVisionPrompt(req) },
+                    {
+                        type: 'image_url',
+                        image_url: {
+                            url: req.imageBase64.startsWith('data:') ? req.imageBase64 : `data:image/jpeg;base64,${req.imageBase64}`,
+                            detail: 'low'
                         }
-                    ]
-                }
-            ],
-            max_tokens: 1000,
-            temperature: 0.7
-        }
+                    }
+                ]
+            }
+        ],
+        max_tokens: 1000,
+        temperature: 0.7
     });
 
     if (error) throw new Error(`GPT-4 Vision failed: ${error.message}`);
@@ -212,12 +209,11 @@ async function analyzeForBackground(req: EnhancementRequest): Promise<{ dallePro
  * Generate enhanced image with DALL-E 3
  */
 async function generateWithDALLE3(prompt: string): Promise<string> {
-    const { data, error } = await supabase.functions.invoke('openai-proxy', {
-        body: {
-            endpoint: 'images/generations',
-            model: 'dall-e-3',
-            prompt: `PREMIUM ADVERTISING PRODUCT PHOTOGRAPHY: ${prompt}
-            
+    const { data, error } = await invokeOpenAIProxy({
+        endpoint: 'images/generations',
+        model: 'dall-e-3',
+        prompt: `PREMIUM ADVERTISING PRODUCT PHOTOGRAPHY: ${prompt}
+        
 CRITICAL TECHNICAL REQUIREMENTS:
 - Ultra-high quality, professional studio photography
 - Perfect lighting with subtle shadows and highlights
@@ -226,11 +222,10 @@ CRITICAL TECHNICAL REQUIREMENTS:
 - Composition optimized for social media advertising
 - No text, logos, or watermarks
 - Clean, distraction-free background that complements the product`,
-            n: 1,
-            size: '1024x1024',
-            quality: 'hd',
-            style: 'vivid'
-        }
+        n: 1,
+        size: '1024x1024',
+        quality: 'hd',
+        style: 'vivid'
     });
 
     if (error) {
@@ -268,13 +263,11 @@ export async function enhanceProductImage(req: EnhancementRequest): Promise<Enha
     console.log('💾 Uploading to Supabase Storage (Server-side)...');
 
     // Unified AI Service (Supabase Edge Function)
-    const { data: uploadData, error: uploadError } = await supabase.functions.invoke('openai-proxy', {
-        body: {
-            processParams: {
-                imageUrl: openAIImageUrl,
-                productName: req.productName,
-                // userId is handled by the Auth context in the Edge Function now
-            }
+    const { data: uploadData, error: uploadError } = await invokeOpenAIProxy({
+        processParams: {
+            imageUrl: openAIImageUrl,
+            productName: req.productName,
+            // userId is handled by the Auth context in the Edge Function now
         }
     });
 
@@ -310,12 +303,10 @@ export async function generateBackgroundScene(req: EnhancementRequest): Promise<
 
     // 3. Upload
     // 3. Upload via Unified Service
-    const { data: uploadData, error: uploadError } = await supabase.functions.invoke('openai-proxy', {
-        body: {
-            processParams: {
-                imageUrl: openAIImageUrl,
-                productName: `${req.productName}-bg`,
-            }
+    const { data: uploadData, error: uploadError } = await invokeOpenAIProxy({
+        processParams: {
+            imageUrl: openAIImageUrl,
+            productName: `${req.productName}-bg`,
         }
     });
 

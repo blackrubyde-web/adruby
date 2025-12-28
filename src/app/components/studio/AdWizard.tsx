@@ -1,5 +1,6 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
 import { supabase } from '../../lib/supabaseClient';
+import { invokeOpenAIProxy } from '../../lib/api/proxyClient';
 import { Upload, Sparkles, ArrowRight, X, Wand2, Check, Zap, Image as Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import type { AdDocument, StudioLayer, ImageLayer } from '../../types/studio';
@@ -374,14 +375,12 @@ Generate this EXACT JSON structure:
   "ctas": ["CTA 1", "CTA 2", ...]
 }`;
 
-            const { data: hooksData, error: hooksError } = await supabase.functions.invoke('openai-proxy', {
-                body: {
-                    endpoint: 'chat/completions',
-                    model: 'gpt-4o',
-                    messages: [{ role: 'user', content: hookPrompt }],
-                    temperature: 0.9,
-                    response_format: { type: 'json_object' }
-                }
+            const { data: hooksData, error: hooksError } = await invokeOpenAIProxy({
+                endpoint: 'chat/completions',
+                model: 'gpt-4o',
+                messages: [{ role: 'user', content: hookPrompt }],
+                temperature: 0.9,
+                response_format: { type: 'json_object' }
             });
 
             if (hooksError) {

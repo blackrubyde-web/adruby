@@ -1,4 +1,5 @@
 import { supabase } from '../supabaseClient';
+import { invokeOpenAIProxy } from '../api/proxyClient';
 import type { StrategicProfile } from './strategic-analyzer';
 
 /**
@@ -79,14 +80,12 @@ JSON Only.
   "bestVariantIndex": 0
 }`;
 
-    const { data, error } = await supabase.functions.invoke('openai-proxy', {
-        body: {
-            endpoint: 'chat/completions',
-            model: 'gpt-4o',
-            messages: [{ role: 'user', content: copyPrompt }],
-            temperature: 0.85, // Slightly higher for variety
-            response_format: { type: 'json_object' }
-        }
+    const { data, error } = await invokeOpenAIProxy({
+        endpoint: 'chat/completions',
+        model: 'gpt-4o',
+        messages: [{ role: 'user', content: copyPrompt }],
+        temperature: 0.85, // Slightly higher for variety
+        response_format: { type: 'json_object' }
     });
 
     if (error) {

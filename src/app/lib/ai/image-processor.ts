@@ -1,4 +1,5 @@
 import { generateBackgroundScene } from '../api/ai-image-enhancement';
+// import { invokeOpenAIProxy } from '../api/proxyClient'; // Not used directly here yet, but prepared
 
 /**
  * STAGE 5: INTELLIGENT COMPOSITING ENGINE
@@ -18,9 +19,10 @@ export interface ProcessedAssets {
 
 export async function processImage(params: {
     imageBase64?: string;
+    cutoutBase64?: string; // NEW
     productName: string;
     tone: string;
-    designVibe?: string; // From Strategic Analyzer
+    designVibe?: string;
     shouldEnhance: boolean;
 }): Promise<ProcessedAssets | undefined> {
     console.log('🖼️ Stage 5: Compositing Engine...');
@@ -30,8 +32,9 @@ export async function processImage(params: {
         return undefined;
     }
 
-    // Default: Just the product
-    const result: ProcessedAssets = { originalProduct: params.imageBase64 };
+    // Default: Use cutout if available, else original
+    const productAsset = params.cutoutBase64 || params.imageBase64;
+    const result: ProcessedAssets = { originalProduct: productAsset };
 
     // Decision: Generate Background?
     if (!params.shouldEnhance) {
@@ -45,7 +48,7 @@ export async function processImage(params: {
         // This function calls our Supabase Edge Function 'openai-proxy' (dall-e-3)
         // It prompts for a "Background texture" or "Scene" without the product.
         const bgResult = await generateBackgroundScene({
-            imageBase64: params.imageBase64, // Passed for reference/color-extraction
+            imageBase64: params.imageBase64, // Passed for reference/color-extraction (Original is better for context)
             userPrompt: `Professional ${params.tone} background for ${params.productName}, style: ${params.designVibe || 'minimalist'}`,
             productName: params.productName,
             tone: params.tone as any
@@ -54,7 +57,7 @@ export async function processImage(params: {
         console.log('✅ Background generated:', bgResult.backgroundImageUrl);
 
         return {
-            originalProduct: params.imageBase64,
+            originalProduct: productAsset, // Return the CUTOUT for the layer
             generatedBackground: bgResult.backgroundImageUrl
         };
 

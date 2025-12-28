@@ -1,4 +1,5 @@
 import { supabase } from '../supabaseClient';
+import { invokeOpenAIProxy } from '../api/proxyClient';
 
 export interface VisionScore {
     totalScore: number; // 0-100
@@ -18,16 +19,15 @@ export interface VisionScore {
  */
 export async function scoreAdQuality(imageUrl: string, context: { product: string, tone: string }): Promise<VisionScore> {
     try {
-        const { data, error } = await supabase.functions.invoke('openai-proxy', {
-            body: {
-                endpoint: 'chat/completions',
-                model: 'gpt-4o', // Capable of Vision
-                messages: [
-                    {
-                        role: 'user',
-                        content: [
-                            {
-                                type: 'text', text: `You are an elite Creative Director using the "Authentic AI" framework. 
+        const { data, error } = await invokeOpenAIProxy({
+            endpoint: 'chat/completions',
+            model: 'gpt-4o', // Capable of Vision
+            messages: [
+                {
+                    role: 'user',
+                    content: [
+                        {
+                            type: 'text', text: `You are an elite Creative Director using the "Authentic AI" framework. 
 Analyze this ad asset for product: "${context.product}". Tone: "${context.tone}".
 Return a JSON object with:
 - totalScore: 0-100
@@ -37,13 +37,12 @@ Return a JSON object with:
     - aesthetics: 0-100 (Does it look premium / authentic?)
     - safetyCheck: boolean (True = safe, False = weird artifacts/NSFW)
 - feedback: 1 sentence summary.` },
-                            { type: 'image_url', image_url: { url: imageUrl } }
-                        ]
-                    }
-                ],
-                max_tokens: 300,
-                response_format: { type: 'json_object' }
-            }
+                        { type: 'image_url', image_url: { url: imageUrl } }
+                    ]
+                }
+            ],
+            max_tokens: 300,
+            response_format: { type: 'json_object' }
         });
 
         if (error) throw error;

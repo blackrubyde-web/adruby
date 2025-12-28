@@ -40,7 +40,7 @@ export function DeepInsightsPanel({ campaign, onClose }: Props) {
     const analyzeWithAI = async () => {
         setIsAnalyzing(true);
         try {
-            const { supabase } = await import('../../lib/supabaseClient');
+            const { invokeOpenAIProxy } = await import('../../lib/api/proxyClient');
 
             // Generate a prompt based on campaign data
             const prompt = `Analyze this ad campaign:
@@ -54,16 +54,14 @@ export function DeepInsightsPanel({ campaign, onClose }: Props) {
             Provide 4-5 deep qualitative insights categorized as 'strength', 'weakness', 'opportunity', or 'threat'.
             Return JSON format: { "insights": [{ "category": "...", "title": "...", "description": "...", "impact": "high/medium/low", "actionable": true, "action": "..." }] }`;
 
-            const { data, error } = await supabase.functions.invoke('openai-proxy', {
-                body: {
-                    endpoint: 'chat/completions',
-                    model: 'gpt-4o',
-                    messages: [
-                        { role: 'system', content: 'You are a senior ad strategist. Return valid JSON only.' },
-                        { role: 'user', content: prompt }
-                    ],
-                    response_format: { type: "json_object" }
-                }
+            const { data, error } = await invokeOpenAIProxy({
+                endpoint: 'chat/completions',
+                model: 'gpt-4o',
+                messages: [
+                    { role: 'system', content: 'You are a senior ad strategist. Return valid JSON only.' },
+                    { role: 'user', content: prompt }
+                ],
+                response_format: { type: "json_object" }
             });
 
             if (error) throw error;

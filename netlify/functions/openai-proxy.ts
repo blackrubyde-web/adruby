@@ -21,10 +21,12 @@ export const handler: Handler = async (event: HandlerEvent) => {
     const SUPABASE_URL = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
     const SUPABASE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.VITE_SUPABASE_ANON_KEY;
 
+    // Check OpenAI Key
     if (!OPENAI_API_KEY) {
+        console.error('❌ Configuration Error: OPENAI_API_KEY is missing.');
         return {
             statusCode: 500,
-            body: JSON.stringify({ error: 'OpenAI API key not configured' })
+            body: JSON.stringify({ error: 'Server configuration error: OpenAI API Key missing' })
         };
     }
 
@@ -35,11 +37,12 @@ export const handler: Handler = async (event: HandlerEvent) => {
 
         // *** HANDLE IMAGE UPLOAD (Supabase Storage) ***
         if (processParams && processParams.imageUrl) {
+            // Check Supabase Config specifically for upload requests
             if (!SUPABASE_URL || !SUPABASE_KEY) {
-                console.error('Missing Supabase configuration');
+                console.error('❌ Configuration Error: Missing Supabase credentials for upload.');
                 return {
                     statusCode: 500,
-                    body: JSON.stringify({ error: 'Server storage configuration missing' })
+                    body: JSON.stringify({ error: 'Server configuration error: Storage credentials missing' })
                 };
             }
 

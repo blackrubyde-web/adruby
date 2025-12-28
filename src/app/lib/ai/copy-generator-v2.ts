@@ -1,4 +1,5 @@
 import { supabase } from '../supabaseClient';
+import { invokeOpenAIProxy } from '../api/proxyClient';
 import type { StrategicProfile } from './strategic-analyzer';
 
 /**
@@ -220,14 +221,12 @@ OUTPUT JSON:
   "reasoning": "Why this variant will convert (1 sentence)"
 }`;
 
-    const { data, error } = await supabase.functions.invoke('openai-proxy', {
-        body: {
-            endpoint: 'chat/completions',
-            model: 'gpt-4o',
-            messages: [{ role: 'user', content: prompt }],
-            temperature: 0.9, // Higher for creative variation
-            response_format: { type: 'json_object' }
-        }
+    const { data, error } = await invokeOpenAIProxy({
+        endpoint: 'chat/completions',
+        model: 'gpt-4o',
+        messages: [{ role: 'user', content: prompt }],
+        temperature: 0.9, // Higher for creative variation
+        response_format: { type: 'json_object' }
     });
 
     if (error) {
