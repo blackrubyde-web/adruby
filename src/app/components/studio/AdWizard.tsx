@@ -236,10 +236,10 @@ export const AdWizard = ({ isOpen, onClose, onComplete }: AdWizardProps) => {
         setGeneratedHooks(null);
 
         try {
-            console.log('📦 Importing premium-ad-generator...');
+            // console.log('📦 Importing premium-ad-generator...');
             // Import premium AI generator
             const { generatePremiumAd } = await import('../../lib/ai/premium-ad-generator');
-            console.log('✅ Import successful!');
+            // console.log('✅ Import successful!');
 
             const { productName, brandName, productDescription, painPoints, usps, targetAudience, offer, socialProof, tone } = formData;
 
@@ -253,10 +253,10 @@ export const AdWizard = ({ isOpen, onClose, onComplete }: AdWizardProps) => {
                 socialProof && `Proof: ${socialProof}`
             ].filter(Boolean).join('. ');
 
-            console.log('📋 Form data:', { productName, brandName, tone, userPrompt, offer, socialProof });
+            // console.log('📋 Form data:', { productName, brandName, tone, userPrompt, offer, socialProof });
 
             // RUN PREMIUM AI 5-STAGE PIPELINE
-            console.log('🚀 Starting Premium AI Pipeline...');
+            // console.log('🚀 Starting Premium AI Pipeline...');
             toast.info('Starte Premium AI Pipeline...');
 
             const result = await generatePremiumAd(
@@ -283,12 +283,12 @@ export const AdWizard = ({ isOpen, onClose, onComplete }: AdWizardProps) => {
                         'Erstelle Layout',
                         'Verarbeite Bild'
                     ];
-                    console.log(`Stage ${stage}/5: ${message}`);
+                    // console.log(`Stage ${stage}/5: ${message}`);
                     toast.info(`${stageNames[stage - 1]}...`);
                 }
             );
 
-            console.log('✅ Premium AI Ad Generated!');
+            // console.log('✅ Premium AI Ad Generated!');
             console.log('📊 Strategic Profile:', result.strategicProfile);
             console.log('✍️  Premium Copy:', result.premiumCopy);
             console.log('🎨 Template:', result.template.name);

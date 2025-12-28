@@ -19,7 +19,7 @@ interface AffiliateService {
 export function ReferralServicesWidget() {
     const [services, setServices] = useState<AffiliateService[]>([]);
     const [isLoading, setIsLoading] = useState(true);
-    const [_affiliateId, setAffiliateId] = useState<string | null>(null);
+    const [_affiliateId, _setAffiliateId] = useState<string | null>(null);
     const [showBookingModal, setShowBookingModal] = useState(false);
     const [selectedService, setSelectedService] = useState<AffiliateService | null>(null);
     const [bookingMessage, setBookingMessage] = useState('');
