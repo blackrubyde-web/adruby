@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Layers, Cuboid, Wand2, ArrowUpDown } from 'lucide-react';
+import { Layers, Cuboid, Wand2 } from 'lucide-react';
 import { LayerPanel } from './LayerPanel';
 import { AssetsPanel } from './AssetsPanel';
 import { RemixPanel, type RemixTheme } from './RemixPanel';

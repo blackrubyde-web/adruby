@@ -359,20 +359,20 @@ export const EditorLayout: React.FC<EditorLayoutProps> = ({ onClose, initialDoc,
     };
 
     // Missing handlers implemented as placeholders or calls to existing APIs
-    const handleAdaptImage = useCallback((id: string) => {
+    const handleAdaptImage = useCallback((_id: string) => {
         // Placeholder for adapt image feature
         toast.info("Adapt Image feature coming soon!");
     }, []);
 
-    const handleGenerateScene = useCallback((id: string, prompt: string, style: string) => {
+    const handleGenerateScene = useCallback((_id: string, prompt: string, _style: string) => {
         toast.info(`Generating scene with prompt: ${prompt}`);
     }, []);
 
-    const handleReplaceBackground = useCallback((id: string, prompt: string) => {
+    const handleReplaceBackground = useCallback((_id: string, prompt: string) => {
         toast.info(`Replacing background with: ${prompt}`);
     }, []);
 
-    const handleEnhanceImage = useCallback((id: string) => {
+    const handleEnhanceImage = useCallback((_id: string) => {
         toast.info("Enhancing image resolution...");
     }, []);
 
@@ -477,7 +477,7 @@ export const EditorLayout: React.FC<EditorLayoutProps> = ({ onClose, initialDoc,
                         setDoc(newDoc);
                         toast.success('Template applied successfully!');
                     }}
-                    onApplyTheme={(theme) => toast.info('Theme applied')}
+                    onApplyTheme={(_theme) => toast.info('Theme applied')}
                     onShuffleColors={() => toast.info('Colors shuffled')}
                     onResizeFormat={(fmt) => toast.info(`Resized to ${fmt}`)}
                     onGenerateVariants={handleGenerateVariants}

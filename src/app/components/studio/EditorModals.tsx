@@ -4,8 +4,8 @@ import { CanvasStage } from './CanvasStage';
 import { AdWizard } from './AdWizard';
 import { AISuggestionsPanel } from './AISuggestionsPanel';
 import { toast } from 'sonner';
-import { smartResize, FORMAT_PRESETS, type FormatPreset } from './SmartResize';
-import type { AdDocument, StudioLayer, BrandKit } from '../../types/studio';
+import { FORMAT_PRESETS, type FormatPreset } from './SmartResize';
+import type { AdDocument, BrandKit } from '../../types/studio';
 import type { AuditResult } from './PerformanceAudit';
 
 interface EditorModalsProps {

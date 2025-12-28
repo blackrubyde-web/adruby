@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, Save, Share2, ShieldCheck, Download, Undo2, Redo2, Sparkles, Palette, Maximize2, Hand, MousePointer2, Zap, PlusCircle, MoreHorizontal, Menu } from 'lucide-react';
+import { X, Save, ShieldCheck, Download, Undo2, Redo2, Sparkles, Palette, Maximize2, Zap, PlusCircle, MoreHorizontal } from 'lucide-react';
 import type { AdDocument } from '../../types/studio';
 
 interface EditorToolbarProps {
@@ -69,8 +69,8 @@ export const EditorToolbar: React.FC<EditorToolbarProps> = ({
                         onClick={onUndo}
                         disabled={historyIndex <= 0}
                         className={`px-2 h-full rounded-md transition-all ${historyIndex > 0
-                                ? 'hover:bg-background dark:hover:bg-background text-foreground'
-                                : 'text-muted-foreground/40 cursor-not-allowed'
+                            ? 'hover:bg-background dark:hover:bg-background text-foreground'
+                            : 'text-muted-foreground/40 cursor-not-allowed'
                             }`}
                         title="Rückgängig (⌘Z)"
                     >
@@ -80,8 +80,8 @@ export const EditorToolbar: React.FC<EditorToolbarProps> = ({
                         onClick={onRedo}
                         disabled={historyIndex >= historyLength - 1}
                         className={`px-2 h-full rounded-md transition-all ${historyIndex < historyLength - 1
-                                ? 'hover:bg-background dark:hover:bg-background text-foreground'
-                                : 'text-muted-foreground/40 cursor-not-allowed'
+                            ? 'hover:bg-background dark:hover:bg-background text-foreground'
+                            : 'text-muted-foreground/40 cursor-not-allowed'
                             }`}
                         title="Wiederholen (⌘⇧Z)"
                     >
@@ -97,8 +97,8 @@ export const EditorToolbar: React.FC<EditorToolbarProps> = ({
                     <button
                         onClick={() => setIsMultiverseMode(!isMultiverseMode)}
                         className={`px-3 h-full text-[10px] font-bold rounded-md transition-all ${isMultiverseMode
-                                ? 'bg-indigo-600 text-white shadow-sm'
-                                : 'text-muted-foreground hover:text-foreground'
+                            ? 'bg-indigo-600 text-white shadow-sm'
+                            : 'text-muted-foreground hover:text-foreground'
                             }`}
                     >
                         Multiverse
@@ -109,8 +109,8 @@ export const EditorToolbar: React.FC<EditorToolbarProps> = ({
                             if (!isPreviewMode) setIsMultiverseMode(false);
                         }}
                         className={`px-3 h-full text-[10px] font-bold rounded-md transition-all ${isPreviewMode
-                                ? 'bg-primary text-primary-foreground shadow-sm'
-                                : 'text-muted-foreground hover:text-foreground'
+                            ? 'bg-primary text-primary-foreground shadow-sm'
+                            : 'text-muted-foreground hover:text-foreground'
                             }`}
                     >
                         Mockup
@@ -136,8 +136,8 @@ export const EditorToolbar: React.FC<EditorToolbarProps> = ({
                 <button
                     onClick={onToggleSuggestions}
                     className={`flex items-center gap-2 px-3 h-9 text-xs font-bold rounded-lg transition-all ${showSuggestions
-                            ? 'bg-violet-500 text-white'
-                            : 'bg-muted dark:bg-muted hover:bg-muted/80 dark:hover:bg-muted/80 text-foreground border border-border'
+                        ? 'bg-violet-500 text-white'
+                        : 'bg-muted dark:bg-muted hover:bg-muted/80 dark:hover:bg-muted/80 text-foreground border border-border'
                         }`}
                 >
                     <Zap className={`w-4 h-4 ${showSuggestions ? 'text-white' : 'text-violet-500'}`} />
