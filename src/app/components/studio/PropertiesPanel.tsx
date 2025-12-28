@@ -1,6 +1,6 @@
-import { useState } from 'react';
+import { useState, type ComponentType, type ReactNode } from 'react';
 import { Type, Image as ImageIcon, LayoutTemplate, Sparkles, Hash, AlignLeft, AlignCenter, AlignRight, Bold, Italic, ChevronDown, ChevronUp, Wand2, X } from 'lucide-react';
-import type { StudioLayer, TextLayer, ImageLayer } from '../../types/studio';
+import type { StudioLayer, TextLayer, ImageLayer, CtaLayer, ShapeLayer } from '../../types/studio';
 
 interface PropertiesPanelProps {
     layer?: StudioLayer;
@@ -31,10 +31,28 @@ const SCENE_PRESETS = [
     { id: 'minimal', label: '⬜ Minimal', prompt: 'Weißer Hintergrund, saubere Schatten' },
 ];
 
-export const PropertiesPanel = ({ layer, onChange, onGenerate, onAdapt, onGenerateScene, onReplaceBackground, onEnhanceImage }: PropertiesPanelProps) => {
+type SectionId = 'content' | 'style' | 'position';
+type TextLikeLayer = TextLayer | CtaLayer;
+
+const isTextLayer = (layer: StudioLayer): layer is TextLayer => layer.type === 'text';
+const isCtaLayer = (layer: StudioLayer): layer is CtaLayer => layer.type === 'cta';
+const isTextLikeLayer = (layer: StudioLayer): layer is TextLikeLayer => isTextLayer(layer) || isCtaLayer(layer);
+const isImageLayer = (layer: StudioLayer): layer is ImageLayer =>
+    layer.type === 'product' || layer.type === 'background' || layer.type === 'overlay';
+const isShapeLayer = (layer: StudioLayer): layer is ShapeLayer => layer.type === 'shape';
+
+const isBoldWeight = (weight: TextLikeLayer['fontWeight'] | undefined) => {
+    if (typeof weight === 'number') return weight >= 700;
+    if (!weight) return false;
+    const numeric = Number(weight);
+    if (Number.isFinite(numeric)) return numeric >= 700;
+    return weight === 'bold';
+};
+
+export const PropertiesPanel = ({ layer, onChange, onGenerate, onAdapt: _onAdapt, onGenerateScene, onReplaceBackground: _onReplaceBackground, onEnhanceImage }: PropertiesPanelProps) => {
     const [showAIModal, setShowAIModal] = useState(false);
     const [isProcessing, setIsProcessing] = useState(false);
-    const [expandedSection, setExpandedSection] = useState<'content' | 'style' | 'position' | null>('content');
+    const [expandedSection, setExpandedSection] = useState<SectionId | null>('content');
 
     if (!layer) {
         return (
@@ -48,8 +66,8 @@ export const PropertiesPanel = ({ layer, onChange, onGenerate, onAdapt, onGenera
         );
     }
 
-    const handleChange = (key: string, value: any) => {
-        onChange?.(layer.id, { [key]: value });
+    const handleChange = <K extends keyof StudioLayer>(key: K, value: StudioLayer[K]) => {
+        onChange?.(layer.id, { [key]: value } as Partial<StudioLayer>);
     };
 
     const applyStylePreset = (preset: typeof STYLE_PRESETS.text[0]) => {
@@ -60,12 +78,14 @@ export const PropertiesPanel = ({ layer, onChange, onGenerate, onAdapt, onGenera
         });
     };
 
-    const handleAIAction = async (action: string, data?: any) => {
+    const handleAIAction = async (action: 'scene' | 'cutout' | 'rewrite' | 'enhance', data?: { prompt: string }) => {
         setIsProcessing(true);
         try {
             switch (action) {
                 case 'scene':
-                    await onGenerateScene?.(layer.id, data.prompt, 'product');
+                    if (data?.prompt) {
+                        await onGenerateScene?.(layer.id, data.prompt, 'product');
+                    }
                     break;
                 case 'cutout':
                     await onGenerate?.(layer.id, 'bg');
@@ -83,11 +103,36 @@ export const PropertiesPanel = ({ layer, onChange, onGenerate, onAdapt, onGenera
         }
     };
 
-    const isText = layer.type === 'text' || layer.type === 'cta';
-    const isImage = layer.type === 'product' || layer.type === 'background' || layer.type === 'overlay';
-    const isShape = layer.type === 'shape';
+    const textLayer = isTextLikeLayer(layer) ? layer : null;
+    const imageLayer = isImageLayer(layer) ? layer : null;
+    const shapeLayer = isShapeLayer(layer) ? layer : null;
 
-    const Section = ({ id, title, icon: Icon, children }: { id: 'content' | 'style' | 'position', title: string, icon: any, children: React.ReactNode }) => (
+    const isText = textLayer !== null;
+    const isImage = imageLayer !== null;
+    const isShape = shapeLayer !== null;
+
+    const textValue = textLayer?.text ?? '';
+    const textFontFamily = textLayer?.fontFamily ?? FONTS[0];
+    const textFontSize = textLayer?.fontSize ?? 16;
+    const textFontWeight = textLayer?.fontWeight;
+    const textIsBold = isBoldWeight(textFontWeight);
+    const textFontStyle = textLayer?.fontStyle ?? 'normal';
+    const textAlign = isTextLayer(layer) ? layer.align : undefined;
+    const textColor = isTextLayer(layer)
+        ? layer.color ?? layer.fill ?? '#000000'
+        : textLayer?.color ?? '#000000';
+    const shapeFill = shapeLayer?.fill ?? '#000000';
+    const shapeCornerRadius = shapeLayer?.cornerRadius ?? 0;
+    const imageOpacity = imageLayer?.opacity ?? layer.opacity;
+
+    const positionFields: Array<{ key: 'x' | 'y' | 'width' | 'height'; label: string }> = [
+        { key: 'x', label: 'X' },
+        { key: 'y', label: 'Y' },
+        { key: 'width', label: 'Breite' },
+        { key: 'height', label: 'Höhe' },
+    ];
+
+    const Section = ({ id, title, icon: Icon, children }: { id: SectionId; title: string; icon: ComponentType<{ className?: string }>; children: ReactNode }) => (
         <div className="border-b border-border/50 last:border-0">
             <button
                 onClick={() => setExpandedSection(expandedSection === id ? null : id)}
@@ -145,7 +190,7 @@ export const PropertiesPanel = ({ layer, onChange, onGenerate, onAdapt, onGenera
                     {isText && (
                         <textarea
                             className="w-full bg-muted/30 border border-border rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 resize-none min-h-[100px]"
-                            value={(layer as any).text}
+                            value={textValue}
                             onChange={(e) => handleChange('text', e.target.value)}
                             placeholder="Text eingeben..."
                         />
@@ -207,7 +252,7 @@ export const PropertiesPanel = ({ layer, onChange, onGenerate, onAdapt, onGenera
                             <div className="space-y-3 pt-2">
                                 <select
                                     className="w-full bg-muted/50 border border-border rounded-xl px-3 py-2.5 text-sm"
-                                    value={(layer as any).fontFamily}
+                                    value={textFontFamily}
                                     onChange={(e) => handleChange('fontFamily', e.target.value)}
                                 >
                                     {FONTS.map(f => <option key={f} value={f}>{f}</option>)}
@@ -219,7 +264,7 @@ export const PropertiesPanel = ({ layer, onChange, onGenerate, onAdapt, onGenera
                                             <button
                                                 key={align}
                                                 onClick={() => handleChange('align', align)}
-                                                className={`flex-1 p-2 rounded-lg transition-all ${(layer as any).align === align ? 'bg-background shadow-sm text-primary' : 'text-muted-foreground'}`}
+                                                className={`flex-1 p-2 rounded-lg transition-all ${textAlign === align ? 'bg-background shadow-sm text-primary' : 'text-muted-foreground'}`}
                                             >
                                                 {align === 'left' && <AlignLeft className="w-4 h-4 mx-auto" />}
                                                 {align === 'center' && <AlignCenter className="w-4 h-4 mx-auto" />}
@@ -229,14 +274,14 @@ export const PropertiesPanel = ({ layer, onChange, onGenerate, onAdapt, onGenera
                                     </div>
                                     <div className="flex bg-muted rounded-xl p-1">
                                         <button
-                                            onClick={() => handleChange('fontWeight', (layer as any).fontWeight >= 700 ? 400 : 700)}
-                                            className={`p-2 rounded-lg transition-all ${(layer as any).fontWeight >= 700 ? 'bg-background shadow-sm text-primary' : 'text-muted-foreground'}`}
+                                            onClick={() => handleChange('fontWeight', textIsBold ? 400 : 700)}
+                                            className={`p-2 rounded-lg transition-all ${textIsBold ? 'bg-background shadow-sm text-primary' : 'text-muted-foreground'}`}
                                         >
                                             <Bold className="w-4 h-4" />
                                         </button>
                                         <button
-                                            onClick={() => handleChange('fontStyle', (layer as any).fontStyle === 'italic' ? 'normal' : 'italic')}
-                                            className={`p-2 rounded-lg transition-all ${(layer as any).fontStyle === 'italic' ? 'bg-background shadow-sm text-primary' : 'text-muted-foreground'}`}
+                                            onClick={() => handleChange('fontStyle', textFontStyle === 'italic' ? 'normal' : 'italic')}
+                                            className={`p-2 rounded-lg transition-all ${textFontStyle === 'italic' ? 'bg-background shadow-sm text-primary' : 'text-muted-foreground'}`}
                                         >
                                             <Italic className="w-4 h-4" />
                                         </button>
@@ -246,14 +291,14 @@ export const PropertiesPanel = ({ layer, onChange, onGenerate, onAdapt, onGenera
                                 <div className="space-y-1">
                                     <div className="flex justify-between text-[10px]">
                                         <span className="text-muted-foreground font-bold uppercase">Größe</span>
-                                        <span className="font-mono text-primary">{(layer as any).fontSize}px</span>
+                                        <span className="font-mono text-primary">{textFontSize}px</span>
                                     </div>
-                                    <input type="range" min="12" max="200" value={(layer as any).fontSize} onChange={(e) => handleChange('fontSize', parseInt(e.target.value))} className="w-full accent-primary h-2 rounded-full" />
+                                    <input type="range" min="12" max="200" value={textFontSize} onChange={(e) => handleChange('fontSize', parseInt(e.target.value))} className="w-full accent-primary h-2 rounded-full" />
                                 </div>
 
                                 <div className="flex items-center gap-3">
-                                    <input type="color" value={(layer as any).color} onChange={(e) => handleChange('color', e.target.value)} className="w-10 h-10 rounded-lg border-2 border-border cursor-pointer" />
-                                    <span className="text-xs font-mono text-muted-foreground">{(layer as any).color}</span>
+                                    <input type="color" value={textColor} onChange={(e) => handleChange('color', e.target.value)} className="w-10 h-10 rounded-lg border-2 border-border cursor-pointer" />
+                                    <span className="text-xs font-mono text-muted-foreground">{textColor}</span>
                                 </div>
                             </div>
                         </>
@@ -265,20 +310,20 @@ export const PropertiesPanel = ({ layer, onChange, onGenerate, onAdapt, onGenera
                             <div className="space-y-1">
                                 <label className="text-[10px] font-bold text-muted-foreground uppercase">Füllfarbe</label>
                                 <div className="flex items-center gap-3">
-                                    <input type="color" value={(layer as any).fill} onChange={(e) => handleChange('fill', e.target.value)} className="w-full h-10 rounded-lg border-2 border-border cursor-pointer" />
+                                    <input type="color" value={shapeFill} onChange={(e) => handleChange('fill', e.target.value)} className="w-full h-10 rounded-lg border-2 border-border cursor-pointer" />
                                 </div>
                             </div>
 
                             <div className="space-y-1">
                                 <div className="flex justify-between text-[10px]">
                                     <span className="text-muted-foreground font-bold uppercase">Abrundung</span>
-                                    <span className="font-mono text-primary">{(layer as any).cornerRadius || 0}px</span>
+                                    <span className="font-mono text-primary">{shapeCornerRadius}px</span>
                                 </div>
                                 <input
                                     type="range"
                                     min="0"
                                     max="100"
-                                    value={(layer as any).cornerRadius || 0}
+                                    value={shapeCornerRadius}
                                     onChange={(e) => handleChange('cornerRadius', parseInt(e.target.value))}
                                     className="w-full accent-primary h-2 rounded-full"
                                 />
@@ -292,9 +337,9 @@ export const PropertiesPanel = ({ layer, onChange, onGenerate, onAdapt, onGenera
                             <div className="space-y-1">
                                 <div className="flex justify-between text-[10px]">
                                     <span className="text-muted-foreground font-bold uppercase">Deckkraft</span>
-                                    <span className="font-mono text-primary">{Math.round(layer.opacity * 100)}%</span>
+                                    <span className="font-mono text-primary">{Math.round(imageOpacity * 100)}%</span>
                                 </div>
-                                <input type="range" min="0" max="1" step="0.05" value={layer.opacity} onChange={(e) => handleChange('opacity', parseFloat(e.target.value))} className="w-full accent-primary h-2 rounded-full" />
+                                <input type="range" min="0" max="1" step="0.05" value={imageOpacity} onChange={(e) => handleChange('opacity', parseFloat(e.target.value))} className="w-full accent-primary h-2 rounded-full" />
                             </div>
                         </div>
                     )}
@@ -303,13 +348,13 @@ export const PropertiesPanel = ({ layer, onChange, onGenerate, onAdapt, onGenera
                 {/* SECTION 3: Position */}
                 <Section id="position" title="Position" icon={Hash}>
                     <div className="grid grid-cols-2 gap-3">
-                        {[{ key: 'x', label: 'X' }, { key: 'y', label: 'Y' }, { key: 'width', label: 'Breite' }, { key: 'height', label: 'Höhe' }].map(({ key, label }) => (
+                        {positionFields.map(({ key, label }) => (
                             <div key={key} className="space-y-1">
                                 <label className="text-[10px] font-bold text-muted-foreground uppercase">{label}</label>
                                 <input
                                     type="number"
                                     className="w-full bg-muted/30 border border-border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-primary/20"
-                                    value={Math.round((layer as any)[key])}
+                                    value={Math.round(layer[key])}
                                     onChange={(e) => handleChange(key, parseInt(e.target.value) || 0)}
                                 />
                             </div>
