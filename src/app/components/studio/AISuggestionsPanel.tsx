@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Lightbulb, AlertTriangle, Sparkles, Check, X, Loader2, ChevronRight, Zap } from 'lucide-react';
 import type { AdDocument } from '../../types/studio';
 
@@ -25,13 +25,7 @@ export const AISuggestionsPanel = ({ document, isVisible, onApplySuggestion, onC
     const [isLoading, setIsLoading] = useState(false);
     const [appliedIds, setAppliedIds] = useState<Set<string>>(new Set());
 
-    useEffect(() => {
-        if (isVisible && document) {
-            fetchSuggestions();
-        }
-    }, [isVisible, document]);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    const fetchSuggestions = async () => {
+    const fetchSuggestions = useCallback(async () => {
         if (!document) return;
 
         setIsLoading(true);
@@ -94,7 +88,13 @@ export const AISuggestionsPanel = ({ document, isVisible, onApplySuggestion, onC
         } finally {
             setIsLoading(false);
         }
-    };
+    }, [document]);
+
+    useEffect(() => {
+        if (isVisible && document) {
+            fetchSuggestions();
+        }
+    }, [isVisible, document, fetchSuggestions]);
 
     const handleApply = (suggestion: Suggestion) => {
         setAppliedIds(prev => new Set([...prev, suggestion.id]));
@@ -156,8 +156,8 @@ export const AISuggestionsPanel = ({ document, isVisible, onApplySuggestion, onC
                             <div
                                 key={suggestion.id}
                                 className={`p-3 rounded-xl border transition-all ${appliedIds.has(suggestion.id)
-                                        ? 'bg-green-500/10 border-green-500/30 opacity-60'
-                                        : getTypeColor(suggestion.type)
+                                    ? 'bg-green-500/10 border-green-500/30 opacity-60'
+                                    : getTypeColor(suggestion.type)
                                     }`}
                             >
                                 <div className="flex items-start gap-3">
@@ -183,8 +183,8 @@ export const AISuggestionsPanel = ({ document, isVisible, onApplySuggestion, onC
                                         )}
                                     </div>
                                     <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${suggestion.priority >= 4 ? 'bg-red-500/20 text-red-500' :
-                                            suggestion.priority >= 2 ? 'bg-amber-500/20 text-amber-600' :
-                                                'bg-muted text-muted-foreground'
+                                        suggestion.priority >= 2 ? 'bg-amber-500/20 text-amber-600' :
+                                            'bg-muted text-muted-foreground'
                                         }`}>
                                         P{suggestion.priority}
                                     </span>

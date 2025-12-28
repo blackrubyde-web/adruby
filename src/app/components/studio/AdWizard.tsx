@@ -2,7 +2,7 @@ import { useState, useRef, useCallback, useEffect } from 'react';
 import { supabase } from '../../lib/supabaseClient';
 import { Upload, Sparkles, ArrowRight, X, Wand2, Check, Zap, Image as Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
-import { _AD_TEMPLATES } from './presets';
+import { AD_TEMPLATES } from './presets';
 import type { AdDocument, StudioLayer } from '../../types/studio';
 import { enhanceProductImage } from '../../lib/api/ai-image-enhancement';
 import { removeBackground, blobToBase64 } from '../../lib/ai/bg-removal';
@@ -90,7 +90,7 @@ export const AdWizard = ({ isOpen, onClose, onComplete }: AdWizardProps) => {
                         setShowResumeDialog(true);
                     }
                 } catch (e) {
-                    // console.log('Invalid draft found');
+                    // log('Invalid draft found');
                 }
             }
         }
@@ -196,7 +196,7 @@ export const AdWizard = ({ isOpen, onClose, onComplete }: AdWizardProps) => {
             toast.success('Hintergrund erfolgreich entfernt! ✂️');
 
         } catch (error) {
-            console.error('BG Removal Error:', error);
+            // console.error('BG Removal Error:', error);
             toast.error('Hintergrund-Entfernung fehlgeschlagen');
         } finally {
             setIsRemovingBg(false);
@@ -236,10 +236,8 @@ export const AdWizard = ({ isOpen, onClose, onComplete }: AdWizardProps) => {
         setGeneratedHooks(null);
 
         try {
-            // console.log('📦 Importing premium-ad-generator...');
             // Import premium AI generator
             const { generatePremiumAd } = await import('../../lib/ai/premium-ad-generator');
-            // console.log('✅ Import successful!');
 
             const { productName, brandName, productDescription, painPoints, usps, targetAudience, offer, socialProof, tone } = formData;
 
@@ -274,7 +272,7 @@ export const AdWizard = ({ isOpen, onClose, onComplete }: AdWizardProps) => {
                         painPoints: painPoints ? [painPoints] : undefined
                     }
                 },
-                (stage, message) => {
+                (stage: number, _message: string) => {
                     // Progress callback
                     const stageNames = [
                         'Analysiere Strategie',
@@ -289,9 +287,11 @@ export const AdWizard = ({ isOpen, onClose, onComplete }: AdWizardProps) => {
             );
 
             // console.log('✅ Premium AI Ad Generated!');
+            /*
             console.log('📊 Strategic Profile:', result.strategicProfile);
             console.log('✍️  Premium Copy:', result.premiumCopy);
             console.log('🎨 Template:', result.template.name);
+            */
 
             // Set generated document
             setGeneratedDoc(result.adDocument);
@@ -306,18 +306,18 @@ export const AdWizard = ({ isOpen, onClose, onComplete }: AdWizardProps) => {
             toast.success('Premium Ad erstellt! 🎉');
 
         } catch (error: any) {
-            console.error('❌ Premium AI generation failed:', error);
-            console.error('Error stack:', error.stack);
+            // console.error('❌ Premium AI generation failed:', error);
+            // console.error('Error stack:', error.stack);
             toast.error(`Generierung fehlgeschlagen: ${error.message || 'Unbekannter Fehler'}`);
         } finally {
             setIsGenerating(false);
             setLoadingStep('idle');
-            console.log('🏁 Generation finished');
+            // console.log('🏁 Generation finished');
         }
     };
 
     // Fallback: Basic generation (old logic)
-    const handleBasicGenerate = async () => {
+    const _handleBasicGenerate = async () => {
         setIsGenerating(true);
         setLoadingStep('image');
 
@@ -326,7 +326,7 @@ export const AdWizard = ({ isOpen, onClose, onComplete }: AdWizardProps) => {
             let finalImage = uploadedImage;
 
             if (uploadedImage && formData.imageEnhancementPrompt.trim()) {
-                console.log('🎨 Starting PREMIUM AI image enhancement...');
+                // console.log('🎨 Starting PREMIUM AI image enhancement...');
                 toast.info('Analysiere Bild...');
 
                 try {
@@ -339,9 +339,9 @@ export const AdWizard = ({ isOpen, onClose, onComplete }: AdWizardProps) => {
                     });
 
                     finalImage = enhancementResult.enhancedImageUrl;
-                    console.log('✅ Premium image generated:', enhancementResult.analysisNotes);
+                    // console.log('✅ Premium image generated:', enhancementResult.analysisNotes);
                 } catch (imageError: any) {
-                    console.error('Image enhancement failed:', imageError);
+                    // console.error('Image enhancement failed:', imageError);
                     toast.warning('Bild-Verbesserung übersprungen. Nutze Original-Bild.');
                     // Continue with original image instead of failing completely
                 }
@@ -350,7 +350,7 @@ export const AdWizard = ({ isOpen, onClose, onComplete }: AdWizardProps) => {
             // HOOK GENERATION - Premium Ad Copy
             setLoadingStep('hooks');
 
-            console.log('✍️ Generating premium ad hooks...');
+            // console.log('✍️ Generating premium ad hooks...');
             toast.info('Generiere Premium Hooks...');
 
             const hookPrompt = `You are an ELITE copywriter for premium advertising. Generate high-converting ad copy.
@@ -389,7 +389,7 @@ Generate this EXACT JSON structure:
             });
 
             if (hooksError) {
-                console.error('Hook generation error:', hooksError);
+                // console.error('Hook generation error:', hooksError);
                 throw new Error(hooksError.message || 'Hook generation failed');
             }
 
@@ -401,7 +401,7 @@ Generate this EXACT JSON structure:
             }
 
             setGeneratedHooks(hooks);
-            console.log('✅ Premium hooks generated:', hooks.headlines.length, 'headlines');
+            // console.log('✅ Premium hooks generated:', hooks.headlines.length, 'headlines');
 
             // CREATE AD DOCUMENT
             setLoadingStep('creating');
@@ -545,7 +545,7 @@ Generate this EXACT JSON structure:
             setStep(4); // Go to preview instead of directly to canvas
             // Parent (StudioPage) handles view transition after preview
         } catch (error) {
-            console.error('❌ Ad generation failed:', error);
+            // console.error('❌ Ad generation failed:', error);
             setIsGenerating(false);
             setLoadingStep('idle');
 

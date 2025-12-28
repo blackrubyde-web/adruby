@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Card } from '../layout';
-import { Zap, Activity, Clock, AlertTriangle, TrendingUp, TrendingDown, PowerOff, Shield } from 'lucide-react';
+import { Zap, Activity, Clock, TrendingUp, TrendingDown, PowerOff, Shield } from 'lucide-react';
 import { supabase } from '../../lib/supabaseClient';
 
 type Log = {

@@ -2,7 +2,7 @@ import { memo, useState } from 'react';
 import { Handle, Position } from '@xyflow/react';
 import { Target, Plus, Copy, DollarSign, Sparkles } from 'lucide-react';
 import { useCampaignCanvas } from '../CampaignCanvasContext';
-import type { CampaignNodeData } from '../types';
+import type { CampaignNodeData, AdSetNodeData } from '../types';
 
 const OBJECTIVE_LABELS: Record<string, { emoji: string; label: string; gradient: string }> = {
     CONVERSIONS: { emoji: '🎯', label: 'Conversions', gradient: 'from-orange-500 to-red-500' },
@@ -19,7 +19,7 @@ export const CampaignNode = memo(function CampaignNode({ id, data, selected }: {
     const [isHovered, setIsHovered] = useState(false);
 
     // Count child ad sets
-    const adSetCount = nodes.filter(n => n.data.type === 'adset' && (n.data as CampaignNodeData).parentId === id).length;
+    const adSetCount = nodes.filter(n => n.data.type === 'adset' && (n.data as AdSetNodeData).parentId === id).length;
 
     // Check for warnings on this node
     const hasWarning = aiAnalysis?.warnings.some(w => w.affectedNodes.includes(id));
@@ -31,12 +31,12 @@ export const CampaignNode = memo(function CampaignNode({ id, data, selected }: {
         <div
             data-id={id}
             className={`min-w-[320px] rounded-2xl overflow-hidden transition-all duration-300 ${selected
-                    ? 'ring-2 ring-primary ring-offset-2 ring-offset-zinc-900 shadow-2xl shadow-primary/30 scale-[1.02]'
-                    : hasError
-                        ? 'ring-2 ring-red-500/50'
-                        : hasWarning
-                            ? 'ring-2 ring-yellow-500/50'
-                            : 'hover:scale-[1.01]'
+                ? 'ring-2 ring-primary ring-offset-2 ring-offset-zinc-900 shadow-2xl shadow-primary/30 scale-[1.02]'
+                : hasError
+                    ? 'ring-2 ring-red-500/50'
+                    : hasWarning
+                        ? 'ring-2 ring-yellow-500/50'
+                        : 'hover:scale-[1.01]'
                 }`}
             style={{
                 background: 'linear-gradient(135deg, rgba(99, 102, 241, 0.15) 0%, rgba(139, 92, 246, 0.15) 100%)',
@@ -77,8 +77,8 @@ export const CampaignNode = memo(function CampaignNode({ id, data, selected }: {
                     {/* AI Score badge */}
                     {aiAnalysis && (
                         <div className={`px-2 py-1 rounded-lg text-[10px] font-bold ${aiAnalysis.score >= 80 ? 'bg-green-500/30 text-green-200' :
-                                aiAnalysis.score >= 60 ? 'bg-yellow-500/30 text-yellow-200' :
-                                    'bg-red-500/30 text-red-200'
+                            aiAnalysis.score >= 60 ? 'bg-yellow-500/30 text-yellow-200' :
+                                'bg-red-500/30 text-red-200'
                             }`}>
                             <Sparkles className="w-3 h-3 inline mr-1" />
                             {aiAnalysis.score}
@@ -139,8 +139,8 @@ export const CampaignNode = memo(function CampaignNode({ id, data, selected }: {
             {/* Error/Warning indicator */}
             {(hasError || hasWarning) && (
                 <div className={`px-4 py-2.5 text-xs font-semibold flex items-center gap-2 ${hasError
-                        ? 'bg-gradient-to-r from-red-500/20 to-red-600/20 text-red-300 border-t border-red-500/20'
-                        : 'bg-gradient-to-r from-yellow-500/20 to-orange-500/20 text-yellow-300 border-t border-yellow-500/20'
+                    ? 'bg-gradient-to-r from-red-500/20 to-red-600/20 text-red-300 border-t border-red-500/20'
+                    : 'bg-gradient-to-r from-yellow-500/20 to-orange-500/20 text-yellow-300 border-t border-yellow-500/20'
                     }`}>
                     <span className="w-2 h-2 rounded-full animate-pulse" style={{ background: hasError ? '#ef4444' : '#eab308' }} />
                     {hasError ? 'Fehler beheben erforderlich' : 'Optimierung möglich'}
