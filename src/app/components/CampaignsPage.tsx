@@ -6,7 +6,7 @@ import { useMetaCampaigns } from '../hooks/useMetaCampaigns';
 import { applyMetaAction, type MetaApplyAction } from '../lib/api/meta';
 import { useMetaConnection } from '../hooks/useMetaConnection';
 import { supabase } from '../lib/supabaseClient';
-import { AdRubyAutopilot, type AutopilotConfig } from '../lib/ai/ai-autopilot'; // Import Autopilot
+import { AdRubyAutopilot } from '../lib/ai/ai-autopilot'; // Import Autopilot
 
 type StatusFilter = 'all' | 'active' | 'paused' | 'completed';
 
@@ -22,7 +22,7 @@ export function CampaignsPage() {
   const [autopilotEnabled, setAutopilotEnabled] = useState(false);
   const [optimizationScore, setOptimizationScore] = useState(92); // Fake initial score
   const [autopilotActions, setAutopilotActions] = useState<string[]>([]);
-  const autopilot = useMemo(() => new AdRubyAutopilot(supabase), []);
+  const _autopilot = useMemo(() => new AdRubyAutopilot(supabase), []);
 
   useEffect(() => {
     setCampaignRows(campaigns);

@@ -221,7 +221,7 @@ function applySafeZone(
     spec: FormatSpec
 ): StudioLayer[] {
     return layers.map(layer => {
-        let adjusted = { ...layer };
+        const adjusted = { ...layer };
 
         // Check if layer is in top safe zone
         if (layer.y < spec.safezone.top && layer.type === 'text') {

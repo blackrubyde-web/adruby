@@ -366,7 +366,7 @@ const AIAnalysisPanel = memo(function AIAnalysisPanel() {
                     </div>
 
                     {/* Warnings */}
-                    {aiAnalysis.warnings.map((warning) => (
+                    {aiAnalysis.warnings.map((warning: any) => (
                         <div
                             key={warning.id}
                             className={`p-2 rounded-lg text-xs flex items-start gap-2 ${warning.severity === 'error' ? 'bg-red-500/10 text-red-400' :
@@ -385,7 +385,7 @@ const AIAnalysisPanel = memo(function AIAnalysisPanel() {
                     ))}
 
                     {/* Suggestions */}
-                    {aiAnalysis.suggestions.map((suggestion) => (
+                    {aiAnalysis.suggestions.map((suggestion: any) => (
                         <div key={suggestion.id} className="p-2 rounded-lg bg-purple-500/10 text-xs">
                             <div className="flex items-center gap-2 text-purple-400 font-medium mb-1">
                                 <CheckCircle2 className="w-3.5 h-3.5" />
