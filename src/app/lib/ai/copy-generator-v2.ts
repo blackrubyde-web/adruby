@@ -258,15 +258,19 @@ OUTPUT JSON:
 /**
  * Fallback variant if AI generation fails
  */
-function createFallbackVariant(hookAngle: HookAngle, params: any): CopyVariant {
+function createFallbackVariant(hookAngle: HookAngle, params: unknown): CopyVariant {
+    const p = params as {
+        productName: string;
+        groundedFacts?: { offer?: string; proof?: string };
+    };
     return {
         id: `fallback_${hookAngle}`,
         hookAngle,
-        headline: `${params.productName} - Premium Quality`,
+        headline: `${p.productName} - Premium Quality`,
         subheadline: 'The solution you\'ve been looking for',
-        description: params.groundedFacts?.offer || 'Get the best results today',
+        description: p.groundedFacts?.offer || 'Get the best results today',
         cta: 'Shop Now',
-        socialProof: params.groundedFacts?.proof,
+        socialProof: p.groundedFacts?.proof,
         score: { clarity: 50, punchiness: 50, emotional: 50, total: 50 },
         reasoning: 'Fallback variant due to generation error'
     };

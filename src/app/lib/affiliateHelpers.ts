@@ -36,9 +36,9 @@ export async function fetchAffiliateEarnings(
         return generateMockEarnings(days);
     }
 
-    return data.map((d: any) => ({
+    return data.map((d: EarningsData) => ({
         date: new Date(d.date).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit' }),
-        earnings: parseFloat(d.earnings) || 0,
+        earnings: Number(d.earnings) || 0,
         referrals_count: d.referrals_count || 0,
         conversions_count: d.conversions_count || 0
     }));

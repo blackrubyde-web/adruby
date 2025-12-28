@@ -664,14 +664,16 @@ export function AdsStrategiesPage() {
     toast.success(`Ad ${newStatus === 'active' ? 'activated' : 'paused'}`);
   };
 
-  const handleCreateMasterStrategy = async (data: {
-    name: string;
-    industry_type: string;
-    target_roas: number;
-    max_daily_budget: number;
-    scale_speed: string;
-    risk_tolerance: string
-  }) => {
+  const handleCreateMasterStrategy = async (rawStrategy: Record<string, unknown>) => {
+    // Cast to expected type - validation handled by Wizard
+    const data = rawStrategy as unknown as {
+      name: string;
+      industry_type: string;
+      target_roas: number;
+      max_daily_budget: number;
+      scale_speed: string;
+      risk_tolerance: string
+    };
     try {
       const { error } = await supabase.from('strategy_blueprints').insert({
         title: data.name,

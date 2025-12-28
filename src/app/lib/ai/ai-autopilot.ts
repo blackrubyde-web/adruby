@@ -31,7 +31,7 @@ export class AdRubyAutopilot {
     /**
      * Run the optimization loop for a specific user's campaigns
      */
-    async optimizeAccount(userId: string) {
+    async optimizeAccount(_userId: string) {
         // 1. Fetch active campaigns
         // 2. Analyze metrics vs user goals
         // 3. Execute actions (Pause, Scale, Bid Adjust)
