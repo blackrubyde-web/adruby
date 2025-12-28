@@ -1,4 +1,4 @@
-import type { AdDocument, StudioLayer } from '../../types/studio';
+import type { AdDocument, CtaLayer, TextLayer } from '../../types/studio';
 
 export interface AuditResult {
     score: number;
@@ -16,9 +16,9 @@ export const performAudit = (doc: AdDocument): AuditResult => {
     };
 
     const layers = doc.layers;
-    const cta = layers.find(l => l.type === 'cta');
-    const headline = layers.find(l => l.type === 'text' && (l as any).fontSize > 50);
-    const product = layers.find(l => l.type === 'product');
+    const cta = layers.find((layer): layer is CtaLayer => layer.type === 'cta');
+    const headline = layers.find((layer): layer is TextLayer => layer.type === 'text' && layer.fontSize > 50);
+    const product = layers.find(layer => layer.type === 'product');
 
     // --- 1. CTA Check ---
     if (!cta) {
@@ -26,7 +26,7 @@ export const performAudit = (doc: AdDocument): AuditResult => {
         result.criticalIssues.push("Missing CTA: An ad without a clear Call-To-Action lacks conversion potential.");
     } else {
         result.positives.push("Clear CTA present: Helps guide the user's next step.");
-        if ((cta as any).width < 200) {
+        if (cta.width < 200) {
             result.score -= 5;
             result.improvements.push("Small CTA: Increase button size for better thumb-reach on mobile.");
         }
@@ -37,7 +37,7 @@ export const performAudit = (doc: AdDocument): AuditResult => {
         result.score -= 15;
         result.improvements.push("No clear Headline: A strong value proposition is missing.");
     } else {
-        const text = (headline as any).text || "";
+        const text = headline.text || "";
         if (text.length > 40) {
             result.score -= 10;
             result.improvements.push("Long Headline: Short, punchy copy performs 40% better on Meta.");

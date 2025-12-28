@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { X, Save, ShieldCheck, Download, Undo2, Redo2, Sparkles, Palette, Maximize2, Zap, PlusCircle, MoreHorizontal } from 'lucide-react';
 import type { AdDocument } from '../../types/studio';
 
@@ -29,8 +29,8 @@ interface EditorToolbarProps {
 export const EditorToolbar: React.FC<EditorToolbarProps> = ({
     doc,
     onClose,
-    activeTool,
-    setActiveTool,
+    activeTool: _activeTool,
+    setActiveTool: _setActiveTool,
     isMultiverseMode,
     setIsMultiverseMode,
     isPreviewMode,

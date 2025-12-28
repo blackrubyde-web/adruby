@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Type, Image as ImageIcon, LayoutTemplate, Sparkles, Hash, AlignLeft, AlignCenter, AlignRight, Bold, Italic, Loader2, ChevronDown, ChevronUp, Wand2, X } from 'lucide-react';
+import { Type, Image as ImageIcon, LayoutTemplate, Sparkles, Hash, AlignLeft, AlignCenter, AlignRight, Bold, Italic, ChevronDown, ChevronUp, Wand2, X } from 'lucide-react';
 import type { StudioLayer, TextLayer, ImageLayer } from '../../types/studio';
 
 interface PropertiesPanelProps {

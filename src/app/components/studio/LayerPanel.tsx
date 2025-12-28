@@ -1,4 +1,4 @@
-import React, { useRef } from 'react';
+import { useRef } from 'react';
 import { Eye, EyeOff, Lock, Unlock, GripVertical, Image as ImageIcon, Type, Layers, Trash2, Copy, Sparkles, LayoutTemplate } from 'lucide-react';
 import type { StudioLayer } from '../../types/studio';
 import { useDrag, useDrop } from 'react-dnd';
@@ -71,7 +71,8 @@ const SortableLayer = ({ layer, index, selectedId, moveLayer, onSelect, onToggle
             const hoverBoundingRect = ref.current?.getBoundingClientRect();
             const hoverMiddleY = (hoverBoundingRect.bottom - hoverBoundingRect.top) / 2;
             const clientOffset = monitor.getClientOffset();
-            const hoverClientY = (clientOffset as any).y - hoverBoundingRect.top;
+            if (!clientOffset) return;
+            const hoverClientY = clientOffset.y - hoverBoundingRect.top;
 
             if (dragIndex < hoverIndex && hoverClientY < hoverMiddleY) return;
             if (dragIndex > hoverIndex && hoverClientY > hoverMiddleY) return;
@@ -177,7 +178,7 @@ const SortableLayer = ({ layer, index, selectedId, moveLayer, onSelect, onToggle
     );
 };
 
-export const LayerPanel = ({ layers, selectedId, onSelect, onToggleVisibility, onToggleLock, onGenerate, onDelete, onDuplicate, onReorder }: LayerPanelProps) => {
+export const LayerPanel = ({ layers, selectedId, onSelect, onToggleVisibility, onToggleLock, onGenerate: _onGenerate, onDelete, onDuplicate, onReorder }: LayerPanelProps) => {
     const displayLayers = [...layers].sort((a, b) => (b.zIndex || 0) - (a.zIndex || 0));
 
     return (
