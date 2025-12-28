@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { toast } from 'sonner';
 import { v4 as uuidv4 } from 'uuid';
-import { useNavigate } from 'react-router-dom';
+// import { useNavigate } from 'react-router-dom';
 
 // Icons & UI
 // (Most icons moved to sub-components, checking if any needed here)
@@ -12,7 +12,8 @@ import type { AuditResult } from './PerformanceAudit';
 import { performAudit } from './PerformanceAudit';
 
 // API & Utils
-import { creativeGenerate } from '../../lib/api/creative';
+// import { creativeGenerate } from '../../lib/api/creative';
+import type { CanvasStageHandle } from './CanvasStage';
 import { smartResize, type FormatPreset } from './SmartResize';
 
 // Sub-components
@@ -139,8 +140,8 @@ export const EditorLayout: React.FC<EditorLayoutProps> = ({ onClose, initialDoc,
     // --- State ---
     const [doc, setDoc] = useState<AdDocument>(initialDoc || MOCK_DOC);
     const [selectedLayerId, setSelectedLayerId] = useState<string | undefined>(undefined);
-    const [activeTab, setActiveTab] = useState<'layers' | 'assets' | 'remix'>('layers');
-    const [scale, setScale] = useState(0.45);
+    const [_activeTab, _setActiveTab] = useState<'layers' | 'assets' | 'remix'>('layers');
+    const [scale, _setScale] = useState(0.45);
     const [history, setHistory] = useState<AdDocument[]>([initialDoc || MOCK_DOC]);
     const [historyIndex, setHistoryIndex] = useState(0);
 
@@ -149,7 +150,7 @@ export const EditorLayout: React.FC<EditorLayoutProps> = ({ onClose, initialDoc,
     const [isMultiverseOpen, setIsMultiverseOpen] = useState(false);
     const [isMockupView, setIsMockupView] = useState(false);
     const [viewPos, setViewPos] = useState({ x: 0, y: 0 });
-    const canvasRef = useRef<any>(null);
+    const canvasRef = useRef<CanvasStageHandle>(null);
     const [mockupType, setMockupType] = useState<'feed' | 'story'>('feed');
 
     // Modals
@@ -167,7 +168,23 @@ export const EditorLayout: React.FC<EditorLayoutProps> = ({ onClose, initialDoc,
 
     // Process States
     const [isGeneratingAd, setIsGeneratingAd] = useState(false);
-    const [isSaving, setIsSaving] = useState(false);
+    const [_isSaving, setIsSaving] = useState(false);
+
+    // --- Handlers (Moved up for useEffect dependency) ---
+
+    const handleUndo = useCallback(() => {
+        if (historyIndex > 0) {
+            setHistoryIndex(historyIndex - 1);
+            setDoc(history[historyIndex - 1]);
+        }
+    }, [history, historyIndex]);
+
+    const handleRedo = useCallback(() => {
+        if (historyIndex < history.length - 1) {
+            setHistoryIndex(historyIndex + 1);
+            setDoc(history[historyIndex + 1]);
+        }
+    }, [history, historyIndex]);
 
     // --- Effects ---
     // Update history when doc changes
@@ -179,7 +196,7 @@ export const EditorLayout: React.FC<EditorLayoutProps> = ({ onClose, initialDoc,
             setHistory(newHistory);
             setHistoryIndex(newHistory.length - 1);
         }
-    }, [doc]);
+    }, [doc, history, historyIndex]);
 
     // Sync initialDoc if provided (and different)
     useEffect(() => {
@@ -209,24 +226,9 @@ export const EditorLayout: React.FC<EditorLayoutProps> = ({ onClose, initialDoc,
         };
         window.addEventListener('keydown', handleKeyDown);
         return () => window.removeEventListener('keydown', handleKeyDown);
-    }, [selectedLayerId, historyIndex]);
+    }, [selectedLayerId, historyIndex, handleRedo, handleUndo]);
 
 
-    // --- Handlers ---
-
-    const handleUndo = () => {
-        if (historyIndex > 0) {
-            setHistoryIndex(historyIndex - 1);
-            setDoc(history[historyIndex - 1]);
-        }
-    };
-
-    const handleRedo = () => {
-        if (historyIndex < history.length - 1) {
-            setHistoryIndex(historyIndex + 1);
-            setDoc(history[historyIndex + 1]);
-        }
-    };
 
     const handleLayerUpdate = (layerId: string, attrs: Partial<StudioLayer>) => {
         setDoc(prev => ({
@@ -235,9 +237,6 @@ export const EditorLayout: React.FC<EditorLayoutProps> = ({ onClose, initialDoc,
         }));
     };
 
-    const handleLayerReorder = (newLayers: StudioLayer[]) => {
-        setDoc(prev => ({ ...prev, layers: newLayers }));
-    };
 
     const handleLayerSelect = (layerId?: string) => {
         setSelectedLayerId(layerId);
