@@ -30,7 +30,7 @@ export const AISuggestionsPanel = ({ document, isVisible, onApplySuggestion, onC
             fetchSuggestions();
         }
     }, [isVisible, document]);
-
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     const fetchSuggestions = async () => {
         if (!document) return;
 

@@ -13,7 +13,7 @@ type Log = {
 };
 
 // Map action types to visual styles
-const ACTION_CONFIG: Record<string, { icon: any, color: string, label: string }> = {
+const ACTION_CONFIG: Record<string, { icon: React.ComponentType<{ className?: string }>, color: string, label: string }> = {
     'SOFT_KILL': { icon: Shield, color: 'text-red-500', label: 'Safety Kill' },
     'HARD_STOP': { icon: PowerOff, color: 'text-red-500', label: 'Stop Loss' },
     'FATIGUE_THROTTLE': { icon: TrendingDown, color: 'text-orange-500', label: 'Fatigue Protection' },

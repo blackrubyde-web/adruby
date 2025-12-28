@@ -47,7 +47,7 @@ export function ReferralServicesWidget() {
                 return; // Not a referral, don't show widget
             }
 
-            set_affiliateId(profileData.referred_by_affiliate_id);
+            _setAffiliateId(profileData.referred_by_affiliate_id);
 
             // Load affiliate's active services
             const { data: servicesData, error: servicesError } = await supabase

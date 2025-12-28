@@ -1,8 +1,8 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
 import { supabase } from '../../lib/supabaseClient';
-import { Upload, Sparkles, ArrowRight, X, Wand2, Check, Zap, Image as ImageIcon, Loader2 } from 'lucide-react';
+import { Upload, Sparkles, ArrowRight, X, Wand2, Check, Zap, Image as Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
-import { AD_TEMPLATES } from './presets';
+import { _AD_TEMPLATES } from './presets';
 import type { AdDocument, StudioLayer } from '../../types/studio';
 import { enhanceProductImage } from '../../lib/api/ai-image-enhancement';
 import { removeBackground, blobToBase64 } from '../../lib/ai/bg-removal';
@@ -90,7 +90,7 @@ export const AdWizard = ({ isOpen, onClose, onComplete }: AdWizardProps) => {
                         setShowResumeDialog(true);
                     }
                 } catch (e) {
-                    console.log('Invalid draft found');
+                    // console.log('Invalid draft found');
                 }
             }
         }
@@ -220,7 +220,7 @@ export const AdWizard = ({ isOpen, onClose, onComplete }: AdWizardProps) => {
     };
 
     const handleGenerate = async () => {
-        console.log('🎯 handleGenerate called!'); // DEBUG
+        // console.log('🎯 handleGenerate called!'); // DEBUG
 
         // Basic validation - ensure product name exists
         if (!formData.productName.trim()) {
@@ -229,7 +229,7 @@ export const AdWizard = ({ isOpen, onClose, onComplete }: AdWizardProps) => {
             return;
         }
 
-        console.log('✅ Validation passed, starting generation...');
+        // console.log('✅ Validation passed, starting generation...');
         setIsGenerating(true);
         setLoadingStep('hooks');
         setGeneratedDoc(null);
