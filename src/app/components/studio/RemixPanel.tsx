@@ -1,4 +1,3 @@
-import React from 'react';
 import { Wand2, Palette, RefreshCw, LayoutTemplate } from 'lucide-react';
 
 export type RemixTheme = {

@@ -191,7 +191,7 @@ export const PropertiesPanel = ({ layer, onChange, onGenerate, onAdapt: _onAdapt
                         <textarea
                             className="w-full bg-muted/30 border border-border rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 resize-none min-h-[100px]"
                             value={textValue}
-                            onChange={(e) => handleChange('text', e.target.value)}
+                            onChange={(e) => handleChange('text' as any, e.target.value)}
                             placeholder="Text eingeben..."
                         />
                     )}
@@ -253,7 +253,7 @@ export const PropertiesPanel = ({ layer, onChange, onGenerate, onAdapt: _onAdapt
                                 <select
                                     className="w-full bg-muted/50 border border-border rounded-xl px-3 py-2.5 text-sm"
                                     value={textFontFamily}
-                                    onChange={(e) => handleChange('fontFamily', e.target.value)}
+                                    onChange={(e) => handleChange('fontFamily' as any, e.target.value)}
                                 >
                                     {FONTS.map(f => <option key={f} value={f}>{f}</option>)}
                                 </select>
@@ -263,7 +263,7 @@ export const PropertiesPanel = ({ layer, onChange, onGenerate, onAdapt: _onAdapt
                                         {(['left', 'center', 'right'] as const).map(align => (
                                             <button
                                                 key={align}
-                                                onClick={() => handleChange('align', align)}
+                                                onClick={() => handleChange('align' as any, align)}
                                                 className={`flex-1 p-2 rounded-lg transition-all ${textAlign === align ? 'bg-background shadow-sm text-primary' : 'text-muted-foreground'}`}
                                             >
                                                 {align === 'left' && <AlignLeft className="w-4 h-4 mx-auto" />}
@@ -274,13 +274,13 @@ export const PropertiesPanel = ({ layer, onChange, onGenerate, onAdapt: _onAdapt
                                     </div>
                                     <div className="flex bg-muted rounded-xl p-1">
                                         <button
-                                            onClick={() => handleChange('fontWeight', textIsBold ? 400 : 700)}
+                                            onClick={() => handleChange('fontWeight' as any, textIsBold ? 400 : 700)}
                                             className={`p-2 rounded-lg transition-all ${textIsBold ? 'bg-background shadow-sm text-primary' : 'text-muted-foreground'}`}
                                         >
                                             <Bold className="w-4 h-4" />
                                         </button>
                                         <button
-                                            onClick={() => handleChange('fontStyle', textFontStyle === 'italic' ? 'normal' : 'italic')}
+                                            onClick={() => handleChange('fontStyle' as any, textFontStyle === 'italic' ? 'normal' : 'italic')}
                                             className={`p-2 rounded-lg transition-all ${textFontStyle === 'italic' ? 'bg-background shadow-sm text-primary' : 'text-muted-foreground'}`}
                                         >
                                             <Italic className="w-4 h-4" />
@@ -293,11 +293,11 @@ export const PropertiesPanel = ({ layer, onChange, onGenerate, onAdapt: _onAdapt
                                         <span className="text-muted-foreground font-bold uppercase">Größe</span>
                                         <span className="font-mono text-primary">{textFontSize}px</span>
                                     </div>
-                                    <input type="range" min="12" max="200" value={textFontSize} onChange={(e) => handleChange('fontSize', parseInt(e.target.value))} className="w-full accent-primary h-2 rounded-full" />
+                                    <input type="range" min="12" max="200" value={textFontSize} onChange={(e) => handleChange('fontSize' as any, parseInt(e.target.value))} className="w-full accent-primary h-2 rounded-full" />
                                 </div>
 
                                 <div className="flex items-center gap-3">
-                                    <input type="color" value={textColor} onChange={(e) => handleChange('color', e.target.value)} className="w-10 h-10 rounded-lg border-2 border-border cursor-pointer" />
+                                    <input type="color" value={textColor} onChange={(e) => handleChange('color' as any, e.target.value)} className="w-10 h-10 rounded-lg border-2 border-border cursor-pointer" />
                                     <span className="text-xs font-mono text-muted-foreground">{textColor}</span>
                                 </div>
                             </div>
@@ -310,7 +310,7 @@ export const PropertiesPanel = ({ layer, onChange, onGenerate, onAdapt: _onAdapt
                             <div className="space-y-1">
                                 <label className="text-[10px] font-bold text-muted-foreground uppercase">Füllfarbe</label>
                                 <div className="flex items-center gap-3">
-                                    <input type="color" value={shapeFill} onChange={(e) => handleChange('fill', e.target.value)} className="w-full h-10 rounded-lg border-2 border-border cursor-pointer" />
+                                    <input type="color" value={shapeFill} onChange={(e) => handleChange('fill' as any, e.target.value)} className="w-full h-10 rounded-lg border-2 border-border cursor-pointer" />
                                 </div>
                             </div>
 
@@ -324,7 +324,7 @@ export const PropertiesPanel = ({ layer, onChange, onGenerate, onAdapt: _onAdapt
                                     min="0"
                                     max="100"
                                     value={shapeCornerRadius}
-                                    onChange={(e) => handleChange('cornerRadius', parseInt(e.target.value))}
+                                    onChange={(e) => handleChange('cornerRadius' as any, parseInt(e.target.value))}
                                     className="w-full accent-primary h-2 rounded-full"
                                 />
                             </div>

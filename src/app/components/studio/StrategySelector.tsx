@@ -1,7 +1,12 @@
-import React, { useMemo } from 'react';
-import { Card } from '../layout';
+import { useMemo } from 'react';
 import { CheckCircle2, TrendingUp, Shield, DollarSign, Zap, Plus, Settings2 } from 'lucide-react';
 import { StrategyBlueprint } from '../../hooks/useStrategies';
+
+interface StrategyConfig {
+    scale_speed: 'aggressive' | 'standard' | 'conservative';
+    risk_tolerance: 'low' | 'medium' | 'high';
+    target_roas: number;
+}
 
 interface StrategySelectorProps {
     strategies: StrategyBlueprint[];
@@ -24,8 +29,8 @@ export function StrategySelector({
         // 1. Prioritize recommended goal
         // 2. Prioritize enabled autopilot
         return [...strategies].sort((a, b) => {
-            const aConfig = a.metadata?.autopilot_config as any;
-            const bConfig = b.metadata?.autopilot_config as any;
+            const aConfig = a.metadata?.autopilot_config as unknown as StrategyConfig;
+            const bConfig = b.metadata?.autopilot_config as unknown as StrategyConfig;
 
             const aIsMatch = isGoalMatch(aConfig, recommendedGoal);
             const bIsMatch = isGoalMatch(bConfig, recommendedGoal);
@@ -36,7 +41,7 @@ export function StrategySelector({
         });
     }, [strategies, recommendedGoal]);
 
-    function isGoalMatch(config: any, goal: string) {
+    function isGoalMatch(config: StrategyConfig, goal: string) {
         if (!config) return false;
         if (goal === 'scaling' && config.scale_speed === 'aggressive') return true;
         if (goal === 'testing' && config.risk_tolerance === 'low') return true;
@@ -44,7 +49,7 @@ export function StrategySelector({
         return false;
     }
 
-    const getStrategyIcon = (config: any) => {
+    const getStrategyIcon = (config: StrategyConfig) => {
         if (!config) return <Settings2 className="w-5 h-5 text-gray-400" />;
         if (config.scale_speed === 'aggressive') return <Zap className="w-5 h-5 text-orange-500" />;
         if (config.risk_tolerance === 'low') return <Shield className="w-5 h-5 text-green-500" />;
@@ -70,7 +75,7 @@ export function StrategySelector({
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 {sortedStrategies.map((strategy) => {
                     const isSelected = selectedId === strategy.id;
-                    const config = strategy.metadata?.autopilot_config as any;
+                    const config = strategy.metadata?.autopilot_config as unknown as StrategyConfig;
                     const isRecommended = isGoalMatch(config, recommendedGoal);
 
                     return (

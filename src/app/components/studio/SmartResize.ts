@@ -54,7 +54,7 @@ export function smartResize(doc: AdDocument, targetFormat: FormatPreset): AdDocu
     // Sort layers by importance
     const sortedLayers = [...doc.layers].sort((a, b) => getLayerImportance(b) - getLayerImportance(a));
 
-    const newLayers = sortedLayers.map((layer, idx) => {
+    const newLayers = sortedLayers.map((layer) => {
         const importance = getLayerImportance(layer);
 
         // Calculate new dimensions
