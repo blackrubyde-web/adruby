@@ -1,4 +1,3 @@
-```typescript
 import { memo, useState } from 'react';
 import { Handle, Position } from '@xyflow/react';
 import { Layers, Plus, Trash2, Users, MapPin, Copy, Target, Zap } from 'lucide-react';
@@ -43,15 +42,14 @@ export const AdSetNode = memo(function AdSetNode({ id, data, selected }: { id: s
     return (
         <div
             data-id={id}
-            className={`min - w - [280px] rounded - 2xl overflow - hidden transition - all duration - 300 ${
-    isDragOver
-        ? 'ring-2 ring-green-500 scale-105 shadow-2xl shadow-green-500/30'
-        : selected
-            ? 'ring-2 ring-primary ring-offset-2 ring-offset-zinc-900 shadow-xl shadow-primary/20 scale-[1.02]'
-            : hasWarning
-                ? 'ring-2 ring-yellow-500/50'
-                : 'hover:scale-[1.01]'
-} `}
+            className={`min-w-[280px] rounded-2xl overflow-hidden transition-all duration-300 ${isDragOver
+                    ? 'ring-2 ring-green-500 scale-105 shadow-2xl shadow-green-500/30'
+                    : selected
+                        ? 'ring-2 ring-primary ring-offset-2 ring-offset-zinc-900 shadow-xl shadow-primary/20 scale-[1.02]'
+                        : hasWarning
+                            ? 'ring-2 ring-yellow-500/50'
+                            : 'hover:scale-[1.01]'
+                } `}
             style={{
                 background: 'linear-gradient(135deg, rgba(59, 130, 246, 0.12) 0%, rgba(99, 102, 241, 0.12) 100%)',
                 backdropFilter: 'blur(12px)',
@@ -136,11 +134,10 @@ export const AdSetNode = memo(function AdSetNode({ id, data, selected }: { id: s
 
                 {/* Ad count badge */}
                 <div className="flex items-center justify-between">
-                    <span className={`text - xs font - semibold px - 3 py - 1.5 rounded - full ${
-    adCount === 0
-    ? 'bg-yellow-500/20 text-yellow-300 border border-yellow-500/20'
-    : 'bg-green-500/20 text-green-300 border border-green-500/20'
-} `}>
+                    <span className={`text-xs font-semibold px-3 py-1.5 rounded-full ${adCount === 0
+                            ? 'bg-yellow-500/20 text-yellow-300 border border-yellow-500/20'
+                            : 'bg-green-500/20 text-green-300 border border-green-500/20'
+                        } `}>
                         {adCount} Ad{adCount !== 1 ? 's' : ''}
                     </span>
                 </div>
