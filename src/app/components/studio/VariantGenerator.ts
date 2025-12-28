@@ -1,5 +1,5 @@
 
-import type { AdDocument, StudioLayer } from '../../types/studio';
+import type { AdDocument } from '../../types/studio';
 import { REMIX_THEMES } from './RemixPanel';
 
 /**
@@ -57,9 +57,9 @@ export const generateVariants = (baseDoc: AdDocument): AdDocument[] => {
     boldVariant.name = "Variant C: Maximalist";
 
     boldVariant.layers = boldVariant.layers.map(layer => {
-        if (layer.type === 'text' && (layer as any).fontSize) {
+        if (layer.type === 'text' && 'fontSize' in layer && layer.fontSize) {
             // Increase font size by 20%
-            return { ...layer, fontSize: (layer as any).fontSize * 1.2, fontWeight: 900 };
+            return { ...layer, fontSize: layer.fontSize * 1.2, fontWeight: 900 };
         }
         if (layer.type === 'cta') {
             // Make button huge

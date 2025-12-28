@@ -7,7 +7,7 @@ import { RiskToleranceSlider } from './RiskToleranceSlider';
 import { ArrowRight, ArrowLeft, Target, Briefcase, Zap, Check } from 'lucide-react';
 
 interface StrategyWizardProps {
-    onComplete: (strategy: any) => void;
+    onComplete: (strategy: Record<string, unknown>) => void;
     onCancel: () => void;
 }
 
@@ -124,11 +124,11 @@ export function StrategyWizard({ onComplete, onCancel }: StrategyWizardProps) {
                                 scaleSpeed={data.scale_speed}
                                 onChange={(val) => {
                                     // Auto-map risk to speed for simplicity in wizard
-                                    const speedMap = { low: 'slow', medium: 'medium', high: 'aggressive' };
+                                    const speedMap: Record<string, 'slow' | 'medium' | 'fast' | 'aggressive'> = { low: 'slow', medium: 'medium', high: 'aggressive' };
                                     setData({
                                         ...data,
                                         risk_tolerance: val,
-                                        scale_speed: speedMap[val] as any
+                                        scale_speed: speedMap[val]
                                     });
                                 }}
                             />

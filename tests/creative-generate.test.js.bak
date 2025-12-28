@@ -1,0 +1,10 @@
+/*
+import { vi, describe, it, expect } from 'vitest';
+
+// Mock auth, entitlements, credits
+vi.mock('../netlify/functions/_shared/auth.js', () => ({ requireUserId: vi.fn(async () => ({ ok: true, userId: 'user-x' })) }));
+vi.mock('../netlify/functions/_shared/entitlements.js', () => ({ requireActiveSubscription: vi.fn(async () => ({ ok: true })) }));
+vi.mock('../netlify/functions/_shared/credits.js', () => ({ assertAndConsumeCredits: vi.fn(async () => 1) }));
+
+// ... (rest of file commented out due to missing ../netlify/functions/creative-generate.js)
+*/

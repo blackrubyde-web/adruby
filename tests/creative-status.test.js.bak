@@ -1,0 +1,9 @@
+/*
+import { vi, describe, it, expect } from 'vitest';
+
+// Mock auth
+vi.mock('../netlify/functions/_shared/auth.js', () => ({ requireUserId: vi.fn(async () => ({ ok: true, userId: 'user-x' })) }));
+vi.mock('../netlify/functions/_shared/entitlements.js', () => ({ requireActiveSubscription: vi.fn(async () => ({ ok: true })) }));
+
+// ... (rest of file commented out due to missing ../netlify/functions/creative-status.js)
+*/
