@@ -19,7 +19,7 @@ export const CampaignNode = memo(function CampaignNode({ id, data, selected }: {
     const [isHovered, setIsHovered] = useState(false);
 
     // Count child ad sets
-    const adSetCount = nodes.filter(n => n.data.type === 'adset' && (n.data as any).parentId === id).length;
+    const adSetCount = nodes.filter(n => n.data.type === 'adset' && (n.data as CampaignNodeData).parentId === id).length;
 
     // Check for warnings on this node
     const hasWarning = aiAnalysis?.warnings.some(w => w.affectedNodes.includes(id));

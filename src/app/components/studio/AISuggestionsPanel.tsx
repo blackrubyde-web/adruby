@@ -10,7 +10,7 @@ interface Suggestion {
     description: string;
     priority: number;
     autoFixAvailable: boolean;
-    autoFixAction?: Record<string, any>;
+    autoFixAction?: Record<string, unknown>;
 }
 
 interface AISuggestionsPanelProps {

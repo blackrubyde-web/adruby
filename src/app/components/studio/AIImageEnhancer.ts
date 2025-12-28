@@ -150,7 +150,7 @@ export async function enhanceImage(request: ImageEnhanceRequest): Promise<AIImag
 }
 
 // Mock images for demo/fallback purposes
-function getMockSceneImage(style: string): string {
+function _getMockSceneImage(style: string): string {
     const scenes: Record<string, string> = {
         product: 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=1080&auto=format&fit=crop',
         lifestyle: 'https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?w=1080&auto=format&fit=crop',
@@ -160,7 +160,7 @@ function getMockSceneImage(style: string): string {
     return scenes[style] || scenes.product;
 }
 
-function getMockBackgroundImage(prompt: string): string {
+function _getMockBackgroundImage(prompt: string): string {
     // Return contextual mock based on keywords
     const promptLower = prompt.toLowerCase();
     if (promptLower.includes('marble') || promptLower.includes('luxury')) {

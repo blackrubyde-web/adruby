@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { MessageSquare, Star, Loader2, Send } from 'lucide-react';
+import { Star, Loader2, Send } from 'lucide-react';
 import { supabase } from '../../lib/supabaseClient';
 import { toast } from 'sonner';
 
@@ -19,7 +19,7 @@ interface AffiliateService {
 export function ReferralServicesWidget() {
     const [services, setServices] = useState<AffiliateService[]>([]);
     const [isLoading, setIsLoading] = useState(true);
-    const [affiliateId, setAffiliateId] = useState<string | null>(null);
+    const [_affiliateId, setAffiliateId] = useState<string | null>(null);
     const [showBookingModal, setShowBookingModal] = useState(false);
     const [selectedService, setSelectedService] = useState<AffiliateService | null>(null);
     const [bookingMessage, setBookingMessage] = useState('');
@@ -47,7 +47,7 @@ export function ReferralServicesWidget() {
                 return; // Not a referral, don't show widget
             }
 
-            setAffiliateId(profileData.referred_by_affiliate_id);
+            set_affiliateId(profileData.referred_by_affiliate_id);
 
             // Load affiliate's active services
             const { data: servicesData, error: servicesError } = await supabase
@@ -61,7 +61,7 @@ export function ReferralServicesWidget() {
 
             if (servicesError) throw servicesError;
 
-            const formattedServices = (servicesData || []).map((s: any) => ({
+            const formattedServices = (servicesData || []).map((s) => ({
                 id: s.id,
                 title: s.title,
                 description: s.description,
