@@ -2,8 +2,7 @@ import { useState, useRef, useCallback, useEffect } from 'react';
 import { supabase } from '../../lib/supabaseClient';
 import { Upload, Sparkles, ArrowRight, X, Wand2, Check, Zap, Image as Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
-import { AD_TEMPLATES } from './presets';
-import type { AdDocument, StudioLayer } from '../../types/studio';
+import type { AdDocument, StudioLayer, ImageLayer, TextLayer, CtaLayer } from '../../types/studio';
 import { enhanceProductImage } from '../../lib/api/ai-image-enhancement';
 import { removeBackground, blobToBase64 } from '../../lib/ai/bg-removal';
 
@@ -287,11 +286,6 @@ export const AdWizard = ({ isOpen, onClose, onComplete }: AdWizardProps) => {
             );
 
             // console.log('✅ Premium AI Ad Generated!');
-            /*
-            console.log('📊 Strategic Profile:', result.strategicProfile);
-            console.log('✍️  Premium Copy:', result.premiumCopy);
-            console.log('🎨 Template:', result.template.name);
-            */
 
             // Set generated document
             setGeneratedDoc(result.adDocument);
@@ -305,10 +299,11 @@ export const AdWizard = ({ isOpen, onClose, onComplete }: AdWizardProps) => {
 
             toast.success('Premium Ad erstellt! 🎉');
 
-        } catch (error: any) {
-            // console.error('❌ Premium AI generation failed:', error);
-            // console.error('Error stack:', error.stack);
-            toast.error(`Generierung fehlgeschlagen: ${error.message || 'Unbekannter Fehler'}`);
+        } catch (error: unknown) {
+            const err = error as Error;
+            // console.error('❌ Premium AI generation failed:', err);
+            // console.error('Error stack:', err.stack);
+            toast.error(`Generierung fehlgeschlagen: ${err.message || 'Unbekannter Fehler'}`);
         } finally {
             setIsGenerating(false);
             setLoadingStep('idle');
@@ -340,8 +335,9 @@ export const AdWizard = ({ isOpen, onClose, onComplete }: AdWizardProps) => {
 
                     finalImage = enhancementResult.enhancedImageUrl;
                     // console.log('✅ Premium image generated:', enhancementResult.analysisNotes);
-                } catch (imageError: any) {
-                    // console.error('Image enhancement failed:', imageError);
+                } catch (imageError: unknown) {
+                    // const err = imageError as Error;
+                    // console.error('Image enhancement failed:', err);
                     toast.warning('Bild-Verbesserung übersprungen. Nutze Original-Bild.');
                     // Continue with original image instead of failing completely
                 }
@@ -407,7 +403,7 @@ Generate this EXACT JSON structure:
             setLoadingStep('creating');
             toast.info('Erstelle Ad...');
             // Create ad document
-            const selectedTone = TONE_OPTIONS.find(t => t.id === formData.tone);
+            const _selectedTone = TONE_OPTIONS.find(t => t.id === formData.tone);
             const doc: AdDocument = {
                 id: `ad-${Date.now()}`,
                 name: `${formData.brandName || formData.productName} Ad`,
@@ -537,7 +533,7 @@ Generate this EXACT JSON structure:
                         shadowBlur: 15,
                         shadowOffsetY: 5
                     }
-                ] as any as StudioLayer[]
+                ] as StudioLayer[]
             };
 
             setGeneratedDoc(doc);
@@ -964,35 +960,41 @@ Generate this EXACT JSON structure:
                                     <div className="aspect-square rounded-2xl overflow-hidden border-2 border-border shadow-2xl relative" style={{ backgroundColor: generatedDoc.backgroundColor }}>
                                         {/* Render Image Layers First */}
                                         {generatedDoc.layers
-                                            .filter(l => (l.type === 'product' || l.type === 'background') && (l as any).src)
-                                            .map((layer: any) => (
-                                                <img
-                                                    key={layer.id}
-                                                    src={layer.src}
-                                                    alt={layer.name}
-                                                    className="absolute"
+                                            .filter(l => (l.type === 'product' || l.type === 'background') && (l as ImageLayer).src)
+                                            .map((layer) => {
+                                                const imgLayer = layer as ImageLayer;
+                                                return (
+                                                    <img
+                                                        key={imgLayer.id}
+                                                        src={imgLayer.src}
+                                                        alt={imgLayer.name}
+                                                        className="absolute"
+                                                        style={{
+                                                            left: `${(imgLayer.x / generatedDoc.width) * 100}%`,
+                                                            top: `${(imgLayer.y / generatedDoc.height) * 100}%`,
+                                                            width: `${(imgLayer.width / generatedDoc.width) * 100}%`,
+                                                            height: `${(imgLayer.height / generatedDoc.height) * 100}%`,
+                                                            objectFit: imgLayer.type === 'background' ? 'cover' : 'contain',
+                                                            opacity: imgLayer.opacity,
+                                                            transform: `rotate(${imgLayer.rotation}deg)`
+                                                        }}
+                                                    />
+                                                );
+                                            })}
+                                        {/* Overlay Layer if exists */}
+                                        {generatedDoc.layers.filter(l => l.type === 'overlay').map((layer: unknown) => {
+                                            const overlayLayer = layer as ImageLayer;
+                                            return (
+                                                <div
+                                                    key={overlayLayer.id}
+                                                    className="absolute inset-0 pointer-events-none"
                                                     style={{
-                                                        left: `${(layer.x / generatedDoc.width) * 100}%`,
-                                                        top: `${(layer.y / generatedDoc.height) * 100}%`,
-                                                        width: `${(layer.width / generatedDoc.width) * 100}%`,
-                                                        height: `${(layer.height / generatedDoc.height) * 100}%`,
-                                                        objectFit: layer.type === 'background' ? 'cover' : 'contain',
-                                                        opacity: layer.opacity,
-                                                        transform: `rotate(${layer.rotation}deg)`
+                                                        backgroundColor: (overlayLayer as unknown as { fill: string }).fill,
+                                                        opacity: overlayLayer.opacity
                                                     }}
                                                 />
-                                            ))}
-                                        {/* Overlay Layer if exists */}
-                                        {generatedDoc.layers.filter(l => l.type === 'overlay').map((layer: any) => (
-                                            <div
-                                                key={layer.id}
-                                                className="absolute inset-0 pointer-events-none"
-                                                style={{
-                                                    backgroundColor: layer.fill,
-                                                    opacity: layer.opacity
-                                                }}
-                                            />
-                                        ))}
+                                            );
+                                        })}
 
                                         <div className="relative w-full h-full p-16 flex flex-col z-20">
                                             {/* Headline */}
@@ -1202,8 +1204,6 @@ Generate this EXACT JSON structure:
                     ) : (
                         <button
                             onClick={() => {
-                                console.log('🔴 BUTTON CLICKED! Step 4 Generate Button');
-                                console.log('Button state:', { isGenerating, step, hasProductName: !!formData.productName });
                                 handleGenerate();
                             }}
                             disabled={isGenerating}
