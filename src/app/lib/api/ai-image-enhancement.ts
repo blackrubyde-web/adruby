@@ -267,35 +267,18 @@ export async function enhanceProductImage(req: EnhancementRequest): Promise<Enha
     // We use 'openai-proxy' because it's already deployed and we merged the logic there
     console.log('💾 Uploading to Supabase Storage (Server-side)...');
 
-    // Switch to Netlify Function (Reliable Deployment)
-    // The previous Edge Function (openai-proxy) had deployment sync issues.
-    // Netlify Functions are deployed automatically with 'npm run build'.
-    const response = await fetch('/api/process-image', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
+    // Unified AI Service (Supabase Edge Function)
+    const { data: uploadData, error: uploadError } = await supabase.functions.invoke('openai-proxy', {
+        body: {
             processParams: {
                 imageUrl: openAIImageUrl,
                 productName: req.productName,
-                userId: (await supabase.auth.getUser()).data.user?.id
+                // userId is handled by the Auth context in the Edge Function now
             }
-        })
+        }
     });
 
-    if (!response.ok) {
-        let errorMessage = 'Unknown error';
-        try {
-            const errorData = await response.json();
-            errorMessage = errorData.error || errorData.message || response.statusText;
-        } catch (e) {
-            errorMessage = response.statusText;
-        }
-        throw new Error(`Backend image processing failed: ${errorMessage}`);
-    }
-
-    const uploadData = await response.json();
+    if (uploadError) throw new Error(uploadError.message || 'Image upload failed');
 
     if (!uploadData?.publicUrl) {
         throw new Error('Backend did not return public URL');
@@ -326,20 +309,19 @@ export async function generateBackgroundScene(req: EnhancementRequest): Promise<
     const openAIImageUrl = await generateWithDALLE3(bgPrompt);
 
     // 3. Upload
-    const response = await fetch('/api/process-image', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
+    // 3. Upload via Unified Service
+    const { data: uploadData, error: uploadError } = await supabase.functions.invoke('openai-proxy', {
+        body: {
             processParams: {
                 imageUrl: openAIImageUrl,
                 productName: `${req.productName}-bg`,
-                userId: (await supabase.auth.getUser()).data.user?.id
             }
-        })
+        }
     });
 
-    if (!response.ok) throw new Error('Backend bg upload failed');
-    const uploadData = await response.json();
+    if (uploadError) throw new Error(uploadError.message || 'Background upload failed');
+
+    if (!uploadData?.publicUrl) throw new Error('Backend did not return public URL');
 
     return {
         backgroundImageUrl: uploadData.publicUrl,

@@ -1,121 +1,134 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.7.1";
 
 const corsHeaders = {
-    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Origin': '*', // We rely on Auth Token for security.
     'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
 serve(async (req) => {
+    // 1. Handle CORS Preflight
     if (req.method === 'OPTIONS') {
         return new Response('ok', { headers: corsHeaders });
     }
 
     try {
-        try {
-            const requestData = await req.json();
+        // 2. AUTHENTICATION CHECK (CRITICAL)
+        // Get the JWT from the Authorization header
+        const authHeader = req.headers.get('Authorization');
+        if (!authHeader) {
+            throw new Error('Missing Authorization header');
+        }
 
-            // -----------------------------------------------------
-            // NEW: Handle Image Processing (Merged into this function)
-            // -----------------------------------------------------
-            if (requestData.processParams) {
-                console.log('[OpenAI Proxy] Handling Image Processing Request...');
-                const { imageUrl, productName, userId } = requestData.processParams;
+        // Initialize Supabase Client with the Auth header
+        const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? '';
+        const supabaseKey = Deno.env.get('SUPABASE_ANON_KEY') ?? ''; // Use Anon key for client-like interaction, or Service Role if needed for admin tasks. 
+        // Ideally we verify the token. The clean way in Edge Functions is creating a client with the access token.
 
-                if (!imageUrl) throw new Error('Missing imageUrl');
+        const supabase = createClient(supabaseUrl, supabaseKey, {
+            global: { headers: { Authorization: authHeader } },
+        });
 
-                // 1. Fetch from external URL (Server-side download)
-                const imageResponse = await fetch(imageUrl);
-                if (!imageResponse.ok) throw new Error(`Failed to fetch image: ${imageResponse.statusText}`);
-                const imageBlob = await imageResponse.blob();
+        // Verify the user
+        const { data: { user }, error: authError } = await supabase.auth.getUser();
 
-                // 2. Upload to Supabase
-                const { createClient } = await import("https://esm.sh/@supabase/supabase-js@2.7.1");
-                const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? '';
-                const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '';
-
-                if (!supabaseUrl || !supabaseKey) throw new Error('Missing Supabase Config');
-
-                const supabase = createClient(supabaseUrl, supabaseKey);
-
-                const filename = `${userId || 'anon'}/${Date.now()}-${productName?.replace(/[^a-z0-9]/gi, '_').toLowerCase() || 'processed'}.png`;
-
-                const { data, error: uploadError } = await supabase
-                    .storage
-                    .from('ad-images')
-                    .upload(filename, imageBlob, { contentType: 'image/png', upsert: false });
-
-                if (uploadError) throw new Error(`Upload failed: ${uploadError.message}`);
-
-                const { data: { publicUrl } } = supabase
-                    .storage
-                    .from('ad-images')
-                    .getPublicUrl(filename);
-
-                console.log(`[OpenAI Proxy] Image processed & saved: ${publicUrl}`);
-
-                return new Response(JSON.stringify({ success: true, publicUrl }), {
-                    headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-                    status: 200,
-                });
-            }
-
-            // -----------------------------------------------------
-            // OLD: Standard OpenAI Proxy Logic
-            // -----------------------------------------------------
-            const { endpoint, method = 'POST', headers: customHeaders, ...openaiParams } = requestData;
-
-            // ONLY Validate endpoint if NOT processing image
-            if (!endpoint) {
-                throw new Error('Missing endpoint');
-            }
-
-            const apiKey = Deno.env.get('OPENAI_API_KEY');
-            if (!apiKey) {
-                throw new Error('Missing OPENAI_API_KEY');
-            }
-
-            const url = `https://api.openai.com/v1/${endpoint}`;
-
-            console.log(`[OpenAI Proxy] ${method} ${url}`);
-            console.log('[OpenAI Proxy] Params:', JSON.stringify(openaiParams, null, 2));
-
-            const response = await fetch(url, {
-                method,
-                headers: {
-                    'Authorization': `Bearer ${apiKey}`,
-                    'Content-Type': 'application/json',
-                    ...customHeaders,
-                },
-                body: JSON.stringify(openaiParams),
+        if (authError || !user) {
+            console.error('[OpenAI Proxy] Auth failed:', authError);
+            return new Response(JSON.stringify({ error: 'Unauthorized', details: authError }), {
+                status: 401,
+                headers: { ...corsHeaders, 'Content-Type': 'application/json' }
             });
+        }
 
-            const data = await response.json();
+        const requestData = await req.json();
 
-            if (!response.ok) {
-                console.error('[OpenAI Proxy] Error:', response.status, data);
-                return new Response(JSON.stringify({
-                    error: data.error?.message || 'OpenAI API request failed',
-                    details: data
-                }), {
-                    headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-                    status: response.status,
-                });
-            }
+        // 3. IMAGE PROCESSING LOGIC
+        if (requestData.processParams) {
+            console.log('[OpenAI Proxy] Handling Image Processing Request for User:', user.id);
+            const { imageUrl, productName } = requestData.processParams;
 
-            console.log('[OpenAI Proxy] Success');
+            if (!imageUrl) throw new Error('Missing imageUrl');
 
-            return new Response(JSON.stringify(data), {
+            // Fetch from external URL
+            const imageResponse = await fetch(imageUrl);
+            if (!imageResponse.ok) throw new Error(`Failed to fetch image: ${imageResponse.statusText}`);
+            const imageBlob = await imageResponse.blob();
+
+            // Use Service Role for Storage Upload (Bypasses RLS for the "upload" part if needed, 
+            // but we should ideally respect RLS. For now, to guarantee it works, we use the Service Role 
+            // for the admin task of saving the processed file, or reuse the auth client if rules allow.)
+            // Let's use Service Role to be safe with Storage permissions for this generated asset.
+            const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '';
+            const adminSupabase = createClient(supabaseUrl, serviceRoleKey);
+
+            const filename = `${user.id}/${Date.now()}-${productName?.replace(/[^a-z0-9]/gi, '_').toLowerCase() || 'processed'}.png`;
+
+            const { error: uploadError } = await adminSupabase
+                .storage
+                .from('ad-images')
+                .upload(filename, imageBlob, { contentType: 'image/png', upsert: false });
+
+            if (uploadError) throw new Error(`Upload failed: ${uploadError.message}`);
+
+            const { data: { publicUrl } } = adminSupabase
+                .storage
+                .from('ad-images')
+                .getPublicUrl(filename);
+
+            return new Response(JSON.stringify({ success: true, publicUrl }), {
                 headers: { ...corsHeaders, 'Content-Type': 'application/json' },
                 status: 200,
             });
-        } catch (error: any) {
-            console.error('[OpenAI Proxy] Exception:', error);
-            return new Response(JSON.stringify({
-                error: error.message || 'Internal server error',
-                stack: error.stack
-            }), {
-                headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-                status: 500,
+        }
+
+        // 4. OPENAI PROXY LOGIC
+        // Only allow authenticated users to hit OpenAI
+        const { endpoint, method = 'POST', headers: customHeaders, ...openaiParams } = requestData;
+
+        if (!endpoint) throw new Error('Missing endpoint');
+
+        // OPTIONAL: Whitelist specific endpoints to prevent abuse?
+        // const ALLOWED_ENDPOINTS = ['chat/completions', 'images/generations', 'images/edits'];
+        // if (!ALLOWED_ENDPOINTS.includes(endpoint)) throw new Error('Endpoint not allowed');
+
+        const apiKey = Deno.env.get('OPENAI_API_KEY');
+        if (!apiKey) throw new Error('Missing Server Configuration');
+
+        const url = `https://api.openai.com/v1/${endpoint}`;
+        console.log(`[OpenAI Proxy] ${method} ${url} (User: ${user.id})`);
+
+        const response = await fetch(url, {
+            method,
+            headers: {
+                'Authorization': `Bearer ${apiKey}`,
+                'Content-Type': 'application/json',
+                ...customHeaders,
+            },
+            body: JSON.stringify(openaiParams),
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+            console.error('[OpenAI Proxy] Upstream Error:', data);
+            return new Response(JSON.stringify({ error: 'OpenAI Error', details: data }), {
+                status: response.status,
+                headers: { ...corsHeaders, 'Content-Type': 'application/json' }
             });
         }
-    });
+
+        return new Response(JSON.stringify(data), {
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+            status: 200,
+        });
+
+    } catch (error: any) {
+        console.error('[OpenAI Proxy] Internal Error:', error);
+        return new Response(JSON.stringify({
+            error: error.message || 'Internal Server Error',
+        }), {
+            status: 500,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        });
+    }
+});

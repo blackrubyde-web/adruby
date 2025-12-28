@@ -1,10 +1,12 @@
-import { Search, MoreVertical, Play, Pause, Copy, Trash2, TrendingUp, TrendingDown } from 'lucide-react';
+import { Search, MoreVertical, Play, Pause, Copy, Trash2, TrendingUp, TrendingDown, Brain, Zap, ShieldCheck } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { toast } from 'sonner';
 import { PageShell, HeroHeader, Card, Chip } from './layout';
 import { useMetaCampaigns } from '../hooks/useMetaCampaigns';
 import { applyMetaAction, type MetaApplyAction } from '../lib/api/meta';
 import { useMetaConnection } from '../hooks/useMetaConnection';
+import { supabase } from '../lib/supabaseClient';
+import { AdRubyAutopilot, type AutopilotConfig } from '../lib/ai/ai-autopilot'; // Import Autopilot
 
 type StatusFilter = 'all' | 'active' | 'paused' | 'completed';
 
@@ -16,9 +18,41 @@ export function CampaignsPage() {
   const [campaignRows, setCampaignRows] = useState(campaigns);
   const [actionState, setActionState] = useState<Record<string, boolean>>({});
 
+  // Autopilot State
+  const [autopilotEnabled, setAutopilotEnabled] = useState(false);
+  const [optimizationScore, setOptimizationScore] = useState(92); // Fake initial score
+  const [autopilotActions, setAutopilotActions] = useState<string[]>([]);
+  const autopilot = useMemo(() => new AdRubyAutopilot(supabase), []);
+
   useEffect(() => {
     setCampaignRows(campaigns);
   }, [campaigns]);
+
+  // Simulate Autopilot Analysis on Mount
+  useEffect(() => {
+    if (campaigns.length > 0) {
+      // Mock analysis
+      setTimeout(() => {
+        const lowRoas = campaigns.filter(c => c.roas < 2 && c.status === 'ACTIVE').length;
+        const highRoas = campaigns.filter(c => c.roas > 4).length;
+
+        let score = 95;
+        const feedback = [];
+
+        if (lowRoas > 0) {
+          score -= 10;
+          feedback.push(`${lowRoas} Kampagnen mit ROAS < 2 gefunden.`);
+        }
+        if (highRoas > 0) {
+          feedback.push(`${highRoas} Gewinner-Kampagnen bereit zum Skalieren.`);
+        }
+
+        setOptimizationScore(score);
+        setAutopilotActions(feedback);
+      }, 1000);
+    }
+  }, [campaigns]);
+
 
   const formatCurrency = useCallback(
     (value: number) =>
@@ -182,6 +216,15 @@ export function CampaignsPage() {
     [campaignRows, normalizeStatus]
   );
 
+  const handleToggleAutopilot = () => {
+    if (!autopilotEnabled) {
+      toast.info("Autopilot aktiviert. Wir optimieren jetzt deine Kampagnen.");
+    } else {
+      toast.info("Autopilot pausiert.");
+    }
+    setAutopilotEnabled(!autopilotEnabled);
+  }
+
   return (
     <PageShell>
       <HeroHeader
@@ -198,7 +241,7 @@ export function CampaignsPage() {
           <div className="flex items-center gap-2">
             <button
               onClick={openCampaignBuilder}
-              className="px-4 py-2 bg-muted hover:bg-muted/80 rounded-xl transition-colors font-medium"
+              className="px-4 py-2 bg-muted hover:bg-muted/80 rounded-xl transition-colors font-medium border border-border"
             >
               Neue Kampagne
             </button>
@@ -211,6 +254,66 @@ export function CampaignsPage() {
           </div>
         }
       />
+
+      {/* Autopilot Scoreboard */}
+      <div className="mb-8">
+        <div className="relative overflow-hidden bg-gradient-to-r from-violet-500/10 to-fuchsia-500/10 border border-violet-500/20 rounded-[32px] p-8">
+          <div className="relative z-10 flex flex-col md:flex-row items-center justify-between gap-8">
+
+            {/* Score Circle */}
+            <div className="flex items-center gap-6">
+              <div className="relative w-24 h-24 flex items-center justify-center">
+                <svg className="w-full h-full transform -rotate-90">
+                  <circle cx="48" cy="48" r="40" stroke="currentColor" strokeWidth="8" fill="transparent" className="text-muted/20" />
+                  <circle cx="48" cy="48" r="40" stroke="currentColor" strokeWidth="8" fill="transparent" strokeDasharray={251.2} strokeDashoffset={251.2 * (1 - optimizationScore / 100)} className="text-violet-500" />
+                </svg>
+                <div className="absolute inset-0 flex flex-col items-center justify-center">
+                  <span className="text-2xl font-black text-foreground">{optimizationScore}</span>
+                  <span className="text-[10px] font-bold uppercase text-muted-foreground">Score</span>
+                </div>
+              </div>
+              <div>
+                <div className="flex items-center gap-2 mb-1">
+                  <Brain className="w-5 h-5 text-violet-500" />
+                  <h3 className="text-lg font-black tracking-tight">AdRuby Autopilot</h3>
+                </div>
+                <p className="text-muted-foreground text-sm max-w-sm">
+                  {autopilotActions.length > 0 ? "Wir haben Optimierungspotenzial gefunden." : "Deine Kampagnen laufen effizient."}
+                </p>
+                {autopilotActions.length > 0 && (
+                  <div className="mt-2 flex flex-col gap-1">
+                    {autopilotActions.map((action, i) => (
+                      <div key={i} className="flex items-center gap-2 text-xs text-orange-500 font-medium">
+                        <Zap className="w-3 h-3" /> {action}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Toggle Switch */}
+            <div className="flex flex-col items-end gap-3">
+              <div className="flex items-center gap-3 bg-card/50 backdrop-blur-md p-2 rounded-2xl border border-white/10 shadow-lg">
+                <span className={`text-xs font-bold uppercase tracking-widest px-2 ${autopilotEnabled ? 'text-violet-500' : 'text-muted-foreground'}`}>
+                  {autopilotEnabled ? "Active" : "Paused"}
+                </span>
+                <button
+                  onClick={handleToggleAutopilot}
+                  className={`w-14 h-8 rounded-full p-1 transition-colors duration-300 ${autopilotEnabled ? 'bg-violet-500' : 'bg-muted'}`}
+                >
+                  <div className={`w-6 h-6 rounded-full bg-white shadow-md transform transition-transform duration-300 ${autopilotEnabled ? 'translate-x-6' : 'translate-x-0'}`} />
+                </button>
+              </div>
+              {autopilotEnabled && (
+                <div className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-widest text-emerald-500">
+                  <ShieldCheck className="w-3 h-3" /> Protected by AI
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
 
       {/* Stats Overview */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -233,7 +336,6 @@ export function CampaignsPage() {
       </div>
 
       {/* Filters and Search */}
-      {/* Filters and Search - Premium Design */}
       <div className="bg-card border border-border rounded-xl p-4">
         <div className="flex flex-col md:flex-row items-center justify-between gap-4">
           {/* Search */}

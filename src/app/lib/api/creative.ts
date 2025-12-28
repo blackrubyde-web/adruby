@@ -204,17 +204,31 @@ export async function fetchResearchSelections() {
 
 export async function creativeSaveToLibrary(params: { output: unknown; creativeId?: string | null }) {
   const token = await requireAccessToken();
-  const res = await fetch(apiUrl("/api/creative/save"), {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${token}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify(params),
-  });
-  const json = await parseJson(res);
-  if (!res.ok) throw new Error(json?.error ?? "Save failed");
-  return json;
+
+  // Direct Supabase Insert (Fixes 404 on deleted endpoint)
+  const { data: session } = await supabase.auth.getSession();
+  if (!session.session?.user?.id) throw new Error('User not authenticated');
+
+  // If we already have a creativeId, update it? Or just insert new?
+  // Usually save means "persist this output". 
+
+  const payload = {
+    user_id: session.session.user.id,
+    outputs: params.output,
+    saved: true,
+    created_at: new Date().toISOString(),
+    // generated_creatives table fields
+  };
+
+  const { data, error } = await supabase
+    .from('generated_creatives')
+    .insert(payload)
+    .select()
+    .single();
+
+  if (error) throw new Error(error.message);
+
+  return { success: true, creativeId: data.id };
 }
 
 export async function generateStrategyPlan(params: { creativeId: string; strategyId?: string | null }) {

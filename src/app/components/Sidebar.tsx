@@ -21,12 +21,12 @@ type NavItem = {
 
 const CORE_WORKFLOW: NavItem[] = [
   { icon: BarChart3, label: 'Dashboard', page: 'dashboard' },
-  { icon: Palette, label: 'Creative Studio', page: 'studio' },
   { icon: BarChart2, label: 'Analytics', page: 'analytics' },
-  { icon: BookOpen, label: 'Creative Library', page: 'library' },
   { icon: Target, label: 'Strategies', page: 'strategies' },
+  { icon: Palette, label: 'Creative Studio', page: 'studio' },
   { icon: Layers, label: 'Campaigns', page: 'campaigns' },
   { icon: Brain, label: 'AI Analysis', page: 'aianalysis' },
+  { icon: BookOpen, label: 'Creative Library', page: 'library' },
 ];
 
 const ACCOUNT_ITEMS: NavItem[] = [

@@ -7,7 +7,7 @@ import { useNavigate } from 'react-router-dom';
 // (Most icons moved to sub-components, checking if any needed here)
 
 // Types
-import type { AdDocument, StudioLayer, BrandKit } from '../../types/studio';
+import type { AdDocument, StudioLayer, ImageLayer, BrandKit } from '../../types/studio';
 import type { AuditResult } from './PerformanceAudit';
 import { performAudit } from './PerformanceAudit';
 
@@ -462,7 +462,22 @@ export const EditorLayout: React.FC<EditorLayoutProps> = ({ onClose, initialDoc,
                     onDeleteLayer={handleDeleteLayer}
                     onDuplicateLayer={handleDuplicateLayer}
                     onGenerate={handleGenerate}
-                    onApplyTemplate={(tpl) => toast.info('Template applied')}
+                    onApplyTemplate={(tpl) => {
+                        const newDoc = { ...doc, ...tpl };
+                        // Smart Merge: Preserve user's uploaded product image if it exists
+                        const existingProduct = doc.layers.find(l => l.type === 'product' && 'src' in l && l.src && l.src.length > 100) as ImageLayer | undefined;
+                        if (existingProduct) {
+                            const newProductIndex = newDoc.layers.findIndex(l => l.type === 'product');
+                            if (newProductIndex !== -1) {
+                                newDoc.layers[newProductIndex] = {
+                                    ...newDoc.layers[newProductIndex],
+                                    src: existingProduct.src
+                                } as ImageLayer;
+                            }
+                        }
+                        setDoc(newDoc);
+                        toast.success('Template applied successfully!');
+                    }}
                     onApplyTheme={(theme) => toast.info('Theme applied')}
                     onShuffleColors={() => toast.info('Colors shuffled')}
                     onResizeFormat={(fmt) => toast.info(`Resized to ${fmt}`)}

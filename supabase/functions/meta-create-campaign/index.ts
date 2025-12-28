@@ -1,76 +1,279 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.7.1";
 
 const corsHeaders = {
-    "Access-Control-Allow-Origin": "*",
-    "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-serve(async (req) => {
-    if (req.method === "OPTIONS") {
-        return new Response("ok", { headers: corsHeaders });
+const GRAPH_API_BASE = "https://graph.facebook.com/v19.0";
+
+// ==========================================
+// HELPERS
+// ==========================================
+
+async function postGraph(path: string, accessToken: string, params: Record<string, any> = {}) {
+    const url = new URL(`${GRAPH_API_BASE}${path}`);
+    const body = new URLSearchParams();
+
+    Object.entries(params).forEach(([key, value]) => {
+        if (value !== undefined && value !== null) {
+            body.set(key, String(value));
+        }
+    });
+    body.set("access_token", accessToken);
+
+    const res = await fetch(url.toString(), {
+        method: "POST",
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        body: body.toString(),
+    });
+
+    const json = await res.json();
+    if (!res.ok) {
+        throw new Error(json?.error?.message || "Meta API request failed");
+    }
+    return json;
+}
+
+function mapObjective(objective: string) {
+    const map: Record<string, string> = {
+        CONVERSIONS: "OUTCOME_SALES",
+        TRAFFIC: "OUTCOME_TRAFFIC",
+        AWARENESS: "OUTCOME_AWARENESS",
+        ENGAGEMENT: "OUTCOME_ENGAGEMENT",
+        LEADS: "OUTCOME_LEADS",
+        APP_INSTALLS: "OUTCOME_APP_PROMOTION",
+    };
+    return map[objective] || "OUTCOME_SALES";
+}
+
+function mapOptimizationGoal(goal: string) {
+    const map: Record<string, string> = {
+        CONVERSIONS: "OFFSITE_CONVERSIONS",
+        LINK_CLICKS: "LINK_CLICKS",
+        IMPRESSIONS: "IMPRESSIONS",
+        REACH: "REACH",
+        LANDING_PAGE_VIEWS: "LANDING_PAGE_VIEWS",
+    };
+    return map[goal] || "OFFSITE_CONVERSIONS";
+}
+
+function mapCTA(cta: string) {
+    const map: Record<string, string> = {
+        "Learn More": "LEARN_MORE",
+        "Shop Now": "SHOP_NOW",
+        "Sign Up": "SIGN_UP",
+        "Get Offer": "GET_OFFER",
+        "Book Now": "BOOK_NOW",
+        "Contact Us": "CONTACT_US",
+    };
+    return map[cta] || "LEARN_MORE";
+}
+
+function buildTargeting(targeting: any) {
+    if (!targeting) return JSON.stringify({ geo_locations: { countries: ["DE"] }, age_min: 18, age_max: 65 });
+
+    const result: any = {
+        geo_locations: { countries: targeting.locations?.length > 0 ? targeting.locations : ["DE"] },
+        age_min: targeting.ageMin || 18,
+        age_max: targeting.ageMax || 65,
+    };
+
+    if (targeting.gender === "male") result.genders = [1];
+    else if (targeting.gender === "female") result.genders = [2];
+
+    if (targeting.interests?.length > 0) {
+        result.flexible_spec = [{
+            interests: targeting.interests.map((i: string) => ({ name: i, id: "0" })) // Mock ID for preview, real ID needs lookup
+        }];
     }
 
+    if (targeting.placements?.length > 0) {
+        result.publisher_platforms = targeting.placements.includes("facebook") ? ["facebook"] : [];
+        if (targeting.placements.some((p: string) => ["instagram", "stories", "reels"].includes(p))) {
+            result.publisher_platforms.push("instagram");
+        }
+    }
+
+    return JSON.stringify(result);
+}
+
+// ==========================================
+// MAIN HANDLER
+// ==========================================
+
+serve(async (req) => {
+    if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
+
     try {
-        const supabaseClient = createClient(
-            Deno.env.get("SUPABASE_URL") ?? "",
-            Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
-        );
+        // 1. AUTH CHECK
+        const authHeader = req.headers.get('Authorization');
+        if (!authHeader) throw new Error('Missing Auth Header');
 
-        const payload = await req.json();
-        const {
-            name,
-            status,
-            daily_budget,
-            objective,
-            ad_sets = []
-        } = payload;
+        const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? '';
+        const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '';
+        const supabase = createClient(supabaseUrl, supabaseKey);
 
-        // 1. "Simulate" Meta API Create Call (which would return an ID)
-        const mockMetaCampaignId = `meta_${Date.now()}_${Math.floor(Math.random() * 1000)}`;
-        const mockMetaAdSetId = `adset_${Date.now()}`;
+        const { data: { user }, error: authError } = await supabase.auth.getUser(authHeader.replace('Bearer ', ''));
+        if (authError || !user) throw new Error('Unauthorized');
 
-        // 2. Insert into meta_campaigns to reflect in Dashboard
-        const { data: campaign, error: campError } = await supabaseClient
-            .from("meta_campaigns")
-            .insert({
-                name: name,
-                status: status === 'ACTIVE' ? 'active' : 'paused',
-                objective: objective,
-                daily_budget: daily_budget ? daily_budget / 100 : 0, // Convert back to currency units
-                spend: 0,
-                revenue: 0,
-                roas: 0,
-                unique_id: mockMetaCampaignId,
-                // Mock performance data for visual completeness
-                impressions: 0,
-                clicks: 0,
-                conversions: 0,
-                ctr: 0,
-                cpc: 0
-            })
-            .select()
+        const { mode = 'create', adAccountId, campaign, adSets } = await req.json();
+
+        if (!campaign) throw new Error("Missing campaign data");
+
+        // PREVIEW MODE
+        if (mode === 'preview') {
+            const previewPayload = {
+                campaign: {
+                    name: campaign.name,
+                    objective: mapObjective(campaign.objective),
+                    status: 'PAUSED',
+                    buying_type: 'AUCTION'
+                },
+                adSets: (adSets || []).map((adSet: any) => ({
+                    name: adSet.name,
+                    optimization_goal: mapOptimizationGoal(adSet.optimizationGoal),
+                    targeting: JSON.parse(buildTargeting(adSet.targeting)),
+                    ads: (adSet.ads || []).map((ad: any) => ({
+                        name: ad.name,
+                        creative: {
+                            title: ad.headline,
+                            body: ad.primaryText,
+                            cta: mapCTA(ad.cta)
+                        }
+                    }))
+                }))
+            };
+
+            return new Response(JSON.stringify({
+                success: true,
+                preview: previewPayload,
+                message: "Preview generated. Ready to push to Meta."
+            }), {
+                headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+            });
+        }
+
+        // CREATE MODE (REAL EXECUTION)
+
+        // 1. Get Meta Token
+        const { data: connection } = await supabase
+            .from("facebook_connections")
+            .select("access_token, ad_accounts")
+            .eq("user_id", user.id)
+            .eq("is_active", true)
             .single();
 
-        if (campError) throw campError;
+        if (!connection || !connection.access_token) {
+            throw new Error("No active Meta connection found.");
+        }
 
-        // 3. Insert Ad Sets (Optional: simplistic mock)
-        // Real implementation would handle ad sets and ads relations if those tables exist
-        // For now, we just ensure the campaign exists
+        const token = connection.access_token;
+
+        // 2. Resolve Ad Account
+        let actId = adAccountId;
+        if (!actId && connection.ad_accounts) {
+            const accounts = JSON.parse(connection.ad_accounts);
+            actId = accounts[0]?.id;
+        }
+        if (!actId) throw new Error("No Ad Account found.");
+        if (!actId.startsWith('act_')) actId = `act_${actId}`;
+
+        // 3. Create Campaign
+        const campaignParams: any = {
+            name: campaign.name || "AdRuby Campaign",
+            objective: mapObjective(campaign.objective),
+            status: "PAUSED",
+            special_ad_categories: "[]",
+        };
+
+        if (campaign.budgetType === "daily" && campaign.dailyBudget) {
+            campaignParams.daily_budget = Math.round(campaign.dailyBudget * 100);
+        }
+
+        console.log(`Creating Campaign on ${actId}...`);
+        const campResult = await postGraph(`/${actId}/campaigns`, token, campaignParams);
+        const campaignId = campResult.id;
+
+        const createdAdSets = [];
+        const createdAds = [];
+
+        // 4. Create Ad Sets & Ads
+        for (const adSet of (adSets || [])) {
+            const adSetParams: any = {
+                campaign_id: campaignId,
+                name: adSet.name || "Ad Set",
+                status: "PAUSED",
+                optimization_goal: mapOptimizationGoal(adSet.optimizationGoal),
+                billing_event: "IMPRESSIONS",
+                targeting: buildTargeting(adSet.targeting),
+            };
+
+            // Simple budget fallback
+            if (!campaign.dailyBudget) adSetParams.daily_budget = 500;
+
+            const asResult = await postGraph(`/${actId}/adsets`, token, adSetParams);
+            const adSetId = asResult.id;
+            createdAdSets.push(adSetId);
+
+            for (const ad of (adSet.ads || [])) {
+                // Creative
+                const creativeParams = {
+                    name: `${ad.name} Creative`,
+                    object_story_spec: JSON.stringify({
+                        page_id: Deno.env.get('META_PAGE_ID') || '', // Needs env var or fetch from connection
+                        link_data: {
+                            message: ad.primaryText || "",
+                            name: ad.headline || "",
+                            link: ad.destinationUrl || "https://example.com",
+                            call_to_action: {
+                                type: mapCTA(ad.cta),
+                                value: { link: ad.destinationUrl || "https://example.com" },
+                            },
+                            // image_hash: ... (In a real app, we'd upload the image first and get a hash. Skipping for MVP/Text ads)
+                        },
+                    }),
+                };
+
+                const crResult = await postGraph(`/${actId}/adcreatives`, token, creativeParams);
+                const creativeId = crResult.id;
+
+                // Ad
+                const adParams = {
+                    name: ad.name,
+                    adset_id: adSetId,
+                    creative: JSON.stringify({ creative_id: creativeId }),
+                    status: "PAUSED"
+                };
+                const adResult = await postGraph(`/${actId}/ads`, token, adParams);
+                createdAds.push(adResult.id);
+            }
+        }
+
+        // 5. Log & Return
+        await supabase.from("meta_campaigns").upsert({
+            user_id: user.id,
+            facebook_campaign_id: campaignId,
+            name: campaign.name,
+            status: "PAUSED",
+            objective: campaign.objective,
+        }, { onConflict: "facebook_campaign_id" });
 
         return new Response(JSON.stringify({
             success: true,
-            campaign_id: campaign.id,
-            meta_id: mockMetaCampaignId,
-            message: "Campaign simulated and created in database"
+            campaignId,
+            adSets: createdAdSets,
+            ads: createdAds,
+            message: "Campaign successfully created on Meta!"
         }), {
-            headers: { ...corsHeaders, "Content-Type": "application/json" },
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         });
 
-    } catch (error) {
+    } catch (error: any) {
         return new Response(JSON.stringify({ error: error.message }), {
-            headers: { ...corsHeaders, "Content-Type": "application/json" },
             status: 400,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         });
     }
 });

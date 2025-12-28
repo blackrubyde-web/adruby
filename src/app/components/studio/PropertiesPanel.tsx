@@ -85,6 +85,7 @@ export const PropertiesPanel = ({ layer, onChange, onGenerate, onAdapt, onGenera
 
     const isText = layer.type === 'text' || layer.type === 'cta';
     const isImage = layer.type === 'product' || layer.type === 'background' || layer.type === 'overlay';
+    const isShape = layer.type === 'shape';
 
     const Section = ({ id, title, icon: Icon, children }: { id: 'content' | 'style' | 'position', title: string, icon: any, children: React.ReactNode }) => (
         <div className="border-b border-border/50 last:border-0">
@@ -112,8 +113,8 @@ export const PropertiesPanel = ({ layer, onChange, onGenerate, onAdapt, onGenera
             <div className="p-4 border-b border-border/50 bg-gradient-to-r from-card to-card/80">
                 <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
-                        <div className={`p-2.5 rounded-xl ${isText ? 'bg-blue-500/10 text-blue-500' : 'bg-emerald-500/10 text-emerald-500'}`}>
-                            {isText ? <Type className="w-5 h-5" /> : <ImageIcon className="w-5 h-5" />}
+                        <div className={`p-2.5 rounded-xl ${isText ? 'bg-blue-500/10 text-blue-500' : isShape ? 'bg-orange-500/10 text-orange-500' : 'bg-emerald-500/10 text-emerald-500'}`}>
+                            {isText ? <Type className="w-5 h-5" /> : isShape ? <LayoutTemplate className="w-5 h-5" /> : <ImageIcon className="w-5 h-5" />}
                         </div>
                         <div>
                             <h3 className="font-bold text-sm truncate max-w-[140px]">{layer.name}</h3>
@@ -127,19 +128,19 @@ export const PropertiesPanel = ({ layer, onChange, onGenerate, onAdapt, onGenera
                     )}
                 </div>
 
-                {/* AI MAGIC BUTTON - Der einzige AI-Button */}
+                {/* AI MAGIC BUTTON */}
                 <button
                     onClick={() => setShowAIModal(true)}
                     className="w-full mt-4 flex items-center justify-center gap-2 py-3 text-sm font-bold bg-gradient-to-r from-violet-600 to-fuchsia-600 text-white rounded-xl hover:shadow-lg hover:shadow-violet-500/25 hover:scale-[1.02] transition-all active:scale-[0.98]"
                 >
                     <Wand2 className="w-5 h-5" />
-                    AI verbessern
+                    AI Magic
                 </button>
             </div>
 
-            {/* Scrollable Content - 3 Sektionen */}
+            {/* Scrollable Content */}
             <div className="flex-1 overflow-y-auto">
-                {/* SEKTION 1: Inhalt */}
+                {/* SECTION 1: Content */}
                 <Section id="content" title="Inhalt" icon={Type}>
                     {isText && (
                         <textarea
@@ -149,19 +150,44 @@ export const PropertiesPanel = ({ layer, onChange, onGenerate, onAdapt, onGenera
                             placeholder="Text eingeben..."
                         />
                     )}
-                    {isImage && (
-                        <div className="text-center py-4 text-sm text-muted-foreground">
-                            <ImageIcon className="w-8 h-8 mx-auto mb-2 opacity-30" />
-                            Nutze "AI verbessern" für Bild-Optionen
+                    {(isImage || isShape) && (
+                        <div className="space-y-3">
+                            {isImage && (
+                                <div className="space-y-2">
+                                    <label className="text-[10px] font-bold text-muted-foreground uppercase">AI Prompt</label>
+                                    <div className="relative">
+                                        <input
+                                            type="text"
+                                            placeholder="Beschreibe das Bild..."
+                                            className="w-full pl-3 pr-8 py-2 bg-muted/30 border border-border rounded-lg text-sm focus:ring-2 focus:ring-primary/20"
+                                        />
+                                        <button className="absolute right-2 top-1/2 -translate-y-1/2 text-primary hover:text-primary/80">
+                                            <Wand2 className="w-4 h-4" />
+                                        </button>
+                                    </div>
+                                </div>
+                            )}
+
+                            {isShape && (
+                                <div className="space-y-2">
+                                    <label className="text-[10px] font-bold text-muted-foreground uppercase">Button Text (Link)</label>
+                                    <input
+                                        type="text"
+                                        placeholder="Button Label..."
+                                        className="w-full px-3 py-2 bg-muted/30 border border-border rounded-lg text-sm focus:ring-2 focus:ring-primary/20"
+                                    // Linking this to a hypothetical linked text layer would be ideal, currently just UI
+                                    />
+                                </div>
+                            )}
                         </div>
                     )}
                 </Section>
 
-                {/* SEKTION 2: Stil */}
+                {/* SECTION 2: Style */}
                 <Section id="style" title="Stil" icon={Sparkles}>
+                    {/* TEXT STYLES */}
                     {isText && (
                         <>
-                            {/* Quick Style Presets */}
                             <div className="space-y-2">
                                 <span className="text-[10px] font-bold text-muted-foreground uppercase">Quick Styles</span>
                                 <div className="grid grid-cols-2 gap-2">
@@ -178,8 +204,7 @@ export const PropertiesPanel = ({ layer, onChange, onGenerate, onAdapt, onGenera
                                 </div>
                             </div>
 
-                            {/* Font & Alignment */}
-                            <div className="space-y-3">
+                            <div className="space-y-3 pt-2">
                                 <select
                                     className="w-full bg-muted/50 border border-border rounded-xl px-3 py-2.5 text-sm"
                                     value={(layer as any).fontFamily}
@@ -218,7 +243,6 @@ export const PropertiesPanel = ({ layer, onChange, onGenerate, onAdapt, onGenera
                                     </div>
                                 </div>
 
-                                {/* Size Slider */}
                                 <div className="space-y-1">
                                     <div className="flex justify-between text-[10px]">
                                         <span className="text-muted-foreground font-bold uppercase">Größe</span>
@@ -227,7 +251,6 @@ export const PropertiesPanel = ({ layer, onChange, onGenerate, onAdapt, onGenera
                                     <input type="range" min="12" max="200" value={(layer as any).fontSize} onChange={(e) => handleChange('fontSize', parseInt(e.target.value))} className="w-full accent-primary h-2 rounded-full" />
                                 </div>
 
-                                {/* Color */}
                                 <div className="flex items-center gap-3">
                                     <input type="color" value={(layer as any).color} onChange={(e) => handleChange('color', e.target.value)} className="w-10 h-10 rounded-lg border-2 border-border cursor-pointer" />
                                     <span className="text-xs font-mono text-muted-foreground">{(layer as any).color}</span>
@@ -236,6 +259,34 @@ export const PropertiesPanel = ({ layer, onChange, onGenerate, onAdapt, onGenera
                         </>
                     )}
 
+                    {/* SHAPE STYLES */}
+                    {isShape && (
+                        <div className="space-y-4">
+                            <div className="space-y-1">
+                                <label className="text-[10px] font-bold text-muted-foreground uppercase">Füllfarbe</label>
+                                <div className="flex items-center gap-3">
+                                    <input type="color" value={(layer as any).fill} onChange={(e) => handleChange('fill', e.target.value)} className="w-full h-10 rounded-lg border-2 border-border cursor-pointer" />
+                                </div>
+                            </div>
+
+                            <div className="space-y-1">
+                                <div className="flex justify-between text-[10px]">
+                                    <span className="text-muted-foreground font-bold uppercase">Abrundung</span>
+                                    <span className="font-mono text-primary">{(layer as any).cornerRadius || 0}px</span>
+                                </div>
+                                <input
+                                    type="range"
+                                    min="0"
+                                    max="100"
+                                    value={(layer as any).cornerRadius || 0}
+                                    onChange={(e) => handleChange('cornerRadius', parseInt(e.target.value))}
+                                    className="w-full accent-primary h-2 rounded-full"
+                                />
+                            </div>
+                        </div>
+                    )}
+
+                    {/* IMAGE STYLES */}
                     {isImage && (
                         <div className="space-y-3">
                             <div className="space-y-1">
@@ -249,15 +300,10 @@ export const PropertiesPanel = ({ layer, onChange, onGenerate, onAdapt, onGenera
                     )}
                 </Section>
 
-                {/* SEKTION 3: Position */}
+                {/* SECTION 3: Position */}
                 <Section id="position" title="Position" icon={Hash}>
                     <div className="grid grid-cols-2 gap-3">
-                        {[
-                            { key: 'x', label: 'X' },
-                            { key: 'y', label: 'Y' },
-                            { key: 'width', label: 'Breite' },
-                            { key: 'height', label: 'Höhe' },
-                        ].map(({ key, label }) => (
+                        {[{ key: 'x', label: 'X' }, { key: 'y', label: 'Y' }, { key: 'width', label: 'Breite' }, { key: 'height', label: 'Höhe' }].map(({ key, label }) => (
                             <div key={key} className="space-y-1">
                                 <label className="text-[10px] font-bold text-muted-foreground uppercase">{label}</label>
                                 <input
@@ -272,104 +318,88 @@ export const PropertiesPanel = ({ layer, onChange, onGenerate, onAdapt, onGenera
                 </Section>
             </div>
 
-            {/* AI MAGIC MODAL */}
+            {/* AI MAGIC MODAL - REDESIGNED */}
             {showAIModal && (
-                <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm animate-in fade-in duration-200 p-4">
-                    <div className="bg-card w-full max-w-sm rounded-3xl shadow-2xl border border-border overflow-hidden animate-in zoom-in-95 duration-300 flex flex-col max-h-[90vh]">
-                        {/* Modal Header */}
-                        <div className="p-5 border-b border-border bg-gradient-to-r from-violet-500/10 to-fuchsia-500/10 shrink-0">
+                <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/40 backdrop-blur-[2px] animate-in fade-in duration-200">
+                    <div className="w-full max-w-[320px] bg-card/95 backdrop-blur-xl border border-white/10 shadow-2xl rounded-2xl overflow-hidden ring-1 ring-white/20 animate-in zoom-in-95 slide-in-from-bottom-5 duration-300">
+                        {/* Compact Header */}
+                        <div className="p-4 border-b border-border/50 bg-gradient-to-r from-violet-500/20 to-fuchsia-500/20">
                             <div className="flex items-center justify-between">
-                                <div className="flex items-center gap-3">
-                                    <div className="p-2.5 rounded-2xl bg-gradient-to-br from-violet-500 to-fuchsia-500 shadow-lg shadow-violet-500/20">
-                                        <Wand2 className="w-5 h-5 text-white" />
+                                <div className="flex items-center gap-2.5">
+                                    <div className="p-2 rounded-xl bg-gradient-to-br from-violet-600 to-fuchsia-600 shadow-lg shadow-violet-500/30">
+                                        <Wand2 className="w-4 h-4 text-white" />
                                     </div>
                                     <div>
-                                        <h2 className="text-base font-bold">AI Magic</h2>
-                                        <p className="text-xs text-muted-foreground">Wähle eine Aktion</p>
+                                        <h2 className="text-sm font-bold tracking-tight">AI Magic</h2>
+                                        <p className="text-[10px] text-muted-foreground font-medium">Was möchtest du tun?</p>
                                     </div>
                                 </div>
-                                <button onClick={() => setShowAIModal(false)} className="p-2 hover:bg-muted rounded-xl transition-colors">
-                                    <X className="w-5 h-5" />
+                                <button onClick={() => setShowAIModal(false)} className="p-1.5 hover:bg-black/10 dark:hover:bg-white/10 rounded-full transition-colors">
+                                    <X className="w-4 h-4 opacity-70" />
                                 </button>
                             </div>
                         </div>
 
-                        {/* Modal Content */}
-                        <div className="p-5 overflow-y-auto">
+                        {/* Content */}
+                        <div className="p-3 max-h-[60vh] overflow-y-auto">
                             {isProcessing ? (
                                 <div className="py-8 text-center">
-                                    <Loader2 className="w-10 h-10 animate-spin mx-auto text-violet-500 mb-4" />
-                                    <p className="text-sm text-muted-foreground font-medium">AI arbeitet...</p>
+                                    <div className="relative w-12 h-12 mx-auto mb-3">
+                                        <div className="absolute inset-0 rounded-full border-2 border-violet-500/30"></div>
+                                        <div className="absolute inset-0 rounded-full border-t-2 border-violet-500 animate-spin"></div>
+                                        <Sparkles className="absolute inset-0 m-auto w-5 h-5 text-violet-500 animate-pulse" />
+                                    </div>
+                                    <p className="text-xs font-bold text-foreground">AI zaubert...</p>
                                 </div>
                             ) : (
-                                <>
+                                <div className="space-y-1">
                                     {isImage && (
-                                        <div className="space-y-5">
-                                            <div className="space-y-3">
-                                                <span className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Szene generieren</span>
-                                                <div className="grid grid-cols-2 gap-2">
-                                                    {SCENE_PRESETS.map(preset => (
-                                                        <button
-                                                            key={preset.id}
-                                                            onClick={() => handleAIAction('scene', { prompt: preset.prompt })}
-                                                            className="p-3 rounded-xl border border-border hover:border-violet-500 hover:bg-violet-500/5 transition-all text-left flex flex-col gap-1 group"
-                                                        >
-                                                            <span className="text-xl group-hover:scale-110 transition-transform duration-300 origin-left">{preset.label.split(' ')[0]}</span>
-                                                            <span className="text-xs font-medium text-foreground">{preset.label.split(' ')[1]}</span>
-                                                        </button>
-                                                    ))}
-                                                </div>
-                                            </div>
-
-                                            <div className="space-y-3">
-                                                <span className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Bearbeiten</span>
-                                                <div className="grid grid-cols-2 gap-3">
-                                                    <button
-                                                        onClick={() => handleAIAction('cutout')}
-                                                        className="p-3 rounded-xl border border-border hover:border-indigo-500 hover:bg-indigo-500/5 transition-all text-left group"
-                                                    >
-                                                        <div className="mb-2 w-8 h-8 rounded-lg bg-indigo-500/10 flex items-center justify-center text-indigo-500 group-hover:scale-110 transition-transform">
-                                                            <span className="text-lg">✂️</span>
-                                                        </div>
-                                                        <div>
-                                                            <span className="text-sm font-bold block">Freistellen</span>
-                                                            <span className="text-[10px] text-muted-foreground">Hintergrund entfernen</span>
-                                                        </div>
-                                                    </button>
-                                                    <button
-                                                        onClick={() => handleAIAction('enhance')}
-                                                        className="p-3 rounded-xl border border-border hover:border-emerald-500 hover:bg-emerald-500/5 transition-all text-left group"
-                                                    >
-                                                        <div className="mb-2 w-8 h-8 rounded-lg bg-emerald-500/10 flex items-center justify-center text-emerald-500 group-hover:scale-110 transition-transform">
-                                                            <span className="text-lg">✨</span>
-                                                        </div>
-                                                        <div>
-                                                            <span className="text-sm font-bold block">Detail-Fix</span>
-                                                            <span className="text-[10px] text-muted-foreground">Qualität maximieren</span>
-                                                        </div>
-                                                    </button>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    )}
-
-                                    {isText && (
-                                        <div className="space-y-3">
-                                            <button
-                                                onClick={() => handleAIAction('rewrite')}
-                                                className="w-full p-4 rounded-xl border border-border hover:border-purple-500 hover:bg-purple-500/5 transition-all text-left flex items-center gap-4 group"
-                                            >
-                                                <div className="w-10 h-10 rounded-xl bg-purple-500/10 flex items-center justify-center text-2xl group-hover:scale-110 transition-transform">
-                                                    ✍️
-                                                </div>
+                                        <>
+                                            <button onClick={() => handleAIAction('cutout')} className="w-full p-3 rounded-xl hover:bg-violet-500/10 hover:border-violet-500/30 border border-transparent transition-all group flex items-center gap-3 text-left">
+                                                <div className="w-8 h-8 rounded-lg bg-violet-500/10 flex items-center justify-center text-violet-500 group-hover:scale-110 transition-transform">✂️</div>
                                                 <div>
-                                                    <span className="text-sm font-bold block">Text umschreiben</span>
-                                                    <span className="text-xs text-muted-foreground">AI generiert Varianten</span>
+                                                    <span className="text-xs font-bold block">Freistellen</span>
+                                                    <span className="text-[10px] text-muted-foreground">Hintergrund entfernen</span>
                                                 </div>
                                             </button>
-                                        </div>
+
+                                            <button onClick={() => handleAIAction('enhance')} className="w-full p-3 rounded-xl hover:bg-emerald-500/10 hover:border-emerald-500/30 border border-transparent transition-all group flex items-center gap-3 text-left">
+                                                <div className="w-8 h-8 rounded-lg bg-emerald-500/10 flex items-center justify-center text-emerald-500 group-hover:scale-110 transition-transform">✨</div>
+                                                <div>
+                                                    <span className="text-xs font-bold block">Upscale</span>
+                                                    <span className="text-[10px] text-muted-foreground">4x Auflösung</span>
+                                                </div>
+                                            </button>
+
+                                            <div className="pt-2 pb-1 px-1">
+                                                <span className="text-[10px] font-bold text-muted-foreground uppercase opacity-70">Szenen Generator</span>
+                                            </div>
+
+                                            <div className="grid grid-cols-2 gap-2">
+                                                {SCENE_PRESETS.map(preset => (
+                                                    <button
+                                                        key={preset.id}
+                                                        onClick={() => handleAIAction('scene', { prompt: preset.prompt })}
+                                                        className="p-2.5 rounded-xl bg-muted/40 hover:bg-primary/5 hover:ring-1 hover:ring-primary/20 transition-all text-center flex flex-col items-center gap-1.5"
+                                                    >
+                                                        <span className="text-lg">{preset.label.split(' ')[0]}</span>
+                                                        <span className="text-[10px] font-medium">{preset.label.split(' ')[1]}</span>
+                                                    </button>
+                                                ))}
+                                            </div>
+                                        </>
                                     )}
-                                </>
+
+                                    {(isText || isShape) && (
+                                        <button onClick={() => handleAIAction('rewrite')} className="w-full p-3 rounded-xl hover:bg-blue-500/10 hover:border-blue-500/30 border border-transparent transition-all group flex items-center gap-3 text-left">
+                                            <div className="w-8 h-8 rounded-lg bg-blue-500/10 flex items-center justify-center text-blue-500 group-hover:scale-110 transition-transform">✍️</div>
+                                            <div>
+                                                <span className="text-xs font-bold block">Rewriter</span>
+                                                <span className="text-[10px] text-muted-foreground">Text umschreiben</span>
+                                            </div>
+                                        </button>
+                                    )}
+                                </div>
                             )}
                         </div>
                     </div>

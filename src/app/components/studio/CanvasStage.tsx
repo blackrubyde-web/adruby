@@ -8,6 +8,17 @@ export interface CanvasStageHandle {
     exportToDataURL: (format?: 'png' | 'jpeg', quality?: number) => string | undefined;
 }
 
+interface CanvasStageProps {
+    doc: AdDocument;
+    scale: number;
+    viewPos?: { x: number; y: number };
+    selectedLayerId?: string;
+    isHandMode?: boolean;
+    preview?: boolean;
+    onLayerSelect?: (id: string) => void;
+    onLayerUpdate?: (id: string, updates: Partial<StudioLayer>) => void;
+    onViewChange?: (pos: { x: number; y: number }) => void;
+}
 
 // --- Sub-Components for Layers ---
 
@@ -104,24 +115,36 @@ const CtaItem = ({ layer }: { layer: CtaLayer }) => {
     );
 };
 
-// --- Main Stage ---
+const ShapeItem = ({ layer }: { layer: any }) => {
+    return (
+        <Rect
+            x={0}
+            y={0}
+            width={layer.width}
+            height={layer.height}
+            fill={layer.fill}
+            stroke={layer.stroke}
+            strokeWidth={layer.strokeWidth}
+            cornerRadius={layer.cornerRadius}
+            opacity={layer.opacity}
+            shadowColor={layer.shadowColor}
+            shadowBlur={layer.shadowBlur}
+            shadowOffsetX={layer.shadowOffsetX}
+            shadowOffsetY={layer.shadowOffsetY}
+        />
+    );
+};
 
-interface CanvasStageProps {
-    doc: AdDocument;
-    scale?: number;
-    selectedLayerId?: string;
-    onLayerSelect?: (id: string) => void;
-    onLayerUpdate?: (id: string, attrs: Partial<StudioLayer>) => void;
-    isHandMode?: boolean;
-    viewPos?: { x: number, y: number };
-    onViewChange?: (pos: { x: number, y: number }) => void;
-    preview?: boolean;
-}
+// --- Main Canvas Stage Component ---
 
-export const CanvasStage = forwardRef<CanvasStageHandle, CanvasStageProps>(({ doc, scale = 1, selectedLayerId, onLayerSelect, onLayerUpdate, isHandMode = false, viewPos = { x: 0, y: 0 }, onViewChange, preview = false }, ref) => {
-    const sortedLayers = [...doc.layers].sort((a, b) => (a.zIndex ?? 0) - (b.zIndex ?? 0));
+export const CanvasStage = forwardRef<CanvasStageHandle, CanvasStageProps>(function CanvasStage(
+    { doc, scale, viewPos = { x: 0, y: 0 }, selectedLayerId, isHandMode, preview, onLayerSelect, onLayerUpdate, onViewChange },
+    ref
+) {
     const trRef = useRef<any>(null);
     const stageRef = useRef<any>(null);
+
+    const sortedLayers = [...doc.layers].sort((a, b) => (a.zIndex ?? 0) - (b.zIndex ?? 0));
 
     // Expose export method via ref
     useImperativeHandle(ref, () => ({
@@ -130,7 +153,7 @@ export const CanvasStage = forwardRef<CanvasStageHandle, CanvasStageProps>(({ do
             // Temporarily hide transformer for export
             if (trRef.current) trRef.current.nodes([]);
 
-            // Reset position for export to capture everything correctly regardless of view pan
+            // Reset position for export
             const oldX = stageRef.current.x();
             const oldY = stageRef.current.y();
             stageRef.current.x(0);
@@ -139,7 +162,7 @@ export const CanvasStage = forwardRef<CanvasStageHandle, CanvasStageProps>(({ do
             const dataURL = stageRef.current.toDataURL({
                 mimeType: format === 'jpeg' ? 'image/jpeg' : 'image/png',
                 quality,
-                pixelRatio: 2 // High resolution export
+                pixelRatio: 2
             });
 
             // Restore position
@@ -151,7 +174,7 @@ export const CanvasStage = forwardRef<CanvasStageHandle, CanvasStageProps>(({ do
     }), []);
 
     useEffect(() => {
-        if (!selectedLayerId || !trRef.current || isHandMode || preview) return; // Don't show transformer in hand mode or preview
+        if (!selectedLayerId || !trRef.current || isHandMode || preview) return;
         const stage = trRef.current.getStage();
         const selectedNode = stage.findOne('.' + selectedLayerId);
         if (selectedNode) {
@@ -191,8 +214,10 @@ export const CanvasStage = forwardRef<CanvasStageHandle, CanvasStageProps>(({ do
                                 >
                                     {layer.type === 'text' ? (
                                         <TextItem layer={layer as TextLayer} />
-                                    ) : (layer.type === 'cta') ? (
+                                    ) : layer.type === 'cta' ? (
                                         <CtaItem layer={layer as CtaLayer} />
+                                    ) : layer.type === 'shape' ? (
+                                        <ShapeItem layer={layer} />
                                     ) : (
                                         <URLImage layer={layer as ImageLayer} />
                                     )}
@@ -282,8 +307,10 @@ export const CanvasStage = forwardRef<CanvasStageHandle, CanvasStageProps>(({ do
                                 >
                                     {layer.type === 'text' ? (
                                         <TextItem layer={layer as TextLayer} />
-                                    ) : (layer.type === 'cta') ? (
+                                    ) : layer.type === 'cta' ? (
                                         <CtaItem layer={layer as CtaLayer} />
+                                    ) : layer.type === 'shape' ? (
+                                        <ShapeItem layer={layer} />
                                     ) : (layer.type === 'background' || layer.type === 'product' || layer.type === 'overlay' || layer.type === 'logo') ? (
                                         <URLImage layer={layer as ImageLayer} />
                                     ) : null}
@@ -325,4 +352,3 @@ export const CanvasStage = forwardRef<CanvasStageHandle, CanvasStageProps>(({ do
 });
 
 CanvasStage.displayName = 'CanvasStage';
-

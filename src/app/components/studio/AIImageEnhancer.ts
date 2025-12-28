@@ -1,5 +1,6 @@
 // AI Image Enhancement Utilities
 // Provides AI-powered image editing capabilities for the Studio
+import { enhanceProductImage, generateBackgroundScene } from '../../lib/api/ai-image-enhancement';
 
 export interface SceneGenerationRequest {
     imageUrl: string;
@@ -23,48 +24,62 @@ export interface AIImageResult {
     error?: string;
 }
 
+// Helper to convert Blob/URL to Base64 for Vision API
+async function urlToBase64(url: string): Promise<string> {
+    try {
+        const response = await fetch(url);
+        const blob = await response.blob();
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onloadend = () => {
+                const base64 = reader.result as string;
+                // Remove data:image/xxx;base64, prefix
+                resolve(base64.split(',')[1]);
+            };
+            reader.onerror = reject;
+            reader.readAsDataURL(blob);
+        });
+    } catch (e) {
+        console.error("Failed to convert image to base64", e);
+        throw new Error("Failed to process image");
+    }
+}
+
 /**
  * Generate a professional product scene around an uploaded image
- * Uses DALL-E to create context/background while keeping the product
+ * Uses Premium Vision API
  */
 export async function generateProductScene(request: SceneGenerationRequest): Promise<AIImageResult> {
     const { imageUrl, scenePrompt, style = 'product' } = request;
 
-    const styleGuides = {
-        product: 'Clean product photography style, professional lighting, subtle shadows',
-        lifestyle: 'Lifestyle setting, natural environment, aspirational feel',
-        studio: 'Professional studio setup, gradient background, controlled lighting',
-        minimal: 'Minimal aesthetic, solid color background, elegant simplicity'
-    };
-
     try {
-        const response = await fetch('/api/ai-generate-image', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                prompt: `Professional product photo: ${scenePrompt}. ${styleGuides[style]}. High quality, 4K, commercial photography style.`,
-                referenceImage: imageUrl,
-                size: '1024x1024'
-            })
+        const base64 = await urlToBase64(imageUrl);
+
+        // Map style to tone
+        const toneMap: Record<string, 'professional' | 'playful' | 'bold' | 'luxury' | 'minimal'> = {
+            product: 'professional',
+            lifestyle: 'playful',
+            studio: 'professional',
+            minimal: 'minimal'
+        };
+
+        const result = await enhanceProductImage({
+            imageBase64: base64,
+            userPrompt: scenePrompt,
+            productName: "Product", // Generic default
+            tone: toneMap[style] || 'professional'
         });
 
-        if (response.ok) {
-            const data = await response.json();
-            if (data.imageUrl) {
-                return { success: true, imageUrl: data.imageUrl };
-            }
-        }
-
-        // Fallback: Return mock result for demo purposes
         return {
             success: true,
-            imageUrl: getMockSceneImage(style)
+            imageUrl: result.enhancedImageUrl
         };
+
     } catch (error) {
         console.error('Scene generation failed:', error);
         return {
             success: false,
-            error: 'Failed to generate scene. Please try again.'
+            error: error instanceof Error ? error.message : 'Failed to generate scene'
         };
     }
 }
@@ -76,32 +91,24 @@ export async function replaceBackground(request: BackgroundReplaceRequest): Prom
     const { imageUrl, backgroundPrompt } = request;
 
     try {
-        const response = await fetch('/api/ai-replace-background', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                imageUrl,
-                backgroundPrompt: `${backgroundPrompt}. Professional quality, seamless integration, appropriate lighting.`
-            })
+        const base64 = await urlToBase64(imageUrl);
+
+        const result = await generateBackgroundScene({
+            imageBase64: base64,
+            userPrompt: backgroundPrompt,
+            productName: "Product",
+            tone: 'professional' // Default
         });
 
-        if (response.ok) {
-            const data = await response.json();
-            if (data.imageUrl) {
-                return { success: true, imageUrl: data.imageUrl };
-            }
-        }
-
-        // Fallback
         return {
             success: true,
-            imageUrl: getMockBackgroundImage(backgroundPrompt)
+            imageUrl: result.backgroundImageUrl
         };
     } catch (error) {
         console.error('Background replacement failed:', error);
         return {
             success: false,
-            error: 'Failed to replace background. Please try again.'
+            error: error instanceof Error ? error.message : 'Failed to replace background'
         };
     }
 }
@@ -113,32 +120,31 @@ export async function enhanceImage(request: ImageEnhanceRequest): Promise<AIImag
     const { imageUrl, enhanceType } = request;
 
     try {
-        const response = await fetch('/api/ai-enhance-image', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                imageUrl,
-                enhanceType
-            })
+        const base64 = await urlToBase64(imageUrl);
+
+        // Map enhance types to prompts
+        const prompts = {
+            quality: "Upscale and sharpen details, improve resolution",
+            lighting: "Professional studio lighting, balanced shadows",
+            color: "Vibrant color grading, color correction"
+        };
+
+        const result = await enhanceProductImage({
+            imageBase64: base64,
+            userPrompt: prompts[enhanceType],
+            productName: "Product",
+            tone: 'professional'
         });
 
-        if (response.ok) {
-            const data = await response.json();
-            if (data.imageUrl) {
-                return { success: true, imageUrl: data.imageUrl };
-            }
-        }
-
-        // For demo: return original with "enhanced" flag
         return {
             success: true,
-            imageUrl: imageUrl // In production, this would be the enhanced image
+            imageUrl: result.enhancedImageUrl
         };
     } catch (error) {
         console.error('Image enhancement failed:', error);
         return {
             success: false,
-            error: 'Failed to enhance image. Please try again.'
+            error: error instanceof Error ? error.message : 'Failed to enhance image'
         };
     }
 }

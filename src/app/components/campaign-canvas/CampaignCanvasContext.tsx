@@ -841,45 +841,41 @@ export function CampaignCanvasProvider({ children }: { children: ReactNode }) {
                     bidStrategy: config?.bidStrategy,
                 };
 
+                // Real Backend Call via Supabase Edge Function
+                const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+
+                if (!token) {
+                    throw new Error('Nicht authentifiziert. Bitte neu einloggen.');
+                }
+
+                const response = await fetch(`${supabaseUrl}/functions/v1/meta-create-campaign`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({
+                        mode: pushToMeta ? 'create' : 'preview',
+                        campaign: campaignPayload,
+                        adSets: adSets
+                    }),
+                });
+
+                const result = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(result.error || 'Request Failed');
+                }
+
                 if (pushToMeta) {
-                    // Real API push to Meta
-                    const response = await fetch('/.netlify/functions/meta-create-campaign', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
-                        },
-                        body: JSON.stringify({ campaign: campaignPayload, adSets }),
-                    });
-
-                    const result = await response.json();
-
-                    if (!response.ok) {
-                        throw new Error(result.error || 'Push zu Meta fehlgeschlagen');
-                    }
-
                     toast.success(`🎉 Kampagne "${config?.name}" auf Meta erstellt!`, {
-                        description: `${result.adSets?.length || 0} Ad Sets, ${result.ads?.length || 0} Ads erstellt`,
+                        description: `Campaign ID: ${result.campaignId}`,
                     });
                 } else {
-                    // Preview only - use export endpoint
-                    const response = await fetch('/.netlify/functions/campaign-canvas-export', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
-                        },
-                        body: JSON.stringify({ campaigns: [{ campaign: campaignPayload, ad_sets: adSets }] }),
+                    toast.success('Export-Vorschau validiert!', {
+                        description: 'JSON Preview ready. Click Export to View.',
                     });
-
-                    if (!response.ok) {
-                        const error = await response.json();
-                        throw new Error(error.error || 'Export fehlgeschlagen');
-                    }
-
-                    toast.success('Export-Vorschau erstellt!', {
-                        description: 'Kampagne kann jetzt zu Meta gepusht werden.',
-                    });
+                    console.log('Preview Result:', result.preview);
                 }
             }
 
@@ -898,7 +894,6 @@ export function CampaignCanvasProvider({ children }: { children: ReactNode }) {
     // ========================================================================
 
     const value = useMemo<CampaignCanvasContextValue>(() => ({
-        // Draft management
         draftId,
         draftName,
         setDraftName,
@@ -906,8 +901,6 @@ export function CampaignCanvasProvider({ children }: { children: ReactNode }) {
         loadDraft,
         createNewDraft,
         deleteDraft,
-
-        // Nodes & Edges
         nodes,
         edges,
         setNodes,
@@ -917,39 +910,27 @@ export function CampaignCanvasProvider({ children }: { children: ReactNode }) {
         onConnect,
         viewport,
         setViewport,
-
-        // Selection
         selectedNodeId,
         setSelectedNodeId,
         selectedNode,
         selectedNodeIds,
         setSelectedNodeIds,
-
-        // Node operations
         addCampaignNode,
         addAdSetNode,
         addAdNode,
         updateNodeData,
         deleteNode,
         duplicateNode,
-
-        // Assets
         availableCreatives,
         setAvailableCreatives,
         dropCreativeOnNode,
-
-        // Undo/Redo
         canUndo,
         canRedo,
         undo,
         redo,
-
-        // AI
         aiAnalysis,
         isAnalyzing,
         runAIAnalysis,
-
-        // Persistence
         isDirty,
         isSaving,
         isLoading,
@@ -957,20 +938,17 @@ export function CampaignCanvasProvider({ children }: { children: ReactNode }) {
         saveDraft,
         autoSaveEnabled,
         setAutoSaveEnabled,
-
-        // Export
         exportToMeta,
         isExporting,
     }), [
         draftId, draftName, drafts, loadDraft, createNewDraft, deleteDraft,
-        nodes, edges, setNodes, setEdges, onNodesChange, onEdgesChange, onConnect, viewport,
-        selectedNodeId, selectedNode, selectedNodeIds,
-        addCampaignNode, addAdSetNode, addAdNode, updateNodeData, deleteNode, duplicateNode,
-        availableCreatives, dropCreativeOnNode,
-        canUndo, canRedo, undo, redo,
-        aiAnalysis, isAnalyzing, runAIAnalysis,
-        isDirty, isSaving, isLoading, lastSaved, saveDraft, autoSaveEnabled,
-        exportToMeta, isExporting,
+        nodes, edges, setNodes, setEdges, onNodesChange, onEdgesChange, onConnect,
+        viewport, setViewport, selectedNodeId, setSelectedNodeId, selectedNode,
+        selectedNodeIds, setSelectedNodeIds, addCampaignNode, addAdSetNode, addAdNode,
+        updateNodeData, deleteNode, duplicateNode, availableCreatives, setAvailableCreatives,
+        dropCreativeOnNode, canUndo, canRedo, undo, redo, aiAnalysis, isAnalyzing, runAIAnalysis,
+        isDirty, isSaving, isLoading, lastSaved, saveDraft, autoSaveEnabled, setAutoSaveEnabled,
+        exportToMeta, isExporting
     ]);
 
     return (

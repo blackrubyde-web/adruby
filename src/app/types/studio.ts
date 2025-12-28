@@ -35,6 +35,8 @@ export type LayerBase = {
     opacity: number;
     zIndex?: number; // Optional
     ai?: AiProvenance;
+    // Layout Composer Role (Clean mapping)
+    role?: 'headline' | 'subheadline' | 'description' | 'cta' | 'bg_image' | 'product_image' | 'logo' | 'social_proof' | 'review_text' | 'review_author' | 'code' | 'price';
 };
 
 export type ImageLayer = LayerBase & {

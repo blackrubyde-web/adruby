@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Brain, TrendingDown, AlertTriangle, CheckCircle, Zap, Lightbulb } from 'lucide-react';
 
 interface Campaign {
@@ -31,18 +31,45 @@ export function DeepInsightsPanel({ campaign, onClose }: Props) {
     const [isAnalyzing, setIsAnalyzing] = useState(false);
     const [insights, setInsights] = useState<DeepInsight[]>([]);
 
+    // Auto-analyze on mount or when campaign changes
+    useEffect(() => {
+        analyzeWithAI();
+    }, [campaign.id]);
+
     const analyzeWithAI = async () => {
         setIsAnalyzing(true);
         try {
-            // Call GPT-4 for deep analysis
-            const response = await fetch('/api/ai-deep-insights', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ campaign })
+            const { supabase } = await import('../../lib/supabaseClient');
+
+            // Generate a prompt based on campaign data
+            const prompt = `Analyze this ad campaign:
+            Name: ${campaign.name}
+            ROAS: ${campaign.roas}
+            Spend: ${campaign.spend}
+            CTR: ${campaign.ctr}%
+            CPC: ${campaign.cpc}
+            Conversions: ${campaign.conversions}
+            
+            Provide 4-5 deep qualitative insights categorized as 'strength', 'weakness', 'opportunity', or 'threat'.
+            Return JSON format: { "insights": [{ "category": "...", "title": "...", "description": "...", "impact": "high/medium/low", "actionable": true, "action": "..." }] }`;
+
+            const { data, error } = await supabase.functions.invoke('openai-proxy', {
+                body: {
+                    endpoint: 'chat/completions',
+                    model: 'gpt-4o',
+                    messages: [
+                        { role: 'system', content: 'You are a senior ad strategist. Return valid JSON only.' },
+                        { role: 'user', content: prompt }
+                    ],
+                    response_format: { type: "json_object" }
+                }
             });
 
-            const data = await response.json();
-            setInsights(data.insights || generateFallbackInsights());
+            if (error) throw error;
+
+            const content = data.choices[0].message.content;
+            const parsed = JSON.parse(content);
+            setInsights(parsed.insights || generateFallbackInsights());
         } catch (error) {
             console.error('Deep analysis failed:', error);
             setInsights(generateFallbackInsights());
@@ -51,128 +78,63 @@ export function DeepInsightsPanel({ campaign, onClose }: Props) {
         }
     };
 
-    const generateFallbackInsights = (): DeepInsight[] => {
-        const insights: DeepInsight[] = [];
-
-        // Strengths
-        if (campaign.roas >= 3.0) {
-            insights.push({
-                category: 'strength',
-                title: 'Starke ROAS Performance',
-                description: `Mit ${campaign.roas.toFixed(2)}x ROAS liegt diese Kampagne deutlich über dem Ziel. Die Zielgruppe ist gut getroffen.`,
-                impact: 'high',
-                actionable: true,
-                action: 'Budget um 50% erhöhen für maximale Skalierung'
-            });
-        }
-
-        if (campaign.ctr >= 2.0) {
-            insights.push({
-                category: 'strength',
-                title: 'Überdurchschnittliche CTR',
-                description: `CTR von ${campaign.ctr.toFixed(2)}% zeigt, dass die Creatives sehr ansprechend sind.`,
-                impact: 'high',
-                actionable: true,
-                action: 'Creative duplizieren und Variationen testen'
-            });
-        }
-
-        // Weaknesses
-        if (campaign.cpc > 2.0) {
-            insights.push({
-                category: 'weakness',
-                title: 'Hohe Cost-per-Click',
-                description: `CPC von €${campaign.cpc.toFixed(2)} ist überdurchschnittlich. Möglicherweise zu breite Zielgruppe.`,
-                impact: 'medium',
-                actionable: true,
-                action: 'Zielgruppe verfeinern, Lookalike Audiences testen'
-            });
-        }
-
-        if (campaign.conversions < 10) {
-            insights.push({
-                category: 'weakness',
-                title: 'Niedrige Conversion-Anzahl',
-                description: 'Zu wenige Conversions für statistisch signifikante Optimierung.',
-                impact: 'high',
-                actionable: true,
-                action: 'Budget erhöhen oder Conversion-Event anpassen'
-            });
-        }
-
-        // Opportunities
-        if (campaign.roas >= 2.5 && campaign.spend < 1000) {
-            insights.push({
-                category: 'opportunity',
-                title: 'Skalierungspotenzial',
-                description: 'Starke Performance bei niedrigem Budget - idealer Kandidat für Skalierung.',
-                impact: 'high',
-                actionable: true,
-                action: 'Budget schrittweise verdoppeln (20% pro Tag)'
-            });
-        }
-
-        insights.push({
-            category: 'opportunity',
-            title: 'A/B Testing Empfehlung',
-            description: 'Teste verschiedene Headlines und CTAs um Performance weiter zu optimieren.',
+    // Helper functions for rendering
+    const generateFallbackInsights = (): DeepInsight[] => [
+        {
+            category: 'strength',
+            title: 'Strong conversion rate',
+            description: 'Your campaign is performing well with consistent conversions.',
+            impact: 'high',
+            actionable: false
+        },
+        {
+            category: 'weakness',
+            title: 'High cost per click',
+            description: `CPC of €${campaign.cpc.toFixed(2)} is above industry average.`,
             impact: 'medium',
             actionable: true,
-            action: 'A/B Test mit 3 Headline-Varianten starten'
-        });
-
-        // Threats
-        if (campaign.impressions > 100000 && campaign.ctr < 1.5) {
-            insights.push({
-                category: 'threat',
-                title: 'Creative Fatigue Risiko',
-                description: 'Hohe Impressions bei sinkender CTR deuten auf Creative Fatigue hin.',
-                impact: 'high',
-                actionable: true,
-                action: 'Neue Creatives innerhalb 3 Tagen launchen'
-            });
+            action: 'Refine audience targeting to reduce wasted impressions'
+        },
+        {
+            category: 'opportunity',
+            title: 'Scaling potential detected',
+            description: 'Your ROAS suggests room for controlled budget increase.',
+            impact: 'high',
+            actionable: true,
+            action: 'Test increasing daily budget by 20%'
         }
+    ];
 
-        return insights;
-    };
-
-    const getCategoryIcon = (category: string) => {
-        switch (category) {
-            case 'strength': return <CheckCircle className="w-5 h-5 text-green-500" />;
-            case 'weakness': return <AlertTriangle className="w-5 h-5 text-orange-500" />;
-            case 'opportunity': return <Lightbulb className="w-5 h-5 text-blue-500" />;
-            case 'threat': return <TrendingDown className="w-5 h-5 text-red-500" />;
-            default: return <Brain className="w-5 h-5" />;
-        }
-    };
-
-    const getCategoryColor = (category: string) => {
+    const getCategoryColor = (category: DeepInsight['category']) => {
         switch (category) {
             case 'strength': return 'bg-green-500/10 border-green-500/30';
-            case 'weakness': return 'bg-orange-500/10 border-orange-500/30';
+            case 'weakness': return 'bg-red-500/10 border-red-500/30';
             case 'opportunity': return 'bg-blue-500/10 border-blue-500/30';
-            case 'threat': return 'bg-red-500/10 border-red-500/30';
-            default: return 'bg-muted border-border';
+            case 'threat': return 'bg-orange-500/10 border-orange-500/30';
         }
     };
 
-    const getImpactBadge = (impact: string) => {
+    const getCategoryIcon = (category: DeepInsight['category']) => {
+        switch (category) {
+            case 'strength': return <CheckCircle className="w-5 h-5 text-green-500" />;
+            case 'weakness': return <TrendingDown className="w-5 h-5 text-red-500" />;
+            case 'opportunity': return <Lightbulb className="w-5 h-5 text-blue-500" />;
+            case 'threat': return <AlertTriangle className="w-5 h-5 text-orange-500" />;
+        }
+    };
+
+    const getImpactBadge = (impact: DeepInsight['impact']) => {
         const colors = {
-            high: 'bg-red-500/20 text-red-600',
-            medium: 'bg-yellow-500/20 text-yellow-600',
-            low: 'bg-blue-500/20 text-blue-600'
+            high: 'bg-red-500/20 text-red-300 border border-red-500/30',
+            medium: 'bg-yellow-500/20 text-yellow-300 border border-yellow-500/30',
+            low: 'bg-gray-500/20 text-gray-300 border border-gray-500/30'
         };
         return (
-            <span className={`px-2 py-0.5 rounded text-xs font-medium ${colors[impact as keyof typeof colors]}`}>
+            <span className={`px-2 py-0.5 rounded text-xs font-semibold ${colors[impact]}`}>
                 {impact.toUpperCase()}
             </span>
         );
     };
-
-    // Auto-analyze on mount
-    useState(() => {
-        analyzeWithAI();
-    });
 
     return (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">

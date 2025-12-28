@@ -20,9 +20,18 @@ export function StreamingAnalysis({ campaigns, onComplete, isAnalyzing }: Stream
             setStreamingText('');
 
             try {
-                const response = await fetch('/api/ai-analyze-stream', {
+                const { data: { session } } = await import('../../lib/supabaseClient').then(m => m.supabase.auth.getSession());
+                const token = session?.access_token;
+
+                if (!token) throw new Error('No active session');
+
+                const supabaseUrl = import.meta.env.VITE_SUPABASE_URL; // Fix Env Var
+                const response = await fetch(`${supabaseUrl}/functions/v1/ai-analyze-stream`, {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
                     body: JSON.stringify({ campaigns })
                 });
 
@@ -37,27 +46,46 @@ export function StreamingAnalysis({ campaigns, onComplete, isAnalyzing }: Stream
                     const { done: streamDone, value } = await reader.read();
                     done = streamDone;
 
-                    if (done) break;
+                    if (value) {
+                        const chunk = decoder.decode(value, { stream: true });
+                        buffer += chunk;
+                        setStreamingText(prev => prev + chunk); // Keep showing raw text for debug/visual
 
-                    const chunk = decoder.decode(value, { stream: true });
-                    buffer += chunk;
-
-                    // Update streaming text
-                    setStreamingText(prev => prev + chunk);
-
-                    // Check for campaign markers
-                    const campaignMatch = chunk.match(/\[CAMPAIGN:(\d+)\]/);
-                    if (campaignMatch) {
-                        setCurrentCampaign(parseInt(campaignMatch[1]));
+                        // Check markers immediately
+                        const campaignMatch = chunk.match(/\[CAMPAIGN:(\d+)\]/);
+                        if (campaignMatch) {
+                            setCurrentCampaign(parseInt(campaignMatch[1]));
+                        }
                     }
                 }
 
-                // Parse final result
-                try {
-                    const result = JSON.parse(buffer);
-                    onComplete(result.analyses || []);
-                } catch (e) {
-                    console.error('Failed to parse streaming result:', e);
+                // Handle JSONL / Multiple Lines
+                // The server might send: {"partial":true...}\n{"analyses": [...]}\n[DONE]
+                // We want the last valid JSON that has 'analyses'.
+                const lines = buffer.split('\n');
+                let analysesResult = [];
+
+                for (const line of lines) {
+                    const trimmed = line.trim();
+                    if (!trimmed) continue;
+                    if (trimmed.startsWith('[')) continue; // Skip markers like [DONE]
+
+                    try {
+                        const json = JSON.parse(trimmed);
+                        if (json.analyses) {
+                            analysesResult = json.analyses;
+                        }
+                    } catch (e) {
+                        // Ignore parse errors for intermediate chunks/markers
+                    }
+                }
+
+                if (analysesResult.length > 0) {
+                    onComplete(analysesResult);
+                } else {
+                    // Fallback: try parsing whole buffer if lines failed? 
+                    // Unlikely if JSONL. But let's log warning.
+                    console.warn("No valid analysis result found in stream.");
                 }
             } catch (error) {
                 console.error('Streaming error:', error);
@@ -127,8 +155,8 @@ export function StreamingAnalysis({ campaigns, onComplete, isAnalyzing }: Stream
                         <Loader2 className="w-4 h-4 animate-spin" />
                         <span>
                             {currentCampaign === 0 && 'Initializing AI analysis...'}
-                            {currentCampaign > 0 && currentCampaign < campaigns.length && 'Analyzing campaigns...'}
-                            {currentCampaign === campaigns.length && 'Finalizing insights...'}
+                            {currentCampaign > 0 && currentCampaign < campaigns.length - 1 && 'Analyzing campaigns...'}
+                            {currentCampaign >= campaigns.length - 1 && 'Finalizing insights...'}
                         </span>
                     </div>
                 </div>

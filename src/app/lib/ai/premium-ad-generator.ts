@@ -1,8 +1,11 @@
 import { analyzeStrategy, type StrategicProfile } from './strategic-analyzer';
 import { selectTemplate } from './template-selector';
 import { generatePremiumCopy, type PremiumCopy } from './copy-generator';
+import { getBestCopyVariant, type CopyVariant } from './copy-generator-v2'; // NEW: 10x variant engine
+import { generateDynamicTemplate, generateVisualStyle, type VisualStyle } from './template-generator-v2'; // NEW: Dynamic templates
 import { composeLayout } from './layout-composer';
 import { processImage } from './image-processor';
+import { scoreAdQuality } from './vision-qa';
 import type { AdDocument } from '../../types/studio';
 
 /**
@@ -17,6 +20,11 @@ export interface PremiumAdParams {
     tone: 'professional' | 'playful' | 'bold' | 'luxury' | 'minimal';
     imageBase64?: string;
     enhanceImage?: boolean;
+    groundedFacts?: {
+        offer?: string;
+        proof?: string;
+        painPoints?: string[];
+    };
 }
 
 export interface PremiumAdResult {
@@ -31,43 +39,86 @@ export async function generatePremiumAd(
     params: PremiumAdParams,
     onProgress?: (stage: number, message: string) => void
 ): Promise<PremiumAdResult> {
-    console.log('🚀 Starting Premium AI Ad Generation Pipeline...');
+    console.log('🚀 Starting Premium AI Ad Generation Pipeline 2.0 (Compositing Mode)...');
 
     try {
-        // STAGE 1: Strategic Analysis
-        onProgress?.(1, 'Analyzing product strategy...');
+        // STAGE 1: Strategic Analysis 2.0 (Design Tokens)
+        onProgress?.(1, 'Analyzing brand strategy & design tokens...');
         const strategicProfile = await analyzeStrategy({
             productName: params.productName,
             brandName: params.brandName,
             userPrompt: params.userPrompt,
-            tone: params.tone
+            tone: params.tone,
+            imageBase64: params.imageBase64
         });
 
-        // STAGE 2: Template Selection
-        onProgress?.(2, 'Selecting optimal template...');
-        const template = selectTemplate(strategicProfile, params.tone);
+        // STAGE 2: Dynamic Template Generation (NEW: Algorithmic Layouts)
+        onProgress?.(2, 'Generating unique template with color harmonies...');
 
-        // STAGE 3: Premium Copy Generation
-        onProgress?.(3, 'Generating conversion-optimized copy...');
-        const premiumCopy = await generatePremiumCopy({
+        // Determine visual style based on tone
+        const visualStyleMap: Record<string, VisualStyle['name']> = {
+            'professional': 'minimal',
+            'playful': 'playful',
+            'bold': 'bold',
+            'luxury': 'luxury',
+            'minimal': 'minimal'
+        };
+        const visualStyle = visualStyleMap[params.tone] || 'minimal';
+
+        // Extract brand color from strategic profile (safe access with fallback)
+        const brandColor = strategicProfile.designSystem?.colorPalette?.primary || '#000000';
+
+        // Generate completely unique template
+        const dynamicTemplate = generateDynamicTemplate({
+            tone: params.tone,
+            visualStyle,
+            brandColor,
+            productCategory: 'general' // strategicProfile doesn't have niche
+        });
+
+        // For compatibility with existing flow, wrap dynamic template
+        const template = {
+            id: dynamicTemplate.id,
+            name: dynamicTemplate.name,
+            document: dynamicTemplate // layout-composer expects template.document
+        };
+
+        // STAGE 3: Premium Copy Explosion (NEW: 10 Hook Angles → Best Variant)
+        onProgress?.(3, 'Generating 10 copy variants with scientific hook angles...');
+        const bestVariant = await getBestCopyVariant({
             productName: params.productName,
             brandName: params.brandName,
             profile: strategicProfile,
-            template,
-            tone: params.tone
+            tone: params.tone,
+            groundedFacts: params.groundedFacts || {
+                offer: "Get 50% Off Today",
+                proof: "Trusted by 10,000+ Customers"
+            }
         });
 
-        // STAGE 5: Intelligent Image Processing (via Backend Edge Function)
-        onProgress?.(5, 'Processing image (Generating Scene)...');
+        // Convert CopyVariant to PremiumCopy format for compatibility
+        const premiumCopy: PremiumCopy = {
+            headline: bestVariant.headline,
+            subheadline: bestVariant.subheadline,
+            description: bestVariant.description,
+            cta: bestVariant.cta,
+            socialProof: bestVariant.socialProof,
+            urgencyText: bestVariant.urgencyText,
+            score: bestVariant.score.total,
+            reasoning: `${bestVariant.hookAngle} hook: ${bestVariant.reasoning}`
+        };
 
-        let processedImages: { original: string; background?: string } | undefined;
+        // STAGE 4: Compositing Engine (Parallel)
+        onProgress?.(4, 'Compositing authentic product scene...');
+
+        let processedAssets: { originalProduct: string; generatedBackground?: string } | undefined;
 
         try {
-            // Safe Race: Give DALL-E 3 generous time (120s)
-            const timeoutPromise = new Promise<{ original: string; background?: string } | undefined>((resolve) => {
+            // Give generation 120s max
+            const timeoutPromise = new Promise<{ originalProduct: string; generatedBackground?: string } | undefined>((resolve) => {
                 setTimeout(() => {
-                    console.warn('⚠️ Image processing pending > 120s');
-                    resolve({ original: params.imageBase64 || '' });
+                    console.warn('⚠️ Compositing timeout > 120s');
+                    resolve({ originalProduct: params.imageBase64 || '' });
                 }, 120000);
             });
 
@@ -75,41 +126,70 @@ export async function generatePremiumAd(
                 imageBase64: params.imageBase64,
                 productName: params.productName,
                 tone: params.tone,
+                designVibe: strategicProfile.designSystem.vibe,
                 shouldEnhance: params.enhanceImage !== false
             });
 
-            // Race the real process against the timeout
-            processedImages = await Promise.race([processingPromise, timeoutPromise]);
+            // Race it
+            processedAssets = await Promise.race([processingPromise, timeoutPromise]);
+
+            // STAGE 6: Vision QA (Safety & Quality Check)
+            if (processedAssets?.generatedBackground) {
+                onProgress?.(6, 'Performing Vision QA on Assets...');
+                const qaScore = await scoreAdQuality(processedAssets.generatedBackground, {
+                    product: params.productName,
+                    tone: params.tone
+                });
+
+                // If QA fails critical safety/quality, fallback to original or specific fix
+                if (qaScore.totalScore < 60 || !qaScore.breakdown.safetyCheck) {
+                    console.warn('⚠️ Vision QA Failed! Reverting to simple product cutout.', qaScore.feedback);
+                    processedAssets.generatedBackground = undefined; // Fallback to solid color/cutout
+                }
+            }
 
         } catch (imageError: any) {
-            console.error('❌ Premium Image Failed:', imageError);
-            processedImages = { original: params.imageBase64 || '' };
+            console.error('❌ Compositing Failed:', imageError);
+            processedAssets = { originalProduct: params.imageBase64 || '' };
         }
 
-        // STAGE 4: Layout Composition (after image processing)
-        onProgress?.(4, 'Composing premium layout...');
+        // STAGE 5: Final Layout Assembly
+        onProgress?.(5, 'Assembling final studio assets...');
         const adDocument = composeLayout({
             template,
             copy: premiumCopy,
-            productImage: processedImages?.original,
-            backgroundImage: processedImages?.background,
+            productImage: processedAssets?.originalProduct,
+            backgroundImage: processedAssets?.generatedBackground,
             brandName: params.brandName,
             productName: params.productName,
-            visualIdentity: strategicProfile.visualIdentity
+            visualIdentity: {
+                primaryColor: strategicProfile.designSystem.colorPalette.primary,
+                accentColor: strategicProfile.designSystem.colorPalette.highlight,
+                backgroundColor: strategicProfile.designSystem.colorPalette.primary,
+                textColor: strategicProfile.designSystem.colorPalette.text,
+                fontStyle: 'modern' // fallback or map from fontPairing
+            },
+            groundedFacts: {
+                offer: params.groundedFacts?.offer || 'Special Offer',
+                proof: params.groundedFacts?.proof
+            }
         });
 
-        console.log('✅ Premium ad generation complete!');
+        console.log('✅ Premium ad pipeline complete!');
 
         return {
             adDocument,
             strategicProfile,
             premiumCopy,
             template,
-            processedImages
+            processedImages: {
+                original: processedAssets?.originalProduct || '',
+                background: processedAssets?.generatedBackground
+            }
         };
 
     } catch (error) {
-        console.error('Premium ad generation failed:', error);
+        console.error('Premium pipeline failed:', error);
         throw error;
     }
 }

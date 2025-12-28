@@ -6,95 +6,94 @@ import { supabase } from '../supabaseClient';
  */
 
 export interface StrategicProfile {
+    // Core Strategy
     productCategory: 'electronics' | 'fashion' | 'food' | 'beauty' | 'home' | 'sports' | 'tech' | 'services' | 'other';
-    targetAudience: 'young_professionals' | 'parents' | 'students' | 'seniors' | 'entrepreneurs' | 'general';
+    targetAudience: string; // Specific audience persona (e.g., "Overworked Moms")
     primaryPainPoint: string;
-    desiredEmotion: 'excitement' | 'trust' | 'desire' | 'urgency' | 'exclusivity' | 'curiosity';
+    desiredEmotion: 'excitement' | 'trust' | 'desire' | 'urgency' | 'exclusivity' | 'curiosity' | 'relief';
     conversionGoal: 'purchase' | 'signup' | 'download' | 'learn_more' | 'contact';
-    recommendedTemplate: string;
-    keyBenefits: string[];
-    competitiveAdvantage: string;
-    visualIdentity: {
-        primaryColor: string;
-        accentColor: string;
-        backgroundColor: string;
-        textColor: string;
-        fontStyle: 'modern' | 'bold' | 'elegant' | 'handwritten' | 'minimal';
+
+    // Copy Directions (Grounded)
+    angle: string; // The specific marketing angle (e.g. "Us vs Them")
+    hookType: 'question' | 'statement' | 'stat' | 'negative' | 'story';
+
+    // Design System (Tokens)
+    designSystem: {
+        vibe: 'minimal' | 'bold' | 'luxury' | 'organic' | 'industrial' | 'tech';
+        colorPalette: {
+            primary: string; // Hex for background/dominant
+            secondary: string; // Hex for accents
+            text: string;    // Hex for body text
+            highlight: string; // Hex for CTAs/Important text
+        };
+        fontPairing: {
+            headline: 'Inter' | 'Oswald' | 'Playfair Display' | 'Caveat' | 'Rubik';
+            body: 'Inter';
+        };
+        visualElements: string[]; // e.g. ["rounded corners", "glassmorphism"]
     };
+
+    recommendedTemplate: string;
 }
 
 export async function analyzeStrategy(params: {
     productName: string;
     brandName?: string;
-    userPrompt: string;
+    userPrompt: string; // Now includes structured brief data
     tone: 'professional' | 'playful' | 'bold' | 'luxury' | 'minimal';
+    imageBase64?: string;
 }): Promise<StrategicProfile> {
-    console.log('📊 Stage 1: Strategic Analysis...');
+    console.log('📊 Stage 1: Strategic Analysis 2.0...');
 
-    const analysisPrompt = `You are an elite Meta ads strategist with 10+ years experience.
-
-PRODUCT ANALYSIS:
+    const analysisPrompt = `You are a World-Class Creative Director.
+    
+CONTEXT:
 - Product: ${params.productName}
-${params.brandName ? `- Brand: ${params.brandName}` : ''}
-- Tone: ${params.tone}
-- User Goal: "${params.userPrompt}"
+- Brand: ${params.brandName || 'N/A'}
+- Brief: ${params.userPrompt}
+- Desired Tone: ${params.tone}
 
-YOUR MISSION: Analyze this product and create a strategic ad profile.
+YOUR TASK:
+Create a cohesive Creative Direction Profile.
 
-ANALYZE:
-1. Product Category (electronics, fashion, food, beauty, home, sports, tech, services, other)
-2. Target Audience (young_professionals, parents, students, seniors, entrepreneurs, general)
-3. Primary Pain Point (what problem does this solve?)
-4. Desired Emotion to evoke (excitement, trust, desire, urgency, exclusivity, curiosity)
-5. Conversion Goal (purchase, signup, download, learn_more, contact)
-6. Recommended Template from these options:
-   - "ugc_testimonial" (social proof heavy, testimonials)
-   - "hook_pas" (problem-agitate-solve framework)
-   - "ugly_postit" (raw authenticity, pattern interrupt)
-   - "before_after" (transformation proof)
-   - "social_proof_max" (reviews, trust badges, urgency)
-   - "feature_spotlight" (benefit-focused, SaaS/product features)
-   - "fomo_scarcity" (urgency, limited time/stock)
-   - "question_hook" (curiosity gap)
-   - "benefit_stack" (multiple benefits list)
-   - "influencer_ugc" (UGC creator style)
-   - "pain_point" (relatable problem → solution)
-   - "bold_statement" (strong claims, guarantees)
+1. ANALYZE AUDIENCE & ANGLE:
+   - Who exactly is this for? Be specific.
+   - What is the ONE main pain point?
+   - What marketing angle cuts through the noise?
 
-7. Key Benefits (3-5 bullet points)
-8. Competitive Advantage (1 sentence unique selling point)
-9. Visual Identity (CRITICAL for aesthetic):
-    - primaryColor: Hex code matching brand/emotion
-    - accentColor: High contrast hex code for CTAs
-    - backgroundColor: Hex code (can be dark or light depending on tone)
-    - textColor: Readable hex code on background
-    - fontStyle: 'modern' (Inter), 'bold' (Oswald), 'elegant' (Playfair), 'handwritten' (Caveat), or 'minimal'
+2. DEFINE DESIGN TOKENS (Visual Identity):
+   - Choose a "Vibe" that fits the tone.
+   - Pick a Color Palette (Hex codes) that evokes the ${params.tone} emotion.
+     * Luxury = Black/Gold/Cream
+     * Bold = Yellow/Black/Red
+     * Trust = Blue/White/Slate
+   - Select Fonts: 'Oswald' for bold, 'Playfair Display' for luxury, 'Inter' for modern/tech.
 
-CRITICAL: Choose template based on:
-- Use "ugc_testimonial" or "social_proof_max" for products needing trust
-- Use "hook_pas" or "pain_point" for problem-solving products
-- Use "fomo_scarcity" for time-sensitive offers
-- Use "feature_spotlight" or "benefit_stack" for SaaS/tech
-- Use "bold_statement" for ${params.tone === 'bold' ? 'BOLD tone ✓' : 'confident claims'}
-- Use "ugly_postit" for authentic, raw feel
+3. RECOMMEND TEMPLATE:
+   - "ugc_testimonial" (if trust needed)
+   - "social_proof_max" (if lots of reviews)
+   - "before_after" (if visible transformation)
+   - "fomo_scarcity" (if urgent offer)
+   - "feature_spotlight" (if tech/SaaS)
+   - "bold_statement" (if lifestyle/brand)
 
-Return ONLY valid JSON:
+OUTPUT FORMAT:
+JSON Only. No markdown.
 {
-  "productCategory": "category",
-  "targetAudience": "audience",
-  "primaryPainPoint": "specific problem",
-  "desiredEmotion": "emotion",
-  "conversionGoal": "goal",
-  "recommendedTemplate": "template_id",
-  "keyBenefits": ["benefit 1", "benefit 2", "benefit 3"],
-  "competitiveAdvantage": "why this is better than competitors",
-  "visualIdentity": {
-    "primaryColor": "#hex",
-    "accentColor": "#hex",
-    "backgroundColor": "#hex",
-    "textColor": "#hex",
-    "fontStyle": "modern"
-  }
+  "productCategory": "...",
+  "targetAudience": "...",
+  "primaryPainPoint": "...",
+  "desiredEmotion": "...",
+  "conversionGoal": "...",
+  "angle": "...",
+  "hookType": "...",
+  "designSystem": {
+    "vibe": "...",
+    "colorPalette": { "primary": "#...", "secondary": "#...", "text": "#...", "highlight": "#..." },
+    "fontPairing": { "headline": "...", "body": "Inter" },
+    "visualElements": ["..."]
+  },
+  "recommendedTemplate": "..."
 }`;
 
     const { data, error } = await supabase.functions.invoke('openai-proxy', {
@@ -108,12 +107,51 @@ Return ONLY valid JSON:
     });
 
     if (error) {
-        console.error('Strategic analysis failed:', error);
         throw new Error(`Strategic analysis failed: ${error.message}`);
     }
 
-    const profile: StrategicProfile = JSON.parse(data.choices[0].message.content);
-    console.log('✅ Strategic profile:', profile.recommendedTemplate);
+    try {
+        const profile = JSON.parse(data.choices[0].message.content);
 
-    return profile;
+        // Validate required fields exist
+        if (!profile.designSystem) {
+            profile.designSystem = {
+                vibe: 'minimal',
+                colorPalette: { primary: '#000000', secondary: '#333333', text: '#000000', highlight: '#0066FF' }
+            };
+        }
+        if (!profile.designSystem.colorPalette) {
+            profile.designSystem.colorPalette = { primary: '#000000', secondary: '#333333', text: '#000000', highlight: '#0066FF' };
+        }
+
+        console.log(`✅ Strategy: ${profile.designSystem?.vibe || 'minimal'} | ${profile.angle || 'general'}`);
+        return profile;
+    } catch (parseError) {
+        console.warn('⚠️ JSON parse failed, using fallback profile:', parseError);
+        // Return safe fallback profile
+        return {
+            productCategory: 'other',
+            targetAudience: 'general consumers',
+            primaryPainPoint: 'finding quality products',
+            desiredEmotion: 'trust',
+            conversionGoal: 'purchase',
+            angle: 'quality_focus',
+            hookType: 'statement',
+            recommendedTemplate: 'hook_pas',
+            designSystem: {
+                vibe: 'minimal',
+                colorPalette: {
+                    primary: '#000000',
+                    secondary: '#333333',
+                    text: '#000000',
+                    highlight: '#0066FF'
+                },
+                fontPairing: {
+                    headline: 'Inter',
+                    body: 'Inter'
+                },
+                visualElements: ['clean', 'modern']
+            }
+        };
+    }
 }

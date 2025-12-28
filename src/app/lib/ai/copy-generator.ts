@@ -6,6 +6,8 @@ import type { StrategicProfile } from './strategic-analyzer';
  * Uses PAS (Problem-Agitate-Solve) framework + Meta best practices
  */
 
+
+
 export interface PremiumCopy {
     headline: string;
     subheadline?: string;
@@ -13,6 +15,8 @@ export interface PremiumCopy {
     cta: string;
     socialProof?: string;
     urgencyText?: string;
+    score?: number; // Internal ranking score
+    reasoning?: string; // Why this variant was chosen
 }
 
 export async function generatePremiumCopy(params: {
@@ -21,73 +25,58 @@ export async function generatePremiumCopy(params: {
     profile: StrategicProfile;
     template: any;
     tone: string;
+    groundedFacts?: {
+        offer?: string;
+        proof?: string;
+        painPoints?: string[];
+    };
 }): Promise<PremiumCopy> {
-    console.log('✍️ Stage 3: Premium Copy Generation...');
+    console.log('✍️ Stage 3: Premium Copy Generation (Ranking Mode)...');
 
-    const copyPrompt = `You are an elite Meta ad copywriter with 10+ years experience writing ads that convert at 4x industry average.
-
-PRODUCT CONTEXT:
+    const copyPrompt = `You are an elite Direct Response Copywriter.
+    
+CONTEXT:
 - Product: ${params.productName}
-${params.brandName ? `- Brand: ${params.brandName}` : ''}
-- Category: ${params.profile.productCategory}
+- Audience: ${params.profile.targetAudience}
 - Pain Point: ${params.profile.primaryPainPoint}
-- Target: ${params.profile.targetAudience}
 - Goal: ${params.profile.conversionGoal}
-- Emotion: ${params.profile.desiredEmotion}
-- Tone: ${params.tone}
-- Template: ${params.template.name}
+- Angle: ${params.profile.angle}
+- Hook Type: ${params.profile.hookType}
 
-YOUR MISSION: Write CONVERSION-OPTIMIZED copy using the PAS (Problem-Agitate-Solve) framework.
+GROUNDED FACTS (You MUST use these, DO NOT Hallucinate):
+- Offer: ${params.groundedFacts?.offer || 'N/A'}
+- Social Proof: ${params.groundedFacts?.proof || 'N/A'}
+- Pain Points: ${params.groundedFacts?.painPoints?.join(', ') || 'N/A'}
 
-COPY FRAMEWORK:
-1. HEADLINE (Hook): 
-   - Pattern interrupt or bold statement
-   - Max 40 characters
-   - Use power words: STOP, FINALLY, SECRET, PROVEN, etc.
-   - Question hooks work best: "Still Wasting Money on X?"
+YOUR TASK:
+Generate 3 distinct copy variants.
+Rank them from 1-3 based on "Punchiness" and "Clarity".
+Return the BEST variant (Rank 1).
 
-2. SUBHEADLINE (Agitate):
-   - Amplify the pain
-   - Max 90 characters
-   - Make it relatable
+FRAMEWORK (Rank 1):
+1. HEADLINE: Max 40 chars. MUST be a ${params.profile.hookType} hook.
+2. SUBHEAD: Agitate the user's pain: "${params.profile.primaryPainPoint}".
+3. BODY: Present the solution using the "Offer" fact.
+4. PROOF: Use the "Social Proof" fact exactly as written.
+5. CTA: High-contrast action verb.
 
-3. DESCRIPTION (Solve + Proof):
-   - Show the solution (product)
-   - Add social proof
-   - Max 125 characters
-   - Include numbers/stats if possible
-
-4. SOCIAL PROOF:
-   - Star ratings: "⭐⭐⭐⭐⭐ 4.9/5"
-   - Review counts: "12,847 Happy Customers"
-   - Trust signals: "Trusted by 50k+"
-   
-5. URGENCY (if applicable):
-   - "70% OFF - Ends Tonight"
-   - "Only 7 Left in Stock"
-   - Limited time offers
-
-6. CTA (Call to Action):
-   - Action verb + benefit
-   - Examples: "CLAIM OFFER NOW →", "GET STARTED FREE", "TRY RISK-FREE"
-   - Max 25 characters
-
-RULES:
-- Write in ${params.tone === 'professional' ? 'professional, trustworthy' : params.tone === 'bold' ? 'BOLD, POWERFUL' : params.tone === 'playful' ? 'fun, energetic' : params.tone} tone
-- Focus on ${params.profile.desiredEmotion}
-- Optimize for ${params.profile.conversionGoal}
-- NO generic phrases like "Discover" or "Explore"
-- YES to specifics, numbers, and bold claims
-- USE emojis strategically (⭐🔥💰✅❌)
-
-Return ONLY valid JSON:
+OUTPUT FORMAT:
+JSON Only.
 {
-  "headline": "Pattern-interrupt headline",
-  "subheadline": "Agitate the pain (optional)",
-  "description": "Solution + proof",
-  "cta": "ACTION VERB →",
-  "socialProof": "⭐⭐⭐⭐⭐ social proof text",
-  "urgencyText": "Limited time offer text (optional)"
+  "variants": [
+    {
+      "headline": "...",
+      "subheadline": "...",
+      "description": "...",
+      "cta": "...",
+      "socialProof": "...",
+      "urgencyText": "...",
+      "score": 95,
+      "reasoning": "Uses strong pattern interrupt..."
+    },
+    ...
+  ],
+  "bestVariantIndex": 0
 }`;
 
     const { data, error } = await supabase.functions.invoke('openai-proxy', {
@@ -95,18 +84,32 @@ Return ONLY valid JSON:
             endpoint: 'chat/completions',
             model: 'gpt-4o',
             messages: [{ role: 'user', content: copyPrompt }],
-            temperature: 0.8,
+            temperature: 0.85, // Slightly higher for variety
             response_format: { type: 'json_object' }
         }
     });
 
     if (error) {
-        console.error('Copy generation failed:', error);
         throw new Error(`Copy generation failed: ${error.message}`);
     }
 
-    const copy: PremiumCopy = JSON.parse(data.choices[0].message.content);
-    console.log('✅ Premium copy generated:', copy.headline);
+    let response;
+    try {
+        response = JSON.parse(data.choices[0].message.content);
+    } catch (e) {
+        throw new Error('Failed to parse AI response: Invalid JSON');
+    }
 
-    return copy;
+    if (!response.variants || !Array.isArray(response.variants) || response.variants.length === 0) {
+        throw new Error('AI returned no valid copy variants');
+    }
+
+    const idx = response.bestVariantIndex;
+    const safeIdx = (typeof idx === 'number' && idx >= 0 && idx < response.variants.length) ? idx : 0;
+
+    const bestVariant = response.variants[safeIdx];
+
+    console.log(`✅ Best Copy Score: ${bestVariant.score}/100 | ${bestVariant.headline}`);
+
+    return bestVariant;
 }

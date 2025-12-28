@@ -1,55 +1,66 @@
-import { supabase } from '../supabaseClient';
-import { enhanceProductImage } from '../api/ai-image-enhancement';
+import { generateBackgroundScene } from '../api/ai-image-enhancement';
 
 /**
- * STAGE 5: INTELLIGENT IMAGE PROCESSOR
- * Smart decisions: enhance, remove BG, or keep as-is
+ * STAGE 5: INTELLIGENT COMPOSITING ENGINE
+ * Philosophy: "Don't touch the product."
+ * 
+ * Pipeline:
+ * 1. Take Original Product (Cutout)
+ * 2. Generate matching "Scene" (Background) based on Strategy
+ * 3. Return both to LayoutComposer for final assembly
  */
+
+export interface ProcessedAssets {
+    originalProduct: string; // The cutout
+    generatedBackground?: string; // The scene
+    compositeUrl?: string; // Optional: Pre-merged (if using backend merger)
+}
 
 export async function processImage(params: {
     imageBase64?: string;
     productName: string;
     tone: string;
+    designVibe?: string; // From Strategic Analyzer
     shouldEnhance: boolean;
-}): Promise<{ original: string; background?: string } | undefined> {
-    console.log('🖼️ Stage 5: Intelligent Image Processing...');
+}): Promise<ProcessedAssets | undefined> {
+    console.log('🖼️ Stage 5: Compositing Engine...');
 
     if (!params.imageBase64) {
         console.log('⏭️  No image provided, skipping');
         return undefined;
     }
 
-    // Default: Return original only
-    const result = { original: params.imageBase64 };
+    // Default: Just the product
+    const result: ProcessedAssets = { originalProduct: params.imageBase64 };
 
-    // Decision: Should we generate a background?
+    // Decision: Generate Background?
     if (!params.shouldEnhance) {
-        console.log('⏭️  User opted out of enhancement');
+        console.log('⏭️  User opted out of background gen');
         return result;
     }
 
     try {
         console.log('✨ Generating Premium Background Scene...');
 
-        // Import dynamically to avoid circular deps if any (though here it's fine)
-        const { generateBackgroundScene } = await import('../api/ai-image-enhancement');
-
+        // This function calls our Supabase Edge Function 'openai-proxy' (dall-e-3)
+        // It prompts for a "Background texture" or "Scene" without the product.
         const bgResult = await generateBackgroundScene({
-            imageBase64: params.imageBase64,
-            userPrompt: 'Generate a matching premium background',
+            imageBase64: params.imageBase64, // Passed for reference/color-extraction
+            userPrompt: `Professional ${params.tone} background for ${params.productName}, style: ${params.designVibe || 'minimalist'}`,
             productName: params.productName,
             tone: params.tone as any
         });
 
         console.log('✅ Background generated:', bgResult.backgroundImageUrl);
+
         return {
-            original: params.imageBase64,
-            background: bgResult.backgroundImageUrl
+            originalProduct: params.imageBase64,
+            generatedBackground: bgResult.backgroundImageUrl
         };
 
     } catch (error) {
         console.error('Image processing error:', error);
-        // Fallback: return original only
+        // Fail safe: Return original
         return result;
     }
 }

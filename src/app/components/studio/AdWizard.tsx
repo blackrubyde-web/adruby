@@ -22,6 +22,8 @@ interface FormData {
     painPoints: string;
     usps: string;
     targetAudience: string;
+    offer: string; // NEW: Grounded Offer
+    socialProof: string; // NEW: Grounded Proof
     tone: 'professional' | 'playful' | 'bold' | 'luxury' | 'minimal';
 }
 
@@ -60,6 +62,8 @@ export const AdWizard = ({ isOpen, onClose, onComplete }: AdWizardProps) => {
         painPoints: '',
         usps: '',
         targetAudience: '',
+        offer: '',
+        socialProof: '',
         tone: 'professional',
     });
     const [isGenerating, setIsGenerating] = useState(false);
@@ -118,6 +122,8 @@ export const AdWizard = ({ isOpen, onClose, onComplete }: AdWizardProps) => {
             painPoints: '',
             usps: '',
             targetAudience: '',
+            offer: '',
+            socialProof: '',
             tone: 'professional',
         });
     };
@@ -235,17 +241,19 @@ export const AdWizard = ({ isOpen, onClose, onComplete }: AdWizardProps) => {
             const { generatePremiumAd } = await import('../../lib/ai/premium-ad-generator');
             console.log('✅ Import successful!');
 
-            const { productName, brandName, productDescription, painPoints, usps, targetAudience, tone } = formData;
+            const { productName, brandName, productDescription, painPoints, usps, targetAudience, offer, socialProof, tone } = formData;
 
             // Prepare user prompt from form data
             const userPrompt = [
                 productDescription && `Description: ${productDescription}`,
                 painPoints && `Pain Points: ${painPoints}`,
                 usps && `USPs: ${usps}`,
-                targetAudience && `Target: ${targetAudience}`
+                targetAudience && `Target: ${targetAudience}`,
+                offer && `Offer: ${offer}`, // Explicitly add to prompt too for context
+                socialProof && `Proof: ${socialProof}`
             ].filter(Boolean).join('. ');
 
-            console.log('📋 Form data:', { productName, brandName, tone, userPrompt });
+            console.log('📋 Form data:', { productName, brandName, tone, userPrompt, offer, socialProof });
 
             // RUN PREMIUM AI 5-STAGE PIPELINE
             console.log('🚀 Starting Premium AI Pipeline...');
@@ -258,7 +266,13 @@ export const AdWizard = ({ isOpen, onClose, onComplete }: AdWizardProps) => {
                     userPrompt: userPrompt || 'Create high-converting Meta ad',
                     tone,
                     imageBase64: uploadedImage || undefined, // Convert null to undefined
-                    enhanceImage: true // Always enhance for now
+                    enhanceImage: true, // Always enhance for now
+                    // Pass grounded facts explicitly
+                    groundedFacts: {
+                        offer: offer || usps || 'Special Offer',
+                        proof: socialProof || 'Trusted Brand',
+                        painPoints: painPoints ? [painPoints] : undefined
+                    }
                 },
                 (stage, message) => {
                     // Progress callback
@@ -565,6 +579,8 @@ Generate this EXACT JSON structure:
                 painPoints: '',
                 usps: '',
                 targetAudience: '',
+                offer: '',
+                socialProof: '',
                 tone: 'professional',
             });
             setIsExiting(false);
@@ -868,9 +884,39 @@ Generate this EXACT JSON structure:
                                         value={formData.usps}
                                         onChange={(e) => updateField('usps', e.target.value)}
                                         placeholder="z.B. '10x schneller als Konkurrenz, KI-powered, 99.9% Genauigkeit, keine Vorkenntnisse nötig'"
-                                        rows={3}
+                                        rows={2}
                                         maxLength={500}
                                         className="w-full bg-muted/50 dark:bg-muted/30 border border-border rounded-xl px-4 md:px-5 py-3 md:py-4 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-transparent transition-all hover:bg-muted/70 dark:hover:bg-muted/50 resize-none text-sm"
+                                    />
+                                </div>
+
+                                {/* Offer (Grounded) */}
+                                <div className="space-y-3 group">
+                                    <label className="flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-muted-foreground group-focus-within:text-primary transition-colors">
+                                        <Zap className="w-4 h-4 text-green-500" />
+                                        Dein Angebot (Offer)
+                                    </label>
+                                    <input
+                                        value={formData.offer}
+                                        onChange={(e) => updateField('offer', e.target.value)}
+                                        placeholder="z.B. '50% Rabatt', 'Kostenloser Versand', 'Jetzt testen'"
+                                        maxLength={100}
+                                        className="w-full bg-muted/50 dark:bg-muted/30 border border-border rounded-xl px-4 md:px-5 py-3 md:py-4 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-transparent transition-all hover:bg-muted/70 dark:hover:bg-muted/50 text-sm"
+                                    />
+                                </div>
+
+                                {/* Social Proof (Grounded) */}
+                                <div className="space-y-3 group">
+                                    <label className="flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-muted-foreground group-focus-within:text-primary transition-colors">
+                                        <Check className="w-4 h-4 text-blue-500" />
+                                        Social Proof / Beweise
+                                    </label>
+                                    <input
+                                        value={formData.socialProof}
+                                        onChange={(e) => updateField('socialProof', e.target.value)}
+                                        placeholder="z.B. '4.9/5 Sterne', '10.000+ Kunden', 'Testsieger 2024'"
+                                        maxLength={100}
+                                        className="w-full bg-muted/50 dark:bg-muted/30 border border-border rounded-xl px-4 md:px-5 py-3 md:py-4 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-transparent transition-all hover:bg-muted/70 dark:hover:bg-muted/50 text-sm"
                                     />
                                 </div>
 

@@ -20,6 +20,10 @@ export function composeLayout(params: {
         textColor: string;
         fontStyle: string;
     };
+    groundedFacts?: {
+        offer?: string;
+        proof?: string;
+    };
 }): AdDocument {
     console.log('🎨 Stage 4: Layout Composition...');
 
@@ -30,22 +34,40 @@ export function composeLayout(params: {
     const layers: StudioLayer[] = baseDoc.layers.map((layer: any) => {
         const newLayer = { ...layer };
 
-        // Replace text based on layer name/type
-        if (layer.type === 'text') {
-            if (layer.name?.toLowerCase().includes('headline') || layer.name?.toLowerCase().includes('hook')) {
-                newLayer.text = params.copy.headline;
-            } else if (layer.name?.toLowerCase().includes('description') || layer.name?.toLowerCase().includes('subheadline')) {
-                newLayer.text = params.copy.subheadline || params.copy.description;
-            } else if (layer.name?.toLowerCase().includes('proof') || layer.name?.toLowerCase().includes('review')) {
-                newLayer.text = params.copy.socialProof || newLayer.text;
-            } else if (layer.name?.toLowerCase().includes('urgency') || layer.name?.toLowerCase().includes('stock')) {
-                newLayer.text = params.copy.urgencyText || newLayer.text;
+        // Content Mapping (Role-based Priority with Fallback)
+        if (newLayer.role) {
+            switch (newLayer.role) {
+                case 'headline': newLayer.text = params.copy.headline; break;
+                case 'subheadline': newLayer.text = params.copy.subheadline || params.copy.description; break;
+                case 'description': newLayer.text = params.copy.description; break;
+                case 'cta': newLayer.text = params.copy.cta; break;
+                case 'social_proof': newLayer.text = params.copy.socialProof || '⭐⭐⭐⭐⭐'; break;
+                case 'price': if (params.groundedFacts?.offer) newLayer.text = params.groundedFacts.offer; break;
             }
         }
 
-        // Replace CTA
-        if (layer.type === 'cta') {
-            newLayer.text = params.copy.cta;
+        // Fallback: Name-based heuristic (if no role or role didn't cover it)
+        if (!newLayer.role) {
+            if (layer.type === 'text') {
+                const name = layer.name?.toLowerCase() || '';
+                if (name.includes('headline') || name.includes('hook')) {
+                    newLayer.text = params.copy.headline;
+                } else if (name.includes('description') || name.includes('subheadline')) {
+                    newLayer.text = params.copy.subheadline || params.copy.description;
+                } else if (name.includes('proof') || name.includes('review')) {
+                    newLayer.text = params.copy.socialProof || newLayer.text;
+                } else if (name.includes('urgency') || name.includes('stock')) {
+                    newLayer.text = params.copy.urgencyText || newLayer.text;
+                }
+            }
+
+            if (layer.type === 'cta') {
+                const name = layer.name?.toLowerCase() || '';
+                // Match: "cta", "button", "call to action", or arrows
+                if (name.includes('cta') || name.includes('button') || name.includes('action') || layer.text?.includes('→')) {
+                    newLayer.text = params.copy.cta;
+                }
+            }
         }
 
         // COMPOSITE STRATEGY:
@@ -92,11 +114,6 @@ export function composeLayout(params: {
                 // CTAs get accent or primary color
                 if (layer.name?.toLowerCase().includes('cta') || layer.text?.includes('→')) {
                     newLayer.bgColor = accentColor;
-                    // Contrast check simplistic: if accent is dark, text white, else black
-                    // optimized for common safe hexes, else default to white/black based on brightness logic could be added here
-                    // keeping it simple: most generic accents are bright/bold, so white text usually works or black.
-                    // Let's stick to what the template had OR force white/black if we knew brightness.
-                    // For now, let's trust the AI picked a good combo or keep template default text color if it was white/black.
                     newLayer.color = '#FFFFFF'; // defaulting to white text on buttons for safety
                     if (['#ffffff', '#fff', '#fefefe'].includes(accentColor.toLowerCase())) newLayer.color = '#000000';
                 } else {
@@ -105,6 +122,34 @@ export function composeLayout(params: {
                     newLayer.color = '#FFFFFF';
                 }
             }
+        }
+
+        // SMART TEXT SCALING (Auto-Fit)
+        if (newLayer.type === 'text' && newLayer.text && newLayer.width && newLayer.height) {
+            // Heuristic: Estimated chars per line capacity
+            const chars = newLayer.text.length;
+
+            // Allow slightly bigger headlines, tighter bodies
+            let currentFontSize = newLayer.fontSize || 60;
+            const minSize = 24; // Never go below this
+
+            // Simple heuristic loop (Node.js/Backend side)
+            // Ideally this happens on client, but we do a "safe" guess here
+            // Assume Average char width ~ 0.5 * fontSize
+            // Total Area Needed ~ chars * (fontSize * 0.5) * (fontSize * 1.2 line height)
+
+            // Optimize: decrease font size until area fits
+            const availableArea = newLayer.width * newLayer.height * 0.9; // 90% fill factor
+
+            let estimatedArea = chars * (currentFontSize * 0.6) * (currentFontSize * 1.2);
+
+            while (estimatedArea > availableArea && currentFontSize > minSize) {
+                currentFontSize -= 2;
+                estimatedArea = chars * (currentFontSize * 0.6) * (currentFontSize * 1.2);
+            }
+
+            // Apply new safe font size
+            newLayer.fontSize = Math.floor(currentFontSize);
         }
 
         return newLayer;
