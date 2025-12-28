@@ -122,7 +122,10 @@ export function smartResize(doc: AdDocument, targetFormat: FormatPreset): AdDocu
         newY = Math.max(0, Math.min(newY, newH - newHeight));
 
         // Adjust font size for text layers
-        let fontSize = (layer as any).fontSize;
+        let fontSize: number | undefined;
+        if ('fontSize' in layer) {
+            fontSize = (layer as { fontSize?: number }).fontSize;
+        }
         if (fontSize) {
             fontSize = Math.round(fontSize * uniformScale);
             // Ensure minimum readability
@@ -142,7 +145,7 @@ export function smartResize(doc: AdDocument, targetFormat: FormatPreset): AdDocu
     });
 
     // Re-sort by original zIndex
-    newLayers.sort((a, b) => a.zIndex - b.zIndex);
+    newLayers.sort((a, b) => (a.zIndex || 0) - (b.zIndex || 0));
 
     return {
         ...doc,
