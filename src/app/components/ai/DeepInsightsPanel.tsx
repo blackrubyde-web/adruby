@@ -34,6 +34,7 @@ export function DeepInsightsPanel({ campaign, onClose }: Props) {
     // Auto-analyze on mount or when campaign changes
     useEffect(() => {
         analyzeWithAI();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [campaign.id]);
 
     const analyzeWithAI = async () => {

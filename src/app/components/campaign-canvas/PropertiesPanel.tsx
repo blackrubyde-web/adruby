@@ -1,7 +1,7 @@
 import { memo } from 'react';
 import { Settings, Target, Users, DollarSign, MapPin, Image, Type, Link2, Sparkles, AlertTriangle, CheckCircle2, Info } from 'lucide-react';
 import { useCampaignCanvas } from './CampaignCanvasContext';
-import type { AdSetNodeData, AdNodeData, CampaignObjective, BidStrategy } from './types';
+import type { CampaignObjective, BidStrategy } from './types';
 
 const OBJECTIVES: { value: CampaignObjective; label: string; icon: string }[] = [
     { value: 'CONVERSIONS', label: 'Conversions', icon: '🎯' },
@@ -20,7 +20,7 @@ const BID_STRATEGIES: { value: BidStrategy; label: string }[] = [
 ];
 
 export const PropertiesPanel = memo(function PropertiesPanel() {
-    const { selectedNode, updateNodeData, aiAnalysis, isAnalyzing, runAIAnalysis } = useCampaignCanvas();
+    const { selectedNode, updateNodeData, aiAnalysis: _aiAnalysis, isAnalyzing: _isAnalyzing, runAIAnalysis: _runAIAnalysis } = useCampaignCanvas();
 
     if (!selectedNode) {
         return (
@@ -366,7 +366,7 @@ const AIAnalysisPanel = memo(function AIAnalysisPanel() {
                     </div>
 
                     {/* Warnings */}
-                    {aiAnalysis.warnings.map((warning: any) => (
+                    {aiAnalysis.warnings.map((warning) => (
                         <div
                             key={warning.id}
                             className={`p-2 rounded-lg text-xs flex items-start gap-2 ${warning.severity === 'error' ? 'bg-red-500/10 text-red-400' :
@@ -385,7 +385,7 @@ const AIAnalysisPanel = memo(function AIAnalysisPanel() {
                     ))}
 
                     {/* Suggestions */}
-                    {aiAnalysis.suggestions.map((suggestion: any) => (
+                    {aiAnalysis.suggestions.map((suggestion) => (
                         <div key={suggestion.id} className="p-2 rounded-lg bg-purple-500/10 text-xs">
                             <div className="flex items-center gap-2 text-purple-400 font-medium mb-1">
                                 <CheckCircle2 className="w-3.5 h-3.5" />

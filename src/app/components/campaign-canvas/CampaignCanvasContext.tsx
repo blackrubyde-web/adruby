@@ -334,7 +334,7 @@ export function CampaignCanvasProvider({ children }: { children: ReactNode }) {
         }
 
         pushHistory();
-        const siblingCount = nodes.filter(n => n.data.type === 'ad' && n.data.parentId === parentId).length;
+        const siblingCount = nodes.filter((n) => n.data.type === 'ad' && (n.data as AdNodeData).parentId === parentId).length;
         const id = generateNodeId('ad');
 
         const newNode: Node<CampaignCanvasNodeData> = {
@@ -659,6 +659,14 @@ export function CampaignCanvasProvider({ children }: { children: ReactNode }) {
         loadDrafts();
     }, [loadDrafts]);
 
+    // Run AI analysis when draft changes
+    useEffect(() => {
+        if (draftId) {
+            runAIAnalysis();
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [draftId]);
+
     // ========================================================================
     // AI ANALYSIS
     // ========================================================================
@@ -875,7 +883,7 @@ export function CampaignCanvasProvider({ children }: { children: ReactNode }) {
                     toast.success('Export-Vorschau validiert!', {
                         description: 'JSON Preview ready. Click Export to View.',
                     });
-                    console.log('Preview Result:', result.preview);
+                    // console.log('Preview Result:', result.preview);
                 }
             }
 
