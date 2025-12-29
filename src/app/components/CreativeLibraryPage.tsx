@@ -14,6 +14,8 @@ interface Creative {
   url: string;
   thumbnail: string;
   tags: string[];
+  hooks?: string[]; // Added hooks
+  primaryText?: string; // Added primary text
   performance: {
     impressions: number;
     clicks: number;
@@ -28,49 +30,41 @@ interface Creative {
 
 export function CreativeLibraryPage() {
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
-  const [searchQuery, setSearchQuery] = useState('');
-  const [selectedType, setSelectedType] = useState<'all' | 'image' | 'video' | 'carousel'>('all');
-
   const [creatives, setCreatives] = useState<Creative[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
-  const [loadError, setLoadError] = useState<string | null>(null);
+  const [favoriteIds, setFavoriteIds] = useState<Set<string>>(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('creativeLibraryFavorites');
+      return saved ? new Set(JSON.parse(saved)) : new Set();
+    }
+    return new Set();
+  });
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedType, setSelectedType] = useState<Creative['type'] | 'all'>('all');
+
   const [isUploading, setIsUploading] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const [isLoading, setIsLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
+
   const [editingCreative, setEditingCreative] = useState<Creative | null>(null);
   const [editName, setEditName] = useState('');
   const [editTags, setEditTags] = useState('');
   const [isSavingEdit, setIsSavingEdit] = useState(false);
-  const [favoriteIds, setFavoriteIds] = useState<Set<string>>(() => {
-    try {
-      const raw = localStorage.getItem('creativeLibraryFavorites');
-      const ids = raw ? JSON.parse(raw) : [];
-      return new Set<string>(Array.isArray(ids) ? ids : []);
-    } catch {
-      return new Set<string>();
-    }
-  });
 
-  // Bulk selection
-  const [selectionMode, setSelectionMode] = useState(false);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [selectionMode, setSelectionMode] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
 
-  const fileInputRef = useRef<HTMLInputElement | null>(null);
-
-  type CreativeRow = {
+  interface CreativeRow {
     id: string;
-    thumbnail?: string | null;
-    inputs?: Record<string, unknown> | null;
-    created_at?: string | null;
-    metrics?: {
-      impressions?: number;
-      clicks?: number;
-      ctr?: number;
-      conversions?: number;
-      roas?: number;
-    } | null;
-  };
-
+    thumbnail: string | null;
+    created_at: string;
+    metrics: Record<string, number> | null;
+    saved: boolean;
+    inputs: unknown;
+  }
   const mapCreativeRow = useCallback((row: CreativeRow, favorites: Set<string>): Creative => {
     const inputs = (row?.inputs || {}) as {
       creativeName?: string;
@@ -78,6 +72,9 @@ export function CreativeLibraryPage() {
       creativeType?: string;
       tags?: string[];
       brief?: { product?: { name?: string; category?: string }; goal?: string };
+      hooks?: string[]; // Extract hooks
+      primaryText?: string; // Extract primary text
+      copy?: { hooks?: string[]; primaryText?: string }; // Alternative structure
     };
     const brief = inputs?.brief || null;
     const name =
@@ -99,6 +96,10 @@ export function CreativeLibraryPage() {
     ].filter(Boolean);
     const tags = hasCustomTags ? customTags : fallbackTags;
 
+    // safe extraction of hooks
+    const hooks = inputs?.hooks || inputs?.copy?.hooks || [];
+    const primaryText = inputs?.primaryText || inputs?.copy?.primaryText;
+
     return {
       id: row.id,
       name,
@@ -106,6 +107,8 @@ export function CreativeLibraryPage() {
       url: '',
       thumbnail: row.thumbnail || '',
       tags,
+      hooks,
+      primaryText,
       performance: {
         impressions: Number(row?.metrics?.impressions || 0),
         clicks: Number(row?.metrics?.clicks || 0),
@@ -142,7 +145,7 @@ export function CreativeLibraryPage() {
         // Only fetch minimal fields for the listing to avoid storing large JSON blobs in memory.
         const { data, error } = await supabase
           .from('generated_creatives')
-          .select('id,thumbnail,created_at,metrics,saved')
+          .select('id,thumbnail,created_at,metrics,saved,inputs')
           .eq('saved', true)
           .order('created_at', { ascending: false })
           .limit(50);
@@ -386,7 +389,7 @@ export function CreativeLibraryPage() {
                 upload: { bucket: upload.bucket, path: upload.path, filename: file.name },
               },
             })
-            .select('id,thumbnail,created_at,metrics,inputs')
+            .select('id,thumbnail,created_at,metrics,inputs,saved')
             .single();
 
           if (error) throw error;
@@ -658,7 +661,7 @@ export function CreativeLibraryPage() {
 
     return (
       <div style={{ ...style, left: Number(style.left) + gridGap / 2, top: Number(style.top) + gridGap / 2 }}>
-        <div className="bg-card border border-border rounded-xl overflow-hidden hover:shadow-xl transition-all hover:scale-[1.02] group" style={{ width: cardWidth, height: cardHeight }}>
+        <div className="bg-card border border-border rounded-xl overflow-hidden hover:shadow-xl transition-all group" style={{ width: cardWidth, height: cardHeight }}>
           <div className="relative aspect-video bg-muted overflow-hidden">
             {creative.thumbnail ? (
               <img
@@ -686,24 +689,28 @@ export function CreativeLibraryPage() {
               <button
                 onClick={() => handleDownload(creative.id)}
                 className="p-2 bg-card rounded-lg hover:bg-card/90 transition-colors"
+                title="Download"
               >
                 <Download className="w-4 h-4 text-foreground" />
               </button>
               <button
                 onClick={() => handleDuplicate(creative.id)}
                 className="p-2 bg-card rounded-lg hover:bg-card/90 transition-colors"
+                title="Duplizieren"
               >
                 <Copy className="w-4 h-4 text-foreground" />
               </button>
               <button
-                onClick={() => handleEditOpen(creative)}
+                onClick={() => window.location.href = `/studio?id=${creative.id}`} // Edit in Studio
                 className="p-2 bg-card rounded-lg hover:bg-card/90 transition-colors"
+                title="Im Canvas Bearbeiten"
               >
                 <Edit2 className="w-4 h-4 text-foreground" />
               </button>
               <button
                 onClick={() => handleDelete(creative.id)}
                 className="p-2 bg-red-500/20 rounded-lg hover:bg-red-500/30 transition-colors"
+                title="Löschen"
               >
                 <Trash2 className="w-4 h-4 text-red-500" />
               </button>
@@ -721,7 +728,7 @@ export function CreativeLibraryPage() {
             )}
           </div>
 
-          <div className="p-4">
+          <div className="p-4 flex flex-col h-[calc(100%-180px)]">
             <h3 className="font-semibold text-foreground mb-2 line-clamp-1">{creative.name}</h3>
 
             <div className="flex flex-wrap gap-1 mb-3">
@@ -732,7 +739,33 @@ export function CreativeLibraryPage() {
               ))}
             </div>
 
-            <div className="grid grid-cols-3 gap-2 pt-3 border-t border-border">
+            {/* Content Preview (Hooks) */}
+            <div className="flex-1 overflow-y-auto mb-3 space-y-2 pr-1">
+              {creative.hooks && creative.hooks.length > 0 ? (
+                <div className="space-y-1.5">
+                  <span className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Hooks</span>
+                  {creative.hooks.slice(0, 2).map((hook, i) => (
+                    <div key={i} className="text-xs bg-muted/30 p-2 rounded-md border border-border/50 text-foreground/90 line-clamp-2">
+                      "{hook}"
+                    </div>
+                  ))}
+                </div>
+              ) : creative.primaryText ? (
+                <div className="space-y-1.5">
+                  <span className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Primary Text</span>
+                  <div className="text-xs bg-muted/30 p-2 rounded-md border border-border/50 text-foreground/90 line-clamp-3">
+                    {creative.primaryText}
+                  </div>
+                </div>
+              ) : (
+                <div className="h-full flex items-center justify-center text-xs text-muted-foreground italic">
+                  Keine Hooks verfügbar
+                </div>
+              )}
+            </div>
+
+
+            <div className="grid grid-cols-3 gap-2 pt-3 border-t border-border mt-auto shrink-0">
               <div>
                 <div className="flex items-center gap-1 text-muted-foreground mb-1">
                   <Eye className="w-3 h-3" />
@@ -762,7 +795,7 @@ export function CreativeLibraryPage() {
               </div>
             </div>
 
-            <div className="flex items-center justify-between mt-3 pt-3 border-t border-border text-xs text-muted-foreground">
+            <div className="flex items-center justify-between mt-3 pt-3 border-t border-border text-xs text-muted-foreground shrink-0">
               <span>Used in {creative.usedInCampaigns} campaigns</span>
               <span>{creative.uploadedAt}</span>
             </div>

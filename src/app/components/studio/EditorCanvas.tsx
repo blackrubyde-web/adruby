@@ -1,12 +1,20 @@
 import React from 'react';
 import { CanvasStage, type CanvasStageHandle } from './CanvasStage';
 import type { AdDocument, StudioLayer } from '../../types/studio';
+import {
+    ContextMenu,
+    ContextMenuContent,
+    ContextMenuItem,
+    ContextMenuTrigger,
+    ContextMenuSeparator,
+    ContextMenuShortcut,
+} from "../ui/context-menu";
 
 interface EditorCanvasProps {
     doc: AdDocument;
     scale: number;
-    selectedLayerId?: string;
-    onLayerSelect: (id: string | undefined) => void;
+    selectedLayerIds: string[];
+    onLayerSelect: (id: string | undefined, multi: boolean) => void;
     onLayerUpdate: (id: string, attrs: Partial<StudioLayer>) => void;
     activeTool: 'select' | 'hand';
     viewPos: { x: number; y: number };
@@ -16,12 +24,17 @@ interface EditorCanvasProps {
     mockupType: 'feed' | 'story';
     setMockupType: (type: 'feed' | 'story') => void;
     canvasRef: React.RefObject<CanvasStageHandle>;
+    onZoom?: (delta: number, center?: { x: number, y: number }) => void;
+    onMultiLayerSelect?: (ids: string[]) => void;
+    onCopy?: () => void;
+    onPaste?: () => void;
+    onDuplicate?: () => void;
 }
 
 export const EditorCanvas: React.FC<EditorCanvasProps> = ({
     doc,
     scale,
-    selectedLayerId,
+    selectedLayerIds,
     onLayerSelect,
     onLayerUpdate,
     activeTool,
@@ -31,25 +44,60 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
     isPreviewMode,
     mockupType,
     setMockupType,
-    canvasRef
+    canvasRef,
+    onZoom,
+    onMultiLayerSelect,
+    onCopy,
+    onPaste,
+    onDuplicate
 }) => {
+    const handleWheel = (e: React.WheelEvent) => {
+        if (e.ctrlKey || e.metaKey) {
+            e.preventDefault();
+            const delta = e.deltaY > 0 ? 0.9 : 1.1;
+            onZoom?.(delta, { x: e.clientX, y: e.clientY }); // Optional: pass center
+        }
+    };
+
     return (
-        <main className={`flex-1 relative overflow-hidden flex items-center justify-center transition-colors duration-500 ${isPreviewMode ? 'bg-white' : 'bg-zinc-100/50 dark:bg-zinc-950'}`}>
+        <main
+            className={`flex-1 relative overflow-hidden flex items-center justify-center transition-colors duration-500 ${isPreviewMode ? 'bg-white' : 'bg-zinc-100/50 dark:bg-zinc-950'}`}
+            onWheel={handleWheel}
+        >
 
             {!isMultiverseMode && !isPreviewMode && (
-                <div className="shadow-2xl shadow-black/5 dark:shadow-[0_0_100px_-20px_rgba(0,0,0,0.5)] border border-zinc-200 dark:border-white/5 rounded-sm overflow-hidden animate-in fade-in zoom-in-95 duration-500">
-                    <CanvasStage
-                        ref={canvasRef}
-                        doc={doc}
-                        scale={scale}
-                        selectedLayerId={selectedLayerId}
-                        onLayerSelect={onLayerSelect}
-                        onLayerUpdate={onLayerUpdate}
-                        isHandMode={activeTool === 'hand'}
-                        viewPos={viewPos}
-                        onViewChange={onViewChange}
-                    />
-                </div>
+                <ContextMenu>
+                    <ContextMenuTrigger className="flex-1 flex items-center justify-center p-8 h-full w-full">
+                        <div className="shadow-2xl shadow-black/5 dark:shadow-[0_0_100px_-20px_rgba(0,0,0,0.5)] border border-zinc-200 dark:border-white/5 rounded-sm overflow-hidden animate-in fade-in zoom-in-95 duration-500">
+                            <CanvasStage
+                                ref={canvasRef}
+                                doc={doc}
+                                scale={scale}
+                                selectedLayerIds={selectedLayerIds}
+                                onLayerSelect={onLayerSelect}
+                                onLayerUpdate={onLayerUpdate}
+                                isHandMode={activeTool === 'hand'}
+                                viewPos={viewPos}
+                                onViewChange={onViewChange}
+                                onMultiLayerSelect={onMultiLayerSelect}
+                            />
+                        </div>
+                    </ContextMenuTrigger>
+                    <ContextMenuContent className="w-64">
+                        <ContextMenuItem inset onSelect={onCopy} disabled={selectedLayerIds.length === 0}>
+                            Copy
+                            <ContextMenuShortcut>⌘C</ContextMenuShortcut>
+                        </ContextMenuItem>
+                        <ContextMenuItem inset onSelect={onPaste}>
+                            Paste
+                            <ContextMenuShortcut>⌘V</ContextMenuShortcut>
+                        </ContextMenuItem>
+                        <ContextMenuItem inset onSelect={onDuplicate} disabled={selectedLayerIds.length === 0}>
+                            Duplicate
+                            <ContextMenuShortcut>⌘D</ContextMenuShortcut>
+                        </ContextMenuItem>
+                    </ContextMenuContent>
+                </ContextMenu>
             )}
 
             {/* MULTIVERSE VIEW: 3 Formats side-by-side */}
@@ -59,7 +107,7 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
                     <div className="flex flex-col gap-4">
                         <span className="text-[10px] font-black uppercase tracking-widest text-zinc-500 dark:text-white/40 text-center">Instagram Post</span>
                         <div className="shadow-2xl border border-zinc-200 dark:border-white/5 rounded-sm overflow-hidden scale-[0.4] origin-top">
-                            <CanvasStage doc={doc} scale={1} preview={true} selectedLayerId={undefined} onLayerSelect={() => { }} onLayerUpdate={() => { }} />
+                            <CanvasStage doc={doc} scale={1} preview={true} selectedLayerIds={[]} onLayerSelect={() => { }} onLayerUpdate={() => { }} />
                         </div>
                     </div>
                     {/* 9:16 Story */}
@@ -71,7 +119,7 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
                                 doc={{ ...doc, width: 1080, height: 1920 }}
                                 scale={1}
                                 preview={true}
-                                selectedLayerId={undefined}
+                                selectedLayerIds={[]}
                                 onLayerSelect={() => { }}
                                 onLayerUpdate={() => { }}
                             />
@@ -85,7 +133,7 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
                                 doc={{ ...doc, width: 1200, height: 628 }}
                                 scale={1}
                                 preview={true}
-                                selectedLayerId={undefined}
+                                selectedLayerIds={[]}
                                 onLayerSelect={() => { }}
                                 onLayerUpdate={() => { }}
                             />
@@ -147,7 +195,7 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
                                         transform: `scale(${359 / doc.width})`,
                                         transformOrigin: 'center center'
                                     }}>
-                                        <CanvasStage doc={doc} scale={1} preview={true} selectedLayerId={undefined} onLayerSelect={() => { }} onLayerUpdate={() => { }} />
+                                        <CanvasStage doc={doc} scale={1} preview={true} selectedLayerIds={[]} onLayerSelect={() => { }} onLayerUpdate={() => { }} />
                                     </div>
                                 </div>
 
@@ -191,7 +239,7 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
                                             doc={doc}
                                             scale={1}
                                             preview={true}
-                                            selectedLayerId={undefined}
+                                            selectedLayerIds={[]}
                                             onLayerSelect={() => { }}
                                             onLayerUpdate={() => { }}
                                         />

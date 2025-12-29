@@ -10,7 +10,8 @@ export type LayerType =
     | "text"
     | "cta"
     | "logo"
-    | "shape"; // Added shape
+    | "shape"
+    | "group"; // Added group
 
 export type AiProvenance = {
     provider: "adcreative" | "openai" | "other";
@@ -44,7 +45,24 @@ export type ImageLayer = LayerBase & {
     src: string;              // url
     fit?: "cover" | "contain"; // Optional
     maskRadius?: number;      // for pill masks etc.
+    clipShape?: 'none' | 'circle' | 'rect' | 'rounded'; // New: Shape Masking
+
+    // Crop Props
+    crop?: {
+        x: number;
+        y: number;
+        width: number;
+        height: number;
+    };
+
     tint?: string;            // hex color for style adaptation
+
+    // Shadow Props
+    shadowColor?: string;
+    shadowBlur?: number;
+    shadowOffsetX?: number;
+    shadowOffsetY?: number;
+    shadowOpacity?: number;
 };
 
 export type TextLayer = LayerBase & {
@@ -107,7 +125,12 @@ export type CtaLayer = LayerBase & {
     paddingY?: number;
 };
 
-export type StudioLayer = ImageLayer | TextLayer | CtaLayer | ShapeLayer;
+export type GroupLayer = LayerBase & {
+    type: "group";
+    children: StudioLayer[];
+};
+
+export type StudioLayer = ImageLayer | TextLayer | CtaLayer | ShapeLayer | GroupLayer;
 
 export type BrandKit = {
     id: string;

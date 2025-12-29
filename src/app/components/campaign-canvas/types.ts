@@ -31,10 +31,33 @@ export interface TargetingConfig {
     gender: 'all' | 'male' | 'female';
     interests: string[];
     behaviors: string[];
-    customAudiences: string[];
-    lookalikeAudiences: string[];
+    customAudiences: CustomAudience[];      // Changed from string[] to full objects
+    lookalikeAudiences: LookalikeAudience[]; // Changed from string[] to full objects
     exclusions: string[];
     placements: ('feed' | 'stories' | 'reels' | 'explore' | 'audience_network')[];
+}
+
+// New: Custom Audience Definition
+export interface CustomAudience {
+    id: string;
+    name: string;
+    type: 'website' | 'customer_list' | 'app_activity' | 'offline_activity' | 'engagement';
+    size?: number;          // Estimated reach
+    status?: 'ready' | 'populating' | 'too_small';
+    description?: string;
+    createdAt?: string;
+}
+
+// New: Lookalike Audience Definition
+export interface LookalikeAudience {
+    id: string;
+    name: string;
+    sourceAudienceId: string;  // References a Custom Audience
+    sourceAudienceName?: string;
+    country: string;
+    ratio: number;             // 1-10 (1% - 10% similarity)
+    size?: number;
+    status?: 'ready' | 'calculating';
 }
 
 export interface AdSetConfig {

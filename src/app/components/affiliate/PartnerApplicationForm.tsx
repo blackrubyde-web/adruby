@@ -1,0 +1,198 @@
+import { useState } from 'react';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import * as z from 'zod';
+import { Loader2, Send, CheckCircle2, Building2, Users, Globe, User } from 'lucide-react';
+import { toast } from 'sonner';
+
+import { Button } from '../ui/button';
+import { Input } from '../ui/input';
+import { Label } from '../ui/label';
+import { Textarea } from '../ui/textarea';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
+import { Card } from '../layout';
+import { supabase } from '../../lib/supabaseClient';
+import { useAuthState } from '../../contexts/AuthContext';
+import { useAffiliate } from '../../contexts/AffiliateContext';
+
+const formSchema = z.object({
+    fullName: z.string().min(2, 'Name must be at least 2 characters'),
+    email: z.string().email('Invalid email address'),
+    companyName: z.string().optional(),
+    website: z.string().url('Invalid URL').optional().or(z.literal('')),
+    partnerType: z.enum(['influencer', 'coach', 'community_leader', 'agency', 'other']),
+    audienceSize: z.string().min(1, 'Please estimate your audience size'),
+    platform: z.string().min(1, 'Primary platform is required'),
+    motivation: z.string().min(50, 'Please tell us a bit more about why you want to partner with us (min 50 chars)'),
+});
+
+type FormData = z.infer<typeof formSchema>;
+
+export function PartnerApplicationForm() {
+    const { user, profile } = useAuthState();
+    const { refreshData } = useAffiliate();
+    const [isSubmitting, setIsSubmitting] = useState(false);
+
+    const { register, handleSubmit, formState: { errors }, setValue, watch } = useForm<FormData>({
+        resolver: zodResolver(formSchema),
+        defaultValues: {
+            fullName: (profile?.full_name || user?.user_metadata?.full_name) || '',
+            email: user?.email || '',
+            companyName: '',
+            website: '',
+            partnerType: 'influencer',
+            audienceSize: '',
+            platform: '',
+            motivation: '',
+        }
+    });
+
+    const onSubmit = async (data: FormData) => {
+        if (!user) return;
+        setIsSubmitting(true);
+
+        try {
+            const { error } = await supabase
+                .from('partner_applications')
+                .insert({
+                    user_id: user.id,
+                    full_name: data.fullName,
+                    email: data.email,
+                    company_name: data.companyName,
+                    website: data.website,
+                    partner_type: data.partnerType,
+                    audience_size: parseInt(data.audienceSize.replace(/[^0-9]/g, '')) || 0, // Simple parsing
+                    platform: data.platform,
+                    motivation: data.motivation,
+                    status: 'pending' // Forced by RLS/Default but good to be explicit mentally
+                });
+
+            if (error) throw error;
+
+            toast.success('Application submitted successfully!');
+            await refreshData();
+        } catch (error: any) {
+            console.error('Application error:', error);
+            toast.error(error.message || 'Failed to submit application');
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
+
+    return (
+        <Card className="max-w-3xl mx-auto p-6 md:p-8">
+            <div className="text-center mb-8">
+                <h2 className="text-2xl font-bold mb-2">Apply for Partner Program</h2>
+                <p className="text-muted-foreground">
+                    Join our exclusive partner network and earn recurring commissions.
+                    Tell us a bit about yourself.
+                </p>
+            </div>
+
+            <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+                {/* Personal Details */}
+                <div className="grid md:grid-cols-2 gap-6">
+                    <div className="space-y-2">
+                        <Label htmlFor="fullName">Full Name</Label>
+                        <div className="relative">
+                            <User className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
+                            <Input id="fullName" {...register('fullName')} className="pl-9" placeholder="John Doe" />
+                        </div>
+                        {errors.fullName && <p className="text-xs text-red-500">{errors.fullName.message}</p>}
+                    </div>
+
+                    <div className="space-y-2">
+                        <Label htmlFor="email">Email</Label>
+                        <div className="relative">
+                            <Send className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
+                            <Input id="email" {...register('email')} className="pl-9" readOnly />
+                        </div>
+                    </div>
+                </div>
+
+                {/* Professional Info */}
+                <div className="grid md:grid-cols-2 gap-6">
+                    <div className="space-y-2">
+                        <Label htmlFor="companyName">Company / Brand (Optional)</Label>
+                        <div className="relative">
+                            <Building2 className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
+                            <Input id="companyName" {...register('companyName')} className="pl-9" placeholder="Acme Inc." />
+                        </div>
+                    </div>
+
+                    <div className="space-y-2">
+                        <Label htmlFor="website">Website / Social Profile (Optional)</Label>
+                        <div className="relative">
+                            <Globe className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
+                            <Input id="website" {...register('website')} className="pl-9" placeholder="https://..." />
+                        </div>
+                        {errors.website && <p className="text-xs text-red-500">{errors.website.message}</p>}
+                    </div>
+                </div>
+
+                {/* Partner Specifics */}
+                <div className="grid md:grid-cols-3 gap-6">
+                    <div className="space-y-2">
+                        <Label>Partner Type</Label>
+                        <Select
+                            onValueChange={(val) => setValue('partnerType', val as any)}
+                            defaultValue={watch('partnerType')}
+                        >
+                            <SelectTrigger>
+                                <SelectValue placeholder="Select type" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="influencer">Influencer / Creator</SelectItem>
+                                <SelectItem value="coach">Coach / Consultant</SelectItem>
+                                <SelectItem value="community_leader">Community Leader</SelectItem>
+                                <SelectItem value="agency">Agency</SelectItem>
+                                <SelectItem value="other">Other</SelectItem>
+                            </SelectContent>
+                        </Select>
+                    </div>
+
+                    <div className="space-y-2">
+                        <Label htmlFor="audienceSize">Est. Audience Size</Label>
+                        <div className="relative">
+                            <Users className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
+                            <Input id="audienceSize" {...register('audienceSize')} className="pl-9" placeholder="e.g. 10k, 500+" />
+                        </div>
+                        {errors.audienceSize && <p className="text-xs text-red-500">{errors.audienceSize.message}</p>}
+                    </div>
+
+                    <div className="space-y-2">
+                        <Label htmlFor="platform">Primary Platform</Label>
+                        <Input id="platform" {...register('platform')} placeholder="e.g. LinkedIn, Instagram, Email List" />
+                        {errors.platform && <p className="text-xs text-red-500">{errors.platform.message}</p>}
+                    </div>
+                </div>
+
+                {/* Motivation */}
+                <div className="space-y-2">
+                    <Label htmlFor="motivation">Why do you want to partner with AdRuby?</Label>
+                    <Textarea
+                        id="motivation"
+                        {...register('motivation')}
+                        placeholder="Tell us about your audience and how you plan to promote AdRuby..."
+                        className="min-h-[120px]"
+                    />
+                    {errors.motivation && <p className="text-xs text-red-500">{errors.motivation.message}</p>}
+                </div>
+
+                <div className="flex justify-end pt-4">
+                    <Button type="submit" size="lg" disabled={isSubmitting} className="w-full md:w-auto">
+                        {isSubmitting ? (
+                            <>
+                                <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Submitting...
+                            </>
+                        ) : (
+                            <>
+                                Submit Application <CheckCircle2 className="ml-2 h-4 w-4" />
+                            </>
+                        )}
+                    </Button>
+                </div>
+            </form>
+        </Card>
+    );
+}

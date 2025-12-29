@@ -160,7 +160,7 @@ serve(async (req) => {
         // 1. Get Meta Token
         const { data: connection } = await supabase
             .from("facebook_connections")
-            .select("access_token, ad_accounts")
+            .select("access_token, ad_accounts, page_id, page_name")
             .eq("user_id", user.id)
             .eq("is_active", true)
             .single();
@@ -170,6 +170,11 @@ serve(async (req) => {
         }
 
         const token = connection.access_token;
+        const pageId = connection.page_id;
+
+        if (!pageId) {
+            throw new Error("No Page ID found in connection. Please reconnect Facebook.");
+        }
 
         // 2. Resolve Ad Account
         let actId = adAccountId;
@@ -219,20 +224,58 @@ serve(async (req) => {
 
             for (const ad of (adSet.ads || [])) {
                 // Creative
+                let imageHash = null;
+
+                // 4a. Upload Image if available
+                if (ad.imageUrl) {
+                    try {
+                        console.log(`Fetching image from ${ad.imageUrl}...`);
+                        const imgRes = await fetch(ad.imageUrl);
+                        if (imgRes.ok) {
+                            const blob = await imgRes.blob();
+                            const formData = new FormData();
+                            formData.append("access_token", token);
+                            formData.append("filename", ad.creativeId || "ad_image.jpg");
+                            formData.append("file", blob);
+
+                            // Helper for multipart upload since postGraph is url-encoded
+                            const uploadRes = await fetch(`${GRAPH_API_BASE}/${actId}/adimages`, {
+                                method: 'POST',
+                                body: formData
+                            });
+
+                            const uploadJson = await uploadRes.json();
+                            if (uploadJson.images && uploadJson.images[ad.creativeId || "ad_image.jpg"]) {
+                                imageHash = uploadJson.images[ad.creativeId || "ad_image.jpg"].hash;
+                                console.log(`Image uploaded! Hash: ${imageHash}`);
+                            } else {
+                                console.warn("Image upload response invalid:", uploadJson);
+                            }
+                        }
+                    } catch (err) {
+                        console.error("Failed to upload image:", err);
+                    }
+                }
+
+                const linkData: any = {
+                    message: ad.primaryText || "",
+                    name: ad.headline || "",
+                    link: ad.destinationUrl || "https://example.com",
+                    call_to_action: {
+                        type: mapCTA(ad.cta),
+                        value: { link: ad.destinationUrl || "https://example.com" },
+                    },
+                };
+
+                if (imageHash) {
+                    linkData.image_hash = imageHash;
+                }
+
                 const creativeParams = {
                     name: `${ad.name} Creative`,
                     object_story_spec: JSON.stringify({
-                        page_id: Deno.env.get('META_PAGE_ID') || '', // Needs env var or fetch from connection
-                        link_data: {
-                            message: ad.primaryText || "",
-                            name: ad.headline || "",
-                            link: ad.destinationUrl || "https://example.com",
-                            call_to_action: {
-                                type: mapCTA(ad.cta),
-                                value: { link: ad.destinationUrl || "https://example.com" },
-                            },
-                            // image_hash: ... (In a real app, we'd upload the image first and get a hash. Skipping for MVP/Text ads)
-                        },
+                        page_id: pageId,
+                        link_data: linkData,
                     }),
                 };
 

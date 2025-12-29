@@ -14,6 +14,8 @@ export interface AffiliateStats {
     is_approved: boolean;
 }
 
+export type ApplicationStatus = 'none' | 'pending' | 'approved' | 'rejected' | 'contacted';
+
 export interface AffiliateReferral {
     id: string;
     referred_user_id: string;
@@ -52,6 +54,7 @@ export interface AffiliatePayout {
 interface AffiliateContextValue {
     isAffiliate: boolean;
     isLoading: boolean;
+    applicationStatus: ApplicationStatus;
     stats: AffiliateStats | null;
     referrals: AffiliateReferral[];
     commissions: AffiliateCommission[];
@@ -68,6 +71,7 @@ export function AffiliateProvider({ children }: { children: ReactNode }) {
     const { profile, user } = useAuthState();
     const [isLoading, setIsLoading] = useState(true);
     const [stats, setStats] = useState<AffiliateStats | null>(null);
+    const [applicationStatus, setApplicationStatus] = useState<ApplicationStatus>('none');
     const [referrals, setReferrals] = useState<AffiliateReferral[]>([]);
     const [commissions, setCommissions] = useState<AffiliateCommission[]>([]);
     const [payouts, setPayouts] = useState<AffiliatePayout[]>([]);
@@ -75,59 +79,81 @@ export function AffiliateProvider({ children }: { children: ReactNode }) {
     const isAffiliate = Boolean(profile?.is_affiliate);
 
     const loadAffiliateData = useCallback(async () => {
-        if (!user?.id || !isAffiliate) {
+        if (!user?.id) {
             setStats(null);
             setReferrals([]);
             setCommissions([]);
             setPayouts([]);
+            setApplicationStatus('none');
             setIsLoading(false);
             return;
         }
 
         setIsLoading(true);
         try {
-            // Get stats via RPC
-            const { data: statsData, error: statsError } = await supabase
-                .rpc('get_affiliate_stats', { p_user_id: user.id });
+            // 1. Check for existing application
+            // Only if not already an affiliate (optimization)
+            if (!isAffiliate) {
+                const { data: appData } = await supabase
+                    .from('partner_applications')
+                    .select('status')
+                    .eq('user_id', user.id)
+                    .maybeSingle(); // Use maybeSingle to avoid error if no row
 
-            if (!statsError && statsData) {
-                setStats(statsData);
+                if (appData) {
+                    setApplicationStatus(appData.status as ApplicationStatus);
+                } else {
+                    setApplicationStatus('none');
+                }
+            } else {
+                setApplicationStatus('approved');
             }
 
-            // Get affiliate partner ID first
-            const { data: partnerData } = await supabase
-                .from('affiliate_partners')
-                .select('id')
-                .eq('user_id', user.id)
-                .single();
+            // 2. If Affiliate, load stats & data
+            if (isAffiliate) {
+                // Get stats via RPC
+                const { data: statsData, error: statsError } = await supabase
+                    .rpc('get_affiliate_stats', { p_user_id: user.id });
 
-            if (partnerData?.id) {
-                // Get referrals
-                const { data: refData } = await supabase
-                    .from('affiliate_referrals')
-                    .select('*')
-                    .eq('affiliate_id', partnerData.id)
-                    .order('registered_at', { ascending: false });
+                if (!statsError && statsData) {
+                    setStats(statsData);
+                }
 
-                if (refData) setReferrals(refData);
+                // Get affiliate partner ID first
+                const { data: partnerData } = await supabase
+                    .from('affiliate_partners')
+                    .select('id')
+                    .eq('user_id', user.id)
+                    .single();
 
-                // Get commissions
-                const { data: commData } = await supabase
-                    .from('affiliate_commissions')
-                    .select('*')
-                    .eq('affiliate_id', partnerData.id)
-                    .order('created_at', { ascending: false });
+                if (partnerData?.id) {
+                    // Get referrals
+                    const { data: refData } = await supabase
+                        .from('affiliate_referrals')
+                        .select('*')
+                        .eq('affiliate_id', partnerData.id)
+                        .order('registered_at', { ascending: false });
 
-                if (commData) setCommissions(commData);
+                    if (refData) setReferrals(refData);
 
-                // Get payouts
-                const { data: payoutData } = await supabase
-                    .from('affiliate_payouts')
-                    .select('*')
-                    .eq('affiliate_id', partnerData.id)
-                    .order('requested_at', { ascending: false });
+                    // Get commissions
+                    const { data: commData } = await supabase
+                        .from('affiliate_commissions')
+                        .select('*')
+                        .eq('affiliate_id', partnerData.id)
+                        .order('created_at', { ascending: false });
 
-                if (payoutData) setPayouts(payoutData);
+                    if (commData) setCommissions(commData);
+
+                    // Get payouts
+                    const { data: payoutData } = await supabase
+                        .from('affiliate_payouts')
+                        .select('*')
+                        .eq('affiliate_id', partnerData.id)
+                        .order('requested_at', { ascending: false });
+
+                    if (payoutData) setPayouts(payoutData);
+                }
             }
         } catch (err) {
             console.error('[Affiliate] Failed to load data:', err);
@@ -188,6 +214,7 @@ export function AffiliateProvider({ children }: { children: ReactNode }) {
     const value = useMemo<AffiliateContextValue>(() => ({
         isAffiliate,
         isLoading,
+        applicationStatus,
         stats,
         referrals,
         commissions,
@@ -196,7 +223,7 @@ export function AffiliateProvider({ children }: { children: ReactNode }) {
         affiliateLink,
         refreshData: loadAffiliateData,
         requestPayout
-    }), [isAffiliate, isLoading, stats, referrals, commissions, payouts, affiliateCode, affiliateLink, loadAffiliateData, requestPayout]);
+    }), [isAffiliate, isLoading, applicationStatus, stats, referrals, commissions, payouts, affiliateCode, affiliateLink, loadAffiliateData, requestPayout]);
 
     return (
         <AffiliateContext.Provider value={value}>
@@ -218,3 +245,4 @@ export function useIsApprovedAffiliate() {
     const { isAffiliate, stats } = useAffiliate();
     return isAffiliate && stats?.is_approved === true;
 }
+

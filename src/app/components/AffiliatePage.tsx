@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
+import { PartnerApplicationForm } from './affiliate/PartnerApplicationForm';
 import {
   Copy,
   Link2,
@@ -42,6 +43,7 @@ export function AffiliatePage() {
     affiliateCode,
     affiliateLink,
     requestPayout,
+    applicationStatus, // Get status from context
   } = useAffiliate();
 
   const [activeTab, setActiveTab] = useState<'overview' | 'services' | 'achievements' | 'analytics'>('overview');
@@ -156,24 +158,57 @@ export function AffiliatePage() {
     );
   };
 
-  // Not an affiliate - show locked state
+  // Not an affiliate - show Application Flow
   if (!isAffiliate) {
+    if (isLoading) {
+      return (
+        <PageShell>
+          <div className="flex items-center justify-center py-20">
+            <Loader2 className="w-8 h-8 animate-spin text-primary" />
+          </div>
+        </PageShell>
+      );
+    }
+
     return (
       <PageShell>
-        <div className="flex flex-col items-center justify-center py-20 text-center">
-          <div className="p-6 bg-muted rounded-full mb-6">
-            <Lock className="w-12 h-12 text-muted-foreground" />
-          </div>
-          <h1 className="text-2xl font-bold mb-2">Partner Program</h1>
-          <p className="text-muted-foreground max-w-md mb-6">
-            Unser Partner-Programm ist nur für ausgewählte Influencer, Coaches und Community-Leader zugänglich.
-          </p>
-          <a
-            href="mailto:partner@adruby.ai"
-            className="px-6 py-3 bg-primary text-primary-foreground rounded-lg font-medium hover:bg-primary/90 transition-colors"
-          >
-            Jetzt bewerben
-          </a>
+        <HeroHeader
+          title="Partner Program"
+          subtitle="Join our exclusive network of creators and leaders."
+        />
+
+        <div className="py-8">
+          {applicationStatus === 'pending' ? (
+            <div className="max-w-md mx-auto text-center py-12 px-4">
+              <div className="w-16 h-16 bg-yellow-500/10 rounded-full flex items-center justify-center mx-auto mb-6">
+                <div className="w-3 h-3 bg-yellow-500 rounded-full animate-ping absolute" />
+                <Loader2 className="w-8 h-8 text-yellow-500 animate-spin" />
+              </div>
+              <h2 className="text-2xl font-bold mb-2">Application Pending</h2>
+              <p className="text-muted-foreground">
+                Your application is currently being reviewed by our team.
+                We usually respond within 24-48 hours.
+              </p>
+            </div>
+          ) : applicationStatus === 'rejected' ? (
+            <div className="max-w-md mx-auto text-center py-12 px-4">
+              <div className="w-16 h-16 bg-red-500/10 rounded-full flex items-center justify-center mx-auto mb-6">
+                <Trophy className="w-8 h-8 text-red-500 rotate-180" />
+              </div>
+              <h2 className="text-2xl font-bold mb-2">Application Update</h2>
+              <p className="text-muted-foreground mb-6">
+                Thank you for your interest. At this time, we are unable to approve your application for the partner program.
+              </p>
+              <button
+                onClick={() => window.location.href = 'mailto:partner@adruby.ai'}
+                className="text-primary hover:underline text-sm"
+              >
+                Contact Support
+              </button>
+            </div>
+          ) : (
+            <PartnerApplicationForm />
+          )}
         </div>
       </PageShell>
     );

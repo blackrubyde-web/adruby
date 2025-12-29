@@ -5,7 +5,7 @@ import { AdWizard } from './AdWizard';
 import { AISuggestionsPanel } from './AISuggestionsPanel';
 import { toast } from 'sonner';
 import { FORMAT_PRESETS, type FormatPreset } from './SmartResize';
-import type { AdDocument, BrandKit } from '../../types/studio';
+import type { AdDocument, BrandKit, StudioLayer } from '../../types/studio';
 import type { AuditResult } from './PerformanceAudit';
 
 interface EditorModalsProps {
@@ -92,7 +92,7 @@ export const EditorModals: React.FC<EditorModalsProps> = ({
                                 <div key={i} className="flex flex-col gap-6 group">
                                     <div className="aspect-[4/5] bg-background rounded-3xl shadow-xl border border-white/5 overflow-hidden relative hover:ring-4 ring-primary hover:scale-[1.02] transition-all duration-300 cursor-pointer" onClick={() => handleApplyVariant(v)}>
                                         <div className="absolute inset-0 transform origin-top-left" style={{ transform: `scale(${280 / v.width})` }}>
-                                            <CanvasStage doc={v} scale={1} selectedLayerId={undefined} onLayerSelect={() => { }} onLayerUpdate={() => { }} />
+                                            <CanvasStage doc={v} scale={1} selectedLayerIds={[]} onLayerSelect={() => { }} onLayerUpdate={() => { }} />
                                         </div>
                                         <div className="absolute inset-0 bg-primary/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                                             <div className="bg-white text-black px-6 py-3 rounded-full font-black text-xs uppercase tracking-widest shadow-2xl transform translate-y-4 group-hover:translate-y-0 transition-transform duration-300">Apply Variant</div>
@@ -408,7 +408,58 @@ export const EditorModals: React.FC<EditorModalsProps> = ({
                 onClose={() => setShowSuggestions(false)}
                 onApplySuggestion={(suggestion) => {
                     // Handle auto-fix suggestions
-                    toast.info(`Vorschlag "${suggestion.title}" wird angewendet...`);
+                    if (!suggestion.autoFixAction) {
+                        toast.info(`Vorschlag "${suggestion.title}" hat keine Auto-Fix Aktion`);
+                        return;
+                    }
+
+                    const { action, targetLayerId, params } = suggestion.autoFixAction;
+
+                    if (!targetLayerId) {
+                        toast.error('Keine Ziel-Layer ID gefunden');
+                        return;
+                    }
+
+                    switch (action) {
+                        case 'resize':
+                            setDoc((prev: AdDocument) => ({
+                                ...prev,
+                                layers: prev.layers.map((layer: StudioLayer) =>
+                                    layer.id === targetLayerId
+                                        ? { ...layer, ...params }
+                                        : layer
+                                )
+                            }));
+                            toast.success(`✨ ${suggestion.title} angewendet!`);
+                            break;
+
+                        case 'recolor':
+                            setDoc((prev: AdDocument) => ({
+                                ...prev,
+                                layers: prev.layers.map((layer: StudioLayer) =>
+                                    layer.id === targetLayerId
+                                        ? { ...layer, ...params }
+                                        : layer
+                                )
+                            }));
+                            toast.success(`🎨 ${suggestion.title} angewendet!`);
+                            break;
+
+                        case 'reposition':
+                            setDoc((prev: AdDocument) => ({
+                                ...prev,
+                                layers: prev.layers.map((layer: StudioLayer) =>
+                                    layer.id === targetLayerId
+                                        ? { ...layer, x: (params as any).x, y: (params as any).y }
+                                        : layer
+                                )
+                            }));
+                            toast.success(`📍 ${suggestion.title} angewendet!`);
+                            break;
+
+                        default:
+                            toast.info(`Aktion "${action}" wird angewendet...`);
+                    }
                 }}
             />
         </>

@@ -5,8 +5,8 @@ import { useDrag, useDrop } from 'react-dnd';
 
 interface LayerPanelProps {
     layers: StudioLayer[];
-    selectedId?: string;
-    onSelect: (id: string) => void;
+    selectedIds: string[];
+    onSelect: (id: string, multi: boolean) => void;
     onToggleVisibility: (id: string) => void;
     onToggleLock: (id: string) => void;
     onGenerate: (id: string, task: 'bg' | 'text') => void;
@@ -18,9 +18,10 @@ interface LayerPanelProps {
 interface SortableLayerProps {
     layer: StudioLayer;
     index: number;
-    selectedId?: string;
+    isSelected: boolean;
+    selectedId?: string; // Kept for minimal breakage if needed, but unused
     moveLayer: (dragIndex: number, hoverIndex: number) => void;
-    onSelect: (id: string) => void;
+    onSelect: (id: string, multi: boolean) => void;
     onToggleVisibility: (id: string) => void;
     onToggleLock: (id: string) => void;
     onDelete?: (id: string) => void;
@@ -47,9 +48,8 @@ const getLayerColor = (type: string) => {
     }
 };
 
-const SortableLayer = ({ layer, index, selectedId, moveLayer, onSelect, onToggleVisibility, onToggleLock, onDelete, onDuplicate }: SortableLayerProps) => {
+const SortableLayer = ({ layer, index, isSelected, moveLayer, onSelect, onToggleVisibility, onToggleLock, onDelete, onDuplicate }: SortableLayerProps) => {
     const ref = useRef<HTMLDivElement>(null);
-    const isSelected = selectedId === layer.id;
 
     const [{ handlerId }, drop] = useDrop<
         { index: number; id: string; type: string },
@@ -97,7 +97,7 @@ const SortableLayer = ({ layer, index, selectedId, moveLayer, onSelect, onToggle
             ref={ref}
             style={{ opacity: isDragging ? 0.4 : 1, transform: isDragging ? 'scale(1.02)' : 'scale(1)' }}
             data-handler-id={handlerId}
-            onClick={() => onSelect(layer.id)}
+            onClick={(e) => onSelect(layer.id, e.shiftKey || e.metaKey)}
             className={`
                 group relative flex items-center gap-3 p-3 rounded-2xl cursor-pointer transition-all duration-200 border-2
                 ${isSelected
@@ -178,7 +178,7 @@ const SortableLayer = ({ layer, index, selectedId, moveLayer, onSelect, onToggle
     );
 };
 
-export const LayerPanel = ({ layers, selectedId, onSelect, onToggleVisibility, onToggleLock, onGenerate: _onGenerate, onDelete, onDuplicate, onReorder }: LayerPanelProps) => {
+export const LayerPanel = ({ layers, selectedIds, onSelect, onToggleVisibility, onToggleLock, onGenerate: _onGenerate, onDelete, onDuplicate, onReorder }: LayerPanelProps) => {
     const displayLayers = [...layers].sort((a, b) => (b.zIndex || 0) - (a.zIndex || 0));
 
     return (
@@ -203,9 +203,10 @@ export const LayerPanel = ({ layers, selectedId, onSelect, onToggleVisibility, o
                         key={layer.id}
                         index={index}
                         layer={layer}
-                        selectedId={selectedId}
+                        selectedId={undefined} // Deprecated, using isSelected check internally or updating SortableLayer
+                        isSelected={selectedIds.includes(layer.id)}
                         moveLayer={onReorder || (() => { })}
-                        onSelect={onSelect}
+                        onSelect={(id, multi) => onSelect(id, multi)}
                         onToggleVisibility={onToggleVisibility}
                         onToggleLock={onToggleLock}
                         onDelete={onDelete}

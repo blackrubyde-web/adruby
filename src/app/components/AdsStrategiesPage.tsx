@@ -1,4 +1,4 @@
-import { Target, Search, Sparkles, Brain, DollarSign, Users, Zap, CheckCircle2, Play, Pause, Copy, Trash2, Eye, CheckSquare, Layers } from 'lucide-react';
+import { Brain, DollarSign, Users, TrendingUp, Sparkles, Check, Copy, Share2, MessageSquare, Trophy, Link2, Wallet, Lock, Loader2, ExternalLink, Search, CheckSquare, Layers, Target, Pause, Play, Trash2, Zap, CheckCircle2, Eye } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { toast } from 'sonner';
 import { StrategyViewModal } from './StrategyViewModal';

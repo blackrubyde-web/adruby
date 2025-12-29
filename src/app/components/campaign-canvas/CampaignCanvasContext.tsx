@@ -829,6 +829,7 @@ export function CampaignCanvasProvider({ children }: { children: ReactNode }) {
                                 cta: (ad.data as AdNodeData).config?.cta,
                                 destinationUrl: (ad.data as AdNodeData).config?.destinationUrl,
                                 creativeId: (ad.data as AdNodeData).creative?.id,
+                                imageUrl: (ad.data as AdNodeData).creative?.thumbnail, // Pass the URL for the backend to upload
                             }));
 
                         return {

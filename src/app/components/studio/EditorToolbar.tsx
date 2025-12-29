@@ -1,5 +1,7 @@
 import { useState } from 'react';
-import { X, Save, ShieldCheck, Download, Undo2, Redo2, Sparkles, Palette, Maximize2, Zap, PlusCircle, MoreHorizontal } from 'lucide-react';
+import { X, Save, ShieldCheck, Download, Undo2, Redo2, Sparkles, Palette, Maximize2, Zap, PlusCircle, MoreHorizontal, Group, Ungroup, Lock, Unlock, AlignLeft, AlignCenter, AlignRight, AlignStartVertical, AlignEndVertical, ChevronsUp, ChevronsDown, ChevronUp, ChevronDown, ListPlus } from 'lucide-react';
+// Using Chevrons for Z-Order. ListPlus/Grid for Distribute? 
+// Let's use generic placeholder icons if specifically named ones fail, but Chevrons are standard.
 import type { AdDocument } from '../../types/studio';
 
 interface EditorToolbarProps {
@@ -24,6 +26,20 @@ interface EditorToolbarProps {
     onShowResize: () => void;
     onShowExport: () => void;
     onSave?: (doc: AdDocument) => void;
+    scale?: number;
+    onZoomIn?: () => void;
+    onZoomOut?: () => void;
+    onGroup?: () => void;
+    onUngroup?: () => void;
+    canGroup?: boolean;
+    canUngroup?: boolean;
+    onLock?: () => void;
+    onUnlock?: () => void;
+    onAlign?: (type: 'left' | 'center' | 'right' | 'top' | 'middle' | 'bottom') => void;
+    onDistribute?: (type: 'horizontal' | 'vertical') => void;
+    onLayerOrder?: (action: 'front' | 'back' | 'forward' | 'backward') => void;
+    saveStatus?: 'saved' | 'saving' | 'unsaved';
+    lastSaved?: Date | null;
 }
 
 export const EditorToolbar: React.FC<EditorToolbarProps> = ({
@@ -47,7 +63,21 @@ export const EditorToolbar: React.FC<EditorToolbarProps> = ({
     onShowBrand,
     onShowResize,
     onShowExport,
-    onSave
+    onSave,
+    scale = 1,
+    onZoomIn,
+    onZoomOut,
+    onGroup,
+    onUngroup,
+    canGroup,
+    canUngroup,
+    onLock,
+    onUnlock,
+    onAlign,
+    onDistribute,
+    onLayerOrder,
+    saveStatus = 'saved',
+    lastSaved
 }) => {
     const [showMobileMenu, setShowMobileMenu] = useState(false);
 
@@ -61,6 +91,67 @@ export const EditorToolbar: React.FC<EditorToolbarProps> = ({
                     title="Schließen"
                 >
                     <X className="w-4 h-4 md:w-5 md:h-5" />
+                </button>
+
+                {/* Auto-Save Indicator */}
+                <div className="flex flex-col justify-center ml-2">
+                    <div className="flex items-center gap-2">
+                        <h1 className="text-sm font-bold text-foreground truncate max-w-[150px] md:max-w-[200px]">
+                            {doc.name || 'Untitled Ad'}
+                        </h1>
+                        {saveStatus === 'unsaved' && (
+                            <div className="w-2 h-2 rounded-full bg-amber-500" title="Unsaved changes" />
+                        )}
+                        {saveStatus === 'saving' && (
+                            <div className="w-2 h-2 rounded-full bg-blue-500 animate-pulse" title="Saving..." />
+                        )}
+                    </div>
+                    <span className="text-[10px] text-muted-foreground hidden md:block leading-none">
+                        {saveStatus === 'saved' && lastSaved
+                            ? `Saved ${lastSaved.toLocaleTimeString()}`
+                            : saveStatus === 'saving' ? 'Saving...' : 'Unsaved changes'}
+                    </span>
+                </div>
+
+                <div className="w-[1px] h-6 bg-border mx-2" />
+
+                <button
+                    onClick={onShowResize}
+                    className="p-2 hover:bg-muted rounded-md transition-colors"
+                    title="Format ändern"
+                >
+                    <Maximize2 className="w-4 h-4 text-muted-foreground" />
+                </button>
+
+                {/* Zoom Controls */}
+                <div className="flex items-center gap-1 bg-muted dark:bg-muted rounded-lg p-0.5 border border-border h-9 mx-2">
+                    <button
+                        onClick={onZoomOut}
+                        className="px-2 h-full hover:bg-background rounded-md text-foreground transition-all"
+                        title="Zoom Out (-)"
+                    >
+                        -
+                    </button>
+                    <span className="text-xs font-medium w-12 text-center select-none text-muted-foreground">
+                        {Math.round(scale * 100)}%
+                    </span>
+                    <button
+                        onClick={onZoomIn}
+                        className="px-2 h-full hover:bg-background rounded-md text-foreground transition-all"
+                        title="Zoom In (+)"
+                    >
+                        +
+                    </button>
+                </div>
+
+                <div className="h-6 w-px bg-border/50 mx-1" />
+
+                <button
+                    onClick={() => onShowExport()}
+                    className="flex items-center gap-2 bg-foreground text-background hover:opacity-90 px-4 h-9 rounded-lg text-sm font-semibold transition-all shadow-sm"
+                >
+                    <Download className="w-4 h-4" />
+                    <span className="hidden xl:inline">Export</span>
                 </button>
 
                 {/* Undo/Redo */}
@@ -92,6 +183,61 @@ export const EditorToolbar: React.FC<EditorToolbarProps> = ({
 
             {/* Right Section - Desktop */}
             <div className="hidden lg:flex items-center gap-2">
+                {/* Alignment Tools (Visible if onAlign provided) */}
+                {onAlign && (
+                    <div className="flex items-center bg-muted dark:bg-muted rounded-lg p-1 border border-border h-9 mr-2 gap-0.5">
+                        <button onClick={() => onAlign('left')} className="p-1 hover:bg-zinc-200 dark:hover:bg-zinc-800 rounded" title="Align Left">
+                            <AlignLeft className="w-4 h-4 text-muted-foreground" />
+                        </button>
+                        <button onClick={() => onAlign('center')} className="p-1 hover:bg-zinc-200 dark:hover:bg-zinc-800 rounded" title="Align Center">
+                            <AlignCenter className="w-4 h-4 text-muted-foreground" />
+                        </button>
+                        <button onClick={() => onAlign('right')} className="p-1 hover:bg-zinc-200 dark:hover:bg-zinc-800 rounded" title="Align Right">
+                            <AlignRight className="w-4 h-4 text-muted-foreground" />
+                        </button>
+                        <div className="w-[1px] h-4 bg-border mx-1" />
+                        <button onClick={() => onAlign('top')} className="p-1 hover:bg-zinc-200 dark:hover:bg-zinc-800 rounded" title="Align Top">
+                            <AlignStartVertical className="w-4 h-4 text-muted-foreground" />
+                        </button>
+                        <button onClick={() => onAlign('middle')} className="p-1 hover:bg-zinc-200 dark:hover:bg-zinc-800 rounded" title="Align Middle">
+                            <AlignCenter className="w-4 h-4 text-muted-foreground rotate-90" />
+                        </button>
+                        <button onClick={() => onAlign('bottom')} className="p-1 hover:bg-zinc-200 dark:hover:bg-zinc-800 rounded" title="Align Bottom">
+                            <AlignEndVertical className="w-4 h-4 text-muted-foreground" />
+                        </button>
+                    </div>
+                )}
+
+                {/* Distribute Tools */}
+                {onDistribute && (
+                    <div className="flex items-center bg-muted dark:bg-muted rounded-lg p-1 border border-border h-9 mr-2 gap-0.5">
+                        <button onClick={() => onDistribute('horizontal')} className="p-1 hover:bg-zinc-200 dark:hover:bg-zinc-800 rounded" title="Distribute Horizontally">
+                            <MoreHorizontal className="w-4 h-4 text-muted-foreground" />
+                        </button>
+                        <button onClick={() => onDistribute('vertical')} className="p-1 hover:bg-zinc-200 dark:hover:bg-zinc-800 rounded" title="Distribute Vertically">
+                            <MoreHorizontal className="w-4 h-4 text-muted-foreground rotate-90" />
+                        </button>
+                    </div>
+                )}
+
+                {/* Z-Order Tools */}
+                {onLayerOrder && (
+                    <div className="flex items-center bg-muted dark:bg-muted rounded-lg p-1 border border-border h-9 mr-2 gap-0.5">
+                        <button onClick={() => onLayerOrder('front')} className="p-1 hover:bg-zinc-200 dark:hover:bg-zinc-800 rounded" title="Bring to Front">
+                            <ChevronsUp className="w-4 h-4 text-muted-foreground" />
+                        </button>
+                        <button onClick={() => onLayerOrder('forward')} className="p-1 hover:bg-zinc-200 dark:hover:bg-zinc-800 rounded" title="Bring Forward">
+                            <ChevronUp className="w-4 h-4 text-muted-foreground" />
+                        </button>
+                        <button onClick={() => onLayerOrder('backward')} className="p-1 hover:bg-zinc-200 dark:hover:bg-zinc-800 rounded" title="Send Backward">
+                            <ChevronDown className="w-4 h-4 text-muted-foreground" />
+                        </button>
+                        <button onClick={() => onLayerOrder('back')} className="p-1 hover:bg-zinc-200 dark:hover:bg-zinc-800 rounded" title="Send to Back">
+                            <ChevronsDown className="w-4 h-4 text-muted-foreground" />
+                        </button>
+                    </div>
+                )}
+
                 {/* View Modes */}
                 <div className="flex items-center bg-muted dark:bg-muted rounded-lg p-0.5 border border-border h-9">
                     <button

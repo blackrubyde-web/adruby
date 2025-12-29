@@ -48,10 +48,18 @@ exports.handler = async function (event, context) {
         }
         if (!action) continue;
 
-        // Call existing meta-apply-action Netlify function
-        const applyRes = await fetch(`${process.env.NETLIFY_FUNCTION_URL || ''}/api/meta-apply-action`, {
+        // Call existing meta-apply-action Netlify function with proper URL
+        const host = event.headers.host || event.headers.Host || 'localhost:8888';
+        const protocol = host.includes('localhost') ? 'http' : 'https';
+        const baseUrl = `${protocol}://${host}`;
+
+        const applyRes = await fetch(`${baseUrl}/.netlify/functions/meta-apply-action`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: {
+                'Content-Type': 'application/json',
+                // Forward auth if present
+                ...(event.headers.authorization && { 'Authorization': event.headers.authorization })
+            },
             body: JSON.stringify({ campaignId, action, scalePct: undefined })
         });
         const applyJson = await applyRes.json();

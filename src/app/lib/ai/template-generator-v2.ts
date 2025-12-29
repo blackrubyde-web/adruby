@@ -189,7 +189,7 @@ export function selectFontPairing(
 export function calculateLayout(
     style: VisualStyle['name'],
     canvasWidth: number = 1080,
-    canvasHeight: number = 1350
+    canvasHeight: number = 1080
 ): {
     headline: { x: number; y: number; width: number; height: number };
     subheadline: { x: number; y: number; width: number; height: number };
@@ -408,7 +408,7 @@ export function generateDynamicTemplate(params: {
             x: 0,
             y: 0,
             width: 1080,
-            height: 1350,
+            height: 1080,
             zIndex: 0,
             rotation: 0,
             opacity: 1,
@@ -531,7 +531,7 @@ export function generateDynamicTemplate(params: {
         id: `template_${params.visualStyle}_${Date.now()}`,
         name: `${params.visualStyle.charAt(0).toUpperCase() + params.visualStyle.slice(1)} Template`,
         width: 1080,
-        height: 1350,
+        height: 1080,
         backgroundColor: style.colorPalette.background,
         layers
     };

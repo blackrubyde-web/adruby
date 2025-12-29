@@ -214,6 +214,120 @@ export const PropertiesPanel = ({ layer, onChange, onGenerate, onAdapt: _onAdapt
                                 </div>
                             )}
 
+                            {isImage && (
+                                <div className="space-y-3 pt-4 border-t border-border/50">
+                                    <label className="text-[10px] font-bold text-muted-foreground uppercase">Mask & Shape</label>
+                                    <div className="grid grid-cols-4 gap-2">
+                                        {(['none', 'circle', 'rounded', 'rect'] as const).map(shape => {
+                                            const currentShape = (layer as ImageLayer).clipShape || 'none';
+                                            const isActive = currentShape === shape;
+                                            return (
+                                                <button
+                                                    key={shape}
+                                                    onClick={() => handleChange('clipShape', shape)}
+                                                    className={`p-2 rounded-lg text-[10px] font-bold border transition-all ${isActive
+                                                        ? 'bg-primary/10 border-primary text-primary'
+                                                        : 'bg-muted/30 border-transparent hover:border-primary/30 text-muted-foreground'
+                                                        }`}
+                                                >
+                                                    {shape === 'none' ? 'None' : shape.charAt(0).toUpperCase() + shape.slice(1)}
+                                                </button>
+                                            )
+                                        })}
+                                    </div>
+                                    {((layer as ImageLayer).clipShape === 'rounded' || (layer as ImageLayer).clipShape === 'rect') && (
+                                        <div className="pt-1 animate-in fade-in slide-in-from-top-2 duration-200">
+                                            <div className="flex justify-between text-[10px] mb-1.5">
+                                                <span className="text-muted-foreground font-bold">Corner Radius</span>
+                                                <span className="font-mono text-primary">{(layer as ImageLayer).maskRadius ?? 0}px</span>
+                                            </div>
+                                            <input
+                                                type="range"
+                                                min="0"
+                                                max="200"
+                                                value={(layer as ImageLayer).maskRadius ?? 0}
+                                                onChange={(e) => handleChange('maskRadius', parseInt(e.target.value))}
+                                                className="w-full accent-primary h-1.5 bg-muted rounded-full appearance-none cursor-pointer"
+                                            />
+                                        </div>
+                                    )}
+                                </div>
+                            )}
+
+                            {isImage && (
+                                <div className="space-y-3 pt-4 border-t border-border/50">
+                                    <div className="flex justify-between items-center">
+                                        <label className="text-[10px] font-bold text-muted-foreground uppercase">Crop Image</label>
+                                        <button
+                                            onClick={() => handleChange('crop', undefined)}
+                                            className="text-[10px] text-red-500 hover:text-red-600"
+                                            disabled={!(layer as ImageLayer).crop}
+                                        >
+                                            Reset
+                                        </button>
+                                    </div>
+
+                                    {/* Simple manual crop controls for MVP */}
+                                    <div className="grid grid-cols-2 gap-2">
+                                        <div className="space-y-1">
+                                            <span className="text-[10px] text-muted-foreground">X Offset</span>
+                                            <input
+                                                type="number"
+                                                className="w-full bg-muted/30 border border-border rounded text-xs p-1"
+                                                value={(layer as ImageLayer).crop?.x || 0}
+                                                onChange={(e) => {
+                                                    const val = parseFloat(e.target.value);
+                                                    const current = (layer as ImageLayer).crop || { x: 0, y: 0, width: 100, height: 100 };
+                                                    handleChange('crop', { ...current, x: val });
+                                                }}
+                                            />
+                                        </div>
+                                        <div className="space-y-1">
+                                            <span className="text-[10px] text-muted-foreground">Y Offset</span>
+                                            <input
+                                                type="number"
+                                                className="w-full bg-muted/30 border border-border rounded text-xs p-1"
+                                                value={(layer as ImageLayer).crop?.y || 0}
+                                                onChange={(e) => {
+                                                    const val = parseFloat(e.target.value);
+                                                    const current = (layer as ImageLayer).crop || { x: 0, y: 0, width: 100, height: 100 };
+                                                    handleChange('crop', { ...current, y: val });
+                                                }}
+                                            />
+                                        </div>
+                                        <div className="space-y-1">
+                                            <span className="text-[10px] text-muted-foreground">Width</span>
+                                            <input
+                                                type="number"
+                                                className="w-full bg-muted/30 border border-border rounded text-xs p-1"
+                                                value={(layer as ImageLayer).crop?.width || 0}
+                                                onChange={(e) => {
+                                                    const val = parseFloat(e.target.value);
+                                                    const current = (layer as ImageLayer).crop || { x: 0, y: 0, width: 100, height: 100 };
+                                                    handleChange('crop', { ...current, width: val });
+                                                }}
+                                            />
+                                        </div>
+                                        <div className="space-y-1">
+                                            <span className="text-[10px] text-muted-foreground">Height</span>
+                                            <input
+                                                type="number"
+                                                className="w-full bg-muted/30 border border-border rounded text-xs p-1"
+                                                value={(layer as ImageLayer).crop?.height || 0}
+                                                onChange={(e) => {
+                                                    const val = parseFloat(e.target.value);
+                                                    const current = (layer as ImageLayer).crop || { x: 0, y: 0, width: 100, height: 100 };
+                                                    handleChange('crop', { ...current, height: val });
+                                                }}
+                                            />
+                                        </div>
+                                    </div>
+                                    <p className="text-[10px] text-muted-foreground italic">
+                                        Note: Values are relative to original image size.
+                                    </p>
+                                </div>
+                            )}
+
                             {isShape && (
                                 <div className="space-y-2">
                                     <label className="text-[10px] font-bold text-muted-foreground uppercase">Button Text (Link)</label>
@@ -362,95 +476,97 @@ export const PropertiesPanel = ({ layer, onChange, onGenerate, onAdapt: _onAdapt
                         ))}
                     </div>
                 </Section>
-            </div>
+            </div >
 
             {/* AI MAGIC MODAL - REDESIGNED */}
-            {showAIModal && createPortal(
-                <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/40 backdrop-blur-[2px] animate-in fade-in duration-200">
-                    <div className="w-full max-w-[320px] bg-card/95 backdrop-blur-xl border border-white/10 shadow-2xl rounded-2xl overflow-hidden ring-1 ring-white/20 animate-in zoom-in-95 slide-in-from-bottom-5 duration-300">
-                        {/* Compact Header */}
-                        <div className="p-4 border-b border-border/50 bg-gradient-to-r from-violet-500/20 to-fuchsia-500/20">
-                            <div className="flex items-center justify-between">
-                                <div className="flex items-center gap-2.5">
-                                    <div className="p-2 rounded-xl bg-gradient-to-br from-violet-600 to-fuchsia-600 shadow-lg shadow-violet-500/30">
-                                        <Wand2 className="w-4 h-4 text-white" />
+            {
+                showAIModal && createPortal(
+                    <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/40 backdrop-blur-[2px] animate-in fade-in duration-200">
+                        <div className="w-full max-w-[320px] bg-card/95 backdrop-blur-xl border border-white/10 shadow-2xl rounded-2xl overflow-hidden ring-1 ring-white/20 animate-in zoom-in-95 slide-in-from-bottom-5 duration-300">
+                            {/* Compact Header */}
+                            <div className="p-4 border-b border-border/50 bg-gradient-to-r from-violet-500/20 to-fuchsia-500/20">
+                                <div className="flex items-center justify-between">
+                                    <div className="flex items-center gap-2.5">
+                                        <div className="p-2 rounded-xl bg-gradient-to-br from-violet-600 to-fuchsia-600 shadow-lg shadow-violet-500/30">
+                                            <Wand2 className="w-4 h-4 text-white" />
+                                        </div>
+                                        <div>
+                                            <h2 className="text-sm font-bold tracking-tight">AI Magic</h2>
+                                            <p className="text-[10px] text-muted-foreground font-medium">Was möchtest du tun?</p>
+                                        </div>
                                     </div>
-                                    <div>
-                                        <h2 className="text-sm font-bold tracking-tight">AI Magic</h2>
-                                        <p className="text-[10px] text-muted-foreground font-medium">Was möchtest du tun?</p>
-                                    </div>
+                                    <button onClick={() => setShowAIModal(false)} className="p-1.5 hover:bg-black/10 dark:hover:bg-white/10 rounded-full transition-colors">
+                                        <X className="w-4 h-4 opacity-70" />
+                                    </button>
                                 </div>
-                                <button onClick={() => setShowAIModal(false)} className="p-1.5 hover:bg-black/10 dark:hover:bg-white/10 rounded-full transition-colors">
-                                    <X className="w-4 h-4 opacity-70" />
-                                </button>
+                            </div>
+
+                            {/* Content */}
+                            <div className="p-3 max-h-[60vh] overflow-y-auto">
+                                {isProcessing ? (
+                                    <div className="py-8 text-center">
+                                        <div className="relative w-12 h-12 mx-auto mb-3">
+                                            <div className="absolute inset-0 rounded-full border-2 border-violet-500/30"></div>
+                                            <div className="absolute inset-0 rounded-full border-t-2 border-violet-500 animate-spin"></div>
+                                            <Sparkles className="absolute inset-0 m-auto w-5 h-5 text-violet-500 animate-pulse" />
+                                        </div>
+                                        <p className="text-xs font-bold text-foreground">AI zaubert...</p>
+                                    </div>
+                                ) : (
+                                    <div className="space-y-1">
+                                        {isImage && (
+                                            <>
+                                                <button onClick={() => handleAIAction('cutout')} className="w-full p-3 rounded-xl hover:bg-violet-500/10 hover:border-violet-500/30 border border-transparent transition-all group flex items-center gap-3 text-left">
+                                                    <div className="w-8 h-8 rounded-lg bg-violet-500/10 flex items-center justify-center text-violet-500 group-hover:scale-110 transition-transform">✂️</div>
+                                                    <div>
+                                                        <span className="text-xs font-bold block">Freistellen</span>
+                                                        <span className="text-[10px] text-muted-foreground">Hintergrund entfernen</span>
+                                                    </div>
+                                                </button>
+
+                                                <button onClick={() => handleAIAction('enhance')} className="w-full p-3 rounded-xl hover:bg-emerald-500/10 hover:border-emerald-500/30 border border-transparent transition-all group flex items-center gap-3 text-left">
+                                                    <div className="w-8 h-8 rounded-lg bg-emerald-500/10 flex items-center justify-center text-emerald-500 group-hover:scale-110 transition-transform">✨</div>
+                                                    <div>
+                                                        <span className="text-xs font-bold block">Upscale</span>
+                                                        <span className="text-[10px] text-muted-foreground">4x Auflösung</span>
+                                                    </div>
+                                                </button>
+
+                                                <div className="pt-2 pb-1 px-1">
+                                                    <span className="text-[10px] font-bold text-muted-foreground uppercase opacity-70">Szenen Generator</span>
+                                                </div>
+
+                                                <div className="grid grid-cols-2 gap-2">
+                                                    {SCENE_PRESETS.map(preset => (
+                                                        <button
+                                                            key={preset.id}
+                                                            onClick={() => handleAIAction('scene', { prompt: preset.prompt })}
+                                                            className="p-2.5 rounded-xl bg-muted/40 hover:bg-primary/5 hover:ring-1 hover:ring-primary/20 transition-all text-center flex flex-col items-center gap-1.5"
+                                                        >
+                                                            <span className="text-lg">{preset.label.split(' ')[0]}</span>
+                                                            <span className="text-[10px] font-medium">{preset.label.split(' ')[1]}</span>
+                                                        </button>
+                                                    ))}
+                                                </div>
+                                            </>
+                                        )}
+
+                                        {(isText || isShape) && (
+                                            <button onClick={() => handleAIAction('rewrite')} className="w-full p-3 rounded-xl hover:bg-blue-500/10 hover:border-blue-500/30 border border-transparent transition-all group flex items-center gap-3 text-left">
+                                                <div className="w-8 h-8 rounded-lg bg-blue-500/10 flex items-center justify-center text-blue-500 group-hover:scale-110 transition-transform">✍️</div>
+                                                <div>
+                                                    <span className="text-xs font-bold block">Rewriter</span>
+                                                    <span className="text-[10px] text-muted-foreground">Text umschreiben</span>
+                                                </div>
+                                            </button>
+                                        )}
+                                    </div>
+                                )}
                             </div>
                         </div>
-
-                        {/* Content */}
-                        <div className="p-3 max-h-[60vh] overflow-y-auto">
-                            {isProcessing ? (
-                                <div className="py-8 text-center">
-                                    <div className="relative w-12 h-12 mx-auto mb-3">
-                                        <div className="absolute inset-0 rounded-full border-2 border-violet-500/30"></div>
-                                        <div className="absolute inset-0 rounded-full border-t-2 border-violet-500 animate-spin"></div>
-                                        <Sparkles className="absolute inset-0 m-auto w-5 h-5 text-violet-500 animate-pulse" />
-                                    </div>
-                                    <p className="text-xs font-bold text-foreground">AI zaubert...</p>
-                                </div>
-                            ) : (
-                                <div className="space-y-1">
-                                    {isImage && (
-                                        <>
-                                            <button onClick={() => handleAIAction('cutout')} className="w-full p-3 rounded-xl hover:bg-violet-500/10 hover:border-violet-500/30 border border-transparent transition-all group flex items-center gap-3 text-left">
-                                                <div className="w-8 h-8 rounded-lg bg-violet-500/10 flex items-center justify-center text-violet-500 group-hover:scale-110 transition-transform">✂️</div>
-                                                <div>
-                                                    <span className="text-xs font-bold block">Freistellen</span>
-                                                    <span className="text-[10px] text-muted-foreground">Hintergrund entfernen</span>
-                                                </div>
-                                            </button>
-
-                                            <button onClick={() => handleAIAction('enhance')} className="w-full p-3 rounded-xl hover:bg-emerald-500/10 hover:border-emerald-500/30 border border-transparent transition-all group flex items-center gap-3 text-left">
-                                                <div className="w-8 h-8 rounded-lg bg-emerald-500/10 flex items-center justify-center text-emerald-500 group-hover:scale-110 transition-transform">✨</div>
-                                                <div>
-                                                    <span className="text-xs font-bold block">Upscale</span>
-                                                    <span className="text-[10px] text-muted-foreground">4x Auflösung</span>
-                                                </div>
-                                            </button>
-
-                                            <div className="pt-2 pb-1 px-1">
-                                                <span className="text-[10px] font-bold text-muted-foreground uppercase opacity-70">Szenen Generator</span>
-                                            </div>
-
-                                            <div className="grid grid-cols-2 gap-2">
-                                                {SCENE_PRESETS.map(preset => (
-                                                    <button
-                                                        key={preset.id}
-                                                        onClick={() => handleAIAction('scene', { prompt: preset.prompt })}
-                                                        className="p-2.5 rounded-xl bg-muted/40 hover:bg-primary/5 hover:ring-1 hover:ring-primary/20 transition-all text-center flex flex-col items-center gap-1.5"
-                                                    >
-                                                        <span className="text-lg">{preset.label.split(' ')[0]}</span>
-                                                        <span className="text-[10px] font-medium">{preset.label.split(' ')[1]}</span>
-                                                    </button>
-                                                ))}
-                                            </div>
-                                        </>
-                                    )}
-
-                                    {(isText || isShape) && (
-                                        <button onClick={() => handleAIAction('rewrite')} className="w-full p-3 rounded-xl hover:bg-blue-500/10 hover:border-blue-500/30 border border-transparent transition-all group flex items-center gap-3 text-left">
-                                            <div className="w-8 h-8 rounded-lg bg-blue-500/10 flex items-center justify-center text-blue-500 group-hover:scale-110 transition-transform">✍️</div>
-                                            <div>
-                                                <span className="text-xs font-bold block">Rewriter</span>
-                                                <span className="text-[10px] text-muted-foreground">Text umschreiben</span>
-                                            </div>
-                                        </button>
-                                    )}
-                                </div>
-                            )}
-                        </div>
                     </div>
-                </div>
-                , document.body)}
-        </div>
+                    , document.body)
+            }
+        </div >
     );
 };

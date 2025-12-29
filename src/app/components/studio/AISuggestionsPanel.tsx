@@ -10,7 +10,11 @@ interface Suggestion {
     description: string;
     priority: number;
     autoFixAvailable: boolean;
-    autoFixAction?: Record<string, unknown>;
+    autoFixAction?: {
+        action: 'resize' | 'recolor' | 'reposition' | 'replace_text' | 'adjust_contrast';
+        targetLayerId?: string;
+        params?: Record<string, unknown>;
+    };
 }
 
 interface AISuggestionsPanelProps {
@@ -30,17 +34,20 @@ export const AISuggestionsPanel = ({ document, isVisible, onApplySuggestion, onC
 
         setIsLoading(true);
         try {
-            const response = await fetch('/api/ai-suggestions', {
+            const response = await fetch('/.netlify/functions/ai-studio-suggestions', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ adDocument: document })
+                body: JSON.stringify({ doc: document })
             });
 
             const data = await response.json();
             if (data.success && data.suggestions) {
                 setSuggestions(data.suggestions.sort((a: Suggestion, b: Suggestion) => b.priority - a.priority));
             } else {
-                // Fallback suggestions
+                // Enhanced fallback suggestions with real auto-fix actions
+                const textLayers = document?.layers.filter(l => l.type === 'text') || [];
+                const ctaLayers = document?.layers.filter(l => l.type === 'cta') || [];
+
                 setSuggestions([
                     {
                         id: '1',
@@ -51,24 +58,34 @@ export const AISuggestionsPanel = ({ document, isVisible, onApplySuggestion, onC
                         priority: 4,
                         autoFixAvailable: false
                     },
-                    {
+                    ...(ctaLayers.length > 0 ? [{
                         id: '2',
-                        type: 'tip',
-                        category: 'cta',
+                        type: 'tip' as const,
+                        category: 'cta' as const,
                         title: 'CTA Button größer',
                         description: 'Ein größerer CTA-Button erhöht die Klickrate um bis zu 30%.',
                         priority: 3,
-                        autoFixAvailable: true
-                    },
-                    {
+                        autoFixAvailable: true,
+                        autoFixAction: {
+                            action: 'resize' as const,
+                            targetLayerId: ctaLayers[0].id,
+                            params: { width: (ctaLayers[0].width || 200) * 1.2, height: (ctaLayers[0].height || 50) * 1.2 }
+                        }
+                    }] : []),
+                    ...(textLayers.length > 0 && (textLayers[0] as any).color ? [{
                         id: '3',
-                        type: 'warning',
-                        category: 'colors',
-                        title: 'Kontrast prüfen',
-                        description: 'Der Text könnte auf dem Hintergrund schwer lesbar sein.',
+                        type: 'warning' as const,
+                        category: 'colors' as const,
+                        title: 'Kontrast verbessern',
+                        description: 'Der Text könnte auf dem Hintergrund schwer lesbar sein. Ändere zu hochkontrastierendem Weiß.',
                         priority: 5,
-                        autoFixAvailable: false
-                    }
+                        autoFixAvailable: true,
+                        autoFixAction: {
+                            action: 'recolor' as const,
+                            targetLayerId: textLayers[0].id,
+                            params: { fill: '#FFFFFF', color: '#FFFFFF' }
+                        }
+                    }] : [])
                 ]);
             }
         } catch (error) {

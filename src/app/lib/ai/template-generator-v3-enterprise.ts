@@ -534,7 +534,7 @@ function createBaseTemplate(
         id: `enterprise_${params.industry}_${pattern}_${Date.now()}`,
         name: `${params.industry} - ${pattern} - ${params.conversionGoal}`,
         width: 1080,
-        height: 1350,
+        height: 1080,
         backgroundColor: getBackgroundColor(params.brandColor, psychologyProfile.colorPsychology),
         layers
     };
@@ -559,7 +559,7 @@ function createBackgroundLayer(brandColor: string, colorPsych: PsychologyProfile
         x: 0,
         y: 0,
         width: 1080,
-        height: 1350,
+        height: 1080,
         zIndex: 0,
         rotation: 0,
         opacity: 1,
@@ -834,7 +834,12 @@ function createBeforeAfterLayers(params: any, psych: PsychologyProfile): StudioL
             opacity: 1,
             locked: false,
             visible: true,
-            src: '' // After photo
+            src: '', // After photo
+            shadowColor: '#000000',
+            shadowBlur: 30,
+            shadowOffsetX: 0,
+            shadowOffsetY: 10,
+            shadowOpacity: 0.3
         } as ImageLayer,
 
         // "After" text overlay
@@ -1181,7 +1186,12 @@ function createQuestionHookLayers(params: any, psych: PsychologyProfile): Studio
             opacity: 1,
             locked: false,
             visible: true,
-            src: ''
+            src: '',
+            shadowColor: '#000000',
+            shadowBlur: 30,
+            shadowOffsetX: 0,
+            shadowOffsetY: 10,
+            shadowOpacity: 0.3
         } as ImageLayer
     ];
 }
@@ -1223,7 +1233,12 @@ function createBoldStatementLayers(params: any, psych: PsychologyProfile): Studi
             opacity: 1,
             locked: false,
             visible: true,
-            src: ''
+            src: '',
+            shadowColor: '#000000',
+            shadowBlur: 30,
+            shadowOffsetX: 0,
+            shadowOffsetY: 10,
+            shadowOpacity: 0.3
         } as ImageLayer
     ];
 }
@@ -1278,7 +1293,12 @@ function createDreamOutcomeLayers(params: any, psych: PsychologyProfile): Studio
             opacity: 1,
             locked: false,
             visible: true,
-            src: ''
+            src: '',
+            shadowColor: '#000000',
+            shadowBlur: 30,
+            shadowOffsetX: 0,
+            shadowOffsetY: 10,
+            shadowOpacity: 0.3
         } as ImageLayer,
         {
             id: 'dream_text',
@@ -1342,7 +1362,12 @@ function createAuthorityProofLayers(params: any, psych: PsychologyProfile): Stud
             opacity: 1,
             locked: false,
             visible: true,
-            src: ''
+            src: '',
+            shadowColor: '#000000',
+            shadowBlur: 30,
+            shadowOffsetX: 0,
+            shadowOffsetY: 10,
+            shadowOpacity: 0.3
         } as ImageLayer,
         {
             id: 'credentials',
@@ -1388,10 +1413,10 @@ function getMicroComponentPosition(pos: MicroComponent['position']): { x: number
     const positions = {
         top_left: { x: 40, y: 40 },
         top_right: { x: 820, y: 40 },
-        bottom_left: { x: 40, y: 1220 },
-        bottom_right: { x: 820, y: 1220 },
+        bottom_left: { x: 40, y: 960 },
+        bottom_right: { x: 820, y: 960 },
         center_top: { x: 390, y: 40 },
-        above_cta: { x: 100, y: 1050 },
+        above_cta: { x: 100, y: 880 },
         below_headline: { x: 100, y: 320 }
     };
 
@@ -1513,7 +1538,7 @@ function createCTALayer(params: any, psych: PsychologyProfile, industryConfig: a
         type: 'cta',
         name: 'CTA Button',
         x: 140,
-        y: 1200,
+        y: 930,
         width: 800,
         height: 110,
         zIndex: 100, // Highest

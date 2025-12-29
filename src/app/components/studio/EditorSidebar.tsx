@@ -7,8 +7,8 @@ import type { AdDocument, StudioLayer } from '../../types/studio';
 
 interface EditorSidebarProps {
     doc: AdDocument;
-    selectedLayerId?: string;
-    onSelectLayer: (id: string | undefined) => void;
+    selectedLayerIds: string[];
+    onSelectLayer: (id: string | undefined, multi: boolean) => void;
     onToggleVisibility: (id: string) => void;
     onToggleLock: (id: string) => void;
     onGenerate: (id: string, task: 'bg' | 'text') => void;
@@ -25,7 +25,7 @@ interface EditorSidebarProps {
 
 export const EditorSidebar: React.FC<EditorSidebarProps> = ({
     doc,
-    selectedLayerId,
+    selectedLayerIds,
     onSelectLayer,
     onToggleVisibility,
     onToggleLock,
@@ -74,7 +74,7 @@ export const EditorSidebar: React.FC<EditorSidebarProps> = ({
                 {activeTab === 'layers' && (
                     <LayerPanel
                         layers={doc.layers}
-                        selectedId={selectedLayerId}
+                        selectedIds={selectedLayerIds}
                         onSelect={onSelectLayer}
                         onToggleVisibility={onToggleVisibility}
                         onToggleLock={onToggleLock}
