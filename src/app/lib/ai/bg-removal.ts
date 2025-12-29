@@ -19,8 +19,7 @@ export async function removeBackground(imageSrc: File | Blob | string, onProgres
     try {
         // Configuration
         const config: Config = {
-            // Point to the -data package which contains the actual model files and WASM
-            publicPath: 'https://cdn.jsdelivr.net/npm/@imgly/background-removal-data@1.7.0/dist/',
+            // Use the package default data host to match the installed version.
             debug: true, // Enable debug to help user identify issues
             model: 'isnet'
         };
