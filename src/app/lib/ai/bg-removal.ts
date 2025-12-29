@@ -20,7 +20,7 @@ export async function removeBackground(imageSrc: File | Blob | string, onProgres
         // Configuration
         const config: Config = {
             // Keep using CDN for the WASM files to avoid needing to copy them to public/ locally
-            publicPath: 'https://cdn.jsdelivr.net/npm/@imgly/background-removal@1.0.4/dist/',
+            publicPath: 'https://cdn.jsdelivr.net/npm/@imgly/background-removal@1.7.0/dist/',
             debug: false,
             model: 'isnet' // Valid type: 'isnet' | 'isnet_fp16' | 'isnet_quint8'
         };

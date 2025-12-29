@@ -1,4 +1,5 @@
 import { useState, type ComponentType, type ReactNode } from 'react';
+import { createPortal } from 'react-dom';
 import { Type, Image as ImageIcon, LayoutTemplate, Sparkles, Hash, AlignLeft, AlignCenter, AlignRight, Bold, Italic, ChevronDown, ChevronUp, Wand2, X } from 'lucide-react';
 import type { StudioLayer, TextLayer, ImageLayer, CtaLayer, ShapeLayer } from '../../types/studio';
 
@@ -364,8 +365,8 @@ export const PropertiesPanel = ({ layer, onChange, onGenerate, onAdapt: _onAdapt
             </div>
 
             {/* AI MAGIC MODAL - REDESIGNED */}
-            {showAIModal && (
-                <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/40 backdrop-blur-[2px] animate-in fade-in duration-200">
+            {showAIModal && createPortal(
+                <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/40 backdrop-blur-[2px] animate-in fade-in duration-200">
                     <div className="w-full max-w-[320px] bg-card/95 backdrop-blur-xl border border-white/10 shadow-2xl rounded-2xl overflow-hidden ring-1 ring-white/20 animate-in zoom-in-95 slide-in-from-bottom-5 duration-300">
                         {/* Compact Header */}
                         <div className="p-4 border-b border-border/50 bg-gradient-to-r from-violet-500/20 to-fuchsia-500/20">
@@ -449,7 +450,7 @@ export const PropertiesPanel = ({ layer, onChange, onGenerate, onAdapt: _onAdapt
                         </div>
                     </div>
                 </div>
-            )}
+                , document.body)}
         </div>
     );
 };
