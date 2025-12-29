@@ -12,16 +12,17 @@ import { removeBackground as imglyRemoveBackground, Config } from '@imgly/backgr
  * @param imageSrc File object, Blob, or URL string of the image
  * @returns Promise<Blob> The processed image as a Blob (PNG with transparency)
  */
+// export async function removeBackground(imageSrc: File | Blob | string, onProgress?: (progress: number) => void): Promise<Blob> {
 export async function removeBackground(imageSrc: File | Blob | string, onProgress?: (progress: number) => void): Promise<Blob> {
-    console.log('🎭 Starting background removal...');
+    // console.log('🎭 Starting background removal...');
 
     try {
         // Configuration
         const config: Config = {
             // Keep using CDN for the WASM files to avoid needing to copy them to public/ locally
             publicPath: 'https://cdn.jsdelivr.net/npm/@imgly/background-removal@1.0.4/dist/',
-            debug: true,
-            model: 'medium' // 'small' is faster, 'medium' is better quality
+            debug: false,
+            model: 'isnet' // Valid type: 'isnet' | 'isnet_fp16' | 'isnet_quint8'
         };
 
         // We can't easily hook into the progress of this specific library version exposed via simple function,

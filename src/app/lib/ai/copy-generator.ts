@@ -1,4 +1,4 @@
-import { supabase } from '../supabaseClient';
+// import { supabase } from '../supabaseClient';
 import { invokeOpenAIProxy } from '../api/proxyClient';
 import type { StrategicProfile } from './strategic-analyzer';
 

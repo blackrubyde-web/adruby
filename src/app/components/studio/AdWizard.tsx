@@ -1,5 +1,5 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
-import { supabase } from '../../lib/supabaseClient';
+// import { supabase } from '../../lib/supabaseClient';
 import { invokeOpenAIProxy } from '../../lib/api/proxyClient';
 import { Upload, Sparkles, ArrowRight, X, Wand2, Check, Zap, Image as Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
@@ -25,6 +25,7 @@ interface FormData {
     offer: string; // NEW: Grounded Offer
     socialProof: string; // NEW: Grounded Proof
     tone: 'professional' | 'playful' | 'bold' | 'luxury' | 'minimal';
+    language: string;
 }
 
 interface GeneratedHooks {
@@ -50,6 +51,14 @@ const TONE_OPTIONS = [
     { id: 'minimal', label: 'Minimal', emoji: '🎯', color: 'from-zinc-400 to-zinc-600', bg: 'bg-zinc-100 dark:bg-zinc-900/50' },
 ];
 
+const LANGUAGES = [
+    { id: 'German', label: '🇩🇪 Deutsch' },
+    { id: 'English', label: '🇺🇸 English' },
+    { id: 'French', label: '🇫🇷 Français' },
+    { id: 'Spanish', label: '🇪🇸 Español' },
+    { id: 'Italian', label: '🇮🇹 Italiano' }
+];
+
 export const AdWizard = ({ isOpen, onClose, onComplete }: AdWizardProps) => {
     const [step, setStep] = useState<WizardStep>(1);
     const [isExiting, setIsExiting] = useState(false);
@@ -65,6 +74,7 @@ export const AdWizard = ({ isOpen, onClose, onComplete }: AdWizardProps) => {
         offer: '',
         socialProof: '',
         tone: 'professional',
+        language: 'German',
     });
     const [isGenerating, setIsGenerating] = useState(false);
     const [isRemovingBg, setIsRemovingBg] = useState(false); // New state for BG removal loading
@@ -125,6 +135,7 @@ export const AdWizard = ({ isOpen, onClose, onComplete }: AdWizardProps) => {
             offer: '',
             socialProof: '',
             tone: 'professional',
+            language: 'German',
         });
     };
 
@@ -578,6 +589,7 @@ Generate this EXACT JSON structure:
                 offer: '',
                 socialProof: '',
                 tone: 'professional',
+                language: 'German',
             });
             setIsExiting(false);
             onClose();

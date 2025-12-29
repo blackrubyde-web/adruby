@@ -26,6 +26,7 @@ export interface PremiumAdParams {
         proof?: string;
         painPoints?: string[];
     };
+    language?: string;
 }
 
 export interface PremiumAdResult {
