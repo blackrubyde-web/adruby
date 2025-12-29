@@ -5,13 +5,7 @@
  */
 
 // Define the interface for the library configuration if necessary
-interface Config {
-    publicPath?: string;
-    debug?: boolean;
-    device?: 'cpu' | 'gpu';
-    proxyToWorker?: boolean;
-    model?: 'small' | 'medium';
-}
+import { removeBackground as imglyRemoveBackground, Config } from '@imgly/background-removal';
 
 /**
  * Removes the background from an image file or URL.
@@ -22,14 +16,9 @@ export async function removeBackground(imageSrc: File | Blob | string, onProgres
     console.log('🎭 Starting background removal...');
 
     try {
-        // Dynamic import from CDN
-        // validation for types is skipped as we are importing from a URL
-        // @ts-expect-error: CDN import external module
-        const imglyRemoveBackground = (await import('https://cdn.jsdelivr.net/npm/@imgly/background-removal@1.0.4/+esm')).default;
-
         // Configuration
         const config: Config = {
-            // Point the public path to the CDN so it can load the WASM/ONNX files
+            // Keep using CDN for the WASM files to avoid needing to copy them to public/ locally
             publicPath: 'https://cdn.jsdelivr.net/npm/@imgly/background-removal@1.0.4/dist/',
             debug: true,
             model: 'medium' // 'small' is faster, 'medium' is better quality
