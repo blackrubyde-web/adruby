@@ -270,7 +270,8 @@ export const AdWizard = ({ isOpen, onClose, onComplete }: AdWizardProps) => {
                         offer: offer || usps || 'Special Offer',
                         proof: socialProof || 'Trusted Brand',
                         painPoints: painPoints ? [painPoints] : undefined
-                    }
+                    },
+                    language: formData.language // NEW
                 },
                 (stage: number, _message: string) => {
                     // Progress callback
@@ -743,7 +744,7 @@ Generate this EXACT JSON structure:
                             </div>
 
                             <div className="md:col-span-7 space-y-3">
-                                <div className="grid grid-cols-2 gap-4">
+                                <div className="grid grid-cols-2 lg:grid-cols-3 gap-3">
                                     <div className="space-y-1.5 group">
                                         <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground group-focus-within:text-primary transition-colors">
                                             Produkt Name *
@@ -767,6 +768,21 @@ Generate this EXACT JSON structure:
                                             placeholder="z.B. AdRuby"
                                             className="w-full bg-muted/50 dark:bg-muted/30 border border-border rounded-xl px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-transparent transition-all hover:bg-muted/70 dark:hover:bg-muted/50"
                                         />
+                                    </div>
+
+                                    <div className="space-y-1.5 group col-span-2 lg:col-span-1">
+                                        <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground group-focus-within:text-primary transition-colors">
+                                            Sprache
+                                        </label>
+                                        <select
+                                            value={formData.language}
+                                            onChange={(e) => updateField('language', e.target.value)}
+                                            className="w-full bg-muted/50 dark:bg-muted/30 border border-border rounded-xl px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-transparent transition-all hover:bg-muted/70 dark:hover:bg-muted/50 appearance-none"
+                                        >
+                                            {LANGUAGES.map(lang => (
+                                                <option key={lang.id} value={lang.id}>{lang.label}</option>
+                                            ))}
+                                        </select>
                                     </div>
                                 </div>
 

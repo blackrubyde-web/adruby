@@ -109,6 +109,7 @@ export async function generateCopyExplosion(params: {
         proof?: string;
         painPoints?: string[];
     };
+    language?: string;
 }): Promise<CopyVariant[]> {
     console.log('🎯 Copy Explosion Engine V2: Generating 10 hook-based variants...');
 
@@ -181,6 +182,7 @@ async function generateSingleVariant(
             proof?: string;
             painPoints?: string[];
         };
+        language?: string;
     }
 ): Promise<CopyVariant> {
     const config = HOOK_ANGLE_CONFIGS[hookAngle];
@@ -192,6 +194,7 @@ BRAND: ${params.brandName || 'N/A'}
 AUDIENCE: ${params.profile.targetAudience}
 PAIN POINT: ${params.profile.primaryPainPoint}
 TONE: ${params.tone}
+LANGUAGE: ${params.language || 'German'} (Output must be in this language)
 
 GROUNDED FACTS (USE THESE EXACTLY):
 - Offer: ${params.groundedFacts?.offer || 'N/A'}
@@ -317,6 +320,7 @@ export async function getBestCopyVariant(params: {
         proof?: string;
         painPoints?: string[];
     };
+    language?: string;
 }): Promise<CopyVariant> {
     const variants = await generateCopyExplosion(params);
     const best = variants[0]; // Already sorted by score

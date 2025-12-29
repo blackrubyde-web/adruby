@@ -43,6 +43,7 @@ export async function analyzeStrategy(params: {
     userPrompt: string; // Now includes structured brief data
     tone: 'professional' | 'playful' | 'bold' | 'luxury' | 'minimal';
     imageBase64?: string;
+    language?: string;
 }): Promise<StrategicProfile> {
     console.log('📊 Stage 1: Strategic Analysis 2.0...');
 
@@ -53,6 +54,7 @@ CONTEXT:
 - Brand: ${params.brandName || 'N/A'}
 - Brief: ${params.userPrompt}
 - Desired Tone: ${params.tone}
+- Language: ${params.language || 'German'} (Ensure any copy direction or angles are optimized for this language)
 
 YOUR TASK:
 Create a cohesive Creative Direction Profile.
