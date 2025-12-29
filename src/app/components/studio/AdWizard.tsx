@@ -626,7 +626,7 @@ Generate this EXACT JSON structure:
 
 
             {/* Content Card */}
-            <div className={`relative w-full max-w-2xl mx-4 rounded-3xl shadow-2xl overflow-hidden max-h-[85vh] flex flex-col transition-all duration-500 transform border border-border bg-background z-50 ${isExiting ? 'scale-95 translate-y-8' : 'scale-100 translate-y-0'}`}>
+            <div className={`relative w-full max-w-5xl mx-4 rounded-3xl shadow-2xl overflow-hidden flex flex-col transition-all duration-500 transform border border-border bg-background z-50 ${isExiting ? 'scale-95 translate-y-8' : 'scale-100 translate-y-0'}`}>
 
                 {/* Header */}
                 <div className="p-4 md:p-6 border-b border-border shrink-0">
@@ -682,7 +682,7 @@ Generate this EXACT JSON structure:
                 </div>
 
                 {/* Content Area */}
-                <div className="p-4 md:p-6 overflow-y-auto flex-1">
+                <div className="p-4 md:p-8 flex-1">
                     {/* Step 1: Product Info */}
                     {step === 1 && (
                         <div className="grid grid-cols-1 md:grid-cols-12 gap-6 md:gap-8 animate-in slide-in-from-right-8 fade-in duration-500">
@@ -691,7 +691,7 @@ Generate this EXACT JSON structure:
                                 <input type="file" ref={fileInputRef} className="hidden" accept="image/*" onChange={(e) => handleFileUpload(e.target.files)} />
                                 <div
                                     onClick={() => fileInputRef.current?.click()}
-                                    className={`aspect-square rounded-2xl border-2 border-dashed flex flex-col items-center justify-center cursor-pointer transition-all duration-300 group relative overflow-hidden ${uploadedImage
+                                    className={`h-[320px] w-full rounded-2xl border-2 border-dashed flex flex-col items-center justify-center cursor-pointer transition-all duration-300 group relative overflow-hidden ${uploadedImage
                                         ? 'border-emerald-500/50 bg-emerald-500/5 dark:bg-emerald-500/10'
                                         : 'border-border hover:border-primary/50 hover:bg-primary/5 dark:hover:bg-primary/10'
                                         }`}
@@ -742,62 +742,63 @@ Generate this EXACT JSON structure:
                                 )}
                             </div>
 
-                            {/* Right: Inputs */}
-                            <div className="md:col-span-7 space-y-4 md:space-y-6">
-                                <div className="space-y-2 group">
-                                    <label className="text-xs font-bold uppercase tracking-widest text-muted-foreground group-focus-within:text-primary transition-colors">
-                                        Produkt Name *
-                                    </label>
-                                    <input
-                                        value={formData.productName}
-                                        onChange={(e) => updateField('productName', e.target.value)}
-                                        placeholder="z.B. Pro Suite, Air Max, Premium Coffee"
-                                        className="w-full bg-muted/50 dark:bg-muted/30 border border-border rounded-xl px-4 md:px-5 py-3 md:py-4 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-transparent transition-all hover:bg-muted/70 dark:hover:bg-muted/50"
-                                        autoFocus
-                                    />
+                            <div className="md:col-span-7 space-y-3">
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div className="space-y-1.5 group">
+                                        <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground group-focus-within:text-primary transition-colors">
+                                            Produkt Name *
+                                        </label>
+                                        <input
+                                            value={formData.productName}
+                                            onChange={(e) => updateField('productName', e.target.value)}
+                                            placeholder="z.B. Pro Suite"
+                                            className="w-full bg-muted/50 dark:bg-muted/30 border border-border rounded-xl px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-transparent transition-all hover:bg-muted/70 dark:hover:bg-muted/50"
+                                            autoFocus
+                                        />
+                                    </div>
+
+                                    <div className="space-y-1.5 group">
+                                        <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground group-focus-within:text-primary transition-colors">
+                                            Brand (Optional)
+                                        </label>
+                                        <input
+                                            value={formData.brandName}
+                                            onChange={(e) => updateField('brandName', e.target.value)}
+                                            placeholder="z.B. AdRuby"
+                                            className="w-full bg-muted/50 dark:bg-muted/30 border border-border rounded-xl px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-transparent transition-all hover:bg-muted/70 dark:hover:bg-muted/50"
+                                        />
+                                    </div>
                                 </div>
 
-                                <div className="space-y-2 group">
-                                    <label className="text-xs font-bold uppercase tracking-widest text-muted-foreground group-focus-within:text-primary transition-colors">
-                                        Brand Name (Optional)
-                                    </label>
-                                    <input
-                                        value={formData.brandName}
-                                        onChange={(e) => updateField('brandName', e.target.value)}
-                                        placeholder="z.B. AdRuby, Nike, Starbucks"
-                                        className="w-full bg-muted/50 dark:bg-muted/30 border border-border rounded-xl px-4 md:px-5 py-3 md:py-4 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-transparent transition-all hover:bg-muted/70 dark:hover:bg-muted/50"
-                                    />
-                                </div>
-
-                                <div className="space-y-2 group">
-                                    <label className="text-xs font-bold uppercase tracking-widest text-muted-foreground group-focus-within:text-primary transition-colors">
+                                <div className="space-y-1.5 group">
+                                    <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground group-focus-within:text-primary transition-colors">
                                         Beschreibung (Optional)
                                     </label>
                                     <textarea
                                         value={formData.productDescription}
                                         onChange={(e) => updateField('productDescription', e.target.value)}
                                         placeholder="Was macht dein Produkt besonders?"
-                                        rows={3}
-                                        className="w-full bg-muted/50 dark:bg-muted/30 border border-border rounded-xl px-4 md:px-5 py-3 md:py-4 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-transparent transition-all hover:bg-muted/70 dark:hover:bg-muted/50 resize-none"
+                                        rows={2}
+                                        className="w-full bg-muted/50 dark:bg-muted/30 border border-border rounded-xl px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-transparent transition-all hover:bg-muted/70 dark:hover:bg-muted/50 resize-none"
                                     />
                                 </div>
 
                                 {/* AI Image Enhancement - Only show if image uploaded */}
                                 {uploadedImage && (
-                                    <div className="space-y-2 group relative">
-                                        <label className="text-xs font-bold uppercase tracking-widest text-muted-foreground group-focus-within:text-primary transition-colors flex items-center gap-2">
-                                            <Sparkles className="w-3.5 h-3.5 text-primary" />
+                                    <div className="space-y-1.5 group relative">
+                                        <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground group-focus-within:text-primary transition-colors flex items-center gap-2">
+                                            <Sparkles className="w-3 h-3 text-primary" />
                                             KI Bild-Verbesserung (Optional)
                                         </label>
                                         <textarea
                                             value={formData.imageEnhancementPrompt}
                                             onChange={(e) => updateField('imageEnhancementPrompt', e.target.value)}
-                                            placeholder="z.B. 'Entferne Hintergrund, füge professionellen Studio-Hintergrund hinzu, verbessere Beleuchtung und Farben für Premium-Look'"
-                                            rows={3}
-                                            className="w-full bg-gradient-to-br from-primary/5 to-red-500/5 dark:from-primary/10 dark:to-red-500/10 border border-primary/30 rounded-xl px-4 md:px-5 py-3 md:py-4 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-transparent transition-all hover:border-primary/50 resize-none"
+                                            placeholder="z.B. 'Entferne Hintergrund, füge Studio-Setup hinzu'"
+                                            rows={2}
+                                            className="w-full bg-gradient-to-br from-primary/5 to-red-500/5 dark:from-primary/10 dark:to-red-500/10 border border-primary/30 rounded-xl px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-transparent transition-all hover:border-primary/50 resize-none"
                                         />
-                                        <p className="text-[10px] text-muted-foreground flex items-center gap-1.5">
-                                            <Sparkles className="w-3 h-3" />
+                                        <p className="text-[9px] text-muted-foreground flex items-center gap-1.5">
+                                            <Sparkles className="w-2.5 h-2.5" />
                                             Die KI optimiert dein Bild für professionelle Ad-Qualität
                                         </p>
                                     </div>
@@ -1223,6 +1224,6 @@ Generate this EXACT JSON structure:
                     )}
                 </div>
             </div>
-        </div>
+        </div >
     );
 };

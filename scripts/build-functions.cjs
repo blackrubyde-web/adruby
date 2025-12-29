@@ -15,7 +15,7 @@ function ensureDir(dir) {
 function getFunctionEntries() {
   return fs
     .readdirSync(SRC_DIR, { withFileTypes: true })
-    .filter((entry) => entry.isFile() && entry.name.endsWith(".js"))
+    .filter((entry) => entry.isFile() && (entry.name.endsWith(".js") || entry.name.endsWith(".ts")))
     .map((entry) => entry.name);
 }
 
@@ -28,18 +28,20 @@ async function buildAll() {
   }
 
   await Promise.all(
-    entries.map((file) =>
-      esbuild.build({
+    entries.map((file) => {
+      // Input: "openai-proxy.ts" -> Output: "openai-proxy.js"
+      const outName = file.replace(/\.ts$/, ".js");
+      return esbuild.build({
         entryPoints: [path.join(SRC_DIR, file)],
         bundle: true,
         platform: "node",
         target: "node18",
         format: "cjs",
-        outfile: path.join(OUT_DIR, file),
+        outfile: path.join(OUT_DIR, outName),
         external: EXTERNALS,
         logLevel: "silent",
-      }),
-    ),
+      });
+    }),
   );
 
   console.log(`Built ${entries.length} Netlify functions → ${path.relative(ROOT, OUT_DIR)}`);
