@@ -5,7 +5,7 @@ import type { StudioLayer, TextLayer, ImageLayer, CtaLayer, ShapeLayer } from '.
 
 interface PropertiesPanelProps {
     layer?: StudioLayer;
-    onChange?: (id: string, updates: Partial<StudioLayer>) => void;
+    onChange?: (id: string, updates: any) => void; // Accept any updates for flexibility
     onGenerate?: (id: string, task: 'bg' | 'text') => void;
     onAdapt?: (id: string) => void;
     onGenerateScene?: (id: string, scenePrompt: string, style: string) => void;
