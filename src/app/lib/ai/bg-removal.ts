@@ -19,10 +19,10 @@ export async function removeBackground(imageSrc: File | Blob | string, onProgres
     try {
         // Configuration
         const config: Config = {
-            // Keep using CDN for the WASM files to avoid needing to copy them to public/ locally
-            publicPath: 'https://cdn.jsdelivr.net/npm/@imgly/background-removal@1.7.0/dist/',
-            debug: false,
-            model: 'isnet' // Valid type: 'isnet' | 'isnet_fp16' | 'isnet_quint8'
+            // Point to the -data package which contains the actual model files and WASM
+            publicPath: 'https://cdn.jsdelivr.net/npm/@imgly/background-removal-data@1.7.0/dist/',
+            debug: true, // Enable debug to help user identify issues
+            model: 'isnet'
         };
 
         // We can't easily hook into the progress of this specific library version exposed via simple function,
