@@ -264,7 +264,7 @@ export function evaluatePerformance(metrics: PerformanceMetrics): {
         return 'poor';
     };
 
-    const details = {
+    const details: Record<string, 'excellent' | 'good' | 'acceptable' | 'poor'> = {
         renderTime: evaluate(metrics.renderTime, PERFORMANCE_THRESHOLDS.renderTime),
         interactionLatency: evaluate(metrics.interactionLatency, PERFORMANCE_THRESHOLDS.interactionLatency),
         memoryUsage: metrics.memoryUsage

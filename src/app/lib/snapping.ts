@@ -18,6 +18,11 @@ export interface SnapResult {
 
 const SNAP_THRESHOLD = 5; // pixels
 
+interface EdgeMatch {
+    pos: number;
+    edgeOffset: number;
+}
+
 /**
  * Check if two numbers are within snap threshold
  */
@@ -58,7 +63,7 @@ export function calculateSnap(
     ];
 
     let minVDist = SNAP_THRESHOLD + 1;
-    let bestVLine: { pos: number, edgeOffset: number } | null = null;
+    let bestVLine: EdgeMatch | null = null;
 
     vTargets.forEach(target => {
         vEdges.forEach(edge => {
@@ -89,7 +94,7 @@ export function calculateSnap(
     ];
 
     let minHDist = SNAP_THRESHOLD + 1;
-    let bestHLine: { pos: number, edgeOffset: number } | null = null;
+    let bestHLine: EdgeMatch | null = null;
 
     hTargets.forEach(target => {
         hEdges.forEach(edge => {
@@ -131,3 +136,6 @@ export function filterVisibleGuides(guides: SnapGuide[], viewportBounds: { left:
         }
     });
 }
+
+// Export alias for compatibility with existing code
+export const getSnapLines = calculateSnap;
