@@ -1,4 +1,4 @@
-import { AD_TEMPLATES } from '../../components/studio/presets';
+import { AD_TEMPLATES, type AdTemplate } from '../../components/studio/presets';
 import type { StrategicProfile } from './strategic-analyzer';
 
 /**
@@ -6,9 +6,7 @@ import type { StrategicProfile } from './strategic-analyzer';
  * Intelligently picks best template from 12 Meta templates
  */
 
-export function selectTemplate(profile: StrategicProfile, tone: string): any {
-    console.log('🎨 Stage 2: Template Selection...');
-
+export function selectTemplate(profile: StrategicProfile, _tone: string): AdTemplate | undefined {
     // Get recommended template
     const templateId = profile.recommendedTemplate;
 
@@ -33,11 +31,5 @@ export function selectTemplate(profile: StrategicProfile, tone: string): any {
     // Find template in AD_TEMPLATES array
     const template = AD_TEMPLATES.find(t => t.id === actualTemplateId);
 
-    if (!template) {
-        console.warn(`Template ${actualTemplateId} not found, using hook_pas`);
-        return AD_TEMPLATES.find(t => t.id === 'meta_hook_pas_v1');
-    }
-
-    console.log('✅ Selected template:', template.name);
-    return template;
+    return template || AD_TEMPLATES.find(t => t.id === 'meta_hook_pas_v1');
 }

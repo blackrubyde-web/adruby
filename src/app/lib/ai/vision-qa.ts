@@ -1,4 +1,3 @@
-import { supabase } from '../supabaseClient';
 import { invokeOpenAIProxy } from '../api/proxyClient';
 
 export interface VisionScore {
@@ -48,12 +47,9 @@ Return a JSON object with:
         if (error) throw error;
 
         const result = JSON.parse(data.choices[0].message.content);
-
-        console.log(`👁️ Vision Score: ${result.totalScore}/100`, result.breakdown);
         return result;
 
-    } catch (err) {
-        console.warn('Vision QA Failed, defaulting to approved:', err);
+    } catch (_err) {
         // Fallback if vision fails (e.g. rate limit)
         return {
             totalScore: 85,

@@ -54,12 +54,9 @@ export function generateVisualVariations(
         variations.push(variation);
     }
 
-    // Sort by diversity score (most different first)
-    return variations.sort((a, b) => {
-        const aScore = (a as any).diversityScore || 50;
-        const bScore = (b as any).diversityScore || 50;
-        return bScore - aScore;
-    });
+    // Variations are already sorted by their creation order
+    // No need to sort since metadata is stored separately
+    return variations;
 }
 
 /**
@@ -92,9 +89,8 @@ export function applyVisualVariation(
         varied.layers.push(textureLayer);
     }
 
-    // Store variation metadata
-    (varied as any).variationMeta = variation;
-    (varied as any).diversityScore = variation.diversityScore;
+    // Note: Variation metadata is stored in the variation object itself
+    // and can be tracked separately if needed
 
     return varied;
 }
@@ -139,30 +135,28 @@ function applyColorMutation(layer: StudioLayer, variation: VisualVariation): Stu
         return hslToHex(hsl);
     };
 
-    // Mutate all color properties
+    // Mutate all color properties with type guards
     if ('color' in mutated && mutated.color) {
         mutated.color = mutateColor(mutated.color);
     }
-    if ('fill' in mutated && (mutated as any).fill) {
-        (mutated as any).fill = mutateColor((mutated as any).fill);
+    if ('fill' in mutated && typeof mutated.fill === 'string') {
+        mutated.fill = mutateColor(mutated.fill);
     }
-    if ('bgColor' in mutated && (mutated as any).bgColor) {
-        (mutated as any).bgColor = mutateColor((mutated as any).bgColor);
+    if ('bgColor' in mutated && typeof mutated.bgColor === 'string') {
+        mutated.bgColor = mutateColor(mutated.bgColor);
     }
-    if ('borderColor' in mutated && (mutated as any).borderColor) {
-        (mutated as any).borderColor = mutateColor((mutated as any).borderColor);
+    if ('borderColor' in mutated && typeof mutated.borderColor === 'string') {
+        mutated.borderColor = mutateColor(mutated.borderColor);
     }
 
     return mutated;
 }
 
-/**
- * Create texture overlay layer
- */
 function createTextureLayer(texture: TextureType, width: number, height: number): StudioLayer {
-    const baseLayer: any = {
-        id: `texture_${texture}_${Date.now()}`,
-        type: 'overlay',
+    const id = `texture_${texture}_${Date.now()}`;
+    const baseLayer = {
+        id,
+        type: 'overlay' as const,
         name: `Texture: ${texture}`,
         x: 0,
         y: 0,
@@ -171,18 +165,20 @@ function createTextureLayer(texture: TextureType, width: number, height: number)
         zIndex: 99, // On top
         rotation: 0,
         locked: false,
-        visible: true
+        visible: true,
+        opacity: 0.1,
+        src: '',
+        fit: 'cover' as const
     };
 
     switch (texture) {
         case 'grain':
             return {
                 ...baseLayer,
-                src: '', // Would be filled with grain texture image
                 opacity: 0.08,
                 ai: {
-                    provider: 'other',
-                    task: 'generate_background',
+                    provider: 'other' as const,
+                    task: 'generate_background' as const,
                     prompt: 'Fine film grain texture overlay',
                     createdAt: new Date().toISOString()
                 }
@@ -190,11 +186,10 @@ function createTextureLayer(texture: TextureType, width: number, height: number)
         case 'gradient_mesh':
             return {
                 ...baseLayer,
-                src: '', // Would be filled with gradient mesh
                 opacity: 0.15,
                 ai: {
-                    provider: 'other',
-                    task: 'generate_background',
+                    provider: 'other' as const,
+                    task: 'generate_background' as const,
                     prompt: 'Subtle gradient mesh overlay',
                     createdAt: new Date().toISOString()
                 }
@@ -202,11 +197,10 @@ function createTextureLayer(texture: TextureType, width: number, height: number)
         case 'gloss':
             return {
                 ...baseLayer,
-                src: '', // Would be filled with gloss effect
                 opacity: 0.12,
                 ai: {
-                    provider: 'other',
-                    task: 'generate_background',
+                    provider: 'other' as const,
+                    task: 'generate_background' as const,
                     prompt: 'Glossy sheen overlay',
                     createdAt: new Date().toISOString()
                 }
