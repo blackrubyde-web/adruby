@@ -639,7 +639,7 @@ Generate this EXACT JSON structure:
 
 
             {/* Content Card */}
-            <div className={`relative w-full max-w-5xl mx-4 rounded-3xl shadow-2xl overflow-hidden flex flex-col transition-all duration-500 transform border border-border bg-background z-50 ${isExiting ? 'scale-95 translate-y-8' : 'scale-100 translate-y-0'}`}>
+            <div className={`relative w-full max-w-5xl max-h-[90vh] mx-4 rounded-3xl shadow-2xl overflow-hidden flex flex-col transition-all duration-500 transform border border-border bg-background z-50 ${isExiting ? 'scale-95 translate-y-8' : 'scale-100 translate-y-0'}`}>
 
                 {/* Header */}
                 <div className="p-4 md:p-6 border-b border-border shrink-0">
@@ -695,7 +695,7 @@ Generate this EXACT JSON structure:
                 </div>
 
                 {/* Content Area */}
-                <div className="p-4 md:p-8 flex-1">
+                <div className="p-4 md:p-8 flex-1 overflow-y-auto">
                     {/* Step 1: Product Info */}
                     {step === 1 && (
                         <div className="grid grid-cols-1 md:grid-cols-12 gap-6 md:gap-8 animate-in slide-in-from-right-8 fade-in duration-500">
@@ -914,34 +914,36 @@ Generate this EXACT JSON structure:
                                     />
                                 </div>
 
-                                {/* Offer (Grounded) */}
-                                <div className="space-y-3 group">
-                                    <label className="flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-muted-foreground group-focus-within:text-primary transition-colors">
-                                        <Zap className="w-4 h-4 text-green-500" />
-                                        Dein Angebot (Offer)
-                                    </label>
-                                    <input
-                                        value={formData.offer}
-                                        onChange={(e) => updateField('offer', e.target.value)}
-                                        placeholder="z.B. '50% Rabatt', 'Kostenloser Versand', 'Jetzt testen'"
-                                        maxLength={100}
-                                        className="w-full bg-muted/50 dark:bg-muted/30 border border-border rounded-xl px-4 md:px-5 py-3 md:py-4 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-transparent transition-all hover:bg-muted/70 dark:hover:bg-muted/50 text-sm"
-                                    />
-                                </div>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                    {/* Offer (Grounded) */}
+                                    <div className="space-y-3 group">
+                                        <label className="flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-muted-foreground group-focus-within:text-primary transition-colors">
+                                            <Zap className="w-4 h-4 text-green-500" />
+                                            Dein Angebot (Offer)
+                                        </label>
+                                        <input
+                                            value={formData.offer}
+                                            onChange={(e) => updateField('offer', e.target.value)}
+                                            placeholder="z.B. '50% Rabatt', 'Kostenloser Versand', 'Jetzt testen'"
+                                            maxLength={100}
+                                            className="w-full bg-muted/50 dark:bg-muted/30 border border-border rounded-xl px-4 md:px-5 py-3 md:py-4 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-transparent transition-all hover:bg-muted/70 dark:hover:bg-muted/50 text-sm"
+                                        />
+                                    </div>
 
-                                {/* Social Proof (Grounded) */}
-                                <div className="space-y-3 group">
-                                    <label className="flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-muted-foreground group-focus-within:text-primary transition-colors">
-                                        <Check className="w-4 h-4 text-blue-500" />
-                                        Social Proof / Beweise
-                                    </label>
-                                    <input
-                                        value={formData.socialProof}
-                                        onChange={(e) => updateField('socialProof', e.target.value)}
-                                        placeholder="z.B. '4.9/5 Sterne', '10.000+ Kunden', 'Testsieger 2024'"
-                                        maxLength={100}
-                                        className="w-full bg-muted/50 dark:bg-muted/30 border border-border rounded-xl px-4 md:px-5 py-3 md:py-4 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-transparent transition-all hover:bg-muted/70 dark:hover:bg-muted/50 text-sm"
-                                    />
+                                    {/* Social Proof (Grounded) */}
+                                    <div className="space-y-3 group">
+                                        <label className="flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-muted-foreground group-focus-within:text-primary transition-colors">
+                                            <Check className="w-4 h-4 text-blue-500" />
+                                            Social Proof / Beweise
+                                        </label>
+                                        <input
+                                            value={formData.socialProof}
+                                            onChange={(e) => updateField('socialProof', e.target.value)}
+                                            placeholder="z.B. '4.9/5 Sterne', '10.000+ Kunden', 'Testsieger 2024'"
+                                            maxLength={100}
+                                            className="w-full bg-muted/50 dark:bg-muted/30 border border-border rounded-xl px-4 md:px-5 py-3 md:py-4 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-transparent transition-all hover:bg-muted/70 dark:hover:bg-muted/50 text-sm"
+                                        />
+                                    </div>
                                 </div>
 
                                 {/* Target Audience */}
