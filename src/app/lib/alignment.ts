@@ -4,18 +4,15 @@ export type Alignment = 'left' | 'center' | 'right' | 'top' | 'middle' | 'bottom
 export type Distribution = 'horizontal' | 'vertical';
 
 export const getLayerBounds = (layer: StudioLayer): { x: number; y: number; width: number; height: number } => {
-    // Basic bounds. For groups, this might need recursion if we want precise content bounds, 
-    // but usually groups have x/y. However, Konva groups don't always have width/height unless set.
-    // In our data model, we should arguably maintain width/height for groups or calc it.
-    // For now, let's assume standard properties or approx.
-    // If width/height are 0/undefined for groups, we might need to assume 0 or calc from children.
+    // Simplification: Use layer properties with type guards
+    const width = 'width' in layer && typeof layer.width === 'number' ? layer.width : 0;
+    const height = 'height' in layer && typeof layer.height === 'number' ? layer.height : 0;
 
-    // Simplification: Use layer properties.
     return {
         x: layer.x,
         y: layer.y,
-        width: (layer as any).width || 0,
-        height: (layer as any).height || 0
+        width,
+        height
     };
 };
 
@@ -111,9 +108,10 @@ export const distributeLayers = (
     const bLast = getLayerBounds(last);
 
     if (type === 'horizontal') {
-        const start = bFirst.x; // Left of first
-        const end = bLast.x + bLast.width; // Right of last
-        // const totalWidth = end - start;
+        // Using "Distribute Centers":
+        // Center of first to Center of last.
+        // Range = CenterLast - CenterFirst.
+        // Step = Range / (n-1).
 
         // Sum of widths of all items
         // const sumWidths = sorted.reduce((sum, l) => sum + getLayerBounds(l).width, 0);
