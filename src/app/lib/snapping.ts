@@ -75,12 +75,13 @@ export function calculateSnap(
         });
     });
 
-    if (bestVLine) {
-        snapX = bestVLine.pos - bestVLine.edgeOffset;
+    if (bestVLine !== null) {
+        const vLine: EdgeMatch = bestVLine;
+        snapX = vLine.pos - vLine.edgeOffset;
         guides.push({
-            type: 'vertical',
-            position: bestVLine.pos,
-            pixelPos: bestVLine.pos,
+            type: 'vertical' as const,
+            position: vLine.pos,
+            pixelPos: vLine.pos,
             start: -1000,
             end: 1000
         });
@@ -106,12 +107,13 @@ export function calculateSnap(
         });
     });
 
-    if (bestHLine) {
-        snapY = bestHLine.pos - bestHLine.edgeOffset;
+    if (bestHLine !== null) {
+        const hLine: EdgeMatch = bestHLine;
+        snapY = hLine.pos - hLine.edgeOffset;
         guides.push({
-            type: 'horizontal',
-            position: bestHLine.pos,
-            pixelPos: bestHLine.pos,
+            type: 'horizontal' as const,
+            position: hLine.pos,
+            pixelPos: hLine.pos,
             start: -1000,
             end: 1000
         });
