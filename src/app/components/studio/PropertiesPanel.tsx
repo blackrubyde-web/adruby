@@ -71,6 +71,10 @@ export const PropertiesPanel = ({ layer, onChange, onGenerate, onAdapt: _onAdapt
         onChange?.(layer.id, { [key]: value } as unknown as Partial<StudioLayer>);
     };
 
+    const handleCropChange = (crop: { x: number; y: number; width: number; height: number }) => {
+        onChange?.(layer.id, { crop } as unknown as Partial<StudioLayer>);
+    };
+
     const applyStylePreset = (preset: typeof STYLE_PRESETS.text[0]) => {
         onChange?.(layer.id, {
             fontFamily: preset.fontFamily,
@@ -278,7 +282,7 @@ export const PropertiesPanel = ({ layer, onChange, onGenerate, onAdapt: _onAdapt
                                                 onChange={(e) => {
                                                     const val = parseFloat(e.target.value);
                                                     const current = (layer as ImageLayer).crop || { x: 0, y: 0, width: 100, height: 100 };
-                                                    handleChange('crop', { ...current, x: val });
+                                                    handleCropChange({ ...current, x: val });
                                                 }}
                                             />
                                         </div>
@@ -291,7 +295,7 @@ export const PropertiesPanel = ({ layer, onChange, onGenerate, onAdapt: _onAdapt
                                                 onChange={(e) => {
                                                     const val = parseFloat(e.target.value);
                                                     const current = (layer as ImageLayer).crop || { x: 0, y: 0, width: 100, height: 100 };
-                                                    handleChange('crop', { ...current, y: val });
+                                                    handleCropChange({ ...current, y: val });
                                                 }}
                                             />
                                         </div>
@@ -304,7 +308,7 @@ export const PropertiesPanel = ({ layer, onChange, onGenerate, onAdapt: _onAdapt
                                                 onChange={(e) => {
                                                     const val = parseFloat(e.target.value);
                                                     const current = (layer as ImageLayer).crop || { x: 0, y: 0, width: 100, height: 100 };
-                                                    handleChange('crop', { ...current, width: val });
+                                                    handleCropChange({ ...current, width: val });
                                                 }}
                                             />
                                         </div>
@@ -317,7 +321,7 @@ export const PropertiesPanel = ({ layer, onChange, onGenerate, onAdapt: _onAdapt
                                                 onChange={(e) => {
                                                     const val = parseFloat(e.target.value);
                                                     const current = (layer as ImageLayer).crop || { x: 0, y: 0, width: 100, height: 100 };
-                                                    handleChange('crop', { ...current, height: val });
+                                                    handleCropChange({ ...current, height: val });
                                                 }}
                                             />
                                         </div>

@@ -420,40 +420,33 @@ export const EditorModals: React.FC<EditorModalsProps> = ({
                         return;
                     }
 
+                    // Get current doc and apply fix
+                    const currentDoc = doc;
+                    const updatedLayers = currentDoc.layers.map((layer: StudioLayer) =>
+                        layer.id === targetLayerId
+                            ? { ...layer, ...params } as StudioLayer
+                            : layer
+                    );
+
                     switch (action) {
                         case 'resize':
-                            setDoc((prev: AdDocument) => ({
-                                ...prev,
-                                layers: prev.layers.map((layer: StudioLayer) =>
-                                    layer.id === targetLayerId
-                                        ? { ...layer, ...params }
-                                        : layer
-                                )
-                            }));
+                        case 'recolor':
+                            setDoc({
+                                ...currentDoc,
+                                layers: updatedLayers
+                            });
                             toast.success(`✨ ${suggestion.title} angewendet!`);
                             break;
 
-                        case 'recolor':
-                            setDoc((prev: AdDocument) => ({
-                                ...prev,
-                                layers: prev.layers.map((layer: StudioLayer) =>
-                                    layer.id === targetLayerId
-                                        ? { ...layer, ...params }
-                                        : layer
-                                )
-                            }));
-                            toast.success(`🎨 ${suggestion.title} angewendet!`);
-                            break;
-
                         case 'reposition':
-                            setDoc((prev: AdDocument) => ({
-                                ...prev,
-                                layers: prev.layers.map((layer: StudioLayer) =>
+                            setDoc({
+                                ...currentDoc,
+                                layers: currentDoc.layers.map((layer: StudioLayer) =>
                                     layer.id === targetLayerId
-                                        ? { ...layer, x: (params as any).x, y: (params as any).y }
+                                        ? { ...layer, x: (params as any).x, y: (params as any).y } as StudioLayer
                                         : layer
                                 )
-                            }));
+                            });
                             toast.success(`📍 ${suggestion.title} angewendet!`);
                             break;
 
