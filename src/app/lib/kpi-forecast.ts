@@ -3,7 +3,7 @@
  * Predicts CTR (Click-Through Rate) and ROAS (Return on Ad Spend) based on ad quality metrics
  */
 
-import type { AdDocument } from '../../types/studio';
+import type { AdDocument, StudioLayer } from '../types/studio';
 
 export interface KPIForecast {
     ctr: {
@@ -45,7 +45,7 @@ interface AdMetrics {
  */
 function analyzeAdDocument(doc: AdDocument): AdMetrics {
     const imageLayers = doc.layers.filter(l => ['background', 'product', 'overlay', 'logo'].includes(l.type));
-    const textLayers = doc.layers.filter(l => l.type === 'text');
+    const textLayers = doc.layers.filter((l: StudioLayer) => l.type === 'text');
     const ctaLayers = doc.layers.filter(l => l.type === 'cta');
 
     // Find headline (first text layer or largest)

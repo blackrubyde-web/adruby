@@ -893,7 +893,6 @@ export const EditorLayout: React.FC<EditorLayoutProps> = ({ onClose, initialDoc,
                 canUngroup={selectedLayerIds.length === 1 && doc.layers.find(l => l.id === selectedLayerIds[0])?.type === 'group'}
                 onLock={handleLockSelected}
                 onUnlock={handleUnlockSelected}
-                saveStatus={saveStatus}
                 lastSaved={lastSaved}
                 onAlign={handleAlign}
                 onDistribute={handleDistribute}
