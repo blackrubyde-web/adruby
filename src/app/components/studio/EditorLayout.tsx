@@ -922,7 +922,7 @@ export const EditorLayout: React.FC<EditorLayoutProps> = ({ onClose, initialDoc,
                             shouldMerge = window.confirm("Möchtest du das aktuelle Design (Bilder & Text) auf das neue Template übernehmen?");
                         }
 
-                        let newDoc = { ...doc, ...tpl };
+                        const newDoc = { ...doc, ...tpl };
 
                         if (shouldMerge) {
                             // Smart Merge: Preserve user's uploaded product image if it exists
