@@ -24,6 +24,7 @@ import { useEditorClipboard } from '../../hooks/useEditorClipboard';
 import { useAutoSave } from '../../hooks/useAutoSave';
 import { invokeOpenAIProxy } from '../../lib/api/proxyClient';
 import { alignLayers, distributeLayers, type Alignment, type Distribution } from '../../lib/alignment';
+import { apiClient } from '../../utils/apiClient';
 import { EditorSidebar } from './EditorSidebar';
 import { EditorCanvas } from './EditorCanvas';
 import { EditorToolbar } from './EditorToolbar';
@@ -487,19 +488,13 @@ export const EditorLayout: React.FC<EditorLayoutProps> = ({ onClose, initialDoc,
 
         toast.loading("Replacing Background...");
         try {
-            // Call Netlify Function
-            const response = await fetch('/.netlify/functions/ai-replace-background', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
+            const result = await apiClient.post<{ imageUrl?: string }>(
+                '/api/ai-replace-background',
+                {
                     imageUrl: (layer as any).src,
                     backgroundPrompt: prompt
-                })
-            });
-
-            if (!response.ok) throw new Error('Generation failed');
-
-            const result = await response.json();
+                }
+            );
             if (result.imageUrl) {
                 handleLayerUpdate(id, { src: result.imageUrl });
                 toast.dismiss();

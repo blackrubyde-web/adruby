@@ -1,12 +1,20 @@
-const { ok, badRequest, serverError, unauthorized } = require('./utils/response');
+import { requireUserId } from './_shared/auth.js';
+import { badRequest, methodNotAllowed, ok, serverError, withCors } from './utils/response.js';
 
 // Real AI-powered campaign analysis using OpenAI GPT-4
-exports.handler = async (event) => {
+export async function handler(event) {
+    if (event.httpMethod === 'OPTIONS') {
+        return withCors({ statusCode: 204, body: '' });
+    }
+
     if (event.httpMethod !== 'POST') {
-        return badRequest('Method not allowed');
+        return methodNotAllowed('POST,OPTIONS');
     }
 
     try {
+        const auth = await requireUserId(event);
+        if (!auth.ok) return auth.response;
+
         const { nodes, edges } = JSON.parse(event.body || '{}');
 
         if (!nodes || !Array.isArray(nodes)) {

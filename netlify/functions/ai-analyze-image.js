@@ -1,29 +1,28 @@
 import OpenAI from 'openai';
+import { requireUserId } from './_shared/auth.js';
+import { badRequest, methodNotAllowed, ok, withCors } from './utils/response.js';
 
 const openai = new OpenAI({
     apiKey: process.env.OPENAI_API_KEY,
 });
 
 export const handler = async (event) => {
-    if (event.httpMethod !== 'POST') {
-        return { statusCode: 405, body: 'Method Not Allowed' };
+    if (event.httpMethod === 'OPTIONS') {
+        return withCors({ statusCode: 204, body: '' });
     }
 
-    const headers = {
-        'Access-Control-Allow-Origin': '*',
-        'Access-Control-Allow-Headers': 'Content-Type',
-        'Content-Type': 'application/json'
-    };
+    if (event.httpMethod !== 'POST') {
+        return methodNotAllowed('POST,OPTIONS');
+    }
 
     try {
+        const auth = await requireUserId(event);
+        if (!auth.ok) return auth.response;
+
         const { imageUrl, productDescription } = JSON.parse(event.body);
 
         if (!imageUrl) {
-            return {
-                statusCode: 400,
-                headers,
-                body: JSON.stringify({ error: 'Missing imageUrl' })
-            };
+            return badRequest('Missing imageUrl');
         }
 
         const systemPrompt = `You are an expert marketing analyst. Analyze the product image and return a JSON object with:
@@ -66,23 +65,15 @@ Be specific and creative. Base your analysis on visual elements and any context 
 
         const analysis = JSON.parse(response.choices[0].message.content);
 
-        return {
-            statusCode: 200,
-            headers,
-            body: JSON.stringify({
-                success: true,
-                analysis
-            }),
-        };
+        return ok({ success: true, analysis });
     } catch (error) {
         console.error('Image Analysis Error:', error);
-        return {
+        return withCors({
             statusCode: 500,
-            headers,
             body: JSON.stringify({
                 success: false,
                 error: error.message || 'Image analysis failed'
-            }),
-        };
+            })
+        });
     }
 };

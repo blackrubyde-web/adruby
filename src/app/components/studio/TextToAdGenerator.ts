@@ -2,6 +2,7 @@
 // Takes a product description and generates a complete ad layout
 
 import type { AdDocument, StudioLayer } from '../../types/studio';
+import { apiClient } from '../../utils/apiClient';
 
 export interface TextToAdRequest {
     description: string;
@@ -46,26 +47,21 @@ ${niche ? `Industry: ${niche}` : ''}
 Be direct, use power words, create urgency.`;
 
     try {
-        const response = await fetch('/api/ai-generate-text', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
+        const data = await apiClient.post<{ text: string }>(
+            '/api/ai-generate-text',
+            {
                 systemPrompt,
                 userPrompt: `Product/Service: ${description}`,
                 model: 'gpt-4o-mini'
-            })
-        });
-
-        if (response.ok) {
-            const data = await response.json();
-            try {
-                // Parse the JSON from the response
-                const parsed = JSON.parse(data.text);
-                return parsed;
-            } catch {
-                // If parsing fails, use fallback
-                console.warn('Failed to parse AI response, using fallback');
             }
+        );
+        try {
+            // Parse the JSON from the response
+            const parsed = JSON.parse(data.text);
+            return parsed;
+        } catch {
+            // If parsing fails, use fallback
+            console.warn('Failed to parse AI response, using fallback');
         }
     } catch (e) {
         console.warn('AI request failed:', e);

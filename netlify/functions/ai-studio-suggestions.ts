@@ -4,6 +4,8 @@
  */
 
 import OpenAI from 'openai';
+import { requireUserId } from './_shared/auth.js';
+import { badRequest, methodNotAllowed, ok, withCors } from './utils/response.js';
 
 const openai = new OpenAI({
     apiKey: process.env.OPENAI_API_KEY
@@ -12,25 +14,21 @@ const openai = new OpenAI({
 export async function handler(event: any) {
     // CORS
     if (event.httpMethod === 'OPTIONS') {
-        return {
-            statusCode: 200,
-            headers: {
-                'Access-Control-Allow-Origin': '*',
-                'Access-Control-Allow-Headers': 'Content-Type',
-                'Access-Control-Allow-Methods': 'POST, OPTIONS'
-            },
-            body: ''
-        };
+        return withCors({ statusCode: 204, body: '' });
+    }
+
+    if (event.httpMethod !== 'POST') {
+        return methodNotAllowed('POST,OPTIONS');
     }
 
     try {
+        const auth = await requireUserId(event);
+        if (!auth.ok) return auth.response;
+
         const { doc } = JSON.parse(event.body || '{}');
 
         if (!doc || !doc.layers) {
-            return {
-                statusCode: 400,
-                body: JSON.stringify({ error: 'Missing ad document' })
-            };
+            return badRequest('Missing ad document');
         }
 
         // Analyze document
@@ -39,30 +37,22 @@ export async function handler(event: any) {
         // Get AI suggestions
         const suggestions = await generateSuggestions(doc, analysis);
 
-        return {
-            statusCode: 200,
-            headers: {
-                'Content-Type': 'application/json',
-                'Access-Control-Allow-Origin': '*'
-            },
-            body: JSON.stringify({
-                success: true,
-                suggestions,
-                analysis
-            })
-        };
+        return ok({
+            success: true,
+            suggestions,
+            analysis
+        });
     } catch (error: any) {
         console.error('AI Suggestions error:', error);
-        return {
+        return withCors({
             statusCode: 500,
-            headers: { 'Access-Control-Allow-Origin': '*' },
             body: JSON.stringify({
                 success: false,
                 error: error.message,
                 // Fallback suggestions
                 suggestions: getFallbackSuggestions(event.body ? JSON.parse(event.body).doc : null)
             })
-        };
+        });
     }
 }
 

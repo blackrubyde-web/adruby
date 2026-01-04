@@ -1,4 +1,3 @@
-import { supabase } from '../supabaseClient';
 import { invokeOpenAIProxy } from '../api/proxyClient';
 
 /**
@@ -36,6 +35,78 @@ export interface StrategicProfile {
 
     recommendedTemplate: string;
 }
+
+const FALLBACK_PROFILE: StrategicProfile = {
+    productCategory: 'other',
+    targetAudience: 'general consumers',
+    primaryPainPoint: 'finding quality products',
+    desiredEmotion: 'trust',
+    conversionGoal: 'purchase',
+    angle: 'quality_focus',
+    hookType: 'statement',
+    recommendedTemplate: 'hook_pas',
+    designSystem: {
+        vibe: 'minimal',
+        colorPalette: {
+            primary: '#000000',
+            secondary: '#333333',
+            text: '#000000',
+            highlight: '#0066FF'
+        },
+        fontPairing: {
+            headline: 'Inter',
+            body: 'Inter'
+        },
+        visualElements: ['clean', 'modern']
+    }
+};
+
+const PRODUCT_CATEGORIES: StrategicProfile['productCategory'][] = [
+    'electronics',
+    'fashion',
+    'food',
+    'beauty',
+    'home',
+    'sports',
+    'tech',
+    'services',
+    'other'
+];
+
+const EMOTIONS: StrategicProfile['desiredEmotion'][] = [
+    'excitement',
+    'trust',
+    'desire',
+    'urgency',
+    'exclusivity',
+    'curiosity',
+    'relief'
+];
+
+const CONVERSION_GOALS: StrategicProfile['conversionGoal'][] = [
+    'purchase',
+    'signup',
+    'download',
+    'learn_more',
+    'contact'
+];
+
+const HOOK_TYPES: StrategicProfile['hookType'][] = [
+    'question',
+    'statement',
+    'stat',
+    'negative',
+    'story'
+];
+
+const VIBES: StrategicProfile['designSystem']['vibe'][] = [
+    'minimal',
+    'bold',
+    'luxury',
+    'organic',
+    'industrial',
+    'tech'
+];
 
 export async function analyzeStrategy(params: {
     productName: string;
@@ -113,46 +184,41 @@ JSON Only. No markdown.
 
     try {
         const profile = JSON.parse(data.choices[0].message.content);
+        const normalizedProfile = normalizeProfile(profile);
 
-        // Validate required fields exist
-        if (!profile.designSystem) {
-            profile.designSystem = {
-                vibe: 'minimal',
-                colorPalette: { primary: '#000000', secondary: '#333333', text: '#000000', highlight: '#0066FF' }
-            };
-        }
-        if (!profile.designSystem.colorPalette) {
-            profile.designSystem.colorPalette = { primary: '#000000', secondary: '#333333', text: '#000000', highlight: '#0066FF' };
-        }
-
-        console.log(`✅ Strategy: ${profile.designSystem?.vibe || 'minimal'} | ${profile.angle || 'general'}`);
-        return profile;
+        console.log(`✅ Strategy: ${normalizedProfile.designSystem.vibe} | ${normalizedProfile.angle}`);
+        return normalizedProfile;
     } catch (parseError) {
         console.warn('⚠️ JSON parse failed, using fallback profile:', parseError);
-        // Return safe fallback profile
-        return {
-            productCategory: 'other',
-            targetAudience: 'general consumers',
-            primaryPainPoint: 'finding quality products',
-            desiredEmotion: 'trust',
-            conversionGoal: 'purchase',
-            angle: 'quality_focus',
-            hookType: 'statement',
-            recommendedTemplate: 'hook_pas',
-            designSystem: {
-                vibe: 'minimal',
-                colorPalette: {
-                    primary: '#000000',
-                    secondary: '#333333',
-                    text: '#000000',
-                    highlight: '#0066FF'
-                },
-                fontPairing: {
-                    headline: 'Inter',
-                    body: 'Inter'
-                },
-                visualElements: ['clean', 'modern']
-            }
-        };
+        return FALLBACK_PROFILE;
     }
+}
+
+function normalizeProfile(raw: any): StrategicProfile {
+    return {
+        productCategory: PRODUCT_CATEGORIES.includes(raw?.productCategory) ? raw.productCategory : FALLBACK_PROFILE.productCategory,
+        targetAudience: raw?.targetAudience || FALLBACK_PROFILE.targetAudience,
+        primaryPainPoint: raw?.primaryPainPoint || FALLBACK_PROFILE.primaryPainPoint,
+        desiredEmotion: EMOTIONS.includes(raw?.desiredEmotion) ? raw.desiredEmotion : FALLBACK_PROFILE.desiredEmotion,
+        conversionGoal: CONVERSION_GOALS.includes(raw?.conversionGoal) ? raw.conversionGoal : FALLBACK_PROFILE.conversionGoal,
+        angle: raw?.angle || FALLBACK_PROFILE.angle,
+        hookType: HOOK_TYPES.includes(raw?.hookType) ? raw.hookType : FALLBACK_PROFILE.hookType,
+        recommendedTemplate: raw?.recommendedTemplate || FALLBACK_PROFILE.recommendedTemplate,
+        designSystem: {
+            vibe: VIBES.includes(raw?.designSystem?.vibe) ? raw.designSystem.vibe : FALLBACK_PROFILE.designSystem.vibe,
+            colorPalette: {
+                primary: raw?.designSystem?.colorPalette?.primary || FALLBACK_PROFILE.designSystem.colorPalette.primary,
+                secondary: raw?.designSystem?.colorPalette?.secondary || FALLBACK_PROFILE.designSystem.colorPalette.secondary,
+                text: raw?.designSystem?.colorPalette?.text || FALLBACK_PROFILE.designSystem.colorPalette.text,
+                highlight: raw?.designSystem?.colorPalette?.highlight || FALLBACK_PROFILE.designSystem.colorPalette.highlight
+            },
+            fontPairing: {
+                headline: raw?.designSystem?.fontPairing?.headline || FALLBACK_PROFILE.designSystem.fontPairing.headline,
+                body: 'Inter'
+            },
+            visualElements: Array.isArray(raw?.designSystem?.visualElements)
+                ? raw.designSystem.visualElements
+                : FALLBACK_PROFILE.designSystem.visualElements
+        }
+    };
 }

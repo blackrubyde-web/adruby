@@ -1,6 +1,8 @@
 // AI Service Module for AdRuby Studio
 // Provides text generation and background removal capabilities
 
+import { apiClient } from '../../utils/apiClient';
+
 export interface AiTextRequest {
     prompt: string;
     context?: string;
@@ -39,23 +41,18 @@ Return ONLY the copy text, no explanations.`;
 
     try {
         // Try OpenAI first
-        const response = await fetch('/api/ai-generate-text', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
+        const data = await apiClient.post<{ text: string; alternatives?: string[] }>(
+            '/api/ai-generate-text',
+            {
                 systemPrompt,
                 userPrompt,
                 model: 'gpt-4o-mini'
-            })
-        });
-
-        if (response.ok) {
-            const data = await response.json();
-            return {
-                text: data.text,
-                alternatives: data.alternatives
-            };
-        }
+            }
+        );
+        return {
+            text: data.text,
+            alternatives: data.alternatives
+        };
     } catch (e) {
         console.warn('OpenAI API failed, using fallback:', e);
     }
@@ -104,19 +101,14 @@ export async function removeBackground(request: AiBgRemovalRequest): Promise<AiB
 
     try {
         // Call our backend API which connects to remove.bg or similar
-        const response = await fetch('/api/ai/remove-background', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ imageUrl })
-        });
-
-        if (response.ok) {
-            const data = await response.json();
-            return {
-                processedUrl: data.processedUrl,
-                success: true
-            };
-        }
+        const data = await apiClient.post<{ processedUrl: string }>(
+            '/api/ai/remove-background',
+            { imageUrl }
+        );
+        return {
+            processedUrl: data.processedUrl,
+            success: true
+        };
     } catch (e) {
         console.warn('Background removal API failed:', e);
     }

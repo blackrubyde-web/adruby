@@ -1,22 +1,28 @@
 import OpenAI from 'openai';
+import { requireUserId } from './_shared/auth.js';
+import { badRequest, methodNotAllowed, ok, withCors } from './utils/response.js';
 
 const openai = new OpenAI({
     apiKey: process.env.OPENAI_API_KEY,
 });
 
 export const handler = async (event) => {
-    if (event.httpMethod !== 'POST') {
-        return { statusCode: 405, body: 'Method Not Allowed' };
+    if (event.httpMethod === 'OPTIONS') {
+        return withCors({ statusCode: 204, body: '' });
     }
 
-    const headers = {
-        'Access-Control-Allow-Origin': '*',
-        'Access-Control-Allow-Headers': 'Content-Type',
-        'Content-Type': 'application/json'
-    };
+    if (event.httpMethod !== 'POST') {
+        return methodNotAllowed('POST,OPTIONS');
+    }
 
     try {
+        const auth = await requireUserId(event);
+        if (!auth.ok) return auth.response;
+
         const { adDocument, imageUrl } = JSON.parse(event.body);
+        if (!adDocument) {
+            return badRequest('Missing adDocument');
+        }
 
         // Analyze the current ad structure
         const layers = adDocument?.layers || [];
@@ -68,23 +74,18 @@ Focus on:
         const result = JSON.parse(response.choices[0].message.content);
         const suggestions = result.suggestions || result;
 
-        return {
-            statusCode: 200,
-            headers,
-            body: JSON.stringify({
-                success: true,
-                suggestions: Array.isArray(suggestions) ? suggestions : []
-            }),
-        };
+        return ok({
+            success: true,
+            suggestions: Array.isArray(suggestions) ? suggestions : []
+        });
     } catch (error) {
         console.error('AI Suggestions Error:', error);
-        return {
+        return withCors({
             statusCode: 500,
-            headers,
             body: JSON.stringify({
                 success: false,
                 error: error.message || 'Suggestions generation failed'
-            }),
-        };
+            })
+        });
     }
 };

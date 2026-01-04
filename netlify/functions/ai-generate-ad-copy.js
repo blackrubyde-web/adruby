@@ -1,22 +1,28 @@
 import OpenAI from 'openai';
+import { requireUserId } from './_shared/auth.js';
+import { badRequest, methodNotAllowed, ok, withCors } from './utils/response.js';
 
 const openai = new OpenAI({
     apiKey: process.env.OPENAI_API_KEY,
 });
 
 export const handler = async (event) => {
-    if (event.httpMethod !== 'POST') {
-        return { statusCode: 405, body: 'Method Not Allowed' };
+    if (event.httpMethod === 'OPTIONS') {
+        return withCors({ statusCode: 204, body: '' });
     }
 
-    const headers = {
-        'Access-Control-Allow-Origin': '*',
-        'Access-Control-Allow-Headers': 'Content-Type',
-        'Content-Type': 'application/json'
-    };
+    if (event.httpMethod !== 'POST') {
+        return methodNotAllowed('POST,OPTIONS');
+    }
 
     try {
+        const auth = await requireUserId(event);
+        if (!auth.ok) return auth.response;
+
         const { productName, niche, benefits, targetAudience, mood, hookIdeas } = JSON.parse(event.body);
+        if (!productName) {
+            return badRequest('Missing productName');
+        }
 
         const systemPrompt = `You are a world-class ad copywriter. Generate compelling ad copy for Facebook/Instagram ads.
 
@@ -51,23 +57,15 @@ Hook ideas to consider: ${hookIdeas?.join(', ') || 'None provided'}`;
 
         const copy = JSON.parse(response.choices[0].message.content);
 
-        return {
-            statusCode: 200,
-            headers,
-            body: JSON.stringify({
-                success: true,
-                copy
-            }),
-        };
+        return ok({ success: true, copy });
     } catch (error) {
         console.error('Ad Copy Generation Error:', error);
-        return {
+        return withCors({
             statusCode: 500,
-            headers,
             body: JSON.stringify({
                 success: false,
                 error: error.message || 'Copy generation failed'
-            }),
-        };
+            })
+        });
     }
 };

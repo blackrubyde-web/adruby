@@ -7,10 +7,25 @@ import { isIP } from 'node:net';
  * Proxies requests to OpenAI API and handles backend image uploads
  */
 export const handler: Handler = async (event: HandlerEvent) => {
+    const corsHeaders = {
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+        'Access-Control-Allow-Methods': 'POST, OPTIONS'
+    };
+
+    if (event.httpMethod === 'OPTIONS') {
+        return {
+            statusCode: 204,
+            headers: corsHeaders,
+            body: ''
+        };
+    }
+
     // Only allow POST requests
     if (event.httpMethod !== 'POST') {
         return {
             statusCode: 405,
+            headers: corsHeaders,
             body: JSON.stringify({ error: 'Method not allowed' })
         };
     }
@@ -39,12 +54,14 @@ export const handler: Handler = async (event: HandlerEvent) => {
             if (!authHeader) {
                 return {
                     statusCode: 401,
+                    headers: corsHeaders,
                     body: JSON.stringify({ error: 'Unauthorized' })
                 };
             }
             if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
                 return {
                     statusCode: 500,
+                    headers: corsHeaders,
                     body: JSON.stringify({ error: 'Server configuration error: Supabase auth misconfigured' })
                 };
             }
@@ -56,6 +73,7 @@ export const handler: Handler = async (event: HandlerEvent) => {
                 console.error('❌ Auth failed:', authError);
                 return {
                     statusCode: 401,
+                    headers: corsHeaders,
                     body: JSON.stringify({ error: 'Unauthorized' })
                 };
             }
@@ -72,6 +90,7 @@ export const handler: Handler = async (event: HandlerEvent) => {
                 console.error('❌ Configuration Error: Missing Supabase credentials for upload.');
                 return {
                     statusCode: 500,
+                    headers: corsHeaders,
                     body: JSON.stringify({ error: 'Server configuration error: Storage credentials missing' })
                 };
             }
@@ -82,6 +101,7 @@ export const handler: Handler = async (event: HandlerEvent) => {
             } catch (error) {
                 return {
                     statusCode: 400,
+                    headers: corsHeaders,
                     body: JSON.stringify({
                         error: error instanceof Error ? error.message : 'Invalid imageUrl'
                     })
@@ -91,6 +111,7 @@ export const handler: Handler = async (event: HandlerEvent) => {
 
             return {
                 statusCode: 200,
+                headers: corsHeaders,
                 body: JSON.stringify({ publicUrl })
             };
         }
@@ -100,6 +121,7 @@ export const handler: Handler = async (event: HandlerEvent) => {
         if (!allowedEndpoints.includes(endpoint)) {
             return {
                 statusCode: 400,
+                headers: corsHeaders,
                 body: JSON.stringify({ error: 'Invalid endpoint' })
             };
         }
@@ -120,10 +142,8 @@ export const handler: Handler = async (event: HandlerEvent) => {
         return {
             statusCode: response.status,
             headers: {
-                'Content-Type': 'application/json',
-                'Access-Control-Allow-Origin': '*', // Allow from any origin (or restrict to your domain)
-                'Access-Control-Allow-Headers': 'Content-Type',
-                'Access-Control-Allow-Methods': 'POST, OPTIONS'
+                ...corsHeaders,
+                'Content-Type': 'application/json'
             },
             body: JSON.stringify(data)
         };
@@ -132,6 +152,7 @@ export const handler: Handler = async (event: HandlerEvent) => {
         console.error('OpenAI proxy/upload error:', error);
         return {
             statusCode: 500,
+            headers: corsHeaders,
             body: JSON.stringify({
                 error: 'Internal server error',
                 message: error instanceof Error ? error.message : 'Unknown error'

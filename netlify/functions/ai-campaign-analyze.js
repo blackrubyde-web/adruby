@@ -2,7 +2,8 @@
 // Netlify serverless function that receives campaign data and returns AI analysis recommendations.
 // Uses OpenAI GPT‑4o‑mini when an API key is configured; otherwise falls back to rule‑based logic.
 
-const fetch = require('node-fetch');
+import { requireUserId } from './_shared/auth.js';
+import { badRequest, methodNotAllowed, ok, withCors } from './utils/response.js';
 
 // Helper: simple rule‑based analysis (same logic as UI fallback)
 function ruleBasedAnalysis(campaign) {
@@ -34,16 +35,23 @@ function ruleBasedAnalysis(campaign) {
     };
 }
 
-exports.handler = async function (event, context) {
-    if (event.httpMethod !== 'POST') {
-        return { statusCode: 405, body: JSON.stringify({ error: 'Method Not Allowed' }) };
+export async function handler(event) {
+    if (event.httpMethod === 'OPTIONS') {
+        return withCors({ statusCode: 204, body: '' });
     }
+
+    if (event.httpMethod !== 'POST') {
+        return methodNotAllowed('POST,OPTIONS');
+    }
+
+    const auth = await requireUserId(event);
+    if (!auth.ok) return auth.response;
 
     let payload;
     try {
         payload = JSON.parse(event.body);
     } catch (e) {
-        return { statusCode: 400, body: JSON.stringify({ error: 'Invalid JSON payload' }) };
+        return badRequest('Invalid JSON payload');
     }
 
     const campaigns = payload.campaigns || [];
@@ -95,9 +103,5 @@ exports.handler = async function (event, context) {
         analyses,
     };
 
-    return {
-        statusCode: 200,
-        headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Methods': 'POST' },
-        body: JSON.stringify(result),
-    };
-};
+    return ok(result);
+}

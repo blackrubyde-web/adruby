@@ -1,29 +1,28 @@
 import OpenAI from 'openai';
+import { requireUserId } from './_shared/auth.js';
+import { badRequest, methodNotAllowed, ok, withCors } from './utils/response.js';
 
 const openai = new OpenAI({
     apiKey: process.env.OPENAI_API_KEY,
 });
 
 export const handler = async (event) => {
-    if (event.httpMethod !== 'POST') {
-        return { statusCode: 405, body: 'Method Not Allowed' };
+    if (event.httpMethod === 'OPTIONS') {
+        return withCors({ statusCode: 204, body: '' });
     }
 
-    const headers = {
-        'Access-Control-Allow-Origin': '*',
-        'Access-Control-Allow-Headers': 'Content-Type',
-        'Content-Type': 'application/json'
-    };
+    if (event.httpMethod !== 'POST') {
+        return methodNotAllowed('POST,OPTIONS');
+    }
 
     try {
+        const auth = await requireUserId(event);
+        if (!auth.ok) return auth.response;
+
         const { imageUrl, backgroundPrompt } = JSON.parse(event.body);
 
         if (!backgroundPrompt) {
-            return {
-                statusCode: 400,
-                headers,
-                body: JSON.stringify({ error: 'Missing backgroundPrompt' })
-            };
+            return badRequest('Missing backgroundPrompt');
         }
 
         // For background replacement, we generate a new background image
@@ -43,25 +42,20 @@ seamless edges, high-end commercial quality, 4K resolution.`;
 
         const newImageUrl = response.data[0].url;
 
-        return {
-            statusCode: 200,
-            headers,
-            body: JSON.stringify({
-                success: true,
-                imageUrl: newImageUrl,
-                originalImage: imageUrl,
-                revisedPrompt: response.data[0].revised_prompt
-            }),
-        };
+        return ok({
+            success: true,
+            imageUrl: newImageUrl,
+            originalImage: imageUrl,
+            revisedPrompt: response.data[0].revised_prompt
+        });
     } catch (error) {
         console.error('Background Replace Error:', error);
-        return {
+        return withCors({
             statusCode: 500,
-            headers,
             body: JSON.stringify({
                 success: false,
                 error: error.message || 'Background replacement failed'
-            }),
-        };
+            })
+        });
     }
 };

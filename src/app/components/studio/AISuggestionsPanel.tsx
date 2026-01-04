@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Lightbulb, AlertTriangle, Sparkles, Check, X, Loader2, ChevronRight, Zap } from 'lucide-react';
 import type { AdDocument } from '../../types/studio';
+import { apiClient } from '../../utils/apiClient';
 
 interface Suggestion {
     id: string;
@@ -34,13 +35,10 @@ export const AISuggestionsPanel = ({ document, isVisible, onApplySuggestion, onC
 
         setIsLoading(true);
         try {
-            const response = await fetch('/.netlify/functions/ai-studio-suggestions', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ doc: document })
-            });
-
-            const data = await response.json();
+            const data = await apiClient.post<{ success: boolean; suggestions?: Suggestion[] }>(
+                '/api/ai-studio-suggestions',
+                { doc: document }
+            );
             if (data.success && data.suggestions) {
                 setSuggestions(data.suggestions.sort((a: Suggestion, b: Suggestion) => b.priority - a.priority));
             } else {
