@@ -1,5 +1,6 @@
 import { createClient } from '@supabase/supabase-js';
 import type { Handler, HandlerEvent } from '@netlify/functions';
+import { isIP } from 'node:net';
 
 /**
  * Netlify Function: OpenAI Proxy + Image Upload
@@ -15,11 +16,13 @@ export const handler: Handler = async (event: HandlerEvent) => {
     }
 
     // Get API key from environment
-    const OPENAI_API_KEY = process.env.OPENAI_API_KEY || process.env.VITE_OPENAI_API_KEY;
+    const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
 
     // Supabase credentials
     const SUPABASE_URL = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
-    const SUPABASE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.VITE_SUPABASE_ANON_KEY;
+    const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY || process.env.VITE_SUPABASE_ANON_KEY;
+    const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
+    const allowAnonymous = process.env.ALLOW_ANON_OPENAI_PROXY === 'true';
 
     // Check OpenAI Key
     if (!OPENAI_API_KEY) {
@@ -31,6 +34,33 @@ export const handler: Handler = async (event: HandlerEvent) => {
     }
 
     try {
+        const authHeader = event.headers.authorization || event.headers.Authorization;
+        if (!allowAnonymous) {
+            if (!authHeader) {
+                return {
+                    statusCode: 401,
+                    body: JSON.stringify({ error: 'Unauthorized' })
+                };
+            }
+            if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
+                return {
+                    statusCode: 500,
+                    body: JSON.stringify({ error: 'Server configuration error: Supabase auth misconfigured' })
+                };
+            }
+            const authClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+                global: { headers: { Authorization: authHeader } }
+            });
+            const { data: { user }, error: authError } = await authClient.auth.getUser();
+            if (authError || !user) {
+                console.error('❌ Auth failed:', authError);
+                return {
+                    statusCode: 401,
+                    body: JSON.stringify({ error: 'Unauthorized' })
+                };
+            }
+        }
+
         // Parse request body
         const body = JSON.parse(event.body || '{}');
         const { endpoint = 'chat/completions', processParams, ...requestData } = body;
@@ -38,7 +68,7 @@ export const handler: Handler = async (event: HandlerEvent) => {
         // *** HANDLE IMAGE UPLOAD (Supabase Storage) ***
         if (processParams && processParams.imageUrl) {
             // Check Supabase Config specifically for upload requests
-            if (!SUPABASE_URL || !SUPABASE_KEY) {
+            if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
                 console.error('❌ Configuration Error: Missing Supabase credentials for upload.');
                 return {
                     statusCode: 500,
@@ -47,7 +77,17 @@ export const handler: Handler = async (event: HandlerEvent) => {
             }
 
             console.log('Backend: Processing image upload for:', processParams.productName);
-            const publicUrl = await handleImageUpload(processParams, SUPABASE_URL, SUPABASE_KEY);
+            try {
+                assertAllowedImageUrl(processParams.imageUrl);
+            } catch (error) {
+                return {
+                    statusCode: 400,
+                    body: JSON.stringify({
+                        error: error instanceof Error ? error.message : 'Invalid imageUrl'
+                    })
+                };
+            }
+            const publicUrl = await handleImageUpload(processParams, SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
             return {
                 statusCode: 200,
@@ -100,6 +140,11 @@ export const handler: Handler = async (event: HandlerEvent) => {
     }
 };
 
+const DEFAULT_ALLOWED_IMAGE_HOSTS = (process.env.ALLOWED_IMAGE_HOSTS || '*.blob.core.windows.net,images.openai.com')
+    .split(',')
+    .map((host) => host.trim().toLowerCase())
+    .filter(Boolean);
+
 /**
  * Handle server-side image upload to Supabase
  */
@@ -137,4 +182,66 @@ async function handleImageUpload(params: { imageUrl: string; productName: string
         .getPublicUrl(fileName);
 
     return publicUrl;
+}
+
+function assertAllowedImageUrl(imageUrl: string): void {
+    let parsed: URL;
+    try {
+        parsed = new URL(imageUrl);
+    } catch {
+        throw new Error('Invalid imageUrl');
+    }
+
+    if (parsed.protocol !== 'https:') {
+        throw new Error('Only https URLs are allowed for image uploads');
+    }
+
+    const hostname = parsed.hostname.toLowerCase();
+    if (hostname === 'localhost' || hostname.endsWith('.local')) {
+        throw new Error('Localhost image URLs are not allowed');
+    }
+
+    const ipVersion = isIP(hostname);
+    if (ipVersion && isPrivateIp(hostname)) {
+        throw new Error('Private network image URLs are not allowed');
+    }
+
+    if (DEFAULT_ALLOWED_IMAGE_HOSTS.length > 0) {
+        const isAllowed = DEFAULT_ALLOWED_IMAGE_HOSTS.some((pattern) => matchesHostPattern(hostname, pattern));
+        if (!isAllowed) {
+            throw new Error(`Image host not allowed: ${hostname}`);
+        }
+    }
+}
+
+function matchesHostPattern(hostname: string, pattern: string): boolean {
+    if (pattern.startsWith('*.')) {
+        const suffix = pattern.slice(2);
+        return hostname === suffix || hostname.endsWith(`.${suffix}`);
+    }
+    return hostname === pattern;
+}
+
+function isPrivateIp(ip: string): boolean {
+    if (ip.includes(':')) {
+        const normalized = ip.toLowerCase();
+        return (
+            normalized === '::1' ||
+            normalized.startsWith('fe80:') ||
+            normalized.startsWith('fc') ||
+            normalized.startsWith('fd')
+        );
+    }
+
+    const parts = ip.split('.').map(Number);
+    if (parts.length !== 4 || parts.some((part) => Number.isNaN(part))) return false;
+    const [a, b] = parts;
+    return (
+        a === 10 ||
+        a === 127 ||
+        a === 0 ||
+        (a === 169 && b === 254) ||
+        (a === 192 && b === 168) ||
+        (a === 172 && b >= 16 && b <= 31)
+    );
 }

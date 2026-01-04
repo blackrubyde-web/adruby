@@ -1,8 +1,7 @@
 import { analyzeStrategy, type StrategicProfile } from './strategic-analyzer';
-import { selectTemplate } from './template-selector';
-import { generatePremiumCopy, type PremiumCopy } from './copy-generator';
-import { getBestCopyVariant, type CopyVariant } from './copy-generator-v2'; // NEW: 10x variant engine
-import { generateDynamicTemplate, generateVisualStyle, type VisualStyle } from './template-generator-v2'; // NEW: Dynamic templates
+import { type PremiumCopy } from './copy-generator';
+import { getBestCopyVariant } from './copy-generator-v2'; // NEW: 10x variant engine
+import { generateDynamicTemplate, type VisualStyle } from './template-generator-v2'; // NEW: Dynamic templates
 import { composeLayout } from './layout-composer';
 import { processImage } from './image-processor';
 import { scoreAdQuality } from './vision-qa';
@@ -51,7 +50,8 @@ export async function generatePremiumAd(
             brandName: params.brandName,
             userPrompt: params.userPrompt,
             tone: params.tone,
-            imageBase64: params.imageBase64
+            imageBase64: params.imageBase64,
+            language: params.language
         });
 
         // STAGE 2: Dynamic Template Generation (NEW: Algorithmic Layouts)
@@ -95,7 +95,8 @@ export async function generatePremiumAd(
             groundedFacts: params.groundedFacts || {
                 offer: "Get 50% Off Today",
                 proof: "Trusted by 10,000+ Customers"
-            }
+            },
+            language: params.language
         });
 
         // Convert CopyVariant to PremiumCopy format for compatibility
@@ -116,12 +117,15 @@ export async function generatePremiumAd(
         let processedAssets: { originalProduct: string; generatedBackground?: string } | undefined;
 
         try {
-            // Give generation 120s max
+            const controller = new AbortController();
+            const timeoutMs = 120000;
+            let timeoutId: ReturnType<typeof setTimeout> | undefined;
             const timeoutPromise = new Promise<{ originalProduct: string; generatedBackground?: string } | undefined>((resolve) => {
-                setTimeout(() => {
+                timeoutId = setTimeout(() => {
                     console.warn('⚠️ Compositing timeout > 120s');
+                    controller.abort();
                     resolve({ originalProduct: params.imageBase64 || '' });
-                }, 120000);
+                }, timeoutMs);
             });
 
             // NEW: Automatic Background Removal (Cutout)
@@ -144,15 +148,17 @@ export async function generatePremiumAd(
                 productName: params.productName,
                 tone: params.tone,
                 designVibe: strategicProfile.designSystem.vibe,
-                shouldEnhance: params.enhanceImage !== false
+                shouldEnhance: params.enhanceImage !== false,
+                signal: controller.signal
             });
 
             // Race it
             processedAssets = await Promise.race([processingPromise, timeoutPromise]);
+            if (timeoutId) clearTimeout(timeoutId);
 
-            // STAGE 6: Vision QA (Safety & Quality Check)
+            // STAGE 4: Vision QA (Safety & Quality Check)
             if (processedAssets?.generatedBackground) {
-                onProgress?.(6, 'Performing Vision QA on Assets...');
+                onProgress?.(4, 'Performing Vision QA on Assets...');
                 const qaScore = await scoreAdQuality(processedAssets.generatedBackground, {
                     product: params.productName,
                     tone: params.tone

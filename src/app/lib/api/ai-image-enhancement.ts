@@ -26,6 +26,10 @@ interface BackgroundResult {
     analysisNotes: string;
 }
 
+interface InvokeOptions {
+    signal?: AbortSignal;
+}
+
 /**
  * MASTER PROMPT SYSTEM
  * This prompt is engineered to extract MAXIMUM quality from GPT-4 Vision
@@ -134,7 +138,10 @@ const getToneBackgroundGuidance = (tone: string): string => {
 /**
  * Call GPT-4 Vision to analyze image and generate DALL-E prompt
  */
-async function analyzeImageWithVision(req: EnhancementRequest): Promise<{ dallePrompt: string; analysisNotes: string }> {
+async function analyzeImageWithVision(
+    req: EnhancementRequest,
+    options?: InvokeOptions
+): Promise<{ dallePrompt: string; analysisNotes: string }> {
     const { data, error } = await invokeOpenAIProxy({
         endpoint: 'chat/completions',
         model: 'gpt-4o',
@@ -155,7 +162,7 @@ async function analyzeImageWithVision(req: EnhancementRequest): Promise<{ dalleP
         ],
         max_tokens: 1000,
         temperature: 0.7
-    });
+    }, options);
 
     if (error) throw new Error(error.message);
     const content = data.choices[0]?.message?.content;
@@ -171,7 +178,10 @@ async function analyzeImageWithVision(req: EnhancementRequest): Promise<{ dalleP
 /**
  * Analyze image to generate BACKGROUND ONLY prompt
  */
-async function analyzeForBackground(req: EnhancementRequest): Promise<{ dallePrompt: string; analysisNotes: string }> {
+async function analyzeForBackground(
+    req: EnhancementRequest,
+    options?: InvokeOptions
+): Promise<{ dallePrompt: string; analysisNotes: string }> {
     const { data, error } = await invokeOpenAIProxy({
         endpoint: 'chat/completions',
         model: 'gpt-4o',
@@ -192,7 +202,7 @@ async function analyzeForBackground(req: EnhancementRequest): Promise<{ dallePro
         ],
         max_tokens: 1000,
         temperature: 0.7
-    });
+    }, options);
 
     if (error) throw new Error(`GPT-4 Vision failed: ${error.message}`);
     const content = data.choices[0]?.message?.content;
@@ -208,7 +218,7 @@ async function analyzeForBackground(req: EnhancementRequest): Promise<{ dallePro
 /**
  * Generate enhanced image with DALL-E 3
  */
-async function generateWithDALLE3(prompt: string): Promise<string> {
+async function generateWithDALLE3(prompt: string, options?: InvokeOptions): Promise<string> {
     const { data, error } = await invokeOpenAIProxy({
         endpoint: 'images/generations',
         model: 'dall-e-3',
@@ -226,7 +236,7 @@ CRITICAL TECHNICAL REQUIREMENTS:
         size: '1024x1024',
         quality: 'hd',
         style: 'vivid'
-    });
+    }, options);
 
     if (error) {
         throw new Error(`DALL-E 3 failed: ${error.message || 'Unknown error'}`);
@@ -245,17 +255,17 @@ CRITICAL TECHNICAL REQUIREMENTS:
  * MAIN EXPORT: Enhance product image to premium ad quality
  * Images are automatically uploaded to Supabase Storage for permanent access
  */
-export async function enhanceProductImage(req: EnhancementRequest): Promise<EnhancementResult> {
+export async function enhanceProductImage(req: EnhancementRequest, options?: InvokeOptions): Promise<EnhancementResult> {
     console.log('🎨 Starting PREMIUM image enhancement pipeline...');
 
     // Step 1: Analyze with GPT-4 Vision
     console.log('📸 Analyzing image with GPT-4 Vision...');
-    const { dallePrompt, analysisNotes } = await analyzeImageWithVision(req);
+    const { dallePrompt, analysisNotes } = await analyzeImageWithVision(req, options);
     console.log('✅ Vision analysis complete:', analysisNotes);
 
     // Step 2: Generate with DALL-E 3
     console.log('🖼️ Generating premium image with DALL-E 3...');
-    const openAIImageUrl = await generateWithDALLE3(dallePrompt);
+    const openAIImageUrl = await generateWithDALLE3(dallePrompt, options);
     console.log('✅ Premium image generated from OpenAI');
 
     // Step 3: Upload to Supabase Storage via Backend Edge Function (Solves CORS)
@@ -269,7 +279,7 @@ export async function enhanceProductImage(req: EnhancementRequest): Promise<Enha
             productName: req.productName,
             // userId is handled by the Auth context in the Edge Function now
         }
-    });
+    }, options);
 
     if (uploadError) throw new Error(uploadError.message || 'Image upload failed');
 
@@ -290,16 +300,16 @@ export async function enhanceProductImage(req: EnhancementRequest): Promise<Enha
 /**
  * Generate a BACKGROUND SCENE only (for composite ads)
  */
-export async function generateBackgroundScene(req: EnhancementRequest): Promise<BackgroundResult> {
+export async function generateBackgroundScene(req: EnhancementRequest, options?: InvokeOptions): Promise<BackgroundResult> {
     console.log('🎭 Generating BACKGROUND SCENE (Composite Mode)...');
 
     // 1. Analyze to get Background Prompt
-    const { dallePrompt, analysisNotes } = await analyzeForBackground(req);
+    const { dallePrompt, analysisNotes } = await analyzeForBackground(req, options);
 
     // 2. Generate Background with DALL-E 3
     // Explicitly add negative prompt instruction in the prompt text itself as DALL-E 3 via API doesn't support neg parameters well
     const bgPrompt = `EMPTY BACKGROUND SCENE for product photography. ${dallePrompt}. NO TEXT. NO PRODUCTS. EMPTY CENTER.`;
-    const openAIImageUrl = await generateWithDALLE3(bgPrompt);
+    const openAIImageUrl = await generateWithDALLE3(bgPrompt, options);
 
     // 3. Upload
     // 3. Upload via Unified Service
@@ -308,7 +318,7 @@ export async function generateBackgroundScene(req: EnhancementRequest): Promise<
             imageUrl: openAIImageUrl,
             productName: `${req.productName}-bg`,
         }
-    });
+    }, options);
 
     if (uploadError) throw new Error(uploadError.message || 'Background upload failed');
 

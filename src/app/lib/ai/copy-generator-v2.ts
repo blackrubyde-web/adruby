@@ -289,22 +289,26 @@ function calculateVariantScore(variant: CopyVariant): {
 } {
     // CLARITY: Word count and readability
     const wordCount = variant.headline.split(' ').length;
-    const clarity = Math.min(100, 100 - (wordCount - 5) * 10); // Penalize long headlines
+    const clarity = clampScore(100 - (wordCount - 5) * 10); // Penalize long headlines
 
     // PUNCHINESS: Short, impactful words
     const hasNumbers = /\d+/.test(variant.headline);
     const hasStrongVerbs = /get|discover|unlock|transform|boost|master/i.test(variant.headline);
-    const punchiness = (hasNumbers ? 50 : 0) + (hasStrongVerbs ? 50 : 0);
+    const punchiness = clampScore((hasNumbers ? 50 : 0) + (hasStrongVerbs ? 50 : 0));
 
     // EMOTIONAL: Question marks, exclamations, power words
     const hasQuestion = /\?/.test(variant.headline);
     const hasExclamation = /!/.test(variant.headline);
     const hasPowerWords = /secret|proven|guaranteed|exclusive|limited/i.test(variant.description);
-    const emotional = (hasQuestion ? 30 : 0) + (hasExclamation ? 30 : 0) + (hasPowerWords ? 40 : 0);
+    const emotional = clampScore((hasQuestion ? 30 : 0) + (hasExclamation ? 30 : 0) + (hasPowerWords ? 40 : 0));
 
-    const total = (clarity + punchiness + emotional) / 3;
+    const total = clampScore((clarity + punchiness + emotional) / 3);
 
     return { clarity, punchiness, emotional, total };
+}
+
+function clampScore(value: number): number {
+    return Math.max(0, Math.min(100, value));
 }
 
 /**

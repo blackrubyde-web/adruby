@@ -20,7 +20,7 @@ export async function removeBackground(imageSrc: File | Blob | string, onProgres
         // Configuration
         const config: Config = {
             // Use the package default data host to match the installed version.
-            debug: true, // Enable debug to help user identify issues
+            debug: import.meta.env.DEV,
             model: 'isnet'
         };
 

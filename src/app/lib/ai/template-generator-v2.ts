@@ -48,14 +48,14 @@ export interface CompositionStyle {
     hierarchy: 'flat' | 'moderate' | 'dramatic';
 }
 
-// Professional Font Pairings (Heading + Body)
-const FONT_PAIRINGS: Record<string, { heading: string; body: string }> = {
-    professional: { heading: 'Inter', body: 'Inter' },
-    luxury: { heading: 'Playfair Display', body: 'Lato' },
-    bold: { heading: 'Bebas Neue', body: 'Roboto' },
-    playful: { heading: 'Poppins', body: 'Nunito' },
-    minimal: { heading: 'Outfit', body: 'Inter' },
-    editorial: { heading: 'Merriweather', body: 'Source Sans Pro' }
+// Premium Font Pairings for Meta-Quality Ads (Heading + Body + CTA)
+const PREMIUM_FONT_PAIRINGS: Record<string, { heading: string; body: string; cta: string }> = {
+    professional: { heading: 'Montserrat', body: 'Inter', cta: 'Montserrat' },
+    luxury: { heading: 'Playfair Display', body: 'Raleway', cta: 'Raleway' },
+    bold: { heading: 'Bebas Neue', body: 'DM Sans', cta: 'Bebas Neue' },
+    playful: { heading: 'Outfit', body: 'Manrope', cta: 'Outfit' },
+    minimal: { heading: 'Space Grotesk', body: 'Inter', cta: 'Space Grotesk' },
+    editorial: { heading: 'Crimson Pro', body: 'Source Sans Pro', cta: 'Source Sans Pro' }
 };
 
 /**
@@ -136,12 +136,14 @@ export function generateColorHarmony(
             scheme = 'monochromatic';
     }
 
+    const normalized = colors.map(normalizeHsl);
+
     return {
-        primary: hslToHex(colors[0]),
-        secondary: hslToHex(colors[1]),
-        accent: hslToHex(colors[2]),
-        background: hslToHex(colors[3]),
-        text: hslToHex(colors[4]),
+        primary: hslToHex(normalized[0]),
+        secondary: hslToHex(normalized[1]),
+        accent: hslToHex(normalized[2]),
+        background: hslToHex(normalized[3]),
+        text: hslToHex(normalized[4]),
         scheme
     };
 }
@@ -153,7 +155,7 @@ export function selectFontPairing(
     tone: string,
     contrast: 'subtle' | 'strong' | 'extreme'
 ): TypographyConfig {
-    const pairing = FONT_PAIRINGS[tone] || FONT_PAIRINGS.professional;
+    const pairing = PREMIUM_FONT_PAIRINGS[tone] || PREMIUM_FONT_PAIRINGS.professional;
 
     // Contrast determines size difference between heading and body
     const sizeMultipliers = {
@@ -181,6 +183,137 @@ export function selectFontPairing(
         },
         contrast
     };
+}
+
+/**
+ * Modern Button Style Configuration
+ */
+export interface ModernButtonStyle {
+    bgColor: string;
+    bgGradient?: { start: string; end: string; angle: number };
+    shadowColor: string;
+    shadowBlur: number;
+    shadowOffsetX: number;
+    shadowOffsetY: number;
+    borderColor?: string;
+    borderWidth?: number;
+}
+
+/**
+ * Utility: Darken a hex color by a percentage
+ */
+function darkenColor(hex: string, percent: number): string {
+    const num = parseInt(hex.replace('#', ''), 16);
+    const r = Math.max(0, (num >> 16) - Math.round((255 * percent) / 100));
+    const g = Math.max(0, ((num >> 8) & 0x00FF) - Math.round((255 * percent) / 100));
+    const b = Math.max(0, (num & 0x0000FF) - Math.round((255 * percent) / 100));
+    return '#' + (0x1000000 + (r * 0x10000) + (g * 0x100) + b).toString(16).slice(1);
+}
+
+/**
+ * Generate modern button style based on visual style
+ */
+export function generateModernButtonStyle(
+    accentColor: string,
+    styleName: VisualStyle['name']
+): ModernButtonStyle {
+    const styleMap: Record<VisualStyle['name'], ModernButtonStyle> = {
+        minimal: {
+            bgColor: accentColor,
+            shadowColor: 'rgba(0, 0, 0, 0.15)',
+            shadowBlur: 20,
+            shadowOffsetX: 0,
+            shadowOffsetY: 8,
+        },
+        bold: {
+            bgColor: accentColor,
+            bgGradient: {
+                start: accentColor,
+                end: darkenColor(accentColor, 15),
+                angle: 180
+            },
+            shadowColor: hexToRgba(accentColor, 0.4) || 'rgba(0, 0, 0, 0.4)',
+            shadowBlur: 25,
+            shadowOffsetX: 0,
+            shadowOffsetY: 12,
+        },
+        luxury: {
+            bgColor: '#000000',
+            shadowColor: 'rgba(0, 0, 0, 0.3)',
+            shadowBlur: 30,
+            shadowOffsetX: 0,
+            shadowOffsetY: 6,
+            borderColor: accentColor,
+            borderWidth: 1
+        },
+        playful: {
+            bgColor: accentColor,
+            bgGradient: {
+                start: accentColor,
+                end: darkenColor(accentColor, 10),
+                angle: 135
+            },
+            shadowColor: 'rgba(0, 0, 0, 0.2)',
+            shadowBlur: 22,
+            shadowOffsetX: 0,
+            shadowOffsetY: 10,
+        },
+        editorial: {
+            bgColor: accentColor,
+            shadowColor: 'rgba(0, 0, 0, 0.18)',
+            shadowBlur: 18,
+            shadowOffsetX: 0,
+            shadowOffsetY: 7,
+            borderColor: darkenColor(accentColor, 20),
+            borderWidth: 1
+        }
+    };
+
+    return styleMap[styleName] || styleMap.minimal;
+}
+
+/**
+ * Generate text shadow for optimal readability
+ */
+export function getTextShadowForReadability(
+    backgroundColor: string,
+    textColor: string
+): { shadowColor: string; shadowBlur: number; shadowOffsetX: number; shadowOffsetY: number } | undefined {
+    // Calculate luminance to determine if shadow is needed
+    const bgLuminance = getLuminance(backgroundColor);
+    const textLuminance = getLuminance(textColor);
+    const contrast = Math.abs(bgLuminance - textLuminance);
+
+    // If contrast is low, add shadow for readability
+    if (contrast < 0.4) {
+        // Light text on light bg OR dark text on dark bg
+        const shadowColor = bgLuminance > 0.5 ? 'rgba(0, 0, 0, 0.8)' : 'rgba(255, 255, 255, 0.8)';
+        return {
+            shadowColor,
+            shadowBlur: 8,
+            shadowOffsetX: 0,
+            shadowOffsetY: 2
+        };
+    }
+
+    // Always add subtle shadow for depth
+    return {
+        shadowColor: bgLuminance > 0.5 ? 'rgba(0, 0, 0, 0.25)' : 'rgba(0, 0, 0, 0.4)',
+        shadowBlur: 4,
+        shadowOffsetX: 0,
+        shadowOffsetY: 1
+    };
+}
+
+/**
+ * Calculate relative luminance of a color (0-1)
+ */
+function getLuminance(color: string): number {
+    const hex = color.replace('#', '');
+    const r = parseInt(hex.substring(0, 2), 16) / 255;
+    const g = parseInt(hex.substring(2, 4), 16) / 255;
+    const b = parseInt(hex.substring(4, 6), 16) / 255;
+    return 0.2126 * r + 0.7152 * g + 0.0722 * b;
 }
 
 /**
@@ -399,6 +532,9 @@ export function generateDynamicTemplate(params: {
     const style = generateVisualStyle(params.brandColor, params.tone, params.visualStyle);
     const layout = calculateLayout(params.visualStyle);
 
+    // NEW: Generate modern button style
+    const buttonStyle = generateModernButtonStyle(style.colorPalette.accent, params.visualStyle);
+
     const layers: StudioLayer[] = [
         // Background layer
         {
@@ -448,14 +584,16 @@ export function generateDynamicTemplate(params: {
             locked: false,
             visible: true,
             text: 'PREMIUM PRODUCT',
-            fontSize: style.typography.heading.size,
+            fontSize: Math.max(48, style.typography.heading.size), // Min 48px for headlines
             fontFamily: style.typography.heading.family,
             fontWeight: style.typography.heading.weight as any,
             color: style.colorPalette.text,
             fill: style.colorPalette.text,
             align: params.visualStyle === 'luxury' || params.visualStyle === 'minimal' ? 'center' : 'left',
             lineHeight: style.typography.heading.lineHeight,
-            letterSpacing: style.typography.heading.letterSpacing
+            letterSpacing: style.typography.heading.letterSpacing,
+            // NEW: Text shadow for readability
+            ...getTextShadowForReadability(style.colorPalette.background, style.colorPalette.text)
         },
         // Subheadline text layer
         {
@@ -479,9 +617,11 @@ export function generateDynamicTemplate(params: {
             color: style.colorPalette.secondary,
             fill: style.colorPalette.secondary,
             align: params.visualStyle === 'luxury' || params.visualStyle === 'minimal' ? 'center' : 'left',
-            lineHeight: 1.4
+            lineHeight: 1.4,
+            // NEW: Text shadow for readability
+            ...getTextShadowForReadability(style.colorPalette.background, style.colorPalette.secondary)
         },
-        // CTA button layer
+        // CTA button layer with modern styling
         {
             id: 'cta-dynamic',
             type: 'cta',
@@ -497,13 +637,21 @@ export function generateDynamicTemplate(params: {
             locked: false,
             visible: true,
             text: 'SHOP NOW',
-            fontSize: 22,
-            fontFamily: style.typography.heading.family,
+            fontSize: Math.max(20, 22), // Min 20px for CTA
+            fontFamily: PREMIUM_FONT_PAIRINGS[params.tone]?.cta || style.typography.heading.family,
             fontWeight: 800,
             lineHeight: 1.2,
-            color: style.colorPalette.background,
-            bgColor: style.colorPalette.accent,
-            radius: params.visualStyle === 'minimal' ? 4 : params.visualStyle === 'luxury' ? 0 : 12
+            color: params.visualStyle === 'luxury' ? style.colorPalette.accent : '#FFFFFF',
+            bgColor: buttonStyle.bgColor,
+            bgGradient: buttonStyle.bgGradient,
+            radius: params.visualStyle === 'minimal' ? 8 : params.visualStyle === 'luxury' ? 0 : 16,
+            // Modern shadows for elevation
+            shadowColor: buttonStyle.shadowColor,
+            shadowBlur: buttonStyle.shadowBlur,
+            shadowOffsetX: buttonStyle.shadowOffsetX,
+            shadowOffsetY: buttonStyle.shadowOffsetY,
+            borderColor: buttonStyle.borderColor,
+            borderWidth: buttonStyle.borderWidth
         }
     ];
 
@@ -597,4 +745,31 @@ function hslToHex(hsl: { h: number; s: number; l: number }): string {
     };
 
     return `#${toHex(r)}${toHex(g)}${toHex(b)}`;
+}
+
+function normalizeHsl(hsl: { h: number; s: number; l: number }): { h: number; s: number; l: number } {
+    return {
+        h: normalizeHue(hsl.h),
+        s: clampPercent(hsl.s),
+        l: clampPercent(hsl.l)
+    };
+}
+
+function normalizeHue(value: number): number {
+    const wrapped = value % 360;
+    return wrapped < 0 ? wrapped + 360 : wrapped;
+}
+
+function clampPercent(value: number): number {
+    return Math.min(100, Math.max(0, value));
+}
+
+function hexToRgba(hex: string, alpha: number): string | null {
+    const normalized = hex.startsWith('#') ? hex : `#${hex}`;
+    const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(normalized);
+    if (!result) return null;
+    const r = parseInt(result[1], 16);
+    const g = parseInt(result[2], 16);
+    const b = parseInt(result[3], 16);
+    return `rgba(${r}, ${g}, ${b}, ${alpha})`;
 }

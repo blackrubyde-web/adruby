@@ -24,6 +24,7 @@ export async function processImage(params: {
     tone: string;
     designVibe?: string;
     shouldEnhance: boolean;
+    signal?: AbortSignal;
 }): Promise<ProcessedAssets | undefined> {
     console.log('🖼️ Stage 5: Compositing Engine...');
 
@@ -42,6 +43,11 @@ export async function processImage(params: {
         return result;
     }
 
+    if (params.signal?.aborted) {
+        console.warn('⏭️  Compositing aborted before background generation');
+        return result;
+    }
+
     try {
         console.log('✨ Generating Premium Background Scene...');
 
@@ -52,7 +58,7 @@ export async function processImage(params: {
             userPrompt: `Professional ${params.tone} background for ${params.productName}, style: ${params.designVibe || 'minimalist'}`,
             productName: params.productName,
             tone: params.tone as any
-        });
+        }, { signal: params.signal });
 
         console.log('✅ Background generated:', bgResult.backgroundImageUrl);
 

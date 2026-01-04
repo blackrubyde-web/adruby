@@ -1,28 +1,54 @@
 
+import { supabase } from '../supabaseClient';
+
+interface OpenAIProxyError {
+    message: string;
+    details?: unknown;
+}
+
 /** OpenAI API Response */
-interface OpenAIResponse {
-    data: unknown;
-    error: unknown;
+interface OpenAIResponse<T = any> {
+    data: T | null;
+    error: OpenAIProxyError | null;
 }
 
 /** OpenAI Proxy Payload */
 interface OpenAIProxyPayload {
-    endpoint: string;
+    endpoint?: string;
+    processParams?: {
+        imageUrl: string;
+        productName?: string;
+    };
     [key: string]: unknown;
+}
+
+interface InvokeOptions {
+    signal?: AbortSignal;
 }
 
 /**
  * Helper to invoke the local Netlify OpenAI Proxy function
  * Replaces supabase.functions.invoke('openai-proxy')
  */
-export async function invokeOpenAIProxy(payload: OpenAIProxyPayload): Promise<OpenAIResponse> {
+export async function invokeOpenAIProxy<T = any>(
+    payload: OpenAIProxyPayload,
+    options?: InvokeOptions
+): Promise<OpenAIResponse<T>> {
     try {
+        const { data: sessionData } = await supabase.auth.getSession();
+        const accessToken = sessionData.session?.access_token;
+        const headers: Record<string, string> = {
+            'Content-Type': 'application/json'
+        };
+        if (accessToken) {
+            headers.Authorization = `Bearer ${accessToken}`;
+        }
+
         const response = await fetch('/api/openai-proxy', {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
+            headers,
             body: JSON.stringify(payload),
+            signal: options?.signal
         });
 
         // Handle non-JSON responses (e.g. 500 html pages) safely
@@ -46,7 +72,7 @@ export async function invokeOpenAIProxy(payload: OpenAIProxyPayload): Promise<Op
             };
         }
 
-        return { data, error: null };
+        return { data: data as T, error: null };
 
     } catch (e) {
         const error = e as Error;
