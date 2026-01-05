@@ -1,16 +1,15 @@
+```javascript
 import { useState, useRef } from 'react';
 import {
-  Target,
-  BarChart3,
-  Users,
-  Share2,
-  Palette,
-  Layers,
-  MousePointer2,
-  Brain,
   Zap,
-  Sparkles,
-  Check,
+  Layout,
+  BarChart,
+  Grid,
+  CheckCircle,
+  Megaphone,
+  Box,
+  Palette,
+  Image as ImageIcon // Alias to avoid conflict if any, though not strictly needed
 } from 'lucide-react';
 import { GlobalNav } from './landing/GlobalNav';
 import { StudioPreview } from './features/previews/StudioPreview';
@@ -41,8 +40,8 @@ export function FeaturesPage({ onNavigate, onSignIn, onGetStarted }: FeaturesPag
     const rect = target.getBoundingClientRect();
     const x = e.clientX - rect.left;
     const y = e.clientY - rect.top;
-    target.style.setProperty("--mouse-x", `${x}px`);
-    target.style.setProperty("--mouse-y", `${y}px`);
+    target.style.setProperty("--mouse-x", `${ x } px`);
+    target.style.setProperty("--mouse-y", `${ y } px`);
   };
 
   return (
@@ -118,14 +117,15 @@ export function FeaturesPage({ onNavigate, onSignIn, onGetStarted }: FeaturesPag
                   <button
                     key={tab.id}
                     onClick={() => setActiveTab(tab.id)}
-                    className={`relative px-6 sm:px-8 py-3 rounded-full font-bold text-sm sm:text-base transition-all duration-500 flex items-center gap-2 ${isActive ? 'text-black shadow-[0_4px_20px_rgba(0,0,0,0.2)]' : 'text-white/60 hover:text-white'
-                      }`}
+                    className={`relative px - 6 sm: px - 8 py - 3 rounded - full font - bold text - sm sm: text - base transition - all duration - 500 flex items - center gap - 2 ${
+  isActive ? 'text-black shadow-[0_4px_20px_rgba(0,0,0,0.2)]' : 'text-white/60 hover:text-white'
+} `}
                   >
                     {isActive && (
                       <div className="absolute inset-0 bg-white rounded-full layout-id-active-tab" />
                     )}
                     <span className="relative z-10 flex items-center gap-2">
-                      <Icon className={`w-4 h-4 ${isActive ? 'text-black' : 'text-current'}`} />
+                      <Icon className={`w - 4 h - 4 ${ isActive ? 'text-black' : 'text-current' } `} />
                       {tab.label}
                     </span>
                   </button>

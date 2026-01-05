@@ -2,7 +2,7 @@ import { lazy, Suspense, useState } from 'react';
 import { DashboardCustomizer, DashboardSection } from './DashboardCustomizer';
 import { ReorderableWidget } from './ReorderableWidget';
 import { TimeRangeFilter } from './TimeRangeFilter';
-import { Eye, MousePointerClick, DollarSign, TrendingUp, LayoutGrid, Brain, Zap, ShieldCheck, Rocket } from 'lucide-react';
+import { Eye, MousePointerClick, DollarSign, TrendingUp, LayoutGrid, Zap, ShieldCheck, Rocket } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from './ui/button';
 import { PageShell, HeroHeader, Card, Chip } from './layout';

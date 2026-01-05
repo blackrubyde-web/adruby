@@ -19,7 +19,6 @@ import { PageShell, HeroHeader } from './layout';
 import { supabase } from '../lib/supabaseClient';
 import { env } from '../lib/env';
 import { StrategySelector } from './studio/StrategySelector';
-import { StrategyWizard } from './studio/StrategyWizard';
 import { useStrategies } from '../hooks/useStrategies';
 import { createCampaign } from '../lib/api/meta';
 
@@ -302,7 +301,6 @@ export function CampaignBuilderPage() {
   const [campaignSpec, setCampaignSpec] = useState<CampaignSpec>(emptySpec);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [ads, setAds] = useState<SavedAd[]>([]);
-  const [showStrategyWizard, setShowStrategyWizard] = useState(false);
 
   // Unified Strategy Data
   const { strategies } = useStrategies();
@@ -538,50 +536,7 @@ export function CampaignBuilderPage() {
   };
   const handleBack = () => { if (currentStep > 1) setCurrentStep(c => c - 1); };
 
-  const handleCreateMasterStrategy = async (rawStrategy: Record<string, unknown>) => {
-    // Cast to expected type - validation handled by Wizard
-    const data = rawStrategy as unknown as {
-      name: string;
-      industry_type: string;
-      target_roas: number;
-      max_daily_budget: number;
-      scale_speed: string;
-      risk_tolerance: string
-    };
-    try {
-      const { error } = await supabase.from('strategy_blueprints').insert({
-        title: data.name,
-        category: 'custom',
-        industry_type: data.industry_type,
-        autopilot_config: {
-          enabled: true,
-          target_roas: data.target_roas,
-          max_daily_budget: data.max_daily_budget,
-          scale_speed: data.scale_speed,
-          risk_tolerance: data.risk_tolerance,
-          pause_threshold_roas: 1.0,
-          scale_threshold_roas: data.target_roas * 1.2,
-          max_budget_increase_pct: 0.2,
-          min_conversions_required: 10
-        },
-        raw_content_markdown: `Strategy: ${data.name}\nIndustry: ${data.industry_type}\nRisk: ${data.risk_tolerance}`,
-        metadata: {
-          created_via: 'campaign_builder_wizard'
-        }
-      });
 
-      if (error) throw error;
-      toast.success("Master Strategy Created!");
-      // useStrategies hook updates automatically on re-render or we can force refresh if needed
-      // Ideally we would call refreshStrategies() but it's not exposed here directly
-      // Quick fix: reload page or rely on SWR-like behavior if implemented
-      window.location.reload();
-      setShowStrategyWizard(false);
-    } catch (e: unknown) {
-      const errorMessage = e instanceof Error ? e.message : 'Unknown error';
-      toast.error("Failed to create strategy: " + errorMessage);
-    }
-  };
 
   // --- UI RENDER (Premium Overhaul) ---
   return (

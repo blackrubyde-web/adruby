@@ -156,8 +156,8 @@ export function PricingPage({ onNavigate, onSignIn, onGetStarted }: PricingPageP
                   key={plan.id}
                   onMouseMove={handleMouseMove}
                   className={`group relative flex flex-col p-8 rounded-3xl border transition-all duration-300 ${isPro
-                      ? 'bg-white/10 border-rose-500/50 shadow-[0_0_40px_rgba(225,29,72,0.15)] md:-mt-8 md:mb-8 z-10'
-                      : 'bg-black/40 border-white/10 hover:border-white/20 backdrop-blur-xl'
+                    ? 'bg-white/10 border-rose-500/50 shadow-[0_0_40px_rgba(225,29,72,0.15)] md:-mt-8 md:mb-8 z-10'
+                    : 'bg-black/40 border-white/10 hover:border-white/20 backdrop-blur-xl'
                     } overflow-hidden`}
                 >
                   <div className="spotlight absolute -inset-px opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none" />
@@ -186,8 +186,8 @@ export function PricingPage({ onNavigate, onSignIn, onGetStarted }: PricingPageP
                     </div>
 
                     <ul className="flex-1 space-y-4 mb-8">
-                      {plan.features.map((feature, idx) => (
-                        <li key={idx} className="flex items-start gap-3 text-sm text-white/80">
+                      {plan.features.map((feature: string, _i: number) => (
+                        <li key={_i} className="flex items-start gap-3 text-sm text-white/80">
                           <Check className={`w-5 h-5 shrink-0 ${isPro ? 'text-rose-500' : 'text-white/40'}`} />
                           <span className="leading-tight">{feature}</span>
                         </li>
@@ -197,8 +197,8 @@ export function PricingPage({ onNavigate, onSignIn, onGetStarted }: PricingPageP
                     <button
                       onClick={onGetStarted}
                       className={`w-full py-4 rounded-xl font-bold text-lg transition-all ${isPro
-                          ? 'bg-rose-600 hover:bg-rose-500 text-white shadow-lg shadow-rose-600/20 hover:scale-[1.02]'
-                          : 'bg-white/10 hover:bg-white/20 text-white border border-white/10'
+                        ? 'bg-rose-600 hover:bg-rose-500 text-white shadow-lg shadow-rose-600/20 hover:scale-[1.02]'
+                        : 'bg-white/10 hover:bg-white/20 text-white border border-white/10'
                         }`}
                     >
                       {plan.cta}

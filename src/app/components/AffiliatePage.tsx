@@ -254,7 +254,7 @@ function AffiliateDashboard({
       setChartData(earnings);
     };
     if (user) loadEarnings();
-  }, [timeRange, user]);
+  }, [timeRange, user, setChartData]);
 
   const affiliateStats = useMemo(() => ({
     totalEarnings: stats?.total_earnings || 0,
