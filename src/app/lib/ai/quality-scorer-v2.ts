@@ -322,7 +322,7 @@ function scorePlatformOptimization(
  */
 function generateFeedback(
     scores: QualityScore['breakdown'],
-    ad: AdDocument
+    _ad: AdDocument
 ): string[] {
     const feedback: string[] = [];
 

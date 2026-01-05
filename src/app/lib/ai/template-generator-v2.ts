@@ -330,7 +330,7 @@ export function calculateLayout(
     cta: { x: number; y: number; width: number; height: number };
     badge?: { x: number; y: number; width: number; height: number };
 } {
-    const GOLDEN_RATIO = 1.618;
+    // const GOLDEN_RATIO = 1.618;
     const padding = canvasWidth * 0.05; // 5% padding
 
     switch (style) {

@@ -1,5 +1,10 @@
 import type { AdDocument, StudioLayer } from '../../types/studio';
 
+type InspectableLayer = StudioLayer & {
+    fontSize?: number;
+    text?: string;
+};
+
 /**
  * SMART RESIZE V2
  * Multi-format auto-resize with focal point detection
@@ -249,7 +254,7 @@ function applySafeZone(
                 // Adjust font size proportionally if it's text
                 if ('fontSize' in adjusted) {
                     const scaleFactor = adjusted.width / layer.width;
-                    (adjusted as any).fontSize = Math.round(((adjusted as any).fontSize || 16) * scaleFactor);
+                    (adjusted as InspectableLayer).fontSize = Math.round(((adjusted as InspectableLayer).fontSize || 16) * scaleFactor);
                 }
             }
         }
@@ -270,15 +275,15 @@ export function autoScaleText(
     }
 
     const adjusted = { ...layer };
-    const text = (adjusted as any).text || '';
-    const currentFontSize = (adjusted as any).fontSize || 16;
+    const text = (adjusted as InspectableLayer).text || '';
+    const currentFontSize = (adjusted as InspectableLayer).fontSize || 16;
 
     // Rough estimation: 1 character ≈ 0.6 * fontSize in width
     const estimatedWidth = text.length * currentFontSize * 0.6;
 
     if (estimatedWidth > maxWidth) {
         const scaleFactor = maxWidth / estimatedWidth;
-        (adjusted as any).fontSize = Math.max(12, Math.round(currentFontSize * scaleFactor));
+        (adjusted as InspectableLayer).fontSize = Math.max(12, Math.round(currentFontSize * scaleFactor));
         adjusted.width = maxWidth;
     }
 

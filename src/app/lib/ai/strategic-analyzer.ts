@@ -116,7 +116,7 @@ export async function analyzeStrategy(params: {
     imageBase64?: string;
     language?: string;
 }): Promise<StrategicProfile> {
-    console.log('📊 Stage 1: Strategic Analysis 2.0...');
+    // console.log('📊 Stage 1: Strategic Analysis 2.0...');
 
     const analysisPrompt = `You are a World-Class Creative Director.
     
@@ -186,7 +186,7 @@ JSON Only. No markdown.
         const profile = JSON.parse(data.choices[0].message.content);
         const normalizedProfile = normalizeProfile(profile);
 
-        console.log(`✅ Strategy: ${normalizedProfile.designSystem.vibe} | ${normalizedProfile.angle}`);
+        // console.log(`✅ Strategy: ${normalizedProfile.designSystem.vibe} | ${normalizedProfile.angle}`);
         return normalizedProfile;
     } catch (parseError) {
         console.warn('⚠️ JSON parse failed, using fallback profile:', parseError);
@@ -194,7 +194,8 @@ JSON Only. No markdown.
     }
 }
 
-function normalizeProfile(raw: any): StrategicProfile {
+function normalizeProfile(input: unknown): StrategicProfile {
+    const raw = input as any;
     return {
         productCategory: PRODUCT_CATEGORIES.includes(raw?.productCategory) ? raw.productCategory : FALLBACK_PROFILE.productCategory,
         targetAudience: raw?.targetAudience || FALLBACK_PROFILE.targetAudience,
