@@ -150,8 +150,6 @@ export function GlobalNav({ currentPage = 'home', onNavigate, onSignIn, onGetSta
         </div>
       </div>
 
-      {/* Spacer to prevent content from going under fixed nav */}
-      <div className="h-16" />
     </>
   );
 }
