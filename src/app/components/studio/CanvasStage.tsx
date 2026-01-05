@@ -389,7 +389,7 @@ export const CanvasStage = forwardRef<CanvasStageHandle, CanvasStageProps>(funct
         const transformerLayer = transformer.getLayer();
         if (transformerLayer) transformerLayer.batchDraw();
 
-    }, [selectedLayerIds, sortedLayers, isHandMode, preview]);
+    }, [selectedLayerIds, sortedLayers, isHandMode, preview, doc.layers]);
 
     if (preview) {
         return (

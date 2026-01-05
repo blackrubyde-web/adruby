@@ -6,7 +6,6 @@ import {
     ContextMenuContent,
     ContextMenuItem,
     ContextMenuTrigger,
-    ContextMenuSeparator,
     ContextMenuShortcut,
 } from "../ui/context-menu";
 

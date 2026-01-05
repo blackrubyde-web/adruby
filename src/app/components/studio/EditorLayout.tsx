@@ -20,7 +20,7 @@ import { smartResize, type FormatPreset } from './SmartResize';
 
 // Sub-components
 import { useEditorShortcuts } from '../../hooks/useEditorShortcuts';
-import { useEditorClipboard } from '../../hooks/useEditorClipboard';
+
 import { useAutoSave } from '../../hooks/useAutoSave';
 import { invokeOpenAIProxy } from '../../lib/api/proxyClient';
 import { alignLayers, distributeLayers, type Alignment, type Distribution } from '../../lib/alignment';
@@ -194,7 +194,7 @@ export const EditorLayout: React.FC<EditorLayoutProps> = ({ onClose, initialDoc,
     const [mockupType, setMockupType] = useState<'feed' | 'story'>('feed');
 
     // Auto-Save
-    const { lastSaved, isSaving } = useAutoSave(doc, setDoc, {
+    const { lastSaved } = useAutoSave(doc, setDoc, {
         enabled: true,
         interval: 5000,
         storageKey: `adruby-autosave-${doc.id || 'default'}`
@@ -297,12 +297,12 @@ export const EditorLayout: React.FC<EditorLayoutProps> = ({ onClose, initialDoc,
 
 
 
-    const handleLayerUpdate = (layerId: string, attrs: Partial<StudioLayer>) => {
+    const handleLayerUpdate = useCallback((layerId: string, attrs: Partial<StudioLayer>) => {
         setDoc(prev => ({
             ...prev,
             layers: updateLayerRecursive(prev.layers, layerId, attrs)
         }));
-    };
+    }, []);
 
 
     const handleLayerSelect = (layerId?: string, multi: boolean = false) => {
@@ -338,7 +338,7 @@ export const EditorLayout: React.FC<EditorLayoutProps> = ({ onClose, initialDoc,
                 const mockContent = "Just Do It. Better.";
                 handleLayerUpdate(layerId, { text: mockContent });
                 toast.success('Copy updated!');
-            } else if (task === 'bg' && (layer.type === 'product' || layer.type === 'overlay' || (layer as any).type === 'image')) {
+            } else if (task === 'bg' && (layer.type === 'product' || layer.type === 'overlay' || layer.type === 'image')) {
                 const imgLayer = layer as ImageLayer;
                 if (!imgLayer.src) return;
 
@@ -476,7 +476,7 @@ export const EditorLayout: React.FC<EditorLayoutProps> = ({ onClose, initialDoc,
         // For now, we mock adding it or just show success
         toast.dismiss();
         toast.success("Scene Generated! (Link copied to log)");
-        console.log("Generated Scene URL:", data.data[0].url);
+
     }, []);
 
     const handleReplaceBackground = useCallback(async (id: string, prompt: string) => {
@@ -491,7 +491,7 @@ export const EditorLayout: React.FC<EditorLayoutProps> = ({ onClose, initialDoc,
             const result = await apiClient.post<{ imageUrl?: string }>(
                 '/api/ai-replace-background',
                 {
-                    imageUrl: (layer as any).src,
+                    imageUrl: (layer as ImageLayer).src,
                     backgroundPrompt: prompt
                 }
             );
@@ -700,73 +700,10 @@ export const EditorLayout: React.FC<EditorLayoutProps> = ({ onClose, initialDoc,
         }));
     };
 
-    const handleLayerOrder = (action: 'front' | 'back' | 'forward' | 'backward') => {
-        if (selectedLayerIds.length === 0) return;
-        setDoc(prev => {
-            // Create shallow copy of layers array, AND shallow copy of each layer object to avoid mutation
-            let layers = prev.layers.map(l => ({ ...l }));
 
-            // Sort by current zIndex to handle consistent moves
-            layers.sort((a, b) => (a.zIndex ?? 0) - (b.zIndex ?? 0));
-
-            // Re-normalize zIndices first to 0..N-1
-            layers.forEach((l, i) => l.zIndex = i);
-
-            const selectedIndices = layers
-                .map((l, i) => selectedLayerIds.includes(l.id) ? i : -1)
-                .filter(i => i !== -1)
-                .sort((a, b) => a - b);
-
-            if (selectedIndices.length === 0) return prev;
-
-            if (action === 'front') {
-                // Move selected to end
-                const selected = layers.filter(l => selectedLayerIds.includes(l.id));
-                const unselected = layers.filter(l => !selectedLayerIds.includes(l.id));
-                layers = [...unselected, ...selected];
-            } else if (action === 'back') {
-                // Move selected to start
-                const selected = layers.filter(l => selectedLayerIds.includes(l.id));
-                const unselected = layers.filter(l => !selectedLayerIds.includes(l.id));
-                layers = [...selected, ...unselected];
-            } else if (action === 'forward') {
-                // Move each selected item one step up if possible
-                // Iterate from top to bottom to avoid swapping issues
-                for (let i = layers.length - 1; i >= 0; i--) {
-                    if (selectedLayerIds.includes(layers[i].id)) {
-                        if (i < layers.length - 1) {
-                            // Swap with next
-                            [layers[i], layers[i + 1]] = [layers[i + 1], layers[i]];
-                        }
-                    }
-                }
-            } else if (action === 'backward') {
-                // Move each selected item one step down
-                for (let i = 0; i < layers.length; i++) {
-                    if (selectedLayerIds.includes(layers[i].id)) {
-                        if (i > 0) {
-                            // Swap with prev
-                            [layers[i], layers[i - 1]] = [layers[i - 1], layers[i]];
-                        }
-                    }
-                }
-            }
-
-            // Re-assign zIndices
-            layers.forEach((l, i) => l.zIndex = i);
-
-            return { ...prev, layers };
-        });
-    };
 
     const handleNudge = (dx: number, dy: number) => {
-        selectedLayerIds.forEach(id => {
-            const layer = doc.layers.find(l => l.id === id); // Need recursive find ideally, but updateLayerRecursive handles logic
-            // Actually, updateLayerRecursive takes ID and updates.
-            // We need current value to add delta.
-            // Let's implement a direct update that doesn't rely on reading previous state inside setDoc if possible, 
-            // OR use functional state update for best practice.
-        });
+
 
         setDoc(prev => {
             let newLayers = [...prev.layers];
