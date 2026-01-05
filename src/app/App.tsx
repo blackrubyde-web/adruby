@@ -132,6 +132,7 @@ const PUBLIC_PAGES = new Set<PageType>([
   'payment-verification',
   'payment-success',
   'payment-cancelled',
+  'affiliate',
 ]);
 
 function normalizePathname(pathname: string) {
@@ -598,7 +599,8 @@ function AppContent() {
         currentPage === 'auth-processing' ||
         currentPage === 'payment-verification' ||
         currentPage === 'payment-success' ||
-        currentPage === 'payment-cancelled') && (
+        currentPage === 'payment-cancelled' ||
+        (currentPage === 'affiliate' && !user)) && (
           <Suspense fallback={pageFallback}>
             <>
               {currentPage === 'landing' && (
@@ -734,6 +736,14 @@ function AppContent() {
                   onGoHome={() => go('landing')}
                 />
               )}
+
+              {currentPage === 'affiliate' && !user && (
+                <AffiliatePage
+                  onNavigate={(page) => go(page as PageType)}
+                  onSignIn={() => go('login')}
+                  onGetStarted={() => go('register')}
+                />
+              )}
             </>
           </Suspense>
         )}
@@ -747,7 +757,8 @@ function AppContent() {
         currentPage !== 'auth-processing' &&
         currentPage !== 'payment-verification' &&
         currentPage !== 'payment-success' &&
-        currentPage !== 'payment-cancelled' && (
+        currentPage !== 'payment-cancelled' &&
+        (currentPage !== 'affiliate' || !!user) && (
           <div className="flex min-h-screen" style={{ background: 'var(--background-gradient)' }}>
             {/* Sidebar */}
             <Sidebar
