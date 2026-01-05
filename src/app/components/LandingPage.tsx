@@ -1,4 +1,4 @@
-import { useState, useRef, useMemo } from 'react';
+import { useState, useRef, useMemo, useEffect } from 'react';
 import {
   ArrowRight,
   Sparkles,
@@ -49,6 +49,20 @@ interface LandingPageProps {
 
 export function LandingPage({ onGetStarted, onLogin }: LandingPageProps) {
   const heroRef = useRef<HTMLElement>(null);
+
+  // Scroll Reveal Logic
+  useEffect(() => {
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('animate-in-view');
+        }
+      });
+    }, { threshold: 0.1 });
+
+    document.querySelectorAll('.reveal-on-scroll').forEach(el => observer.observe(el));
+    return () => observer.disconnect();
+  }, []);
 
   // Generate stable particle positions once
   const particles = useMemo(() => {
@@ -314,9 +328,6 @@ export function LandingPage({ onGetStarted, onLogin }: LandingPageProps) {
     </div>
 
       {/* ============================================
-          8-STUFEN KI-PIPELINE (MOBIL-OPTIMIERT)
-          ============================================ */}
-  {/* ============================================
           8-STUFEN KI-PIPELINE (DEEP RUBY GRID)
           ============================================ */}
   <section className="py-24 sm:py-32 bg-black relative overflow-hidden">
@@ -1035,15 +1046,21 @@ export function LandingPage({ onGetStarted, onLogin }: LandingPageProps) {
           transform: rotateY(2deg) rotateX(-1deg) scale(1.02);
         }
 
-        /* Accessibility: Reduce motion */
-        @media (prefers-reduced-motion: reduce) {
-          .animate-float, .animate-pulse-slow, .animate-pulse-slower, 
-          .animate-pulse-slowest, .animate-glow, .animate-shimmer, .animate-pulse-glow {
-            animation: none;
-          }
           .tilt-card:hover {
             transform: scale(1.02);
           }
+        }
+        
+        /* Scroll Reveal Animation */
+        .reveal-on-scroll {
+          opacity: 0;
+          transform: translateY(30px);
+          transition: all 0.8s cubic-bezier(0.2, 0.8, 0.2, 1);
+        }
+        
+        .animate-in-view {
+          opacity: 1;
+          transform: translateY(0);
         }
       `}</style>
     </div >
