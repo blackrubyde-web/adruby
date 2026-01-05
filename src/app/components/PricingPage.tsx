@@ -1,12 +1,10 @@
 import { useState, useRef } from 'react';
 import {
   Check,
-  Zap,
   Rocket,
   Crown,
-  Info,
   Building2,
-  ShieldCheck
+  ChevronDown
 } from 'lucide-react';
 import { GlobalNav } from './landing/GlobalNav';
 import { MobileStickyCTA } from './landing/MobileStickyCTA';

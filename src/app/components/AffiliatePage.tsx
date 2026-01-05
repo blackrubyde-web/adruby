@@ -6,26 +6,18 @@ import {
   TrendingUp,
   Users,
   DollarSign,
-  Repeat,
   Check,
-  Share2,
   Sparkles,
-  Trophy,
-  Award,
-  MessageSquare,
   Loader2,
   Lock,
   Wallet,
-  ExternalLink,
-  Zap,
   Rocket
 } from 'lucide-react';
 import { toast } from 'sonner';
-import { PageShell, HeroHeader, Card, Chip } from './layout';
+import { PageShell, Card } from './layout';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { useAffiliate } from '../contexts/AffiliateContext';
 import { supabase } from '../lib/supabaseClient';
-import { ServiceMarketplace } from './affiliate/ServiceMarketplace';
 import { AchievementsPanel } from './affiliate/AchievementsPanel';
 import { ReferralDetailsModal } from './affiliate/ReferralDetailsModal';
 
