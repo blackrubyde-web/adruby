@@ -1,14 +1,7 @@
 import { useState, useRef } from 'react';
 import {
   Zap,
-  Layout,
-  BarChart,
-  Grid,
-  CheckCircle,
-  Megaphone,
-  Box,
   Palette,
-  Image as ImageIcon,
   Layers,
   BarChart3,
   Brain,

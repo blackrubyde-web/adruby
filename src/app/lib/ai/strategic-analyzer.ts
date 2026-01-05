@@ -194,11 +194,10 @@ JSON Only. No markdown.
     }
 }
 
-type LooseProfile = Partial<StrategicProfile> & { designSystem?: any };
-
+// Use strict typing for input validation
 function normalizeProfile(input: unknown): StrategicProfile {
-    // Cast to any first to allow safe checks, treating input as untrusted
-    const raw = input as any;
+    // Treat input as untrusted record first
+    const raw = input as Record<string, any>;
 
     // Safety helpers
     const isValidCategory = (v: any): v is StrategicProfile['productCategory'] => PRODUCT_CATEGORIES.includes(v);
