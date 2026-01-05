@@ -197,18 +197,27 @@ JSON Only. No markdown.
 type LooseProfile = Partial<StrategicProfile> & { designSystem?: any };
 
 function normalizeProfile(input: unknown): StrategicProfile {
-    const raw = input as LooseProfile;
+    // Cast to any first to allow safe checks, treating input as untrusted
+    const raw = input as any;
+
+    // Safety helpers
+    const isValidCategory = (v: any): v is StrategicProfile['productCategory'] => PRODUCT_CATEGORIES.includes(v);
+    const isValidEmotion = (v: any): v is StrategicProfile['desiredEmotion'] => EMOTIONS.includes(v);
+    const isValidGoal = (v: any): v is StrategicProfile['conversionGoal'] => CONVERSION_GOALS.includes(v);
+    const isValidHook = (v: any): v is StrategicProfile['hookType'] => HOOK_TYPES.includes(v);
+    const isValidVibe = (v: any): v is StrategicProfile['designSystem']['vibe'] => VIBES.includes(v);
+
     return {
-        productCategory: PRODUCT_CATEGORIES.includes(raw?.productCategory) ? raw.productCategory : FALLBACK_PROFILE.productCategory,
+        productCategory: isValidCategory(raw?.productCategory) ? raw.productCategory : FALLBACK_PROFILE.productCategory,
         targetAudience: raw?.targetAudience || FALLBACK_PROFILE.targetAudience,
         primaryPainPoint: raw?.primaryPainPoint || FALLBACK_PROFILE.primaryPainPoint,
-        desiredEmotion: EMOTIONS.includes(raw?.desiredEmotion) ? raw.desiredEmotion : FALLBACK_PROFILE.desiredEmotion,
-        conversionGoal: CONVERSION_GOALS.includes(raw?.conversionGoal) ? raw.conversionGoal : FALLBACK_PROFILE.conversionGoal,
+        desiredEmotion: isValidEmotion(raw?.desiredEmotion) ? raw.desiredEmotion : FALLBACK_PROFILE.desiredEmotion,
+        conversionGoal: isValidGoal(raw?.conversionGoal) ? raw.conversionGoal : FALLBACK_PROFILE.conversionGoal,
         angle: raw?.angle || FALLBACK_PROFILE.angle,
-        hookType: HOOK_TYPES.includes(raw?.hookType) ? raw.hookType : FALLBACK_PROFILE.hookType,
+        hookType: isValidHook(raw?.hookType) ? raw.hookType : FALLBACK_PROFILE.hookType,
         recommendedTemplate: raw?.recommendedTemplate || FALLBACK_PROFILE.recommendedTemplate,
         designSystem: {
-            vibe: VIBES.includes(raw?.designSystem?.vibe) ? raw.designSystem.vibe : FALLBACK_PROFILE.designSystem.vibe,
+            vibe: isValidVibe(raw?.designSystem?.vibe) ? raw.designSystem.vibe : FALLBACK_PROFILE.designSystem.vibe,
             colorPalette: {
                 primary: raw?.designSystem?.colorPalette?.primary || FALLBACK_PROFILE.designSystem.colorPalette.primary,
                 secondary: raw?.designSystem?.colorPalette?.secondary || FALLBACK_PROFILE.designSystem.colorPalette.secondary,

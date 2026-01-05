@@ -598,7 +598,7 @@ function createPatternLayers(
 // ========== PATTERN LAYER GENERATORS ==========
 // Each function creates optimized layout for specific pattern
 
-function createUGCTestimonialLayers(_params: any, psych: PsychologyProfile): StudioLayer[] {
+function createUGCTestimonialLayers(_params: any, _psych: PsychologyProfile): StudioLayer[] {
     return [
         // User photo/avatar (top-left, builds trust)
         {
@@ -684,7 +684,7 @@ function createUGCTestimonialLayers(_params: any, psych: PsychologyProfile): Stu
     ];
 }
 
-function createHookPASLayers(params: any, psych: PsychologyProfile): StudioLayer[] {
+function createHookPASLayers(_params: any, _psych: PsychologyProfile): StudioLayer[] {
     return [
         // Hook headline (Z-pattern: top)
         {
@@ -753,7 +753,7 @@ function createHookPASLayers(params: any, psych: PsychologyProfile): StudioLayer
     ];
 }
 
-function createBeforeAfterLayers(params: any, psych: PsychologyProfile): StudioLayer[] {
+function createBeforeAfterLayers(_params: any, _psych: PsychologyProfile): StudioLayer[] {
     return [
         // "Before/After" label
         {
@@ -868,7 +868,7 @@ function createBeforeAfterLayers(params: any, psych: PsychologyProfile): StudioL
     ];
 }
 
-function createFeatureGridLayers(params: any, psych: PsychologyProfile): StudioLayer[] {
+function createFeatureGridLayers(_params: any, _psych: PsychologyProfile): StudioLayer[] {
     return [
         // Main headline
         {
@@ -985,7 +985,7 @@ function createFeatureGridLayers(params: any, psych: PsychologyProfile): StudioL
     ];
 }
 
-function createSocialProofMaxLayers(params: any, psych: PsychologyProfile): StudioLayer[] {
+function createSocialProofMaxLayers(_params: any, _psych: PsychologyProfile): StudioLayer[] {
     return [
         // Big stat (trust builder)
         {
@@ -1079,7 +1079,7 @@ function createSocialProofMaxLayers(params: any, psych: PsychologyProfile): Stud
     ];
 }
 
-function createScarcityFOMOLayers(params: any, psych: PsychologyProfile): StudioLayer[] {
+function createScarcityFOMOLayers(_params: any, _psych: PsychologyProfile): StudioLayer[] {
     return [
         // Urgency headline
         {
@@ -1149,7 +1149,7 @@ function createScarcityFOMOLayers(params: any, psych: PsychologyProfile): Studio
 }
 
 // Simpler implementations for remaining patterns...
-function createQuestionHookLayers(params: any, psych: PsychologyProfile): StudioLayer[] {
+function createQuestionHookLayers(_params: any, _psych: PsychologyProfile): StudioLayer[] {
     return [
         {
             id: 'question',
@@ -1196,7 +1196,7 @@ function createQuestionHookLayers(params: any, psych: PsychologyProfile): Studio
     ];
 }
 
-function createBoldStatementLayers(params: any, psych: PsychologyProfile): StudioLayer[] {
+function createBoldStatementLayers(_params: any, _psych: PsychologyProfile): StudioLayer[] {
     return [
         {
             id: 'bold_headline',
@@ -1243,7 +1243,7 @@ function createBoldStatementLayers(params: any, psych: PsychologyProfile): Studi
     ];
 }
 
-function createBenefitStackLayers(params: any, psych: PsychologyProfile): StudioLayer[] {
+function createBenefitStackLayers(_params: any, _psych: PsychologyProfile): StudioLayer[] {
     const benefits = [
         '✓ Save 3 Hours Every Day',
         '✓ Increase Productivity 10x',
@@ -1278,7 +1278,7 @@ function createPainPointLayers(params: any, psych: PsychologyProfile): StudioLay
     return createHookPASLayers(params, psych); // Similar pattern
 }
 
-function createDreamOutcomeLayers(params: any, psych: PsychologyProfile): StudioLayer[] {
+function createDreamOutcomeLayers(_params: any, _psych: PsychologyProfile): StudioLayer[] {
     return [
         {
             id: 'dream_visual',
@@ -1325,7 +1325,7 @@ function createDreamOutcomeLayers(params: any, psych: PsychologyProfile): Studio
     ];
 }
 
-function createAuthorityProofLayers(params: any, psych: PsychologyProfile): StudioLayer[] {
+function createAuthorityProofLayers(_params: any, _psych: PsychologyProfile): StudioLayer[] {
     return [
         {
             id: 'authority_badge',
@@ -1397,7 +1397,7 @@ function createAuthorityProofLayers(params: any, psych: PsychologyProfile): Stud
 /**
  * Create micro-component layers (badges, timers, etc.)
  */
-function createMicroComponentLayers(components: MicroComponent[], params: any): StudioLayer[] {
+function createMicroComponentLayers(components: MicroComponent[], _params: any): StudioLayer[] {
     const layers: StudioLayer[] = [];
 
     components.forEach(comp => {
@@ -1513,7 +1513,7 @@ function createMicroComponentLayer(
 /**
  * Create CTA layer with conversion optimization
  */
-function createCTALayer(params: any, psych: PsychologyProfile, industryConfig: any): CtaLayer {
+function createCTALayer(params: any, psych: PsychologyProfile, _industryConfig: any): CtaLayer {
     const ctaTexts: Record<ConversionGoal, string> = {
         sales: 'BUY NOW',
         leads: 'GET FREE GUIDE',
