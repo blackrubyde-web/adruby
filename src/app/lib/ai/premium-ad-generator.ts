@@ -198,7 +198,7 @@ export async function generatePremiumAd(
             }
         });
 
-        console.log('✅ Premium ad pipeline complete!');
+        // console.log('✅ Premium ad pipeline complete!');
 
         return {
             adDocument,

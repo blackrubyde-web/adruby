@@ -1,4 +1,13 @@
-import type { AdDocument } from '../../types/studio';
+import type { AdDocument, StudioLayer } from '../../types/studio';
+
+type InspectableLayer = StudioLayer & {
+    text?: string;
+    fontSize?: number;
+    fontFamily?: string;
+    color?: string;
+    fill?: string;
+    bgColor?: string;
+};
 
 /**
  * QUALITY SCORER V2
@@ -147,7 +156,7 @@ function scoreCopyClarity(ad: AdDocument): number {
     }
 
     textLayers.forEach(layer => {
-        const text = (layer as any).text || '';
+        const text = (layer as InspectableLayer).text || '';
 
         // Check headline length
         if (layer.role === 'headline') {
@@ -167,7 +176,7 @@ function scoreCopyClarity(ad: AdDocument): number {
         }
 
         // Check font size readability
-        const fontSize = (layer as any).fontSize || 16;
+        const fontSize = (layer as InspectableLayer).fontSize || 16;
         if (fontSize < 14 && text.length > 50) {
             score -= 8;
             issues.push('Small font with long text - readability issue');
@@ -176,7 +185,7 @@ function scoreCopyClarity(ad: AdDocument): number {
 
     // Check for description/body copy
     const hasDescription = textLayers.some(l =>
-        l.role === 'description' || ((l as any).text || '').length > 50
+        l.role === 'description' || ((l as InspectableLayer).text || '').length > 50
     );
     if (!hasDescription) {
         score -= 5;
@@ -198,7 +207,7 @@ function scoreBrandConsistency(ad: AdDocument, brandColor?: string): number {
 
     // Check if brand color is used in any layer
     const layersWithColor = ad.layers.filter(l => {
-        const color = (l as any).color || (l as any).fill || (l as any).bgColor;
+        const color = (l as InspectableLayer).color || (l as InspectableLayer).fill || (l as InspectableLayer).bgColor;
         return color && colorsAreSimilar(color, brandColor);
     });
 
@@ -212,7 +221,7 @@ function scoreBrandConsistency(ad: AdDocument, brandColor?: string): number {
     const fontFamilies = new Set<string>();
     ad.layers.forEach(l => {
         if ('fontFamily' in l) {
-            fontFamilies.add((l as any).fontFamily);
+            fontFamilies.add((l as InspectableLayer).fontFamily!);
         }
     });
 
@@ -235,7 +244,7 @@ function scoreConversionPotential(ad: AdDocument): number {
         score += 15; // Has CTA
 
         // Check CTA text
-        const ctaText = (ctaLayers[0] as any).text || '';
+        const ctaText = (ctaLayers[0] as InspectableLayer).text || '';
         const strongVerbs = ['get', 'start', 'join', 'claim', 'unlock', 'discover', 'try'];
         if (strongVerbs.some(verb => ctaText.toLowerCase().includes(verb))) {
             score += 10; // Strong action verb
@@ -247,7 +256,7 @@ function scoreConversionPotential(ad: AdDocument): number {
     // Check for urgency signals
     const allText = ad.layers
         .filter(l => 'text' in l)
-        .map(l => ((l as any).text || '').toLowerCase())
+        .map(l => ((l as InspectableLayer).text || '').toLowerCase())
         .join(' ');
 
     const urgencyWords = ['now', 'today', 'limited', 'ending', 'last chance', 'hurry'];
@@ -289,7 +298,7 @@ function scorePlatformOptimization(
     // Check text size
     const textLayers = ad.layers.filter(l => 'fontSize' in l);
     const tooSmallText = textLayers.filter(l =>
-        ((l as any).fontSize || 16) < spec.minTextSize
+        ((l as InspectableLayer).fontSize || 16) < spec.minTextSize
     );
     if (tooSmallText.length > 0) {
         score -= 10; // Text too small for platform
