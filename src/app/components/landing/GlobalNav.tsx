@@ -6,9 +6,10 @@ interface GlobalNavProps {
   onNavigate: (page: string) => void;
   onSignIn: () => void;
   onGetStarted: () => void;
+  onMobileMenuChange?: (isOpen: boolean) => void;
 }
 
-export function GlobalNav({ currentPage = 'home', onNavigate, onSignIn, onGetStarted }: GlobalNavProps) {
+export function GlobalNav({ currentPage = 'home', onNavigate, onSignIn, onGetStarted, onMobileMenuChange }: GlobalNavProps) {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
@@ -19,6 +20,14 @@ export function GlobalNav({ currentPage = 'home', onNavigate, onSignIn, onGetSta
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
+
+  const handleMobileMenuToggle = (next?: boolean) => {
+    setIsMobileMenuOpen((prev) => {
+      const newState = typeof next === 'boolean' ? next : !prev;
+      onMobileMenuChange?.(newState);
+      return newState;
+    });
+  };
 
   const navItems = [
     { id: 'home', label: 'Home' },
@@ -86,8 +95,8 @@ export function GlobalNav({ currentPage = 'home', onNavigate, onSignIn, onGetSta
 
             {/* Mobile Menu Button */}
             <button
-              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-              className="md:hidden p-2 hover:bg-muted/50 rounded-lg transition-colors"
+              onClick={() => handleMobileMenuToggle()}
+              className="md:hidden p-2 hover:bg-muted/50 rounded-lg transition-colors mr-1"
               aria-label="Toggle navigation menu"
               aria-expanded={isMobileMenuOpen}
               aria-controls="mobile-menu"
@@ -104,14 +113,14 @@ export function GlobalNav({ currentPage = 'home', onNavigate, onSignIn, onGetSta
           }`}
       >
 
-        <div className="flex flex-col h-full pt-24 pb-12 px-6">
+        <div className="flex flex-col h-full pt-24 pb-12 px-6 pr-8">
           <div className="flex-1 flex flex-col justify-center space-y-8">
             {navItems.map((item, i) => (
               <button
                 key={item.id}
                 onClick={() => {
                   onNavigate(item.id);
-                  setIsMobileMenuOpen(false);
+                  handleMobileMenuToggle(false);
                 }}
                 className={`text-4xl font-black tracking-tighter text-white text-left transition-all duration-500 ${isMobileMenuOpen
                     ? 'translate-y-0 opacity-100'
@@ -130,7 +139,7 @@ export function GlobalNav({ currentPage = 'home', onNavigate, onSignIn, onGetSta
             <button
               onClick={() => {
                 onSignIn();
-                setIsMobileMenuOpen(false);
+                handleMobileMenuToggle(false);
               }}
               className="w-full py-4 text-center text-white/60 font-medium hover:text-white transition-colors"
             >
@@ -140,7 +149,7 @@ export function GlobalNav({ currentPage = 'home', onNavigate, onSignIn, onGetSta
             <button
               onClick={() => {
                 onGetStarted();
-                setIsMobileMenuOpen(false);
+                handleMobileMenuToggle(false);
               }}
               className="w-full py-5 bg-[#FF1F1F] text-white font-bold rounded-2xl shadow-[0_0_30px_rgba(255,31,31,0.4)]"
             >

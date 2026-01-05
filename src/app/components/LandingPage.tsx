@@ -47,6 +47,7 @@ interface LandingPageProps {
 
 export function LandingPage({ onGetStarted, onLogin }: LandingPageProps) {
   const heroRef = useRef<HTMLElement>(null);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   // Scroll Reveal Logic
   useEffect(() => {
@@ -261,9 +262,10 @@ export function LandingPage({ onGetStarted, onLogin }: LandingPageProps) {
         onNavigate={() => { }}
         onSignIn={onLogin}
         onGetStarted={onGetStarted}
+        onMobileMenuChange={setIsMobileMenuOpen}
       />
 
-      <MobileStickyCTA onGetStarted={onGetStarted} showAfterRef={heroRef} />
+      <MobileStickyCTA onGetStarted={onGetStarted} showAfterRef={heroRef} isHidden={isMobileMenuOpen} />
 
       {/* ============================================
           HERO - MOBILE-FIRST META ADS OPTIMIERT

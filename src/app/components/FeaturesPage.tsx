@@ -25,6 +25,7 @@ interface FeaturesPageProps {
 
 export function FeaturesPage({ onNavigate, onSignIn, onGetStarted }: FeaturesPageProps) {
   const [activeTab, setActiveTab] = useState<'studio' | 'canvas' | 'analytics'>('studio');
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const heroRef = useRef<HTMLElement>(null);
 
   const tabs = [
@@ -35,8 +36,14 @@ export function FeaturesPage({ onNavigate, onSignIn, onGetStarted }: FeaturesPag
 
   return (
     <div className="min-h-screen w-full bg-background overflow-hidden relative">
-      <GlobalNav currentPage="features" onNavigate={onNavigate} onSignIn={onSignIn} onGetStarted={onGetStarted} />
-      <MobileStickyCTA onGetStarted={onGetStarted} showAfterRef={heroRef} />
+      <GlobalNav
+        currentPage="features"
+        onNavigate={onNavigate}
+        onSignIn={onSignIn}
+        onGetStarted={onGetStarted}
+        onMobileMenuChange={setIsMobileMenuOpen}
+      />
+      <MobileStickyCTA onGetStarted={onGetStarted} showAfterRef={heroRef} isHidden={isMobileMenuOpen} />
 
       {/* Background Ambience */}
       <div className="absolute inset-0 pointer-events-none">

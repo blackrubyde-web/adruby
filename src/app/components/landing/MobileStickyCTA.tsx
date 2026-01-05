@@ -4,9 +4,10 @@ import { ArrowRight, Sparkles } from 'lucide-react';
 interface MobileStickyCTAProps {
     onGetStarted: () => void;
     showAfterRef?: React.RefObject<HTMLElement>;
+    isHidden?: boolean;
 }
 
-export function MobileStickyCTA({ onGetStarted, showAfterRef }: MobileStickyCTAProps) {
+export function MobileStickyCTA({ onGetStarted, showAfterRef, isHidden }: MobileStickyCTAProps) {
     const [isVisible, setIsVisible] = useState(false);
 
     useEffect(() => {
@@ -31,7 +32,7 @@ export function MobileStickyCTA({ onGetStarted, showAfterRef }: MobileStickyCTAP
         return () => window.removeEventListener('scroll', handleScroll);
     }, [showAfterRef]);
 
-    if (!isVisible) return null;
+    if (!isVisible || isHidden) return null;
 
     return (
         <div className="fixed bottom-6 left-1/2 -translate-x-1/2 w-[92%] max-w-[400px] z-50 md:hidden animate-in slide-in-from-bottom-full duration-500 ease-out">

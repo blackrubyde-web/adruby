@@ -27,6 +27,7 @@ export function PricingPage({ onNavigate, onSignIn, onGetStarted }: PricingPageP
   const [billingCycle, setBillingCycle] = useState<'monthly' | 'yearly'>('monthly');
   const [openFaqIndex, setOpenFaqIndex] = useState<number | null>(null);
   const [calculatorAds, setCalculatorAds] = useState(20);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const heroRef = useRef<HTMLElement>(null);
 
   const calculateCredits = (ads: number) => {
@@ -124,8 +125,14 @@ export function PricingPage({ onNavigate, onSignIn, onGetStarted }: PricingPageP
 
   return (
     <div className="min-h-screen w-full bg-background overflow-hidden relative font-sans text-foreground">
-      <GlobalNav currentPage="pricing" onNavigate={onNavigate} onSignIn={onSignIn} onGetStarted={onGetStarted} />
-      <MobileStickyCTA onGetStarted={onGetStarted} showAfterRef={heroRef} />
+      <GlobalNav
+        currentPage="pricing"
+        onNavigate={onNavigate}
+        onSignIn={onSignIn}
+        onGetStarted={onGetStarted}
+        onMobileMenuChange={setIsMobileMenuOpen}
+      />
+      <MobileStickyCTA onGetStarted={onGetStarted} showAfterRef={heroRef} isHidden={isMobileMenuOpen} />
 
       {/* Background Ambience */}
       <div className="absolute inset-0 pointer-events-none">
