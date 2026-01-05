@@ -392,633 +392,632 @@ export function LandingPage({ onGetStarted, onLogin }: LandingPageProps) {
 
       </div>
 
-    </div>
 
       {/* ============================================
           8-STUFEN KI-PIPELINE (DEEP RUBY GRID)
           ============================================ */}
-  <section className="py-24 sm:py-32 bg-black relative overflow-hidden">
-    {/* Ambient Glow */}
-    <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-[#FF1F1F]/5 blur-[120px] rounded-full pointer-events-none" />
+      <section className="py-24 sm:py-32 bg-black relative overflow-hidden">
+        {/* Ambient Glow */}
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-[#FF1F1F]/5 blur-[120px] rounded-full pointer-events-none" />
 
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 relative z-10">
-      <div className="text-center mb-16 sm:mb-24 animate-fade-in-up">
-        <h2 className="text-4xl sm:text-5xl md:text-6xl font-black text-white mb-6 tracking-tight">
-          KI die <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#FF1F1F] to-rose-600">versteht</span>, <br className="hidden sm:block" />
-          nicht nur generiert.
-        </h2>
-        <p className="text-lg sm:text-xl text-white/50 max-w-2xl mx-auto font-medium">
-          Vom weißen Blatt zur perfekten Ad in 8 Schritten.
-        </p>
-      </div>
-
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 sm:gap-6">
-        {[
-          { id: 1, title: 'Strategie', desc: 'Deep-Dive Analyse', icon: Target, color: 'from-blue-500 to-cyan-500' },
-          { id: 2, title: 'Tokens', desc: 'Brand DNA Extrakt', icon: BarChart3, color: 'from-indigo-500 to-purple-500' },
-          { id: 3, title: 'Hooks', desc: 'Psychologie-Layer', icon: Brain, color: 'from-purple-500 to-pink-500' },
-          { id: 4, title: 'Cutout', desc: 'WASM Freisteller', icon: Eye, color: 'from-pink-500 to-rose-500' },
-          { id: 5, title: 'Szene', desc: 'KI-Komposition', icon: Sparkles, color: 'from-yellow-500 to-orange-500' },
-          { id: 6, title: 'Varianten', desc: 'Stil-Mutationen', icon: Zap, color: 'from-green-500 to-emerald-500' },
-          { id: 7, title: 'Prognose', desc: 'RoAS Vorhersage', icon: LineChart, color: 'from-teal-500 to-cyan-500' },
-          { id: 8, title: 'Export', desc: 'Meta API Push', icon: Rocket, color: 'from-[#C80000] to-rose-600' }
-        ].map((step, i) => (
-          <div
-            key={step.id}
-            onMouseMove={handleMouseMove}
-            className="group relative bg-white/5 border border-white/10 rounded-3xl p-6 sm:p-8 hover:bg-white/10 transition-all duration-500 overflow-hidden text-left"
-          >
-            {/* Spotlight Effect */}
-            <div
-              className="pointer-events-none absolute -inset-px rounded-3xl opacity-0 transition duration-300 group-hover:opacity-100"
-              style={{
-                background: `radial-gradient(600px circle at var(--mouse-x) var(--mouse-y), rgba(255, 31, 31, 0.15), transparent 40%)`
-              }}
-            />
-
-            {/* Hover Glow */}
-            <div className={`absolute inset-0 bg-gradient-to-br ${step.color} opacity-0 group-hover:opacity-5 transition-opacity duration-500`} />
-
-            <div className={`w-12 h-12 rounded-2xl bg-gradient-to-br ${step.color} flex items-center justify-center mb-6 shadow-xl group-hover:scale-110 transition-transform duration-500 relative z-10`}>
-              <step.icon className="w-6 h-6 text-white" />
-            </div>
-
-            <div className="relative z-10">
-              <div className="text-white/20 text-xs font-bold uppercase tracking-widest mb-2">Step 0{step.id}</div>
-              <h3 className="text-xl font-bold text-white mb-1 group-hover:translate-x-1 transition-transform">{step.title}</h3>
-              <p className="text-sm text-white/50">{step.desc}</p>
-            </div>
-          </div>
-        ))}
-      </div>
-    </div>
-  </section>
-
-  {/* ============================================
-          AD CREATIVE GALLERY - Hidden
-          ============================================ */}
-  <section className={tokens.sectionSpacing + " hidden"}>
-    <div className={tokens.marketingContainer}>
-      <SectionHeader
-        title="AI-generated ad creatives"
-        subtitle="Real ads created by AdRuby in seconds"
-      />
-
-      {/* Industry Tabs */}
-      <div className="flex justify-center mb-12">
-        <Tabs
-          tabs={['E-commerce', 'Coaching', 'SaaS', 'Local']}
-          activeTab={selectedIndustry}
-          onTabChange={(tab) => {
-            setSelectedIndustry(tab);
-            setCurrentAdIndex(0);
-          }}
-        />
-      </div>
-
-      {/* Ad Preview - Desktop Only */}
-      <div className="hidden md:block max-w-sm mx-auto relative">
-        {/* Navigation Arrows */}
-        {currentAds.length > 1 && (
-          <>
-            <button
-              onClick={() => setCurrentAdIndex((prev) => (prev - 1 + currentAds.length) % currentAds.length)}
-              className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-12 w-9 h-9 bg-card border border-border/60 rounded-full flex items-center justify-center hover:bg-muted transition-colors z-10 hidden lg:flex"
-            >
-              <ChevronLeft className="w-4 h-4" />
-            </button>
-            <button
-              onClick={() => setCurrentAdIndex((prev) => (prev + 1) % currentAds.length)}
-              className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-12 w-9 h-9 bg-card border border-border/60 rounded-full flex items-center justify-center hover:bg-muted transition-colors z-10 hidden lg:flex"
-            >
-              <ChevronRight className="w-4 h-4" />
-            </button>
-          </>
-        )}
-
-        <div className={tokens.card + " overflow-hidden"}>
-          {/* Ad Header */}
-          <div className="p-3 flex items-center gap-2.5 border-b border-border/60">
-            <div className="w-9 h-9 rounded-full bg-gradient-to-br from-primary to-purple-600 flex items-center justify-center flex-shrink-0">
-              <Sparkles className="w-4 h-4 text-white" />
-            </div>
-            <div className="flex-1 min-w-0">
-              <p className="font-semibold text-sm truncate">AdRuby AI</p>
-              <p className="text-xs text-muted-foreground">Sponsored</p>
-            </div>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 relative z-10">
+          <div className="text-center mb-16 sm:mb-24 animate-fade-in-up">
+            <h2 className="text-4xl sm:text-5xl md:text-6xl font-black text-white mb-6 tracking-tight">
+              KI die <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#FF1F1F] to-rose-600">versteht</span>, <br className="hidden sm:block" />
+              nicht nur generiert.
+            </h2>
+            <p className="text-lg sm:text-xl text-white/50 max-w-2xl mx-auto font-medium">
+              Vom weißen Blatt zur perfekten Ad in 8 Schritten.
+            </p>
           </div>
 
-          {/* Ad Body Text */}
-          <div className="p-3">
-            <p className="text-sm leading-relaxed">{currentAd.primaryText}</p>
-          </div>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 sm:gap-6">
+            {[
+              { id: 1, title: 'Strategie', desc: 'Deep-Dive Analyse', icon: Target, color: 'from-blue-500 to-cyan-500' },
+              { id: 2, title: 'Tokens', desc: 'Brand DNA Extrakt', icon: BarChart3, color: 'from-indigo-500 to-purple-500' },
+              { id: 3, title: 'Hooks', desc: 'Psychologie-Layer', icon: Brain, color: 'from-purple-500 to-pink-500' },
+              { id: 4, title: 'Cutout', desc: 'WASM Freisteller', icon: Eye, color: 'from-pink-500 to-rose-500' },
+              { id: 5, title: 'Szene', desc: 'KI-Komposition', icon: Sparkles, color: 'from-yellow-500 to-orange-500' },
+              { id: 6, title: 'Varianten', desc: 'Stil-Mutationen', icon: Zap, color: 'from-green-500 to-emerald-500' },
+              { id: 7, title: 'Prognose', desc: 'RoAS Vorhersage', icon: LineChart, color: 'from-teal-500 to-cyan-500' },
+              { id: 8, title: 'Export', desc: 'Meta API Push', icon: Rocket, color: 'from-[#C80000] to-rose-600' }
+            ].map((step, i) => (
+              <div
+                key={step.id}
+                onMouseMove={handleMouseMove}
+                className="group relative bg-white/5 border border-white/10 rounded-3xl p-6 sm:p-8 hover:bg-white/10 transition-all duration-500 overflow-hidden text-left"
+              >
+                {/* Spotlight Effect */}
+                <div
+                  className="pointer-events-none absolute -inset-px rounded-3xl opacity-0 transition duration-300 group-hover:opacity-100"
+                  style={{
+                    background: `radial-gradient(600px circle at var(--mouse-x) var(--mouse-y), rgba(255, 31, 31, 0.15), transparent 40%)`
+                  }}
+                />
 
-          {/* Ad Image - Realistic Facebook aspect ratio */}
-          <div className="relative w-full" style={{ paddingBottom: '100%' }}>
-            <ImageWithFallback
-              src={currentAd.image}
-              alt={`${selectedIndustry} ad example`}
-              className="absolute inset-0 w-full h-full object-cover"
-            />
-            <div className="absolute top-2 right-2 px-2 py-1 bg-black/80 text-white rounded text-[10px] font-bold">
-              AI Generated
-            </div>
-          </div>
+                {/* Hover Glow */}
+                <div className={`absolute inset-0 bg-gradient-to-br ${step.color} opacity-0 group-hover:opacity-5 transition-opacity duration-500`} />
 
-          {/* Ad Footer */}
-          <div className="p-3 border-t border-border/60">
-            <h3 className="font-bold text-sm mb-2">{currentAd.headline}</h3>
-            <button className="w-full py-2 bg-primary text-white rounded-lg text-sm font-semibold hover:bg-primary/90 transition-all">
-              {currentAd.cta}
-            </button>
-          </div>
+                <div className={`w-12 h-12 rounded-2xl bg-gradient-to-br ${step.color} flex items-center justify-center mb-6 shadow-xl group-hover:scale-110 transition-transform duration-500 relative z-10`}>
+                  <step.icon className="w-6 h-6 text-white" />
+                </div>
 
-          {/* Performance Prediction - Kompakter */}
-          <div className="p-3 bg-gradient-to-br from-green-500/10 to-emerald-500/10 border-t border-green-500/20">
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-[10px] font-bold text-green-600 uppercase tracking-wide">
-                AI Prediction
-              </span>
-              <span className="text-[10px] font-semibold text-green-600">{currentAd.confidence}% confidence</span>
-            </div>
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <p className="text-[10px] text-muted-foreground mb-0.5">Expected CTR</p>
-                <p className="text-lg font-bold text-green-600">{currentAd.ctr}</p>
+                <div className="relative z-10">
+                  <div className="text-white/20 text-xs font-bold uppercase tracking-widest mb-2">Step 0{step.id}</div>
+                  <h3 className="text-xl font-bold text-white mb-1 group-hover:translate-x-1 transition-transform">{step.title}</h3>
+                  <p className="text-sm text-white/50">{step.desc}</p>
+                </div>
               </div>
-              <div>
-                <p className="text-[10px] text-muted-foreground mb-0.5">Expected ROAS</p>
-                <p className="text-lg font-bold text-green-600">{currentAd.roas}</p>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Pagination Dots */}
-        {currentAds.length > 1 && (
-          <div className="flex items-center justify-center gap-2 mt-5">
-            {currentAds.map((_, index) => (
-              <button
-                key={index}
-                onClick={() => setCurrentAdIndex(index)}
-                className={`h-1.5 rounded-full transition-all ${index === currentAdIndex ? 'w-6 bg-primary' : 'w-1.5 bg-border hover:bg-primary/50'
-                  }`}
-              />
             ))}
           </div>
-        )}
-      </div>
-    </div>
-  </section >
+        </div>
+      </section>
 
-  {/* ============================================
+      {/* ============================================
+          AD CREATIVE GALLERY - Hidden
+          ============================================ */}
+      <section className={tokens.sectionSpacing + " hidden"}>
+        <div className={tokens.marketingContainer}>
+          <SectionHeader
+            title="AI-generated ad creatives"
+            subtitle="Real ads created by AdRuby in seconds"
+          />
+
+          {/* Industry Tabs */}
+          <div className="flex justify-center mb-12">
+            <Tabs
+              tabs={['E-commerce', 'Coaching', 'SaaS', 'Local']}
+              activeTab={selectedIndustry}
+              onTabChange={(tab) => {
+                setSelectedIndustry(tab);
+                setCurrentAdIndex(0);
+              }}
+            />
+          </div>
+
+          {/* Ad Preview - Desktop Only */}
+          <div className="hidden md:block max-w-sm mx-auto relative">
+            {/* Navigation Arrows */}
+            {currentAds.length > 1 && (
+              <>
+                <button
+                  onClick={() => setCurrentAdIndex((prev) => (prev - 1 + currentAds.length) % currentAds.length)}
+                  className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-12 w-9 h-9 bg-card border border-border/60 rounded-full flex items-center justify-center hover:bg-muted transition-colors z-10 hidden lg:flex"
+                >
+                  <ChevronLeft className="w-4 h-4" />
+                </button>
+                <button
+                  onClick={() => setCurrentAdIndex((prev) => (prev + 1) % currentAds.length)}
+                  className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-12 w-9 h-9 bg-card border border-border/60 rounded-full flex items-center justify-center hover:bg-muted transition-colors z-10 hidden lg:flex"
+                >
+                  <ChevronRight className="w-4 h-4" />
+                </button>
+              </>
+            )}
+
+            <div className={tokens.card + " overflow-hidden"}>
+              {/* Ad Header */}
+              <div className="p-3 flex items-center gap-2.5 border-b border-border/60">
+                <div className="w-9 h-9 rounded-full bg-gradient-to-br from-primary to-purple-600 flex items-center justify-center flex-shrink-0">
+                  <Sparkles className="w-4 h-4 text-white" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="font-semibold text-sm truncate">AdRuby AI</p>
+                  <p className="text-xs text-muted-foreground">Sponsored</p>
+                </div>
+              </div>
+
+              {/* Ad Body Text */}
+              <div className="p-3">
+                <p className="text-sm leading-relaxed">{currentAd.primaryText}</p>
+              </div>
+
+              {/* Ad Image - Realistic Facebook aspect ratio */}
+              <div className="relative w-full" style={{ paddingBottom: '100%' }}>
+                <ImageWithFallback
+                  src={currentAd.image}
+                  alt={`${selectedIndustry} ad example`}
+                  className="absolute inset-0 w-full h-full object-cover"
+                />
+                <div className="absolute top-2 right-2 px-2 py-1 bg-black/80 text-white rounded text-[10px] font-bold">
+                  AI Generated
+                </div>
+              </div>
+
+              {/* Ad Footer */}
+              <div className="p-3 border-t border-border/60">
+                <h3 className="font-bold text-sm mb-2">{currentAd.headline}</h3>
+                <button className="w-full py-2 bg-primary text-white rounded-lg text-sm font-semibold hover:bg-primary/90 transition-all">
+                  {currentAd.cta}
+                </button>
+              </div>
+
+              {/* Performance Prediction - Kompakter */}
+              <div className="p-3 bg-gradient-to-br from-green-500/10 to-emerald-500/10 border-t border-green-500/20">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-[10px] font-bold text-green-600 uppercase tracking-wide">
+                    AI Prediction
+                  </span>
+                  <span className="text-[10px] font-semibold text-green-600">{currentAd.confidence}% confidence</span>
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <p className="text-[10px] text-muted-foreground mb-0.5">Expected CTR</p>
+                    <p className="text-lg font-bold text-green-600">{currentAd.ctr}</p>
+                  </div>
+                  <div>
+                    <p className="text-[10px] text-muted-foreground mb-0.5">Expected ROAS</p>
+                    <p className="text-lg font-bold text-green-600">{currentAd.roas}</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Pagination Dots */}
+            {currentAds.length > 1 && (
+              <div className="flex items-center justify-center gap-2 mt-5">
+                {currentAds.map((_, index) => (
+                  <button
+                    key={index}
+                    onClick={() => setCurrentAdIndex(index)}
+                    className={`h-1.5 rounded-full transition-all ${index === currentAdIndex ? 'w-6 bg-primary' : 'w-1.5 bg-border hover:bg-primary/50'
+                      }`}
+                  />
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      </section >
+
+      {/* ============================================
           KI INSIGHTS & PERFORMANCE
           ============================================ */}
-  < section className="py-16 sm:py-20 md:py-24 bg-gradient-to-b from-muted/20 via-background to-muted/30" >
-    <PageContainer>
-      <div className="text-center mb-10 sm:mb-12 px-4">
-        <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-3 sm:mb-4">
-          KI <span className="text-primary">erstellt</span> nicht nur Ads — sie <span className="text-primary">optimiert</span> sie
-        </h2>
-        <p className="text-base sm:text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto">
-          Intelligente Insights die Performance automatisch verbessern
-        </p>
-      </div>
+      < section className="py-16 sm:py-20 md:py-24 bg-gradient-to-b from-muted/20 via-background to-muted/30" >
+        <PageContainer>
+          <div className="text-center mb-10 sm:mb-12 px-4">
+            <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-3 sm:mb-4">
+              KI <span className="text-primary">erstellt</span> nicht nur Ads — sie <span className="text-primary">optimiert</span> sie
+            </h2>
+            <p className="text-base sm:text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto">
+              Intelligente Insights die Performance automatisch verbessern
+            </p>
+          </div>
 
-      <div className="grid md:grid-cols-3 gap-6">
-        {/* Performance Prediction */}
-        <Card className="hover:shadow-xl transition-all">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-sm sm:text-base font-bold">Performance</h3>
-            <TrendingUp className="w-5 h-5 text-green-600" />
-          </div>
-          <div className="text-3xl sm:text-4xl font-bold text-green-600 mb-1">8.2x</div>
-          <p className="text-xs sm:text-sm text-muted-foreground mb-3 sm:mb-4">Erwarteter ROAS</p>
-          <div className="p-2.5 sm:p-3 bg-green-500/10 border border-green-500/20 rounded-lg">
-            <p className="text-xs font-semibold text-green-600">Hohe Konfidenz (94%)</p>
-          </div>
-        </Card>
+          <div className="grid md:grid-cols-3 gap-6">
+            {/* Performance Prediction */}
+            <Card className="hover:shadow-xl transition-all">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-sm sm:text-base font-bold">Performance</h3>
+                <TrendingUp className="w-5 h-5 text-green-600" />
+              </div>
+              <div className="text-3xl sm:text-4xl font-bold text-green-600 mb-1">8.2x</div>
+              <p className="text-xs sm:text-sm text-muted-foreground mb-3 sm:mb-4">Erwarteter ROAS</p>
+              <div className="p-2.5 sm:p-3 bg-green-500/10 border border-green-500/20 rounded-lg">
+                <p className="text-xs font-semibold text-green-600">Hohe Konfidenz (94%)</p>
+              </div>
+            </Card>
 
-        {/* CTR Score */}
-        <Card className="hover:shadow-xl transition-all">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-sm sm:text-base font-bold">Klickrate (CTR)</h3>
-            <Eye className="w-5 h-5 text-blue-600" />
-          </div>
-          <div className="text-3xl sm:text-4xl font-bold text-blue-600 mb-1">4.1%</div>
-          <p className="text-xs sm:text-sm text-muted-foreground mb-3 sm:mb-4">Über Branchen-Ø (2.3%)</p>
-          <div className="p-2.5 sm:p-3 bg-blue-500/10 border border-blue-500/20 rounded-lg">
-            <p className="text-xs font-semibold text-blue-600">Exzellente Performance erwartet</p>
-          </div>
-        </Card>
+            {/* CTR Score */}
+            <Card className="hover:shadow-xl transition-all">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-sm sm:text-base font-bold">Klickrate (CTR)</h3>
+                <Eye className="w-5 h-5 text-blue-600" />
+              </div>
+              <div className="text-3xl sm:text-4xl font-bold text-blue-600 mb-1">4.1%</div>
+              <p className="text-xs sm:text-sm text-muted-foreground mb-3 sm:mb-4">Über Branchen-Ø (2.3%)</p>
+              <div className="p-2.5 sm:p-3 bg-blue-500/10 border border-blue-500/20 rounded-lg">
+                <p className="text-xs font-semibold text-blue-600">Exzellente Performance erwartet</p>
+              </div>
+            </Card>
 
-        {/* AI Suggestions */}
-        <Card className="hover:shadow-xl transition-all">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-sm sm:text-base font-bold">KI-Empfehlungen</h3>
-            <Brain className="w-5 h-5 text-purple-600" />
+            {/* AI Suggestions */}
+            <Card className="hover:shadow-xl transition-all">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-sm sm:text-base font-bold">KI-Empfehlungen</h3>
+                <Brain className="w-5 h-5 text-purple-600" />
+              </div>
+              <div className="space-y-2">
+                <div className="flex items-start gap-2 p-2 bg-green-500/10 border border-green-500/20 rounded-lg">
+                  <CheckCircle className="w-4 h-4 text-green-600 mt-0.5 flex-shrink-0" />
+                  <p className="text-xs font-medium">Video-Ads übertreffen Bilder um 34%</p>
+                </div>
+                <div className="flex items-start gap-2 p-2 bg-yellow-500/10 border border-yellow-500/20 rounded-lg">
+                  <AlertCircle className="w-4 h-4 text-yellow-600 mt-0.5 flex-shrink-0" />
+                  <p className="text-xs font-medium">Zielgruppen-Überschneidung erkannt</p>
+                </div>
+                <div className="flex items-start gap-2 p-2 bg-blue-500/10 border border-blue-500/20 rounded-lg">
+                  <ArrowUpRight className="w-4 h-4 text-blue-600 mt-0.5 flex-shrink-0" />
+                  <p className="text-xs font-medium">Budget um 20% erhöhen</p>
+                </div>
+              </div>
+            </Card>
           </div>
-          <div className="space-y-2">
-            <div className="flex items-start gap-2 p-2 bg-green-500/10 border border-green-500/20 rounded-lg">
-              <CheckCircle className="w-4 h-4 text-green-600 mt-0.5 flex-shrink-0" />
-              <p className="text-xs font-medium">Video-Ads übertreffen Bilder um 34%</p>
-            </div>
-            <div className="flex items-start gap-2 p-2 bg-yellow-500/10 border border-yellow-500/20 rounded-lg">
-              <AlertCircle className="w-4 h-4 text-yellow-600 mt-0.5 flex-shrink-0" />
-              <p className="text-xs font-medium">Zielgruppen-Überschneidung erkannt</p>
-            </div>
-            <div className="flex items-start gap-2 p-2 bg-blue-500/10 border border-blue-500/20 rounded-lg">
-              <ArrowUpRight className="w-4 h-4 text-blue-600 mt-0.5 flex-shrink-0" />
-              <p className="text-xs font-medium">Budget um 20% erhöhen</p>
-            </div>
-          </div>
-        </Card>
-      </div>
-    </PageContainer>
-  </section >
+        </PageContainer>
+      </section >
 
-  {/* ============================================
+      {/* ============================================
           SOCIAL PROOF
           ============================================ */}
-  {/* ============================================
+      {/* ============================================
           SOCIAL PROOF (DEEP RUBY)
           ============================================ */}
-  <section className="py-24 sm:py-32 bg-gradient-to-b from-black via-[#0A0A0A] to-black text-white relative">
-    <div className="absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-white/10 to-transparent" />
+      <section className="py-24 sm:py-32 bg-gradient-to-b from-black via-[#0A0A0A] to-black text-white relative">
+        <div className="absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-white/10 to-transparent" />
 
-    <div className="max-w-7xl mx-auto px-6">
-      <div className="text-center mb-20 animate-fade-in-up">
-        <h2 className="text-4xl sm:text-5xl font-black mb-6">
-          Vertraut von <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#FF1F1F] to-rose-500">Marketern & Gründern</span>
-        </h2>
-      </div>
-
-      {/* Testimonials Bento */}
-      <div className="grid md:grid-cols-3 gap-6 mb-20">
-        {[
-          {
-            quote: "Wir haben Ad-Erstellung von 2 Stunden auf 8 Minuten reduziert.",
-            author: "Markus Klein",
-            role: "Growth Lead, SaaS Startup",
-            avatar: "MK",
-            gradient: "from-blue-500 to-cyan-500"
-          },
-          {
-            quote: "KI-Varianten schlagen unsere Best-Performer um 22% CTR.",
-            author: "Julia Schmidt",
-            role: "Performance Marketerin",
-            avatar: "JS",
-            gradient: "from-purple-500 to-pink-500"
-          },
-          {
-            quote: "Endlich skalierbare Workflows für unsere Agentur.",
-            author: "Alexander Lang",
-            role: "Agentur-Inhaber",
-            avatar: "AL",
-            gradient: "from-green-500 to-emerald-500"
-          }
-        ].map((t, i) => (
-          <div key={i} className="bg-white/5 border border-white/10 rounded-3xl p-8 relative overflow-hidden group hover:border-white/20 transition-all">
-            <div className="absolute top-0 right-0 p-8 opacity-20">
-              <Quote className="w-12 h-12 text-white" />
-            </div>
-            <p className="text-lg font-medium text-white/90 mb-8 relative z-10">"{t.quote}"</p>
-
-            <div className="flex items-center gap-4">
-              <div className={`w-10 h-10 rounded-full bg-gradient-to-br ${t.gradient} flex items-center justify-center text-xs font-bold`}>
-                {t.avatar}
-              </div>
-              <div>
-                <div className="font-bold text-white">{t.author}</div>
-                <div className="text-sm text-white/40">{t.role}</div>
-              </div>
-            </div>
+        <div className="max-w-7xl mx-auto px-6">
+          <div className="text-center mb-20 animate-fade-in-up">
+            <h2 className="text-4xl sm:text-5xl font-black mb-6">
+              Vertraut von <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#FF1F1F] to-rose-500">Marketern & Gründern</span>
+            </h2>
           </div>
-        ))}
-      </div>
 
-      {/* Results Strip - Dark Mode */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        {[
-          { value: "50.000+", label: "Ads erstellt", icon: Sparkles, color: "text-[#FF1F1F]" },
-          { value: "14x", label: "Ø ROAS", icon: TrendingUp, color: "text-green-500" },
-          { value: "86%", label: "Zeit gespart", icon: Zap, color: "text-yellow-500" },
-          { value: "2.500+", label: "Aktive Nutzer", icon: Users, color: "text-blue-500" }
-        ].map((stat, i) => (
-          <div key={i} className="bg-white/5 border border-white/10 rounded-2xl p-6 text-center hover:bg-white/10 transition-colors">
-            <stat.icon className={`w-6 h-6 ${stat.color} mx-auto mb-3`} />
-            <div className="text-3xl font-black text-white mb-1">{stat.value}</div>
-            <div className="text-sm text-white/40 font-medium uppercase tracking-wider">{stat.label}</div>
+          {/* Testimonials Bento */}
+          <div className="grid md:grid-cols-3 gap-6 mb-20">
+            {[
+              {
+                quote: "Wir haben Ad-Erstellung von 2 Stunden auf 8 Minuten reduziert.",
+                author: "Markus Klein",
+                role: "Growth Lead, SaaS Startup",
+                avatar: "MK",
+                gradient: "from-blue-500 to-cyan-500"
+              },
+              {
+                quote: "KI-Varianten schlagen unsere Best-Performer um 22% CTR.",
+                author: "Julia Schmidt",
+                role: "Performance Marketerin",
+                avatar: "JS",
+                gradient: "from-purple-500 to-pink-500"
+              },
+              {
+                quote: "Endlich skalierbare Workflows für unsere Agentur.",
+                author: "Alexander Lang",
+                role: "Agentur-Inhaber",
+                avatar: "AL",
+                gradient: "from-green-500 to-emerald-500"
+              }
+            ].map((t, i) => (
+              <div key={i} className="bg-white/5 border border-white/10 rounded-3xl p-8 relative overflow-hidden group hover:border-white/20 transition-all">
+                <div className="absolute top-0 right-0 p-8 opacity-20">
+                  <Quote className="w-12 h-12 text-white" />
+                </div>
+                <p className="text-lg font-medium text-white/90 mb-8 relative z-10">"{t.quote}"</p>
+
+                <div className="flex items-center gap-4">
+                  <div className={`w-10 h-10 rounded-full bg-gradient-to-br ${t.gradient} flex items-center justify-center text-xs font-bold`}>
+                    {t.avatar}
+                  </div>
+                  <div>
+                    <div className="font-bold text-white">{t.author}</div>
+                    <div className="text-sm text-white/40">{t.role}</div>
+                  </div>
+                </div>
+              </div>
+            ))}
           </div>
-        ))}
-      </div>
-    </div>
-  </section>
 
-  {/* ============================================
+          {/* Results Strip - Dark Mode */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            {[
+              { value: "50.000+", label: "Ads erstellt", icon: Sparkles, color: "text-[#FF1F1F]" },
+              { value: "14x", label: "Ø ROAS", icon: TrendingUp, color: "text-green-500" },
+              { value: "86%", label: "Zeit gespart", icon: Zap, color: "text-yellow-500" },
+              { value: "2.500+", label: "Aktive Nutzer", icon: Users, color: "text-blue-500" }
+            ].map((stat, i) => (
+              <div key={i} className="bg-white/5 border border-white/10 rounded-2xl p-6 text-center hover:bg-white/10 transition-colors">
+                <stat.icon className={`w-6 h-6 ${stat.color} mx-auto mb-3`} />
+                <div className="text-3xl font-black text-white mb-1">{stat.value}</div>
+                <div className="text-sm text-white/40 font-medium uppercase tracking-wider">{stat.label}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ============================================
           FÜR WEN IST ADRUBY?
           ============================================ */}
-  < section className="py-16 sm:py-20 md:py-24 bg-gradient-to-b from-muted/20 via-muted/30 to-background" >
-    <PageContainer>
-      <div className="text-center mb-10 sm:mb-12 px-4">
-        <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-3 sm:mb-4">
-          Entwickelt für <span className="text-primary">Marketer & Gründer</span>
-        </h2>
-      </div>
+      < section className="py-16 sm:py-20 md:py-24 bg-gradient-to-b from-muted/20 via-muted/30 to-background" >
+        <PageContainer>
+          <div className="text-center mb-10 sm:mb-12 px-4">
+            <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-3 sm:mb-4">
+              Entwickelt für <span className="text-primary">Marketer & Gründer</span>
+            </h2>
+          </div>
 
-      <div className="grid md:grid-cols-3 gap-8">
-        {[
-          {
-            icon: Rocket,
-            title: 'Solo-Gründer',
-            pain: 'Keine Zeit für manuelle Ad-Erstellung',
-            solution: '10+ Varianten in Minuten generieren',
-            outcome: 'Kampagnen 10x schneller launchen',
-          },
-          {
-            icon: BarChart3,
-            title: 'Performance Marketer',
-            pain: 'Benötigen datengetriebenes Creative-Testing',
-            solution: 'KI sagt best-performende Ads voraus',
-            outcome: 'ROAS um 3-5x steigern',
-          },
-          {
-            icon: Briefcase,
-            title: 'Agenturen',
-            pain: '50+ Kunden-Accounts verwalten',
-            solution: 'Creative-Produktion automatisieren',
-            outcome: 'Skalieren ohne neues Personal',
-          },
-        ].map((persona, index) => (
-          <Card key={index} className="hover:shadow-xl transition-all hover:-translate-y-1">
-            <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center mb-5">
-              <persona.icon className="w-6 h-6 text-primary" />
-            </div>
-            <h3 className="text-lg font-bold mb-4">{persona.title}</h3>
-            <div className="space-y-3">
-              <div>
-                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1">
-                  Herausforderung
-                </p>
-                <p className="text-sm font-medium text-red-600">{persona.pain}</p>
-              </div>
-              <div>
-                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1">
-                  Unsere Lösung
-                </p>
-                <p className="text-sm font-medium">{persona.solution}</p>
-              </div>
-              <div className="pt-3 border-t border-border/60">
-                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1">Ergebnis</p>
-                <p className="font-bold text-green-600">{persona.outcome}</p>
-              </div>
-            </div>
-          </Card>
-        ))}
-      </div>
-    </PageContainer>
-  </section >
+          <div className="grid md:grid-cols-3 gap-8">
+            {[
+              {
+                icon: Rocket,
+                title: 'Solo-Gründer',
+                pain: 'Keine Zeit für manuelle Ad-Erstellung',
+                solution: '10+ Varianten in Minuten generieren',
+                outcome: 'Kampagnen 10x schneller launchen',
+              },
+              {
+                icon: BarChart3,
+                title: 'Performance Marketer',
+                pain: 'Benötigen datengetriebenes Creative-Testing',
+                solution: 'KI sagt best-performende Ads voraus',
+                outcome: 'ROAS um 3-5x steigern',
+              },
+              {
+                icon: Briefcase,
+                title: 'Agenturen',
+                pain: '50+ Kunden-Accounts verwalten',
+                solution: 'Creative-Produktion automatisieren',
+                outcome: 'Skalieren ohne neues Personal',
+              },
+            ].map((persona, index) => (
+              <Card key={index} className="hover:shadow-xl transition-all hover:-translate-y-1">
+                <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center mb-5">
+                  <persona.icon className="w-6 h-6 text-primary" />
+                </div>
+                <h3 className="text-lg font-bold mb-4">{persona.title}</h3>
+                <div className="space-y-3">
+                  <div>
+                    <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1">
+                      Herausforderung
+                    </p>
+                    <p className="text-sm font-medium text-red-600">{persona.pain}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1">
+                      Unsere Lösung
+                    </p>
+                    <p className="text-sm font-medium">{persona.solution}</p>
+                  </div>
+                  <div className="pt-3 border-t border-border/60">
+                    <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1">Ergebnis</p>
+                    <p className="font-bold text-green-600">{persona.outcome}</p>
+                  </div>
+                </div>
+              </Card>
+            ))}
+          </div>
+        </PageContainer>
+      </section >
 
-  {/* ============================================
+      {/* ============================================
           TRY IT LIVE - INTERACTIVE AI TEASER
           ============================================ */}
-  < TryItLiveSection onGetStarted={onGetStarted} />
+      < TryItLiveSection onGetStarted={onGetStarted} />
 
-  {/* ============================================
+      {/* ============================================
           BEFORE / AFTER COMPARISON
           ============================================ */}
-  < BeforeAfterSection />
+      < BeforeAfterSection />
 
-  {/* ============================================
+      {/* ============================================
           REAL USE CASES
           ============================================ */}
-  < RealUseCasesSection />
+      < RealUseCasesSection />
 
-  {/* ============================================
+      {/* ============================================
           AI CONFIDENCE & TRUST
           ============================================ */}
-  < AITrustSection />
+      < AITrustSection />
 
-  {/* ============================================
+      {/* ============================================
           PREISE
           ============================================ */}
-  < section className="py-16 sm:py-20 md:py-24 bg-gradient-to-b from-background via-muted/20 to-background" >
-    <PageContainer>
-      <div className="text-center mb-10 sm:mb-12 px-4">
-        <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-3 sm:mb-4">Einfache, transparente Preise</h2>
-        <p className="text-base sm:text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto">Ein Plan. Alle Features. Keine Überraschungen.</p>
-      </div>
+      < section className="py-16 sm:py-20 md:py-24 bg-gradient-to-b from-background via-muted/20 to-background" >
+        <PageContainer>
+          <div className="text-center mb-10 sm:mb-12 px-4">
+            <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-3 sm:mb-4">Einfache, transparente Preise</h2>
+            <p className="text-base sm:text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto">Ein Plan. Alle Features. Keine Überraschungen.</p>
+          </div>
 
-      <div className="max-w-lg mx-auto">
-        <PricingCard
-          title="Pro Plan"
-          price="€29.99"
-          period="Monat"
-          features={[
-            'Unbegrenzte KI-Ads',
-            '1.000 Credits inklusive',
-            'Echtzeit Performance-Prognosen',
-            'Multi-Plattform (FB, IG, LinkedIn)',
-            'Erweiterte Zielgruppen-Targeting',
-            'Prioritäts-Support',
-          ]}
-          cta="7 Tage kostenlos testen"
-          onCtaClick={onGetStarted}
-          featured
-        />
+          <div className="max-w-lg mx-auto">
+            <PricingCard
+              title="Pro Plan"
+              price="€29.99"
+              period="Monat"
+              features={[
+                'Unbegrenzte KI-Ads',
+                '1.000 Credits inklusive',
+                'Echtzeit Performance-Prognosen',
+                'Multi-Plattform (FB, IG, LinkedIn)',
+                'Erweiterte Zielgruppen-Targeting',
+                'Prioritäts-Support',
+              ]}
+              cta="7 Tage kostenlos testen"
+              onCtaClick={onGetStarted}
+              featured
+            />
 
-        {/* Credits Explanation */}
-        <Card className="mt-6">
-          <h4 className="font-semibold mb-2">Was sind Credits?</h4>
-          <p className="text-sm text-muted-foreground leading-relaxed">
-            Jede KI-Generierung verbraucht ~10 Credits. 1.000 Credits = ~100 Ad-Varianten. Mehr benötigt? Jederzeit zusätzliche Credits kaufen.
-          </p>
-        </Card>
-      </div>
-    </PageContainer>
-  </section >
+            {/* Credits Explanation */}
+            <Card className="mt-6">
+              <h4 className="font-semibold mb-2">Was sind Credits?</h4>
+              <p className="text-sm text-muted-foreground leading-relaxed">
+                Jede KI-Generierung verbraucht ~10 Credits. 1.000 Credits = ~100 Ad-Varianten. Mehr benötigt? Jederzeit zusätzliche Credits kaufen.
+              </p>
+            </Card>
+          </div>
+        </PageContainer>
+      </section >
 
-  {/* ============================================
+      {/* ============================================
           AFFILIATE CTA
           ============================================ */}
-  < AffiliateCTASection />
+      < AffiliateCTASection />
 
-  {/* ============================================
+      {/* ============================================
           SEO CONTENT
           ============================================ */}
-  < SEOContentSection />
+      < SEOContentSection />
 
-  {/* ============================================
+      {/* ============================================
           STICKY MOBILE CTA
           ============================================ */}
-  < div className="fixed bottom-0 left-0 right-0 p-3 sm:p-4 bg-card/95 backdrop-blur-xl border-t border-border z-50 md:hidden animate-in slide-in-from-bottom" >
-    <button
-      onClick={onGetStarted}
-      className="w-full min-h-[52px] py-3 bg-gradient-to-r from-[#C80000] via-rose-600 to-red-600 text-white rounded-xl font-bold text-base sm:text-lg shadow-lg flex items-center justify-center gap-2 active:scale-95 transition-transform">
-      Jetzt kostenlos starten
-      <ArrowRight className="w-5 h-5" />
-    </button>
-  </div >
-
-  {/* ============================================
-          FAQ
-          ============================================ */}
-  < section className="py-16 sm:py-20 md:py-24 bg-gradient-to-b from-muted/20 via-background to-background" >
-    <PageContainer>
-      <div className="text-center mb-10 sm:mb-12 px-4">
-        <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-3 sm:mb-4">Häufig gestellte Fragen</h2>
-      </div>
-
-      <div className="max-w-3xl mx-auto space-y-4">
-        {faqs.map((faq, index) => (
-          <Card
-            key={index}
-            className="cursor-pointer hover:shadow-lg transition-all"
-            onClick={() => setOpenFaqIndex(openFaqIndex === index ? null : index)}
-          >
-            <div className="flex items-center justify-between">
-              <h3 className="font-semibold">{faq.question}</h3>
-              <ChevronDown
-                className={`w-5 h-5 text-muted-foreground transition-transform ${openFaqIndex === index ? 'rotate-180' : ''
-                  }`}
-              />
-            </div>
-            {openFaqIndex === index && (
-              <p className="mt-3 text-sm text-muted-foreground leading-relaxed">{faq.answer}</p>
-            )}
-          </Card>
-        ))}
-
-        {/* Contact Card */}
-        <Card className="bg-primary/5 border-primary/20 text-center">
-          <MessageCircle className="w-8 h-8 text-primary mx-auto mb-3" />
-          <h3 className="font-bold mb-2">Noch Fragen?</h3>
-          <p className="text-sm text-muted-foreground mb-4">Unser Team hilft Ihnen gerne weiter</p>
-          <SecondaryButton className="mx-auto">Support kontaktieren</SecondaryButton>
-        </Card>
-      </div>
-    </PageContainer>
-  </section >
-
-  {/* ============================================
-          FINAL CTA
-          ============================================ */}
-  < section className="py-32 px-6 lg:px-8 bg-gradient-to-br from-primary/5 via-purple-500/5 to-background relative overflow-hidden" >
-    {/* Subtle noise texture */}
-    < div className="absolute inset-0 opacity-[0.015] bg-[url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIzMDAiIGhlaWdodD0iMzAwIj48ZmlsdGVyIGlkPSJhIiB4PSIwIiB5PSIwIj48ZmVUdXJidWxlbmNlIGJhc2VGcmVxdWVuY3k9Ii43NSIgc3RpdGNoVGlsZXM9InN0aXRjaCIgdHlwZT0iZnJhY3RhbE5vaXNlIi8+PGZlQ29sb3JNYXRyaXggdHlwZT0ic2F0dXJhdGUiIHZhbHVlcz0iMCIvPjwvZmlsdGVyPjxwYXRoIGQ9Ik0wIDBoMzAwdjMwMEgweiIgZmlsdGVyPSJ1cmwoI2EpIiBvcGFjaXR5PSIuMDUiLz48L3N2Zz4=')]" />
-
-    <PageContainer className="relative z-10">
-      <div className="text-center">
-        <h2 className="text-4xl sm:text-5xl md:text-6xl font-bold mb-4 sm:mb-6 leading-tight px-4">
-          Starten Sie jetzt mit der
-          <br />
-          Generierung von Ads
-        </h2>
-        <p className="text-lg sm:text-xl text-muted-foreground mb-8 sm:mb-10 px-4">Keine Kreditkarte erforderlich.</p>
+      < div className="fixed bottom-0 left-0 right-0 p-3 sm:p-4 bg-card/95 backdrop-blur-xl border-t border-border z-50 md:hidden animate-in slide-in-from-bottom" >
         <button
           onClick={onGetStarted}
-          className="button-spring px-8 sm:px-10 py-4 sm:py-5 bg-gradient-to-r from-[#C80000] via-rose-600 to-red-600 text-white rounded-2xl font-bold text-base sm:text-lg hover:shadow-2xl transition-all shadow-xl inline-flex items-center gap-2">
-          Erste Ad generieren
+          className="w-full min-h-[52px] py-3 bg-gradient-to-r from-[#C80000] via-rose-600 to-red-600 text-white rounded-xl font-bold text-base sm:text-lg shadow-lg flex items-center justify-center gap-2 active:scale-95 transition-transform">
+          Jetzt kostenlos starten
           <ArrowRight className="w-5 h-5" />
         </button>
-      </div>
-    </PageContainer>
-  </section >
+      </div >
 
-  {/* ============================================
+      {/* ============================================
+          FAQ
+          ============================================ */}
+      < section className="py-16 sm:py-20 md:py-24 bg-gradient-to-b from-muted/20 via-background to-background" >
+        <PageContainer>
+          <div className="text-center mb-10 sm:mb-12 px-4">
+            <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-3 sm:mb-4">Häufig gestellte Fragen</h2>
+          </div>
+
+          <div className="max-w-3xl mx-auto space-y-4">
+            {faqs.map((faq, index) => (
+              <Card
+                key={index}
+                className="cursor-pointer hover:shadow-lg transition-all"
+                onClick={() => setOpenFaqIndex(openFaqIndex === index ? null : index)}
+              >
+                <div className="flex items-center justify-between">
+                  <h3 className="font-semibold">{faq.question}</h3>
+                  <ChevronDown
+                    className={`w-5 h-5 text-muted-foreground transition-transform ${openFaqIndex === index ? 'rotate-180' : ''
+                      }`}
+                  />
+                </div>
+                {openFaqIndex === index && (
+                  <p className="mt-3 text-sm text-muted-foreground leading-relaxed">{faq.answer}</p>
+                )}
+              </Card>
+            ))}
+
+            {/* Contact Card */}
+            <Card className="bg-primary/5 border-primary/20 text-center">
+              <MessageCircle className="w-8 h-8 text-primary mx-auto mb-3" />
+              <h3 className="font-bold mb-2">Noch Fragen?</h3>
+              <p className="text-sm text-muted-foreground mb-4">Unser Team hilft Ihnen gerne weiter</p>
+              <SecondaryButton className="mx-auto">Support kontaktieren</SecondaryButton>
+            </Card>
+          </div>
+        </PageContainer>
+      </section >
+
+      {/* ============================================
+          FINAL CTA
+          ============================================ */}
+      < section className="py-32 px-6 lg:px-8 bg-gradient-to-br from-primary/5 via-purple-500/5 to-background relative overflow-hidden" >
+        {/* Subtle noise texture */}
+        < div className="absolute inset-0 opacity-[0.015] bg-[url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIzMDAiIGhlaWdodD0iMzAwIj48ZmlsdGVyIGlkPSJhIiB4PSIwIiB5PSIwIj48ZmVUdXJidWxlbmNlIGJhc2VGcmVxdWVuY3k9Ii43NSIgc3RpdGNoVGlsZXM9InN0aXRjaCIgdHlwZT0iZnJhY3RhbE5vaXNlIi8+PGZlQ29sb3JNYXRyaXggdHlwZT0ic2F0dXJhdGUiIHZhbHVlcz0iMCIvPjwvZmlsdGVyPjxwYXRoIGQ9Ik0wIDBoMzAwdjMwMEgweiIgZmlsdGVyPSJ1cmwoI2EpIiBvcGFjaXR5PSIuMDUiLz48L3N2Zz4=')]" />
+
+        <PageContainer className="relative z-10">
+          <div className="text-center">
+            <h2 className="text-4xl sm:text-5xl md:text-6xl font-bold mb-4 sm:mb-6 leading-tight px-4">
+              Starten Sie jetzt mit der
+              <br />
+              Generierung von Ads
+            </h2>
+            <p className="text-lg sm:text-xl text-muted-foreground mb-8 sm:mb-10 px-4">Keine Kreditkarte erforderlich.</p>
+            <button
+              onClick={onGetStarted}
+              className="button-spring px-8 sm:px-10 py-4 sm:py-5 bg-gradient-to-r from-[#C80000] via-rose-600 to-red-600 text-white rounded-2xl font-bold text-base sm:text-lg hover:shadow-2xl transition-all shadow-xl inline-flex items-center gap-2">
+              Erste Ad generieren
+              <ArrowRight className="w-5 h-5" />
+            </button>
+          </div>
+        </PageContainer>
+      </section >
+
+      {/* ============================================
           FOOTER
           ============================================ */}
-  < footer className="border-t border-border/60" >
-    <PageContainer className="py-16">
-      <div className="grid md:grid-cols-4 gap-12 mb-12">
-        {/* Brand */}
-        <div>
-          <div className="flex items-center gap-2 mb-4">
-            <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center">
-              <Sparkles className="w-4 h-4 text-white" />
+      < footer className="border-t border-border/60" >
+        <PageContainer className="py-16">
+          <div className="grid md:grid-cols-4 gap-12 mb-12">
+            {/* Brand */}
+            <div>
+              <div className="flex items-center gap-2 mb-4">
+                <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center">
+                  <Sparkles className="w-4 h-4 text-white" />
+                </div>
+                <span className="font-bold text-lg">AdRuby</span>
+              </div>
+              <p className="text-sm text-muted-foreground leading-relaxed">
+                KI-gestützte Ad-Plattform für Marketer & Gründer.
+              </p>
             </div>
-            <span className="font-bold text-lg">AdRuby</span>
+
+            {/* Product */}
+            <div>
+              <h3 className="font-bold mb-4">Produkt</h3>
+              <ul className="space-y-3 text-sm text-muted-foreground">
+                <li>
+                  <a href="#" className="hover:text-foreground transition-colors">
+                    Features
+                  </a>
+                </li>
+                <li>
+                  <a href="#" className="hover:text-foreground transition-colors">
+                    Preise
+                  </a>
+                </li>
+                <li>
+                  <a href="#" className="hover:text-foreground transition-colors">
+                    API
+                  </a>
+                </li>
+              </ul>
+            </div>
+
+            {/* Company */}
+            <div>
+              <h3 className="font-bold mb-4">Unternehmen</h3>
+              <ul className="space-y-3 text-sm text-muted-foreground">
+                <li>
+                  <a href="#" className="hover:text-foreground transition-colors">
+                    Über uns
+                  </a>
+                </li>
+                <li>
+                  <a href="#" className="hover:text-foreground transition-colors">
+                    Blog
+                  </a>
+                </li>
+                <li>
+                  <a href="#" className="hover:text-foreground transition-colors">
+                    Kontakt
+                  </a>
+                </li>
+              </ul>
+            </div>
+
+            {/* Legal */}
+            <div>
+              <h3 className="font-bold mb-4">Rechtliches</h3>
+              <ul className="space-y-3 text-sm text-muted-foreground">
+                <li>
+                  <a href="#" className="hover:text-foreground transition-colors">
+                    Datenschutz
+                  </a>
+                </li>
+                <li>
+                  <a href="#" className="hover:text-foreground transition-colors">
+                    AGB
+                  </a>
+                </li>
+                <li>
+                  <a href="#" className="hover:text-foreground transition-colors">
+                    Sicherheit
+                  </a>
+                </li>
+              </ul>
+            </div>
           </div>
-          <p className="text-sm text-muted-foreground leading-relaxed">
-            KI-gestützte Ad-Plattform für Marketer & Gründer.
-          </p>
-        </div>
 
-        {/* Product */}
-        <div>
-          <h3 className="font-bold mb-4">Produkt</h3>
-          <ul className="space-y-3 text-sm text-muted-foreground">
-            <li>
-              <a href="#" className="hover:text-foreground transition-colors">
-                Features
-              </a>
-            </li>
-            <li>
-              <a href="#" className="hover:text-foreground transition-colors">
-                Preise
-              </a>
-            </li>
-            <li>
-              <a href="#" className="hover:text-foreground transition-colors">
-                API
-              </a>
-            </li>
-          </ul>
-        </div>
+          <div className="pt-8 border-t border-border/60 text-center">
+            <p className="text-sm text-muted-foreground">© 2024 AdRuby. All rights reserved.</p>
+          </div>
+        </PageContainer>
+      </footer >
 
-        {/* Company */}
-        <div>
-          <h3 className="font-bold mb-4">Unternehmen</h3>
-          <ul className="space-y-3 text-sm text-muted-foreground">
-            <li>
-              <a href="#" className="hover:text-foreground transition-colors">
-                Über uns
-              </a>
-            </li>
-            <li>
-              <a href="#" className="hover:text-foreground transition-colors">
-                Blog
-              </a>
-            </li>
-            <li>
-              <a href="#" className="hover:text-foreground transition-colors">
-                Kontakt
-              </a>
-            </li>
-          </ul>
-        </div>
-
-        {/* Legal */}
-        <div>
-          <h3 className="font-bold mb-4">Rechtliches</h3>
-          <ul className="space-y-3 text-sm text-muted-foreground">
-            <li>
-              <a href="#" className="hover:text-foreground transition-colors">
-                Datenschutz
-              </a>
-            </li>
-            <li>
-              <a href="#" className="hover:text-foreground transition-colors">
-                AGB
-              </a>
-            </li>
-            <li>
-              <a href="#" className="hover:text-foreground transition-colors">
-                Sicherheit
-              </a>
-            </li>
-          </ul>
-        </div>
-      </div>
-
-      <div className="pt-8 border-t border-border/60 text-center">
-        <p className="text-sm text-muted-foreground">© 2024 AdRuby. All rights reserved.</p>
-      </div>
-    </PageContainer>
-  </footer >
-
-  {/* Styles */ }
-  < style > {`
+      {/* Styles */}
+      < style > {`
         /* Premium Animations */
         @keyframes float {
           0%, 100% {
