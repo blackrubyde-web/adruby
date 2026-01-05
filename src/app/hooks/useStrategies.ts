@@ -6,10 +6,10 @@ export type StrategyBlueprint = {
   title: string;
   category: string | null;
   raw_content_markdown: string;
-  metadata: Record<string, unknown> | null;
-  autopilot_config: Record<string, unknown> | null;
+  metadata: Record<string, any> | null;
+  autopilot_config: Record<string, any> | null;
   industry_type: string | null;
-  target_audience_definition: Record<string, unknown> | null;
+  target_audience_definition: Record<string, any> | null;
   created_at: string | null;
   updated_at: string | null;
 };
@@ -32,9 +32,6 @@ export function useStrategies() {
           category,
           raw_content_markdown,
           metadata,
-          autopilot_config,
-          industry_type,
-          target_audience_definition,
           created_at,
           updated_at
         `)
@@ -42,10 +39,20 @@ export function useStrategies() {
 
       if (!active) return;
       if (error) {
+        console.error("Strategy load error:", error);
         setError(error.message);
         setStrategies([]);
       } else {
-        setStrategies((data || []) as StrategyBlueprint[]);
+        // Map metadata fields to top-level properties to satisfy the type definition
+        // and handle the schema mismatch safely.
+        const mappedStrategies: StrategyBlueprint[] = (data || []).map((item) => ({
+          ...item,
+          autopilot_config: item.metadata?.autopilot_config || null,
+          industry_type: item.metadata?.industry_type || null,
+          target_audience_definition: item.metadata?.target_audience_definition || null,
+        })) as StrategyBlueprint[];
+
+        setStrategies(mappedStrategies);
       }
       setLoading(false);
     };
@@ -56,5 +63,5 @@ export function useStrategies() {
     };
   }, []);
 
-  return { strategies, loading, error, refreshStrategies: () => window.location.reload() }; // Simple reload for now
+  return { strategies, loading, error, refreshStrategies: () => window.location.reload() };
 }
