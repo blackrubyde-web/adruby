@@ -224,7 +224,7 @@ export function PartnerApplicationForm() {
                         <div className="space-y-2">
                             <Label>Partner Type</Label>
                             <Select
-                                onValueChange={(val) => setValue('partnerType', val as any)}
+                                onValueChange={(val) => setValue('partnerType', val as 'influencer' | 'coach' | 'community_leader' | 'agency' | 'other')}
                                 defaultValue={watch('partnerType')}
                             >
                                 <SelectTrigger>

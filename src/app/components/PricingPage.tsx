@@ -149,7 +149,7 @@ export function PricingPage({ onNavigate, onSignIn, onGetStarted }: PricingPageP
 
           {/* Pricing Cards */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-7xl mx-auto">
-            {plans.map((plan, i) => {
+            {plans.map((plan, _i) => {
               const isPro = plan.id === 'pro';
               return (
                 <div

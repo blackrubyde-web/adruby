@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { ArrowRight, Brain, Lock, CheckCircle2, Loader2, Sparkles } from 'lucide-react';
+import { ArrowRight, Lock, CheckCircle2, Loader2, Sparkles } from 'lucide-react';
 import { PageContainer, SectionHeader, FeatureCard, PrimaryButton } from '../design-system';
 
 interface TryItLiveSectionProps {

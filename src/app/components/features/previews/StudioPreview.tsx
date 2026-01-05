@@ -1,5 +1,4 @@
-import React from 'react';
-import { Palette, Layers, Type, Image as ImageIcon, Sparkles, Download, Settings, MousePointer, Box, X } from 'lucide-react';
+import { Layers, Type, Image as ImageIcon, Sparkles, Settings, MousePointer, Box } from 'lucide-react';
 
 export const StudioPreview = () => {
     return (

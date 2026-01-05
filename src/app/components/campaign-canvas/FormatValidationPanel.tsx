@@ -1,5 +1,5 @@
 import { AlertCircle, CheckCircle2, AlertTriangle, Info } from 'lucide-react';
-import { validateForPlacements, getRecommendedDimensions, type ValidationResult } from '../../lib/format-validation';
+import { validateForPlacements, getRecommendedDimensions, type ValidationResult, type PlacementConstraints } from '../../lib/format-validation';
 
 interface FormatValidationPanelProps {
     creativeWidth: number;
@@ -54,10 +54,10 @@ export const FormatValidationPanel = ({
         <div className="space-y-4">
             {/* Overall Status */}
             <div className={`p-4 rounded-xl border ${allValid && !hasWarnings
-                    ? 'bg-emerald-500/10 border-emerald-500/20'
-                    : !allValid
-                        ? 'bg-red-500/10 border-red-500/20'
-                        : 'bg-amber-500/10 border-amber-500/20'
+                ? 'bg-emerald-500/10 border-emerald-500/20'
+                : !allValid
+                    ? 'bg-red-500/10 border-red-500/20'
+                    : 'bg-amber-500/10 border-amber-500/20'
                 }`}>
                 <div className="flex items-center gap-2">
                     {allValid && !hasWarnings ? (
@@ -108,7 +108,7 @@ export const FormatValidationPanel = ({
                     const result = validationResults[placement];
                     if (!result) return null;
 
-                    const recommended = getRecommendedDimensions(placement as any);
+                    const recommended = getRecommendedDimensions(placement as keyof PlacementConstraints);
 
                     return (
                         <div
