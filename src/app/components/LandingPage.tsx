@@ -64,6 +64,57 @@ export function LandingPage({ onGetStarted, onLogin }: LandingPageProps) {
     return () => observer.disconnect();
   }, []);
 
+  // Hacker Text Effect Hook
+  const useScrambleText = (text: string, speed: number = 30) => {
+    const [displayText, setDisplayText] = useState(text);
+    const [isHovered, setIsHovered] = useState(false);
+    const chars = "!<>-_\\/[]{}—=+*^?#________";
+
+    useEffect(() => {
+      if (!isHovered) {
+        setDisplayText(text);
+        return;
+      }
+
+      let iteration = 0;
+      const interval = setInterval(() => {
+        setDisplayText(text
+          .split("")
+          .map((letter, index) => {
+            if (index < iteration) {
+              return text[index];
+            }
+            return chars[Math.floor(Math.random() * chars.length)];
+          })
+          .join("")
+        );
+
+        if (iteration >= text.length) {
+          clearInterval(interval);
+        }
+
+        iteration += 1 / 3;
+      }, speed);
+
+      return () => clearInterval(interval);
+    }, [isHovered, text, speed]);
+
+    return { displayText, setIsHovered };
+  };
+
+  const headline = useScrambleText("WERBUNG DIE");
+  const subHeadline = useScrambleText("KNALLT.");
+
+  // Spotlight Effect Logic
+  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    const { currentTarget: target } = e;
+    const rect = target.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+    target.style.setProperty("--mouse-x", `${x}px`);
+    target.style.setProperty("--mouse-y", `${y}px`);
+  };
+
   // Generate stable particle positions once
   const particles = useMemo(() => {
     return Array.from({ length: 20 }, () => ({
@@ -269,10 +320,19 @@ export function LandingPage({ onGetStarted, onLogin }: LandingPageProps) {
 
           {/* Colossal Typography */}
           <div className="space-y-4 animate-fade-in-up delay-100 max-w-4xl">
-            <h1 className="text-5xl sm:text-7xl md:text-8xl font-black tracking-tighter text-white leading-[0.9] sm:leading-[0.9]">
-              WERBUNG DIE <br className="block sm:hidden" />
-              <span className="text-transparent bg-clip-text bg-gradient-to-br from-[#FF1F1F] via-[#ff4d4d] to-[#C80000] drop-shadow-2xl">
-                KNALLT.
+            <h1 className="text-5xl sm:text-7xl md:text-8xl font-black tracking-tighter text-white leading-[0.9] sm:leading-[0.9] cursor-default">
+              <span
+                onMouseEnter={() => headline.setIsHovered(true)}
+                onMouseLeave={() => headline.setIsHovered(false)}
+              >
+                {headline.displayText}
+              </span> <br className="block sm:hidden" />
+              <span
+                className="text-transparent bg-clip-text bg-gradient-to-br from-[#FF1F1F] via-[#ff4d4d] to-[#C80000] drop-shadow-2xl"
+                onMouseEnter={() => subHeadline.setIsHovered(true)}
+                onMouseLeave={() => subHeadline.setIsHovered(false)}
+              >
+                {subHeadline.displayText}
               </span>
             </h1>
             <p className="text-lg sm:text-2xl text-white/60 font-medium max-w-xl mx-auto leading-relaxed pt-4">
@@ -302,18 +362,25 @@ export function LandingPage({ onGetStarted, onLogin }: LandingPageProps) {
             </button>
           </div>
 
-          {/* Social Proof (Minimalist) */}
-          <div className="pt-8 sm:pt-12 animate-fade-in-up delay-300">
-            <p className="text-xs font-semibold tracking-widest text-white/30 uppercase mb-6">
-              Geliebt von den Besten
-            </p>
-            <div className="flex flex-wrap justify-center items-center gap-8 sm:gap-16 opacity-40 grayscale mix-blend-screen">
-              {/* Replaced Text with simple cleaner visuals or keep stylized text */}
-              <span className="text-lg font-bold font-serif italic text-white">Vogue</span>
-              <span className="text-lg font-black tracking-tighter text-white">Supreme</span>
-              <span className="text-lg font-bold font-mono text-white">Shopify</span>
-              <span className="text-lg font-semibold tracking-wide text-white">Forbes</span>
+          {/* Social Proof (Infinite Marquee) */}
+          <div className="pt-16 sm:pt-20 w-full overflow-hidden mask-gradient-x relative">
+            <div className="flex animate-marquee whitespace-nowrap gap-12 sm:gap-24 items-center opacity-50 grayscale hover:grayscale-0 transition-all duration-500 ease-out hover:opacity-100">
+              {[...Array(2)].map((_, i) => (
+                <div key={i} className="flex gap-12 sm:gap-24 items-center">
+                  <span className="text-lg font-bold font-serif italic text-white flex items-center gap-2"><Sparkles className="w-4 h-4" />Vogue</span>
+                  <span className="text-lg font-black tracking-tighter text-white">Supreme</span>
+                  <span className="text-lg font-bold font-mono text-white">Shopify</span>
+                  <span className="text-lg font-serif font-bold text-white tracking-widest">FORBES</span>
+                  <span className="text-lg font-bold text-white flex items-center gap-1"><div className="w-4 h-4 bg-white rounded-full" />Medium</span>
+                  <span className="text-lg font-extrabold tracking-tight text-white italic">NIKE</span>
+                  <span className="text-lg font-mono text-white tracking-widest">WIRED</span>
+                </div>
+              ))}
             </div>
+
+            {/* Fade Edges */}
+            <div className="absolute inset-y-0 left-0 w-20 bg-gradient-to-r from-background to-transparent z-10 pointer-events-none" />
+            <div className="absolute inset-y-0 right-0 w-20 bg-gradient-to-l from-background to-transparent z-10 pointer-events-none" />
           </div>
 
         </div>
@@ -354,16 +421,25 @@ export function LandingPage({ onGetStarted, onLogin }: LandingPageProps) {
           { id: 5, title: 'Szene', desc: 'KI-Komposition', icon: Sparkles, color: 'from-yellow-500 to-orange-500' },
           { id: 6, title: 'Varianten', desc: 'Stil-Mutationen', icon: Zap, color: 'from-green-500 to-emerald-500' },
           { id: 7, title: 'Prognose', desc: 'RoAS Vorhersage', icon: LineChart, color: 'from-teal-500 to-cyan-500' },
-          { id: 8, title: 'Export', desc: 'Meta API Push', icon: Rocket, color: 'from-[#C80000] to-rose-600' },
+          { id: 8, title: 'Export', desc: 'Meta API Push', icon: Rocket, color: 'from-[#C80000] to-rose-600' }
         ].map((step, i) => (
           <div
             key={step.id}
-            className="group relative bg-white/5 border border-white/10 rounded-3xl p-6 sm:p-8 hover:bg-white/10 transition-all duration-500 hover:scale-[1.02] hover:border-white/20 overflow-hidden"
+            onMouseMove={handleMouseMove}
+            className="group relative bg-white/5 border border-white/10 rounded-3xl p-6 sm:p-8 hover:bg-white/10 transition-all duration-500 overflow-hidden text-left"
           >
-            {/* Hover Glow */}
-            <div className={`absolute inset-0 bg-gradient-to-br ${step.color} opacity-0 group-hover:opacity-10 transition-opacity duration-500`} />
+            {/* Spotlight Effect */}
+            <div
+              className="pointer-events-none absolute -inset-px rounded-3xl opacity-0 transition duration-300 group-hover:opacity-100"
+              style={{
+                background: `radial-gradient(600px circle at var(--mouse-x) var(--mouse-y), rgba(255, 31, 31, 0.15), transparent 40%)`
+              }}
+            />
 
-            <div className={`w-12 h-12 rounded-2xl bg-gradient-to-br ${step.color} flex items-center justify-center mb-6 shadow-xl group-hover:scale-110 transition-transform duration-500`}>
+            {/* Hover Glow */}
+            <div className={`absolute inset-0 bg-gradient-to-br ${step.color} opacity-0 group-hover:opacity-5 transition-opacity duration-500`} />
+
+            <div className={`w-12 h-12 rounded-2xl bg-gradient-to-br ${step.color} flex items-center justify-center mb-6 shadow-xl group-hover:scale-110 transition-transform duration-500 relative z-10`}>
               <step.icon className="w-6 h-6 text-white" />
             </div>
 
@@ -1025,6 +1101,19 @@ export function LandingPage({ onGetStarted, onLogin }: LandingPageProps) {
         @keyframes slide-in-from-bottom {
           from { transform: translateY(1rem); opacity: 0; }
           to { transform: translateY(0); opacity: 1; }
+        }
+
+        @keyframes marquee {
+          from { transform: translateX(0); }
+          to { transform: translateX(-50%); }
+        }
+
+        .animate-marquee {
+          animation: marquee 30s linear infinite;
+        }
+
+        .animate-marquee:hover {
+          animation-play-state: paused;
         }
 
         /* Premium effect classes */
