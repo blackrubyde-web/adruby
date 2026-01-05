@@ -194,8 +194,10 @@ JSON Only. No markdown.
     }
 }
 
+type LooseProfile = Partial<StrategicProfile> & { designSystem?: any };
+
 function normalizeProfile(input: unknown): StrategicProfile {
-    const raw = input as any;
+    const raw = input as LooseProfile;
     return {
         productCategory: PRODUCT_CATEGORIES.includes(raw?.productCategory) ? raw.productCategory : FALLBACK_PROFILE.productCategory,
         targetAudience: raw?.targetAudience || FALLBACK_PROFILE.targetAudience,

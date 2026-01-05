@@ -586,7 +586,7 @@ export function generateDynamicTemplate(params: {
             text: 'PREMIUM PRODUCT',
             fontSize: Math.max(48, style.typography.heading.size), // Min 48px for headlines
             fontFamily: style.typography.heading.family,
-            fontWeight: style.typography.heading.weight as any,
+            fontWeight: style.typography.heading.weight as number,
             color: style.colorPalette.text,
             fill: style.colorPalette.text,
             align: params.visualStyle === 'luxury' || params.visualStyle === 'minimal' ? 'center' : 'left',
@@ -613,7 +613,7 @@ export function generateDynamicTemplate(params: {
             text: 'The perfect solution for you',
             fontSize: style.typography.body.size * 1.3,
             fontFamily: style.typography.body.family,
-            fontWeight: 600 as any,
+            fontWeight: 600 as number,
             color: style.colorPalette.secondary,
             fill: style.colorPalette.secondary,
             align: params.visualStyle === 'luxury' || params.visualStyle === 'minimal' ? 'center' : 'left',

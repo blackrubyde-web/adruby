@@ -365,7 +365,7 @@ function buildMicroComponents(
 /**
  * Get psychology profile for pattern and goal
  */
-function getPsychologyProfile(pattern: ConversionPattern, goal: ConversionGoal): PsychologyProfile {
+function getPsychologyProfile(pattern: ConversionPattern, _goal: ConversionGoal): PsychologyProfile {
     const profiles: Record<ConversionPattern, PsychologyProfile> = {
         ugc_testimonial: {
             readingPattern: 'F_pattern',
@@ -509,7 +509,7 @@ function createBaseTemplate(
         productName: string;
     },
     pattern: ConversionPattern,
-    industryConfig: any,
+    industryConfig: unknown,
     microComponents: MicroComponent[],
     psychologyProfile: PsychologyProfile
 ): AdDocument {
@@ -543,14 +543,14 @@ function createBaseTemplate(
 /**
  * Create background layer with psychology-optimized color
  */
-function createBackgroundLayer(brandColor: string, colorPsych: PsychologyProfile['colorPsychology']): ImageLayer {
-    const bgColors = {
-        trust: '#F9FAFB',    // Off-white (safe, clean)
-        urgency: '#FEF2F2',  // Light red tint (action)
-        luxury: '#FAFAF9',   // Warm white (elegant)
-        energy: '#FFFBEB',   // Light yellow tint (exciting)
-        calm: '#F0F9FF'      // Light blue tint (peaceful)
-    };
+function createBackgroundLayer(_brandColor: string, _colorPsych: PsychologyProfile['colorPsychology']): ImageLayer {
+    // const bgColors = {
+    //     trust: '#F9FAFB',    // Off-white (safe, clean)
+    //     urgency: '#FEF2F2',  // Light red tint (action)
+    //     luxury: '#FAFAF9',   // Warm white (elegant)
+    //     energy: '#FFFBEB',   // Light yellow tint (exciting)
+    //     calm: '#F0F9FF'      // Light blue tint (peaceful)
+    // };
 
     return {
         id: 'bg_enterprise',
@@ -574,7 +574,7 @@ function createBackgroundLayer(brandColor: string, colorPsych: PsychologyProfile
  */
 function createPatternLayers(
     pattern: ConversionPattern,
-    params: any,
+    params: unknown,
     psychologyProfile: PsychologyProfile
 ): StudioLayer[] {
     const generators: Record<ConversionPattern, () => StudioLayer[]> = {
@@ -598,7 +598,7 @@ function createPatternLayers(
 // ========== PATTERN LAYER GENERATORS ==========
 // Each function creates optimized layout for specific pattern
 
-function createUGCTestimonialLayers(params: any, psych: PsychologyProfile): StudioLayer[] {
+function createUGCTestimonialLayers(_params: any, psych: PsychologyProfile): StudioLayer[] {
     return [
         // User photo/avatar (top-left, builds trust)
         {
