@@ -272,7 +272,7 @@ export function LandingPage({ onGetStarted, onLogin }: LandingPageProps) {
           HERO - MOBILE-FIRST META ADS OPTIMIERT
           ============================================ */}
       {/* HERO - KRASS & VERSPIELT (MOBILE FIRST) */}
-      <div className="relative min-h-[600px] sm:min-h-[100dvh] flex flex-col items-center justify-start sm:justify-center pt-32 sm:pt-24 pb-12 overflow-hidden w-full max-w-[100vw]">
+      <div className="relative min-h-[600px] sm:min-h-[100dvh] flex flex-col items-center justify-start sm:justify-center pt-20 sm:pt-24 pb-12 overflow-hidden w-full max-w-[100vw]">
 
         {/* 1. Animated Background (The "Krass" Factor) */}
         <div className="absolute inset-0 pointer-events-none -z-20">
