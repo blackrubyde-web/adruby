@@ -443,7 +443,7 @@ export const EditorModals: React.FC<EditorModalsProps> = ({
                                 ...currentDoc,
                                 layers: currentDoc.layers.map((layer: StudioLayer) =>
                                     layer.id === targetLayerId
-                                        ? { ...layer, x: (params as any).x, y: (params as any).y } as StudioLayer
+                                        ? { ...layer, x: (params as { x: number, y: number }).x, y: (params as { x: number, y: number }).y } as StudioLayer
                                         : layer
                                 )
                             });

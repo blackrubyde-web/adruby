@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { X, Save, ShieldCheck, Download, Undo2, Redo2, Sparkles, Palette, Maximize2, Zap, PlusCircle, MoreHorizontal, Group, Ungroup, Lock, Unlock, AlignLeft, AlignCenter, AlignRight, AlignStartVertical, AlignEndVertical, ChevronsUp, ChevronsDown, ChevronUp, ChevronDown, ListPlus } from 'lucide-react';
+import { X, Save, ShieldCheck, Download, Undo2, Redo2, Sparkles, Palette, Maximize2, Zap, PlusCircle, MoreHorizontal, Group, Ungroup, Lock, Unlock, AlignLeft, AlignCenter, AlignRight, AlignStartVertical, AlignEndVertical, ChevronsUp, ChevronsDown, ChevronUp, ChevronDown } from 'lucide-react';
 // Using Chevrons for Z-Order. ListPlus/Grid for Distribute? 
 // Let's use generic placeholder icons if specifically named ones fail, but Chevrons are standard.
 import type { AdDocument } from '../../types/studio';
@@ -217,6 +217,48 @@ export const EditorToolbar: React.FC<EditorToolbarProps> = ({
                         <button onClick={() => onDistribute('vertical')} className="p-1 hover:bg-zinc-200 dark:hover:bg-zinc-800 rounded" title="Distribute Vertically">
                             <MoreHorizontal className="w-4 h-4 text-muted-foreground rotate-90" />
                         </button>
+                    </div>
+                )}
+
+                {/* Grouping Tools */}
+                {(onGroup || onUngroup) && (
+                    <div className="flex items-center bg-muted dark:bg-muted rounded-lg p-1 border border-border h-9 mr-2 gap-0.5">
+                        {onGroup && (
+                            <button
+                                onClick={onGroup}
+                                disabled={!canGroup}
+                                className={`p-1 rounded ${!canGroup ? 'opacity-30 cursor-not-allowed' : 'hover:bg-zinc-200 dark:hover:bg-zinc-800'}`}
+                                title="Group"
+                            >
+                                <Group className="w-4 h-4 text-muted-foreground" />
+                            </button>
+                        )}
+                        {onUngroup && (
+                            <button
+                                onClick={onUngroup}
+                                disabled={!canUngroup}
+                                className={`p-1 rounded ${!canUngroup ? 'opacity-30 cursor-not-allowed' : 'hover:bg-zinc-200 dark:hover:bg-zinc-800'}`}
+                                title="Ungroup"
+                            >
+                                <Ungroup className="w-4 h-4 text-muted-foreground" />
+                            </button>
+                        )}
+                    </div>
+                )}
+
+                {/* Locking Tools */}
+                {(onLock || onUnlock) && (
+                    <div className="flex items-center bg-muted dark:bg-muted rounded-lg p-1 border border-border h-9 mr-2 gap-0.5">
+                        {onLock && (
+                            <button onClick={onLock} className="p-1 hover:bg-zinc-200 dark:hover:bg-zinc-800 rounded" title="Lock">
+                                <Lock className="w-4 h-4 text-muted-foreground" />
+                            </button>
+                        )}
+                        {onUnlock && (
+                            <button onClick={onUnlock} className="p-1 hover:bg-zinc-200 dark:hover:bg-zinc-800 rounded" title="Unlock">
+                                <Unlock className="w-4 h-4 text-muted-foreground" />
+                            </button>
+                        )}
                     </div>
                 )}
 

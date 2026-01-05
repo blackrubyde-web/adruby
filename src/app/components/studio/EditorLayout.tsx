@@ -770,7 +770,7 @@ export const EditorLayout: React.FC<EditorLayoutProps> = ({ onClose, initialDoc,
     };
 
 
-    const handleZoom = (delta: number, center?: { x: number, y: number }) => {
+    const handleZoom = (delta: number, _center?: { x: number, y: number }) => {
         setScale(prev => {
             const newScale = Math.min(Math.max(prev * delta, 0.1), 5);
             return newScale;
@@ -848,7 +848,7 @@ export const EditorLayout: React.FC<EditorLayoutProps> = ({ onClose, initialDoc,
                     onApplyTemplate={(tpl) => {
                         // Check if we have existing content worth saving
                         const existingProduct = doc.layers.find(l => l.type === 'product' && 'src' in l && l.src && l.src.length > 100) as ImageLayer | undefined;
-                        const existingTexts = doc.layers.filter(l => l.type === 'text') as any[];
+                        const existingTexts = doc.layers.filter(l => l.type === 'text') as StudioLayer[];
 
                         let shouldMerge = false;
                         if (existingProduct || existingTexts.length > 0) {
