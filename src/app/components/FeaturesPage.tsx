@@ -1,9 +1,7 @@
 import { useState, useRef } from 'react';
 import {
-  Sparkles,
   Target,
   BarChart3,
-  TrendingUp,
   Users,
   Share2,
   Palette,
@@ -11,7 +9,6 @@ import {
   MousePointer2,
   Brain,
   Zap,
-  ArrowRight
 } from 'lucide-react';
 import { GlobalNav } from './landing/GlobalNav';
 import { PageContainer } from './design-system';
@@ -34,7 +31,7 @@ export function FeaturesPage({ onNavigate, onSignIn, onGetStarted }: FeaturesPag
     { id: 'studio', label: 'Creative Studio', icon: Palette, color: 'text-rose-500', bg: 'bg-rose-500/10' },
     { id: 'canvas', label: 'Campaign Canvas', icon: Layers, color: 'text-blue-500', bg: 'bg-blue-500/10' },
     { id: 'analytics', label: 'AI Analytics', icon: BarChart3, color: 'text-green-500', bg: 'bg-green-500/10' },
-  ];
+  ] as const;
 
   return (
     <div className="min-h-screen w-full bg-background overflow-hidden relative">
@@ -88,7 +85,7 @@ export function FeaturesPage({ onNavigate, onSignIn, onGetStarted }: FeaturesPag
               return (
                 <button
                   key={tab.id}
-                  onClick={() => setActiveTab(tab.id as any)}
+                  onClick={() => setActiveTab(tab.id)}
                   className={`px-6 py-4 rounded-2xl font-bold text-sm sm:text-base transition-all duration-300 flex items-center gap-3 border ${isActive
                     ? 'bg-card border-rose-500/50 shadow-xl scale-105'
                     : 'bg-card/30 border-transparent hover:bg-card/50 text-muted-foreground'

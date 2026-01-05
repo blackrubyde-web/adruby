@@ -3,33 +3,30 @@ import {
   ArrowRight,
   Sparkles,
   Target,
-  TrendingUp,
   BarChart3,
   Brain,
   LineChart,
+  Rocket,
+  Zap,
   CheckCircle,
   AlertCircle,
   ArrowUpRight,
-  Rocket,
   Briefcase,
   ChevronLeft,
   ChevronRight,
   Eye,
   Users,
-  Zap,
   ChevronDown,
   MessageCircle,
   Quote,
+  TrendingUp,
 } from 'lucide-react';
 import { ImageWithFallback } from './figma/ImageWithFallback';
 import {
   PageContainer,
   SectionHeader,
   Card,
-  StatCard,
-  TestimonialCard,
   PricingCard,
-  PrimaryButton,
   SecondaryButton,
   Tabs,
   tokens,
@@ -437,7 +434,7 @@ export function LandingPage({ onGetStarted, onLogin }: LandingPageProps) {
               { id: 6, title: 'Varianten', desc: 'Stil-Mutationen', icon: Zap, color: 'from-green-500 to-emerald-500' },
               { id: 7, title: 'Prognose', desc: 'RoAS Vorhersage', icon: LineChart, color: 'from-teal-500 to-cyan-500' },
               { id: 8, title: 'Export', desc: 'Meta API Push', icon: Rocket, color: 'from-[#C80000] to-rose-600' }
-            ].map((step, i) => (
+            ].map((step) => (
               <div
                 key={step.id}
                 onMouseMove={handleMouseMove}

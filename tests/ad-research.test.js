@@ -21,6 +21,12 @@ vi.mock('../netlify/functions/_shared/apifyClientShim.js', () => ({
 vi.mock('../netlify/functions/_shared/clients.js', () => ({
   supabaseAdmin: {
     from: (table) => ({ insert: vi.fn(async (rows) => ({ error: null })) }),
+    auth: {
+      getUser: vi.fn(async (token) => ({
+        data: { user: { id: 'test-user-id', email: 'test@example.com' } },
+        error: null,
+      })),
+    },
   },
 }));
 
@@ -35,6 +41,9 @@ describe('ad-research-start', () => {
 
     const event = {
       httpMethod: 'POST',
+      headers: {
+        authorization: 'Bearer valid-test-token',
+      },
       body: JSON.stringify({ searchUrl: 'https://www.facebook.com/ads/library/?id=123' }),
     };
 

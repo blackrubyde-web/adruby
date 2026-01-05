@@ -82,9 +82,10 @@ export function PartnerApplicationForm() {
 
             toast.success('Application submitted successfully!');
             await refreshData();
-        } catch (error: any) {
-            console.error('Application error:', error);
-            toast.error(error.message || 'Failed to submit application');
+        } catch (err) {
+            console.error('Application error:', err);
+            const message = err instanceof Error ? err.message : 'Failed to submit application';
+            toast.error(message);
         } finally {
             setIsSubmitting(false);
         }

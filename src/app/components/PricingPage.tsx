@@ -3,7 +3,6 @@ import {
   Check,
   Sparkles,
   Zap,
-  HelpCircle,
   Brain,
   BarChart3,
   Download,
