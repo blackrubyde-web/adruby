@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Lightbulb, AlertTriangle, Sparkles, Check, X, Loader2, ChevronRight, Zap } from 'lucide-react';
-import type { AdDocument } from '../../types/studio';
+import type { AdDocument, TextLayer } from '../../types/studio';
 import { apiClient } from '../../utils/apiClient';
 
 interface Suggestion {
@@ -70,7 +70,7 @@ export const AISuggestionsPanel = ({ document, isVisible, onApplySuggestion, onC
                             params: { width: (ctaLayers[0].width || 200) * 1.2, height: (ctaLayers[0].height || 50) * 1.2 }
                         }
                     }] : []),
-                    ...(textLayers.length > 0 && (textLayers[0] as any).color ? [{
+                    ...(textLayers.length > 0 && (textLayers[0] as TextLayer).color ? [{
                         id: '3',
                         type: 'warning' as const,
                         category: 'colors' as const,
