@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { fetchMetaCampaigns } from '../lib/api/meta';
 
-type MetaCampaign = {
+export type MetaCampaign = {
   id: string;
   name: string;
   status: string;

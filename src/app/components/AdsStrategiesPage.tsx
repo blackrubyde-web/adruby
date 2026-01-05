@@ -7,11 +7,30 @@ import { supabase } from '../lib/supabaseClient';
 import { StrategyWizard } from './studio/StrategyWizard';
 import { useStrategies, StrategyBlueprint } from '../hooks/useStrategies';
 
+type RiskTolerance = 'low' | 'medium' | 'high';
+type ScaleSpeed = 'slow' | 'medium' | 'fast' | 'aggressive';
+
 type AutopilotConfig = {
   target_roas?: number;
   max_daily_budget?: number;
-  scale_speed?: string;
-  risk_tolerance?: string;
+  scale_speed?: ScaleSpeed;
+  risk_tolerance?: RiskTolerance;
+};
+
+const RISK_TOLERANCE_VALUES: RiskTolerance[] = ['low', 'medium', 'high'];
+const SCALE_SPEED_VALUES: ScaleSpeed[] = ['slow', 'medium', 'fast', 'aggressive'];
+
+const toRiskTolerance = (value: unknown): RiskTolerance | undefined => (
+  typeof value === 'string' && RISK_TOLERANCE_VALUES.includes(value as RiskTolerance)
+    ? (value as RiskTolerance)
+    : undefined
+);
+
+const toScaleSpeed = (value: unknown): ScaleSpeed | undefined => {
+  if (typeof value !== 'string') return undefined;
+  if (value === 'standard') return 'medium';
+  if (value === 'conservative') return 'slow';
+  return SCALE_SPEED_VALUES.includes(value as ScaleSpeed) ? (value as ScaleSpeed) : undefined;
 };
 
 const toAutopilotConfig = (
@@ -22,8 +41,8 @@ const toAutopilotConfig = (
   return {
     target_roas: typeof record.target_roas === 'number' ? record.target_roas : undefined,
     max_daily_budget: typeof record.max_daily_budget === 'number' ? record.max_daily_budget : undefined,
-    scale_speed: typeof record.scale_speed === 'string' ? record.scale_speed : undefined,
-    risk_tolerance: typeof record.risk_tolerance === 'string' ? record.risk_tolerance : undefined
+    scale_speed: toScaleSpeed(record.scale_speed),
+    risk_tolerance: toRiskTolerance(record.risk_tolerance)
   };
 };
 
@@ -40,8 +59,8 @@ export function AdsStrategiesPage() {
       industry_type: string;
       target_roas: number;
       max_daily_budget: number;
-      scale_speed: string;
-      risk_tolerance: string
+      scale_speed: ScaleSpeed;
+      risk_tolerance: RiskTolerance;
     };
 
     const commonData = {
@@ -214,7 +233,7 @@ export function AdsStrategiesPage() {
             industry_type: editingStrategy.industry_type || '',
             target_roas: editingConfig?.target_roas ?? 3.0,
             risk_tolerance: editingConfig?.risk_tolerance ?? 'medium',
-            scale_speed: editingConfig?.scale_speed ?? 'standard',
+            scale_speed: editingConfig?.scale_speed ?? 'medium',
             max_daily_budget: editingConfig?.max_daily_budget ?? 100
           } : null}
         />

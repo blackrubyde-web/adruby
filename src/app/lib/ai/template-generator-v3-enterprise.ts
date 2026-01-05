@@ -86,16 +86,26 @@ export interface PsychologyProfile {
     colorPsychology: 'trust' | 'urgency' | 'luxury' | 'energy' | 'calm';
 }
 
-/**
- * MAIN: Generate enterprise-grade template based on industry & goal
- */
-export function generateEnterpriseTemplate(params: {
+export type EnterpriseTemplateParams = {
     industry: Industry;
     conversionGoal: ConversionGoal;
     brandColor: string;
     productName: string;
     tone?: string;
-}): AdDocument {
+};
+
+type IndustryConfig = {
+    emphasize: string[];
+    colorBias: PsychologyProfile['colorPsychology'];
+    trustSignals: string[];
+    avgPrice: 'low' | 'medium' | 'high' | 'free';
+    decisionSpeed: 'fast' | 'medium' | 'slow';
+};
+
+/**
+ * MAIN: Generate enterprise-grade template based on industry & goal
+ */
+export function generateEnterpriseTemplate(params: EnterpriseTemplateParams): AdDocument {
     // Select best conversion pattern for industry + goal combination
     const pattern = selectOptimalPattern(params.industry, params.conversionGoal);
 
@@ -207,7 +217,7 @@ function selectOptimalPattern(industry: Industry, goal: ConversionGoal): Convers
 /**
  * Get industry-specific configuration
  */
-function getIndustryConfig(industry: Industry) {
+function getIndustryConfig(industry: Industry): IndustryConfig {
     const configs = {
         dropshipping: {
             emphasize: ['discount', 'social_proof', 'scarcity'],
@@ -502,14 +512,9 @@ function getPsychologyProfile(pattern: ConversionPattern, _goal: ConversionGoal)
  * Create base template with all layers
  */
 function createBaseTemplate(
-    params: {
-        industry: Industry;
-        conversionGoal: ConversionGoal;
-        brandColor: string;
-        productName: string;
-    },
+    params: EnterpriseTemplateParams,
     pattern: ConversionPattern,
-    industryConfig: unknown,
+    industryConfig: IndustryConfig,
     microComponents: MicroComponent[],
     psychologyProfile: PsychologyProfile
 ): AdDocument {
@@ -574,7 +579,7 @@ function createBackgroundLayer(_brandColor: string, _colorPsych: PsychologyProfi
  */
 function createPatternLayers(
     pattern: ConversionPattern,
-    params: unknown,
+    params: EnterpriseTemplateParams,
     psychologyProfile: PsychologyProfile
 ): StudioLayer[] {
     const generators: Record<ConversionPattern, () => StudioLayer[]> = {
@@ -598,7 +603,7 @@ function createPatternLayers(
 // ========== PATTERN LAYER GENERATORS ==========
 // Each function creates optimized layout for specific pattern
 
-function createUGCTestimonialLayers(_params: any, _psych: PsychologyProfile): StudioLayer[] {
+function createUGCTestimonialLayers(_params: EnterpriseTemplateParams, _psych: PsychologyProfile): StudioLayer[] {
     return [
         // User photo/avatar (top-left, builds trust)
         {
@@ -684,7 +689,7 @@ function createUGCTestimonialLayers(_params: any, _psych: PsychologyProfile): St
     ];
 }
 
-function createHookPASLayers(_params: any, _psych: PsychologyProfile): StudioLayer[] {
+function createHookPASLayers(_params: EnterpriseTemplateParams, _psych: PsychologyProfile): StudioLayer[] {
     return [
         // Hook headline (Z-pattern: top)
         {
@@ -753,7 +758,7 @@ function createHookPASLayers(_params: any, _psych: PsychologyProfile): StudioLay
     ];
 }
 
-function createBeforeAfterLayers(_params: any, _psych: PsychologyProfile): StudioLayer[] {
+function createBeforeAfterLayers(_params: EnterpriseTemplateParams, _psych: PsychologyProfile): StudioLayer[] {
     return [
         // "Before/After" label
         {
@@ -868,7 +873,7 @@ function createBeforeAfterLayers(_params: any, _psych: PsychologyProfile): Studi
     ];
 }
 
-function createFeatureGridLayers(_params: any, _psych: PsychologyProfile): StudioLayer[] {
+function createFeatureGridLayers(_params: EnterpriseTemplateParams, _psych: PsychologyProfile): StudioLayer[] {
     return [
         // Main headline
         {
@@ -985,7 +990,7 @@ function createFeatureGridLayers(_params: any, _psych: PsychologyProfile): Studi
     ];
 }
 
-function createSocialProofMaxLayers(_params: any, _psych: PsychologyProfile): StudioLayer[] {
+function createSocialProofMaxLayers(_params: EnterpriseTemplateParams, _psych: PsychologyProfile): StudioLayer[] {
     return [
         // Big stat (trust builder)
         {
@@ -1079,7 +1084,7 @@ function createSocialProofMaxLayers(_params: any, _psych: PsychologyProfile): St
     ];
 }
 
-function createScarcityFOMOLayers(_params: any, _psych: PsychologyProfile): StudioLayer[] {
+function createScarcityFOMOLayers(_params: EnterpriseTemplateParams, _psych: PsychologyProfile): StudioLayer[] {
     return [
         // Urgency headline
         {
@@ -1149,7 +1154,7 @@ function createScarcityFOMOLayers(_params: any, _psych: PsychologyProfile): Stud
 }
 
 // Simpler implementations for remaining patterns...
-function createQuestionHookLayers(_params: any, _psych: PsychologyProfile): StudioLayer[] {
+function createQuestionHookLayers(_params: EnterpriseTemplateParams, _psych: PsychologyProfile): StudioLayer[] {
     return [
         {
             id: 'question',
@@ -1196,7 +1201,7 @@ function createQuestionHookLayers(_params: any, _psych: PsychologyProfile): Stud
     ];
 }
 
-function createBoldStatementLayers(_params: any, _psych: PsychologyProfile): StudioLayer[] {
+function createBoldStatementLayers(_params: EnterpriseTemplateParams, _psych: PsychologyProfile): StudioLayer[] {
     return [
         {
             id: 'bold_headline',
@@ -1243,7 +1248,7 @@ function createBoldStatementLayers(_params: any, _psych: PsychologyProfile): Stu
     ];
 }
 
-function createBenefitStackLayers(_params: any, _psych: PsychologyProfile): StudioLayer[] {
+function createBenefitStackLayers(_params: EnterpriseTemplateParams, _psych: PsychologyProfile): StudioLayer[] {
     const benefits = [
         '✓ Save 3 Hours Every Day',
         '✓ Increase Productivity 10x',
@@ -1274,11 +1279,11 @@ function createBenefitStackLayers(_params: any, _psych: PsychologyProfile): Stud
     } as TextLayer));
 }
 
-function createPainPointLayers(params: any, psych: PsychologyProfile): StudioLayer[] {
+function createPainPointLayers(params: EnterpriseTemplateParams, psych: PsychologyProfile): StudioLayer[] {
     return createHookPASLayers(params, psych); // Similar pattern
 }
 
-function createDreamOutcomeLayers(_params: any, _psych: PsychologyProfile): StudioLayer[] {
+function createDreamOutcomeLayers(_params: EnterpriseTemplateParams, _psych: PsychologyProfile): StudioLayer[] {
     return [
         {
             id: 'dream_visual',
@@ -1325,7 +1330,7 @@ function createDreamOutcomeLayers(_params: any, _psych: PsychologyProfile): Stud
     ];
 }
 
-function createAuthorityProofLayers(_params: any, _psych: PsychologyProfile): StudioLayer[] {
+function createAuthorityProofLayers(_params: EnterpriseTemplateParams, _psych: PsychologyProfile): StudioLayer[] {
     return [
         {
             id: 'authority_badge',
@@ -1397,7 +1402,7 @@ function createAuthorityProofLayers(_params: any, _psych: PsychologyProfile): St
 /**
  * Create micro-component layers (badges, timers, etc.)
  */
-function createMicroComponentLayers(components: MicroComponent[], _params: any): StudioLayer[] {
+function createMicroComponentLayers(components: MicroComponent[], _params: EnterpriseTemplateParams): StudioLayer[] {
     const layers: StudioLayer[] = [];
 
     components.forEach(comp => {
@@ -1513,7 +1518,7 @@ function createMicroComponentLayer(
 /**
  * Create CTA layer with conversion optimization
  */
-function createCTALayer(params: any, psych: PsychologyProfile, _industryConfig: any): CtaLayer {
+function createCTALayer(params: EnterpriseTemplateParams, psych: PsychologyProfile, _industryConfig: IndustryConfig): CtaLayer {
     const ctaTexts: Record<ConversionGoal, string> = {
         sales: 'BUY NOW',
         leads: 'GET FREE GUIDE',
@@ -1531,7 +1536,7 @@ function createCTALayer(params: any, psych: PsychologyProfile, _industryConfig: 
         calm: '#059669'      // Green
     };
 
-    const goal = params.conversionGoal as ConversionGoal;
+    const goal = params.conversionGoal;
 
     return {
         id: 'cta_enterprise',

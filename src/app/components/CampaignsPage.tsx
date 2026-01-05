@@ -2,8 +2,9 @@ import { Search, MoreVertical, Play, Pause, Copy, Trash2, TrendingUp, TrendingDo
 import { useCallback, useMemo, useState } from 'react';
 import { toast } from 'sonner';
 import { PageShell, HeroHeader, Card } from './layout';
-import { useMetaCampaigns } from '../hooks/useMetaCampaigns';
+import { useMetaCampaigns, type MetaCampaign } from '../hooks/useMetaCampaigns';
 import { useMetaConnection } from '../hooks/useMetaConnection';
+import type { MetaApplyAction } from '../lib/api/meta';
 
 type StatusFilter = 'all' | 'active' | 'paused' | 'completed';
 
@@ -48,12 +49,11 @@ export function CampaignsPage() {
     });
   }, [campaigns, searchQuery, statusFilter]);
 
-  const handleAction = useCallback(async (campaign: any, action: string) => {
+  const handleAction = useCallback(async (campaign: MetaCampaign, action: MetaApplyAction) => {
     const id = campaign.id;
     setActionState(prev => ({ ...prev, [`${id}-${action}`]: true }));
     try {
       // Mock action call
-      console.log(`Performing ${action} on campaign ${id}`);
       await new Promise(resolve => setTimeout(resolve, 1000));
       toast.success(`Campaign ${action} successful`);
       refresh();
@@ -64,7 +64,7 @@ export function CampaignsPage() {
     }
   }, [refresh]);
 
-  const isBusy = useCallback((id: string, action: string) => {
+  const isBusy = useCallback((id: string, action: MetaApplyAction) => {
     return !!actionState[`${id}-${action}`];
   }, [actionState]);
 

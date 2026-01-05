@@ -197,39 +197,55 @@ JSON Only. No markdown.
 // Use strict typing for input validation
 function normalizeProfile(input: unknown): StrategicProfile {
     // Treat input as untrusted record first
-    const raw = input as Record<string, any>;
+    const raw = input as Record<string, unknown>;
 
     // Safety helpers
-    const isValidCategory = (v: any): v is StrategicProfile['productCategory'] => PRODUCT_CATEGORIES.includes(v);
-    const isValidEmotion = (v: any): v is StrategicProfile['desiredEmotion'] => EMOTIONS.includes(v);
-    const isValidGoal = (v: any): v is StrategicProfile['conversionGoal'] => CONVERSION_GOALS.includes(v);
-    const isValidHook = (v: any): v is StrategicProfile['hookType'] => HOOK_TYPES.includes(v);
-    const isValidVibe = (v: any): v is StrategicProfile['designSystem']['vibe'] => VIBES.includes(v);
+    const getString = (value: unknown, fallback: string) =>
+        typeof value === 'string' ? value : fallback;
+    const isValidCategory = (v: unknown): v is StrategicProfile['productCategory'] =>
+        typeof v === 'string' && PRODUCT_CATEGORIES.includes(v as StrategicProfile['productCategory']);
+    const isValidEmotion = (v: unknown): v is StrategicProfile['desiredEmotion'] =>
+        typeof v === 'string' && EMOTIONS.includes(v as StrategicProfile['desiredEmotion']);
+    const isValidGoal = (v: unknown): v is StrategicProfile['conversionGoal'] =>
+        typeof v === 'string' && CONVERSION_GOALS.includes(v as StrategicProfile['conversionGoal']);
+    const isValidHook = (v: unknown): v is StrategicProfile['hookType'] =>
+        typeof v === 'string' && HOOK_TYPES.includes(v as StrategicProfile['hookType']);
+    const isValidVibe = (v: unknown): v is StrategicProfile['designSystem']['vibe'] =>
+        typeof v === 'string' && VIBES.includes(v as StrategicProfile['designSystem']['vibe']);
+    const isValidHeadlineFont = (v: unknown): v is StrategicProfile['designSystem']['fontPairing']['headline'] =>
+        typeof v === 'string' && ['Inter', 'Oswald', 'Playfair Display', 'Caveat', 'Rubik'].includes(v);
+    const rawDesignSystem = raw.designSystem as Record<string, unknown> | undefined;
+    const rawPalette = rawDesignSystem?.colorPalette as Record<string, unknown> | undefined;
+    const rawFontPairing = rawDesignSystem?.fontPairing as Record<string, unknown> | undefined;
+    const rawVisualElements = rawDesignSystem?.visualElements;
+    const visualElements = Array.isArray(rawVisualElements)
+        ? rawVisualElements.filter((item): item is string => typeof item === 'string')
+        : FALLBACK_PROFILE.designSystem.visualElements;
 
     return {
         productCategory: isValidCategory(raw?.productCategory) ? raw.productCategory : FALLBACK_PROFILE.productCategory,
-        targetAudience: raw?.targetAudience || FALLBACK_PROFILE.targetAudience,
-        primaryPainPoint: raw?.primaryPainPoint || FALLBACK_PROFILE.primaryPainPoint,
+        targetAudience: getString(raw?.targetAudience, FALLBACK_PROFILE.targetAudience),
+        primaryPainPoint: getString(raw?.primaryPainPoint, FALLBACK_PROFILE.primaryPainPoint),
         desiredEmotion: isValidEmotion(raw?.desiredEmotion) ? raw.desiredEmotion : FALLBACK_PROFILE.desiredEmotion,
         conversionGoal: isValidGoal(raw?.conversionGoal) ? raw.conversionGoal : FALLBACK_PROFILE.conversionGoal,
-        angle: raw?.angle || FALLBACK_PROFILE.angle,
+        angle: getString(raw?.angle, FALLBACK_PROFILE.angle),
         hookType: isValidHook(raw?.hookType) ? raw.hookType : FALLBACK_PROFILE.hookType,
-        recommendedTemplate: raw?.recommendedTemplate || FALLBACK_PROFILE.recommendedTemplate,
+        recommendedTemplate: getString(raw?.recommendedTemplate, FALLBACK_PROFILE.recommendedTemplate),
         designSystem: {
-            vibe: isValidVibe(raw?.designSystem?.vibe) ? raw.designSystem.vibe : FALLBACK_PROFILE.designSystem.vibe,
+            vibe: isValidVibe(rawDesignSystem?.vibe) ? rawDesignSystem.vibe : FALLBACK_PROFILE.designSystem.vibe,
             colorPalette: {
-                primary: raw?.designSystem?.colorPalette?.primary || FALLBACK_PROFILE.designSystem.colorPalette.primary,
-                secondary: raw?.designSystem?.colorPalette?.secondary || FALLBACK_PROFILE.designSystem.colorPalette.secondary,
-                text: raw?.designSystem?.colorPalette?.text || FALLBACK_PROFILE.designSystem.colorPalette.text,
-                highlight: raw?.designSystem?.colorPalette?.highlight || FALLBACK_PROFILE.designSystem.colorPalette.highlight
+                primary: getString(rawPalette?.primary, FALLBACK_PROFILE.designSystem.colorPalette.primary),
+                secondary: getString(rawPalette?.secondary, FALLBACK_PROFILE.designSystem.colorPalette.secondary),
+                text: getString(rawPalette?.text, FALLBACK_PROFILE.designSystem.colorPalette.text),
+                highlight: getString(rawPalette?.highlight, FALLBACK_PROFILE.designSystem.colorPalette.highlight)
             },
             fontPairing: {
-                headline: raw?.designSystem?.fontPairing?.headline || FALLBACK_PROFILE.designSystem.fontPairing.headline,
+                headline: isValidHeadlineFont(rawFontPairing?.headline)
+                    ? rawFontPairing.headline
+                    : FALLBACK_PROFILE.designSystem.fontPairing.headline,
                 body: 'Inter'
             },
-            visualElements: Array.isArray(raw?.designSystem?.visualElements)
-                ? raw.designSystem.visualElements
-                : FALLBACK_PROFILE.designSystem.visualElements
+            visualElements
         }
     };
 }
