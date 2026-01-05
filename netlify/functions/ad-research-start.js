@@ -1,5 +1,6 @@
 import { runAdResearchActor } from "./_shared/apifyClientShim.js";
 import { supabaseAdmin } from "./_shared/clients.js";
+import { requireUserId } from "./_shared/auth.js";
 import { withCors } from "./utils/response.js";
 
 export async function handler(event) {
@@ -8,6 +9,9 @@ export async function handler(event) {
   if (event.httpMethod === "OPTIONS") {
     return { statusCode: 200, headers, body: "" };
   }
+
+  const { ok, userId, response: authResponse } = await requireUserId(event);
+  if (!ok) return { ...authResponse, headers: { ...headers, ...authResponse.headers } };
 
   if (event.httpMethod !== "POST") {
     return { statusCode: 405, headers, body: JSON.stringify({ error: "Method not allowed" }) };

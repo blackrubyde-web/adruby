@@ -1,22 +1,24 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import {
   Sparkles,
   Target,
   BarChart3,
   TrendingUp,
   Users,
-  ArrowRight,
-  ChevronDown,
-  Brain,
-  Eye,
-  Zap,
-  FileText,
   Share2,
-  Download,
+  Palette,
+  Layers,
+  MousePointer2,
+  Brain,
+  Zap,
+  ArrowRight
 } from 'lucide-react';
-import type { LucideIcon } from 'lucide-react';
 import { GlobalNav } from './landing/GlobalNav';
-import { PageContainer, Card, Chip } from './design-system';
+import { PageContainer } from './design-system';
+import { StudioPreview } from './features/previews/StudioPreview';
+import { CanvasPreview } from './features/previews/CanvasPreview';
+import { AnalyticsPreview } from './features/previews/AnalyticsPreview';
+import { MobileStickyCTA } from './landing/MobileStickyCTA';
 
 interface FeaturesPageProps {
   onNavigate: (page: string) => void;
@@ -24,315 +26,211 @@ interface FeaturesPageProps {
   onGetStarted: () => void;
 }
 
-interface Feature {
-  id: string;
-  name: string;
-  description: string;
-  whyItMatters: string;
-  icon: LucideIcon;
-  availableIn?: string;
-}
-
 export function FeaturesPage({ onNavigate, onSignIn, onGetStarted }: FeaturesPageProps) {
-  const [activeCategory, setActiveCategory] = useState('ai-creative');
-  const [expandedFeature, setExpandedFeature] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState<'studio' | 'canvas' | 'analytics'>('studio');
+  const heroRef = useRef<HTMLElement>(null);
 
-  const categories = [
-    { id: 'ai-creative', label: 'AI Creative Generation', icon: Sparkles },
-    { id: 'audience', label: 'Audience & Targeting', icon: Target },
-    { id: 'analytics', label: 'Performance & Analytics', icon: BarChart3 },
-    { id: 'optimization', label: 'Optimization & Scaling', icon: TrendingUp },
-    { id: 'collaboration', label: 'Collaboration & Workflow', icon: Users },
-    { id: 'integrations', label: 'Integrations & Export', icon: Share2 },
+  const tabs = [
+    { id: 'studio', label: 'Creative Studio', icon: Palette, color: 'text-rose-500', bg: 'bg-rose-500/10' },
+    { id: 'canvas', label: 'Campaign Canvas', icon: Layers, color: 'text-blue-500', bg: 'bg-blue-500/10' },
+    { id: 'analytics', label: 'AI Analytics', icon: BarChart3, color: 'text-green-500', bg: 'bg-green-500/10' },
   ];
 
-  const features: Record<string, Feature[]> = {
-    'ai-creative': [
-      {
-        id: 'ai-ad-generation',
-        name: 'AI Ad Generation',
-        description: 'Generate headlines, primary text, and CTAs automatically. Creates multiple variations optimized for Meta Ads formats.',
-        whyItMatters: 'Save 2-3 hours per campaign and test 10x more creatives.',
-        icon: Brain,
-        availableIn: 'All Plans',
-      },
-      {
-        id: 'performance-prediction',
-        name: 'Performance Prediction',
-        description: 'AI predicts CTR, CPC, and conversion likelihood before you launch. Based on 10M+ historical ad data points.',
-        whyItMatters: 'Launch only ads that will perform, reducing wasted spend by 40%.',
-        icon: Eye,
-        availableIn: 'Pro & Agency',
-      },
-      {
-        id: 'smart-variations',
-        name: 'Smart Variations',
-        description: 'AI creates variations by testing different angles, pain points, and benefits automatically.',
-        whyItMatters: 'Find winning creatives faster with data-driven testing.',
-        icon: Zap,
-        availableIn: 'All Plans',
-      },
-      {
-        id: 'copy-optimization',
-        name: 'Copy Optimization',
-        description: 'AI suggests improvements to existing ad copy based on performance patterns and best practices.',
-        whyItMatters: 'Improve underperforming ads without starting from scratch.',
-        icon: FileText,
-        availableIn: 'Pro & Agency',
-      },
-    ],
-    'audience': [
-      {
-        id: 'audience-builder',
-        name: 'AI Audience Builder',
-        description: 'Generate targeting recommendations based on your product, industry, and goals.',
-        whyItMatters: 'Reach the right people without manual research.',
-        icon: Target,
-        availableIn: 'Pro & Agency',
-      },
-      {
-        id: 'lookalike-suggestions',
-        name: 'Lookalike Suggestions',
-        description: 'AI identifies best-performing audience segments and suggests lookalikes.',
-        whyItMatters: 'Scale winning audiences predictably.',
-        icon: Users,
-        availableIn: 'Pro & Agency',
-      },
-    ],
-    'analytics': [
-      {
-        id: 'real-time-tracking',
-        name: 'Real-Time Performance Tracking',
-        description: 'Monitor CTR, CPC, ROAS, and conversions in one dashboard. Updates every hour.',
-        whyItMatters: 'React fast to performance changes.',
-        icon: BarChart3,
-        availableIn: 'All Plans',
-      },
-      {
-        id: 'ai-insights',
-        name: 'AI-Powered Insights',
-        description: 'Get actionable recommendations on what to change, pause, or scale.',
-        whyItMatters: 'Make decisions based on data, not guesses.',
-        icon: Brain,
-        availableIn: 'Pro & Agency',
-      },
-    ],
-    'optimization': [
-      {
-        id: 'auto-optimization',
-        name: 'Auto-Optimization',
-        description: 'AI automatically adjusts budgets, pauses underperformers, and scales winners.',
-        whyItMatters: 'Maximize ROAS without constant monitoring.',
-        icon: TrendingUp,
-        availableIn: 'Agency',
-      },
-      {
-        id: 'ab-testing',
-        name: 'A/B Testing Manager',
-        description: 'Test creatives, audiences, and placements systematically with statistical significance tracking.',
-        whyItMatters: 'Know what works with confidence.',
-        icon: Zap,
-        availableIn: 'Pro & Agency',
-      },
-    ],
-    'collaboration': [
-      {
-        id: 'team-workspace',
-        name: 'Team Workspace',
-        description: 'Invite team members, assign roles, and collaborate on campaigns in real-time.',
-        whyItMatters: 'Scale without chaos.',
-        icon: Users,
-        availableIn: 'Agency',
-      },
-      {
-        id: 'approval-workflow',
-        name: 'Approval Workflow',
-        description: 'Client approval system for agencies. Share previews, collect feedback, and track changes.',
-        whyItMatters: 'Professional client management.',
-        icon: FileText,
-        availableIn: 'Agency',
-      },
-    ],
-    'integrations': [
-      {
-        id: 'meta-export',
-        name: 'Export to Meta Ads',
-        description: 'Push ads directly to Facebook Ads Manager with one click. No copy-pasting.',
-        whyItMatters: 'Launch campaigns 10x faster.',
-        icon: Download,
-        availableIn: 'All Plans',
-      },
-      {
-        id: 'api-access',
-        name: 'API Access',
-        description: 'Connect AdRuby to your tools via REST API. Automate creative workflows.',
-        whyItMatters: 'Build custom integrations.',
-        icon: Share2,
-        availableIn: 'Agency',
-      },
-    ],
-  };
-
-  const toggleFeature = (featureId: string) => {
-    setExpandedFeature(expandedFeature === featureId ? null : featureId);
-  };
-
   return (
-    <div className="min-h-screen w-full bg-background landing-page">
+    <div className="min-h-screen w-full bg-background overflow-hidden relative">
       <GlobalNav currentPage="features" onNavigate={onNavigate} onSignIn={onSignIn} onGetStarted={onGetStarted} />
+      <MobileStickyCTA onGetStarted={onGetStarted} showAfterRef={heroRef} />
 
-      {/* Hero Header */}
-      <section className="py-16 sm:py-20 bg-muted/30">
+      {/* Background Ambience */}
+      <div className="absolute inset-0 pointer-events-none">
+        <div className="absolute top-[-10%] left-[-10%] w-[1000px] h-[1000px] bg-rose-600/10 rounded-full blur-[150px] animate-pulse-slow"></div>
+        <div className="absolute bottom-[-10%] right-[-10%] w-[800px] h-[800px] bg-blue-600/10 rounded-full blur-[150px] animate-pulse-slower"></div>
+      </div>
+
+      {/* Hero Section */}
+      <section ref={heroRef} className="relative pt-32 pb-20 sm:pt-40 sm:pb-24">
         <PageContainer>
-          <div className="max-w-3xl mx-auto text-center">
-            <h1 className="text-hero mb-4">All Features</h1>
-            <p className="text-body-large text-muted-foreground mb-6">
-              Everything you need to build, test, and scale ads with AI.
+          <div className="max-w-4xl mx-auto text-center animate-in fade-in slide-in-from-bottom-8 duration-700">
+            <h1 className="text-5xl sm:text-7xl font-black tracking-tighter mb-6 leading-[1.1]">
+              Das mächtigste <br />
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#C80000] via-rose-500 to-red-600">
+                Ad-Studio der Welt.
+              </span>
+            </h1>
+            <p className="text-xl text-muted-foreground mb-10 max-w-2xl mx-auto leading-relaxed">
+              Vom ersten Prompt zur perfekten Kampagne in Sekunden. AdRuby vereint generative AI, präzises Targeting und automatische Skalierung in einer Plattform.
             </p>
-            <div className="flex flex-wrap gap-2 justify-center">
-              <Chip icon={<Sparkles className="w-3 h-3" />}>AI-powered</Chip>
-              <Chip icon={<Zap className="w-3 h-3" />}>Fast workflows</Chip>
-              <Chip icon={<BarChart3 className="w-3 h-3" />}>Performance-driven</Chip>
+            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+              <button
+                onClick={onGetStarted}
+                className="px-8 py-4 bg-gradient-to-r from-[#C80000] via-rose-600 to-red-600 text-white rounded-2xl font-bold text-lg hover:shadow-2xl hover:scale-105 transition-all shadow-[0_0_30px_rgba(200,0,0,0.3)] flex items-center justify-center gap-2"
+              >
+                <Zap className="w-5 h-5 fill-white" />
+                7 Tage kostenlos testen
+              </button>
+              <button className="px-8 py-4 bg-card/50 backdrop-blur border border-border text-foreground rounded-2xl font-bold text-lg hover:bg-card/80 transition-all">
+                Live Demo ansehen
+              </button>
             </div>
           </div>
         </PageContainer>
       </section>
 
-      {/* Features Content */}
-      <section className="py-16 sm:py-20">
+      {/* Interactive Feature Showcase */}
+      <section className="py-20 relative z-10">
         <PageContainer>
-          <div className="grid lg:grid-cols-[280px_1fr] gap-8">
-            {/* Left: Category Navigation */}
-            <div className="lg:sticky lg:top-24 lg:self-start">
-              <div className="space-y-2">
-                {categories.map((category) => {
-                  const Icon = category.icon;
-                  return (
-                    <button
-                      key={category.id}
-                      onClick={() => {
-                        setActiveCategory(category.id);
-                        setExpandedFeature(null);
-                      }}
-                      className={`w-full text-left px-4 py-3 rounded-xl font-semibold transition-all flex items-center gap-3 ${
-                        activeCategory === category.id
-                          ? 'bg-primary/10 text-primary'
-                          : 'text-muted-foreground hover:bg-muted/50 hover:text-foreground'
-                      }`}
-                    >
-                      <Icon className="w-5 h-5 flex-shrink-0" />
-                      <span className="text-sm">{category.label}</span>
-                    </button>
-                  );
-                })}
+
+          {/* Tabs */}
+          <div className="flex flex-wrap justify-center gap-4 mb-16">
+            {tabs.map((tab) => {
+              const Icon = tab.icon;
+              const isActive = activeTab === tab.id;
+              return (
+                <button
+                  key={tab.id}
+                  onClick={() => setActiveTab(tab.id as any)}
+                  className={`px-6 py-4 rounded-2xl font-bold text-sm sm:text-base transition-all duration-300 flex items-center gap-3 border ${isActive
+                    ? 'bg-card border-rose-500/50 shadow-xl scale-105'
+                    : 'bg-card/30 border-transparent hover:bg-card/50 text-muted-foreground'
+                    }`}
+                >
+                  <div className={`p-2 rounded-lg ${isActive ? tab.bg : 'bg-muted'}`}>
+                    <Icon className={`w-5 h-5 ${isActive ? tab.color : 'text-muted-foreground'}`} />
+                  </div>
+                  <span className={isActive ? 'text-foreground' : ''}>{tab.label}</span>
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Preview Container */}
+          <div className="relative max-w-6xl mx-auto">
+            <div className="absolute inset-0 bg-gradient-to-b from-rose-500/5 to-transparent rounded-3xl blur-3xl -z-10"></div>
+
+            {/* Transition Groups */}
+            <div className="relative min-h-[600px] transition-all duration-500">
+              {activeTab === 'studio' && (
+                <div className="animate-in fade-in zoom-in-95 duration-500">
+                  <div className="mb-8 text-center max-w-2xl mx-auto">
+                    <h3 className="text-3xl font-bold mb-3">Creative Studio</h3>
+                    <p className="text-muted-foreground">Der erste Editor, der mitdenkt. Generiere Bilder, Texte und komplette Layouts mit einem Klick.</p>
+                  </div>
+                  <StudioPreview />
+                </div>
+              )}
+              {activeTab === 'canvas' && (
+                <div className="animate-in fade-in zoom-in-95 duration-500">
+                  <div className="mb-8 text-center max-w-2xl mx-auto">
+                    <h3 className="text-3xl font-bold mb-3">Campaign Canvas</h3>
+                    <p className="text-muted-foreground">Visualisiere deine Strategie. Verbinde Zielgruppen, Ads und Budgets per Drag-and-Drop.</p>
+                  </div>
+                  <CanvasPreview />
+                </div>
+              )}
+              {activeTab === 'analytics' && (
+                <div className="animate-in fade-in zoom-in-95 duration-500">
+                  <div className="mb-8 text-center max-w-2xl mx-auto">
+                    <h3 className="text-3xl font-bold mb-3">AI Analytics</h3>
+                    <p className="text-muted-foreground">Verstehe nicht nur was passiert, sondern warum. KI-basierte Vorhersagen für maximalen ROAS.</p>
+                  </div>
+                  <AnalyticsPreview />
+                </div>
+              )}
+            </div>
+
+          </div>
+        </PageContainer>
+      </section>
+
+      {/* Feature Grid Details */}
+      <section className="py-24 bg-card/30 border-t border-white/5">
+        <PageContainer>
+          <div className="text-center mb-16">
+            <h2 className="text-4xl font-bold mb-4">Features im Detail</h2>
+            <p className="text-muted-foreground">Alles was du brauchst in einer Suite.</p>
+          </div>
+
+          <div className="grid md:grid-cols-3 gap-8">
+            <div className="p-8 rounded-3xl bg-card/50 border border-white/5 hover:border-rose-500/30 transition-all hover:-translate-y-1 group">
+              <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-rose-500 to-red-600 flex items-center justify-center mb-6 shadow-lg shadow-rose-900/20 group-hover:scale-110 transition-transform">
+                <Brain className="w-7 h-7 text-white" />
               </div>
+              <h3 className="text-xl font-bold mb-3">AI Generation Engine</h3>
+              <p className="text-muted-foreground leading-relaxed">
+                Erstelle tausende Variationen deiner Ads. Die AI lernt, welche Farben, Hooks und Bilder am besten für deine Brand funktionieren.
+              </p>
             </div>
 
-            {/* Right: Feature Details */}
-            <div className="space-y-4">
-              {features[activeCategory]?.map((feature) => {
-                const Icon = feature.icon;
-                const isExpanded = expandedFeature === feature.id;
+            <div className="p-8 rounded-3xl bg-card/50 border border-white/5 hover:border-blue-500/30 transition-all hover:-translate-y-1 group">
+              <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center mb-6 shadow-lg shadow-blue-900/20 group-hover:scale-110 transition-transform">
+                <Target className="w-7 h-7 text-white" />
+              </div>
+              <h3 className="text-xl font-bold mb-3">Präzises Targeting</h3>
+              <p className="text-muted-foreground leading-relaxed">
+                Finde deine idealen Kunden automatisch. Unsere Algorithmen analysieren Kaufverhalten und Interessen in Echtzeit.
+              </p>
+            </div>
 
-                return (
-                  <Card key={feature.id} className="overflow-hidden">
-                    {/* Feature Header (Always Visible) */}
-                    <button
-                      onClick={() => toggleFeature(feature.id)}
-                      className="w-full text-left p-6 flex items-start gap-4 hover:bg-muted/30 transition-colors"
-                    >
-                      <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0">
-                        <Icon className="w-5 h-5 text-primary" />
-                      </div>
-                      <div className="flex-1">
-                        <div className="flex items-center justify-between mb-1">
-                          <h3 className="font-bold text-lg">{feature.name}</h3>
-                          <ChevronDown
-                            className={`w-5 h-5 text-muted-foreground transition-transform ${
-                              isExpanded ? 'rotate-180' : ''
-                            }`}
-                          />
-                        </div>
-                        {feature.availableIn && (
-                          <span className="text-xs font-semibold text-primary">{feature.availableIn}</span>
-                        )}
-                      </div>
-                    </button>
+            <div className="p-8 rounded-3xl bg-card/50 border border-white/5 hover:border-green-500/30 transition-all hover:-translate-y-1 group">
+              <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-green-500 to-emerald-600 flex items-center justify-center mb-6 shadow-lg shadow-green-900/20 group-hover:scale-110 transition-transform">
+                <Share2 className="w-7 h-7 text-white" />
+              </div>
+              <h3 className="text-xl font-bold mb-3">1-Click Publish</h3>
+              <p className="text-muted-foreground leading-relaxed">
+                Veröffentliche Kampagnen direkt auf Meta, TikTok und Google. Kein manuelles Hochladen, keine CSV-Export-Hölle mehr.
+              </p>
+            </div>
 
-                    {/* Expanded Content */}
-                    {isExpanded && (
-                      <div className="px-6 pb-6 space-y-4 animate-in">
-                        <div className="pl-14">
-                          <p className="text-sm text-muted-foreground mb-4 leading-relaxed">{feature.description}</p>
+            <div className="p-8 rounded-3xl bg-card/50 border border-white/5 hover:border-purple-500/30 transition-all hover:-translate-y-1 group">
+              <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-purple-500 to-violet-600 flex items-center justify-center mb-6 shadow-lg shadow-purple-900/20 group-hover:scale-110 transition-transform">
+                <Users className="w-7 h-7 text-white" />
+              </div>
+              <h3 className="text-xl font-bold mb-3">Team Collaboration</h3>
+              <p className="text-muted-foreground leading-relaxed">
+                Arbeite live mit deinem Team zusammen. Kommentiere Entwürfe, teile Previews und verwalte Zugriffsrechte zentral.
+              </p>
+            </div>
 
-                          {/* Why It Matters */}
-                          <div className="p-4 bg-green-500/5 border border-green-500/20 rounded-xl">
-                            <p className="text-xs font-semibold text-green-700 uppercase tracking-wide mb-1">
-                              Why it matters
-                            </p>
-                            <p className="text-sm font-medium text-green-900">{feature.whyItMatters}</p>
-                          </div>
+            <div className="p-8 rounded-3xl bg-card/50 border border-white/5 hover:border-orange-500/30 transition-all hover:-translate-y-1 group">
+              <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-orange-500 to-amber-600 flex items-center justify-center mb-6 shadow-lg shadow-orange-900/20 group-hover:scale-110 transition-transform">
+                <Zap className="w-7 h-7 text-white" />
+              </div>
+              <h3 className="text-xl font-bold mb-3">Auto-Optimierung</h3>
+              <p className="text-muted-foreground leading-relaxed">
+                Setze Regeln für deine Kampagnen. AdRuby stoppt schlechte Ads automatisch und skaliert die Gewinner für dich.
+              </p>
+            </div>
 
-                          {/* Optional: Visual Mock Placeholder */}
-                          <div className="mt-4 p-8 bg-muted/30 rounded-xl border border-border/50 flex items-center justify-center">
-                            <div className="text-center text-muted-foreground">
-                              <Icon className="w-12 h-12 mx-auto mb-2 opacity-20" />
-                              <p className="text-xs">Feature visualization</p>
-                            </div>
-                          </div>
-
-                          {/* Try Feature Button */}
-                          <button
-                            onClick={onGetStarted}
-                            className="mt-4 w-full sm:w-auto px-5 py-2.5 bg-primary text-white rounded-xl font-semibold hover:bg-primary/90 transition-all flex items-center justify-center gap-2"
-                          >
-                            Try this feature
-                            <ArrowRight className="w-4 h-4" />
-                          </button>
-                        </div>
-                      </div>
-                    )}
-                  </Card>
-                );
-              })}
+            <div className="p-8 rounded-3xl bg-card/50 border border-white/5 hover:border-pink-500/30 transition-all hover:-translate-y-1 group">
+              <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-pink-500 to-rose-600 flex items-center justify-center mb-6 shadow-lg shadow-pink-900/20 group-hover:scale-110 transition-transform">
+                <MousePointer2 className="w-7 h-7 text-white" />
+              </div>
+              <h3 className="text-xl font-bold mb-3">Drag & Drop Builder</h3>
+              <p className="text-muted-foreground leading-relaxed">
+                Der intuitivste Editor am Markt. Baue professionelle Ads ohne Design-Vorkenntnisse, unterstützt von smarten Templates.
+              </p>
             </div>
           </div>
         </PageContainer>
       </section>
 
-      {/* CTA Section */}
-      <section className="py-16 sm:py-20 bg-muted/30">
+      {/* Final CTA */}
+      <section className="py-24 relative overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-b from-transparent via-rose-900/5 to-transparent"></div>
         <PageContainer>
-          <Card className="text-center max-w-2xl mx-auto bg-gradient-to-br from-primary/5 to-purple-500/5 border-primary/20">
-            <h2 className="text-section-title mb-4">Ready to see it in action?</h2>
-            <p className="text-body-large text-muted-foreground mb-6">
-              Start your 7-day free trial. No credit card required.
-            </p>
+          <div className="max-w-4xl mx-auto text-center relative z-10">
+            <h2 className="text-5xl font-black mb-8">Bereit für das nächste Level?</h2>
             <button
               onClick={onGetStarted}
-              className="px-8 py-3 bg-primary text-white rounded-xl font-semibold hover:bg-primary/90 transition-all hover:shadow-xl"
+              className="px-12 py-5 bg-gradient-to-r from-[#C80000] via-rose-600 to-red-600 text-white rounded-2xl font-bold text-xl hover:shadow-[0_0_50px_rgba(200,0,0,0.4)] hover:scale-105 transition-all shadow-2xl"
             >
-              Start free trial
+              Jetzt AdRuby testen
             </button>
-          </Card>
+            <p className="mt-6 text-muted-foreground">Keine Kreditkarte erforderlich. 7 Tage kostenlos.</p>
+          </div>
         </PageContainer>
       </section>
 
-      <style>{`
-        .animate-in {
-          animation: slide-down 0.3s ease-out;
-        }
-        @keyframes slide-down {
-          from {
-            opacity: 0;
-            transform: translateY(-10px);
-          }
-          to {
-            opacity: 1;
-            transform: translateY(0);
-          }
-        }
-      `}</style>
     </div>
   );
 }

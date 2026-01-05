@@ -6,6 +6,41 @@ import type { AdDocument, StudioLayer } from '../../types/studio';
  * Creates strategic layer placement using golden ratio & visual hierarchy
  */
 
+/**
+ * Generate professional shadow for product layers
+ * Creates realistic depth and prevents "GIMP sticker" effect
+ */
+function generateProductShadow(
+    layerWidth: number,
+    layerHeight: number,
+    intensity: 'subtle' | 'normal' | 'dramatic' = 'normal'
+): {
+    shadowColor: string;
+    shadowBlur: number;
+    shadowOffsetX: number;
+    shadowOffsetY: number;
+    shadowOpacity: number;
+} {
+    const intensityMap = {
+        subtle: { blur: 20, offsetY: 10, opacity: 0.15 },
+        normal: { blur: 35, offsetY: 18, opacity: 0.25 },
+        dramatic: { blur: 55, offsetY: 28, opacity: 0.35 }
+    };
+
+    const config = intensityMap[intensity];
+
+    // Scale shadow based on product size (larger products = larger shadows)
+    const sizeMultiplier = Math.max(layerWidth, layerHeight) / 500;
+
+    return {
+        shadowColor: 'rgba(0, 0, 0, 1)', // Full black, opacity controlled separately
+        shadowBlur: Math.round(config.blur * sizeMultiplier),
+        shadowOffsetX: 0, // Centered shadow
+        shadowOffsetY: Math.round(config.offsetY * sizeMultiplier),
+        shadowOpacity: config.opacity
+    };
+}
+
 export function composeLayout(params: {
     template: any;
     copy: PremiumCopy;
@@ -30,8 +65,8 @@ export function composeLayout(params: {
     // Clone template document
     const baseDoc = JSON.parse(JSON.stringify(params.template.document));
 
-    // Apply premium copy to layers
-    const layers: StudioLayer[] = baseDoc.layers.map((layer: any) => {
+    // Recursive layer processing to handle groups
+    const processLayer = (layer: any): StudioLayer => {
         const newLayer = { ...layer };
 
         // Content Mapping (Role-based Priority with Fallback)
@@ -77,11 +112,21 @@ export function composeLayout(params: {
             newLayer.opacity = 1; // Ensure full visibility
         }
 
-        // 2. Product Layer -> Gets ORIGINAL Product Image
+        // 2. Product Layer → Gets ORIGINAL Product Image + PROFESSIONAL SHADOW
         if (params.productImage && (layer.name?.toLowerCase().includes('product') || layer.type === 'product' || layer.name?.toLowerCase().includes('customer'))) {
             newLayer.src = params.productImage;
             // Best effort fit
             newLayer.fit = 'contain';
+
+            // NEW: Automatic professional shadow for realistic integration
+            const shadow = generateProductShadow(newLayer.width, newLayer.height, 'normal');
+            newLayer.shadowColor = shadow.shadowColor;
+            newLayer.shadowBlur = shadow.shadowBlur;
+            newLayer.shadowOffsetX = shadow.shadowOffsetX;
+            newLayer.shadowOffsetY = shadow.shadowOffsetY;
+            newLayer.shadowOpacity = shadow.shadowOpacity;
+
+            console.log(`✨ Applied product shadow: blur=${shadow.shadowBlur}px, offset=${shadow.shadowOffsetY}px`);
         }
 
         // Apply Dynamic Styling
@@ -96,12 +141,14 @@ export function composeLayout(params: {
                 else newLayer.fontFamily = 'Inter';
             }
 
-            // Update Colors
+            // Update Colors - FIX: Use 'fill' for consistency with renderer
             if (newLayer.type === 'text') {
                 // Headlines get primary or text color
                 if (layer.name?.toLowerCase().includes('headline')) {
-                    newLayer.color = textColor;
+                    newLayer.fill = textColor;
+                    newLayer.color = textColor; // Set both for compatibility
                 } else {
+                    newLayer.fill = textColor;
                     newLayer.color = textColor;
                     // Adjust opacity for subtitles
                     if (layer.name?.toLowerCase().includes('description')) {
@@ -152,8 +199,16 @@ export function composeLayout(params: {
             newLayer.fontSize = Math.floor(currentFontSize);
         }
 
+        // RECURSIVE: Process group children
+        if (newLayer.type === 'group' && Array.isArray(newLayer.children)) {
+            newLayer.children = newLayer.children.map(processLayer);
+        }
+
         return newLayer;
-    });
+    };
+
+    // Apply recursive processing to all layers
+    const layers: StudioLayer[] = baseDoc.layers.map(processLayer);
 
     const adDocument: AdDocument = {
         id: `premium-ad-${Date.now()}`,

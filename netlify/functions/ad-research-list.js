@@ -1,9 +1,14 @@
 import { withCors } from './utils/response.js';
 import { supabaseAdmin } from './_shared/clients.js';
+import { requireUserId } from './_shared/auth.js';
 
 export async function handler(event) {
   const headers = { ...withCors().headers, 'Content-Type': 'application/json' };
   if (event.httpMethod === 'OPTIONS') return { statusCode: 200, headers, body: '' };
+
+  const { ok, userId, response: authResponse } = await requireUserId(event);
+  if (!ok) return { ...authResponse, headers: { ...headers, ...authResponse.headers } };
+
   if (event.httpMethod !== 'GET') return { statusCode: 405, headers, body: JSON.stringify({ error: 'Method not allowed' }) };
 
   if (!process.env.SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) {

@@ -15,19 +15,14 @@ export async function trackEvent(name: string, properties: Record<string, unknow
     timestamp: new Date().toISOString()
   };
 
-  try {
-    if (navigator?.sendBeacon) {
-      const blob = new Blob([JSON.stringify(payload)], { type: 'application/json' });
-      navigator.sendBeacon('/.netlify/functions/analytics', blob);
-      return;
-    }
-  } catch {
-    // fallback to fetch
-  }
-
+  // Use apiClient to ensure authentication headers are sent.
+  // We use the non-blocking nature of the async function, but we can't easily use keepalive with apiClient wrapper
+  // unless we extend it. For now, relying on apiClient is better than failing auth.
   try {
     await apiClient.post('/api/analytics', payload);
   } catch {
     // Non-blocking analytics: ignore errors
   }
+
+
 }

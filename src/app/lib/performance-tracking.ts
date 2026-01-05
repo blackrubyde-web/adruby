@@ -48,17 +48,24 @@ export interface CampaignPerformance {
  * Calculate prediction accuracy
  */
 export function calculateAccuracy(performance: CampaignPerformance): CampaignPerformance['accuracy'] {
-    if (!performance.actual.ctr || !performance.actual.roas) {
+    // Check for actual undefined/null values, but allow 0 as valid
+    if (performance.actual.ctr === undefined || performance.actual.ctr === null ||
+        performance.actual.roas === undefined || performance.actual.roas === null) {
         return undefined;
     }
 
-    const ctrError = Math.abs(
-        (performance.actual.ctr - performance.predicted.ctr.expected) / performance.predicted.ctr.expected * 100
-    );
+    // Prevent division by zero for expected values
+    const ctrExpected = performance.predicted.ctr.expected;
+    const roasExpected = performance.predicted.roas.expected;
 
-    const roasError = Math.abs(
-        (performance.actual.roas - performance.predicted.roas.expected) / performance.predicted.roas.expected * 100
-    );
+    // If expected is 0 or very close to 0, we can't calculate meaningful error percentage
+    const ctrError = (ctrExpected && Math.abs(ctrExpected) > 0.001)
+        ? Math.abs((performance.actual.ctr - ctrExpected) / ctrExpected * 100)
+        : 0;
+
+    const roasError = (roasExpected && Math.abs(roasExpected) > 0.001)
+        ? Math.abs((performance.actual.roas - roasExpected) / roasExpected * 100)
+        : 0;
 
     const ctrInRange =
         performance.actual.ctr >= performance.predicted.ctr.min &&
@@ -84,21 +91,20 @@ export async function saveCampaignPerformance(
     try {
         const accuracy = calculateAccuracy(performance as CampaignPerformance);
 
-        const response = await fetch('/api/campaign-performance', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                ...performance,
-                accuracy,
-                lastUpdated: new Date().toISOString()
-            })
-        });
+        const response = await apiClient.post<{ success: boolean; error?: string }>('/api/campaign-performance', {
+            ...performance,
+            accuracy,
+            lastUpdated: new Date().toISOString()
+        }
+        );
 
-        if (!response.ok) {
-            throw new Error('Failed to save performance data');
+        if (!response.success && response.error) {
+            throw new Error(response.error);
         }
 
         return { success: true };
+
+
     } catch (error) {
         console.error('Error saving performance:', error);
         return {
@@ -115,32 +121,30 @@ export async function fetchMetaPerformance(
     campaignId: string
 ): Promise<CampaignPerformance['actual'] | null> {
     try {
-        const response = await fetch(`/.netlify/functions/meta-campaigns?campaignId=${campaignId}`);
-        const data = await response.json();
+        // Build query params and pass to apiClient
+        const data = await apiClient.get<{ campaigns?: Array<{ id: string; insights?: any }> }>(
+            `/.netlify/functions/meta-campaigns?campaignId=${encodeURIComponent(campaignId)}`
+        );
 
-        if (!data.success || !data.insights) {
+        if (!data.campaigns || data.campaigns.length === 0) {
             return null;
         }
 
-        const insights = data.insights;
+        const campaign = data.campaigns.find(c => c.id === campaignId);
+        if (!campaign || !campaign.insights) {
+            return null;
+        }
+
+        const insights = campaign.insights;
 
         // Calculate metrics from raw data
-        const ctr = insights.clicks && insights.impressions
-            ? (insights.clicks / insights.impressions) * 100
-            : undefined;
-
-        const roas = insights.revenue && insights.spend
-            ? insights.revenue / insights.spend
-            : undefined;
-
         return {
-            ctr,
-            roas,
-            impressions: insights.impressions,
-            clicks: insights.clicks,
-            conversions: insights.conversions,
-            spend: insights.spend,
-            revenue: insights.revenue
+            impressions: insights.impressions || 0,
+            clicks: insights.clicks || 0,
+            ctr: insights.ctr || (insights.clicks / insights.impressions) * 100 || 0,
+            spend: insights.spend || 0,
+            conversions: insights.conversions || insights.actions?.find((a: any) => a.action_type === 'purchase')?.value || 0,
+            roas: insights.roas || (insights.purchase_value / insights.spend) || 0
         };
     } catch (error) {
         console.error('Error fetching Meta performance:', error);
@@ -190,6 +194,7 @@ export function usePerformanceTracking(campaignId: string) {
 
 // Need to add React import
 import React from 'react';
+import { apiClient } from '../utils/apiClient';
 
 /**
  * Model retraining data structure
@@ -226,11 +231,7 @@ export async function collectTrainingData(
     };
 
     try {
-        await fetch('/api/model-training', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(trainingData)
-        });
+        await apiClient.post('/api/model-training', trainingData);
     } catch (error) {
         console.error('Error collecting training data:', error);
     }

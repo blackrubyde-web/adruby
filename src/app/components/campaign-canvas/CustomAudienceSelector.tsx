@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Users, Upload, Copy, Target, Check, Loader2, Plus, X } from 'lucide-react';
 import type { CustomAudience, LookalikeAudience } from './types';
+import { getMetaAudiences } from '../../lib/api/meta';
 
 interface CustomAudienceSelectorProps {
     selectedAudiences: CustomAudience[];
@@ -24,39 +25,18 @@ export const CustomAudienceSelector = ({
         const fetchAudiences = async () => {
             setIsLoading(true);
             try {
-                const response = await fetch('/.netlify/functions/meta-audiences');
-                const data = await response.json();
+                // Now using authenticated apiClient via getMetaAudiences
+                const data = await getMetaAudiences();
 
                 if (data.success && data.audiences) {
                     setAvailableAudiences(data.audiences);
                 } else {
-                    // Mock data for development
-                    setAvailableAudiences([
-                        {
-                            id: 'ca_1',
-                            name: 'Website Visitors (30 days)',
-                            type: 'website',
-                            size: 15000,
-                            status: 'ready',
-                            description: 'Alle Besucher der letzten 30 Tage'
-                        },
-                        {
-                            id: 'ca_2',
-                            name: 'Customer Email List',
-                            type: 'customer_list',
-                            size: 8500,
-                            status: 'ready',
-                            description: 'Hochgeladene Kundenliste'
-                        },
-                        {
-                            id: 'ca_3',
-                            name: 'Email Openers',
-                            type: 'engagement',
-                            size: 3200,
-                            status: 'ready',
-                            description: 'Nutzer die Email geöffnet haben'
-                        }
-                    ]);
+                    // Fallback or empty if failed, but backend now enforces auth
+                    // If backend returns mock data currently, it stays here.
+                    // Ideally we remove mock data from frontend if backend provides it.
+                    // The backend code I modified still returns mocked list for now (as per original code),
+                    // but properly gated behind auth.
+                    setAvailableAudiences([]);
                 }
             } catch (error) {
                 console.error('Failed to fetch audiences:', error);

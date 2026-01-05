@@ -95,7 +95,21 @@ const TextItem = ({ layer }: { layer: TextLayer }) => {
 };
 
 const CtaItem = ({ layer }: { layer: CtaLayer }) => {
-    const { width, height, opacity, bgColor, radius, text, fontSize, fontFamily, fontWeight, fontStyle, color, letterSpacing, shadowColor, shadowBlur, shadowOffsetX, shadowOffsetY } = layer;
+    const { width, height, opacity, bgColor, bgGradient, radius, text, fontSize, fontFamily, fontWeight, fontStyle, color, letterSpacing, shadowColor, shadowBlur, shadowOffsetX, shadowOffsetY, borderColor, borderWidth } = layer;
+
+    // Calculate gradient points based on angle (default: top-to-bottom = 180deg)
+    const getGradientPoints = (angle: number = 180) => {
+        const radians = (angle - 90) * (Math.PI / 180);
+        const cos = Math.cos(radians);
+        const sin = Math.sin(radians);
+
+        return {
+            start: { x: width / 2 - (cos * width) / 2, y: height / 2 - (sin * height) / 2 },
+            end: { x: width / 2 + (cos * width) / 2, y: height / 2 + (sin * height) / 2 }
+        };
+    };
+
+    const gradientPoints = bgGradient ? getGradientPoints(bgGradient.angle) : null;
 
     return (
         <Group
@@ -107,13 +121,20 @@ const CtaItem = ({ layer }: { layer: CtaLayer }) => {
             <Rect
                 width={width}
                 height={height}
-                fill={bgColor}
+                fill={bgGradient ? undefined : bgColor}
+                // Gradient support
+                fillLinearGradientStartPoint={gradientPoints ? gradientPoints.start : undefined}
+                fillLinearGradientEndPoint={gradientPoints ? gradientPoints.end : undefined}
+                fillLinearGradientColorStops={bgGradient ? [0, bgGradient.start, 1, bgGradient.end] : undefined}
                 cornerRadius={radius}
-                shadowColor={shadowColor || "black"}
+                shadowColor={shadowColor || "rgba(0, 0, 0, 0.3)"}
                 shadowBlur={shadowBlur || 10}
-                shadowOpacity={0.2}
+                shadowOpacity={0.3}
                 shadowOffsetX={shadowOffsetX || 0}
                 shadowOffsetY={shadowOffsetY || 5}
+                // Border support
+                stroke={borderColor}
+                strokeWidth={borderWidth}
             />
             <Text
                 text={text}
@@ -251,7 +272,7 @@ const LayerNode = ({
                             onDragMove={onDragMove}
                         />
                     ))
-                ) : (layer.type === 'background' || layer.type === 'product' || layer.type === 'overlay' || layer.type === 'logo') ? (
+                ) : (layer.type === 'background' || layer.type === 'product' || layer.type === 'overlay' || layer.type === 'logo' || layer.type === 'image') ? (
                     <URLImage layer={layer as ImageLayer} />
                 ) : null
             }
@@ -403,6 +424,28 @@ export const CanvasStage = forwardRef<CanvasStageHandle, CanvasStageProps>(funct
                                         <CtaItem layer={layer as CtaLayer} />
                                     ) : layer.type === 'shape' ? (
                                         <ShapeItem layer={layer} />
+                                    ) : layer.type === 'group' ? (
+                                        // Render group children recursively
+                                        (layer as GroupLayer).children.map(child => (
+                                            <Group
+                                                key={child.id}
+                                                x={child.x}
+                                                y={child.y}
+                                                width={child.width}
+                                                height={child.height}
+                                                rotation={child.rotation}
+                                            >
+                                                {child.type === 'text' ? (
+                                                    <TextItem layer={child as TextLayer} />
+                                                ) : child.type === 'cta' ? (
+                                                    <CtaItem layer={child as CtaLayer} />
+                                                ) : child.type === 'shape' ? (
+                                                    <ShapeItem layer={child} />
+                                                ) : (
+                                                    <URLImage layer={child as ImageLayer} />
+                                                )}
+                                            </Group>
+                                        ))
                                     ) : (
                                         <URLImage layer={layer as ImageLayer} />
                                     )}

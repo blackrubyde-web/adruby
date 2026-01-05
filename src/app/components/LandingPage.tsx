@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef, useMemo } from 'react';
 import {
   ArrowRight,
   Sparkles,
@@ -40,6 +40,7 @@ import { AITrustSection } from './landing/AITrustSection';
 import { AffiliateCTASection } from './landing/AffiliateCTASection';
 import { SEOContentSection } from './landing/SEOContentSection';
 import { GlobalNav } from './landing/GlobalNav';
+import { MobileStickyCTA } from './landing/MobileStickyCTA';
 
 interface LandingPageProps {
   onGetStarted: () => void;
@@ -47,6 +48,18 @@ interface LandingPageProps {
 }
 
 export function LandingPage({ onGetStarted, onLogin }: LandingPageProps) {
+  const heroRef = useRef<HTMLElement>(null);
+
+  // Generate stable particle positions once
+  const particles = useMemo(() => {
+    return Array.from({ length: 20 }, () => ({
+      left: Math.random() * 100,
+      top: Math.random() * 100,
+      delay: Math.random() * 10,
+      duration: 15 + Math.random() * 10
+    }));
+  }, []);
+
   // ============================================
   // AD GALLERY STATE
   // ============================================
@@ -154,24 +167,24 @@ export function LandingPage({ onGetStarted, onLogin }: LandingPageProps) {
 
   const faqs = [
     {
-      question: 'How does the AI generate ads?',
-      answer: 'AdRuby uses advanced AI models trained on millions of high-performing ads. Simply describe your offer, and our AI analyzes your audience, competitors, and market trends to generate multiple creative variations optimized for performance.',
+      question: 'Wie generiert die KI Ads?',
+      answer: 'AdRuby nutzt fortschrittliche KI-Modelle, die auf Millionen von erfolgreichen Ads trainiert wurden. Beschreiben Sie einfach Ihr Angebot, und unsere KI analysiert Ihre Zielgruppe, Wettbewerber und Markttrends, um mehrere kreative Varianten zu generieren, die für Performance optimiert sind.',
     },
     {
-      question: 'What platforms do you support?',
-      answer: 'We currently support Facebook, Instagram, and LinkedIn ads. Export your creatives directly to Meta Ads Manager or download them for manual upload.',
+      question: 'Welche Plattformen werden unterstützt?',
+      answer: 'Wir unterstützen aktuell Facebook, Instagram und LinkedIn Ads. Exportieren Sie Ihre Creatives direkt in den Meta Ads Manager oder laden Sie sie für manuellen Upload herunter.',
     },
     {
-      question: 'How many credits do I get?',
-      answer: 'Our standard plan includes 1,000 credits per month. Each AI generation uses ~10 credits, so you can create approximately 100 ad variations. Need more? Purchase additional credits anytime.',
+      question: 'Wie viele Credits erhalte ich?',
+      answer: 'Unser Standard-Plan enthält 1.000 Credits pro Monat. Jede KI-Generierung verbraucht ~10 Credits, sodass Sie ca. 100 Ad-Varianten erstellen können. Mehr benötigt? Kaufen Sie jederzeit zusätzliche Credits.',
     },
     {
-      question: 'Can I cancel anytime?',
-      answer: 'Yes! Cancel anytime from your account settings. No questions asked. Your subscription will remain active until the end of your billing period.',
+      question: 'Kann ich jederzeit kündigen?',
+      answer: 'Ja! Jederzeit kündbar in Ihren Account-Einstellungen. Keine Fragen gestellt. Ihr Abo bleibt bis zum Ende des Abrechnungszeitraums aktiv.',
     },
     {
-      question: 'Do you offer agency plans?',
-      answer: 'Yes! Contact our sales team for custom agency plans with unlimited seats, white-label options, and priority support.',
+      question: 'Bieten Sie Agentur-Pläne an?',
+      answer: 'Ja! Kontaktieren Sie unser Sales-Team für individuelle Agentur-Pläne mit unbegrenzten Seats, White-Label-Optionen und Priority-Support.',
     },
   ];
 
@@ -187,249 +200,302 @@ export function LandingPage({ onGetStarted, onLogin }: LandingPageProps) {
         onGetStarted={onGetStarted}
       />
 
-      {/* ============================================
-          HERO - PRODUCT FIRST (AdCreative.ai STYLE)
-          ============================================ */}
-      <section className="relative pt-28 pb-20 sm:pb-32 overflow-hidden bg-gradient-to-b from-background to-muted/20">
+      <MobileStickyCTA onGetStarted={onGetStarted} showAfterRef={heroRef} />
 
-        {/* Marketing Container - Centered */}
-        <div className="max-w-4xl mx-auto px-6">
-          {/* Countdown Banner */}
-          <div className="mb-8 animate-fade-in-up">
-            <div className="inline-flex items-center gap-3 bg-primary text-white px-6 py-3 rounded-2xl shadow-lg">
-              <span className="font-bold text-sm sm:text-base">
-                EARLY BIRD — 50% OFF FIRST 3 MONTHS!
+      {/* ============================================
+          HERO - MOBILE-FIRST META ADS OPTIMIERT
+          ============================================ */}
+      <section
+        ref={heroRef}
+        className="relative pt-20 pb-16 sm:pt-28 sm:pb-24 overflow-hidden bg-gradient-to-b from-background via-muted/10 to-background"
+      >
+        {/* Animated Gradient Mesh Background - PERF OPTIMIZED */}
+        <div className="absolute inset-0 opacity-30 pointer-events-none -z-20 motion-reduce:hidden">
+          <div className="absolute top-0 left-1/4 w-[500px] h-[500px] bg-gradient-to-br from-[#C80000]/30 via-rose-500/20 to-transparent rounded-full blur-[120px] animate-pulse-slow will-change-transform" />
+          <div className="absolute top-1/4 right-1/4 w-[400px] h-[400px] bg-gradient-to-br from-purple-500/20 via-pink-500/20 to-transparent rounded-full blur-[100px] animate-pulse-slower will-change-transform" />
+          <div className="absolute bottom-0 left-1/3 w-[600px] h-[600px] bg-gradient-to-br from-blue-500/10 via-cyan-500/10 to-transparent rounded-full blur-[140px] animate-pulse-slowest will-change-transform" />
+        </div>
+
+        {/* Floating Particles - PERF OPTIMIZED */}
+        <div className="absolute inset-0 overflow-hidden pointer-events-none -z-10 opacity-40 motion-reduce:hidden">
+          {particles.map((particle, i) => (
+            <div
+              key={i}
+              className="absolute w-1 h-1 bg-primary rounded-full animate-float will-change-transform"
+              style={{
+                left: `${particle.left}%`,
+                top: `${particle.top}%`,
+                animationDelay: `${particle.delay}s`,
+                animationDuration: `${particle.duration}s`,
+              }}
+            />
+          ))}
+        </div>
+
+        {/* Ambient Ruby Glow - Enhanced */}
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[800px] bg-gradient-to-br from-[#C80000]/15 via-rose-500/8 to-transparent blur-[150px] pointer-events-none -z-10 animate-glow will-change-transform" />
+
+        {/* Mobile-First Container */}
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 relative z-10">
+          {/* Early Bird Banner */}
+          <div className="mb-6 sm:mb-8 animate-fade-in-up text-center">
+            <div className="inline-flex items-center gap-2 sm:gap-3 bg-gradient-to-r from-[#C80000] via-rose-600 to-red-600 text-white px-4 sm:px-6 py-2.5 sm:py-3 rounded-full sm:rounded-2xl shadow-lg">
+              <Sparkles className="w-4 h-4 sm:w-5 sm:h-5 animate-pulse" />
+              <span className="font-bold text-xs sm:text-sm md:text-base">
+                JETZT 7 TAGE KOSTENLOS TESTEN
               </span>
             </div>
           </div>
 
-          {/* Social Proof Badge */}
-          <div className="mb-8 animate-fade-in-up delay-100">
-            <div className="inline-flex items-center gap-3 bg-white/80 backdrop-blur-sm border border-border/60 px-5 py-2.5 rounded-full shadow-sm">
+          {/* Social Proof Badge - Mobile Optimized */}
+          <div className="mb-6 sm:mb-8 animate-fade-in-up delay-100 text-center">
+            <div className="inline-flex items-center gap-2 sm:gap-3 bg-card/80 backdrop-blur-sm border border-border/60 px-4 sm:px-5 py-2 sm:py-2.5 rounded-full shadow-sm">
               {/* Avatar Stack */}
               <div className="flex -space-x-2">
-                <div className="w-7 h-7 rounded-full bg-gradient-to-br from-blue-500 to-cyan-500 border-2 border-white flex items-center justify-center text-[10px] font-bold text-white">
-                  SC
+                <div className="w-6 h-6 sm:w-7 sm:h-7 rounded-full bg-gradient-to-br from-blue-500 to-cyan-500 border-2 border-background flex items-center justify-center text-[9px] sm:text-[10px] font-bold text-white">
+                  MK
                 </div>
-                <div className="w-7 h-7 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 border-2 border-white flex items-center justify-center text-[10px] font-bold text-white">
-                  MR
+                <div className="w-6 h-6 sm:w-7 sm:h-7 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 border-2 border-background flex items-center justify-center text-[9px] sm:text-[10px] font-bold text-white">
+                  JS
                 </div>
-                <div className="w-7 h-7 rounded-full bg-gradient-to-br from-green-500 to-emerald-500 border-2 border-white flex items-center justify-center text-[10px] font-bold text-white">
-                  ET
+                <div className="w-6 h-6 sm:w-7 sm:h-7 rounded-full bg-gradient-to-br from-green-500 to-emerald-500 border-2 border-background flex items-center justify-center text-[9px] sm:text-[10px] font-bold text-white">
+                  AL
                 </div>
-                <div className="w-7 h-7 rounded-full bg-gradient-to-br from-orange-500 to-red-500 border-2 border-white flex items-center justify-center text-[10px] font-bold text-white">
-                  JK
+                <div className="w-6 h-6 sm:w-7 sm:h-7 rounded-full bg-gradient-to-br from-orange-500 to-red-500 border-2 border-background flex items-center justify-center text-[9px] sm:text-[10px] font-bold text-white">
+                  TP
                 </div>
               </div>
-              <span className="text-sm font-medium text-foreground">
-                Trusted by <span className="font-bold text-primary">2,500+</span> marketers worldwide
+              <span className="text-xs sm:text-sm font-medium text-foreground">
+                <span className="font-bold text-primary">2.500+</span> Marketer vertrauen AdRuby
               </span>
             </div>
           </div>
 
-          {/* Main Headline - Benefit Driven (Video Tip #1) */}
-          <div className="text-center mb-6 animate-fade-in-up delay-200">
-            <h1 className="text-5xl sm:text-6xl lg:text-7xl font-extrabold leading-tight mb-6 tracking-tight">
-              <span className="text-foreground">Stop Wasting Ad Spend.</span>
+          {/* Main Headline - MOBILE FIRST */}
+          <div className="text-center mb-8 sm:mb-10 animate-fade-in-up delay-200">
+            <h1 className="text-[2.5rem] leading-[1.1] sm:text-5xl md:text-6xl lg:text-7xl font-extrabold mb-4 sm:mb-6 tracking-tight">
+              <span className="text-foreground">KI-Ads die verkaufen.</span>
               <br />
-              <span className="bg-clip-text text-transparent bg-gradient-to-r from-primary via-purple-500 to-pink-500 pb-2">
-                Get High-ROAS Ads in Seconds.
+              <span className="bg-clip-text text-transparent bg-gradient-to-r from-[#C80000] via-rose-500 to-red-600 pb-2">
+                In Sekunden.
               </span>
             </h1>
-            <p className="text-xl sm:text-2xl text-muted-foreground max-w-2xl mx-auto leading-relaxed">
-              AdRuby doesn't just "make ads" — it analyzes what converts to generate winning hooks, copy, and designs that drive <span className="text-foreground font-semibold">3x higher ROAS</span>.
+            <p className="text-base sm:text-xl md:text-2xl text-muted-foreground max-w-2xl mx-auto leading-relaxed px-4">
+              AdRuby analysiert was konvertiert und erstellt gewinnende Hooks, Texte und Designs — für <span className="text-foreground font-semibold">3x höheren ROAS</span>.
             </p>
           </div>
 
-          {/* CTA Buttons */}
-          <div className="flex flex-col items-center gap-4 mb-12 animate-fade-in-up delay-300">
-            <button
-              onClick={onGetStarted}
-              className="button-spring relative w-full sm:w-auto px-10 py-4 bg-primary text-white rounded-2xl font-bold text-lg hover:bg-primary/90 transition-all shadow-xl hover:shadow-2xl flex flex-col items-center justify-center gap-0.5 group"
-            >
-              <div className="flex items-center gap-2">
-                Start Generating For Free
-                <Sparkles className="w-5 h-5 group-hover:rotate-12 transition-transform" />
-              </div>
-              <span className="text-[10px] font-medium opacity-80 uppercase tracking-wide">No credit card required</span>
-            </button>
+          {/* CTA Buttons - MOBILE OPTIMIZED (min 48px touch target) */}
+          <div className="flex flex-col items-center gap-3 sm:gap-4 mb-10 sm:mb-12 animate-fade-in-up delay-300 px-4">
+            {/* Google Login - PRIMARY CTA */}
             <button
               onClick={onLogin}
-              className="button-spring w-full sm:w-auto px-10 py-4 bg-white border-2 border-border/60 text-foreground rounded-2xl font-semibold text-lg hover:bg-muted/50 transition-all shadow-md hover:shadow-lg flex items-center justify-center gap-3"
-            >
-              <svg className="w-5 h-5" viewBox="0 0 24 24">
+              className="button-spring w-full sm:w-auto min-h-[52px] px-8 sm:px-10 py-3 sm:py-4 bg-gradient-to-r from-[#C80000] via-rose-600 to-red-600 text-white rounded-2xl font-bold text-base sm:text-lg hover:shadow-2xl transition-all shadow-xl flex items-center justify-center gap-3 group">
+              <svg className="w-5 h-5 sm:w-6 sm:h-6 flex-shrink-0" viewBox="0 0 24 24">
                 <path
-                  fill="#4285F4"
+                  fill="currentColor"
                   d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
+                  opacity="0.9"
                 />
                 <path
-                  fill="#34A853"
+                  fill="currentColor"
                   d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
+                  opacity="0.9"
                 />
                 <path
-                  fill="#FBBC05"
+                  fill="currentColor"
                   d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"
+                  opacity="0.9"
                 />
                 <path
-                  fill="#EA4335"
+                  fill="currentColor"
                   d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
+                  opacity="0.9"
                 />
               </svg>
-              Start Free With Google
+              <span className="flex flex-col items-start gap-0.5">
+                <span className="leading-none">7 Tage kostenlos testen</span>
+                <span className="text-[10px] font-medium opacity-80 uppercase tracking-wide leading-none">Jederzeit kündbar</span>
+              </span>
+            </button>
+
+            {/* Email Signup - SECONDARY */}
+            <button
+              onClick={onGetStarted}
+              className="button-spring w-full sm:w-auto min-h-[48px] px-8 sm:px-10 py-3 bg-card/60 backdrop-blur-sm border-2 border-border/60 text-foreground rounded-2xl font-semibold text-base sm:text-lg hover:bg-muted/80 transition-all shadow-md hover:shadow-lg flex items-center justify-center gap-2">
+              Kostenlosen Account erstellen
+              <ArrowRight className="w-4 h-4 sm:w-5 sm:h-5" />
             </button>
           </div>
 
-          {/* Brand Logos Banner */}
-          <div className="text-center animate-fade-in-up delay-400">
-            <p className="text-sm font-semibold text-muted-foreground mb-6 uppercase tracking-wide">
-              Trusted by leading brands worldwide
+          {/* Trust Logos - Mobile Friendly */}
+          <div className="text-center animate-fade-in-up delay-400 mb-12 sm:mb-16">
+            <p className="text-xs sm:text-sm font-semibold text-muted-foreground mb-4 sm:mb-6 uppercase tracking-wide">
+              Vertraut von führenden Marken
             </p>
-
-            <div className="flex flex-wrap items-center justify-center gap-8 sm:gap-16 opacity-50 grayscale transition-all hover:grayscale-0 hover:opacity-80">
-              {/* Trust Signals */}
-              <div className="text-xl font-bold font-mono">Shopify</div>
-              <div className="text-xl font-bold font-serif italic">Vogue</div>
-              <div className="text-xl font-bold tracking-widest">Forbes</div>
-              <div className="text-xl font-bold font-sans">TechCrunch</div>
-              <div className="text-xl font-bold uppercase tracking-wide">Inc.5000</div>
+            <div className="flex flex-wrap items-center justify-center gap-6 sm:gap-8 md:gap-12 opacity-40 grayscale">
+              <div className="text-base sm:text-lg md:text-xl font-bold font-mono">Shopify</div>
+              <div className="text-base sm:text-lg md:text-xl font-bold font-serif italic">Vogue</div>
+              <div className="text-base sm:text-lg md:text-xl font-bold tracking-widest">Forbes</div>
+              <div className="text-base sm:text-lg md:text-xl font-bold font-sans">TechCrunch</div>
             </div>
           </div>
 
+          {/* Mobile Hero Visual - Enhanced with 3D Tilt */}
+          <div className="animate-fade-in-up delay-500">
+            {/* Mobile: Single phone mockup */}
+            <div className="block sm:hidden relative mx-auto max-w-[280px] transform-gpu transition-transform duration-300 hover:scale-[1.02]">
+              <div className="relative rounded-[2.5rem] overflow-hidden shadow-2xl border-4 border-border/40 bg-gradient-to-br from-card/50 to-muted/30 backdrop-blur-xl">
+                <div className="aspect-[9/16] bg-gradient-to-br from-muted via-card to-muted/50 flex items-center justify-center p-6 relative overflow-hidden">
+                  {/* Shimmer effect */}
+                  <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full animate-shimmer" />
 
-          {/* Dashboard Mockup - Main Hero Image */}
-          <div className="mt-16 relative animate-fade-in-up delay-500 rounded-2xl overflow-hidden shadow-2xl border border-border/40 group">
-            {/* Confetti Background Effect */}
-            <div className="absolute inset-0 opacity-30 pointer-events-none z-0">
-              {[...Array(20)].map((_, i) => (
-                <div
-                  key={i}
-                  className="absolute w-2 h-2 rounded-full animate-pulse"
-                  style={{
-                    left: `${Math.random() * 100}%`,
-                    top: `${Math.random() * 100}%`,
-                    backgroundColor: ['#C80000', '#9333ea', '#3b82f6', '#10b981'][i % 4],
-                    animationDelay: `${Math.random() * 2}s`,
-                  }}
-                />
-              ))}
+                  <div className="text-center space-y-4 relative z-10">
+                    <div className="w-16 h-16 mx-auto rounded-2xl bg-gradient-to-br from-[#C80000] to-rose-600 flex items-center justify-center shadow-lg animate-pulse-glow">
+                      <Sparkles className="w-8 h-8 text-white animate-pulse" />
+                    </div>
+                    <div className="space-y-2">
+                      <div className="h-3 bg-foreground/20 rounded w-3/4 mx-auto animate-pulse" style={{ animationDelay: '0.1s' }} />
+                      <div className="h-3 bg-foreground/15 rounded w-full animate-pulse" style={{ animationDelay: '0.2s' }} />
+                      <div className="h-3 bg-foreground/10 rounded w-2/3 mx-auto animate-pulse" style={{ animationDelay: '0.3s' }} />
+                    </div>
+                    <div className="h-10 bg-gradient-to-r from-[#C80000] to-rose-600 rounded-xl flex items-center justify-center text-white text-sm font-bold shadow-lg hover:shadow-xl transition-shadow">
+                      Ad erstellen
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
 
-            <div className="relative z-10 bg-background/50 backdrop-blur-sm p-2 rounded-2xl">
-              <img
-                src="/images/mockups/dashboard.png"
-                alt="AdRuby Dashboard Interface"
-                className="w-full h-auto rounded-xl shadow-2xl transform transition-transform duration-700 group-hover:scale-[1.01]"
-              />
+            {/* Tablet/Desktop: Full dashboard with 3D tilt */}
+            <div className="hidden sm:block relative group perspective-1000">
+              <div className="relative rounded-2xl overflow-hidden shadow-2xl border border-border/40 transform-gpu transition-all duration-500 hover:scale-[1.02] tilt-card">
+                {/* Glassmorphic overlay */}
+                <div className="absolute inset-0 bg-gradient-to-br from-white/5 via-transparent to-black/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none z-10" />
 
-              {/* Floating Element: Wizard Preview */}
-              <div className="hidden lg:block absolute -right-12 -bottom-12 w-2/5 rounded-xl shadow-2xl border-4 border-background overflow-hidden transform rotate-[-3deg] group-hover:rotate-0 transition-all duration-500">
-                <img src="/images/mockups/adwizard.png" alt="AI Ad Wizard" className="w-full h-auto" />
-              </div>
+                {/* Glow effect */}
+                <div className="absolute -inset-1 bg-gradient-to-r from-[#C80000] via-rose-500 to-purple-500 rounded-2xl opacity-0 group-hover:opacity-20 blur-xl transition-opacity duration-500 -z-10" />
 
-              {/* Floating Element: Mobile Preview */}
-              <div className="hidden lg:block absolute -left-8 bottom-12 w-1/5 rounded-[2rem] shadow-2xl border-4 border-background overflow-hidden transform rotate-[6deg] group-hover:rotate-0 transition-all duration-500">
-                <img src="/images/mockups/mobile.png" alt="AdRuby Mobile App" className="w-full h-auto" />
+                <div className="relative bg-card/50 backdrop-blur-sm p-2 rounded-2xl">
+                  <img
+                    src="/images/mockups/dashboard.png"
+                    alt="AdRuby Dashboard"
+                    className="w-full h-auto rounded-xl shadow-2xl"
+                  // loading="eager" // Removed to let browser decide, or keep if crucial
+                  />
+                </div>
               </div>
             </div>
           </div>
         </div>
 
-        {/* Gradient Line Separator */}
-        <div className="gradient-line mt-20" />
+        {/* Gradient Separator */}
+        <div className="mt-16 sm:mt-20 h-px bg-gradient-to-r from-transparent via-border to-transparent" />
       </section>
 
       {/* ============================================
-          AI WORKFLOW PIPELINE (HORIZONTAL FLOW)
+          8-STUFEN KI-PIPELINE (MOBIL-OPTIMIERT)
           ============================================ */}
-      <section className="py-20 sm:py-24 bg-muted/30">
+      <section className="py-16 sm:py-20 md:py-24 bg-gradient-to-b from-muted/30 via-background to-muted/20">
         <div className={tokens.marketingContainer}>
-          <div className="text-center mb-12 animate-fade-in-up">
-            <h2 className="text-section-title mb-4">How AdRuby's AI builds winning ads</h2>
-            <p className="text-body-large text-muted-foreground max-w-2xl mx-auto">
-              Intelligent system that analyzes, creates, and optimizes
+          <div className="text-center mb-10 sm:mb-12 animate-fade-in-up px-4">
+            <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-3 sm:mb-4">
+              Wie AdRuby's KI <span className="text-primary">gewinnende Ads</span> erstellt
+            </h2>
+            <p className="text-base sm:text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto">
+              Intelligentes System, das analysiert, erstellt und optimiert
             </p>
           </div>
 
-          {/* Horizontal Pipeline - Stacked on Mobile */}
-          <div className="workflow-pipeline max-w-5xl mx-auto flex flex-col md:flex-row gap-4 relative">
+          {/* Vertical Mobile Pipeline / Horizontal Desktop */}
+          <div className="workflow-pipeline max-w-5xl mx-auto flex flex-col md:flex-row gap-3 sm:gap-4 relative px-4">
             {/* Mobile Connecting Line (Vertical) */}
-            <div className="absolute left-6 top-6 bottom-6 w-0.5 bg-gradient-to-b from-blue-500 via-purple-500 to-green-500 md:hidden -z-10 opacity-30"></div>
-            {/* Step 1 */}
+            <div className="absolute left-8 top-6 bottom-6 w-0.5 bg-gradient-to-b from-blue-500 via-purple-500 via-yellow-500 via-green-500 to-red-500 md:hidden -z-10 opacity-20" />
+
+            {/* Stage 1 - Strategische Analyse */}
             <div className="workflow-step landing-card-hover">
-              <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-500 to-cyan-500 flex items-center justify-center mb-4">
-                <Target className="w-6 h-6 text-white" />
+              <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-gradient-to-br from-blue-500 to-cyan-500 flex items-center justify-center mb-3 sm:mb-4">
+                <Target className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
               </div>
-              <h3 className="text-feature-title mb-2">Input</h3>
-              <p className="text-sm text-muted-foreground">Describe your offer</p>
-              {/* Mini UI Snippet */}
-              <div className="mt-3 p-2 bg-muted/50 rounded text-xs font-mono text-muted-foreground">
-                "Fitness coaching..."
-              </div>
+              <h3 className="text-sm sm:text-base font-bold mb-1 sm:mb-2">1. Strategie</h3>
+              <p className="text-xs sm:text-sm text-muted-foreground">Analyse & Design Tokens</p>
             </div>
 
             <div className="workflow-connector" />
 
-            {/* Step 2 */}
+            {/* Stage 2 - Template */}
             <div className="workflow-step landing-card-hover">
-              <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center mb-4">
-                <Brain className="w-6 h-6 text-white" />
+              <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-500 flex items-center justify-center mb-3 sm:mb-4">
+                <BarChart3 className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
               </div>
-              <h3 className="text-feature-title mb-2">Analyze</h3>
-              <p className="text-sm text-muted-foreground">AI finds winning angles</p>
-              {/* Mini UI Snippet */}
-              <div className="mt-3 flex gap-1">
-                <div className="h-1.5 flex-1 bg-purple-500/30 rounded" />
-                <div className="h-1.5 flex-1 bg-purple-500/50 rounded" />
-                <div className="h-1.5 flex-1 bg-purple-500 rounded" />
-              </div>
+              <h3 className="text-sm sm:text-base font-bold mb-1 sm:mb-2">2. Template</h3>
+              <p className="text-xs sm:text-sm text-muted-foreground">Dynamische Layouts</p>
             </div>
 
             <div className="workflow-connector" />
 
-            {/* Step 3 */}
+            {/* Stage 3 - Copy */}
             <div className="workflow-step landing-card-hover">
-              <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-yellow-500 to-orange-500 flex items-center justify-center mb-4">
-                <Sparkles className="w-6 h-6 text-white" />
+              <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center mb-3 sm:mb-4">
+                <Brain className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
               </div>
-              <h3 className="text-feature-title mb-2">Generate</h3>
-              <p className="text-sm text-muted-foreground">Creates 10 variations</p>
-              {/* Mini UI Snippet */}
-              <div className="mt-3 space-y-1">
-                <div className="h-2 bg-yellow-500/30 rounded w-full" />
-                <div className="h-2 bg-yellow-500/30 rounded w-4/5" />
-                <div className="h-2 bg-yellow-500/30 rounded w-3/4" />
-              </div>
+              <h3 className="text-sm sm:text-base font-bold mb-1 sm:mb-2">3. Copy</h3>
+              <p className="text-xs sm:text-sm text-muted-foreground">10x Hook-Varianten</p>
             </div>
 
             <div className="workflow-connector" />
 
-            {/* Step 4 */}
+            {/* Stage 4 - Cutout */}
             <div className="workflow-step landing-card-hover">
-              <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-green-500 to-emerald-500 flex items-center justify-center mb-4">
-                <LineChart className="w-6 h-6 text-white" />
+              <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-gradient-to-br from-pink-500 to-rose-500 flex items-center justify-center mb-3 sm:mb-4">
+                <Eye className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
               </div>
-              <h3 className="text-feature-title mb-2">Predict</h3>
-              <p className="text-sm text-muted-foreground">Scores CTR/ROAS</p>
-              {/* Mini UI Snippet */}
-              <div className="mt-3 text-xs font-semibold text-green-600">
-                94% confidence ↑
-              </div>
+              <h3 className="text-sm sm:text-base font-bold mb-1 sm:mb-2">4. Ausschnitt</h3>
+              <p className="text-xs sm:text-sm text-muted-foreground">WASM Hintergrund-Entfernung</p>
             </div>
 
             <div className="workflow-connector" />
 
-            {/* Step 5 */}
+            {/* Stage 5 - Scene + Vision QA */}
             <div className="workflow-step landing-card-hover">
-              <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-red-500 to-rose-500 flex items-center justify-center mb-4">
-                <Rocket className="w-6 h-6 text-white" />
+              <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-gradient-to-br from-yellow-500 to-orange-500 flex items-center justify-center mb-3 sm:mb-4">
+                <Sparkles className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
               </div>
-              <h3 className="text-feature-title mb-2">Launch</h3>
-              <p className="text-sm text-muted-foreground">Export to Meta Ads</p>
-              {/* Mini UI Snippet */}
-              <div className="mt-3 flex items-center gap-1 text-xs text-muted-foreground">
-                <div className="w-4 h-4 bg-blue-600 rounded-sm" />
-                <span>Meta</span>
+              <h3 className="text-sm sm:text-base font-bold mb-1 sm:mb-2">5. Szene</h3>
+              <p className="text-xs sm:text-sm text-muted-foreground">KI-Komposition + QA</p>
+            </div>
+
+            <div className="workflow-connector" />
+
+            {/* Stage 6 - Variations */}
+            <div className="workflow-step landing-card-hover">
+              <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-gradient-to-br from-green-500 to-emerald-500 flex items-center justify-center mb-3 sm:mb-4">
+                <Zap className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
               </div>
+              <h3 className="text-sm sm:text-base font-bold mb-1 sm:mb-2">6. Variationen</h3>
+              <p className="text-xs sm:text-sm text-muted-foreground">Stil-Mutationen</p>
+            </div>
+
+            <div className="workflow-connector" />
+
+            {/* Stage 7 - Forecast */}
+            <div className="workflow-step landing-card-hover">
+              <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-gradient-to-br from-teal-500 to-cyan-500 flex items-center justify-center mb-3 sm:mb-4">
+                <LineChart className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
+              </div>
+              <h3 className="text-sm sm:text-base font-bold mb-1 sm:mb-2">7. Prognose</h3>
+              <p className="text-xs sm:text-sm text-muted-foreground">KPI-Vorhersage</p>
+            </div>
+
+            <div className="workflow-connector" />
+
+            {/* Stage 8 - Launch */}
+            <div className="workflow-step landing-card-hover">
+              <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-gradient-to-br from-[#C80000] to-rose-600 flex items-center justify-center mb-3 sm:mb-4">
+                <Rocket className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
+              </div>
+              <h3 className="text-sm sm:text-base font-bold mb-1 sm:mb-2">8. Launch</h3>
+              <p className="text-xs sm:text-sm text-muted-foreground">Export zu Meta</p>
             </div>
           </div>
         </div>
@@ -553,60 +619,64 @@ export function LandingPage({ onGetStarted, onLogin }: LandingPageProps) {
       </section>
 
       {/* ============================================
-          AI INSIGHTS - ASSISTANT VIBE
+          KI INSIGHTS & PERFORMANCE
           ============================================ */}
-      <section className={tokens.sectionSpacing + " bg-muted/30"}>
+      <section className="py-16 sm:py-20 md:py-24 bg-gradient-to-b from-muted/20 via-background to-muted/30">
         <PageContainer>
-          <SectionHeader
-            title="AI doesn't just create ads — it optimizes them"
-            subtitle="Smart insights that improve performance automatically"
-          />
+          <div className="text-center mb-10 sm:mb-12 px-4">
+            <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-3 sm:mb-4">
+              KI <span className="text-primary">erstellt</span> nicht nur Ads — sie <span className="text-primary">optimiert</span> sie
+            </h2>
+            <p className="text-base sm:text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto">
+              Intelligente Insights die Performance automatisch verbessern
+            </p>
+          </div>
 
           <div className="grid md:grid-cols-3 gap-6">
             {/* Performance Prediction */}
             <Card className="hover:shadow-xl transition-all">
               <div className="flex items-center justify-between mb-4">
-                <h3 className="font-bold">Performance</h3>
+                <h3 className="text-sm sm:text-base font-bold">Performance</h3>
                 <TrendingUp className="w-5 h-5 text-green-600" />
               </div>
-              <div className="text-4xl font-bold text-green-600 mb-1">8.2x</div>
-              <p className="text-sm text-muted-foreground mb-4">Estimated ROAS</p>
-              <div className="p-3 bg-green-500/10 border border-green-500/20 rounded-lg">
-                <p className="text-xs font-semibold text-green-600">High confidence (94%)</p>
+              <div className="text-3xl sm:text-4xl font-bold text-green-600 mb-1">8.2x</div>
+              <p className="text-xs sm:text-sm text-muted-foreground mb-3 sm:mb-4">Erwarteter ROAS</p>
+              <div className="p-2.5 sm:p-3 bg-green-500/10 border border-green-500/20 rounded-lg">
+                <p className="text-xs font-semibold text-green-600">Hohe Konfidenz (94%)</p>
               </div>
             </Card>
 
             {/* CTR Score */}
             <Card className="hover:shadow-xl transition-all">
               <div className="flex items-center justify-between mb-4">
-                <h3 className="font-bold">Click-Through Rate</h3>
+                <h3 className="text-sm sm:text-base font-bold">Klickrate (CTR)</h3>
                 <Eye className="w-5 h-5 text-blue-600" />
               </div>
-              <div className="text-4xl font-bold text-blue-600 mb-1">4.1%</div>
-              <p className="text-sm text-muted-foreground mb-4">Above industry avg (2.3%)</p>
-              <div className="p-3 bg-blue-500/10 border border-blue-500/20 rounded-lg">
-                <p className="text-xs font-semibold text-blue-600">Excellent performance expected</p>
+              <div className="text-3xl sm:text-4xl font-bold text-blue-600 mb-1">4.1%</div>
+              <p className="text-xs sm:text-sm text-muted-foreground mb-3 sm:mb-4">Über Branchen-Ø (2.3%)</p>
+              <div className="p-2.5 sm:p-3 bg-blue-500/10 border border-blue-500/20 rounded-lg">
+                <p className="text-xs font-semibold text-blue-600">Exzellente Performance erwartet</p>
               </div>
             </Card>
 
             {/* AI Suggestions */}
             <Card className="hover:shadow-xl transition-all">
               <div className="flex items-center justify-between mb-4">
-                <h3 className="font-bold">AI Suggestions</h3>
+                <h3 className="text-sm sm:text-base font-bold">KI-Empfehlungen</h3>
                 <Brain className="w-5 h-5 text-purple-600" />
               </div>
               <div className="space-y-2">
                 <div className="flex items-start gap-2 p-2 bg-green-500/10 border border-green-500/20 rounded-lg">
                   <CheckCircle className="w-4 h-4 text-green-600 mt-0.5 flex-shrink-0" />
-                  <p className="text-xs font-medium">Video creatives outperform images by 34%</p>
+                  <p className="text-xs font-medium">Video-Ads übertreffen Bilder um 34%</p>
                 </div>
                 <div className="flex items-start gap-2 p-2 bg-yellow-500/10 border border-yellow-500/20 rounded-lg">
                   <AlertCircle className="w-4 h-4 text-yellow-600 mt-0.5 flex-shrink-0" />
-                  <p className="text-xs font-medium">Audience overlap detected</p>
+                  <p className="text-xs font-medium">Zielgruppen-Überschneidung erkannt</p>
                 </div>
                 <div className="flex items-start gap-2 p-2 bg-blue-500/10 border border-blue-500/20 rounded-lg">
                   <ArrowUpRight className="w-4 h-4 text-blue-600 mt-0.5 flex-shrink-0" />
-                  <p className="text-xs font-medium">Increase budget by 20%</p>
+                  <p className="text-xs font-medium">Budget um 20% erhöhen</p>
                 </div>
               </div>
             </Card>
@@ -617,71 +687,79 @@ export function LandingPage({ onGetStarted, onLogin }: LandingPageProps) {
       {/* ============================================
           SOCIAL PROOF
           ============================================ */}
-      <section className={tokens.sectionSpacing}>
+      <section className="py-16 sm:py-20 md:py-24">
         <PageContainer>
-          <SectionHeader title="Trusted by creators & marketers" />
+          <div className="text-center mb-10 sm:mb-12 px-4">
+            <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-3 sm:mb-4">
+              Vertraut von <span className="text-primary">Marketern & Gründern</span>
+            </h2>
+          </div>
 
           {/* Testimonials */}
           <div className="grid md:grid-cols-3 gap-6 mb-12">
             <TestimonialCard
-              quote="We cut ad creation from 2 hours to 8 minutes."
-              author="Sarah Chen"
+              quote="Wir haben Ad-Erstellung von 2 Stunden auf 8 Minuten reduziert."
+              author="Markus Klein"
               role="Growth Lead, SaaS Startup"
-              avatar="SC"
+              avatar="MK"
             />
             <TestimonialCard
-              quote="AI variations beat our best performer by 22% CTR."
-              author="Mike Rodriguez"
-              role="Performance Marketer"
-              avatar="MR"
+              quote="KI-Varianten schlagen unsere Best-Performer um 22% CTR."
+              author="Julia Schmidt"
+              role="Performance Marketerin"
+              avatar="JS"
             />
             <TestimonialCard
-              quote="Agency workflow finally scalable."
-              author="Emma Taylor"
-              role="Agency Owner"
-              avatar="ET"
+              quote="Endlich skalierbare Workflows für unsere Agentur."
+              author="Alexander Lang"
+              role="Agentur-Inhaber"
+              avatar="AL"
             />
           </div>
 
           {/* Results Strip */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <StatCard value="50,000+" label="ads generated" icon={<Sparkles className="w-5 h-5 text-primary" />} />
-            <StatCard value="14x" label="avg ROAS" icon={<TrendingUp className="w-5 h-5 text-green-600" />} />
-            <StatCard value="86%" label="time saved" icon={<Zap className="w-5 h-5 text-yellow-600" />} />
-            <StatCard value="2,500+" label="active users" icon={<Users className="w-5 h-5 text-blue-600" />} />
+            <StatCard value="50.000+" label="Ads erstellt" icon={<Sparkles className="w-5 h-5 text-primary" />} />
+            <StatCard value="14x" label="Ø ROAS" icon={<TrendingUp className="w-5 h-5 text-green-600" />} />
+            <StatCard value="86%" label="Zeit gespart" icon={<Zap className="w-5 h-5 text-yellow-600" />} />
+            <StatCard value="2.500+" label="Aktive Nutzer" icon={<Users className="w-5 h-5 text-blue-600" />} />
           </div>
         </PageContainer>
       </section>
 
       {/* ============================================
-          WHO IT'S FOR
+          FÜR WEN IST ADRUBY?
           ============================================ */}
-      <section className={tokens.sectionSpacing + " bg-muted/30"}>
+      <section className="py-16 sm:py-20 md:py-24 bg-gradient-to-b from-muted/20 via-muted/30 to-background">
         <PageContainer>
-          <SectionHeader title="Built for creators & marketers" />
+          <div className="text-center mb-10 sm:mb-12 px-4">
+            <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-3 sm:mb-4">
+              Entwickelt für <span className="text-primary">Marketer & Gründer</span>
+            </h2>
+          </div>
 
           <div className="grid md:grid-cols-3 gap-8">
             {[
               {
                 icon: Rocket,
-                title: 'Solo Founders',
-                pain: 'No time to create ads manually',
-                solution: 'Generate 10+ variations in minutes',
-                outcome: 'Launch campaigns 10x faster',
+                title: 'Solo-Gründer',
+                pain: 'Keine Zeit für manuelle Ad-Erstellung',
+                solution: '10+ Varianten in Minuten generieren',
+                outcome: 'Kampagnen 10x schneller launchen',
               },
               {
                 icon: BarChart3,
-                title: 'Performance Marketers',
-                pain: 'Need data-driven creative testing',
-                solution: 'AI predicts best-performing ads',
-                outcome: 'Increase ROAS by 3-5x',
+                title: 'Performance Marketer',
+                pain: 'Benötigen datengetriebenes Creative-Testing',
+                solution: 'KI sagt best-performende Ads voraus',
+                outcome: 'ROAS um 3-5x steigern',
               },
               {
                 icon: Briefcase,
-                title: 'Agencies',
-                pain: 'Managing 50+ client accounts',
-                solution: 'Automate creative production',
-                outcome: 'Scale clients without hiring',
+                title: 'Agenturen',
+                pain: '50+ Kunden-Accounts verwalten',
+                solution: 'Creative-Produktion automatisieren',
+                outcome: 'Skalieren ohne neues Personal',
               },
             ].map((persona, index) => (
               <Card key={index} className="hover:shadow-xl transition-all hover:-translate-y-1">
@@ -692,18 +770,18 @@ export function LandingPage({ onGetStarted, onLogin }: LandingPageProps) {
                 <div className="space-y-3">
                   <div>
                     <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1">
-                      Their Pain
+                      Herausforderung
                     </p>
                     <p className="text-sm font-medium text-red-600">{persona.pain}</p>
                   </div>
                   <div>
                     <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1">
-                      What We Do
+                      Unsere Lösung
                     </p>
                     <p className="text-sm font-medium">{persona.solution}</p>
                   </div>
                   <div className="pt-3 border-t border-border/60">
-                    <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1">Outcome</p>
+                    <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1">Ergebnis</p>
                     <p className="font-bold text-green-600">{persona.outcome}</p>
                   </div>
                 </div>
@@ -734,36 +812,38 @@ export function LandingPage({ onGetStarted, onLogin }: LandingPageProps) {
       <AITrustSection />
 
       {/* ============================================
-          PRICING
+          PREISE
           ============================================ */}
-      <section className={tokens.sectionSpacing}>
+      <section className="py-16 sm:py-20 md:py-24 bg-gradient-to-b from-background via-muted/20 to-background">
         <PageContainer>
-          <SectionHeader title="Simple, transparent pricing" subtitle="One plan. All features. No surprises." />
+          <div className="text-center mb-10 sm:mb-12 px-4">
+            <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-3 sm:mb-4">Einfache, transparente Preise</h2>
+            <p className="text-base sm:text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto">Ein Plan. Alle Features. Keine Überraschungen.</p>
+          </div>
 
           <div className="max-w-lg mx-auto">
             <PricingCard
               title="Pro Plan"
               price="€29.99"
-              period="month"
+              period="Monat"
               features={[
-                'Unlimited AI ad creatives',
-                '1,000 credits included',
-                'Real-time performance predictions',
-                'Multi-platform support (FB, IG, LinkedIn)',
-                'Advanced audience targeting',
-                'Priority support',
+                'Unbegrenzte KI-Ads',
+                '1.000 Credits inklusive',
+                'Echtzeit Performance-Prognosen',
+                'Multi-Plattform (FB, IG, LinkedIn)',
+                'Erweiterte Zielgruppen-Targeting',
+                'Prioritäts-Support',
               ]}
-              cta="Start 7-Day Free Trial"
+              cta="7 Tage kostenlos testen"
               onCtaClick={onGetStarted}
               featured
             />
 
             {/* Credits Explanation */}
             <Card className="mt-6">
-              <h4 className="font-semibold mb-2">What are credits?</h4>
+              <h4 className="font-semibold mb-2">Was sind Credits?</h4>
               <p className="text-sm text-muted-foreground leading-relaxed">
-                Each AI generation uses ~10 credits. 1,000 credits = ~100 ad variations. Need more? Purchase additional
-                credits anytime.
+                Jede KI-Generierung verbraucht ~10 Credits. 1.000 Credits = ~100 Ad-Varianten. Mehr benötigt? Jederzeit zusätzliche Credits kaufen.
               </p>
             </Card>
           </div>
@@ -783,12 +863,11 @@ export function LandingPage({ onGetStarted, onLogin }: LandingPageProps) {
       {/* ============================================
           STICKY MOBILE CTA
           ============================================ */}
-      <div className="fixed bottom-0 left-0 right-0 p-4 bg-background/80 backdrop-blur-xl border-t border-border z-50 md:hidden animate-in slide-in-from-bottom">
+      <div className="fixed bottom-0 left-0 right-0 p-3 sm:p-4 bg-card/95 backdrop-blur-xl border-t border-border z-50 md:hidden animate-in slide-in-from-bottom">
         <button
           onClick={onGetStarted}
-          className="w-full py-3 bg-primary text-white rounded-xl font-bold text-lg shadow-lg flex items-center justify-center gap-2"
-        >
-          Start Free Trial
+          className="w-full min-h-[52px] py-3 bg-gradient-to-r from-[#C80000] via-rose-600 to-red-600 text-white rounded-xl font-bold text-base sm:text-lg shadow-lg flex items-center justify-center gap-2 active:scale-95 transition-transform">
+          Jetzt kostenlos starten
           <ArrowRight className="w-5 h-5" />
         </button>
       </div>
@@ -796,9 +875,11 @@ export function LandingPage({ onGetStarted, onLogin }: LandingPageProps) {
       {/* ============================================
           FAQ
           ============================================ */}
-      <section className={tokens.sectionSpacing}>
+      <section className="py-16 sm:py-20 md:py-24 bg-gradient-to-b from-muted/20 via-background to-background">
         <PageContainer>
-          <SectionHeader title="Frequently asked questions" />
+          <div className="text-center mb-10 sm:mb-12 px-4">
+            <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-3 sm:mb-4">Häufig gestellte Fragen</h2>
+          </div>
 
           <div className="max-w-3xl mx-auto space-y-4">
             {faqs.map((faq, index) => (
@@ -823,9 +904,9 @@ export function LandingPage({ onGetStarted, onLogin }: LandingPageProps) {
             {/* Contact Card */}
             <Card className="bg-primary/5 border-primary/20 text-center">
               <MessageCircle className="w-8 h-8 text-primary mx-auto mb-3" />
-              <h3 className="font-bold mb-2">Still have questions?</h3>
-              <p className="text-sm text-muted-foreground mb-4">Our team is here to help</p>
-              <SecondaryButton className="mx-auto">Contact Support</SecondaryButton>
+              <h3 className="font-bold mb-2">Noch Fragen?</h3>
+              <p className="text-sm text-muted-foreground mb-4">Unser Team hilft Ihnen gerne weiter</p>
+              <SecondaryButton className="mx-auto">Support kontaktieren</SecondaryButton>
             </Card>
           </div>
         </PageContainer>
@@ -840,16 +921,18 @@ export function LandingPage({ onGetStarted, onLogin }: LandingPageProps) {
 
         <PageContainer className="relative z-10">
           <div className="text-center">
-            <h2 className="text-5xl sm:text-6xl font-bold mb-6 leading-tight">
-              Start generating ads
+            <h2 className="text-4xl sm:text-5xl md:text-6xl font-bold mb-4 sm:mb-6 leading-tight px-4">
+              Starten Sie jetzt mit der
               <br />
-              in minutes
+              Generierung von Ads
             </h2>
-            <p className="text-xl text-muted-foreground mb-10">No credit card required.</p>
-            <PrimaryButton onClick={onGetStarted} className="text-lg px-10 py-5">
-              Generate Your First Ad
-              <ArrowRight className="w-5 h-5 ml-2" />
-            </PrimaryButton>
+            <p className="text-lg sm:text-xl text-muted-foreground mb-8 sm:mb-10 px-4">Keine Kreditkarte erforderlich.</p>
+            <button
+              onClick={onGetStarted}
+              className="button-spring px-8 sm:px-10 py-4 sm:py-5 bg-gradient-to-r from-[#C80000] via-rose-600 to-red-600 text-white rounded-2xl font-bold text-base sm:text-lg hover:shadow-2xl transition-all shadow-xl inline-flex items-center gap-2">
+              Erste Ad generieren
+              <ArrowRight className="w-5 h-5" />
+            </button>
           </div>
         </PageContainer>
       </section>
@@ -869,13 +952,13 @@ export function LandingPage({ onGetStarted, onLogin }: LandingPageProps) {
                 <span className="font-bold text-lg">AdRuby</span>
               </div>
               <p className="text-sm text-muted-foreground leading-relaxed">
-                AI-powered ad platform for creators & marketers.
+                KI-gestützte Ad-Plattform für Marketer & Gründer.
               </p>
             </div>
 
             {/* Product */}
             <div>
-              <h3 className="font-bold mb-4">Product</h3>
+              <h3 className="font-bold mb-4">Produkt</h3>
               <ul className="space-y-3 text-sm text-muted-foreground">
                 <li>
                   <a href="#" className="hover:text-foreground transition-colors">
@@ -884,7 +967,7 @@ export function LandingPage({ onGetStarted, onLogin }: LandingPageProps) {
                 </li>
                 <li>
                   <a href="#" className="hover:text-foreground transition-colors">
-                    Pricing
+                    Preise
                   </a>
                 </li>
                 <li>
@@ -897,11 +980,11 @@ export function LandingPage({ onGetStarted, onLogin }: LandingPageProps) {
 
             {/* Company */}
             <div>
-              <h3 className="font-bold mb-4">Company</h3>
+              <h3 className="font-bold mb-4">Unternehmen</h3>
               <ul className="space-y-3 text-sm text-muted-foreground">
                 <li>
                   <a href="#" className="hover:text-foreground transition-colors">
-                    About
+                    Über uns
                   </a>
                 </li>
                 <li>
@@ -911,7 +994,7 @@ export function LandingPage({ onGetStarted, onLogin }: LandingPageProps) {
                 </li>
                 <li>
                   <a href="#" className="hover:text-foreground transition-colors">
-                    Contact
+                    Kontakt
                   </a>
                 </li>
               </ul>
@@ -919,21 +1002,21 @@ export function LandingPage({ onGetStarted, onLogin }: LandingPageProps) {
 
             {/* Legal */}
             <div>
-              <h3 className="font-bold mb-4">Legal</h3>
+              <h3 className="font-bold mb-4">Rechtliches</h3>
               <ul className="space-y-3 text-sm text-muted-foreground">
                 <li>
                   <a href="#" className="hover:text-foreground transition-colors">
-                    Privacy
+                    Datenschutz
                   </a>
                 </li>
                 <li>
                   <a href="#" className="hover:text-foreground transition-colors">
-                    Terms
+                    AGB
                   </a>
                 </li>
                 <li>
                   <a href="#" className="hover:text-foreground transition-colors">
-                    Security
+                    Sicherheit
                   </a>
                 </li>
               </ul>
@@ -948,6 +1031,65 @@ export function LandingPage({ onGetStarted, onLogin }: LandingPageProps) {
 
       {/* Styles */}
       <style>{`
+        /* Premium Animations */
+        @keyframes float {
+          0%, 100% {
+            transform: translateY(0) translateX(0);
+            opacity: 0.3;
+          }
+          50% {
+            transform: translateY(-100px) translateX(50px);
+            opacity: 0.8;
+          }
+        }
+
+        @keyframes pulse-slow {
+          0%, 100% {
+            transform: scale(1) translateX(0);
+            opacity: 0.3;
+          }
+          50% {
+            transform: scale(1.1) translateX(20px);
+            opacity: 0.5;
+          }
+        }
+
+        @keyframes pulse-slower {
+          0%, 100% {
+            transform: scale(1) translateY(0);
+            opacity: 0.2;
+          }
+          50% {
+            transform: scale(1.15) translateY(-20px);
+            opacity: 0.4;
+          }
+        }
+
+        @keyframes pulse-slowest {
+          0%, 100% {
+            transform: scale(1) translateX(0);
+            opacity: 0.1;
+          }
+          50% {
+            transform: scale(1.05) translateX(-15px);
+            opacity: 0.3;
+          }
+        }
+
+        @keyframes glow {
+          0%, 100% { opacity: 0.15; }
+          50% { opacity: 0.25; }
+        }
+
+        @keyframes pulse-glow {
+          0%, 100% {
+            box-shadow: 0 0 20px rgba(200, 0, 0, 0.3);
+          }
+          50% {
+            box-shadow: 0 0 40px rgba(200, 0, 0, 0.6);
+          }
+        }
+
         .shimmer {
           background: linear-gradient(90deg, #C80000 0%, #9333ea 50%, #C80000 100%);
           background-size: 200% 100%;
@@ -956,7 +1098,7 @@ export function LandingPage({ onGetStarted, onLogin }: LandingPageProps) {
         
         @keyframes shimmer {
           0% { background-position: 100% 0; }
-          100% { background-position: -100% 0; }
+          to { transform: translateX(200%); }
         }
         
         .animate-in {
@@ -971,6 +1113,36 @@ export function LandingPage({ onGetStarted, onLogin }: LandingPageProps) {
         @keyframes slide-in-from-bottom {
           from { transform: translateY(1rem); opacity: 0; }
           to { transform: translateY(0); opacity: 1; }
+        }
+
+        /* Premium effect classes */
+        .animate-float { animation: float linear infinite; }
+        .animate-pulse-slow { animation: pulse-slow 8s ease-in-out infinite; }
+        .animate-pulse-slower { animation: pulse-slower 12s ease-in-out infinite; }
+        .animate-pulse-slowest { animation: pulse-slowest 15s ease-in-out infinite; }
+        .animate-glow { animation: glow 4s ease-in-out infinite; }
+        .animate-shimmer { animation: shimmer 2s ease-in-out infinite; }
+        .animate-pulse-glow { animation: pulse-glow 2s ease-in-out infinite; }
+
+        .perspective-1000 { perspective: 1000px; }
+        
+        .tilt-card {
+          transition: transform 0.5s ease;
+        }
+        
+        .tilt-card:hover {
+          transform: rotateY(2deg) rotateX(-1deg) scale(1.02);
+        }
+
+        /* Accessibility: Reduce motion */
+        @media (prefers-reduced-motion: reduce) {
+          .animate-float, .animate-pulse-slow, .animate-pulse-slower, 
+          .animate-pulse-slowest, .animate-glow, .animate-shimmer, .animate-pulse-glow {
+            animation: none;
+          }
+          .tilt-card:hover {
+            transform: scale(1.02);
+          }
         }
       `}</style>
     </div>

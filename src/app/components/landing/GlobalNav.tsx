@@ -30,9 +30,8 @@ export function GlobalNav({ currentPage = 'home', onNavigate, onSignIn, onGetSta
   return (
     <>
       <nav
-        className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
-          isScrolled ? 'bg-background/95 backdrop-blur-xl border-b border-border/50 shadow-sm' : 'bg-background/80'
-        }`}
+        className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${isScrolled ? 'bg-card/95 backdrop-blur-xl border-b border-border/50 shadow-lg' : 'bg-card/60 backdrop-blur-md'
+          }`}
       >
         <div className="landing-container">
           <div className="flex items-center justify-between h-16">
@@ -53,15 +52,17 @@ export function GlobalNav({ currentPage = 'home', onNavigate, onSignIn, onGetSta
                 <button
                   key={item.id}
                   onClick={() => onNavigate(item.id)}
-                  className={`text-sm font-semibold transition-colors relative ${
-                    currentPage === item.id
-                      ? 'text-foreground'
-                      : 'text-muted-foreground hover:text-foreground'
-                  }`}
+                  className={`text-sm font-semibold transition-all relative group ${currentPage === item.id
+                    ? 'text-foreground'
+                    : 'text-muted-foreground hover:text-foreground'
+                    }`}
                 >
                   {item.label}
                   {currentPage === item.id && (
-                    <div className="absolute -bottom-[1.125rem] left-0 right-0 h-0.5 bg-primary" />
+                    <div className="absolute -bottom-[1.125rem] left-0 right-0 h-0.5 bg-gradient-to-r from-[#C80000] via-rose-500 to-red-600 shadow-glow" />
+                  )}
+                  {currentPage !== item.id && (
+                    <div className="absolute -bottom-[1.125rem] left-1/2 right-1/2 h-0.5 bg-gradient-to-r from-[#C80000] via-rose-500 to-red-600 opacity-0 group-hover:opacity-100 group-hover:left-0 group-hover:right-0 transition-all duration-300" />
                   )}
                 </button>
               ))}
@@ -71,15 +72,15 @@ export function GlobalNav({ currentPage = 'home', onNavigate, onSignIn, onGetSta
             <div className="hidden md:flex items-center gap-3">
               <button
                 onClick={onSignIn}
-                className="px-4 py-2 text-sm font-semibold text-foreground hover:text-primary transition-colors"
+                className="px-4 py-2 text-sm font-semibold text-foreground hover:text-primary transition-all"
               >
-                Sign in
+                Anmelden
               </button>
               <button
                 onClick={onGetStarted}
-                className="px-5 py-2.5 bg-primary text-white rounded-xl font-semibold hover:bg-primary/90 transition-all hover:shadow-lg"
+                className="px-5 py-2.5 bg-gradient-to-r from-[#C80000] via-rose-600 to-red-600 text-white rounded-xl font-semibold hover:shadow-xl transition-all shadow-md"
               >
-                Start free trial
+                7 Tage kostenlos testen
               </button>
             </div>
 
@@ -87,6 +88,9 @@ export function GlobalNav({ currentPage = 'home', onNavigate, onSignIn, onGetSta
             <button
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
               className="md:hidden p-2 hover:bg-muted/50 rounded-lg transition-colors"
+              aria-label="Toggle navigation menu"
+              aria-expanded={isMobileMenuOpen}
+              aria-controls="mobile-menu"
             >
               {isMobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
             </button>
@@ -104,7 +108,12 @@ export function GlobalNav({ currentPage = 'home', onNavigate, onSignIn, onGetSta
           />
 
           {/* Menu Panel */}
-          <div className="absolute top-16 left-0 right-0 bg-background border-b border-border/50 shadow-xl">
+          <div
+            id="mobile-menu"
+            role="navigation"
+            aria-label="Mobile navigation"
+            className="absolute top-16 left-0 right-0 bg-background border-b border-border/50 shadow-xl"
+          >
             <div className="landing-container py-6">
               <div className="flex flex-col gap-4">
                 {/* Navigation Items */}
@@ -115,11 +124,10 @@ export function GlobalNav({ currentPage = 'home', onNavigate, onSignIn, onGetSta
                       onNavigate(item.id);
                       setIsMobileMenuOpen(false);
                     }}
-                    className={`text-left px-4 py-3 rounded-lg font-semibold transition-colors ${
-                      currentPage === item.id
-                        ? 'bg-primary/10 text-primary'
-                        : 'text-foreground hover:bg-muted/50'
-                    }`}
+                    className={`text-left px-4 py-3 rounded-lg font-semibold transition-colors ${currentPage === item.id
+                      ? 'bg-primary/10 text-primary'
+                      : 'text-foreground hover:bg-muted/50'
+                      }`}
                   >
                     {item.label}
                   </button>
@@ -136,16 +144,16 @@ export function GlobalNav({ currentPage = 'home', onNavigate, onSignIn, onGetSta
                   }}
                   className="px-4 py-3 text-left font-semibold text-foreground hover:bg-muted/50 rounded-lg transition-colors"
                 >
-                  Sign in
+                  Anmelden
                 </button>
                 <button
                   onClick={() => {
                     onGetStarted();
                     setIsMobileMenuOpen(false);
                   }}
-                  className="px-4 py-3 bg-primary text-white rounded-xl font-semibold hover:bg-primary/90 transition-all text-center"
+                  className="px-4 py-3 bg-gradient-to-r from-[#C80000] via-rose-600 to-red-600 text-white rounded-xl font-semibold hover:shadow-xl transition-all text-center"
                 >
-                  Start free trial
+                  7 Tage kostenlos testen
                 </button>
               </div>
             </div>

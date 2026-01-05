@@ -11,7 +11,8 @@ export type LayerType =
     | "cta"
     | "logo"
     | "shape"
-    | "group"; // Added group
+    | "group"
+    | "image"; // Generic image layer
 
 export type AiProvenance = {
     provider: "adcreative" | "openai" | "other";
@@ -123,6 +124,13 @@ export type CtaLayer = LayerBase & {
     radius?: number;
     paddingX?: number;
     paddingY?: number;
+
+    // NEW: Gradient Support for modern button designs
+    bgGradient?: {
+        start: string;
+        end: string;
+        angle: number; // degrees, e.g., 180 for top-to-bottom
+    };
 };
 
 export type GroupLayer = LayerBase & {

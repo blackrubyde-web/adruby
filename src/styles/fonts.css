@@ -1,2 +1,29 @@
-/* Optional font imports; kept to satisfy src/styles/index.css */
+/* Premium Font Stack for AdRuby Studio - Modern Meta Ads Typography */
 
+/**
+ * PERFORMANCE NOTE:
+ * These fonts should be loaded via <link rel="preconnect"> and <link rel="stylesheet">
+ * in index.html for better LCP performance, not via @import.
+ * All fonts should use &display=swap parameter.
+ * 
+ * For now, we keep @import for simplicity but with display=swap.
+ * Migrate to <link> tags in production for optimal performance.
+ */
+
+/* Modern Sans-Serif Fonts */
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800;900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&display=swap');
+
+/* Serif Fonts for Luxury */
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Crimson+Pro:wght@400;600;700&display=swap');
+
+/* Body Fonts */
+@import url('https://fonts.googleapis.com/css2?family=Raleway:wght@300;400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Source+Sans+Pro:wght@300;400;600;700&display=swap');
+
+/* Bold Display Fonts */
+@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&display=swap');

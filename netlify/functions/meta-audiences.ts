@@ -3,6 +3,9 @@
  * Fetches custom audiences from Meta Business Account
  */
 
+// @ts-ignore
+import { supabaseAdmin } from './_shared/clients.js';
+
 export async function handler(event: any) {
     // CORS
     if (event.httpMethod === 'OPTIONS') {
@@ -18,15 +21,28 @@ export async function handler(event: any) {
     }
 
     try {
-        const userId = event.headers['x-user-id'];
+        const authHeader = event.headers.authorization || event.headers.Authorization;
+        if (!authHeader?.startsWith('Bearer ')) {
+            return {
+                statusCode: 401,
+                headers: { 'Access-Control-Allow-Origin': '*' },
+                body: JSON.stringify({ error: 'Missing or invalid Authorization header' })
+            };
+        }
 
-        if (!userId) {
+        const token = authHeader.replace('Bearer ', '').trim();
+        const { data: userData, error: authError } = await supabaseAdmin.auth.getUser(token);
+
+        if (authError || !userData?.user?.id) {
+            console.warn('[MetaAudiences] Auth failed', authError);
             return {
                 statusCode: 401,
                 headers: { 'Access-Control-Allow-Origin': '*' },
                 body: JSON.stringify({ error: 'Unauthorized' })
             };
         }
+
+        const userId = userData.user.id;
 
         // TODO: Fetch from Supabase facebook_connections
         // For now, return mock data
