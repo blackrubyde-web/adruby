@@ -202,22 +202,25 @@ export async function fetchResearchSelections() {
   return json;
 }
 
-export async function creativeSaveToLibrary(params: { output: unknown; creativeId?: string | null }) {
+export async function creativeSaveToLibrary(params: {
+  output: unknown;
+  creativeId?: string | null;
+  blueprintId?: string | null;
+  score?: number | null;
+}) {
   const token = await requireAccessToken();
 
   // Direct Supabase Insert (Fixes 404 on deleted endpoint)
   const { data: session } = await supabase.auth.getSession();
   if (!session.session?.user?.id) throw new Error('User not authenticated');
 
-  // If we already have a creativeId, update it? Or just insert new?
-  // Usually save means "persist this output". 
-
   const payload = {
     user_id: session.session.user.id,
     outputs: params.output,
     saved: true,
     created_at: new Date().toISOString(),
-    // generated_creatives table fields
+    blueprint_id: params.blueprintId || null,
+    score: params.score || null,
   };
 
   const { data, error } = await supabase

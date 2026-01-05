@@ -14,17 +14,16 @@ import {
   Rocket
 } from 'lucide-react';
 import { toast } from 'sonner';
-import { PageShell, Card } from './layout';
+import { PageShell, Card, HeroHeader } from './layout';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { useAffiliate } from '../contexts/AffiliateContext';
 import { supabase } from '../lib/supabaseClient';
 import { AchievementsPanel } from './affiliate/AchievementsPanel';
-import { ReferralDetailsModal } from './affiliate/ReferralDetailsModal';
+import { User } from '@supabase/supabase-js';
 
 // --- Imports for Marketing View ---
 import { GlobalNav } from './landing/GlobalNav';
 import { MobileStickyCTA } from './landing/MobileStickyCTA';
-import { PageContainer } from './design-system';
 
 interface EarningsData {
   date: string;
@@ -38,7 +37,7 @@ interface AffiliatePageProps {
 }
 
 export function AffiliatePage({ onNavigate = () => { }, onSignIn = () => { }, onGetStarted = () => { } }: AffiliatePageProps) {
-  const [user, setUser] = useState<any>(null);
+  const [user, setUser] = useState<User | null>(null);
   const [authLoading, setAuthLoading] = useState(true);
 
   // Marketing View States
@@ -46,13 +45,9 @@ export function AffiliatePage({ onNavigate = () => { }, onSignIn = () => { }, on
   const heroRef = useRef<HTMLElement>(null);
   const [activeTab, setActiveTab] = useState<'overview' | 'services' | 'achievements' | 'analytics'>('overview');
 
-  // Dashboard States (lifted from original)
+  // Dashboard States
   const [timeRange, setTimeRange] = useState<'7d' | '30d' | 'all'>('30d');
-  const [referralFilter, setReferralFilter] = useState<'all' | 'paid' | 'trial' | 'registered'>('all');
   const [chartData, setChartData] = useState<EarningsData[]>([]);
-  const [showPayoutModal, setShowPayoutModal] = useState(false);
-  const [payoutAmount, setPayoutAmount] = useState('');
-  const [payoutMethod, setPayoutMethod] = useState<string>('paypal');
   const [copiedItem, setCopiedItem] = useState<string | null>(null);
 
   // Check Auth Status on Mount
@@ -92,16 +87,8 @@ export function AffiliatePage({ onNavigate = () => { }, onSignIn = () => { }, on
       setActiveTab={setActiveTab}
       timeRange={timeRange}
       setTimeRange={setTimeRange}
-      referralFilter={referralFilter}
-      setReferralFilter={setReferralFilter}
       chartData={chartData}
       setChartData={setChartData}
-      showPayoutModal={showPayoutModal}
-      setShowPayoutModal={setShowPayoutModal}
-      payoutAmount={payoutAmount}
-      setPayoutAmount={setPayoutAmount}
-      payoutMethod={payoutMethod}
-      setPayoutMethod={setPayoutMethod}
       copiedItem={copiedItem}
       setCopiedItem={setCopiedItem}
     />
@@ -110,7 +97,16 @@ export function AffiliatePage({ onNavigate = () => { }, onSignIn = () => { }, on
 
 // --- Sub-Components ---
 
-function AffiliateMarketingView({ onNavigate, onSignIn, onGetStarted, heroRef, isMobileMenuOpen, setIsMobileMenuOpen }: any) {
+interface AffiliateMarketingViewProps {
+  onNavigate: (page: string) => void;
+  onSignIn: () => void;
+  onGetStarted: () => void;
+  heroRef: React.RefObject<HTMLElement>;
+  isMobileMenuOpen: boolean;
+  setIsMobileMenuOpen: (isOpen: boolean) => void;
+}
+
+function AffiliateMarketingView({ onNavigate, onSignIn, onGetStarted, heroRef, isMobileMenuOpen, setIsMobileMenuOpen }: AffiliateMarketingViewProps) {
   // Spotlight Effect Logic
   const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
     const { currentTarget: target } = e;
@@ -210,8 +206,22 @@ function AffiliateMarketingView({ onNavigate, onSignIn, onGetStarted, heroRef, i
         </div>
       </section>
 
+      {/* FAQ / Trust Section could go here */}
+
     </div>
   );
+}
+
+interface AffiliateDashboardProps {
+  user: User;
+  activeTab: 'overview' | 'services' | 'achievements' | 'analytics';
+  setActiveTab: (tab: 'overview' | 'services' | 'achievements' | 'analytics') => void;
+  timeRange: '7d' | '30d' | 'all';
+  setTimeRange: (range: '7d' | '30d' | 'all') => void;
+  chartData: EarningsData[];
+  setChartData: (data: EarningsData[]) => void;
+  copiedItem: string | null;
+  setCopiedItem: (item: string | null) => void;
 }
 
 function AffiliateDashboard({
@@ -220,29 +230,18 @@ function AffiliateDashboard({
   setActiveTab,
   timeRange,
   setTimeRange,
-  referralFilter,
-  setReferralFilter,
   chartData,
   setChartData,
-  showPayoutModal,
-  setShowPayoutModal,
-  payoutAmount,
-  setPayoutAmount,
-  payoutMethod,
-  setPayoutMethod,
   copiedItem,
   setCopiedItem
-}: any) {
+}: AffiliateDashboardProps) {
   // Use hooks logic here, safe because user exists
   const {
     isAffiliate,
     isLoading,
     stats,
-    referrals,
-    payouts,
     affiliateCode,
     affiliateLink,
-    requestPayout,
     applicationStatus,
   } = useAffiliate();
 
@@ -267,17 +266,6 @@ function AffiliateDashboard({
   }), [stats]);
 
   const promoCode = (affiliateCode || 'PARTNER') + '10';
-
-  const chartSummary = useMemo(() => ({
-    bestDay: `€${Math.max(...(chartData || []).map((d: any) => d.earnings), 0)}`,
-    avgDay: `€${Math.round((chartData || []).reduce((a: any, b: any) => a + b.earnings, 0) / ((chartData || []).length || 1))}`,
-    lastPayout: 'Coming soon',
-  }), [chartData]);
-
-  const filteredReferrals = useMemo(() => {
-    if (referralFilter === 'all') return referrals;
-    return referrals.filter(r => r.status === referralFilter);
-  }, [referrals, referralFilter]);
 
   const copyToClipboard = async (text: string, label: string) => {
     try {
@@ -403,6 +391,7 @@ function AffiliateDashboard({
   if (!isAffiliate && !applicationStatus) {
     return (
       <PageShell>
+        <HeroHeader title="Join Partner Program" subtitle="Apply to become an AdRuby affiliate" />
         <PartnerApplicationForm />
       </PageShell>
     )
@@ -411,6 +400,7 @@ function AffiliateDashboard({
   if (applicationStatus && applicationStatus !== 'approved') {
     return (
       <PageShell>
+        <HeroHeader title="Application Status" subtitle="We are reviewing your application" />
         <div className="max-w-xl mx-auto mt-20 text-center">
           <div className="w-16 h-16 bg-yellow-500/10 rounded-full flex items-center justify-center mx-auto mb-6">
             <Lock className="w-8 h-8 text-yellow-500" />
@@ -426,7 +416,8 @@ function AffiliateDashboard({
   }
 
   return (
-    <PageShell title="Affiliate Dashboard" description="Manage your referrals and earnings">
+    <PageShell>
+      <HeroHeader title="Affiliate Dashboard" subtitle="Manage your referrals and earnings" />
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
         <Card className="p-4 flex items-center justify-between">
           <div>

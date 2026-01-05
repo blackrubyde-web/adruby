@@ -1,10 +1,11 @@
-"use client";
-import { memo, useState } from 'react';
-import { Palette, Sparkles } from 'lucide-react';
-import { EditorLayout } from './studio/EditorLayout';
-import { AdWizard } from './studio/AdWizard';
+import { memo, useState, lazy, Suspense } from 'react';
+import { Palette, Sparkles, Loader2 } from 'lucide-react';
 import { creativeSaveToLibrary } from '../lib/api/creative';
 import { AdDocument, StudioLayer, TextLayer, ImageLayer } from '../types/studio';
+
+// Lazy load heavy components to speed up Studio Landing view
+const EditorLayout = lazy(() => import('./studio/EditorLayout').then(mod => ({ default: mod.EditorLayout })));
+const AdWizard = lazy(() => import('./studio/AdWizard').then(mod => ({ default: mod.AdWizard })));
 
 export const StudioPage = memo(function StudioPage() {
     const [currentView, setCurrentView] = useState<'landing' | 'wizard' | 'editor'>('landing');
@@ -49,7 +50,9 @@ export const StudioPage = memo(function StudioPage() {
             };
 
             await creativeSaveToLibrary({
-                output: payload
+                output: payload,
+                blueprintId: doc.meta?.blueprintId,
+                score: doc.meta?.score
             });
 
             // eslint-disable-next-line no-alert
@@ -61,6 +64,15 @@ export const StudioPage = memo(function StudioPage() {
             alert('Failed to save ad. See console for details.');
         }
     };
+
+    const LoadingFallback = () => (
+        <div className="flex items-center justify-center min-h-screen bg-background text-primary">
+            <div className="flex flex-col items-center gap-4">
+                <Loader2 className="w-10 h-10 animate-spin" />
+                <p className="text-sm font-medium text-muted-foreground animate-pulse">Lade Studio...</p>
+            </div>
+        </div>
+    );
 
     // Landing Page
     if (currentView === 'landing') {
@@ -111,11 +123,13 @@ export const StudioPage = memo(function StudioPage() {
     if (currentView === 'wizard') {
         return (
             <div className="fixed inset-0 z-[9999] bg-background">
-                <AdWizard
-                    isOpen={true}
-                    onClose={handleClose}
-                    onComplete={handleWizardComplete}
-                />
+                <Suspense fallback={<LoadingFallback />}>
+                    <AdWizard
+                        isOpen={true}
+                        onClose={handleClose}
+                        onComplete={handleWizardComplete}
+                    />
+                </Suspense>
             </div>
         );
     }
@@ -123,11 +137,13 @@ export const StudioPage = memo(function StudioPage() {
     // Canvas Editor
     return (
         <div className="fixed inset-0 z-[9999] bg-background text-foreground flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-500">
-            <EditorLayout
-                onClose={handleClose}
-                onSave={handleSave}
-                initialDoc={currentDocument}
-            />
+            <Suspense fallback={<LoadingFallback />}>
+                <EditorLayout
+                    onClose={handleClose}
+                    onSave={handleSave}
+                    initialDoc={currentDocument}
+                />
+            </Suspense>
         </div>
     );
 });

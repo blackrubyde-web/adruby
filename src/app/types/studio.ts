@@ -163,5 +163,7 @@ export type AdDocument = {
         mood?: "cozy_warm" | "clean_neutral" | "dramatic" | "bright";
         benefitFocus?: "atmosphere" | "function" | "design" | "gift";
         textInImage?: "none" | "minimal" | "custom";
+        blueprintId?: string;
+        score?: number;
     };
 };

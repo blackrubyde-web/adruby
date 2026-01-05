@@ -17,6 +17,7 @@ import { toast } from 'sonner';
 import { memo } from 'react';
 import { PageShell, HeroHeader } from './layout';
 import { supabase } from '../lib/supabaseClient';
+import { env } from '../lib/env';
 import { StrategySelector } from './studio/StrategySelector';
 import { useStrategies } from '../hooks/useStrategies';
 import { createCampaign } from '../lib/api/meta';
@@ -551,14 +552,16 @@ export function CampaignBuilderPage() {
         />
 
         {/* SIMULATION MODE BANNER */}
-        <div className="max-w-5xl mx-auto px-4 mb-4">
-          <div className="bg-orange-500/10 border border-orange-500/20 text-orange-200 p-2 rounded-xl flex items-center justify-center gap-3 backdrop-blur-sm shadow-[0_0_20px_rgba(249,115,22,0.1)]">
-            <AlertTriangle className="w-4 h-4 text-orange-500 animate-pulse" />
-            <span className="font-semibold text-xs">
-              <strong className="text-orange-500">DEMO MODE:</strong> Campaigns are simulated.
-            </span>
+        {env.demoMode && (
+          <div className="max-w-5xl mx-auto px-4 mb-4">
+            <div className="bg-orange-500/10 border border-orange-500/20 text-orange-200 p-2 rounded-xl flex items-center justify-center gap-3 backdrop-blur-sm shadow-[0_0_20px_rgba(249,115,22,0.1)]">
+              <AlertTriangle className="w-4 h-4 text-orange-500 animate-pulse" />
+              <span className="font-semibold text-xs">
+                <strong className="text-orange-500">DEMO MODE:</strong> Campaigns are simulated.
+              </span>
+            </div>
           </div>
-        </div>
+        )}
 
         {/* Stepper UI - Premium */}
         <div className="mb-8 max-w-5xl mx-auto px-4">
