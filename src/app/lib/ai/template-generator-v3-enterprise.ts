@@ -218,7 +218,7 @@ function selectOptimalPattern(industry: Industry, goal: ConversionGoal): Convers
  * Get industry-specific configuration
  */
 function getIndustryConfig(industry: Industry): IndustryConfig {
-    const configs = {
+    const configs: Record<Industry, IndustryConfig> = {
         dropshipping: {
             emphasize: ['discount', 'social_proof', 'scarcity'],
             colorBias: 'urgency', // Red/Orange tones

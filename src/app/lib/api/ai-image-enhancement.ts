@@ -1,4 +1,3 @@
-import { supabase } from '../supabaseClient';
 import { invokeOpenAIProxy } from './proxyClient';
 
 /**
@@ -256,21 +255,14 @@ CRITICAL TECHNICAL REQUIREMENTS:
  * Images are automatically uploaded to Supabase Storage for permanent access
  */
 export async function enhanceProductImage(req: EnhancementRequest, options?: InvokeOptions): Promise<EnhancementResult> {
-    console.log('🎨 Starting PREMIUM image enhancement pipeline...');
-
     // Step 1: Analyze with GPT-4 Vision
-    console.log('📸 Analyzing image with GPT-4 Vision...');
     const { dallePrompt, analysisNotes } = await analyzeImageWithVision(req, options);
-    console.log('✅ Vision analysis complete:', analysisNotes);
 
     // Step 2: Generate with DALL-E 3
-    console.log('🖼️ Generating premium image with DALL-E 3...');
     const openAIImageUrl = await generateWithDALLE3(dallePrompt, options);
-    console.log('✅ Premium image generated from OpenAI');
 
     // Step 3: Upload to Supabase Storage via Backend Edge Function (Solves CORS)
     // We use 'openai-proxy' because it's already deployed and we merged the logic there
-    console.log('💾 Uploading to Supabase Storage (Server-side)...');
 
     // Unified AI Service (Supabase Edge Function)
     const { data: uploadData, error: uploadError } = await invokeOpenAIProxy({
@@ -289,8 +281,6 @@ export async function enhanceProductImage(req: EnhancementRequest, options?: Inv
 
 
     const permanentImageUrl = uploadData.publicUrl;
-    console.log('✅ Image permanently stored at:', permanentImageUrl);
-
     return {
         enhancedImageUrl: permanentImageUrl,
         analysisNotes
@@ -301,8 +291,6 @@ export async function enhanceProductImage(req: EnhancementRequest, options?: Inv
  * Generate a BACKGROUND SCENE only (for composite ads)
  */
 export async function generateBackgroundScene(req: EnhancementRequest, options?: InvokeOptions): Promise<BackgroundResult> {
-    console.log('🎭 Generating BACKGROUND SCENE (Composite Mode)...');
-
     // 1. Analyze to get Background Prompt
     const { dallePrompt, analysisNotes } = await analyzeForBackground(req, options);
 

@@ -44,6 +44,80 @@ export interface HeadlineGenerationResult {
     };
 }
 
+const HEADLINE_STYLES: HeadlineVariant['style'][] = [
+    'bold',
+    'elegant',
+    'modern',
+    'playful',
+    'professional'
+];
+
+const TEXT_TRANSFORMS: NonNullable<HeadlineDesign['textTransform']>[] = [
+    'uppercase',
+    'lowercase',
+    'capitalize',
+    'none'
+];
+
+const DEFAULT_DESIGN: HeadlineDesign = {
+    primaryColor: '#111111',
+    accentColor: '#F59E0B',
+    fontWeight: 800,
+    fontSize: 48,
+    letterSpacing: -1,
+    textTransform: 'none'
+};
+
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+    typeof value === 'object' && value !== null;
+
+const toString = (value: unknown, fallback: string): string =>
+    typeof value === 'string' ? value : fallback;
+
+const toNumber = (value: unknown, fallback: number): number =>
+    typeof value === 'number' && Number.isFinite(value) ? value : fallback;
+
+const toStyle = (value: unknown): HeadlineVariant['style'] =>
+    typeof value === 'string' && HEADLINE_STYLES.includes(value as HeadlineVariant['style'])
+        ? (value as HeadlineVariant['style'])
+        : 'modern';
+
+const toTextTransform = (value: unknown): HeadlineDesign['textTransform'] =>
+    typeof value === 'string' && TEXT_TRANSFORMS.includes(value as NonNullable<HeadlineDesign['textTransform']>)
+        ? (value as HeadlineDesign['textTransform'])
+        : DEFAULT_DESIGN.textTransform;
+
+const toDesign = (value: unknown): HeadlineDesign => {
+    if (!isRecord(value)) return DEFAULT_DESIGN;
+
+    const gradient = isRecord(value.gradient)
+        ? {
+            from: toString(value.gradient.from, ''),
+            to: toString(value.gradient.to, '')
+        }
+        : undefined;
+    const shadow = isRecord(value.shadow)
+        ? {
+            color: toString(value.shadow.color, ''),
+            blur: toNumber(value.shadow.blur, 0)
+        }
+        : undefined;
+
+    const normalizedGradient = gradient?.from && gradient?.to ? gradient : undefined;
+    const normalizedShadow = shadow?.color ? shadow : undefined;
+
+    return {
+        primaryColor: toString(value.primaryColor, DEFAULT_DESIGN.primaryColor),
+        accentColor: toString(value.accentColor, DEFAULT_DESIGN.accentColor),
+        fontWeight: toNumber(value.fontWeight, DEFAULT_DESIGN.fontWeight),
+        fontSize: toNumber(value.fontSize, DEFAULT_DESIGN.fontSize),
+        letterSpacing: toNumber(value.letterSpacing, DEFAULT_DESIGN.letterSpacing),
+        textTransform: toTextTransform(value.textTransform),
+        ...(normalizedGradient ? { gradient: normalizedGradient } : {}),
+        ...(normalizedShadow ? { shadow: normalizedShadow } : {})
+    };
+};
+
 /**
  * AI-powered headline generator for affiliate partner applications.
  * Generates conversion-optimized headlines with design specifications.
@@ -51,7 +125,7 @@ export interface HeadlineGenerationResult {
 export async function generateAffiliateHeadlines(
     params: HeadlineGenerationParams
 ): Promise<HeadlineGenerationResult> {
-    const { partnerType, audienceSize, platform, companyName, language = 'de' } = params;
+    const { partnerType, audienceSize, platform, language = 'de' } = params;
 
     // Build context-aware prompt
     const prompt = buildHeadlinePrompt(params);
@@ -95,10 +169,18 @@ export async function generateAffiliateHeadlines(
         }
 
         // Add IDs to variants
-        const variants: HeadlineVariant[] = parsed.variants.map((v: any, idx: number) => ({
-            ...v,
-            id: `headline-${Date.now()}-${idx}`
-        }));
+        const variants: HeadlineVariant[] = parsed.variants.map((variant: unknown, idx: number) => {
+            const record = isRecord(variant) ? variant : {};
+            return {
+                id: `headline-${Date.now()}-${idx}`,
+                headline: toString(record.headline, 'Headline'),
+                subheadline: typeof record.subheadline === 'string' ? record.subheadline : undefined,
+                style: toStyle(record.style),
+                design: toDesign(record.design),
+                emotion: toString(record.emotion, ''),
+                conversionFocus: toString(record.conversionFocus, '')
+            };
+        });
 
         return {
             variants,
