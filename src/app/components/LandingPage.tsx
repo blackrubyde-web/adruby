@@ -19,6 +19,7 @@ import {
   Zap,
   ChevronDown,
   MessageCircle,
+  Quote,
 } from 'lucide-react';
 import { ImageWithFallback } from './figma/ImageWithFallback';
 import {
