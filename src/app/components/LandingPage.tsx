@@ -316,107 +316,53 @@ export function LandingPage({ onGetStarted, onLogin }: LandingPageProps) {
       {/* ============================================
           8-STUFEN KI-PIPELINE (MOBIL-OPTIMIERT)
           ============================================ */}
-  <section className="py-16 sm:py-20 md:py-24 bg-gradient-to-b from-muted/30 via-background to-muted/20">
-    <div className={tokens.marketingContainer}>
-      <div className="text-center mb-10 sm:mb-12 animate-fade-in-up px-4">
-        <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-3 sm:mb-4">
-          Wie AdRuby's KI <span className="text-primary">gewinnende Ads</span> erstellt
+  {/* ============================================
+          8-STUFEN KI-PIPELINE (DEEP RUBY GRID)
+          ============================================ */}
+  <section className="py-24 sm:py-32 bg-black relative overflow-hidden">
+    {/* Ambient Glow */}
+    <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-[#FF1F1F]/5 blur-[120px] rounded-full pointer-events-none" />
+
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 relative z-10">
+      <div className="text-center mb-16 sm:mb-24 animate-fade-in-up">
+        <h2 className="text-4xl sm:text-5xl md:text-6xl font-black text-white mb-6 tracking-tight">
+          KI die <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#FF1F1F] to-rose-600">versteht</span>, <br className="hidden sm:block" />
+          nicht nur generiert.
         </h2>
-        <p className="text-base sm:text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto">
-          Intelligentes System, das analysiert, erstellt und optimiert
+        <p className="text-lg sm:text-xl text-white/50 max-w-2xl mx-auto font-medium">
+          Vom weißen Blatt zur perfekten Ad in 8 Schritten.
         </p>
       </div>
 
-      {/* Vertical Mobile Pipeline / Horizontal Desktop */}
-      <div className="workflow-pipeline max-w-5xl mx-auto flex flex-col md:flex-row gap-3 sm:gap-4 relative px-4">
-        {/* Mobile Connecting Line (Vertical) */}
-        <div className="absolute left-8 top-6 bottom-6 w-0.5 bg-gradient-to-b from-blue-500 via-purple-500 via-yellow-500 via-green-500 to-red-500 md:hidden -z-10 opacity-20" />
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 sm:gap-6">
+        {[
+          { id: 1, title: 'Strategie', desc: 'Deep-Dive Analyse', icon: Target, color: 'from-blue-500 to-cyan-500' },
+          { id: 2, title: 'Tokens', desc: 'Brand DNA Extrakt', icon: BarChart3, color: 'from-indigo-500 to-purple-500' },
+          { id: 3, title: 'Hooks', desc: 'Psychologie-Layer', icon: Brain, color: 'from-purple-500 to-pink-500' },
+          { id: 4, title: 'Cutout', desc: 'WASM Freisteller', icon: Eye, color: 'from-pink-500 to-rose-500' },
+          { id: 5, title: 'Szene', desc: 'KI-Komposition', icon: Sparkles, color: 'from-yellow-500 to-orange-500' },
+          { id: 6, title: 'Varianten', desc: 'Stil-Mutationen', icon: Zap, color: 'from-green-500 to-emerald-500' },
+          { id: 7, title: 'Prognose', desc: 'RoAS Vorhersage', icon: LineChart, color: 'from-teal-500 to-cyan-500' },
+          { id: 8, title: 'Export', desc: 'Meta API Push', icon: Rocket, color: 'from-[#C80000] to-rose-600' },
+        ].map((step, i) => (
+          <div
+            key={step.id}
+            className="group relative bg-white/5 border border-white/10 rounded-3xl p-6 sm:p-8 hover:bg-white/10 transition-all duration-500 hover:scale-[1.02] hover:border-white/20 overflow-hidden"
+          >
+            {/* Hover Glow */}
+            <div className={`absolute inset-0 bg-gradient-to-br ${step.color} opacity-0 group-hover:opacity-10 transition-opacity duration-500`} />
 
-        {/* Stage 1 - Strategische Analyse */}
-        <div className="workflow-step landing-card-hover">
-          <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-gradient-to-br from-blue-500 to-cyan-500 flex items-center justify-center mb-3 sm:mb-4">
-            <Target className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
+            <div className={`w-12 h-12 rounded-2xl bg-gradient-to-br ${step.color} flex items-center justify-center mb-6 shadow-xl group-hover:scale-110 transition-transform duration-500`}>
+              <step.icon className="w-6 h-6 text-white" />
+            </div>
+
+            <div className="relative z-10">
+              <div className="text-white/20 text-xs font-bold uppercase tracking-widest mb-2">Step 0{step.id}</div>
+              <h3 className="text-xl font-bold text-white mb-1 group-hover:translate-x-1 transition-transform">{step.title}</h3>
+              <p className="text-sm text-white/50">{step.desc}</p>
+            </div>
           </div>
-          <h3 className="text-sm sm:text-base font-bold mb-1 sm:mb-2">1. Strategie</h3>
-          <p className="text-xs sm:text-sm text-muted-foreground">Analyse & Design Tokens</p>
-        </div>
-
-        <div className="workflow-connector" />
-
-        {/* Stage 2 - Template */}
-        <div className="workflow-step landing-card-hover">
-          <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-500 flex items-center justify-center mb-3 sm:mb-4">
-            <BarChart3 className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
-          </div>
-          <h3 className="text-sm sm:text-base font-bold mb-1 sm:mb-2">2. Template</h3>
-          <p className="text-xs sm:text-sm text-muted-foreground">Dynamische Layouts</p>
-        </div>
-
-        <div className="workflow-connector" />
-
-        {/* Stage 3 - Copy */}
-        <div className="workflow-step landing-card-hover">
-          <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center mb-3 sm:mb-4">
-            <Brain className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
-          </div>
-          <h3 className="text-sm sm:text-base font-bold mb-1 sm:mb-2">3. Copy</h3>
-          <p className="text-xs sm:text-sm text-muted-foreground">10x Hook-Varianten</p>
-        </div>
-
-        <div className="workflow-connector" />
-
-        {/* Stage 4 - Cutout */}
-        <div className="workflow-step landing-card-hover">
-          <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-gradient-to-br from-pink-500 to-rose-500 flex items-center justify-center mb-3 sm:mb-4">
-            <Eye className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
-          </div>
-          <h3 className="text-sm sm:text-base font-bold mb-1 sm:mb-2">4. Ausschnitt</h3>
-          <p className="text-xs sm:text-sm text-muted-foreground">WASM Hintergrund-Entfernung</p>
-        </div>
-
-        <div className="workflow-connector" />
-
-        {/* Stage 5 - Scene + Vision QA */}
-        <div className="workflow-step landing-card-hover">
-          <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-gradient-to-br from-yellow-500 to-orange-500 flex items-center justify-center mb-3 sm:mb-4">
-            <Sparkles className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
-          </div>
-          <h3 className="text-sm sm:text-base font-bold mb-1 sm:mb-2">5. Szene</h3>
-          <p className="text-xs sm:text-sm text-muted-foreground">KI-Komposition + QA</p>
-        </div>
-
-        <div className="workflow-connector" />
-
-        {/* Stage 6 - Variations */}
-        <div className="workflow-step landing-card-hover">
-          <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-gradient-to-br from-green-500 to-emerald-500 flex items-center justify-center mb-3 sm:mb-4">
-            <Zap className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
-          </div>
-          <h3 className="text-sm sm:text-base font-bold mb-1 sm:mb-2">6. Variationen</h3>
-          <p className="text-xs sm:text-sm text-muted-foreground">Stil-Mutationen</p>
-        </div>
-
-        <div className="workflow-connector" />
-
-        {/* Stage 7 - Forecast */}
-        <div className="workflow-step landing-card-hover">
-          <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-gradient-to-br from-teal-500 to-cyan-500 flex items-center justify-center mb-3 sm:mb-4">
-            <LineChart className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
-          </div>
-          <h3 className="text-sm sm:text-base font-bold mb-1 sm:mb-2">7. Prognose</h3>
-          <p className="text-xs sm:text-sm text-muted-foreground">KPI-Vorhersage</p>
-        </div>
-
-        <div className="workflow-connector" />
-
-        {/* Stage 8 - Launch */}
-        <div className="workflow-step landing-card-hover">
-          <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-gradient-to-br from-[#C80000] to-rose-600 flex items-center justify-center mb-3 sm:mb-4">
-            <Rocket className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
-          </div>
-          <h3 className="text-sm sm:text-base font-bold mb-1 sm:mb-2">8. Launch</h3>
-          <p className="text-xs sm:text-sm text-muted-foreground">Export zu Meta</p>
-        </div>
+        ))}
       </div>
     </div>
   </section>
@@ -607,45 +553,80 @@ export function LandingPage({ onGetStarted, onLogin }: LandingPageProps) {
   {/* ============================================
           SOCIAL PROOF
           ============================================ */}
-  < section className="py-16 sm:py-20 md:py-24" >
-    <PageContainer>
-      <div className="text-center mb-10 sm:mb-12 px-4">
-        <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-3 sm:mb-4">
-          Vertraut von <span className="text-primary">Marketern & Gründern</span>
+  {/* ============================================
+          SOCIAL PROOF (DEEP RUBY)
+          ============================================ */}
+  <section className="py-24 sm:py-32 bg-gradient-to-b from-black via-[#0A0A0A] to-black text-white relative">
+    <div className="absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-white/10 to-transparent" />
+
+    <div className="max-w-7xl mx-auto px-6">
+      <div className="text-center mb-20 animate-fade-in-up">
+        <h2 className="text-4xl sm:text-5xl font-black mb-6">
+          Vertraut von <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#FF1F1F] to-rose-500">Marketern & Gründern</span>
         </h2>
       </div>
 
-      {/* Testimonials */}
-      <div className="grid md:grid-cols-3 gap-6 mb-12">
-        <TestimonialCard
-          quote="Wir haben Ad-Erstellung von 2 Stunden auf 8 Minuten reduziert."
-          author="Markus Klein"
-          role="Growth Lead, SaaS Startup"
-          avatar="MK"
-        />
-        <TestimonialCard
-          quote="KI-Varianten schlagen unsere Best-Performer um 22% CTR."
-          author="Julia Schmidt"
-          role="Performance Marketerin"
-          avatar="JS"
-        />
-        <TestimonialCard
-          quote="Endlich skalierbare Workflows für unsere Agentur."
-          author="Alexander Lang"
-          role="Agentur-Inhaber"
-          avatar="AL"
-        />
+      {/* Testimonials Bento */}
+      <div className="grid md:grid-cols-3 gap-6 mb-20">
+        {[
+          {
+            quote: "Wir haben Ad-Erstellung von 2 Stunden auf 8 Minuten reduziert.",
+            author: "Markus Klein",
+            role: "Growth Lead, SaaS Startup",
+            avatar: "MK",
+            gradient: "from-blue-500 to-cyan-500"
+          },
+          {
+            quote: "KI-Varianten schlagen unsere Best-Performer um 22% CTR.",
+            author: "Julia Schmidt",
+            role: "Performance Marketerin",
+            avatar: "JS",
+            gradient: "from-purple-500 to-pink-500"
+          },
+          {
+            quote: "Endlich skalierbare Workflows für unsere Agentur.",
+            author: "Alexander Lang",
+            role: "Agentur-Inhaber",
+            avatar: "AL",
+            gradient: "from-green-500 to-emerald-500"
+          }
+        ].map((t, i) => (
+          <div key={i} className="bg-white/5 border border-white/10 rounded-3xl p-8 relative overflow-hidden group hover:border-white/20 transition-all">
+            <div className="absolute top-0 right-0 p-8 opacity-20">
+              <Quote className="w-12 h-12 text-white" />
+            </div>
+            <p className="text-lg font-medium text-white/90 mb-8 relative z-10">"{t.quote}"</p>
+
+            <div className="flex items-center gap-4">
+              <div className={`w-10 h-10 rounded-full bg-gradient-to-br ${t.gradient} flex items-center justify-center text-xs font-bold`}>
+                {t.avatar}
+              </div>
+              <div>
+                <div className="font-bold text-white">{t.author}</div>
+                <div className="text-sm text-white/40">{t.role}</div>
+              </div>
+            </div>
+          </div>
+        ))}
       </div>
 
-      {/* Results Strip */}
+      {/* Results Strip - Dark Mode */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <StatCard value="50.000+" label="Ads erstellt" icon={<Sparkles className="w-5 h-5 text-primary" />} />
-        <StatCard value="14x" label="Ø ROAS" icon={<TrendingUp className="w-5 h-5 text-green-600" />} />
-        <StatCard value="86%" label="Zeit gespart" icon={<Zap className="w-5 h-5 text-yellow-600" />} />
-        <StatCard value="2.500+" label="Aktive Nutzer" icon={<Users className="w-5 h-5 text-blue-600" />} />
+        {[
+          { value: "50.000+", label: "Ads erstellt", icon: Sparkles, color: "text-[#FF1F1F]" },
+          { value: "14x", label: "Ø ROAS", icon: TrendingUp, color: "text-green-500" },
+          { value: "86%", label: "Zeit gespart", icon: Zap, color: "text-yellow-500" },
+          { value: "2.500+", label: "Aktive Nutzer", icon: Users, color: "text-blue-500" }
+        ].map((stat, i) => (
+          <div key={i} className="bg-white/5 border border-white/10 rounded-2xl p-6 text-center hover:bg-white/10 transition-colors">
+            <stat.icon className={`w-6 h-6 ${stat.color} mx-auto mb-3`} />
+            <div className="text-3xl font-black text-white mb-1">{stat.value}</div>
+            <div className="text-sm text-white/40 font-medium uppercase tracking-wider">{stat.label}</div>
+          </div>
+        ))}
       </div>
-    </PageContainer>
-  </section >
+    </div>
+  </section>
 
   {/* ============================================
           FÜR WEN IST ADRUBY?

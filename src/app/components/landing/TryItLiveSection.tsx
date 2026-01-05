@@ -68,180 +68,163 @@ export function TryItLiveSection({ onGetStarted }: TryItLiveSectionProps) {
   };
 
   return (
-    <section className="py-20 sm:py-24 landing-page">
-      <PageContainer>
-        <SectionHeader title="Try AdRuby live" subtitle="Describe your offer and see what AI creates" />
+    <section className="py-24 sm:py-32 relative overflow-hidden bg-black pl-8 pr-8">
+      {/* Background Ambience */}
+      <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-[0.03] mix-blend-overlay pointer-events-none" />
+      <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-red-600/10 blur-[120px] rounded-full pointer-events-none" />
 
-        <div className="max-w-2xl mx-auto">
-          <FeatureCard className="p-8 relative overflow-hidden">
-            {/* Background Gradient for Depth */}
-            <div className="absolute top-0 right-0 w-64 h-64 bg-primary/5 rounded-full blur-3xl -z-10" />
-
-            <h3 className="text-lg font-semibold mb-2">Generate your first ad</h3>
-            <p className="text-sm text-muted-foreground mb-6">
-              See how AI transforms your product description into high-performing ad copy
-            </p>
-
-            {/* Input */}
-            <div className="space-y-4 mb-6">
-              <textarea
-                value={livePrompt}
-                onChange={(e) => setLivePrompt(e.target.value)}
-                className="w-full px-4 py-3 rounded-xl border border-border/60 bg-background focus:outline-none focus:ring-2 focus:ring-primary/20 min-h-[100px] resize-none"
-                placeholder="e.g., Online fitness coaching for busy professionals. We offer 15-minute home workouts and custom meal plans."
-              />
-
-              {/* Dropdowns */}
-              <div className="grid grid-cols-2 gap-3">
-                <select
-                  value={livePlatform}
-                  onChange={(e) => setLivePlatform(e.target.value)}
-                  className="px-3 py-2.5 rounded-xl border border-border/60 bg-background focus:outline-none focus:ring-2 focus:ring-primary/20"
-                >
-                  <option>Facebook Ads</option>
-                  <option>Instagram Ads</option>
-                  <option>LinkedIn Ads</option>
-                </select>
-                <select
-                  value={liveGoal}
-                  onChange={(e) => setLiveGoal(e.target.value)}
-                  className="px-3 py-2.5 rounded-xl border border-border/60 bg-background focus:outline-none focus:ring-2 focus:ring-primary/20"
-                >
-                  <option>Sales</option>
-                  <option>Leads</option>
-                  <option>Traffic</option>
-                </select>
-              </div>
-            </div>
-
-            {/* Generate Button */}
-            {!showLiveOutput && (
-              <button
-                onClick={handleLiveGenerate}
-                disabled={!livePrompt.trim() || isLiveGenerating}
-                className="w-full py-3 bg-gradient-to-r from-primary to-rose-600 text-white rounded-xl font-bold shadow-lg hover:shadow-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-              >
-                {isLiveGenerating ? (
-                  <>
-                    <Loader2 className="w-5 h-5 animate-spin" />
-                    Generating...
-                  </>
-                ) : (
-                  <>
-                    <Sparkles className="w-5 h-5 fill-white/20" />
-                    Generate ad with AI
-                  </>
-                )}
-              </button>
-            )}
-
-            {/* Progress Visualization */}
-            {isLiveGenerating && (
-              <div className="mt-6 space-y-3">
-                {GENERATION_STEPS.map((step, index) => {
-                  const isActive = index === currentStepIndex;
-                  const isCompleted = index < currentStepIndex;
-                  const isPending = index > currentStepIndex;
-
-                  return (
-                    <div
-                      key={index}
-                      className={`flex items-center gap-3 transition-all duration-300 ${isPending ? 'opacity-30' : 'opacity-100'
-                        }`}
-                    >
-                      <div className={`
-                        w-6 h-6 rounded-full flex items-center justify-center border transition-colors
-                        ${isCompleted ? 'bg-green-500 border-green-500 text-white' : ''}
-                        ${isActive ? 'border-primary text-primary animate-pulse' : ''}
-                        ${isPending ? 'border-muted-foreground text-muted-foreground' : ''}
-                      `}>
-                        {isCompleted ? (
-                          <CheckCircle2 className="w-4 h-4" />
-                        ) : (
-                          <span className="text-[10px] font-bold">{index + 1}</span>
-                        )}
-                      </div>
-                      <span className={`text-sm font-medium ${isActive ? 'text-primary' : ''}`}>
-                        {step}
-                      </span>
-                    </div>
-                  );
-                })}
-              </div>
-            )}
-
-            {/* Output Preview */}
-            {showLiveOutput && (
-              <div className="animate-in fade-in slide-in-from-bottom-4 duration-700 space-y-6 mt-6">
-                <div className="relative">
-                  <div className="absolute -inset-0.5 bg-gradient-to-r from-primary to-purple-600 rounded-2xl opacity-20 blur-sm" />
-                  <div className="relative bg-card border border-border/60 rounded-xl overflow-hidden">
-                    {/* Fake Ad Preview Header */}
-                    <div className="p-3 border-b border-border/40 bg-muted/30 flex items-center gap-2">
-                      <div className="w-2 h-2 rounded-full bg-red-400" />
-                      <div className="w-2 h-2 rounded-full bg-yellow-400" />
-                      <div className="w-2 h-2 rounded-full bg-green-400" />
-                      <span className="ml-2 text-xs text-muted-foreground font-mono">Ad Preview ({livePlatform})</span>
-                    </div>
-
-                    <div className="p-5 space-y-4">
-                      <div>
-                        <p className="text-xs font-bold text-muted-foreground mb-1 uppercase tracking-wide">Headline</p>
-                        <p className="font-bold text-lg leading-tight">Get Fit in 12 Weeks — No Gym Required ⚡️</p>
-                      </div>
-                      <div>
-                        <p className="text-xs font-bold text-muted-foreground mb-1 uppercase tracking-wide">Primary Text</p>
-                        <p className="text-sm leading-relaxed text-foreground/80">
-                          Busy schedule? 🕒 Our AI-powered coaching fits your life, not the other way around.
-                          Get personalized 15-min workouts, custom meal plans, and see results fast.
-                          <br /><br />
-                          Join 10,000+ professionals hitting their goals from home.
-                        </p>
-                      </div>
-                      <div>
-                        <p className="text-xs font-bold text-muted-foreground mb-1 uppercase tracking-wide">CTA Button</p>
-                        <button className="w-full py-2.5 bg-[#0081FB] text-white rounded-md font-semibold text-sm">
-                          Start Your Free Trial
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Lock Screen */}
-                <div className="p-6 bg-gradient-to-br from-primary/10 to-transparent border border-primary/20 rounded-2xl text-center space-y-4">
-                  <div className="w-12 h-12 bg-primary/20 text-primary rounded-full flex items-center justify-center mx-auto mb-2">
-                    <Lock className="w-6 h-6" />
-                  </div>
-                  <div>
-                    <h4 className="text-lg font-bold mb-1">Unlock 50+ Variations</h4>
-                    <p className="text-sm text-muted-foreground max-w-sm mx-auto">
-                      Create an account to generate visual creatives, see performance predictions, and export directly to Ads Manager.
-                    </p>
-                  </div>
-
-                  <PrimaryButton onClick={onGetStarted} className="w-full sm:w-auto px-8 mx-auto shadow-xl shadow-primary/20">
-                    Start 7-Day Free Trial
-                    <ArrowRight className="w-4 h-4 ml-2" />
-                  </PrimaryButton>
-                  <p className="text-[10px] text-muted-foreground mt-3">
-                    No payment due today. Cancel anytime.
-                  </p>
-                  <button
-                    onClick={() => {
-                      setShowLiveOutput(false);
-                      setLivePrompt('');
-                    }}
-                    className="text-xs text-muted-foreground hover:text-primary transition-colors block mx-auto mt-4"
-                  >
-                    Try another example
-                  </button>
-                </div>
-              </div>
-            )}
-          </FeatureCard>
+      <div className="max-w-4xl mx-auto relative z-10">
+        <div className="text-center mb-12 sm:mb-16">
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/5 border border-white/10 text-xs font-bold uppercase tracking-wider text-white/70 mb-6">
+            <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
+            Live Demo
+          </div>
+          <h2 className="text-4xl sm:text-5xl font-black text-white mb-6">
+            Probier's <span className="text-[#FF1F1F]">live</span> aus.
+          </h2>
+          <p className="text-lg text-white/50 max-w-xl mx-auto">
+            Beschreibe dein Angebot und sieh zu, wie AdRuby in Sekunden eine High-Converting Ad generiert.
+          </p>
         </div>
-      </PageContainer>
+
+        <div className="relative group">
+          {/* Glowing Border Gradient */}
+          <div className="absolute -inset-0.5 bg-gradient-to-br from-[#FF1F1F] via-purple-600 to-blue-600 rounded-3xl opacity-30 blur-lg group-hover:opacity-60 transition-opacity duration-500" />
+
+          <div className="relative bg-[#0A0A0A] border border-white/10 rounded-3xl p-6 sm:p-10 shadow-2xl overflow-hidden">
+
+            {/* Input Overlay */}
+            <div className="space-y-6">
+              <div>
+                <label className="text-sm font-bold text-white/70 uppercase tracking-wide mb-3 block">Dein Angebot</label>
+                <textarea
+                  value={livePrompt}
+                  onChange={(e) => setLivePrompt(e.target.value)}
+                  className="w-full px-5 py-4 rounded-2xl bg-white/5 border border-white/10 text-white placeholder:text-white/20 focus:outline-none focus:border-[#FF1F1F]/50 focus:bg-white/10 transition-all min-h-[120px] resize-none text-lg"
+                  placeholder="z.B. Online Fitness Coaching für vielbeschäftigte Väter. 20 Minuten Workouts ohne Equipment."
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="text-sm font-bold text-white/70 uppercase tracking-wide mb-3 block">Plattform</label>
+                  <select
+                    value={livePlatform}
+                    onChange={(e) => setLivePlatform(e.target.value)}
+                    className="w-full px-5 py-3 rounded-xl bg-white/5 border border-white/10 text-white focus:outline-none focus:border-[#FF1F1F]/50 appearance-none cursor-pointer hover:bg-white/10 transition-colors"
+                  >
+                    <option className="bg-black">Facebook Ads</option>
+                    <option className="bg-black">Instagram Ads</option>
+                    <option className="bg-black">LinkedIn Ads</option>
+                    <option className="bg-black">TikTok Ads</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="text-sm font-bold text-white/70 uppercase tracking-wide mb-3 block">Ziel</label>
+                  <select
+                    value={liveGoal}
+                    onChange={(e) => setLiveGoal(e.target.value)}
+                    className="w-full px-5 py-3 rounded-xl bg-white/5 border border-white/10 text-white focus:outline-none focus:border-[#FF1F1F]/50 appearance-none cursor-pointer hover:bg-white/10 transition-colors"
+                  >
+                    <option className="bg-black">Sales (Conversions)</option>
+                    <option className="bg-black">Leads</option>
+                    <option className="bg-black">Traffic</option>
+                  </select>
+                </div>
+              </div>
+
+              {/* Generate Button */}
+              {!showLiveOutput ? (
+                <button
+                  onClick={handleLiveGenerate}
+                  disabled={!livePrompt.trim() || isLiveGenerating}
+                  className="w-full py-4 mt-4 bg-[#FF1F1F] text-white rounded-xl font-bold text-lg hover:shadow-[0_0_30px_rgba(255,31,31,0.4)] transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-3 group/btn"
+                >
+                  {isLiveGenerating ? (
+                    <>
+                      <Loader2 className="w-5 h-5 animate-spin" />
+                      Analysiere Angebot...
+                    </>
+                  ) : (
+                    <>
+                      <Sparkles className="w-5 h-5 fill-white/20 group-hover/btn:animate-pulse" />
+                      Jetzt Ad generieren
+                    </>
+                  )}
+                </button>
+              ) : (
+                <div className="animate-in fade-in zoom-in duration-500 pt-4 text-center">
+                  <div className="bg-green-500/10 border border-green-500/20 rounded-2xl p-6 text-center mb-6">
+                    <div className="w-12 h-12 bg-green-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
+                      <CheckCircle2 className="w-6 h-6 text-green-500" />
+                    </div>
+                    <h3 className="text-xl font-bold text-white mb-2">Ad generiert!</h3>
+                    <p className="text-green-400 mb-0">Deine Ad ist bereit im Dashboard.</p>
+                  </div>
+
+                  <div className="p-6 bg-gradient-to-br from-primary/10 to-transparent border border-primary/20 rounded-2xl text-center space-y-4">
+                    <div className="w-12 h-12 bg-primary/20 text-primary rounded-full flex items-center justify-center mx-auto mb-2">
+                      <Lock className="w-6 h-6" />
+                    </div>
+                    <div>
+                      <h4 className="text-lg font-bold mb-1 text-white">Unlock 50+ Variations</h4>
+                      <p className="text-sm text-muted-foreground max-w-sm mx-auto">
+                        Create an account to generate visual creatives, see performance predictions, and export directly to Ads Manager.
+                      </p>
+                    </div>
+
+                    <PrimaryButton onClick={onGetStarted} className="w-full sm:w-auto px-8 mx-auto shadow-xl shadow-primary/20 bg-[#FF1F1F] hover:bg-[#D41919] text-white">
+                      Start 7-Day Free Trial
+                      <ArrowRight className="w-4 h-4 ml-2" />
+                    </PrimaryButton>
+
+                    <button
+                      onClick={() => {
+                        setShowLiveOutput(false);
+                        setLivePrompt('');
+                      }}
+                      className="text-xs text-muted-foreground hover:text-primary transition-colors block mx-auto mt-4"
+                    >
+                      Try another example
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {/* Progress Steps */}
+              {isLiveGenerating && (
+                <div className="pt-6 space-y-4">
+                  {GENERATION_STEPS.map((step, index) => {
+                    const isActive = index === currentStepIndex;
+                    const isCompleted = index < currentStepIndex;
+                    const isPending = index > currentStepIndex;
+
+                    return (
+                      <div
+                        key={index}
+                        className={`flex items-center gap-4 transition-all duration-300 ${isPending ? 'opacity-20' : 'opacity-100'}`}
+                      >
+                        <div className={`
+                            w-5 h-5 rounded-full flex items-center justify-center border transition-colors
+                            ${isCompleted ? 'bg-[#FF1F1F] border-[#FF1F1F] text-white' : ''}
+                            ${isActive ? 'border-[#FF1F1F] text-[#FF1F1F] animate-pulse' : ''}
+                            ${isPending ? 'border-white/20 text-white/20' : ''}
+                          `}>
+                          {isCompleted && <CheckCircle2 className="w-3 h-3" />}
+                        </div>
+                        <span className={`text-sm font-medium ${isActive ? 'text-white' : 'text-white/40'}`}>
+                          {step}
+                        </span>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+
+            </div>
+          </div>
+        </div>
+      </div>
     </section>
   );
 }
