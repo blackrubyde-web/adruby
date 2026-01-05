@@ -1,4 +1,4 @@
-import { lazy, Suspense, useEffect, useMemo, useState } from 'react';
+import { lazy, Suspense, useEffect, useMemo, useRef, useState } from 'react';
 import {
   TrendingUp,
   TrendingDown,
@@ -232,6 +232,17 @@ export function OverviewPage({ onNavigate }: OverviewPageProps) {
     }
     return 'Daten sind aktuell unvollständig. Bitte später erneut versuchen.';
   }, [warning]);
+  const warningToastRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    if (!warningMessage) {
+      warningToastRef.current = null;
+      return;
+    }
+    if (warningToastRef.current === warningMessage) return;
+    toast.info(warningMessage);
+    warningToastRef.current = warningMessage;
+  }, [warningMessage]);
 
   const actions = [
     {
@@ -336,12 +347,6 @@ export function OverviewPage({ onNavigate }: OverviewPageProps) {
           </div>
         }
       />
-
-      {warningMessage && (
-        <Card className="p-4 border border-amber-500/30 bg-amber-500/10 text-amber-700 mb-6">
-          {warningMessage}
-        </Card>
-      )}
 
       {/* Filters */}
       <div className="flex items-center gap-3">

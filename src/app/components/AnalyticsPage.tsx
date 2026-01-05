@@ -1,4 +1,4 @@
-import { lazy, Suspense, useEffect, useState } from 'react';
+import { lazy, Suspense, useEffect, useRef, useState } from 'react';
 import { DashboardCustomizer, DashboardSection } from './DashboardCustomizer';
 import { ReorderableWidget } from './ReorderableWidget';
 import { TimeRangeFilter } from './TimeRangeFilter';
@@ -211,6 +211,22 @@ export function AnalyticsPage() {
   const summary = data?.summary;
   const currentSeries = data?.timeseries.current ?? [];
   const warning = data?.warning;
+  const warningMessage = warning
+    ? warning === 'meta_insights_daily_missing'
+      ? 'Meta-Datenbank-Tabellen fehlen. Bitte Migration ausführen (meta_insights_daily).'
+      : 'Analytics-Daten sind noch nicht verfügbar. Bitte später erneut versuchen.'
+    : null;
+  const warningToastRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    if (!warningMessage) {
+      warningToastRef.current = null;
+      return;
+    }
+    if (warningToastRef.current === warningMessage) return;
+    toast.info(warningMessage);
+    warningToastRef.current = warningMessage;
+  }, [warningMessage]);
 
 
   const formatCurrency = (value: number) =>
@@ -622,14 +638,6 @@ export function AnalyticsPage() {
           </div>
         </div>
       </div>
-
-      {warning && (
-        <Card className="p-4 border border-amber-500/30 bg-amber-500/10 text-amber-700 mb-6">
-          {warning === 'meta_insights_daily_missing'
-            ? 'Meta-Datenbank-Tabellen fehlen. Bitte Migration ausführen (meta_insights_daily).'
-            : 'Analytics-Daten sind noch nicht verfügbar. Bitte später erneut versuchen.'}
-        </Card>
-      )}
 
       {/* ═══════════════════════════════════════════════════════════
           MOBILE-FIRST ANALYTICS CONTROLS
