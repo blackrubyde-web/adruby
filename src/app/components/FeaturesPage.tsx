@@ -1,4 +1,3 @@
-```javascript
 import { useState, useRef } from 'react';
 import {
   Zap,
@@ -9,7 +8,11 @@ import {
   Megaphone,
   Box,
   Palette,
-  Image as ImageIcon // Alias to avoid conflict if any, though not strictly needed
+  Image as ImageIcon,
+  Layers,
+  BarChart3,
+  Brain,
+  Check
 } from 'lucide-react';
 import { GlobalNav } from './landing/GlobalNav';
 import { StudioPreview } from './features/previews/StudioPreview';
@@ -68,7 +71,7 @@ export function FeaturesPage({ onNavigate, onSignIn, onGetStarted }: FeaturesPag
         <div className="landing-container">
           <div className="max-w-4xl mx-auto text-center animate-in fade-in slide-in-from-bottom-8 duration-700">
             <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/5 border border-white/10 backdrop-blur-md mb-8 animate-in fade-in zoom-in duration-1000 delay-200">
-              <Sparkles className="w-4 h-4 text-rose-500 fill-rose-500/20 animate-pulse" />
+              <Zap className="w-4 h-4 text-rose-500 fill-rose-500/20 animate-pulse" />
               <span className="text-sm font-medium text-white/80">Next Gen Creative Suite</span>
             </div>
 
@@ -113,19 +116,21 @@ export function FeaturesPage({ onNavigate, onSignIn, onGetStarted }: FeaturesPag
               {tabs.map((tab) => {
                 const Icon = tab.icon;
                 const isActive = activeTab === tab.id;
+                const baseClasses = "relative px-6 sm:px-8 py-3 rounded-full font-bold text-sm sm:text-base transition-all duration-500 flex items-center gap-2";
+                const activeClasses = "text-black shadow-[0_4px_20px_rgba(0,0,0,0.2)]";
+                const inactiveClasses = "text-white/60 hover:text-white";
+
                 return (
                   <button
                     key={tab.id}
                     onClick={() => setActiveTab(tab.id)}
-                    className={`relative px-6 sm:px-8 py-3 rounded-full font-bold text-sm sm:text-base transition-all duration-500 flex items-center gap-2 ${
-  isActive ? 'text-black shadow-[0_4px_20px_rgba(0,0,0,0.2)]' : 'text-white/60 hover:text-white'
-} `}
+                    className={`${baseClasses} ${isActive ? activeClasses : inactiveClasses}`}
                   >
                     {isActive && (
                       <div className="absolute inset-0 bg-white rounded-full layout-id-active-tab" />
                     )}
                     <span className="relative z-10 flex items-center gap-2">
-                      <Icon className={`w-4 h-4 ${ isActive ? 'text-black' : 'text-current' } `} />
+                      <Icon className={`w-4 h-4 ${isActive ? 'text-black' : 'text-current'}`} />
                       {tab.label}
                     </span>
                   </button>
