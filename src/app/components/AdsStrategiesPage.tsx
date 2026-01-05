@@ -7,10 +7,31 @@ import { supabase } from '../lib/supabaseClient';
 import { StrategyWizard } from './studio/StrategyWizard';
 import { useStrategies, StrategyBlueprint } from '../hooks/useStrategies';
 
+type AutopilotConfig = {
+  target_roas?: number;
+  max_daily_budget?: number;
+  scale_speed?: string;
+  risk_tolerance?: string;
+};
+
+const toAutopilotConfig = (
+  config: StrategyBlueprint['autopilot_config']
+): AutopilotConfig => {
+  if (!config || typeof config !== 'object') return {};
+  const record = config as Record<string, unknown>;
+  return {
+    target_roas: typeof record.target_roas === 'number' ? record.target_roas : undefined,
+    max_daily_budget: typeof record.max_daily_budget === 'number' ? record.max_daily_budget : undefined,
+    scale_speed: typeof record.scale_speed === 'string' ? record.scale_speed : undefined,
+    risk_tolerance: typeof record.risk_tolerance === 'string' ? record.risk_tolerance : undefined
+  };
+};
+
 export function AdsStrategiesPage() {
   const { strategies, loading: strategiesLoading, refreshStrategies } = useStrategies();
   const [showStrategyWizard, setShowStrategyWizard] = useState(false);
   const [editingStrategy, setEditingStrategy] = useState<StrategyBlueprint | null>(null);
+  const editingConfig = editingStrategy ? toAutopilotConfig(editingStrategy.autopilot_config) : null;
 
   const handleCreateOrUpdateStrategy = async (rawStrategy: Record<string, unknown>) => {
     // Cast to expected type
@@ -126,7 +147,7 @@ export function AdsStrategiesPage() {
           <div className="grid grid-cols-1 gap-6">
             {/* Reusing StrategySelector layout but custom logic for management card */}
             {strategies.map(s => {
-              const config = s.autopilot_config as any || {};
+              const config = toAutopilotConfig(s.autopilot_config);
               return (
                 <Card key={s.id} className="p-6 flex flex-col md:flex-row items-center justify-between gap-6 group hover:border-primary/30 transition-all">
                   <div className="flex items-start gap-4">
@@ -142,15 +163,15 @@ export function AdsStrategiesPage() {
                       </div>
                       <div className="flex flex-wrap gap-4 mt-2 text-sm text-muted-foreground">
                         <div className="flex items-center gap-1">
-                          <span className="text-foreground font-medium">{config.target_roas}x</span> ROAS
+                          <span className="text-foreground font-medium">{config.target_roas ?? '-'}x</span> ROAS
                         </div>
                         <div className="w-1 h-1 bg-white/20 rounded-full" />
                         <div className="flex items-center gap-1">
-                          <span className="text-foreground font-medium capitalize">{config.scale_speed}</span> Scaling
+                          <span className="text-foreground font-medium capitalize">{config.scale_speed ?? 'standard'}</span> Scaling
                         </div>
                         <div className="w-1 h-1 bg-white/20 rounded-full" />
                         <div className="flex items-center gap-1">
-                          €<span className="text-foreground font-medium">{config.max_daily_budget}</span>/day
+                          €<span className="text-foreground font-medium">{config.max_daily_budget ?? '-'}</span>/day
                         </div>
                       </div>
                     </div>
@@ -191,10 +212,10 @@ export function AdsStrategiesPage() {
           initialData={editingStrategy ? {
             name: editingStrategy.title,
             industry_type: editingStrategy.industry_type || '',
-            target_roas: (editingStrategy.autopilot_config as any)?.target_roas || 3.0,
-            risk_tolerance: (editingStrategy.autopilot_config as any)?.risk_tolerance || 'medium',
-            scale_speed: (editingStrategy.autopilot_config as any)?.scale_speed || 'standard',
-            max_daily_budget: (editingStrategy.autopilot_config as any)?.max_daily_budget || 100
+            target_roas: editingConfig?.target_roas ?? 3.0,
+            risk_tolerance: editingConfig?.risk_tolerance ?? 'medium',
+            scale_speed: editingConfig?.scale_speed ?? 'standard',
+            max_daily_budget: editingConfig?.max_daily_budget ?? 100
           } : null}
         />
       )}

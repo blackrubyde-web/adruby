@@ -1,9 +1,8 @@
 import { Search, MoreVertical, Play, Pause, Copy, Trash2, TrendingUp, TrendingDown } from 'lucide-react';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { toast } from 'sonner';
-import { PageShell, HeroHeader, Card, Chip } from './layout';
+import { PageShell, HeroHeader, Card } from './layout';
 import { useMetaCampaigns } from '../hooks/useMetaCampaigns';
-import { applyMetaAction, type MetaApplyAction } from '../lib/api/meta';
 import { useMetaConnection } from '../hooks/useMetaConnection';
 
 type StatusFilter = 'all' | 'active' | 'paused' | 'completed';
@@ -24,7 +23,7 @@ export function CampaignsPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
   const { campaigns, loading, error, refresh } = useMetaCampaigns();
-  const { connected: metaConnected, connection } = useMetaConnection();
+  const { connection } = useMetaConnection();
   const [actionState, setActionState] = useState<Record<string, boolean>>({});
 
   // Mock stats - replace with real calculations based on campaigns
@@ -70,7 +69,7 @@ export function CampaignsPage() {
   }, [actionState]);
 
   const openMetaCampaign = (id: string) => {
-    window.open(`https://business.facebook.com/adsmanager/manage/campaigns?act=${connection?.adAccountId}&selection_ids=${id}`, '_blank');
+    window.open(`https://business.facebook.com/adsmanager/manage/campaigns?act=${connection?.ad_account_id}&selection_ids=${id}`, '_blank');
   };
 
   return (

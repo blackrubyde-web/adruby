@@ -176,7 +176,7 @@ export function composeLayout(params: {
 
             if (newLayer.type === 'cta') {
                 // CTAs get accent or primary color
-                if (layer.name?.toLowerCase().includes('cta') || layer.text?.includes('→')) {
+                if (layer.name?.toLowerCase().includes('cta') || newLayer.text?.includes('→')) {
                     newLayer.bgColor = accentColor;
                     newLayer.color = '#FFFFFF'; // defaulting to white text on buttons for safety
                     if (['#ffffff', '#fff', '#fefefe'].includes(accentColor.toLowerCase())) newLayer.color = '#000000';

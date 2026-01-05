@@ -36,7 +36,7 @@ export interface TypographyConfig {
 
 export interface FontConfig {
     family: string;
-    weight: number;
+    weight: 400 | 500 | 600 | 700 | 800 | 900;
     size: number;
     lineHeight: number;
     letterSpacing: number;
@@ -586,7 +586,7 @@ export function generateDynamicTemplate(params: {
             text: 'PREMIUM PRODUCT',
             fontSize: Math.max(48, style.typography.heading.size), // Min 48px for headlines
             fontFamily: style.typography.heading.family,
-            fontWeight: style.typography.heading.weight as number,
+            fontWeight: style.typography.heading.weight,
             color: style.colorPalette.text,
             fill: style.colorPalette.text,
             align: params.visualStyle === 'luxury' || params.visualStyle === 'minimal' ? 'center' : 'left',
@@ -613,7 +613,7 @@ export function generateDynamicTemplate(params: {
             text: 'The perfect solution for you',
             fontSize: style.typography.body.size * 1.3,
             fontFamily: style.typography.body.family,
-            fontWeight: 600 as number,
+            fontWeight: 600,
             color: style.colorPalette.secondary,
             fill: style.colorPalette.secondary,
             align: params.visualStyle === 'luxury' || params.visualStyle === 'minimal' ? 'center' : 'left',

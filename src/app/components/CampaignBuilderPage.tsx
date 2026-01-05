@@ -306,6 +306,7 @@ export function CampaignBuilderPage() {
   const { strategies } = useStrategies();
 
   const [selectedStrategyId, setSelectedStrategyId] = useState<string | null>(null);
+  const [, setShowStrategyWizard] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
