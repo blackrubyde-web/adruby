@@ -211,6 +211,6 @@ export function CampaignsPage() {
       </table>
     </div>
   </Card>
-    </PageShell >
+    </PageShell>
   );
 }
