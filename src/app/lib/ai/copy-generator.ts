@@ -24,7 +24,7 @@ export async function generatePremiumCopy(params: {
     productName: string;
     brandName?: string;
     profile: StrategicProfile;
-    template: any;
+    template: unknown;
     tone: string;
     groundedFacts?: {
         offer?: string;
@@ -32,7 +32,7 @@ export async function generatePremiumCopy(params: {
         painPoints?: string[];
     };
 }): Promise<PremiumCopy> {
-    console.log('✍️ Stage 3: Premium Copy Generation (Ranking Mode)...');
+    // console.log('✍️ Stage 3: Premium Copy Generation (Ranking Mode)...');
 
     const copyPrompt = `You are an elite Direct Response Copywriter.
     
@@ -108,7 +108,7 @@ JSON Only.
 
     const bestVariant = response.variants[safeIdx];
 
-    console.log(`✅ Best Copy Score: ${bestVariant.score}/100 | ${bestVariant.headline}`);
+    // console.log(`✅ Best Copy Score: ${bestVariant.score}/100 | ${bestVariant.headline}`);
 
     return bestVariant;
 }

@@ -103,7 +103,7 @@ export function useAutoSave(
         } catch (error) {
             console.error('Failed to restore autosave:', error);
         }
-    }, [enabled, storageKey]); // Only run on mount
+    }, [enabled, storageKey, setDoc, doc]); // Only run on mount or if doc changes (careful with loops)
 
     return {
         lastSaved,

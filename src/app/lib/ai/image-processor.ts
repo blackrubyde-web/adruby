@@ -26,20 +26,15 @@ export async function processImage(params: {
     shouldEnhance: boolean;
     signal?: AbortSignal;
 }): Promise<ProcessedAssets | undefined> {
-    console.log('🖼️ Stage 5: Compositing Engine...');
 
-    if (!params.imageBase64) {
-        console.log('⏭️  No image provided, skipping');
-        return undefined;
-    }
 
     // Default: Use cutout if available, else original
     const productAsset = params.cutoutBase64 || params.imageBase64;
-    const result: ProcessedAssets = { originalProduct: productAsset };
+    const result: ProcessedAssets = { originalProduct: productAsset as string };
 
     // Decision: Generate Background?
     if (!params.shouldEnhance) {
-        console.log('⏭️  User opted out of background gen');
+        // console.log('⏭️  User opted out of background gen');
         return result;
     }
 
@@ -49,21 +44,21 @@ export async function processImage(params: {
     }
 
     try {
-        console.log('✨ Generating Premium Background Scene...');
+        // console.log('✨ Generating Premium Background Scene...');
 
         // This function calls our Supabase Edge Function 'openai-proxy' (dall-e-3)
         // It prompts for a "Background texture" or "Scene" without the product.
         const bgResult = await generateBackgroundScene({
-            imageBase64: params.imageBase64, // Passed for reference/color-extraction (Original is better for context)
+            imageBase64: params.imageBase64 as string, // Passed for reference/color-extraction (Original is better for context)
             userPrompt: `Professional ${params.tone} background for ${params.productName}, style: ${params.designVibe || 'minimalist'}`,
             productName: params.productName,
             tone: params.tone as any
         }, { signal: params.signal });
 
-        console.log('✅ Background generated:', bgResult.backgroundImageUrl);
+        // console.log('✅ Background generated:', bgResult.backgroundImageUrl);
 
         return {
-            originalProduct: productAsset, // Return the CUTOUT for the layer
+            originalProduct: productAsset as string, // Return the CUTOUT for the layer
             generatedBackground: bgResult.backgroundImageUrl
         };
 

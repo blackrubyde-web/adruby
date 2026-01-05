@@ -160,9 +160,9 @@ export async function generateCopyExplosion(params: {
         }))
         .sort((a, b) => b.score.total - a.score.total);
 
-    console.log('✅ Generated 10 variants. Top 3 scores:',
-        scoredVariants.slice(0, 3).map(v => `${v.hookAngle}: ${v.score.total.toFixed(1)}`).join(', ')
-    );
+    // console.log('✅ Generated 10 variants. Top 3 scores:',
+    //    scoredVariants.slice(0, 3).map(v => `${v.hookAngle}: ${v.score.total.toFixed(1)}`).join(', ')
+    // );
 
     return scoredVariants;
 }
@@ -329,8 +329,8 @@ export async function getBestCopyVariant(params: {
     const variants = await generateCopyExplosion(params);
     const best = variants[0]; // Already sorted by score
 
-    console.log(`🏆 Best Variant: ${best.hookAngle} (Score: ${best.score.total.toFixed(1)}/100)`);
-    console.log(`   Headline: "${best.headline}"`);
+    // console.log(`🏆 Best Variant: ${best.hookAngle} (Score: ${best.score.total.toFixed(1)}/100)`);
+    // console.log(`   Headline: "${best.headline}"`);
 
     return best;
 }
