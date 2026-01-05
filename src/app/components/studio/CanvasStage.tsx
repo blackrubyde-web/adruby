@@ -30,7 +30,7 @@ interface CanvasStageProps {
 const URLImage = ({ layer }: { layer: ImageLayer }) => {
     const [image] = useImage(layer.src, 'anonymous');
 
-    const clipFunc = layer.clipShape === 'circle' ? (ctx: any) => {
+    const clipFunc = layer.clipShape === 'circle' ? (ctx: Konva.Context) => {
         ctx.arc(layer.width / 2, layer.height / 2, Math.min(layer.width, layer.height) / 2, 0, Math.PI * 2, false);
     } : undefined;
 
@@ -184,7 +184,7 @@ const LayerNode = ({
     isHandMode?: boolean;
     onLayerSelect?: (id: string | undefined, multi: boolean) => void;
     onLayerUpdate?: (id: string, updates: Partial<StudioLayer>) => void;
-    onDragMove?: (id: string, e: any) => void;
+    onDragMove?: (id: string, e: Konva.KonvaEventObject<DragEvent>) => void;
 }) => {
     return (
         <Group
@@ -232,7 +232,7 @@ const LayerNode = ({
                         y: child.y * scaleY,
                         width: child.width * scaleX,
                         height: child.height * scaleY,
-                        fontSize: (child as any).fontSize ? (child as any).fontSize * Math.max(scaleX, scaleY) : undefined
+                        fontSize: (child.type === 'text' || child.type === 'cta') ? (child as TextLayer | CtaLayer).fontSize * Math.max(scaleX, scaleY) : undefined
                     }));
 
                     onLayerUpdate?.(layer.id, {
@@ -241,7 +241,7 @@ const LayerNode = ({
                         rotation: node.rotation(),
                         width: node.width() * scaleX,
                         height: node.height() * scaleY,
-                        children: newChildren as any
+                        children: newChildren as GroupLayer['children']
                     });
                 } else {
                     onLayerUpdate?.(layer.id, {
@@ -323,7 +323,7 @@ export const CanvasStage = forwardRef<CanvasStageHandle, CanvasStageProps>(funct
         }
     }));
 
-    const handleLayerDragMove = (id: string, e: any) => {
+    const handleLayerDragMove = (id: string, e: Konva.KonvaEventObject<DragEvent>) => {
         setSnapGuides([]);
         const node = e.target;
         // Current position from drag
