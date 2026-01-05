@@ -93,7 +93,7 @@ export function LandingPage({ onGetStarted, onLogin }: LandingPageProps) {
           clearInterval(interval);
         }
 
-        iteration += 1 / 3;
+        iteration += 1 / 2; // Faster reveal for better readability
       }, speed);
 
       return () => clearInterval(interval);
@@ -340,25 +340,25 @@ export function LandingPage({ onGetStarted, onLogin }: LandingPageProps) {
             </p>
           </div>
 
-          {/* Sleek Action Buttons (Mobile First) */}
-          <div className="flex flex-col sm:flex-row gap-4 w-full sm:w-auto animate-fade-in-up delay-200">
-            <button
-              onClick={onLogin}
-              className="btn-ruby-glow group relative px-8 py-4 text-lg w-full sm:w-auto min-w-[200px] flex items-center justify-center gap-3 overflow-hidden"
-            >
-              <div className="absolute inset-0 bg-[linear-gradient(45deg,transparent_25%,rgba(255,255,255,0.2)_50%,transparent_75%)] bg-[length:250%_250%,100%_100%] bg-[position:-100%_0,0_0] bg-no-repeat transition-[background-position_0s_ease] hover:bg-[position:200%_0,0_0] duration-[1500ms]" />
-              <span className="relative font-bold">Kostenlos testen</span>
-              <Sparkles className="w-5 h-5 relative animate-pulse" />
-            </button>
-
+          {/* 3. CTA Buttons (Atomic & Sleek) */}
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-4 sm:gap-6 animate-fade-in-up delay-200 w-full sm:w-auto px-4">
             <button
               onClick={onGetStarted}
-              className="btn-glass-pill px-8 py-4 text-lg w-full sm:w-auto min-w-[200px] font-semibold text-white/90 hover:text-white flex items-center justify-center gap-2"
+              className="group relative w-full sm:w-auto px-8 py-4 bg-gradient-to-r from-[#C80000] via-rose-600 to-red-600 text-white rounded-full font-bold text-lg hover:shadow-[0_0_40px_rgba(200,0,0,0.4)] transition-all transform hover:scale-105 active:scale-95 flex items-center justify-center gap-3 overflow-hidden shadow-2xl ring-1 ring-white/10"
             >
-              Demo ansehen
-              <div className="w-6 h-6 rounded-full bg-white/10 flex items-center justify-center">
-                <span className="text-xs">▶</span>
-              </div>
+              <div className="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-500 rounded-full" />
+              <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-700 bg-[radial-gradient(circle_at_center,rgba(255,255,255,0.3),transparent_70%)] animate-pulse-glow" />
+              <span className="relative z-10 flex items-center gap-2">
+                Jetzt 7 Tage testen
+                <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+              </span>
+            </button>
+            <button
+              onClick={onGetStarted}
+              className="group w-full sm:w-auto px-8 py-4 bg-white/5 backdrop-blur-md text-white border border-white/10 rounded-full font-bold text-lg hover:bg-white/10 transition-all flex items-center justify-center gap-2 hover:border-white/20"
+            >
+              <Sparkles className="w-5 h-5 text-rose-500" />
+              <span>Demo ansehen</span>
             </button>
           </div>
 
