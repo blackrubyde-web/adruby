@@ -4,6 +4,7 @@ import * as Sentry from '@sentry/react';
 import App from './app/App';
 import { env } from './app/lib/env';
 import './styles/index.css';
+import './styles/landing-theme.css';
 
 if (env.sentryDsn) {
   Sentry.init({ dsn: env.sentryDsn, tracesSampleRate: 0.1 });

@@ -1,0 +1,133 @@
+/* ========================================================================
+   ADRUBY PREMIUM LANDING THEME via Scope
+   "Deep Ruby" - Dark Luxury Mode
+   ======================================================================== */
+
+.landing-theme-root {
+    /* 
+     Reset standard variables to "Hyper-Premium Dark Mode" 
+     regardless of system preference or dashboard settings.
+  */
+    --background: #030303;
+    /* Almost Pure Black */
+    --background-alt: #0a0a0a;
+    --foreground: #ffffff;
+
+    --primary: #FF1F1F;
+    /* Brighter, neon-like red for dark mode */
+    --primary-foreground: #ffffff;
+
+    --muted: #1a1a1a;
+    --muted-foreground: #888888;
+
+    --card: rgba(10, 10, 10, 0.6);
+    /* Glassy */
+    --card-foreground: #ffffff;
+
+    --border: rgba(255, 255, 255, 0.1);
+    --input: rgba(255, 255, 255, 0.05);
+
+    --ring: #FF1F1F;
+
+    /* Custom Gradients */
+    --gradient-ruby: linear-gradient(135deg, #FF1F1F 0%, #C80000 100%);
+    --gradient-dark-glass: linear-gradient(180deg, rgba(20, 20, 20, 0.8) 0%, rgba(10, 10, 10, 0.9) 100%);
+
+    /* Font Families - "Editorial" Stack */
+    --font-display: 'Outfit', 'Inter', sans-serif;
+    --font-body: 'Manrope', 'Inter', sans-serif;
+
+    /* Scoped Base Styles */
+    color: var(--foreground);
+    background-color: var(--background);
+    font-family: var(--font-body);
+    line-height: 1.6;
+    width: 100%;
+    overflow-x: hidden;
+    -webkit-font-smoothing: antialiased;
+}
+
+/* Typography Overrides */
+.landing-theme-root h1,
+.landing-theme-root h2,
+.landing-theme-root h3,
+.landing-theme-root h4 {
+    font-family: var(--font-display);
+    letter-spacing: -0.04em;
+    /* Tight editorial tracking */
+    line-height: 1.1;
+    color: #ffffff;
+}
+
+.landing-theme-root p {
+    color: #a0a0a0;
+    font-size: 1.125rem;
+}
+
+/* ========================================================================
+   UTILITIES
+   ======================================================================== */
+
+/* "Glass Pill" Button Style */
+.landing-theme-root .btn-glass-pill {
+    background: rgba(255, 255, 255, 0.03);
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 9999px;
+    /* Pill */
+    color: white;
+    transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.2);
+}
+
+.landing-theme-root .btn-glass-pill:hover {
+    background: rgba(255, 255, 255, 0.08);
+    border-color: rgba(255, 255, 255, 0.3);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+}
+
+/* "Ruby Glow" Button Style */
+.landing-theme-root .btn-ruby-glow {
+    background: var(--gradient-ruby);
+    color: white;
+    border-radius: 9999px;
+    font-weight: 600;
+    border: none;
+    position: relative;
+    z-index: 1;
+    overflow: hidden;
+    transition: transform 0.3s ease;
+}
+
+.landing-theme-root .btn-ruby-glow::before {
+    content: '';
+    position: absolute;
+    inset: -4px;
+    background: var(--primary);
+    filter: blur(16px);
+    z-index: -1;
+    opacity: 0.6;
+    transition: opacity 0.3s ease;
+}
+
+.landing-theme-root .btn-ruby-glow:hover {
+    transform: scale(1.05);
+}
+
+.landing-theme-root .btn-ruby-glow:hover::before {
+    opacity: 0.8;
+}
+
+/* "Floating Island" Sticky Bar */
+.landing-theme-root .nav-glass {
+    background: rgba(3, 3, 3, 0.7);
+    backdrop-filter: blur(16px);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+/* Selection Color */
+.landing-theme-root ::selection {
+    background: var(--primary);
+    color: white;
+}

@@ -98,68 +98,57 @@ export function GlobalNav({ currentPage = 'home', onNavigate, onSignIn, onGetSta
         </div>
       </nav>
 
-      {/* Mobile Menu */}
-      {isMobileMenuOpen && (
-        <div className="fixed inset-0 z-40 md:hidden">
-          {/* Backdrop */}
-          <div
-            className="absolute inset-0 bg-black/20 backdrop-blur-sm"
-            onClick={() => setIsMobileMenuOpen(false)}
-          />
+      {/* Premium Fullscreen Takeover Menu */}
+      <div
+        className={`fixed inset-0 z-40 md:hidden bg-black/95 backdrop-blur-2xl transition-all duration-500 ease-[cubic-bezier(0.32,0.725,0,1)] ${isMobileMenuOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none delay-200'
+          }`}
+      >
 
-          {/* Menu Panel */}
-          <div
-            id="mobile-menu"
-            role="navigation"
-            aria-label="Mobile navigation"
-            className="absolute top-16 left-0 right-0 bg-background border-b border-border/50 shadow-xl"
-          >
-            <div className="landing-container py-6">
-              <div className="flex flex-col gap-4">
-                {/* Navigation Items */}
-                {navItems.map((item) => (
-                  <button
-                    key={item.id}
-                    onClick={() => {
-                      onNavigate(item.id);
-                      setIsMobileMenuOpen(false);
-                    }}
-                    className={`text-left px-4 py-3 rounded-lg font-semibold transition-colors ${currentPage === item.id
-                      ? 'bg-primary/10 text-primary'
-                      : 'text-foreground hover:bg-muted/50'
-                      }`}
-                  >
-                    {item.label}
-                  </button>
-                ))}
+        <div className="flex flex-col h-full pt-24 pb-12 px-6">
+          <div className="flex-1 flex flex-col justify-center space-y-8">
+            {navItems.map((item, i) => (
+              <button
+                key={item.id}
+                onClick={() => {
+                  onNavigate(item.id);
+                  setIsMobileMenuOpen(false);
+                }}
+                className={`text-4xl font-black tracking-tighter text-white text-left transition-all duration-500 ${isMobileMenuOpen
+                    ? 'translate-y-0 opacity-100'
+                    : 'translate-y-8 opacity-0'
+                  }`}
+                style={{ transitionDelay: `${100 + i * 50}ms` }}
+              >
+                {item.label}
+              </button>
+            ))}
+          </div>
 
-                {/* Divider */}
-                <div className="h-px bg-border/50 my-2" />
+          <div className={`space-y-4 transition-all duration-700 delay-300 ${isMobileMenuOpen ? 'translate-y-0 opacity-100' : 'translate-y-8 opacity-0'}`}>
+            <div className="h-px bg-white/10 w-full mb-8" />
 
-                {/* CTA Buttons */}
-                <button
-                  onClick={() => {
-                    onSignIn();
-                    setIsMobileMenuOpen(false);
-                  }}
-                  className="px-4 py-3 text-left font-semibold text-foreground hover:bg-muted/50 rounded-lg transition-colors"
-                >
-                  Anmelden
-                </button>
-                <button
-                  onClick={() => {
-                    onGetStarted();
-                    setIsMobileMenuOpen(false);
-                  }}
-                  className="px-4 py-3 bg-gradient-to-r from-[#C80000] via-rose-600 to-red-600 text-white rounded-xl font-semibold hover:shadow-xl transition-all text-center"
-                >
-                  7 Tage kostenlos testen
-                </button>
-              </div>
-            </div>
+            <button
+              onClick={() => {
+                onSignIn();
+                setIsMobileMenuOpen(false);
+              }}
+              className="w-full py-4 text-center text-white/60 font-medium hover:text-white transition-colors"
+            >
+              Anmelden
+            </button>
+
+            <button
+              onClick={() => {
+                onGetStarted();
+                setIsMobileMenuOpen(false);
+              }}
+              className="w-full py-5 bg-[#FF1F1F] text-white font-bold rounded-2xl shadow-[0_0_30px_rgba(255,31,31,0.4)]"
+            >
+              Kostenlos starten
+            </button>
           </div>
         </div>
-      )}
+      </div>
 
       {/* Spacer to prevent content from going under fixed nav */}
       <div className="h-16" />
