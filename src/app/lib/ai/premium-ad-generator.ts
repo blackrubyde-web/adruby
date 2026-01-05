@@ -32,7 +32,7 @@ export interface PremiumAdResult {
     adDocument: AdDocument;
     strategicProfile: StrategicProfile;
     premiumCopy: PremiumCopy;
-    template: any;
+    template: unknown;
     processedImages?: { original: string; background?: string };
 }
 
@@ -40,7 +40,7 @@ export async function generatePremiumAd(
     params: PremiumAdParams,
     onProgress?: (stage: number, message: string) => void
 ): Promise<PremiumAdResult> {
-    console.log('🚀 Starting Premium AI Ad Generation Pipeline 2.0 (Compositing Mode)...');
+    // console.log('🚀 Starting Premium AI Ad Generation Pipeline 2.0 (Compositing Mode)...');
 
     try {
         // STAGE 1: Strategic Analysis 2.0 (Design Tokens)
@@ -136,7 +136,7 @@ export async function generatePremiumAd(
                 try {
                     const blob = await removeBackground(params.imageBase64);
                     cutoutBase64 = await blobToBase64(blob);
-                    console.log('✂️ Cutout generated successfully');
+                    // console.log('✂️ Cutout generated successfully');
                 } catch (e) {
                     console.warn('⚠️ Background removal failed, using original:', e);
                 }
@@ -171,7 +171,7 @@ export async function generatePremiumAd(
                 }
             }
 
-        } catch (imageError: any) {
+        } catch (imageError) {
             console.error('❌ Compositing Failed:', imageError);
             processedAssets = { originalProduct: params.imageBase64 || '' };
         }

@@ -52,7 +52,7 @@ export async function processImage(params: {
             imageBase64: params.imageBase64 as string, // Passed for reference/color-extraction (Original is better for context)
             userPrompt: `Professional ${params.tone} background for ${params.productName}, style: ${params.designVibe || 'minimalist'}`,
             productName: params.productName,
-            tone: params.tone as any
+            tone: params.tone as 'professional' | 'playful' | 'bold' | 'luxury' | 'minimal'
         }, { signal: params.signal });
 
         // console.log('✅ Background generated:', bgResult.backgroundImageUrl);

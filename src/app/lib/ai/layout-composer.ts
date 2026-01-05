@@ -1,6 +1,23 @@
 import type { PremiumCopy } from './copy-generator';
 import type { AdDocument, StudioLayer } from '../../types/studio';
 
+type MutableLayer = StudioLayer & {
+    text?: string;
+    src?: string;
+    fit?: string;
+    shadowColor?: string;
+    shadowBlur?: number;
+    shadowOffsetX?: number;
+    shadowOffsetY?: number;
+    shadowOpacity?: number;
+    fontFamily?: string;
+    fill?: string;
+    color?: string;
+    bgColor?: string;
+    fontSize?: number;
+    children?: MutableLayer[];
+};
+
 /**
  * STAGE 4: LAYOUT COMPOSER
  * Creates strategic layer placement using golden ratio & visual hierarchy
@@ -42,7 +59,7 @@ function generateProductShadow(
 }
 
 export function composeLayout(params: {
-    template: any;
+    template: { document: AdDocument };
     copy: PremiumCopy;
     productImage?: string;
     backgroundImage?: string;
@@ -60,14 +77,14 @@ export function composeLayout(params: {
         proof?: string;
     };
 }): AdDocument {
-    console.log('🎨 Stage 4: Layout Composition...');
+    // console.log('🎨 Stage 4: Layout Composition...');
 
     // Clone template document
     const baseDoc = JSON.parse(JSON.stringify(params.template.document));
 
     // Recursive layer processing to handle groups
-    const processLayer = (layer: any): StudioLayer => {
-        const newLayer = { ...layer };
+    const processLayer = (layer: StudioLayer): StudioLayer => {
+        const newLayer = { ...layer } as MutableLayer;
 
         // Content Mapping (Role-based Priority with Fallback)
         if (newLayer.role) {
@@ -126,7 +143,7 @@ export function composeLayout(params: {
             newLayer.shadowOffsetY = shadow.shadowOffsetY;
             newLayer.shadowOpacity = shadow.shadowOpacity;
 
-            console.log(`✨ Applied product shadow: blur=${shadow.shadowBlur}px, offset=${shadow.shadowOffsetY}px`);
+            // console.log(`✨ Applied product shadow: blur=${shadow.shadowBlur}px, offset=${shadow.shadowOffsetY}px`);
         }
 
         // Apply Dynamic Styling
@@ -201,10 +218,10 @@ export function composeLayout(params: {
 
         // RECURSIVE: Process group children
         if (newLayer.type === 'group' && Array.isArray(newLayer.children)) {
-            newLayer.children = newLayer.children.map(processLayer);
+            newLayer.children = (newLayer.children as StudioLayer[]).map(processLayer) as MutableLayer[];
         }
 
-        return newLayer;
+        return newLayer as unknown as StudioLayer;
     };
 
     // Apply recursive processing to all layers
@@ -219,6 +236,6 @@ export function composeLayout(params: {
         layers: layers
     };
 
-    console.log('✅ Layout composed with', layers.length, 'layers');
+    // console.log('✅ Layout composed with', layers.length, 'layers');
     return adDocument;
 }
