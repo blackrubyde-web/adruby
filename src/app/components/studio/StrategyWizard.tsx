@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { Label } from '../ui/label';
@@ -9,6 +9,14 @@ import { ArrowRight, ArrowLeft, Target, Briefcase, Zap, Check } from 'lucide-rea
 interface StrategyWizardProps {
     onComplete: (strategy: Record<string, unknown>) => void;
     onCancel: () => void;
+    initialData?: {
+        name: string;
+        industry_type: string;
+        target_roas: number;
+        risk_tolerance: 'low' | 'medium' | 'high';
+        scale_speed: 'slow' | 'medium' | 'fast' | 'aggressive';
+        max_daily_budget: number;
+    } | null;
 }
 
 const STEPS = [
@@ -17,7 +25,7 @@ const STEPS = [
     { id: 3, title: 'Review', icon: Check },
 ];
 
-export function StrategyWizard({ onComplete, onCancel }: StrategyWizardProps) {
+export function StrategyWizard({ onComplete, onCancel, initialData }: StrategyWizardProps) {
     const [step, setStep] = useState(1);
     const [data, setData] = useState({
         name: '',
@@ -27,6 +35,12 @@ export function StrategyWizard({ onComplete, onCancel }: StrategyWizardProps) {
         scale_speed: 'medium' as 'slow' | 'medium' | 'fast' | 'aggressive',
         max_daily_budget: 100
     });
+
+    useEffect(() => {
+        if (initialData) {
+            setData(initialData);
+        }
+    }, [initialData]);
 
     const handleNext = () => {
         if (step < 3) setStep(step + 1);
@@ -50,10 +64,10 @@ export function StrategyWizard({ onComplete, onCancel }: StrategyWizardProps) {
                         <div>
                             <h2 className="text-xl font-bold flex items-center gap-2">
                                 <Zap className="w-5 h-5 text-primary" />
-                                Create Master Strategy
+                                {initialData ? 'Edit Master Strategy' : 'Create Master Strategy'}
                             </h2>
                             <p className="text-sm text-muted-foreground mt-1">
-                                Define your creative voice and autopilot rules in one go.
+                                {initialData ? 'Modify your autopilot rules.' : 'Define your creative voice and autopilot rules in one go.'}
                             </p>
                         </div>
                         <div className="text-sm font-mono text-muted-foreground">
@@ -101,15 +115,14 @@ export function StrategyWizard({ onComplete, onCancel }: StrategyWizardProps) {
                                             key={ind.id}
                                             onClick={() => setData({ ...data, industry_type: ind.id })}
                                             className={`
-                        p-4 rounded-xl border cursor-pointer transition-all duration-300 flex items-center justify-between group
+                        p-4 rounded-xl border cursor-pointer transition-all duration-300 flex items-center justify-center text-center font-medium group
                         ${data.industry_type === ind.id
-                                                    ? 'border-primary bg-primary/10 shadow-[0_0_15px_rgba(124,58,237,0.15)]'
-                                                    : 'border-white/5 bg-white/5 hover:bg-white/10 hover:border-white/10'
+                                                    ? 'border-primary bg-primary/10 text-primary shadow-[0_0_15px_rgba(124,58,237,0.15)]'
+                                                    : 'border-white/5 bg-white/5 text-gray-400 hover:bg-white/10 hover:border-white/10 hover:text-white'
                                                 }
                       `}
                                         >
-                                            <span className={`font-medium transition-colors ${data.industry_type === ind.id ? 'text-white' : 'text-gray-400 group-hover:text-gray-200'}`}>{ind.label}</span>
-                                            {data.industry_type === ind.id && <Check className="w-4 h-4 text-primary drop-shadow-[0_0_8px_rgba(124,58,237,0.8)]" />}
+                                            {ind.label}
                                         </div>
                                     ))}
                                 </div>
@@ -206,7 +219,7 @@ export function StrategyWizard({ onComplete, onCancel }: StrategyWizardProps) {
                         )}
                     </Button>
                     <Button onClick={handleNext} disabled={!data.name}>
-                        {step === 3 ? 'Create Strategy' : (
+                        {step === 3 ? (initialData ? 'Update Strategy' : 'Create Strategy') : (
                             <span className="flex items-center gap-2">Next <ArrowRight className="w-4 h-4" /></span>
                         )}
                     </Button>

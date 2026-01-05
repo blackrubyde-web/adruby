@@ -47,9 +47,14 @@ export function useStrategies() {
         // and handle the schema mismatch safely.
         const mappedStrategies: StrategyBlueprint[] = (data || []).map((item) => ({
           ...item,
-          autopilot_config: item.metadata?.autopilot_config || null,
-          industry_type: item.metadata?.industry_type || null,
-          target_audience_definition: item.metadata?.target_audience_definition || null,
+          autopilot_config: item.metadata?.autopilot_config || {
+            enabled: true,
+            risk_tolerance: 'medium',
+            scale_speed: 'standard',
+            target_roas: 3.0
+          },
+          industry_type: item.metadata?.industry_type || 'General',
+          target_audience_definition: item.metadata?.target_audience_definition || {},
         })) as StrategyBlueprint[];
 
         setStrategies(mappedStrategies);

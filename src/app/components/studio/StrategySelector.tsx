@@ -29,8 +29,8 @@ export function StrategySelector({
         // 1. Prioritize recommended goal
         // 2. Prioritize enabled autopilot
         return [...strategies].sort((a, b) => {
-            const aConfig = a.metadata?.autopilot_config as unknown as StrategyConfig;
-            const bConfig = b.metadata?.autopilot_config as unknown as StrategyConfig;
+            const aConfig = a.autopilot_config as unknown as StrategyConfig;
+            const bConfig = b.autopilot_config as unknown as StrategyConfig;
 
             const aIsMatch = isGoalMatch(aConfig, recommendedGoal);
             const bIsMatch = isGoalMatch(bConfig, recommendedGoal);
@@ -75,7 +75,7 @@ export function StrategySelector({
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 {sortedStrategies.map((strategy) => {
                     const isSelected = selectedId === strategy.id;
-                    const config = strategy.metadata?.autopilot_config as unknown as StrategyConfig;
+                    const config = strategy.autopilot_config as unknown as StrategyConfig;
                     const isRecommended = isGoalMatch(config, recommendedGoal);
 
                     return (
