@@ -765,7 +765,7 @@ function AppContent() {
 
             {/* Main Content */}
             <div
-              className={`flex-1 transition-[margin-left] duration-300 md:ml-0 ${isMobileSidebarOpen ? 'pointer-events-none' : ''}`}
+              className={`flex-1 transition-[margin-left] duration-300 md:ml-0 w-full max-w-full overflow-x-hidden ${isMobileSidebarOpen ? 'pointer-events-none' : ''}`}
               style={{ marginLeft: isDesktop ? `${sidebarWidth}px` : '0' }}
             >
               {/* Header */}
