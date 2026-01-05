@@ -6,10 +6,10 @@ export type StrategyBlueprint = {
   title: string;
   category: string | null;
   raw_content_markdown: string;
-  metadata: Record<string, any> | null;
-  autopilot_config: Record<string, any> | null;
+  metadata: Record<string, unknown> | null;
+  autopilot_config: Record<string, unknown> | null;
   industry_type: string | null;
-  target_audience_definition: Record<string, any> | null;
+  target_audience_definition: Record<string, unknown> | null;
   created_at: string | null;
   updated_at: string | null;
 };

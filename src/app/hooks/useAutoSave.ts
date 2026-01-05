@@ -51,12 +51,13 @@ export function useAutoSave(
 
                 localStorage.setItem(storageKey, JSON.stringify(saved));
                 setLastSaved(new Date());
-            } catch (error: any) {
+                setLastSaved(new Date());
+            } catch (error) {
                 console.error('AutoSave failed:', error);
 
                 // Handle quota exceeded
-                if (error.name === 'QuotaExceededError') {
-                    console.warn('localStorage quota exceeded - clearing old saves');
+                if (error instanceof Error && error.name === 'QuotaExceededError') {
+                    // console.warn('localStorage quota exceeded - clearing old saves');
                     try {
                         localStorage.removeItem(storageKey);
                     } catch (e) {
@@ -81,7 +82,7 @@ export function useAutoSave(
                 clearTimeout(timerRef.current);
             }
         };
-    }, [doc, enabled, interval, storageKey]);
+    }, [doc, enabled, interval, storageKey, setDoc]);
 
     // Restore from localStorage on mount
     useEffect(() => {
@@ -94,7 +95,7 @@ export function useAutoSave(
 
                 // Only restore if document is fresh/empty
                 if (doc && doc.layers.length === 0 && parsed.doc) {
-                    console.log('Restoring autosaved document...');
+                    // console.log('Restoring autosaved document...');
                     setDoc(parsed.doc);
                     setLastSaved(new Date(parsed.timestamp));
                 }

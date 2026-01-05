@@ -111,7 +111,7 @@ export async function generateCopyExplosion(params: {
     };
     language?: string;
 }): Promise<CopyVariant[]> {
-    console.log('🎯 Copy Explosion Engine V2: Generating 10 hook-based variants...');
+
 
     const hookAngles: HookAngle[] = [
         'problem_agitate',
@@ -137,7 +137,7 @@ export async function generateCopyExplosion(params: {
 
     for (let i = 0; i < batches.length; i++) {
         const batch = batches[i];
-        console.log(`   Generating batch ${i + 1}/${batches.length} (${batch.length} variants)...`);
+
 
         const batchPromises = batch.map(angle =>
             generateSingleVariant(angle, params)

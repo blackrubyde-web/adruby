@@ -42,7 +42,8 @@ export async function removeBackground(imageSrc: File | Blob | string, onProgres
         });
 
         if (onProgress) onProgress(100); // Finish
-        console.log('✅ Background removal complete');
+        if (onProgress) onProgress(100); // Finish
+        // console.log('✅ Background removal complete');
         return blob;
 
     } catch (error) {
