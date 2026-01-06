@@ -41,8 +41,8 @@ const toAutopilotConfig = (
   if (!config || typeof config !== 'object') return {};
   const record = config as Record<string, unknown>;
   return {
-    target_roas: typeof record.target_roas === 'number' ? record.target_roas : undefined,
-    max_daily_budget: typeof record.max_daily_budget === 'number' ? record.max_daily_budget : undefined,
+    target_roas: (typeof record.target_roas === 'number' && !isNaN(record.target_roas)) ? record.target_roas : undefined,
+    max_daily_budget: (typeof record.max_daily_budget === 'number' && !isNaN(record.max_daily_budget)) ? record.max_daily_budget : undefined,
     scale_speed: toScaleSpeed(record.scale_speed),
     risk_tolerance: toRiskTolerance(record.risk_tolerance)
   };

@@ -37,25 +37,31 @@ export function StrategySimulationPreview({ targetRoas, riskTolerance, scaleSpee
     // SVG Path generation
     const width = 100;
     const height = 50;
-    const maxY = Math.max(...points.map(p => p.y), targetRoas * 1.2);
-    const minY = Math.min(...points.map(p => p.y), targetRoas * 0.5);
+
+    // Guard against NaN
+    const safeTargetRoas = isNaN(targetRoas) || targetRoas <= 0 ? 3 : targetRoas;
+
+    const maxY = Math.max(...points.map(p => p.y), safeTargetRoas * 1.2, 0.01);
+    const minY = Math.min(...points.map(p => p.y), safeTargetRoas * 0.5, 0);
+    const range = (maxY - minY) || 1;
 
     const getCoord = (p: { x: number, y: number }) => {
         const x = (p.x / 30) * width;
-        const y = height - ((p.y - minY) / (maxY - minY)) * height;
+        const y = height - ((p.y - minY) / range) * height;
         return `${x},${y}`;
     };
 
     const pathD = points.length > 0 ? `M ${points.map(getCoord).join(' L ')}` : '';
     const areaD = points.length > 0 ? `${pathD} L ${width},${height} L 0,${height} Z` : '';
+    const targetLineY = height - ((safeTargetRoas - minY) / range) * height;
 
     return (
         <div className="w-full h-full min-h-[120px] relative bg-black/20 rounded-xl overflow-hidden border border-white/5 p-4 flex flex-col justify-between">
             <div className="flex justify-between items-start z-10">
                 <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">30-Day Projection</span>
                 <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${riskTolerance === 'high' ? 'bg-red-500/20 text-red-400' :
-                        riskTolerance === 'medium' ? 'bg-yellow-500/20 text-yellow-400' :
-                            'bg-emerald-500/20 text-emerald-400'
+                    riskTolerance === 'medium' ? 'bg-yellow-500/20 text-yellow-400' :
+                        'bg-emerald-500/20 text-emerald-400'
                     }`}>
                     {riskTolerance === 'high' ? 'VOLATILE' : riskTolerance === 'medium' ? 'BALANCED' : 'STABLE'}
                 </span>
@@ -66,9 +72,9 @@ export function StrategySimulationPreview({ targetRoas, riskTolerance, scaleSpee
                     {/* Target Line */}
                     <line
                         x1="0"
-                        y1={height - ((targetRoas - minY) / (maxY - minY)) * height}
+                        y1={targetLineY}
                         x2={width}
-                        y2={height - ((targetRoas - minY) / (maxY - minY)) * height}
+                        y2={targetLineY}
                         stroke="rgba(255,255,255,0.1)"
                         strokeDasharray="4 2"
                         strokeWidth="1"

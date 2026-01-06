@@ -258,8 +258,11 @@ export function StrategyWizard({ onComplete, onCancel, initialData }: StrategyWi
                                             <div className="flex items-center gap-2">
                                                 <Input
                                                     type="number"
-                                                    value={data.target_roas}
-                                                    onChange={e => setData({ ...data, target_roas: parseFloat(e.target.value) })}
+                                                    value={isNaN(data.target_roas) ? '' : data.target_roas}
+                                                    onChange={e => {
+                                                        const val = parseFloat(e.target.value);
+                                                        setData({ ...data, target_roas: isNaN(val) ? 0 : val });
+                                                    }}
                                                     step="0.1"
                                                     className="text-2xl font-bold h-12 bg-transparent border-none focus-visible:ring-0 px-0 w-24"
                                                 />
@@ -276,8 +279,11 @@ export function StrategyWizard({ onComplete, onCancel, initialData }: StrategyWi
                                                 <span className="text-xl font-bold text-muted-foreground">€</span>
                                                 <Input
                                                     type="number"
-                                                    value={data.max_daily_budget}
-                                                    onChange={e => setData({ ...data, max_daily_budget: parseInt(e.target.value) })}
+                                                    value={isNaN(data.max_daily_budget) ? '' : data.max_daily_budget}
+                                                    onChange={e => {
+                                                        const val = parseInt(e.target.value);
+                                                        setData({ ...data, max_daily_budget: isNaN(val) ? 0 : val });
+                                                    }}
                                                     className="text-2xl font-bold h-12 bg-transparent border-none focus-visible:ring-0 px-0 w-full"
                                                 />
                                             </div>
