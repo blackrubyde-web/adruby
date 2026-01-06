@@ -49,7 +49,7 @@ const toAutopilotConfig = (
 };
 
 export function AdsStrategiesPage() {
-  const { strategies, loading: strategiesLoading, refreshStrategies } = useStrategies();
+  const { strategies, loading: strategiesLoading, refreshStrategies, saveStrategy } = useStrategies();
   const [showStrategyWizard, setShowStrategyWizard] = useState(false);
   const [editingStrategy, setEditingStrategy] = useState<StrategyBlueprint | null>(null);
   const editingConfig = editingStrategy ? toAutopilotConfig(editingStrategy.autopilot_config) : null;
@@ -91,6 +91,7 @@ export function AdsStrategiesPage() {
     };
 
     const commonData = {
+      id: editingStrategy?.id,
       title: data.name,
       category: 'custom',
       industry_type: data.industry_type,
@@ -112,23 +113,10 @@ export function AdsStrategiesPage() {
     };
 
     try {
-      if (editingStrategy) {
-        const { error } = await supabase
-          .from('strategy_blueprints')
-          .update(commonData)
-          .eq('id', editingStrategy.id);
+      const result = await saveStrategy(commonData);
+      if (!result) throw new Error("Save returned null");
 
-        if (error) throw error;
-        toast.success("Strategy Updated!");
-      } else {
-        const { error } = await supabase
-          .from('strategy_blueprints')
-          .insert(commonData);
-
-        if (error) throw error;
-        toast.success("Master Strategy Created!");
-      }
-
+      toast.success(editingStrategy ? "Strategy Updated!" : "Master Strategy Created!");
       refreshStrategies();
       setShowStrategyWizard(false);
       setEditingStrategy(null);
@@ -244,11 +232,12 @@ export function AdsStrategiesPage() {
                       </div>
                     </div>
 
-                    <div className="w-full h-[70px] relative mt-auto border-t border-border/30 pt-4">
+                    <div className="w-full h-[100px] relative mt-auto border-t border-border/10 pt-4">
                       <StrategySimulationPreview
                         targetRoas={config.target_roas ?? 3}
                         riskTolerance={config.risk_tolerance ?? 'medium'}
                         scaleSpeed={config.scale_speed ?? 'medium'}
+                        compact
                       />
                     </div>
                   </Card>

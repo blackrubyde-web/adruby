@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { AnalyticsData } from "../types/analytics";
 import { apiClient } from "../utils/apiClient";
 import { supabase } from "../lib/supabaseClient";
+import { env } from "../lib/env";
 
 export function useAnalyticsData(
   range: "7d" | "30d" | "90d" | "custom",
@@ -16,6 +17,57 @@ export function useAnalyticsData(
   useEffect(() => {
     let cancelled = false;
     const run = async () => {
+      if (env.demoMode) {
+        const mockData: AnalyticsData = {
+          range: "30d",
+          compare: false,
+          granularity: "day",
+          summary: {
+            spend: 8500,
+            revenue: 32000,
+            roas: 3.76,
+            impressions: 450000,
+            clicks: 9800,
+            conversions: 120,
+            ctr: 2.17,
+            deltas: {
+              spend: 0.05,
+              revenue: 0.15,
+              roas: 0.10
+            }
+          },
+          timeseries: {
+            current: Array.from({ length: 30 }, (_, i) => ({
+              ts: new Date(Date.now() - (29 - i) * 24 * 60 * 60 * 1000).toISOString(),
+              spend: 250 + Math.random() * 50,
+              revenue: 900 + Math.random() * 300,
+              roas: 3.5 + Math.random(),
+              impressions: 15000 + Math.random() * 2000,
+              clicks: 300 + Math.random() * 50,
+              conversions: 4 + Math.random() * 2,
+              ctr: 1.9 + Math.random() * 0.5
+            }))
+          },
+          campaigns: [],
+          breakdowns: {
+            audience: {
+              byAge: [],
+              byGender: { male: 50, female: 50, other: 0 }
+            },
+            funnel: [],
+            heatmap: []
+          },
+          performance: { score: 85, quality: 80, relevance: 90, engagement: 82 },
+          budget: { total: 10000, spent: 8500, remaining: 1500, dailyAverage: 280, projectedEnd: new Date().toISOString() }
+        };
+        if (!cancelled) {
+          setData(mockData);
+          setLoading(false);
+          setError(null);
+        }
+        return;
+      }
+
       let userId = "anon";
       try {
         const { data: session } = await supabase.auth.getSession();

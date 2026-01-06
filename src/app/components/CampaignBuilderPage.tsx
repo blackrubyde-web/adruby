@@ -450,6 +450,20 @@ export function CampaignBuilderPage() {
     if (!draft?.id) return;
     setIsSaving(true);
     try {
+      if (env.demoMode) {
+        await new Promise(r => setTimeout(r, 1000));
+        if (status === 'ready') {
+          toast.loading("Deploying to Meta (Simulation)...");
+          await new Promise(r => setTimeout(r, 2000));
+          toast.dismiss();
+          toast.success("Kampagne erfolgreich auf Meta gestartet! 🚀 (Demo)");
+        } else {
+          toast.success('Draft gespeichert (Demo)');
+        }
+        setDraft(prev => prev ? { ...prev, status: status || prev.status } : prev);
+        return;
+      }
+
       // 1. Save locally first
       const { error } = await supabase.from('campaign_drafts').update({ name: campaignSpec.campaign.name || draft.name || 'Kampagne', creative_ids: selectedIds, strategy_blueprint_id: selectedStrategyId, campaign_spec: campaignSpec, status: status || draft.status }).eq('id', draft.id);
       if (error) throw error;

@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { fetchMetaCampaigns } from '../lib/api/meta';
+import { env } from '../lib/env';
 
 export type MetaCampaign = {
   id: string;
@@ -24,6 +25,16 @@ export function useMetaCampaigns() {
     setLoading(true);
     setError(null);
     try {
+      if (env.demoMode) {
+        const mockCampaigns: MetaCampaign[] = [
+          { id: 'mc-1', name: 'Performance Max - Winter', status: 'active', spend: 2500, revenue: 12000, roas: 4.8, ctr: 2.1, conversions: 85, impressions: 45000, clicks: 950 },
+          { id: 'mc-2', name: 'Prospecting - Lookalikes', status: 'active', spend: 1500, revenue: 4500, roas: 3.0, ctr: 1.8, conversions: 35, impressions: 35000, clicks: 650 },
+          { id: 'mc-3', name: 'Retargeting - Cart Abandoners', status: 'paused', spend: 500, revenue: 3500, roas: 7.0, ctr: 4.5, conversions: 25, impressions: 5000, clicks: 225 }
+        ];
+        setCampaigns(mockCampaigns);
+        setLoading(false);
+        return;
+      }
       const data = await fetchMetaCampaigns();
       setCampaigns(data.campaigns || []);
     } catch (err: unknown) {

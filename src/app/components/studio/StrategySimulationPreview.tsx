@@ -5,9 +5,10 @@ interface StrategySimulationPreviewProps {
     targetRoas: number;
     riskTolerance: 'low' | 'medium' | 'high';
     scaleSpeed: 'slow' | 'medium' | 'fast' | 'aggressive';
+    compact?: boolean;
 }
 
-export function StrategySimulationPreview({ targetRoas, riskTolerance, scaleSpeed }: StrategySimulationPreviewProps) {
+export function StrategySimulationPreview({ targetRoas, riskTolerance, scaleSpeed, compact }: StrategySimulationPreviewProps) {
     const [points, setPoints] = useState<{ x: number; y: number }[]>([]);
 
     useEffect(() => {
@@ -56,16 +57,18 @@ export function StrategySimulationPreview({ targetRoas, riskTolerance, scaleSpee
     const targetLineY = height - ((safeTargetRoas - minY) / range) * height;
 
     return (
-        <div className="w-full h-full min-h-[120px] relative bg-black/20 rounded-xl overflow-hidden border border-white/5 p-4 flex flex-col justify-between">
-            <div className="flex justify-between items-start z-10">
-                <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">30-Day Projection</span>
-                <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${riskTolerance === 'high' ? 'bg-red-500/20 text-red-400' :
-                    riskTolerance === 'medium' ? 'bg-yellow-500/20 text-yellow-400' :
-                        'bg-emerald-500/20 text-emerald-400'
-                    }`}>
-                    {riskTolerance === 'high' ? 'VOLATILE' : riskTolerance === 'medium' ? 'BALANCED' : 'STABLE'}
-                </span>
-            </div>
+        <div className={`w-full h-full relative bg-black/20 rounded-xl overflow-hidden border border-white/5 flex flex-col justify-between ${compact ? 'p-2 min-h-[60px]' : 'p-4 min-h-[120px]'}`}>
+            {!compact && (
+                <div className="flex justify-between items-start z-10">
+                    <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">30-Day Projection</span>
+                    <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${riskTolerance === 'high' ? 'bg-red-500/20 text-red-400' :
+                        riskTolerance === 'medium' ? 'bg-yellow-500/20 text-yellow-400' :
+                            'bg-emerald-500/20 text-emerald-400'
+                        }`}>
+                        {riskTolerance === 'high' ? 'VOLATILE' : riskTolerance === 'medium' ? 'BALANCED' : 'STABLE'}
+                    </span>
+                </div>
+            )}
 
             <div className="absolute inset-0 pt-8 px-0 pb-0">
                 <svg viewBox={`0 0 ${width} ${height}`} preserveAspectRatio="none" className="w-full h-full overflow-visible">
@@ -112,12 +115,14 @@ export function StrategySimulationPreview({ targetRoas, riskTolerance, scaleSpee
                 </svg>
             </div>
 
-            <div className="flex justify-between items-end z-10 mt-auto pt-8">
-                <div className="text-[10px] text-muted-foreground">Ad Spend</div>
-                <div className={`text-lg font-bold ${riskTolerance === 'high' ? 'text-red-400' : 'text-emerald-400'}`}>
-                    ~{targetRoas}x <span className="text-[10px] sm:text-xs text-muted-foreground font-normal">ROAS</span>
+            {!compact && (
+                <div className="flex justify-between items-end z-10 mt-auto pt-8">
+                    <div className="text-[10px] text-muted-foreground">Ad Spend</div>
+                    <div className={`text-lg font-bold ${riskTolerance === 'high' ? 'text-red-400' : 'text-emerald-400'}`}>
+                        ~{targetRoas}x <span className="text-[10px] sm:text-xs text-muted-foreground font-normal">ROAS</span>
+                    </div>
                 </div>
-            </div>
+            )}
         </div>
     );
 }

@@ -38,6 +38,25 @@ export function useAdBuilder() {
     setError(null);
     setStatus("analyzing");
     setJobId(null);
+
+    if (env.demoMode) {
+      await new Promise(r => setTimeout(r, 1500));
+      const mockResult = {
+        brief: {
+          product: { name: "Demo Product", description: "A high-quality demo product." },
+          audience: { summary: "Tech-savvy professionals interested in AI." },
+          pain_points: ["Slow workflows", "Manual tasks"],
+          usp: ["Fast", "AI-powered"],
+          tone: "Professional"
+        } as NormalizedBrief,
+        image: { path: "https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=800" }
+      };
+      setBrief(mockResult.brief);
+      setImageMeta(mockResult.image);
+      setStatus("idle");
+      return mockResult;
+    }
+
     try {
       const res = await creativeAnalyze(fd);
       setBrief(res.brief);
@@ -73,6 +92,45 @@ export function useAdBuilder() {
       pollRef.current.cancelled = false;
       pollIdRef.current += 1;
       const pollId = pollIdRef.current;
+
+      if (env.demoMode) {
+        setJobId("demo-job-123");
+        setStatus("polling");
+
+        // Simulate progress
+        for (let i = 0; i <= 100; i += 20) {
+          if (pollRef.current.cancelled || pollId !== pollIdRef.current) break;
+          setProgress(i);
+          await new Promise(r => setTimeout(r, 800));
+        }
+
+        if (pollRef.current.cancelled || pollId !== pollIdRef.current) {
+          setStatus("idle");
+          throw new Error("Poll cancelled");
+        }
+
+        const mockOutput: CreativeOutput = {
+          creatives: [
+            {
+              id: "demo-cr-1",
+              copy: {
+                hook: "Level up your workflow with AI.",
+                primary_text: "Our new AI-powered platform helps you scale faster than ever.",
+                cta: "Learn More"
+              },
+              layers: []
+            }
+          ],
+          brief: opts.brief as NormalizedBrief
+        };
+
+        setResult(mockOutput);
+        setQuality({ score: 95, summary: "Excellent alignment with brief." });
+        setStatus("complete");
+        setProgress(null);
+        return { jobId: "demo-job-123", status: "complete", outputs: mockOutput } as CreativeStatusResponse;
+      }
+
       try {
         const resolvedImagePath =
           opts.imagePath ||

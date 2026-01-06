@@ -1,6 +1,7 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import type { Session, User } from '@supabase/supabase-js';
 import { supabase } from '../lib/supabaseClient';
+import { env } from '../lib/env';
 
 export type UserProfile = {
   id: string;
@@ -134,6 +135,34 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     let cancelled = false;
 
     const init = async () => {
+      if (env.demoMode) {
+        console.log('[Auth] Demo Mode Enabled - Mocking Auth');
+        const mockUser: User = {
+          id: 'demo-user-123',
+          email: 'demo@adruby.ai',
+          app_metadata: {},
+          user_metadata: { full_name: 'Demo User' },
+          aud: 'authenticated',
+          created_at: new Date().toISOString()
+        } as any;
+
+        const mockSession: Session = {
+          access_token: 'demo-token',
+          refresh_token: 'demo-refresh',
+          expires_in: 3600,
+          token_type: 'bearer',
+          user: mockUser
+        };
+
+        if (!cancelled) {
+          setSession(mockSession);
+          setUser(mockUser);
+          setIsLoading(false);
+          setIsAuthReady(true);
+        }
+        return;
+      }
+
       setIsLoading(true);
       setAuthError(null);
 
@@ -194,14 +223,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     init();
 
-    const { data: listener } = supabase.auth.onAuthStateChange((_event, nextSession) => {
-      setSession(nextSession);
-      setUser(nextSession?.user ?? null);
-    });
+    const { data: listener } = env.demoMode
+      ? { data: { subscription: { unsubscribe: () => { } } } }
+      : supabase.auth.onAuthStateChange((_event, nextSession) => {
+        setSession(nextSession);
+        setUser(nextSession?.user ?? null);
+      });
 
     return () => {
       cancelled = true;
-      listener.subscription.unsubscribe();
+      if (listener.subscription) listener.subscription.unsubscribe();
     };
   }, []);
 
@@ -212,6 +243,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const run = async () => {
       if (!user?.id) {
         setProfile(null);
+        return;
+      }
+
+      if (env.demoMode) {
+        setProfile({
+          id: user.id,
+          email: user.email,
+          full_name: 'AdRuby Demo',
+          credits: 1000,
+          onboarding_completed: true,
+          payment_verified: true,
+          subscription_status: 'active'
+        });
+        setIsLoading(false);
         return;
       }
 

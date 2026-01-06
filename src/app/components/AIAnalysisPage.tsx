@@ -122,6 +122,13 @@ export function AIAnalysisPage() {
     if (!Object.keys(aiAnalysisCache).length) return;
     setIsApplying(true);
     try {
+      if (env.demoMode) {
+        toast.loading("Applying changes to Meta (Simulation)...");
+        await new Promise(r => setTimeout(r, 2000));
+        toast.dismiss();
+        toast.success('Empfohlene Änderungen wurden auf Meta angewendet (Demo).');
+        return;
+      }
       const { data } = await supabase.auth.getSession();
       const token = data.session?.access_token;
       if (!token) {
@@ -185,6 +192,26 @@ export function AIAnalysisPage() {
 
     setIsAnalyzingAI(true);
     try {
+      if (env.demoMode) {
+        await new Promise(r => setTimeout(r, 1500));
+        // Simple mock cache for campaigns
+        const cache: Record<string, AIAnalysis> = {};
+        campaignsToAnalyze.forEach(c => {
+          cache[c.id] = {
+            id: `mock-ana-${c.id}`,
+            recommendation: c.roas > 3 ? 'duplicate' : c.roas < 1.5 ? 'kill' : 'increase',
+            confidence: 90,
+            reason: "Mock AI Insight based on ROAS benchark.",
+            expectedImpact: "+20% Efficiency",
+            details: ["ROAS: " + c.roas, "CTR: " + c.ctr]
+          };
+        });
+        setAiAnalysisCache(cache);
+        setAiPowered(true);
+        toast.success(`AI Analyse abgeschlossen (Demo: ${campaignsToAnalyze.length} Kampagnen)`);
+        return;
+      }
+
       const apiBase = String(import.meta.env.VITE_API_BASE_URL || '').replace(/\/$/, '');
       const apiUrl = apiBase ? `${apiBase}/api/ai-campaign-analyze` : '/api/ai-campaign-analyze';
       const { data } = await supabase.auth.getSession();
@@ -692,6 +719,18 @@ export function AIAnalysisPage() {
     setSyncProgress(0);
 
     try {
+      if (env.demoMode) {
+        setSyncProgress(15);
+        await new Promise(r => setTimeout(r, 800));
+        setSyncProgress(45);
+        await new Promise(r => setTimeout(r, 1000));
+        setSyncProgress(85);
+        await new Promise(r => setTimeout(r, 1200));
+        setSyncProgress(100);
+        toast.success('Sync completed (Demo)');
+        return;
+      }
+
       const apiBase = String(import.meta.env.VITE_API_BASE_URL || '').replace(/\/$/, '');
       const apiUrl = apiBase ? `${apiBase}/api/meta-sync` : '/api/meta-sync';
       const { data } = await supabase.auth.getSession();

@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { supabase } from "../lib/supabaseClient";
+import { env } from "../lib/env";
 
 export type StrategyBlueprint = {
   id: string;
@@ -24,6 +25,59 @@ export function useStrategies() {
     const load = async () => {
       setLoading(true);
       setError(null);
+
+      if (env.demoMode) {
+        const mockStrategies: StrategyBlueprint[] = [
+          {
+            id: 'demo-strat-1',
+            title: 'Q1 Growth Engine',
+            category: 'custom',
+            raw_content_markdown: '# Growth Plan\nAccelerate your traffic.',
+            metadata: {
+              autopilot_config: {
+                enabled: true,
+                target_roas: 4.5,
+                risk_tolerance: 'low',
+                scale_speed: 'slow',
+                max_daily_budget: 200
+              },
+              industry_type: 'ecommerce'
+            },
+            autopilot_config: { enabled: true, target_roas: 4.5, risk_tolerance: 'low', scale_speed: 'slow', max_daily_budget: 200 },
+            industry_type: 'ecommerce',
+            target_audience_definition: {},
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          },
+          {
+            id: 'demo-strat-2',
+            title: 'Aggressive SaaS Scaling',
+            category: 'custom',
+            raw_content_markdown: '# Scale Plan\nHigh risk, high reward.',
+            metadata: {
+              autopilot_config: {
+                enabled: true,
+                target_roas: 2.1,
+                risk_tolerance: 'high',
+                scale_speed: 'aggressive',
+                max_daily_budget: 1000
+              },
+              industry_type: 'saas'
+            },
+            autopilot_config: { enabled: true, target_roas: 2.1, risk_tolerance: 'high', scale_speed: 'aggressive', max_daily_budget: 1000 },
+            industry_type: 'saas',
+            target_audience_definition: {},
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          }
+        ];
+        if (active) {
+          setStrategies(mockStrategies);
+          setLoading(false);
+        }
+        return;
+      }
+
       const { data, error } = await supabase
         .from("strategy_blueprints")
         .select(`
@@ -68,5 +122,16 @@ export function useStrategies() {
     };
   }, []);
 
-  return { strategies, loading, error, refreshStrategies: () => window.location.reload() };
+  const saveStrategy = async (strategy: Partial<StrategyBlueprint>) => {
+    if (env.demoMode) {
+      await new Promise(r => setTimeout(r, 1000));
+      toast.success("Strategie erfolgreich gespeichert (Demo)");
+      return { id: strategy.id || 'demo-new-id' };
+    }
+    // Real implementation would go here, currently useStrategies is read-only in this hook version
+    toast.error("Speichern in Demo-Modus simuliert. Echt-Modus nicht verfügbar.");
+    return null;
+  };
+
+  return { strategies, loading, error, refreshStrategies: () => window.location.reload(), saveStrategy };
 }
