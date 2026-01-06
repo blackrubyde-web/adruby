@@ -5,6 +5,7 @@ import { PageShell, HeroHeader, Card } from './layout';
 import { useMetaCampaigns, type MetaCampaign } from '../hooks/useMetaCampaigns';
 import { useMetaConnection } from '../hooks/useMetaConnection';
 import type { MetaApplyAction } from '../lib/api/meta';
+import { applyMetaAction } from '../lib/api/meta';
 
 type StatusFilter = 'all' | 'active' | 'paused' | 'completed';
 
@@ -26,6 +27,10 @@ export function CampaignsPage() {
   const { campaigns, loading, error, refresh } = useMetaCampaigns();
   const { connection } = useMetaConnection();
   const [actionState, setActionState] = useState<Record<string, boolean>>({});
+  const handleCreateCampaign = () => {
+    window.history.pushState({}, document.title, '/campaign-builder');
+    window.dispatchEvent(new PopStateEvent('popstate'));
+  };
 
   // Mock stats - replace with real calculations based on campaigns
   const stats = useMemo(() => {
@@ -53,8 +58,10 @@ export function CampaignsPage() {
     const id = campaign.id;
     setActionState(prev => ({ ...prev, [`${id}-${action}`]: true }));
     try {
-      // Mock action call
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      const res = await applyMetaAction({ campaignId: id, action });
+      if (!res?.ok) {
+        throw new Error('Meta action failed');
+      }
       toast.success(`Campaign ${action} successful`);
       refresh();
     } catch (err) {
@@ -77,6 +84,14 @@ export function CampaignsPage() {
       <HeroHeader
         title="Campaigns"
         subtitle="Manage and optimize your Meta Ads campaigns."
+        actions={
+          <button
+            onClick={handleCreateCampaign}
+            className="px-4 py-2 bg-primary text-primary-foreground rounded-lg text-sm font-semibold hover:bg-primary/90 transition-colors"
+          >
+            Neue Kampagne
+          </button>
+        }
       />
 
       {/* Stats Overview */}
@@ -141,6 +156,21 @@ export function CampaignsPage() {
       {loading && (
         <Card className="p-4 border border-border bg-card text-sm text-muted-foreground mb-8">
           Lade Kampagnen…
+        </Card>
+      )}
+
+      {!loading && campaigns.length === 0 && (
+        <Card className="p-5 border border-border/60 bg-card mb-8 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+          <div>
+            <div className="text-base font-semibold text-foreground">Noch keine Kampagnen</div>
+            <div className="text-sm text-muted-foreground">Erstelle eine Kampagne und pushe sie direkt zu Meta.</div>
+          </div>
+          <button
+            onClick={handleCreateCampaign}
+            className="px-4 py-2 bg-primary text-primary-foreground rounded-lg text-sm font-semibold hover:bg-primary/90 transition-colors"
+          >
+            Kampagne erstellen
+          </button>
         </Card>
       )}
 

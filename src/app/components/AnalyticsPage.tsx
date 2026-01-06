@@ -2,7 +2,7 @@ import { lazy, Suspense, useEffect, useRef, useState } from 'react';
 import { DashboardCustomizer, DashboardSection } from './DashboardCustomizer';
 import { ReorderableWidget } from './ReorderableWidget';
 import { TimeRangeFilter } from './TimeRangeFilter';
-import { Eye, MousePointerClick, DollarSign, TrendingUp, LayoutGrid, Zap, ShieldCheck, Rocket } from 'lucide-react';
+import { Eye, MousePointerClick, DollarSign, TrendingUp, LayoutGrid } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from './ui/button';
 import { PageShell, HeroHeader, Card, Chip } from './layout';
@@ -169,44 +169,6 @@ export function AnalyticsPage() {
   const [isComparing, setIsComparing] = useState(false);
 
   const { data, loading } = useAnalyticsData(timeRange, isComparing, 'meta');
-
-  // Autopilot State
-  const [autopilotEnabled, setAutopilotEnabled] = useState(false);
-  const [optimizationScore, setOptimizationScore] = useState(92);
-  const [autopilotActions, setAutopilotActions] = useState<string[]>([]);
-
-  // Simulate Autopilot Analysis
-  useEffect(() => {
-    // Determine active campaigns from data if available, else mock
-    // For now we mock the analysis result based on general data health
-    const score = data?.summary.roas && data.summary.roas > 3 ? 96 : 88;
-    setOptimizationScore(score);
-
-    if (score < 90) {
-      setAutopilotActions([
-        "2 Kampagnen mit ROAS < 1.5 identifiziert.",
-        "Budget-Shift zu 'Winners' empfohlen."
-      ]);
-    } else {
-      setAutopilotActions(["Kampagnen laufen effizient. Skalierung möglich."]);
-    }
-  }, [data]);
-
-  const toggleAutopilot = () => {
-    setAutopilotEnabled(!autopilotEnabled);
-    toast.success(autopilotEnabled ? "Autopilot paused" : "Autopilot active & optimizing");
-  };
-
-  const handleScaleWinners = () => {
-    toast.promise(
-      new Promise(resolve => setTimeout(resolve, 2000)),
-      {
-        loading: 'Analzing top performers & increasing budget...',
-        success: 'Budget for 3 winning adsets increased by 20%!',
-        error: 'Failed to scale'
-      }
-    );
-  };
 
   const summary = data?.summary;
   const currentSeries = data?.timeseries.current ?? [];
@@ -544,100 +506,15 @@ export function AnalyticsPage() {
   return (
     <PageShell>
       <HeroHeader
-        title="AI Analysis & Autopilot"
-        subtitle="Real-time predictive analysis and autonomous campaign optimization."
+        title="Analytics"
+        subtitle="Performance insights, trends, and campaign reporting."
         chips={
           <div className="flex flex-wrap gap-2">
             <Chip>{useGridLayout ? '📊 Grid' : '📋 List'}</Chip>
             <Chip>{timeRange === '7d' ? '7 Days' : timeRange === '30d' ? '30 Days' : '90 Days'}</Chip>
-            <div className={`px-2 py-0.5 rounded-full text-xs font-bold border flex items-center gap-1.5 ${autopilotEnabled ? 'bg-violet-500/10 text-violet-400 border-violet-500/20' : 'bg-muted text-muted-foreground border-transparent'}`}>
-              <ShieldCheck className="w-3 h-3" />
-              {autopilotEnabled ? 'AUTOPILOT ON' : 'AUTOPILOT OFF'}
-            </div>
           </div>
         }
       />
-
-      {/* AUTOPILOT CONTROL CENTER */}
-      <div className="mb-8 p-1 relative overflow-hidden rounded-[32px] bg-gradient-to-b from-white/5 to-transparent border border-white/5">
-        <div className="absolute inset-0 bg-gradient-to-r from-violet-500/10 via-fuchsia-500/5 to-transparent opacity-50" />
-
-        <div className="relative bg-black/40 backdrop-blur-xl rounded-[30px] p-6 md:p-8 flex flex-col md:flex-row items-center justify-between gap-8">
-          {/* Score & Status */}
-          <div className="flex items-center gap-6 w-full md:w-auto">
-            <div className="relative flex-none">
-              <svg className="w-24 h-24 transform -rotate-90 drop-shadow-[0_0_15px_rgba(139,92,246,0.3)]">
-                <circle cx="48" cy="48" r="40" stroke="currentColor" strokeWidth="6" fill="transparent" className="text-white/5" />
-                <circle cx="48" cy="48" r="40" stroke="currentColor" strokeWidth="6" fill="transparent" strokeDasharray={251.2} strokeDashoffset={251.2 * (1 - optimizationScore / 100)} className="text-violet-500" />
-              </svg>
-              <div className="absolute inset-0 flex flex-col items-center justify-center">
-                <span className="text-3xl font-black text-white">{optimizationScore}</span>
-                <span className="text-[10px] uppercase tracking-wider text-white/50 font-bold">Health</span>
-              </div>
-            </div>
-
-            <div className="flex-1">
-              <div className="flex items-center gap-2 mb-2">
-                <h3 className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-white to-white/60">
-                  AdRuby Autopilot
-                </h3>
-                {autopilotEnabled && (
-                  <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/20 tracking-wider">
-                    ACTIVE
-                  </span>
-                )}
-              </div>
-              <div className="space-y-1">
-                {autopilotActions.map((action, i) => (
-                  <div key={i} className="flex items-start gap-2 text-sm text-muted-foreground">
-                    <Zap className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
-                    {action}
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-
-          {/* Actions */}
-          <div className="flex items-center gap-4 w-full md:w-auto">
-            <Button
-              variant="outline"
-              className="h-12 rounded-full px-6 border-white/10 hover:bg-white/5 hover:text-white hover:border-violet-500/50 transition-all group"
-              onClick={handleScaleWinners}
-              disabled={!autopilotEnabled}
-            >
-              <Rocket className="w-4 h-4 mr-2 text-violet-400 group-hover:text-violet-300 transition-colors" />
-              Scale Winners (+20%)
-            </Button>
-
-            <div className="h-12 w-[1px] bg-white/10 mx-2 hidden md:block" />
-
-            <div className="flex flex-col items-center gap-2">
-              <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
-                {autopilotEnabled ? 'DISABLE' : 'ENABLE'}
-              </span>
-              <button
-                onClick={toggleAutopilot}
-                className={`
-                            relative w-16 h-8 rounded-full transition-all duration-300 border
-                            ${autopilotEnabled
-                    ? 'bg-violet-600/20 border-violet-500/50 shadow-[0_0_20px_rgba(139,92,246,0.2)]'
-                    : 'bg-white/5 border-white/10'
-                  }
-                        `}
-              >
-                <div className={`
-                            absolute top-1 left-1 w-6 h-6 rounded-full transition-all duration-300 shadow-sm
-                            ${autopilotEnabled
-                    ? 'translate-x-8 bg-violet-400'
-                    : 'translate-x-0 bg-white/20'
-                  }
-                        `} />
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
 
       {/* ═══════════════════════════════════════════════════════════
           MOBILE-FIRST ANALYTICS CONTROLS

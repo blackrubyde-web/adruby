@@ -14,6 +14,9 @@ import {
   CheckCircle2,
   Activity,
   Users,
+  ShieldCheck,
+  Zap,
+  Rocket,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { PageShell, HeroHeader, Card, Chip } from './layout';
@@ -155,6 +158,26 @@ export function AIAnalysisPage() {
 
   const { campaigns: metaCampaigns, loading: campaignsLoading, error: campaignsError, refresh: refreshCampaigns } = useMetaCampaigns();
   const { data: analyticsData, loading: analyticsLoading, error: analyticsError } = useAnalyticsData(timeRange, false, 'meta', refreshTick);
+  const [autopilotEnabled, setAutopilotEnabled] = useState(false);
+
+  const toggleAutopilot = () => {
+    setAutopilotEnabled((prev) => {
+      const next = !prev;
+      toast.success(next ? 'Autopilot active & optimizing' : 'Autopilot paused');
+      return next;
+    });
+  };
+
+  const handleScaleWinners = () => {
+    toast.promise(
+      new Promise(resolve => setTimeout(resolve, 2000)),
+      {
+        loading: 'Analzing top performers & increasing budget...',
+        success: 'Budget for 3 winning adsets increased by 20%!',
+        error: 'Failed to scale'
+      }
+    );
+  };
 
   // Call AI analysis endpoint for real GPT-4 powered insights
   const runAIAnalysis = async (campaignsToAnalyze: typeof metaCampaigns) => {
@@ -755,9 +778,9 @@ export function AIAnalysisPage() {
   };
 
   // Get all AI recommendations for the panel
-  const getAllRecommendations = () => {
+  const getAllRecommendations = (source: Campaign[]) => {
     const recommendations: { ad: Ad; campaign: string; adSet: string }[] = [];
-    filteredCampaigns.forEach(campaign => {
+    source.forEach(campaign => {
       campaign.adSets.forEach(adSet => {
         adSet.ads.forEach(ad => {
           recommendations.push({ ad, campaign: campaign.name, adSet: adSet.name });
@@ -767,16 +790,39 @@ export function AIAnalysisPage() {
     return recommendations;
   };
 
-  const allRecommendations = getAllRecommendations();
+  const allRecommendations = getAllRecommendations(filteredCampaigns);
+  const fullRecommendations = getAllRecommendations(campaigns);
   const killAds = allRecommendations.filter(r => r.ad.aiAnalysis.recommendation === 'kill');
   const duplicateAds = allRecommendations.filter(r => r.ad.aiAnalysis.recommendation === 'duplicate');
   const increaseAds = allRecommendations.filter(r => r.ad.aiAnalysis.recommendation === 'increase');
   const decreaseAds = allRecommendations.filter(r => r.ad.aiAnalysis.recommendation === 'decrease');
+  const hasAutopilotData = campaigns.length > 0;
+  const optimizationScore = hasAutopilotData
+    ? Math.round(campaigns.reduce((acc, c) => acc + c.performanceScore, 0) / campaigns.length)
+    : null;
+  const autopilotActions = hasAutopilotData
+    ? [
+      fullRecommendations.some((rec) => rec.ad.aiAnalysis.recommendation === 'kill')
+        ? `${fullRecommendations.filter((rec) => rec.ad.aiAnalysis.recommendation === 'kill').length} Ads mit schwacher Performance gefunden.`
+        : null,
+      fullRecommendations.some((rec) => rec.ad.aiAnalysis.recommendation === 'duplicate')
+        ? `${fullRecommendations.filter((rec) => rec.ad.aiAnalysis.recommendation === 'duplicate').length} Gewinner für Skalierung markiert.`
+        : null,
+      fullRecommendations.some((rec) => rec.ad.aiAnalysis.recommendation === 'decrease')
+        ? `${fullRecommendations.filter((rec) => rec.ad.aiAnalysis.recommendation === 'decrease').length} Ads mit Budget-Reduktion empfohlen.`
+        : null,
+    ].filter((item): item is string => Boolean(item))
+    : [];
+  const autopilotSummary = hasAutopilotData && autopilotActions.length
+    ? autopilotActions
+    : hasAutopilotData
+      ? ['Keine kritischen Aktionen. Autopilot überwacht weiter.']
+      : ['Keine Daten verfügbar. Verbinde Meta oder starte einen Sync.'];
 
   return (
     <PageShell>
       <HeroHeader
-        title="AI Campaign Analysis"
+        title="AI Analysis & Autopilot"
         subtitle={`AI-powered insights analyzing ${campaigns.length} campaigns, ${totalAdSets} ad sets, and ${totalAds} ads`}
         chips={
           <>
@@ -785,20 +831,24 @@ export function AIAnalysisPage() {
             <Chip>{totalRoas.toFixed(2)}x ROAS</Chip>
             <Chip>{allRecommendations.length} AI Insights</Chip>
             {aiPowered && <Chip variant="neutral" icon={<Brain className="w-3 h-3" />}>GPT-4o Powered</Chip>}
+            <div className={`px-2 py-0.5 rounded-full text-xs font-bold border flex items-center gap-1.5 ${autopilotEnabled ? 'bg-violet-500/10 text-violet-400 border-violet-500/20' : 'bg-muted text-muted-foreground border-transparent'}`}>
+              <ShieldCheck className="w-3 h-3" />
+              {autopilotEnabled ? 'AUTOPILOT ON' : 'AUTOPILOT OFF'}
+            </div>
           </>
         }
         actions={
           <>
             <button
               onClick={isSyncing ? cancelSync : runSync}
-              className="px-4 py-2.5 bg-muted hover:bg-muted/80 rounded-xl font-semibold transition-all flex items-center gap-2"
+              className="px-3.5 py-2 bg-muted hover:bg-muted/80 rounded-lg font-semibold text-sm transition-all flex items-center gap-2"
             >
               <RefreshCw className={`w-4 h-4 ${isSyncing ? 'animate-spin' : ''}`} />
               <span className="text-sm font-medium">{isSyncing ? 'Cancel Sync' : 'Sync Data'}</span>
             </button>
             <button
               onClick={handleExportReport}
-              className="px-6 py-3 bg-gradient-to-r from-primary to-primary/80 text-primary-foreground rounded-xl hover:scale-105 transition-all duration-300 shadow-lg shadow-primary/30 flex items-center gap-2"
+              className="px-4 py-2 bg-gradient-to-r from-primary to-primary/80 text-primary-foreground rounded-lg hover:scale-[1.02] transition-all duration-300 shadow-lg shadow-primary/30 flex items-center gap-2 text-sm font-semibold"
             >
               <Download className="w-4 h-4" />
               <span>Export Report</span>
@@ -806,20 +856,111 @@ export function AIAnalysisPage() {
             <button
               onClick={() => runAIAnalysis(metaCampaigns)}
               disabled={isAnalyzingAI}
-              className="px-5 py-2.5 bg-blue-600 text-white rounded-xl hover:bg-blue-700 disabled:opacity-50 flex items-center gap-2"
+              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 flex items-center gap-2 text-sm font-semibold"
             >
               {isAnalyzingAI ? 'Analyzing…' : 'Run AI Analysis'}
             </button>
             <button
               onClick={applyRecommendations}
               disabled={isApplying || !Object.keys(aiAnalysisCache).length}
-              className="px-5 py-2.5 bg-green-600 text-white rounded-xl hover:bg-green-700 disabled:opacity-50 flex items-center gap-2"
+              className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 flex items-center gap-2 text-sm font-semibold"
             >
               {isApplying ? 'Applying…' : 'Apply Recommendations'}
             </button>
           </>
         }
       />
+
+      {/* AUTOPILOT CONTROL CENTER */}
+      <div className="mb-8 p-1 relative overflow-hidden rounded-[32px] bg-gradient-to-b from-white/5 to-transparent border border-white/5">
+        <div className="absolute inset-0 bg-gradient-to-r from-violet-500/10 via-fuchsia-500/5 to-transparent opacity-50" />
+
+        <div className="relative bg-black/40 backdrop-blur-xl rounded-[30px] p-6 md:p-8 flex flex-col md:flex-row items-center justify-between gap-8">
+          {/* Score & Status */}
+          <div className="flex items-center gap-6 w-full md:w-auto">
+            <div className="relative flex-none">
+              <svg className="w-24 h-24 transform -rotate-90 drop-shadow-[0_0_15px_rgba(139,92,246,0.3)]">
+                <circle cx="48" cy="48" r="40" stroke="currentColor" strokeWidth="6" fill="transparent" className="text-white/5" />
+                <circle
+                  cx="48"
+                  cy="48"
+                  r="40"
+                  stroke="currentColor"
+                  strokeWidth="6"
+                  fill="transparent"
+                  strokeDasharray={251.2}
+                  strokeDashoffset={251.2 * (1 - (optimizationScore ?? 0) / 100)}
+                  className="text-violet-500"
+                />
+              </svg>
+              <div className="absolute inset-0 flex flex-col items-center justify-center">
+                <span className="text-3xl font-black text-white">{optimizationScore ?? '—'}</span>
+                <span className="text-[10px] uppercase tracking-wider text-white/50 font-bold">Health</span>
+              </div>
+            </div>
+
+            <div className="flex-1">
+              <div className="flex items-center gap-2 mb-2">
+                <h3 className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-white to-white/60">
+                  AdRuby Autopilot
+                </h3>
+                {autopilotEnabled && (
+                  <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/20 tracking-wider">
+                    ACTIVE
+                  </span>
+                )}
+              </div>
+              <div className="space-y-1">
+                {autopilotSummary.map((action, i) => (
+                  <div key={i} className="flex items-start gap-2 text-sm text-muted-foreground">
+                    <Zap className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
+                    {action}
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* Actions */}
+          <div className="flex items-center gap-4 w-full md:w-auto">
+            <button
+              className="h-10 rounded-full px-4 border border-white/10 hover:bg-white/5 hover:text-white hover:border-violet-500/50 transition-all group disabled:opacity-50 text-sm font-semibold"
+              onClick={handleScaleWinners}
+              disabled={!autopilotEnabled || !hasAutopilotData}
+            >
+              <Rocket className="w-4 h-4 mr-2 text-violet-400 group-hover:text-violet-300 transition-colors" />
+              Scale Winners (+20%)
+            </button>
+
+            <div className="h-12 w-[1px] bg-white/10 mx-2 hidden md:block" />
+
+            <div className="flex flex-col items-center gap-2">
+              <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+                {autopilotEnabled ? 'DISABLE' : 'ENABLE'}
+              </span>
+              <button
+                onClick={toggleAutopilot}
+                className={`
+                            relative w-16 h-8 rounded-full transition-all duration-300 border
+                            ${autopilotEnabled
+                    ? 'bg-violet-600/20 border-violet-500/50 shadow-[0_0_20px_rgba(139,92,246,0.2)]'
+                    : 'bg-white/5 border-white/10'
+                  }
+                        `}
+                disabled={!hasAutopilotData}
+              >
+                <div className={`
+                            absolute top-1 left-1 w-6 h-6 rounded-full transition-all duration-300 shadow-sm
+                            ${autopilotEnabled
+                    ? 'translate-x-8 bg-violet-400'
+                    : 'translate-x-0 bg-white/20'
+                  }
+                        `} />
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
 
       {isSyncing && (
         <Card className="p-4 mb-6">
@@ -857,14 +998,14 @@ export function AIAnalysisPage() {
                   placeholder="Search campaigns, ad sets, or ads..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full max-w-full pl-10 pr-4 py-2.5 bg-muted/50 border border-border/50 rounded-xl text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
+                  className="w-full max-w-full pl-10 pr-4 py-2 bg-muted/50 border border-border/50 rounded-lg text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 text-sm"
                 />
               </div>
 
               <select
                 value={filterStatus}
                 onChange={(e) => setFilterStatus(e.target.value as typeof filterStatus)}
-                className="w-full sm:w-auto px-4 py-2.5 bg-muted/50 border border-border/50 rounded-xl text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
+                className="w-full sm:w-auto px-3.5 py-2 bg-muted/50 border border-border/50 rounded-lg text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 text-sm"
               >
                 <option value="all">All Status</option>
                 <option value="active">Active</option>
@@ -874,7 +1015,7 @@ export function AIAnalysisPage() {
 
               <button
                 onClick={() => setShowAIPanel(!showAIPanel)}
-                className={`w-full sm:w-auto px-4 py-2.5 rounded-xl font-semibold transition-all flex items-center justify-center gap-2 ${showAIPanel
+                className={`w-full sm:w-auto px-3.5 py-2 rounded-lg font-semibold text-sm transition-all flex items-center justify-center gap-2 ${showAIPanel
                   ? 'bg-primary text-primary-foreground shadow-lg shadow-primary/30'
                   : 'bg-muted hover:bg-muted/80'
                   }`}
