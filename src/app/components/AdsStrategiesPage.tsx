@@ -1,8 +1,9 @@
-import { Brain, Trash2, Edit, Plus, TrendingUp, Shield, Zap, Activity, BarChart3, Globe, Sparkles } from 'lucide-react';
-import { useState } from 'react';
+import { Brain, Trash2, Edit, Plus, TrendingUp, Shield, Zap, Activity, Globe, Sparkles, Target } from 'lucide-react';
+import { useMemo, useState } from 'react';
 import { toast } from 'sonner';
-import { PageShell } from './layout';
+import { PageShell, HeroHeader, Card, Chip, Badge } from './layout';
 import { supabase } from '../lib/supabaseClient';
+import { useAnalyticsData } from '../hooks/useAnalyticsData';
 
 import { StrategyWizard } from './studio/StrategyWizard';
 import { useStrategies, StrategyBlueprint } from '../hooks/useStrategies';
@@ -53,8 +54,33 @@ export function AdsStrategiesPage() {
   const [editingStrategy, setEditingStrategy] = useState<StrategyBlueprint | null>(null);
   const editingConfig = editingStrategy ? toAutopilotConfig(editingStrategy.autopilot_config) : null;
 
+  // Real Analytics Integration
+  const { data: analytics } = useAnalyticsData('30d', false, 'meta');
+
+  const marketPulse = useMemo(() => {
+    // Default fallback if no data
+    if (!analytics || !analytics.summary) {
+      return { cpm: 12.45, ctr: 1.8, volatility: 'Stable', cpmDelta: 2, ctrDelta: 0.1 };
+    }
+
+    const s = analytics.summary;
+    const cpm = s.impressions > 0 ? (s.spend / s.impressions) * 1000 : 12.45;
+    const ctr = s.ctr || 1.8;
+
+    // Determine volatility based on ROAS change
+    const roasChange = s.deltas?.roas || 0;
+    const volatility = Math.abs(roasChange) > 0.2 ? 'Volatile' : Math.abs(roasChange) > 0.1 ? 'Active' : 'Stable';
+
+    return {
+      cpm,
+      ctr,
+      volatility,
+      cpmDelta: (s.deltas?.spend || 0) * 100, // spending as proxy for CPM shift
+      ctrDelta: (s.deltas?.ctr || 0) * 100
+    };
+  }, [analytics]);
+
   const handleCreateOrUpdateStrategy = async (rawStrategy: Record<string, unknown>) => {
-    // Cast to expected type
     const data = rawStrategy as unknown as {
       name: string;
       industry_type: string;
@@ -87,7 +113,6 @@ export function AdsStrategiesPage() {
 
     try {
       if (editingStrategy) {
-        // UPDATE Existing
         const { error } = await supabase
           .from('strategy_blueprints')
           .update(commonData)
@@ -96,7 +121,6 @@ export function AdsStrategiesPage() {
         if (error) throw error;
         toast.success("Strategy Updated!");
       } else {
-        // CREATE New
         const { error } = await supabase
           .from('strategy_blueprints')
           .insert(commonData);
@@ -133,136 +157,113 @@ export function AdsStrategiesPage() {
 
   return (
     <PageShell>
-      {/* Header Section with Holographic Feel */}
-      <div className="relative overflow-hidden rounded-3xl bg-[#080808] border border-white/5 p-8 mb-8 animate-in fade-in slide-in-from-top-4 duration-700">
-        <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-indigo-500/10 rounded-full blur-[100px] -translate-y-1/2 translate-x-1/3 pointer-events-none" />
-        <div className="absolute bottom-0 left-0 w-[400px] h-[400px] bg-purple-500/10 rounded-full blur-[80px] translate-y-1/2 -translate-x-1/3 pointer-events-none" />
-
-        <div className="relative z-10 flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
-          <div>
-            <h1 className="text-4xl md:text-5xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-white via-white to-white/50 mb-4 tracking-tight">
-              Strategy Command
-            </h1>
-            <p className="text-lg text-muted-foreground max-w-xl leading-relaxed">
-              Orchestrate your autopilot logic. Define your risk tolerance, growth targets, and let the AI handle the daily optimizations.
-            </p>
+      <HeroHeader
+        title="Strategy Command"
+        subtitle="Orchestrate your autopilot logic. Define your risk tolerance, growth targets, and let the AI handle the daily optimizations."
+        actions={
+          <button
+            onClick={() => { setEditingStrategy(null); setShowStrategyWizard(true); }}
+            className="px-4 py-2 bg-primary text-primary-foreground rounded-lg text-sm font-semibold hover:bg-primary/90 transition-colors flex items-center gap-2"
+          >
+            <Sparkles className="w-4 h-4" />
+            New Strategy
+          </button>
+        }
+        chips={
+          <div className="flex flex-wrap gap-2">
+            <Chip variant={marketPulse.volatility === 'Stable' ? 'success' : 'warning'} icon={<Activity className="w-3 h-3" />}>
+              Market Volatility: {marketPulse.volatility}
+            </Chip>
+            <Chip variant="info" icon={<Globe className="w-3 h-3" />}>
+              30-Day Outlook: Positive
+            </Chip>
           </div>
+        }
+      />
 
-          <div className="flex gap-4">
-            <div className="hidden lg:flex items-center gap-2 px-4 py-2 rounded-full border border-white/5 bg-white/5 backdrop-blur-md">
-              <Activity className="w-4 h-4 text-emerald-400" />
-              <span className="text-xs font-medium text-emerald-400">Market Volatility: Low</span>
-            </div>
-            <button
-              onClick={() => { setEditingStrategy(null); setShowStrategyWizard(true); }}
-              className="
-                        group relative overflow-hidden px-8 py-4 rounded-2xl bg-white text-black font-bold text-lg 
-                        shadow-[0_0_30px_rgba(255,255,255,0.15)] hover:shadow-[0_0_50px_rgba(255,255,255,0.3)] 
-                        transition-all duration-300 hover:scale-[1.02] active:scale-95
-                    "
-            >
-              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-black/5 to-transparent translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700" />
-              <span className="relative flex items-center gap-3">
-                <Sparkles className="w-5 h-5 text-indigo-600" />
-                New Strategy
-              </span>
-            </button>
-          </div>
-        </div>
-      </div>
-
-      {/* Main Content Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-12 gap-8 animate-in slide-in-from-bottom-8 duration-700 delay-100">
-
+      <div className="grid grid-cols-1 md:grid-cols-12 gap-6 lg:gap-8">
         {/* Left Col: Strategy List */}
         <div className="md:col-span-8 space-y-6">
-          <div className="flex items-center justify-between mb-2">
+          <div className="flex items-center justify-between">
             <h2 className="text-xl font-bold flex items-center gap-2">
-              <Brain className="w-5 h-5 text-indigo-400" />
+              <Brain className="w-5 h-5 text-primary" />
               Active Blueprints
             </h2>
           </div>
 
           {strategiesLoading ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {[1, 2, 3, 4].map(i => <div key={i} className="h-[240px] bg-white/5 animate-pulse rounded-2xl" />)}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+              {[1, 2, 3, 4].map(i => <div key={i} className="h-[240px] bg-card/50 animate-pulse rounded-2xl border border-border/40" />)}
             </div>
           ) : (
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
-              {strategies.map((s, i) => {
+              {strategies.map((s) => {
                 const config = toAutopilotConfig(s.autopilot_config);
                 return (
-                  <div
+                  <Card
                     key={s.id}
-                    className="group relative flex flex-col justify-between p-6 rounded-3xl bg-[#0A0A0A] border border-white/5 hover:border-indigo-500/30 transition-all duration-300 hover:shadow-[0_0_30px_rgba(79,70,229,0.1)] overflow-hidden"
-                    style={{ animationDelay: `${i * 100}ms` }}
+                    className="group relative flex flex-col justify-between p-6 hover:-translate-y-1 transition-all duration-300"
                   >
-                    {/* Active Glow on Hover */}
-                    <div className="absolute inset-0 bg-gradient-to-br from-indigo-500/0 via-transparent to-indigo-500/0 group-hover:from-indigo-500/5 group-hover:to-purple-500/5 transition-all duration-500" />
-
                     <div>
-                      <div className="flex justify-between items-start mb-6 relative z-10">
-                        <div className="p-3 bg-white/5 rounded-2xl group-hover:bg-indigo-500/20 group-hover:text-indigo-300 transition-colors">
+                      <div className="flex justify-between items-start mb-6">
+                        <div className="p-3 bg-primary/10 rounded-xl text-primary group-hover:bg-primary group-hover:text-primary-foreground transition-colors duration-300">
                           {s.industry_type === 'ecommerce' ? <Globe className="w-6 h-6" /> :
                             s.industry_type === 'saas' ? <Zap className="w-6 h-6" /> :
                               <Brain className="w-6 h-6" />}
                         </div>
-                        <div className="flex gap-2">
+                        <div className="flex gap-1">
                           <button
                             onClick={() => handleEditClick(s)}
-                            className="p-2 hover:bg-white/10 rounded-full transition-colors text-muted-foreground hover:text-white"
+                            className="p-2 hover:bg-muted rounded-lg transition-colors text-muted-foreground hover:text-foreground"
                           >
                             <Edit className="w-4 h-4" />
                           </button>
                           <button
                             onClick={() => handleDeleteStrategy(s.id)}
-                            className="p-2 hover:bg-red-500/20 rounded-full transition-colors text-muted-foreground hover:text-red-400"
+                            className="p-2 hover:bg-red-500/10 rounded-lg transition-colors text-muted-foreground hover:text-red-500"
                           >
                             <Trash2 className="w-4 h-4" />
                           </button>
                         </div>
                       </div>
 
-                      <h3 className="text-2xl font-bold mb-1 relative z-10 group-hover:text-indigo-200 transition-colors">{s.title}</h3>
-                      <p className="text-sm text-muted-foreground mb-6 uppercase tracking-wider font-medium opacity-60">
+                      <h3 className="text-xl font-bold mb-1 text-foreground">{s.title}</h3>
+                      <p className="text-xs text-muted-foreground mb-6 uppercase tracking-wider font-semibold opacity-70">
                         {s.industry_type} • {config.risk_tolerance} Risk
                       </p>
 
-                      <div className="grid grid-cols-2 gap-4 mb-6 relative z-10">
-                        <div className="p-3 rounded-xl bg-white/5 border border-white/5">
+                      <div className="grid grid-cols-2 gap-3 mb-6">
+                        <div className="p-3 rounded-xl bg-muted/40 border border-border/50">
                           <div className="text-[10px] uppercase text-muted-foreground font-bold tracking-wider mb-1">Target ROAS</div>
-                          <div className="text-xl font-bold">{config.target_roas}x</div>
+                          <div className="text-xl font-bold text-foreground">{(config.target_roas || 0).toFixed(1)}x</div>
                         </div>
-                        <div className="p-3 rounded-xl bg-white/5 border border-white/5">
+                        <div className="p-3 rounded-xl bg-muted/40 border border-border/50">
                           <div className="text-[10px] uppercase text-muted-foreground font-bold tracking-wider mb-1">Budget Cap</div>
-                          <div className="text-xl font-bold">€{config.max_daily_budget}</div>
+                          <div className="text-xl font-bold text-foreground">€{(config.max_daily_budget || 0).toLocaleString()}</div>
                         </div>
                       </div>
                     </div>
 
-                    {/* Mini Chart Preview */}
-                    <div className="w-full h-[60px] relative z-10 opacity-50 group-hover:opacity-100 transition-opacity">
+                    <div className="w-full h-[70px] relative mt-auto border-t border-border/30 pt-4">
                       <StrategySimulationPreview
                         targetRoas={config.target_roas ?? 3}
                         riskTolerance={config.risk_tolerance ?? 'medium'}
                         scaleSpeed={config.scale_speed ?? 'medium'}
                       />
-                      {/* Overlay to block interaction with chart bits if needed, or just let it be visual */}
-                      <div className="absolute inset-0" />
                     </div>
-                  </div>
+                  </Card>
                 );
               })}
 
-              {/* Add New Card (Empty State) */}
               <button
                 onClick={() => { setEditingStrategy(null); setShowStrategyWizard(true); }}
-                className="group flex flex-col items-center justify-center p-6 rounded-3xl border-2 border-dashed border-white/10 hover:border-indigo-500/50 hover:bg-indigo-500/5 transition-all min-h-[400px]"
+                className="group flex flex-col items-center justify-center p-8 rounded-2xl border-2 border-dashed border-border/60 bg-muted/20 hover:border-primary/50 hover:bg-primary/5 transition-all min-h-[360px]"
               >
-                <div className="w-16 h-16 rounded-full bg-white/5 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
-                  <Plus className="w-8 h-8 text-muted-foreground group-hover:text-indigo-400" />
+                <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                  <Plus className="w-8 h-8 text-primary" />
                 </div>
-                <span className="font-bold text-lg text-muted-foreground group-hover:text-indigo-300">Create New Strategy</span>
+                <span className="font-bold text-lg text-muted-foreground group-hover:text-primary transition-colors">Create New Strategy</span>
+                <p className="text-xs text-muted-foreground mt-2 text-center max-w-[200px]">Define a custom blueprint for AI autopilot</p>
               </button>
             </div>
           )}
@@ -271,48 +272,59 @@ export function AdsStrategiesPage() {
         {/* Right Col: Sidebar / Market Stats */}
         <div className="md:col-span-4 space-y-6">
           {/* Market Pulse Card */}
-          <div className="p-6 rounded-3xl bg-gradient-to-b from-[#111] to-[#0A0A0A] border border-white/5 relative overflow-hidden">
-            <div className="flex items-center gap-3 mb-6">
-              <div className="w-10 h-10 rounded-full bg-emerald-500/10 flex items-center justify-center">
-                <TrendingUp className="w-5 h-5 text-emerald-400" />
+          <Card className="p-6 relative overflow-hidden bg-gradient-to-b from-card to-card/50">
+            <div className="flex items-center gap-3 mb-6 relative z-10">
+              <div className="w-10 h-10 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center">
+                <Target className="w-5 h-5 text-emerald-600" />
               </div>
               <div>
-                <h3 className="font-bold text-lg">Market Pulse</h3>
+                <h3 className="font-bold text-base text-foreground">Market Pulse</h3>
                 <p className="text-xs text-muted-foreground">Real-time ad ecosystem data</p>
               </div>
             </div>
 
-            <div className="space-y-4">
-              <div className="flex justify-between items-center py-2 border-b border-white/5">
+            <div className="space-y-4 relative z-10">
+              <div className="flex justify-between items-center py-2.5 border-b border-border/40">
                 <span className="text-sm text-muted-foreground">CPM (Global)</span>
-                <span className="font-mono text-sm">€12.45 <span className="text-red-400 text-xs ml-1">▲ 2%</span></span>
+                <span className="font-semibold text-sm text-foreground">
+                  €{marketPulse.cpm.toFixed(2)}
+                  <span className={`text-[10px] ml-1.5 ${marketPulse.cpmDelta >= 0 ? 'text-red-500' : 'text-emerald-500'}`}>
+                    {marketPulse.cpmDelta >= 0 ? '▲' : '▼'} {Math.abs(marketPulse.cpmDelta).toFixed(1)}%
+                  </span>
+                </span>
               </div>
-              <div className="flex justify-between items-center py-2 border-b border-white/5">
+              <div className="flex justify-between items-center py-2.5 border-b border-border/40">
                 <span className="text-sm text-muted-foreground">CTR Avg</span>
-                <span className="font-mono text-sm">1.8% <span className="text-emerald-400 text-xs ml-1">▲ 0.1%</span></span>
+                <span className="font-semibold text-sm text-foreground">
+                  {marketPulse.ctr.toFixed(2)}%
+                  <span className={`text-[10px] ml-1.5 ${marketPulse.ctrDelta >= 0 ? 'text-emerald-500' : 'text-red-500'}`}>
+                    {marketPulse.ctrDelta >= 0 ? '▲' : '▼'} {Math.abs(marketPulse.ctrDelta).toFixed(1)}%
+                  </span>
+                </span>
               </div>
-              <div className="flex justify-between items-center py-2">
+              <div className="flex justify-between items-center py-2.5">
                 <span className="text-sm text-muted-foreground">Volatility</span>
-                <span className="px-2 py-0.5 rounded text-xs bg-emerald-500/10 text-emerald-400 font-medium">Stable</span>
+                <Badge variant={marketPulse.volatility === 'Stable' ? 'success' : 'warning'}>
+                  {marketPulse.volatility}
+                </Badge>
               </div>
             </div>
 
-            {/* Decorative background element */}
-            <div className="absolute -right-10 -bottom-10 w-32 h-32 bg-emerald-500/5 rounded-full blur-2xl pointer-events-none" />
-          </div>
+            <div className="absolute -right-12 -bottom-12 w-40 h-40 bg-primary/5 rounded-full blur-3xl pointer-events-none" />
+          </Card>
 
-          {/* Recommended Templates */}
-          <div className="p-6 rounded-3xl bg-[#0A0A0A] border border-white/5">
-            <h3 className="font-bold text-lg mb-4 flex items-center gap-2">
-              <Sparkles className="w-4 h-4 text-amber-400" />
+          {/* Top Templates */}
+          <Card className="p-6">
+            <h3 className="font-bold text-base mb-4 flex items-center gap-2 text-foreground">
+              <Sparkles className="w-4 h-4 text-amber-500" />
               Top Templates
             </h3>
-            <div className="space-y-3">
+            <div className="space-y-2">
               {[
                 {
                   name: 'E-com Blitz',
                   risk: 'High',
-                  color: 'text-red-400',
+                  variant: 'warning' as const,
                   data: {
                     name: 'E-com Blitz Strategy',
                     industry_type: 'ecommerce',
@@ -325,7 +337,7 @@ export function AdsStrategiesPage() {
                 {
                   name: 'Lead Gen Steady',
                   risk: 'Low',
-                  color: 'text-emerald-400',
+                  variant: 'success' as const,
                   data: {
                     name: 'Steady Leads 24/7',
                     industry_type: 'local',
@@ -338,7 +350,7 @@ export function AdsStrategiesPage() {
                 {
                   name: 'Brand Awareness',
                   risk: 'Medium',
-                  color: 'text-purple-400',
+                  variant: 'purple' as const,
                   data: {
                     name: 'Brand Visibility',
                     industry_type: 'saas',
@@ -355,17 +367,17 @@ export function AdsStrategiesPage() {
                     setEditingStrategy(t.data as any);
                     setShowStrategyWizard(true);
                   }}
-                  className="flex items-center justify-between p-3 rounded-xl hover:bg-white/5 cursor-pointer transition-colors group border border-transparent hover:border-white/5"
+                  className="flex items-center justify-between p-3 rounded-xl hover:bg-muted/60 cursor-pointer transition-all border border-transparent hover:border-border/60 group"
                 >
-                  <span className="font-medium group-hover:text-white transition-colors flex items-center gap-2">
-                    <Plus className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity text-indigo-400" />
+                  <span className="text-sm font-medium text-foreground group-hover:text-primary transition-colors flex items-center gap-2">
+                    <Plus className="w-3.5 h-3.5 text-primary opacity-0 group-hover:opacity-100 transition-opacity" />
                     {t.name}
                   </span>
-                  <span className={`text-xs font-bold ${t.color}`}>{t.risk}</span>
+                  <Badge variant={t.variant}>{t.risk}</Badge>
                 </div>
               ))}
             </div>
-          </div>
+          </Card>
         </div>
       </div>
 
