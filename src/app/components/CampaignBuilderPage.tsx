@@ -567,15 +567,15 @@ export function CampaignBuilderPage() {
         )}
 
         {/* Stepper UI - Premium */}
-        <div className="mb-8 max-w-5xl mx-auto px-4">
-          <div className="flex items-center justify-between relative bg-card/40 backdrop-blur-xl p-4 rounded-3xl border border-border shadow-xl">
+        <div className="mb-6 max-w-5xl mx-auto px-4">
+          <div className="flex items-center justify-between relative bg-card/40 backdrop-blur-xl p-3 rounded-2xl border border-border shadow-xl">
             {/* Progress Bar Background */}
-            <div className="absolute left-16 right-16 top-1/2 -translate-y-1/2 h-1 bg-white/5 rounded-full -z-10" />
+            <div className="absolute left-12 right-12 top-1/2 -translate-y-1/2 h-1 bg-white/5 rounded-full -z-10" />
 
             {/* Active Progress Bar */}
             <div
-              className="absolute left-16 top-1/2 -translate-y-1/2 h-1 bg-gradient-to-r from-violet-500 to-fuchsia-500 transition-all duration-500 ease-out -z-10 rounded-full shadow-[0_0_20px_rgba(167,139,250,0.5)]"
-              style={{ width: `calc(${((currentStep - 1) / (STEPS.length - 1)) * 100}% - 8rem)` }}
+              className="absolute left-12 top-1/2 -translate-y-1/2 h-1 bg-primary/70 transition-all duration-500 ease-out -z-10 rounded-full shadow-[0_0_12px_rgba(0,0,0,0.35)]"
+              style={{ width: `calc(${((currentStep - 1) / (STEPS.length - 1)) * 100}% - 6rem)` }}
             />
 
             {STEPS.map((step) => {
@@ -584,14 +584,14 @@ export function CampaignBuilderPage() {
               const Icon = step.icon;
 
               return (
-                <div key={step.id} className="flex flex-col items-center gap-3 relative z-10">
+                <div key={step.id} className="flex flex-col items-center gap-2 relative z-10">
                   <div
-                    className={`w-12 h-12 rounded-2xl flex items-center justify-center transition-all duration-500 ${isActive
-                      ? 'bg-gradient-to-br from-violet-500 to-fuchsia-600 text-white shadow-[0_0_30px_rgba(167,139,250,0.4)] scale-110'
+                    className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all duration-500 ${isActive
+                      ? 'bg-primary text-primary-foreground shadow-[0_0_16px_rgba(0,0,0,0.35)] scale-105'
                       : 'bg-muted border border-border text-muted-foreground'
                       }`}
                   >
-                    {isActive && !isCurrent ? <CheckCircle2 className="w-6 h-6" /> : <Icon className="w-5 h-5" />}
+                    {isActive && !isCurrent ? <CheckCircle2 className="w-5 h-5" /> : <Icon className="w-5 h-5" />}
                   </div>
                   <div className={`text-xs font-bold uppercase tracking-widest text-center transition-colors duration-300 ${isCurrent ? 'text-foreground' : 'text-muted-foreground'}`}>
                     {step.label}
@@ -619,25 +619,25 @@ export function CampaignBuilderPage() {
         )}
 
         {!isLoading && draft && (
-          <div className="max-w-5xl mx-auto px-4 space-y-8">
+          <div className="max-w-5xl mx-auto px-4 space-y-6">
 
             {/* Content Card */}
-            <div className="bg-card/60 backdrop-blur-2xl border border-border rounded-[40px] shadow-2xl overflow-hidden min-h-[500px] flex flex-col relative">
+            <div className="bg-card/60 backdrop-blur-2xl border border-border rounded-[28px] shadow-2xl overflow-hidden min-h-[500px] flex flex-col relative">
 
               {/* Step Content */}
-              <div className="p-8 md:p-12 flex-1">
+              <div className="p-6 md:p-8 flex-1">
                 {/* STEP 1: CAMPAIGN DETAILS */}
                 {currentStep === 1 && (
                   <div className="animate-in fade-in slide-in-from-right-8 duration-500">
-                    <div className="flex items-start justify-between mb-8">
+                    <div className="flex items-start justify-between mb-6">
                       <div>
-                        <h2 className="text-3xl font-black tracking-tight bg-gradient-to-br from-white to-white/60 bg-clip-text text-transparent">Kampagne starten</h2>
-                        <p className="text-muted-foreground mt-2 text-lg">Lege die Basis-Daten für deine Kampagne fest.</p>
+                        <h2 className="text-2xl md:text-3xl font-black tracking-tight bg-gradient-to-br from-white to-white/60 bg-clip-text text-transparent">Kampagne starten</h2>
+                        <p className="text-muted-foreground mt-2 text-base">Lege die Basis-Daten für deine Kampagne fest.</p>
                       </div>
                       <select
                         value={draft.status}
                         onChange={(e) => setDraft((prev) => (prev ? { ...prev, status: e.target.value as CampaignStatus } : prev))}
-                        className="px-4 py-2 bg-muted/50 border border-border rounded-xl text-sm font-medium focus:ring-2 focus:ring-primary/50 outline-none hover:bg-muted transition-colors text-foreground"
+                        className="px-3 py-1.5 bg-muted/50 border border-border rounded-lg text-sm font-medium focus:ring-2 focus:ring-primary/50 outline-none hover:bg-muted transition-colors text-foreground"
                       >
                         {STATUS_OPTIONS.map((option) => (
                           <option key={option} value={option} className="bg-popover text-popover-foreground">{option.toUpperCase()}</option>
@@ -645,37 +645,37 @@ export function CampaignBuilderPage() {
                       </select>
                     </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                      <div className="space-y-6">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <div className="space-y-4">
                         <div className="space-y-2">
                           <label className="text-sm font-bold uppercase tracking-widest text-muted-foreground ml-1">Campaign Name</label>
                           <input
                             value={campaignSpec.campaign.name || ''}
                             onChange={(e) => setCampaignSpec((prev) => ({ ...prev, campaign: { ...prev.campaign, name: e.target.value } }))}
-                            className="w-full px-5 py-4 bg-muted/30 border border-border rounded-2xl text-foreground placeholder:text-muted-foreground/50 focus:ring-2 focus:ring-primary/50 outline-none transition-all focus:bg-muted/50"
+                            className="w-full px-4 py-3 bg-muted/30 border border-border rounded-xl text-foreground placeholder:text-muted-foreground/50 focus:ring-2 focus:ring-primary/50 outline-none transition-all focus:bg-muted/50 text-sm"
                             placeholder="z.B. Sommer Sale 2025"
                           />
                         </div>
                         <div className="space-y-2">
                           <label className="text-sm font-bold uppercase tracking-widest text-muted-foreground ml-1">Daily Budget</label>
                           <div className="relative">
-                            <span className="absolute left-5 top-1/2 -translate-y-1/2 text-muted-foreground font-bold">€</span>
+                            <span className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground font-bold">€</span>
                             <input
                               value={campaignSpec.campaign.daily_budget || ''}
                               onChange={(e) => setCampaignSpec((prev) => ({ ...prev, campaign: { ...prev.campaign, daily_budget: e.target.value } }))}
-                              className="w-full pl-10 pr-5 py-4 bg-muted/30 border border-border rounded-2xl text-foreground placeholder:text-muted-foreground/50 focus:ring-2 focus:ring-primary/50 outline-none transition-all focus:bg-muted/50"
+                              className="w-full pl-9 pr-4 py-3 bg-muted/30 border border-border rounded-xl text-foreground placeholder:text-muted-foreground/50 focus:ring-2 focus:ring-primary/50 outline-none transition-all focus:bg-muted/50 text-sm"
                               placeholder="50.00"
                             />
                           </div>
                         </div>
                       </div>
-                      <div className="space-y-6">
+                      <div className="space-y-4">
                         <div className="space-y-2">
                           <label className="text-sm font-bold uppercase tracking-widest text-muted-foreground ml-1">Objective</label>
                           <select
                             value={campaignSpec.campaign.objective || 'OUTCOME_SALES'}
                             onChange={(e) => setCampaignSpec((prev) => ({ ...prev, campaign: { ...prev.campaign, objective: e.target.value } }))}
-                            className="w-full px-5 py-4 bg-muted/30 border border-border rounded-2xl text-foreground focus:ring-2 focus:ring-primary/50 outline-none transition-all hover:bg-muted/50 appearance-none"
+                            className="w-full px-4 py-3 bg-muted/30 border border-border rounded-xl text-foreground focus:ring-2 focus:ring-primary/50 outline-none transition-all hover:bg-muted/50 appearance-none text-sm"
                           >
                             <option value="OUTCOME_SALES" className="bg-popover text-popover-foreground">Sales</option>
                             <option value="OUTCOME_LEADS" className="bg-popover text-popover-foreground">Leads</option>
@@ -688,7 +688,7 @@ export function CampaignBuilderPage() {
                           <select
                             value={campaignSpec.campaign.bid_strategy || 'LOWEST_COST_WITHOUT_CAP'}
                             onChange={(e) => setCampaignSpec((prev) => ({ ...prev, campaign: { ...prev.campaign, bid_strategy: e.target.value } }))}
-                            className="w-full px-5 py-4 bg-muted/30 border border-border rounded-2xl text-foreground focus:ring-2 focus:ring-primary/50 outline-none transition-all hover:bg-muted/50 appearance-none"
+                            className="w-full px-4 py-3 bg-muted/30 border border-border rounded-xl text-foreground focus:ring-2 focus:ring-primary/50 outline-none transition-all hover:bg-muted/50 appearance-none text-sm"
                           >
                             <option value="LOWEST_COST_WITHOUT_CAP" className="bg-popover text-popover-foreground">Lowest Cost (Auto)</option>
                             <option value="COST_CAP" className="bg-popover text-popover-foreground">Cost Cap</option>
@@ -703,12 +703,12 @@ export function CampaignBuilderPage() {
                 {/* STEP 2: SELECT ADS */}
                 {currentStep === 2 && (
                   <div className="animate-in fade-in slide-in-from-right-8 duration-500">
-                    <div className="flex items-center justify-between mb-8">
+                    <div className="flex items-center justify-between mb-6">
                       <div>
-                        <h2 className="text-3xl font-black tracking-tight text-foreground bg-clip-text">Ads auswählen</h2>
-                        <p className="text-muted-foreground mt-2 text-lg">Wähle die High-Performer aus deiner Library.</p>
+                        <h2 className="text-2xl md:text-3xl font-black tracking-tight text-foreground bg-clip-text">Ads auswählen</h2>
+                        <p className="text-muted-foreground mt-2 text-base">Wähle die High-Performer aus deiner Library.</p>
                       </div>
-                      <div className="px-4 py-2 bg-primary/20 border border-primary/30 rounded-xl text-primary font-bold shadow-[0_0_20px_rgba(167,139,250,0.2)]">
+                      <div className="px-3 py-1.5 bg-primary/15 border border-primary/30 rounded-lg text-primary text-sm font-semibold">
                         {selectedIds.length} ausgewählt
                       </div>
                     </div>
@@ -736,9 +736,9 @@ export function CampaignBuilderPage() {
                 {/* STEP 3: STRATEGY */}
                 {currentStep === 3 && (
                   <div className="animate-in fade-in slide-in-from-right-8 duration-500">
-                    <div className="mb-8">
-                      <h2 className="text-3xl font-black tracking-tight bg-gradient-to-br from-white to-white/60 bg-clip-text text-transparent">Strategie anwenden</h2>
-                      <p className="text-muted-foreground mt-2 text-lg">Nutze eine KI-generierte Strategie für Targeting & Struktur.</p>
+                    <div className="mb-6">
+                      <h2 className="text-2xl md:text-3xl font-black tracking-tight bg-gradient-to-br from-white to-white/60 bg-clip-text text-transparent">Strategie anwenden</h2>
+                      <p className="text-muted-foreground mt-2 text-base">Nutze eine KI-generierte Strategie für Targeting & Struktur.</p>
                     </div>
 
                     <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
@@ -755,7 +755,7 @@ export function CampaignBuilderPage() {
 
                       {/* Right: Preview */}
                       <div className="lg:col-span-8">
-                        <div className="h-full bg-card/60 border border-border rounded-3xl p-8 relative overflow-hidden group">
+                        <div className="h-full bg-card/60 border border-border rounded-2xl p-6 relative overflow-hidden group">
                           {strategyPreview ? (
                             <div className="space-y-6 relative z-10">
                               <div className="flex items-center gap-3 mb-6">
@@ -779,14 +779,14 @@ export function CampaignBuilderPage() {
 
                               <button
                                 onClick={() => handleApplyStrategy('structure')}
-                                className="col-span-2 py-3 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl font-bold text-sm shadow-lg shadow-emerald-500/20 transition-all hover:scale-[1.02]"
+                                className="col-span-2 py-2.5 bg-primary hover:bg-primary/90 text-primary-foreground rounded-lg font-semibold text-sm shadow-sm transition-all"
                               >
                                 Komplette Struktur übernehmen
                               </button>
-                              <button onClick={() => handleApplyStrategy('targeting')} className="py-3 bg-muted hover:bg-muted/80 border border-border rounded-xl text-sm font-bold transition-all text-foreground">
+                              <button onClick={() => handleApplyStrategy('targeting')} className="py-2.5 bg-muted hover:bg-muted/80 border border-border rounded-lg text-sm font-semibold transition-all text-foreground">
                                 Nur Targeting
                               </button>
-                              <button onClick={() => handleApplyStrategy('budget')} className="py-3 bg-muted hover:bg-muted/80 border border-border rounded-xl text-sm font-bold transition-all text-foreground">
+                              <button onClick={() => handleApplyStrategy('budget')} className="py-2.5 bg-muted hover:bg-muted/80 border border-border rounded-lg text-sm font-semibold transition-all text-foreground">
                                 Nur Budget
                               </button>
                             </div>
@@ -806,19 +806,19 @@ export function CampaignBuilderPage() {
                 {/* STEP 4: REVIEW */}
                 {currentStep === 4 && (
                   <div className="animate-in fade-in slide-in-from-right-8 duration-500">
-                    <div className="flex items-center justify-between mb-8">
+                    <div className="flex items-center justify-between mb-6">
                       <div>
-                        <h2 className="text-3xl font-black tracking-tight text-foreground bg-clip-text">Ready to Launch?</h2>
-                        <p className="text-muted-foreground mt-2 text-lg">Final Review deiner Kampagnen-Struktur.</p>
+                        <h2 className="text-2xl md:text-3xl font-black tracking-tight text-foreground bg-clip-text">Ready to Launch?</h2>
+                        <p className="text-muted-foreground mt-2 text-base">Final Review deiner Kampagnen-Struktur.</p>
                       </div>
-                      <button onClick={handleAddAdSet} className="px-4 py-2 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl text-sm font-bold transition-all flex items-center gap-2">
+                      <button onClick={handleAddAdSet} className="px-3 py-1.5 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg text-xs font-semibold transition-all flex items-center gap-2">
                         <Plus className="w-4 h-4" /> Add Ad Set
                       </button>
                     </div>
 
                     <div className="space-y-4 mb-8">
                       {campaignSpec.ad_sets.map((set, idx) => (
-                        <div key={set.id} className="p-6 rounded-3xl border border-white/5 bg-black/20 hover:bg-black/30 transition-all group">
+                        <div key={set.id} className="p-5 rounded-2xl border border-white/5 bg-black/20 hover:bg-black/30 transition-all group">
                           <div className="flex items-center justify-between mb-4">
                             <div className="flex items-center gap-4">
                               <span className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center text-sm font-bold">{idx + 1}</span>
@@ -833,7 +833,7 @@ export function CampaignBuilderPage() {
                             </button>
                           </div>
 
-                          <div className="grid grid-cols-2 gap-6 pl-12">
+                          <div className="grid grid-cols-2 gap-5 pl-12">
                             <div>
                               <label className="text-xs font-bold uppercase tracking-widest text-muted-foreground mb-1 block">Budget</label>
                               <input
@@ -858,9 +858,9 @@ export function CampaignBuilderPage() {
                       ))}
                     </div>
 
-                    <div className="p-6 rounded-2xl bg-white/5 border border-white/5">
+                    <div className="p-5 rounded-2xl bg-white/5 border border-white/5">
                       <h3 className="text-sm font-bold uppercase tracking-widest text-muted-foreground mb-4">Preflight Checklist</h3>
-                      <div className="grid grid-cols-2 gap-4">
+                      <div className="grid grid-cols-2 gap-3">
                         {checks.map((check, idx) => (
                           <div key={idx} className="flex items-center gap-3">
                             <div className={`p-1 rounded-full ${check.ok ? 'bg-emerald-500/20 text-emerald-500' : 'bg-amber-500/20 text-amber-500'}`}>
@@ -876,11 +876,11 @@ export function CampaignBuilderPage() {
               </div>
 
               {/* Footer Controls */}
-              <div className="p-6 md:p-8 border-t border-white/10 bg-black/20 flex items-center justify-between">
+              <div className="p-4 md:p-6 border-t border-white/10 bg-black/20 flex items-center justify-between">
                 <button
                   onClick={handleBack}
                   disabled={currentStep === 1}
-                  className="px-6 py-3 rounded-2xl font-bold text-sm transition-all hover:bg-white/5 disabled:opacity-0 flex items-center gap-2"
+                  className="px-4 py-2 rounded-lg font-semibold text-sm transition-all hover:bg-white/5 disabled:opacity-0 flex items-center gap-2"
                 >
                   <ChevronLeft className="w-4 h-4" /> Zurück
                 </button>
@@ -889,7 +889,7 @@ export function CampaignBuilderPage() {
                   <button
                     onClick={() => handleSaveDraft()}
                     disabled={isSaving}
-                    className="px-6 py-3 rounded-2xl border-2 border-white/10 hover:bg-white/5 font-bold text-sm transition-all text-muted-foreground hover:text-white"
+                    className="px-4 py-2 rounded-lg border border-white/10 hover:bg-white/5 font-semibold text-sm transition-all text-muted-foreground hover:text-white"
                   >
                     {isSaving ? 'Speichere...' : 'Als Draft speichern'}
                   </button>
@@ -897,14 +897,14 @@ export function CampaignBuilderPage() {
                   {currentStep < 4 ? (
                     <button
                       onClick={handleNext}
-                      className="px-8 py-3 rounded-2xl bg-gradient-to-r from-violet-600 to-indigo-600 text-white font-bold text-sm hover:scale-[1.02] shadow-[0_0_20px_rgba(139,92,246,0.3)] transition-all flex items-center gap-2"
+                      className="px-5 py-2 rounded-lg bg-primary text-primary-foreground font-semibold text-sm hover:bg-primary/90 shadow-sm transition-all flex items-center gap-2"
                     >
                       Weiter <ChevronRight className="w-4 h-4" />
                     </button>
                   ) : (
                     <button
                       onClick={() => handleSaveDraft('ready')}
-                      className="px-8 py-3 rounded-2xl bg-gradient-to-r from-emerald-500 to-teal-500 text-white font-bold text-sm hover:scale-[1.02] shadow-[0_0_20px_rgba(16,185,129,0.3)] transition-all flex items-center gap-2"
+                      className="px-5 py-2 rounded-lg bg-primary text-primary-foreground font-semibold text-sm hover:bg-primary/90 shadow-sm transition-all flex items-center gap-2"
                     >
                       <Rocket className="w-4 h-4" />
                       Kampagne Starten
