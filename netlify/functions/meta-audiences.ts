@@ -3,112 +3,77 @@
  * Fetches custom audiences from Meta Business Account
  */
 
-// @ts-ignore
-import { supabaseAdmin } from './_shared/clients.js';
+import {
+    badRequest,
+    methodNotAllowed,
+    ok,
+    serverError,
+    withCors
+} from './utils/response.js';
+import { initTelemetry, captureException } from './utils/telemetry.js';
+import { requireUserId } from './_shared/auth.js';
+import { fetchGraph, pickPrimaryAdAccount, resolveMetaAccessToken } from './_shared/meta.js';
+
+function mapSubtype(subtype?: string) {
+    const value = String(subtype || '').toLowerCase();
+    if (value.includes('website')) return 'website';
+    if (value.includes('custom')) return 'customer_list';
+    if (value.includes('engagement')) return 'engagement';
+    if (value.includes('app')) return 'app_activity';
+    if (value.includes('offline')) return 'offline_activity';
+    return 'engagement';
+}
+
+function mapStatus(status?: string) {
+    const value = String(status || '').toLowerCase();
+    if (value.includes('populating') || value.includes('processing')) return 'populating';
+    if (value.includes('ready')) return 'ready';
+    return 'ready';
+}
 
 export async function handler(event: any) {
-    // CORS
-    if (event.httpMethod === 'OPTIONS') {
-        return {
-            statusCode: 200,
-            headers: {
-                'Access-Control-Allow-Origin': '*',
-                'Access-Control-Allow-Headers': 'Content-Type, Authorization',
-                'Access-Control-Allow-Methods': 'GET, OPTIONS'
-            },
-            body: ''
-        };
-    }
+    if (event.httpMethod === 'OPTIONS') return withCors({ statusCode: 200 });
+    if (event.httpMethod !== 'GET') return methodNotAllowed('GET,OPTIONS');
+
+    initTelemetry();
+
+    const auth = await requireUserId(event);
+    if (!auth.ok) return auth.response;
+    const userId = auth.userId;
 
     try {
-        const authHeader = event.headers.authorization || event.headers.Authorization;
-        if (!authHeader?.startsWith('Bearer ')) {
-            return {
-                statusCode: 401,
-                headers: { 'Access-Control-Allow-Origin': '*' },
-                body: JSON.stringify({ error: 'Missing or invalid Authorization header' })
-            };
+        const { token, connection } = await resolveMetaAccessToken(userId);
+        if (!token) {
+            return badRequest('Meta nicht verbunden. Bitte zuerst Meta verknüpfen.');
         }
 
-        const token = authHeader.replace('Bearer ', '').trim();
-        const { data: userData, error: authError } = await supabaseAdmin.auth.getUser(token);
+        const meta = connection?.meta || {};
+        const accounts = Array.isArray(meta?.ad_accounts) ? meta.ad_accounts : [];
+        const primary = pickPrimaryAdAccount(accounts, connection?.ad_account_id || meta?.selected_account?.id);
+        const adAccountId = connection?.ad_account_id || meta?.selected_account?.id || primary?.id;
 
-        if (authError || !userData?.user?.id) {
-            console.warn('[MetaAudiences] Auth failed', authError);
-            return {
-                statusCode: 401,
-                headers: { 'Access-Control-Allow-Origin': '*' },
-                body: JSON.stringify({ error: 'Unauthorized' })
-            };
+        if (!adAccountId) {
+            return badRequest('Kein Ad Account gefunden. Bitte in Einstellungen konfigurieren.');
         }
 
-        const userId = userData.user.id;
+        const actId = adAccountId.startsWith('act_') ? adAccountId : `act_${adAccountId}`;
+        const response = await fetchGraph(`/${actId}/customaudiences`, token, {
+            fields: 'id,name,subtype,approximate_count,delivery_status,description',
+            limit: '100'
+        });
 
-        // TODO: Fetch from Supabase facebook_connections
-        // For now, return mock data
-        const audiences = [
-            {
-                id: 'ca_website_30d',
-                name: 'Website Visitors (30 days)',
-                type: 'website',
-                size: 15000,
-                status: 'ready',
-                description: 'Alle Besucher der letzten 30 Tage'
-            },
-            {
-                id: 'ca_customers',
-                name: 'Customer Email List',
-                type: 'customer_list',
-                size: 8500,
-                status: 'ready',
-                description: 'Hochgeladene Kundenliste'
-            },
-            {
-                id: 'ca_engagement',
-                name: 'Email Openers',
-                type: 'engagement',
-                size: 3200,
-                status: 'ready',
-                description: 'Nutzer die Email geöffnet haben'
-            },
-            {
-                id: 'ca_video_viewers',
-                name: 'Video Viewers (90 days)',
-                type: 'engagement',
-                size: 12000,
-                status: 'ready',
-                description: 'Video-Interaktionen der letzten 90 Tage'
-            },
-            {
-                id: 'ca_cart_abandoners',
-                name: 'Cart Abandoners',
-                type: 'website',
-                size: 2800,
-                status: 'populating',
-                description: 'Warenkorbabbrecher'
-            }
-        ];
+        const audiences = (response?.data || []).map((aud: any) => ({
+            id: aud.id,
+            name: aud.name,
+            type: mapSubtype(aud.subtype),
+            size: Number(aud.approximate_count || 0),
+            status: mapStatus(aud.delivery_status),
+            description: aud.description || null
+        }));
 
-        return {
-            statusCode: 200,
-            headers: {
-                'Content-Type': 'application/json',
-                'Access-Control-Allow-Origin': '*'
-            },
-            body: JSON.stringify({
-                success: true,
-                audiences
-            })
-        };
+        return ok({ success: true, audiences });
     } catch (error: any) {
-        console.error('Meta audiences error:', error);
-        return {
-            statusCode: 500,
-            headers: { 'Access-Control-Allow-Origin': '*' },
-            body: JSON.stringify({
-                success: false,
-                error: error.message
-            })
-        };
+        captureException(error, { function: 'meta-audiences' });
+        return serverError(error?.message || 'Meta audiences failed');
     }
 }

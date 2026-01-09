@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { Loader2, Send, CheckCircle2, Building2, Users, Globe, User, WandSparkles } from 'lucide-react';
+import { Loader2, Send, CheckCircle2, Building2, Users, Globe, User, WandSparkles, ArrowRight, ArrowLeft } from 'lucide-react';
 import { toast } from 'sonner';
 
 import { Button } from '../ui/button';
@@ -18,14 +18,14 @@ import { generateAffiliateHeadlines, type HeadlineVariant } from '../../lib/api/
 import { HeadlineSelector } from './HeadlineSelector';
 
 const formSchema = z.object({
-    fullName: z.string().min(2, 'Name must be at least 2 characters'),
-    email: z.string().email('Invalid email address'),
+    fullName: z.string().min(2, 'Name muss mindestens 2 Zeichen lang sein'),
+    email: z.string().email('Ungültige E-Mail-Adresse'),
     companyName: z.string().optional(),
-    website: z.string().url('Invalid URL').optional().or(z.literal('')),
+    website: z.string().url('Ungültige URL').optional().or(z.literal('')),
     partnerType: z.enum(['influencer', 'coach', 'community_leader', 'agency', 'other']),
-    audienceSize: z.string().min(1, 'Please estimate your audience size'),
-    platform: z.string().min(1, 'Primary platform is required'),
-    motivation: z.string().min(50, 'Please tell us a bit more about why you want to partner with us (min 50 chars)'),
+    audienceSize: z.string().min(1, 'Bitte gib deine geschätzte Reichweite an'),
+    platform: z.string().min(1, 'Primäre Plattform ist erforderlich'),
+    motivation: z.string().min(50, 'Bitte erzähle uns etwas mehr darüber, warum du Partner werden möchtest (min. 50 Zeichen)'),
 });
 
 type FormData = z.infer<typeof formSchema>;
@@ -34,6 +34,8 @@ export function PartnerApplicationForm() {
     const { user, profile } = useAuthState();
     const { refreshData } = useAffiliate();
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [isSuccess, setIsSuccess] = useState(false);
+    const [step, setStep] = useState(1);
 
     // AI Magic Headline State
     const [showHeadlineSelector, setShowHeadlineSelector] = useState(false);
@@ -41,7 +43,7 @@ export function PartnerApplicationForm() {
     const [headlineVariants, setHeadlineVariants] = useState<HeadlineVariant[]>([]);
     const [selectedHeadline, setSelectedHeadline] = useState<HeadlineVariant | null>(null);
 
-    const { register, handleSubmit, formState: { errors }, setValue, watch } = useForm<FormData>({
+    const { register, handleSubmit, formState: { errors }, setValue, watch, trigger } = useForm<FormData>({
         resolver: zodResolver(formSchema),
         defaultValues: {
             fullName: (profile?.full_name || user?.user_metadata?.full_name) || '',
@@ -57,7 +59,7 @@ export function PartnerApplicationForm() {
 
     const onSubmit = async (data: FormData) => {
         if (!user) {
-            toast.error('You must be logged in to submit an application');
+            toast.error('Du musst eingeloggt sein, um eine Bewerbung abzusenden.');
             return;
         }
         setIsSubmitting(true);
@@ -75,16 +77,16 @@ export function PartnerApplicationForm() {
                     audience_size: parseInt(data.audienceSize.replace(/[^0-9]/g, '')) || 0, // Simple parsing
                     platform: data.platform,
                     motivation: data.motivation,
-                    status: 'pending' // Forced by RLS/Default but good to be explicit mentally
+                    status: 'pending'
                 });
 
             if (error) throw error;
 
-            toast.success('Application submitted successfully!');
+            setIsSuccess(true);
             await refreshData();
         } catch (err) {
             console.error('Application error:', err);
-            const message = err instanceof Error ? err.message : 'Failed to submit application';
+            const message = err instanceof Error ? err.message : 'Fehler beim Senden der Bewerbung';
             toast.error(message);
         } finally {
             setIsSubmitting(false);
@@ -93,6 +95,13 @@ export function PartnerApplicationForm() {
 
     const handleGenerateHeadlines = async () => {
         const formValues = watch();
+        // Validation for AI gen
+        const isValid = await trigger(['partnerType', 'audienceSize', 'platform', 'companyName']);
+
+        if (!isValid) {
+            toast.error('Bitte fülle zuerst die Details zu deiner Reichweite aus (Schritt 2).');
+            return;
+        }
 
         setIsGeneratingHeadlines(true);
         setShowHeadlineSelector(true);
@@ -122,164 +131,228 @@ export function PartnerApplicationForm() {
         toast.success(`✨ "${variant.headline}" ausgewählt!`);
     };
 
+    const nextStep = async () => {
+        let fieldsToValidate: (keyof FormData)[] = [];
+        if (step === 1) fieldsToValidate = ['fullName', 'email', 'companyName', 'website'];
+        if (step === 2) fieldsToValidate = ['partnerType', 'audienceSize', 'platform'];
+
+        const isValid = await trigger(fieldsToValidate);
+        if (isValid) setStep(s => s + 1);
+    };
+
+    const prevStep = () => setStep(s => s - 1);
+
+    if (isSuccess) {
+        return (
+            <Card className="max-w-2xl mx-auto p-12 text-center animate-in fade-in zoom-in duration-500">
+                <div className="w-24 h-24 bg-green-500/10 rounded-full flex items-center justify-center mx-auto mb-6">
+                    <CheckCircle2 className="w-12 h-12 text-green-500" />
+                </div>
+                <h2 className="text-3xl font-black text-white mb-4">Bewerbung eingegangen!</h2>
+                <p className="text-xl text-white/60 mb-8">
+                    Vielen Dank für deine Bewerbung. Unser Team prüft dein Profil und meldet sich innerhalb von 24 Stunden bei dir.
+                </p>
+                <div className="p-4 rounded-xl bg-white/5 border border-white/10 mb-8">
+                    <p className="text-sm text-white/40">Status</p>
+                    <p className="text-lg font-bold text-yellow-500 flex items-center justify-center gap-2">
+                        <Loader2 className="w-4 h-4 animate-spin" /> In Prüfung
+                    </p>
+                </div>
+                <Button variant="outline" onClick={() => window.location.reload()}>
+                    Zurück zum Dashboard
+                </Button>
+            </Card>
+        );
+    }
+
     return (
         <>
-            <Card className="max-w-3xl mx-auto p-6 md:p-8">
-                <div className="text-center mb-8">
-                    <h2 className="text-2xl font-bold mb-2">Apply for Partner Program</h2>
-                    <p className="text-muted-foreground">
-                        Join our exclusive partner network and earn recurring commissions.
-                        Tell us a bit about yourself.
-                    </p>
-
-                    {/* AI Magic Button */}
-                    <button
-                        type="button"
-                        onClick={handleGenerateHeadlines}
-                        disabled={isGeneratingHeadlines}
-                        className="w-full mt-4 flex items-center justify-center gap-2 py-3 text-sm font-bold bg-gradient-to-r from-violet-600 to-fuchsia-600 text-white rounded-xl hover:shadow-lg hover:shadow-violet-500/25 hover:scale-[1.02] transition-all active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                        {isGeneratingHeadlines ? (
-                            <>
-                                <Loader2 className="w-5 h-5 animate-spin" />
-                                AI zaubert Headlines...
-                            </>
-                        ) : (
-                            <>
-                                <WandSparkles className="w-5 h-5" />
-                                AI Magic - Krasse Headlines generieren
-                            </>
-                        )}
-                    </button>
-
-                    {/* Display Selected Headline */}
-                    {selectedHeadline && (
-                        <div className="mt-4 p-4 rounded-xl bg-gradient-to-br from-violet-500/10 to-fuchsia-500/10 border border-violet-500/20">
-                            <p className="text-xs font-bold text-violet-600 mb-1">✨ Deine AI-generierte Headline</p>
-                            <p
-                                className="font-bold leading-tight"
-                                style={{
-                                    fontSize: '20px',
-                                    fontWeight: selectedHeadline.design.fontWeight,
-                                    background: selectedHeadline.design.gradient
-                                        ? `linear-gradient(135deg, ${selectedHeadline.design.gradient.from}, ${selectedHeadline.design.gradient.to})`
-                                        : selectedHeadline.design.accentColor,
-                                    WebkitBackgroundClip: 'text',
-                                    WebkitTextFillColor: 'transparent',
-                                    backgroundClip: 'text'
-                                }}
-                            >
-                                {selectedHeadline.headline}
-                            </p>
-                            {selectedHeadline.subheadline && (
-                                <p className="text-sm text-muted-foreground mt-1">{selectedHeadline.subheadline}</p>
+            <div className="max-w-3xl mx-auto mb-8">
+                {/* Progress Steps */}
+                <div className="flex items-center justify-center mb-8">
+                    {[1, 2, 3].map((s) => (
+                        <div key={s} className="flex items-center">
+                            <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold transition-all ${step >= s ? 'bg-gradient-to-r from-rose-500 to-orange-500 text-white shadow-lg shadow-rose-500/25' : 'bg-white/5 text-white/40 border border-white/10'
+                                }`}>
+                                {s}
+                            </div>
+                            {s < 3 && (
+                                <div className={`w-16 h-1 mx-2 rounded-full transition-all ${step > s ? 'bg-gradient-to-r from-rose-500 to-orange-500' : 'bg-white/5'
+                                    }`} />
                             )}
                         </div>
-                    )}
+                    ))}
+                </div>
+            </div>
+
+            <Card className="max-w-3xl mx-auto p-6 md:p-8">
+                <div className="text-center mb-8">
+                    <h2 className="text-2xl font-bold mb-2">
+                        {step === 1 && "Über Dich"}
+                        {step === 2 && "Deine Reichweite"}
+                        {step === 3 && "Warum AdRuby?"}
+                    </h2>
+                    <p className="text-muted-foreground">
+                        {step === 1 && "Beginne mit deinen persönlichen und beruflichen Details."}
+                        {step === 2 && "Erzähl uns von deiner Zielgruppe und Plattform."}
+                        {step === 3 && "Warum möchtest du AdRuby Partner werden?"}
+                    </p>
                 </div>
 
                 <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-                    {/* Personal Details */}
-                    <div className="grid md:grid-cols-2 gap-6">
-                        <div className="space-y-2">
-                            <Label htmlFor="fullName">Full Name</Label>
-                            <div className="relative">
-                                <User className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
-                                <Input id="fullName" {...register('fullName')} className="pl-9" placeholder="John Doe" />
+                    {/* Step 1: Personal Details */}
+                    {step === 1 && (
+                        <div className="animate-in fade-in slide-in-from-left-4 duration-300 space-y-6">
+                            <div className="grid md:grid-cols-2 gap-6">
+                                <div className="space-y-2">
+                                    <Label htmlFor="fullName">Vor- und Nachname</Label>
+                                    <div className="relative">
+                                        <User className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
+                                        <Input id="fullName" {...register('fullName')} className="pl-9" placeholder="Max Mustermann" />
+                                    </div>
+                                    {errors.fullName && <p className="text-xs text-red-500">{errors.fullName.message}</p>}
+                                </div>
+
+                                <div className="space-y-2">
+                                    <Label htmlFor="email">E-Mail</Label>
+                                    <div className="relative">
+                                        <Send className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
+                                        <Input id="email" {...register('email')} className="pl-9" readOnly />
+                                    </div>
+                                </div>
                             </div>
-                            {errors.fullName && <p className="text-xs text-red-500">{errors.fullName.message}</p>}
-                        </div>
+                            <div className="grid md:grid-cols-2 gap-6">
+                                <div className="space-y-2">
+                                    <Label htmlFor="companyName">Unternehmen / Brand (Optional)</Label>
+                                    <div className="relative">
+                                        <Building2 className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
+                                        <Input id="companyName" {...register('companyName')} className="pl-9" placeholder="Dein Unternehmen GmbH" />
+                                    </div>
+                                </div>
 
-                        <div className="space-y-2">
-                            <Label htmlFor="email">Email</Label>
-                            <div className="relative">
-                                <Send className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
-                                <Input id="email" {...register('email')} className="pl-9" readOnly />
+                                <div className="space-y-2">
+                                    <Label htmlFor="website">Webseite / Social Profil (Optional)</Label>
+                                    <div className="relative">
+                                        <Globe className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
+                                        <Input id="website" {...register('website')} className="pl-9" placeholder="https://..." />
+                                    </div>
+                                    {errors.website && <p className="text-xs text-red-500">{errors.website.message}</p>}
+                                </div>
                             </div>
                         </div>
-                    </div>
+                    )}
 
-                    {/* Professional Info */}
-                    <div className="grid md:grid-cols-2 gap-6">
-                        <div className="space-y-2">
-                            <Label htmlFor="companyName">Company / Brand (Optional)</Label>
-                            <div className="relative">
-                                <Building2 className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
-                                <Input id="companyName" {...register('companyName')} className="pl-9" placeholder="Acme Inc." />
+                    {/* Step 2: Professional Info */}
+                    {step === 2 && (
+                        <div className="animate-in fade-in slide-in-from-right-4 duration-300 space-y-6">
+                            <div className="grid md:grid-cols-3 gap-6">
+                                <div className="space-y-2">
+                                    <Label>Partner Typ</Label>
+                                    <Select
+                                        onValueChange={(val) => setValue('partnerType', val as 'influencer' | 'coach' | 'community_leader' | 'agency' | 'other')}
+                                        defaultValue={watch('partnerType')}
+                                    >
+                                        <SelectTrigger>
+                                            <SelectValue placeholder="Bitte wählen" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="influencer">Influencer / Creator</SelectItem>
+                                            <SelectItem value="coach">Coach / Berater</SelectItem>
+                                            <SelectItem value="community_leader">Community Leader</SelectItem>
+                                            <SelectItem value="agency">Agentur</SelectItem>
+                                            <SelectItem value="other">Sonstiges</SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+
+                                <div className="space-y-2">
+                                    <Label htmlFor="audienceSize">Geschätzte Reichweite</Label>
+                                    <div className="relative">
+                                        <Users className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
+                                        <Input id="audienceSize" {...register('audienceSize')} className="pl-9" placeholder="z.B. 10k, 500+" />
+                                    </div>
+                                    {errors.audienceSize && <p className="text-xs text-red-500">{errors.audienceSize.message}</p>}
+                                </div>
+
+                                <div className="space-y-2">
+                                    <Label htmlFor="platform">Primäre Plattform</Label>
+                                    <Input id="platform" {...register('platform')} placeholder="z.B. LinkedIn, Instagram" />
+                                    {errors.platform && <p className="text-xs text-red-500">{errors.platform.message}</p>}
+                                </div>
                             </div>
                         </div>
+                    )}
 
-                        <div className="space-y-2">
-                            <Label htmlFor="website">Website / Social Profile (Optional)</Label>
-                            <div className="relative">
-                                <Globe className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
-                                <Input id="website" {...register('website')} className="pl-9" placeholder="https://..." />
+                    {/* Step 3: Motivation & AI */}
+                    {step === 3 && (
+                        <div className="animate-in fade-in slide-in-from-right-4 duration-300 space-y-6">
+                            {/* AI Magic Link in Logic */}
+                            <div className="p-6 rounded-2xl bg-gradient-to-br from-violet-500/10 to-fuchsia-500/10 border border-violet-500/20 mb-6">
+                                <div className="flex items-center gap-3 mb-4">
+                                    <div className="p-2 bg-violet-500/20 rounded-lg">
+                                        <WandSparkles className="w-5 h-5 text-violet-400" />
+                                    </div>
+                                    <div>
+                                        <h4 className="font-bold text-white">Noch keine Idee?</h4>
+                                        <p className="text-sm text-muted-foreground">Lass die AI basierend auf deinem Profil aus Schritt 2 Headlines generieren.</p>
+                                    </div>
+                                </div>
+                                <button
+                                    type="button"
+                                    onClick={handleGenerateHeadlines}
+                                    disabled={isGeneratingHeadlines}
+                                    className="w-full py-2 text-sm font-bold bg-white/5 border border-white/10 hover:bg-white/10 text-white rounded-lg transition-all flex items-center justify-center gap-2"
+                                >
+                                    {isGeneratingHeadlines ? <Loader2 className="w-4 h-4 animate-spin" /> : "Headlines generieren"}
+                                </button>
+
+                                {selectedHeadline && (
+                                    <div className="mt-4 pt-4 border-t border-white/10">
+                                        <p className="text-xs font-bold text-violet-400 mb-1">Ausgewählte Headline:</p>
+                                        <p className="italic text-white">{selectedHeadline.headline}</p>
+                                    </div>
+                                )}
                             </div>
-                            {errors.website && <p className="text-xs text-red-500">{errors.website.message}</p>}
-                        </div>
-                    </div>
 
-                    {/* Partner Specifics */}
-                    <div className="grid md:grid-cols-3 gap-6">
-                        <div className="space-y-2">
-                            <Label>Partner Type</Label>
-                            <Select
-                                onValueChange={(val) => setValue('partnerType', val as 'influencer' | 'coach' | 'community_leader' | 'agency' | 'other')}
-                                defaultValue={watch('partnerType')}
-                            >
-                                <SelectTrigger>
-                                    <SelectValue placeholder="Select type" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="influencer">Influencer / Creator</SelectItem>
-                                    <SelectItem value="coach">Coach / Consultant</SelectItem>
-                                    <SelectItem value="community_leader">Community Leader</SelectItem>
-                                    <SelectItem value="agency">Agency</SelectItem>
-                                    <SelectItem value="other">Other</SelectItem>
-                                </SelectContent>
-                            </Select>
-                        </div>
-
-                        <div className="space-y-2">
-                            <Label htmlFor="audienceSize">Est. Audience Size</Label>
-                            <div className="relative">
-                                <Users className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
-                                <Input id="audienceSize" {...register('audienceSize')} className="pl-9" placeholder="e.g. 10k, 500+" />
+                            <div className="space-y-2">
+                                <Label htmlFor="motivation">Warum möchtest du AdRuby Partner werden?</Label>
+                                <Textarea
+                                    id="motivation"
+                                    {...register('motivation')}
+                                    placeholder="Erzähl uns von deiner Zielgruppe und wie du AdRuby bewerben möchtest..."
+                                    className="min-h-[120px]"
+                                />
+                                {errors.motivation && <p className="text-xs text-red-500">{errors.motivation.message}</p>}
                             </div>
-                            {errors.audienceSize && <p className="text-xs text-red-500">{errors.audienceSize.message}</p>}
                         </div>
+                    )}
 
-                        <div className="space-y-2">
-                            <Label htmlFor="platform">Primary Platform</Label>
-                            <Input id="platform" {...register('platform')} placeholder="e.g. LinkedIn, Instagram, Email List" />
-                            {errors.platform && <p className="text-xs text-red-500">{errors.platform.message}</p>}
-                        </div>
-                    </div>
+                    <div className="flex justify-between pt-8 border-t border-white/10">
+                        {step > 1 ? (
+                            <Button type="button" variant="outline" onClick={prevStep}>
+                                <ArrowLeft className="mr-2 h-4 w-4" /> Zurück
+                            </Button>
+                        ) : (
+                            <div /> /* Spacer */
+                        )}
 
-                    {/* Motivation */}
-                    <div className="space-y-2">
-                        <Label htmlFor="motivation">Why do you want to partner with AdRuby?</Label>
-                        <Textarea
-                            id="motivation"
-                            {...register('motivation')}
-                            placeholder="Tell us about your audience and how you plan to promote AdRuby..."
-                            className="min-h-[120px]"
-                        />
-                        {errors.motivation && <p className="text-xs text-red-500">{errors.motivation.message}</p>}
-                    </div>
-
-                    <div className="flex justify-end pt-4">
-                        <Button type="submit" size="lg" disabled={isSubmitting} className="w-full md:w-auto">
-                            {isSubmitting ? (
-                                <>
-                                    <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Submitting...
-                                </>
-                            ) : (
-                                <>
-                                    Submit Application <CheckCircle2 className="ml-2 h-4 w-4" />
-                                </>
-                            )}
-                        </Button>
+                        {step < 3 ? (
+                            <Button type="button" onClick={nextStep} className="bg-white text-black hover:bg-white/90">
+                                Weiter <ArrowRight className="ml-2 h-4 w-4" />
+                            </Button>
+                        ) : (
+                            <Button type="submit" size="lg" disabled={isSubmitting} className="bg-gradient-to-r from-rose-500 to-orange-500 text-white border-0">
+                                {isSubmitting ? (
+                                    <>
+                                        <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Sende...
+                                    </>
+                                ) : (
+                                    <>
+                                        Bewerbung absenden <CheckCircle2 className="ml-2 h-4 w-4" />
+                                    </>
+                                )}
+                            </Button>
+                        )}
                     </div>
                 </form>
             </Card>

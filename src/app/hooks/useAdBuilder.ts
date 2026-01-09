@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { creativeAnalyze, creativeGenerate, creativeStatus } from "../lib/api/creative";
 import type { CreativeGenerateResponse, CreativeStatusResponse } from "../lib/api/creative";
-import type { NormalizedBrief, CreativeOutput } from "../lib/creative/schemas";
+import { NormalizedBriefSchema, type NormalizedBrief, type CreativeOutput } from "../lib/creative/schemas";
+import { env } from "../lib/env";
 
 type Quality =
   | number
@@ -13,6 +14,27 @@ type Quality =
   };
 
 type Status = "idle" | "analyzing" | "generating" | "polling" | "complete" | "error";
+
+const DEMO_BRIEF: NormalizedBrief = {
+  brand: { name: "AdRuby Demo" },
+  product: { name: "Demo Product", url: "https://example.com", category: "Software" },
+  goal: "sales",
+  funnel_stage: "cold",
+  language: "de",
+  format: "4:5",
+  audience: { summary: "Tech teams scaling fast", segments: ["Founders", "Ops Leads"] },
+  offer: { summary: "14-day free trial", constraints: [] },
+  tone: "trustworthy",
+  angles: [
+    { id: "benefit", label: "Key benefit", why_it_fits: "Highlights the main value quickly." },
+    { id: "proof", label: "Social proof", why_it_fits: "Builds trust with results." },
+  ],
+  risk_flags: [],
+};
+
+const DEMO_IMAGE = {
+  path: "https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=800",
+};
 
 export function useAdBuilder() {
   const [status, setStatus] = useState<Status>("idle");
@@ -42,14 +64,8 @@ export function useAdBuilder() {
     if (env.demoMode) {
       await new Promise(r => setTimeout(r, 1500));
       const mockResult = {
-        brief: {
-          product: { name: "Demo Product", description: "A high-quality demo product." },
-          audience: { summary: "Tech-savvy professionals interested in AI." },
-          pain_points: ["Slow workflows", "Manual tasks"],
-          usp: ["Fast", "AI-powered"],
-          tone: "Professional"
-        } as NormalizedBrief,
-        image: { path: "https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=800" }
+        brief: DEMO_BRIEF,
+        image: DEMO_IMAGE,
       };
       setBrief(mockResult.brief);
       setImageMeta(mockResult.image);
@@ -109,26 +125,57 @@ export function useAdBuilder() {
           throw new Error("Poll cancelled");
         }
 
+        const parsedBrief = NormalizedBriefSchema.safeParse(opts.brief);
+        const resolvedBrief = parsedBrief.success ? parsedBrief.data : DEMO_BRIEF;
+
         const mockOutput: CreativeOutput = {
+          version: "1.0",
+          brief: resolvedBrief,
           creatives: [
             {
               id: "demo-cr-1",
+              angle_id: resolvedBrief.angles[0]?.id || "benefit",
+              format: resolvedBrief.format,
               copy: {
                 hook: "Level up your workflow with AI.",
-                primary_text: "Our new AI-powered platform helps you scale faster than ever.",
-                cta: "Learn More"
+                primary_text: "Ship faster with AI-powered workflows built for modern teams.",
+                cta: "Learn More",
+                bullets: [],
               },
-              layers: []
-            }
+              score: { value: 92, rationale: "Clear benefit-driven hook with strong CTA." },
+              image: {
+                input_image_used: Boolean(opts.hasImage),
+                render_intent: "Clean product scene with modern lighting",
+              },
+            },
+            {
+              id: "demo-cr-2",
+              angle_id: resolvedBrief.angles[1]?.id || "proof",
+              format: resolvedBrief.format,
+              copy: {
+                hook: "Teams switch for measurable ROI.",
+                primary_text: "Join 1,200+ teams improving output in the first 14 days.",
+                cta: "Start Free Trial",
+                bullets: [],
+              },
+              score: { value: 88, rationale: "Proof-led angle builds trust and urgency." },
+              image: {
+                input_image_used: Boolean(opts.hasImage),
+                render_intent: "Minimal dashboard mockup with bold contrast",
+              },
+            },
           ],
-          brief: opts.brief as NormalizedBrief
         };
 
         setResult(mockOutput);
         setQuality({ score: 95, summary: "Excellent alignment with brief." });
         setStatus("complete");
         setProgress(null);
-        return { jobId: "demo-job-123", status: "complete", outputs: mockOutput } as CreativeStatusResponse;
+        return {
+          id: "demo-job-123",
+          status: "complete",
+          outputs: mockOutput,
+        } as CreativeStatusResponse;
       }
 
       try {

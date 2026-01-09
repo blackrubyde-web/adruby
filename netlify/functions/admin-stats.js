@@ -7,7 +7,7 @@ import { withCors, forbidden, serverError } from './utils/response.js';
  * Admin Stats API
  * GET - Get platform-wide statistics
  */
-export const handler = withCors(async (event) => {
+async function handleRequest(event) {
     // Require authentication
     const auth = await requireUserId(event);
     if (!auth.ok) return auth.response;
@@ -49,4 +49,10 @@ export const handler = withCors(async (event) => {
         console.error('[Admin] Stats error:', err);
         return serverError('Internal server error');
     }
-});
+}
+
+export async function handler(event) {
+    if (event.httpMethod === 'OPTIONS') return withCors({ statusCode: 200 });
+    const response = await handleRequest(event);
+    return withCors(response);
+}

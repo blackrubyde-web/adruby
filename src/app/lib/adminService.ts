@@ -1,5 +1,5 @@
 // Admin Service - API calls for admin dashboard
-import { supabase } from './supabaseClient';
+import { apiClient } from '../utils/apiClient';
 
 // Types matches RPC return types
 export interface AdminUser {
@@ -73,14 +73,8 @@ export interface AdminStats {
 
 export async function checkAdminRole(): Promise<boolean> {
     try {
-        const { data: { session } } = await supabase.auth.getSession();
-        if (!session?.user?.id) return false;
-
-        const { data, error } = await supabase.rpc('admin_check_role', {
-            p_user_id: session.user.id
-        });
-
-        return !error && data === true;
+        await apiClient.get('/api/admin-stats');
+        return true;
     } catch {
         return false;
     }
@@ -91,23 +85,18 @@ export async function getAdminUsers(params: {
     offset?: number;
     search?: string;
 } = {}): Promise<{ users: AdminUser[]; total: number }> {
-    // Parallel fetch for users and count
-    const [usersResult, countResult] = await Promise.all([
-        supabase.rpc('admin_get_all_users', {
-            p_limit: params.limit || 50,
-            p_offset: params.offset || 0,
-            p_search: params.search || null
-        }),
-        supabase.rpc('admin_get_user_count', {
-            p_search: params.search || null
-        })
-    ]);
+    const query = new URLSearchParams();
+    query.set('limit', String(params.limit || 50));
+    query.set('offset', String(params.offset || 0));
+    if (params.search) query.set('search', params.search);
 
-    if (usersResult.error) throw new Error(usersResult.error.message);
-    // countResult might error if function missing, handle safely
-    const total = countResult.data || 0;
+    const result = await apiClient.get<{
+        success: boolean;
+        users: AdminUser[];
+        total: number;
+    }>(`/api/admin-users?${query.toString()}`);
 
-    return { users: usersResult.data || [], total: Number(total) };
+    return { users: result.users || [], total: Number(result.total || 0) };
 }
 
 export async function updateUserCredits(userId: string, credits: number, reason?: string): Promise<{
@@ -116,20 +105,33 @@ export async function updateUserCredits(userId: string, credits: number, reason?
     credits_after: number;
     error?: string;
 }> {
-    const { data, error } = await supabase.rpc('admin_update_user_credits', {
-        p_user_id: userId,
-        p_credits: credits,
-        p_reason: reason || 'admin_adjustment'
-    });
-
-    if (error) return { success: false, credits_before: 0, credits_after: 0, error: error.message };
-    return data;
+    try {
+        const result = await apiClient.patch<{
+            success: boolean;
+            credits_before: number;
+            credits_after: number;
+            error?: string;
+        }>('/api/admin-users', {
+            user_id: userId,
+            credits,
+            reason: reason || 'admin_adjustment'
+        });
+        return result;
+    } catch (err) {
+        return {
+            success: false,
+            credits_before: 0,
+            credits_after: 0,
+            error: err instanceof Error ? err.message : 'Failed to update credits'
+        };
+    }
 }
 
 export async function getAdminAffiliates(): Promise<AdminAffiliate[]> {
-    const { data, error } = await supabase.rpc('admin_get_all_affiliates');
-    if (error) throw new Error(error.message);
-    return data || [];
+    const result = await apiClient.get<{ success: boolean; affiliates: AdminAffiliate[] }>(
+        '/api/admin-affiliates'
+    );
+    return result.affiliates || [];
 }
 
 export async function createAffiliate(params: {
@@ -137,52 +139,62 @@ export async function createAffiliate(params: {
     affiliate_code?: string;
     payout_email?: string;
 }): Promise<{ success: boolean; affiliate_id?: string; affiliate_code?: string; error?: string }> {
-    const { data, error } = await supabase.rpc('admin_create_affiliate', {
-        p_user_id: params.user_id,
-        p_code: params.affiliate_code || null,
-        p_payout_email: params.payout_email || null
-    });
-
-    if (error) return { success: false, error: error.message };
-    return data;
+    try {
+        const result = await apiClient.post<{
+            success: boolean;
+            affiliate_id?: string;
+            affiliate_code?: string;
+            error?: string;
+        }>('/api/admin-affiliates', {
+            user_id: params.user_id,
+            affiliate_code: params.affiliate_code || null,
+            payout_email: params.payout_email || null
+        });
+        return result;
+    } catch (err) {
+        return { success: false, error: err instanceof Error ? err.message : 'Failed to create affiliate' };
+    }
 }
 
 export async function approveAffiliate(affiliateId: string): Promise<{ success: boolean; error?: string }> {
-    const { data, error } = await supabase.rpc('admin_approve_affiliate', {
-        p_affiliate_id: affiliateId
-    });
-
-    if (error) return { success: false, error: error.message };
-    return data;
+    try {
+        const result = await apiClient.patch<{ success: boolean; error?: string }>(
+            '/api/admin-affiliates',
+            { affiliate_id: affiliateId, action: 'approve' }
+        );
+        return result;
+    } catch (err) {
+        return { success: false, error: err instanceof Error ? err.message : 'Failed to approve affiliate' };
+    }
 }
 
 export async function getAdminPayouts(status?: string): Promise<AdminPayout[]> {
-    const { data, error } = await supabase.rpc('admin_get_all_payouts', {
-        p_status: status || null
-    });
-
-    if (error) throw new Error(error.message);
-    return data || [];
+    const query = new URLSearchParams();
+    if (status) query.set('status', status);
+    const result = await apiClient.get<{ success: boolean; payouts: AdminPayout[] }>(
+        `/api/admin-payouts${query.toString() ? `?${query.toString()}` : ''}`
+    );
+    return result.payouts || [];
 }
 
 export async function processPayout(payoutId: string, status: 'completed' | 'failed' | 'processing', reference?: string): Promise<{
     success: boolean;
     error?: string;
 }> {
-    const { data, error } = await supabase.rpc('admin_process_payout', {
-        p_payout_id: payoutId,
-        p_status: status,
-        p_reference: reference || null
-    });
-
-    if (error) return { success: false, error: error.message };
-    return data;
+    try {
+        const result = await apiClient.post<{ success: boolean; error?: string }>(
+            '/api/admin-payouts',
+            { payout_id: payoutId, status, reference: reference || null }
+        );
+        return result;
+    } catch (err) {
+        return { success: false, error: err instanceof Error ? err.message : 'Failed to process payout' };
+    }
 }
 
 export async function getAdminStats(): Promise<AdminStats> {
-    const { data, error } = await supabase.rpc('admin_get_revenue_stats');
-    if (error) throw new Error(error.message);
-    return data || {
+    const result = await apiClient.get<{ success: boolean; stats: AdminStats }>('/api/admin-stats');
+    return result.stats || {
         total_users: 0,
         paying_users: 0,
         trial_users: 0,
@@ -199,4 +211,3 @@ export async function getAdminStats(): Promise<AdminStats> {
         this_month_commissions: 0,
     };
 }
-

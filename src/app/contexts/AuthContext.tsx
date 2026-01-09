@@ -249,7 +249,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (env.demoMode) {
         setProfile({
           id: user.id,
-          email: user.email,
+          email: user.email ?? null,
           full_name: 'AdRuby Demo',
           credits: 1000,
           onboarding_completed: true,

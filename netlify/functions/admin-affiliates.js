@@ -9,7 +9,7 @@ import { withCors, badRequest, forbidden, serverError } from './utils/response.j
  * POST - Create new affiliate partner
  * PATCH - Approve/update affiliate
  */
-export const handler = withCors(async (event) => {
+async function handleRequest(event) {
     // Require authentication
     const auth = await requireUserId(event);
     if (!auth.ok) return auth.response;
@@ -107,4 +107,10 @@ export const handler = withCors(async (event) => {
         console.error('[Admin] Affiliates error:', err);
         return serverError('Internal server error');
     }
-});
+}
+
+export async function handler(event) {
+    if (event.httpMethod === 'OPTIONS') return withCors({ statusCode: 200 });
+    const response = await handleRequest(event);
+    return withCors(response);
+}

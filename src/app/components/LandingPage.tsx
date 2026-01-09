@@ -39,6 +39,9 @@ import { AffiliateCTASection } from './landing/AffiliateCTASection';
 import { SEOContentSection } from './landing/SEOContentSection';
 import { GlobalNav } from './landing/GlobalNav';
 import { MobileStickyCTA } from './landing/MobileStickyCTA';
+import { DashboardShowcaseSection } from './landing/DashboardShowcaseSection';
+import { PainPointsSection } from './landing/PainPointsSection';
+import { ObjectionHandlingSection } from './landing/ObjectionHandlingSection';
 
 interface LandingPageProps {
   onGetStarted: () => void;
@@ -469,6 +472,17 @@ export function LandingPage({ onGetStarted, onLogin }: LandingPageProps) {
       </section>
 
       {/* ============================================
+          DASHBOARD SHOWCASE
+          ============================================ */}
+      <DashboardShowcaseSection />
+
+      {/* ============================================
+          PAIN POINTS
+          ============================================ */}
+      <PainPointsSection />
+
+
+      {/* ============================================
           AD CREATIVE GALLERY - Hidden
           ============================================ */}
       <section className={tokens.sectionSpacing + " hidden"}>
@@ -814,6 +828,11 @@ export function LandingPage({ onGetStarted, onLogin }: LandingPageProps) {
       < AITrustSection />
 
       {/* ============================================
+          OBJECTION HANDLING
+          ============================================ */}
+      <ObjectionHandlingSection />
+
+      {/* ============================================
           PREISE
           ============================================ */}
       < section className="py-16 sm:py-20 md:py-24 bg-gradient-to-b from-background via-muted/20 to-background" >
@@ -865,14 +884,16 @@ export function LandingPage({ onGetStarted, onLogin }: LandingPageProps) {
       {/* ============================================
           STICKY MOBILE CTA
           ============================================ */}
-      < div className="fixed bottom-0 left-0 right-0 p-3 sm:p-4 bg-card/95 backdrop-blur-xl border-t border-border z-50 md:hidden animate-in slide-in-from-bottom" >
-        <button
-          onClick={onGetStarted}
-          className="w-full min-h-[52px] py-3 bg-gradient-to-r from-[#C80000] via-rose-600 to-red-600 text-white rounded-xl font-bold text-base sm:text-lg shadow-lg flex items-center justify-center gap-2 active:scale-95 transition-transform">
-          Jetzt kostenlos starten
-          <ArrowRight className="w-5 h-5" />
-        </button>
-      </div >
+      {!isMobileMenuOpen && (
+        <div className="fixed bottom-0 left-0 right-0 p-3 sm:p-4 bg-card/95 backdrop-blur-xl border-t border-border z-50 md:hidden animate-in slide-in-from-bottom">
+          <button
+            onClick={onGetStarted}
+            className="w-full min-h-[52px] py-3 bg-gradient-to-r from-[#C80000] via-rose-600 to-red-600 text-white rounded-xl font-bold text-base sm:text-lg shadow-lg flex items-center justify-center gap-2 active:scale-95 transition-transform">
+            Jetzt kostenlos starten
+            <ArrowRight className="w-5 h-5" />
+          </button>
+        </div>
+      )}
 
       {/* ============================================
           FAQ

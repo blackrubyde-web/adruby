@@ -12,6 +12,7 @@ import { StudioPreview } from './features/previews/StudioPreview';
 import { CanvasPreview } from './features/previews/CanvasPreview';
 import { AnalyticsPreview } from './features/previews/AnalyticsPreview';
 import { MobileStickyCTA } from './landing/MobileStickyCTA';
+import { FeaturesComparisonSection } from './features/FeaturesComparisonSection';
 
 interface FeaturesPageProps {
   onNavigate: (page: string) => void;
@@ -139,7 +140,7 @@ export function FeaturesPage({ onNavigate, onSignIn, onGetStarted }: FeaturesPag
 
                 {/* Main Preview Feature */}
                 <div
-                  className="md:col-span-8 group relative overflow-hidden rounded-3xl border border-white/10 bg-black/40 backdrop-blur-xl transition-all hover:border-white/20"
+                  className="md:col-span-8 group relative overflow-hidden rounded-3xl border border-white/10 bg-black/40 backdrop-blur-xl transition-all hover:border-white/20 shadow-[0_8px_32px_rgba(0,0,0,0.3)] hover:shadow-[0_12px_48px_rgba(0,0,0,0.4)]"
                   onMouseMove={handleMouseMove}
                 >
                   <div className="spotlight absolute -inset-px opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none" />
@@ -297,6 +298,9 @@ export function FeaturesPage({ onNavigate, onSignIn, onGetStarted }: FeaturesPag
 
         </div>
       </section>
+
+      {/* Comparison Section */}
+      <FeaturesComparisonSection />
 
       {/* Ready CTA */}
       <section className="py-32 relative z-10 text-center">

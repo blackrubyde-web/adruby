@@ -189,6 +189,29 @@ const assignAdsToSets = (adIds: string[], setCount: number) => {
   return buckets;
 };
 
+const parseCurrency = (value?: string | null) => {
+  if (!value) return null;
+  const normalized = String(value).replace(/[^0-9.,]/g, "").replace(",", ".");
+  const parsed = Number(normalized);
+  return Number.isFinite(parsed) ? parsed : null;
+};
+
+const parseAgeRange = (value?: string | null) => {
+  if (!value) return {};
+  const matches = String(value).match(/\d+/g);
+  if (!matches?.length) return {};
+  const [min, max] = matches.map((n) => Number(n));
+  const ageMin = Number.isFinite(min) ? min : undefined;
+  const ageMax = Number.isFinite(max) ? max : undefined;
+  return { ageMin, ageMax };
+};
+
+const normalizeGender = (value?: string | null): "male" | "female" | "all" | undefined => {
+  const raw = String(value || "").trim().toLowerCase();
+  if (raw === "male" || raw === "female" || raw === "all") return raw;
+  return undefined;
+};
+
 const applyStrategyToSpec = (
   strategy: GeneratedStrategy,
   spec: CampaignSpec,
@@ -471,41 +494,53 @@ export function CampaignBuilderPage() {
 
       // 2. If Launching ('ready'), call Meta API
       if (status === 'ready') {
+        const budgetType: "daily" | "lifetime" = campaignSpec.campaign.budget_type === 'lifetime' ? 'lifetime' : 'daily';
+        const campaignBudget = parseCurrency(campaignSpec.campaign.daily_budget);
+
         const payload = {
-          name: campaignSpec.campaign.name || 'New Campaign',
-          objective: campaignSpec.campaign.objective || 'OUTCOME_SALES',
-          status: 'ACTIVE',
-          daily_budget: parseFloat(campaignSpec.campaign.daily_budget || '0') * 100, // cents
-          bid_strategy: campaignSpec.campaign.bid_strategy,
-          ad_sets: campaignSpec.ad_sets.map(set => ({
-            name: set.name || 'Ad Set',
-            daily_budget: set.budget ? parseFloat(set.budget.replace(/[^0-9.]/g, '')) * 100 : undefined,
-            status: 'ACTIVE',
-            targeting: {
-              geo_locations: { countries: ['DE'] }, // Default for MVP
-              age_min: 18,
-              age_max: 65,
-            },
-            ads: set.ad_ids.map(adId => {
-              const adSpec = campaignSpec.ads.find(a => a.creative_id === adId);
-              const savedAd = adMap.get(adId);
-              return {
-                name: adSpec?.name || 'Ad',
-                creative_id: adId,
-                status: 'ACTIVE',
-                creative: {
+          mode: 'create' as const,
+          campaign: {
+            name: campaignSpec.campaign.name || 'New Campaign',
+            objective: campaignSpec.campaign.objective || 'OUTCOME_SALES',
+            budgetType,
+            dailyBudget: budgetType === 'daily' ? campaignBudget ?? undefined : undefined,
+            lifetimeBudget: budgetType === 'lifetime' ? campaignBudget ?? undefined : undefined,
+            bidStrategy: campaignSpec.campaign.bid_strategy,
+          },
+          adSets: campaignSpec.ad_sets.map(set => {
+            const adSetBudget = parseCurrency(set.budget);
+            const { ageMin, ageMax } = parseAgeRange(set.targeting?.age);
+            const gender = normalizeGender(set.targeting?.gender);
+
+            return {
+              name: set.name || 'Ad Set',
+              dailyBudget: adSetBudget ?? undefined,
+              targeting: {
+                locations: set.targeting?.locations,
+                ageMin,
+                ageMax,
+                gender,
+                interests: set.targeting?.interests,
+                placements: set.placements,
+              },
+              ads: set.ad_ids.map(adId => {
+                const adSpec = campaignSpec.ads.find(a => a.creative_id === adId);
+                const savedAd = adMap.get(adId);
+                return {
+                  name: adSpec?.name || 'Ad',
                   headline: adSpec?.headline || savedAd?.headline || '',
-                  primary_text: adSpec?.primary_text || savedAd?.description || '',
-                  call_to_action: adSpec?.cta || savedAd?.cta || 'LEARN_MORE',
-                  image_url: savedAd?.thumbnail || undefined
-                }
-              };
-            })
-          }))
+                  primaryText: adSpec?.primary_text || savedAd?.description || '',
+                  cta: adSpec?.cta || savedAd?.cta || 'LEARN_MORE',
+                  destinationUrl: undefined,
+                  creativeId: adId,
+                  imageUrl: savedAd?.thumbnail || undefined,
+                };
+              })
+            };
+          })
         };
 
         toast.loading("Deploying to Meta...");
-        // @ts-expect-error - Payload type match relies on backend leniency for MVP
         await createCampaign(payload);
         toast.dismiss();
         toast.success("Kampagne erfolgreich auf Meta gestartet! 🚀");

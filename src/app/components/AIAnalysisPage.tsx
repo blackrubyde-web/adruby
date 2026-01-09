@@ -22,6 +22,7 @@ import { toast } from 'sonner';
 import { PageShell, HeroHeader, Card, Chip } from './layout';
 import { Progress } from './ui/progress';
 import { supabase } from '../lib/supabaseClient';
+import { env } from '../lib/env';
 import { useMetaCampaigns } from '../hooks/useMetaCampaigns';
 import { useStrategies } from '../hooks/useStrategies';
 import { useAnalyticsData } from '../hooks/useAnalyticsData';

@@ -20,6 +20,7 @@ function getFunctionEntries() {
 }
 
 async function buildAll() {
+  fs.rmSync(OUT_DIR, { recursive: true, force: true });
   ensureDir(OUT_DIR);
   const entries = getFunctionEntries();
   if (!entries.length) {

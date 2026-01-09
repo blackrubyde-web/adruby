@@ -2,6 +2,7 @@ import { createContext, useContext, useState, useCallback, useMemo, useEffect, u
 import { useNodesState, useEdgesState, addEdge, type Node, type Edge, type Connection, type Viewport, type OnNodesChange, type OnEdgesChange } from '@xyflow/react';
 import { toast } from 'sonner';
 import { supabase } from '../../lib/supabaseClient';
+import { apiClient } from '../../utils/apiClient';
 import {
     type CampaignCanvasNodeData,
     type CampaignNodeData,
@@ -810,9 +811,6 @@ export function CampaignCanvasProvider({ children }: { children: ReactNode }) {
                 return { success: false, error: 'Keine Campaign gefunden' };
             }
 
-            const { data: session } = await supabase.auth.getSession();
-            const token = session.session?.access_token;
-
             // Build structure for each campaign
             for (const campaign of campaignNodes) {
                 const config = (campaign.data as CampaignNodeData).config;
@@ -850,31 +848,15 @@ export function CampaignCanvasProvider({ children }: { children: ReactNode }) {
                     bidStrategy: config?.bidStrategy,
                 };
 
-                // Real Backend Call via Supabase Edge Function
-                const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-
-                if (!token) {
-                    throw new Error('Nicht authentifiziert. Bitte neu einloggen.');
-                }
-
-                const response = await fetch(`${supabaseUrl}/functions/v1/meta-create-campaign`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${token}`
-                    },
-                    body: JSON.stringify({
-                        mode: pushToMeta ? 'create' : 'preview',
-                        campaign: campaignPayload,
-                        adSets: adSets
-                    }),
+                const result = await apiClient.post<{
+                    success: boolean;
+                    campaignId?: string;
+                    preview?: unknown;
+                }>('/api/meta-create-campaign', {
+                    mode: pushToMeta ? 'create' : 'preview',
+                    campaign: campaignPayload,
+                    adSets: adSets,
                 });
-
-                const result = await response.json();
-
-                if (!response.ok) {
-                    throw new Error(result.error || 'Request Failed');
-                }
 
                 if (pushToMeta) {
                     toast.success(`🎉 Kampagne "${config?.name}" auf Meta erstellt!`, {

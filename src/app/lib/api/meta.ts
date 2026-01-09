@@ -90,47 +90,60 @@ export async function applyMetaAction(params: {
   }>("/api/meta-apply-action", params);
 }
 
+export type MetaTargetingInput = {
+  locations?: string[];
+  ageMin?: number;
+  ageMax?: number;
+  gender?: "all" | "male" | "female";
+  interests?: string[];
+  customAudiences?: Array<{ id: string; name?: string }>;
+  lookalikeAudiences?: Array<{ id: string; name?: string }>;
+  exclusions?: string[];
+  placements?: Array<"feed" | "stories" | "reels" | "explore" | "audience_network">;
+};
+
+export type MetaAdInput = {
+  name?: string;
+  headline?: string;
+  primaryText?: string;
+  cta?: string;
+  destinationUrl?: string;
+  creativeId?: string;
+  imageUrl?: string;
+  imageHash?: string;
+};
+
+export type MetaAdSetInput = {
+  name?: string;
+  targeting?: MetaTargetingInput;
+  optimizationGoal?: string;
+  dailyBudget?: number;
+  ads?: MetaAdInput[];
+};
+
+export type MetaCampaignInput = {
+  name?: string;
+  objective?: string;
+  budgetType?: "daily" | "lifetime";
+  dailyBudget?: number;
+  lifetimeBudget?: number;
+  bidStrategy?: string;
+};
+
 export type CreateCampaignParams = {
-  name: string;
-  objective: string;
-  special_ad_categories?: string[];
-  status: 'ACTIVE' | 'PAUSED';
-  daily_budget?: number; // In cents or currency units depending on implementation
-  bid_strategy?: string;
-  ad_sets: Array<{
-    name: string;
-    daily_budget?: number;
-    bid_amount?: number;
-    billing_event?: string;
-    optimization_goal?: string;
-    targeting: {
-      geo_locations: { countries: string[] };
-      age_min?: number;
-      age_max?: number;
-      genders?: number[]; // 1=male, 2=female
-      interests?: Array<{ id: string; name: string }>;
-    };
-    start_time?: string;
-    status: 'ACTIVE' | 'PAUSED';
-    ads: Array<{
-      name: string;
-      creative_id: string; // Internal ID to fetch details
-      status: 'ACTIVE' | 'PAUSED';
-      creative: {
-        headline: string;
-        primary_text: string;
-        image_url?: string;
-        link_url?: string;
-        call_to_action?: string;
-      };
-    }>;
-  }>;
+  mode?: "create" | "preview";
+  adAccountId?: string;
+  campaign: MetaCampaignInput;
+  adSets?: MetaAdSetInput[];
 };
 
 export async function createCampaign(params: CreateCampaignParams) {
   return apiClient.post<{
     success: boolean;
-    campaign_id: string;
-    errors?: any[];
+    campaignId?: string;
+    adSets?: Array<{ id: string; name?: string }>;
+    ads?: Array<{ id: string; name?: string }>;
+    preview?: unknown;
+    message?: string;
   }>("/api/meta-create-campaign", params);
 }

@@ -19,6 +19,7 @@ import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContai
 import { useAffiliate } from '../contexts/AffiliateContext';
 import { supabase } from '../lib/supabaseClient';
 import { AchievementsPanel } from './affiliate/AchievementsPanel';
+import { AffiliateSuccessStories } from './affiliate/AffiliateSuccessStories';
 import { User } from '@supabase/supabase-js';
 
 // --- Imports for Marketing View ---
@@ -206,9 +207,31 @@ function AffiliateMarketingView({ onNavigate, onSignIn, onGetStarted, heroRef, i
         </div>
       </section>
 
-      {/* FAQ / Trust Section could go here */}
+    </section>
 
+      {/* Success Stories */ }
+  <AffiliateSuccessStories />
+
+  {/* Partner Application Form Wrapper */ }
+  <section className="py-24 relative z-10">
+    <div className="landing-container">
+      <div className="max-w-4xl mx-auto text-center mb-16">
+        <div className="w-16 h-16 bg-white/10 rounded-2xl flex items-center justify-center mx-auto mb-6 backdrop-blur-md border border-white/10">
+          <Rocket className="w-8 h-8 text-white" />
+        </div>
+        <h2 className="text-3xl sm:text-5xl font-black text-white mb-6">
+          Starte deine <br />
+          <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-teal-500">Partner Journey</span>
+        </h2>
+        <p className="text-white/60 text-lg max-w-xl mx-auto">
+          Fülle das Formular aus. Wir melden uns innerhalb von 24h bei dir.
+        </p>
+      </div>
+      <PartnerApplicationForm />
     </div>
+  </section>
+
+    </div >
   );
 }
 

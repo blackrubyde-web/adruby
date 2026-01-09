@@ -81,6 +81,9 @@ export const CreativeOutputV1Schema = z
             image: z.object({
               input_image_used: z.boolean(),
               render_intent: z.string().min(1).max(200),
+              input_image_url: z.string().min(1).nullable().optional(),
+              input_image_bucket: z.string().min(1).nullable().optional(),
+              input_image_path: z.string().min(1).nullable().optional(),
               hero_image_url: z.string().min(1).nullable().optional(),
               hero_image_bucket: z.string().min(1).nullable().optional(),
               hero_image_path: z.string().min(1).nullable().optional(),

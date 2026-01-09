@@ -8,8 +8,64 @@ import {
 import { initTelemetry, captureException } from "./utils/telemetry.js";
 import { requireUserId } from "./_shared/auth.js";
 import { requireActiveSubscription } from "./_shared/entitlements.js";
-import { postGraph, fetchGraph, resolveMetaAccessToken, pickPrimaryAdAccount } from "./_shared/meta.js";
+import { postGraph, resolveMetaAccessToken, pickPrimaryAdAccount } from "./_shared/meta.js";
 import { supabaseAdmin } from "./_shared/clients.js";
+
+const GRAPH_API_BASE = "https://graph.facebook.com/v19.0";
+
+async function uploadImageHash(actId, token, imageUrl, filename) {
+    const imgRes = await fetch(imageUrl);
+    if (!imgRes.ok) {
+        throw new Error(`Image download failed: ${imgRes.status}`);
+    }
+
+    const blob = await imgRes.blob();
+    const formData = new FormData();
+    formData.append("access_token", token);
+    formData.append("filename", filename || "ad_image.jpg");
+    formData.append("file", blob);
+
+    const uploadRes = await fetch(`${GRAPH_API_BASE}/${actId}/adimages`, {
+        method: "POST",
+        body: formData,
+    });
+    const uploadJson = await uploadRes.json();
+    if (!uploadRes.ok) {
+        const msg = uploadJson?.error?.message || "Meta image upload failed";
+        const err = new Error(msg);
+        err.data = uploadJson;
+        throw err;
+    }
+
+    const images = uploadJson?.images || {};
+    const firstKey = Object.keys(images)[0];
+    return firstKey ? images[firstKey]?.hash || null : null;
+}
+
+function buildPreviewPayload(campaign, adSets) {
+    return {
+        campaign: {
+            name: campaign?.name,
+            objective: mapObjective(campaign?.objective),
+            status: "PAUSED",
+            buying_type: "AUCTION",
+        },
+        adSets: (adSets || []).map((adSet) => ({
+            name: adSet?.name,
+            optimization_goal: mapOptimizationGoal(adSet?.optimizationGoal),
+            targeting: JSON.parse(buildTargeting(adSet?.targeting)),
+            ads: (adSet?.ads || []).map((ad) => ({
+                name: ad?.name,
+                creative: {
+                    title: ad?.headline,
+                    body: ad?.primaryText,
+                    cta: mapCTA(ad?.cta),
+                    image_url: ad?.imageUrl || null,
+                },
+            })),
+        })),
+    };
+}
 
 /**
  * Create a full campaign structure in Meta Ads
@@ -35,23 +91,32 @@ export async function handler(event) {
         return badRequest("Invalid JSON body");
     }
 
-    const { adAccountId, campaign, adSets } = body;
+    const { mode = "create", adAccountId, campaign, adSets } = body;
 
     if (!campaign) {
         return badRequest("Missing campaign data");
     }
 
     try {
+        if (mode === "preview") {
+            return ok({
+                success: true,
+                preview: buildPreviewPayload(campaign, adSets),
+                message: "Preview generated. Ready to push to Meta.",
+            });
+        }
+
         const { token, connection } = await resolveMetaAccessToken(userId);
         if (!token) {
             return badRequest("Meta nicht verbunden. Bitte zuerst Meta verknüpfen.");
         }
 
         // Resolve ad account
-        let accountId = adAccountId;
-        if (!accountId && connection?.ad_accounts) {
-            const accounts = JSON.parse(connection.ad_accounts || "[]");
-            const primary = pickPrimaryAdAccount(accounts, connection.preferred_ad_account_id);
+        const meta = connection?.meta || {};
+        const metaAccounts = Array.isArray(meta?.ad_accounts) ? meta.ad_accounts : [];
+        let accountId = adAccountId || connection?.ad_account_id || meta?.selected_account?.id;
+        if (!accountId && metaAccounts.length) {
+            const primary = pickPrimaryAdAccount(metaAccounts, meta?.selected_account?.id);
             accountId = primary?.id;
         }
 
@@ -139,12 +204,21 @@ export async function handler(event) {
                     };
 
                     // Add image if available
-                    if (ad.imageHash) {
+                    let imageHash = ad.imageHash;
+                    if (!imageHash && ad.imageUrl) {
+                        try {
+                            imageHash = await uploadImageHash(actId, token, ad.imageUrl, ad.creativeId || "ad_image.jpg");
+                        } catch (err) {
+                            console.warn("[Meta] Image upload failed", err?.message || err);
+                        }
+                    }
+
+                    if (imageHash) {
                         creativeParams.object_story_spec = JSON.stringify({
                             ...JSON.parse(creativeParams.object_story_spec),
                             link_data: {
                                 ...JSON.parse(creativeParams.object_story_spec).link_data,
-                                image_hash: ad.imageHash,
+                                image_hash: imageHash,
                             },
                         });
                     }
@@ -237,6 +311,10 @@ export async function handler(event) {
 
 // Helper functions
 function mapObjective(objective) {
+    const raw = String(objective || "").trim();
+    const upper = raw.toUpperCase().replace(/\s+/g, "_");
+    if (upper.startsWith("OUTCOME_")) return upper;
+
     const map = {
         CONVERSIONS: "OUTCOME_SALES",
         TRAFFIC: "OUTCOME_TRAFFIC",
@@ -245,7 +323,7 @@ function mapObjective(objective) {
         LEADS: "OUTCOME_LEADS",
         APP_INSTALLS: "OUTCOME_APP_PROMOTION",
     };
-    return map[objective] || "OUTCOME_SALES";
+    return map[upper] || "OUTCOME_SALES";
 }
 
 function mapBidStrategy(strategy) {
@@ -270,6 +348,21 @@ function mapOptimizationGoal(goal) {
 }
 
 function mapCTA(cta) {
+    const raw = String(cta || "").trim();
+    const upper = raw.toUpperCase().replace(/\s+/g, "_");
+
+    const direct = {
+        LEARN_MORE: "LEARN_MORE",
+        SHOP_NOW: "SHOP_NOW",
+        SIGN_UP: "SIGN_UP",
+        GET_OFFER: "GET_OFFER",
+        BOOK_NOW: "BOOK_NOW",
+        CONTACT_US: "CONTACT_US",
+        DOWNLOAD: "DOWNLOAD",
+        WATCH_MORE: "WATCH_MORE",
+    };
+    if (direct[upper]) return direct[upper];
+
     const map = {
         "Learn More": "LEARN_MORE",
         "Shop Now": "SHOP_NOW",
@@ -280,7 +373,7 @@ function mapCTA(cta) {
         "Download": "DOWNLOAD",
         "Watch More": "WATCH_MORE",
     };
-    return map[cta] || "LEARN_MORE";
+    return map[raw] || "LEARN_MORE";
 }
 
 function buildTargeting(targeting) {
@@ -322,12 +415,31 @@ function buildTargeting(targeting) {
         }];
     }
 
+    // Custom audiences
+    if (Array.isArray(targeting.customAudiences) && targeting.customAudiences.length > 0) {
+        result.custom_audiences = targeting.customAudiences.map((aud) => ({ id: aud.id }));
+    }
+
+    if (Array.isArray(targeting.lookalikeAudiences) && targeting.lookalikeAudiences.length > 0) {
+        const lookalikeIds = targeting.lookalikeAudiences.map((aud) => ({ id: aud.id }));
+        result.custom_audiences = [...(result.custom_audiences || []), ...lookalikeIds];
+    }
+
+    if (Array.isArray(targeting.exclusions) && targeting.exclusions.length > 0) {
+        result.excluded_custom_audiences = targeting.exclusions.map((id) => ({ id }));
+    }
+
     // Placements
     if (targeting.placements?.length > 0) {
-        result.publisher_platforms = targeting.placements.includes("facebook") ? ["facebook"] : [];
-        if (targeting.placements.includes("instagram") || targeting.placements.includes("stories") || targeting.placements.includes("reels")) {
-            result.publisher_platforms.push("instagram");
+        const placements = targeting.placements;
+        const platforms = [];
+        if (placements.includes("feed") || placements.includes("stories") || placements.includes("reels") || placements.includes("explore")) {
+            platforms.push("facebook", "instagram");
         }
+        if (placements.includes("audience_network")) {
+            platforms.push("audience_network");
+        }
+        result.publisher_platforms = Array.from(new Set(platforms));
     }
 
     return JSON.stringify(result);

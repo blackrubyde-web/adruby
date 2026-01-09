@@ -8,6 +8,8 @@ import {
 } from 'lucide-react';
 import { GlobalNav } from './landing/GlobalNav';
 import { MobileStickyCTA } from './landing/MobileStickyCTA';
+import { ROICalculatorSection } from './pricing/ROICalculatorSection';
+import { PricingComparisonTable } from './pricing/PricingComparisonTable';
 
 interface PricingPageProps {
   onNavigate: (page: string) => void;
@@ -237,6 +239,12 @@ export function PricingPage({ onNavigate, onSignIn, onGetStarted }: PricingPageP
           </div>
         </div>
       </section>
+
+      {/* ROI Calculator */}
+      <ROICalculatorSection />
+
+      {/* Feature Comparison Table */}
+      <PricingComparisonTable />
     </div>
   );
 }
