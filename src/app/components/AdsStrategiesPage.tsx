@@ -1,4 +1,4 @@
-import { Brain, Trash2, Edit, Plus, TrendingUp, Shield, Zap, Activity, Globe, Sparkles, Target } from 'lucide-react';
+import { Brain, Trash2, Edit, Plus, Zap, Activity, Globe, Sparkles, Target } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { toast } from 'sonner';
 import { PageShell, HeroHeader, Card, Chip, Badge } from './layout';
@@ -91,7 +91,7 @@ export function AdsStrategiesPage() {
     };
 
     const commonData = {
-      id: editingStrategy?.id,
+      id: editingStrategy?.id?.trim() || undefined,
       title: data.name,
       category: 'custom',
       industry_type: data.industry_type,
@@ -353,7 +353,24 @@ export function AdsStrategiesPage() {
                 <div
                   key={i}
                   onClick={() => {
-                    setEditingStrategy(t.data as any);
+                    const templateStrategy: StrategyBlueprint = {
+                      id: '',
+                      title: t.data.name,
+                      category: 'quick-start',
+                      raw_content_markdown: '',
+                      metadata: { source: 'quick-start' },
+                      autopilot_config: {
+                        target_roas: t.data.target_roas,
+                        risk_tolerance: t.data.risk_tolerance,
+                        scale_speed: t.data.scale_speed,
+                        max_daily_budget: t.data.max_daily_budget
+                      },
+                      industry_type: t.data.industry_type,
+                      target_audience_definition: null,
+                      created_at: null,
+                      updated_at: null
+                    };
+                    setEditingStrategy(templateStrategy);
                     setShowStrategyWizard(true);
                   }}
                   className="flex items-center justify-between p-3 rounded-xl hover:bg-muted/60 cursor-pointer transition-all border border-transparent hover:border-border/60 group"

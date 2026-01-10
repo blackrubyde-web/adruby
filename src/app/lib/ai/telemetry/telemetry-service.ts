@@ -186,9 +186,9 @@ class TelemetryService {
 
         // Send to Sentry in production
         if (process.env.NODE_ENV === 'production' && typeof window !== 'undefined') {
-            // @ts-ignore
+            // @ts-expect-error - Sentry is injected at runtime in production.
             if (window.Sentry) {
-                // @ts-ignore
+                // @ts-expect-error - Sentry is injected at runtime in production.
                 window.Sentry.captureException(error, { extra: context });
             }
         }
@@ -252,9 +252,9 @@ class TelemetryService {
 
         if (typeof window !== 'undefined') {
             // Browser environment - could use PostHog
-            // @ts-ignore
+            // @ts-expect-error - PostHog is injected at runtime in production.
             if (window.posthog) {
-                // @ts-ignore
+                // @ts-expect-error - PostHog is injected at runtime in production.
                 window.posthog.capture(event.name, {
                     ...event.properties,
                     ...event.metrics

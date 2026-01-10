@@ -1,4 +1,4 @@
-import { Star, TrendingUp, Users, ArrowRight } from 'lucide-react';
+import { Star } from 'lucide-react';
 
 export function AffiliateSuccessStories() {
     const stories = [

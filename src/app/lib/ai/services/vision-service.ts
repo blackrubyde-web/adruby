@@ -267,9 +267,6 @@ Return JSON:
     }
 }
 
-// Singleton
-let visionServiceInstance: VisionService | null = null;
-
 /**
  * Get Vision service instance
  * 

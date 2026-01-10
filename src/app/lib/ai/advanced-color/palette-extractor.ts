@@ -177,7 +177,7 @@ function kMeansClustering(
     }
 
     // Iterate
-    let assignments = new Array(samples.length).fill(0);
+    const assignments = new Array(samples.length).fill(0);
 
     for (let iter = 0; iter < maxIterations; iter++) {
         // Assign samples to nearest centroid
@@ -328,7 +328,7 @@ export function suggestAccessiblePalette(
     adjustments: string[];
 } {
     const adjustments: string[] = [];
-    let palette = { ...dominantColors };
+    const palette = { ...dominantColors };
 
     // If brand color provided, use it as primary
     if (brandColor) {

@@ -36,7 +36,7 @@ export interface EnhancedLayoutOutput extends LayoutOutput {
 export async function composeAdEnhanced(input: LayoutInput): Promise<EnhancedLayoutOutput> {
     try {
         // STEP 1: Extract colors from product image if provided
-        let enhancedInput = { ...input };
+        const enhancedInput = { ...input };
 
         if (input.productImage && !input.colors) {
             try {
@@ -64,8 +64,8 @@ export async function composeAdEnhanced(input: LayoutInput): Promise<EnhancedLay
         }
 
         // STEP 2: Generate base layout
-        let result = await baseComposeAd(enhancedInput);
-        let { adDocument, quality, metadata } = result;
+        const result = await baseComposeAd(enhancedInput);
+        const { adDocument, quality, metadata } = result;
 
         // STEP 3: Auto-adjust layout if collisions detected
         try {

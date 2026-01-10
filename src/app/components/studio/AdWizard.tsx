@@ -1,8 +1,7 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
-import { Upload, Sparkles, ArrowRight, X, Wand2, Check, Zap, Image as Loader2, TrendingUp, Award } from 'lucide-react';
+import { Upload, Sparkles, ArrowRight, X, Wand2, Check, Zap, Image as Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
-import type { AdDocument, StudioLayer, ImageLayer } from '../../types/studio';
-import { enhanceProductImage } from '../../lib/api/ai-image-enhancement';
+import type { AdDocument, ImageLayer } from '../../types/studio';
 import { removeBackground, blobToBase64 } from '../../lib/ai/bg-removal';
 // generatePremiumAd is now handled via Netlify function
 
