@@ -105,38 +105,33 @@ const handler: Handler = async (event: HandlerEvent) => {
 
         console.log(`🚀 MASTER ORCHESTRATOR: Generating ad for ${request.productName}...`);
 
-        // 🆕 USE MASTER TEMPLATE ORCHESTRATOR
-        // This integrates ALL new AI systems:
-        // - Product DNA Analysis
-        // - Style DNA Extraction  
-        // - Template Intelligence (3500+ templates)
-        // - Adaptive Layout Engine
-        // - Variation Generator
+        // 🆕 MASTER TEMPLATE ORCHESTRATOR (optional - do not hard-fail)
+        // Integrates AI systems: Product DNA, Style DNA, Template Intelligence, Variations
+        try {
+            const { orchestrateTemplateGeneration } = await import('../../src/app/lib/ai/design/master-template-orchestrator');
 
-        // Import orchestrator (dynamically to avoid bundling issues)
-        const { orchestrateTemplateGeneration } = await import('../../src/app/lib/ai/design/master-template-orchestrator');
+            const orchestratorResult = await orchestrateTemplateGeneration({
+                productName: request.productName,
+                productDescription: request.userPrompt,
+                productImageBase64: request.imageBase64,
+                brandName: request.brandName,
+                tone: request.tone,
+                variationCount: 5,
+                minQuality: 75
+            });
 
-        const orchestratorResult = await orchestrateTemplateGeneration({
-            productName: request.productName,
-            productDescription: request.userPrompt,
-            productImageBase64: request.imageBase64,
-            brandName: request.brandName,
-            tone: request.tone,
-            variationCount: 5,  // Generate 5 variations, pick best
-            minQuality: 75
-        });
-
-        // Pick best variation
-        const bestVariation = orchestratorResult.topVariations[0];
-
-        if (!bestVariation) {
-            throw new Error('No quality variations generated');
+            const bestVariation = orchestratorResult?.topVariations?.[0];
+            if (bestVariation) {
+                console.log(`✅ Best variation selected:`);
+                console.log(`   Quality Score: ${bestVariation.scores.overall}/100`);
+                console.log(`   Uniqueness: ${bestVariation.scores.uniqueness}/100`);
+                console.log(`   Harmony: ${bestVariation.scores.harmony}/100`);
+            } else {
+                console.warn('[generate-ad] Orchestrator returned no variations; falling back.');
+            }
+        } catch (err) {
+            console.warn('[generate-ad] Orchestrator failed, falling back to baseline pipeline:', err?.message || err);
         }
-
-        console.log(`✅ Best variation selected:`);
-        console.log(`   Quality Score: ${bestVariation.scores.overall}/100`);
-        console.log(`   Uniqueness: ${bestVariation.scores.uniqueness}/100`);
-        console.log(`   Harmony: ${bestVariation.scores.harmony}/100`);
 
         // FALLBACK: Simple copy generation if orchestrator disabled
         // For now, we'll use a simplified version since orchestrator needs full setup
@@ -144,9 +139,13 @@ const handler: Handler = async (event: HandlerEvent) => {
         const openai = new OpenAI({ apiKey });
 
         const copyPrompt = buildCopyPrompt(request);
+        const copyModels = [
+            process.env.OPENAI_COPY_MODEL || 'gpt-4-turbo-preview',
+            'gpt-4o-mini',
+            'gpt-3.5-turbo'
+        ];
 
-        const copyResponse = await openai.chat.completions.create({
-            model: 'gpt-4-turbo-preview',
+        const copyResponse = await createChatCompletion(openai, copyModels, {
             messages: [
                 {
                     role: 'system',
@@ -174,8 +173,12 @@ const handler: Handler = async (event: HandlerEvent) => {
 
         if (request.imageBase64 && request.imageBase64.startsWith('data:image')) {
             try {
-                const visionResponse = await openai.chat.completions.create({
-                    model: 'gpt-4-vision-preview',
+                const visionModels = [
+                    process.env.OPENAI_VISION_MODEL || 'gpt-4-vision-preview',
+                    'gpt-4o-mini'
+                ];
+
+                const visionResponse = await createChatCompletion(openai, visionModels, {
                     messages: [
                         {
                             role: 'user',
@@ -409,6 +412,24 @@ const handler: Handler = async (event: HandlerEvent) => {
         };
     }
 };
+
+async function createChatCompletion(
+    openai: OpenAI,
+    models: string[],
+    params: Omit<OpenAI.Chat.Completions.ChatCompletionCreateParams, 'model'>
+) {
+    let lastError: unknown = null;
+    for (const model of models) {
+        if (!model) continue;
+        try {
+            return await openai.chat.completions.create({ model, ...params });
+        } catch (err) {
+            lastError = err;
+            console.warn('[generate-ad] OpenAI model failed:', model, err?.message || err);
+        }
+    }
+    throw lastError || new Error('OpenAI request failed');
+}
 
 // Helper: Build copy generation prompt
 function buildCopyPrompt(request: GenerateAdRequest): string {

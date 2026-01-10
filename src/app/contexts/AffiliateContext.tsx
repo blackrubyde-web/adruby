@@ -120,11 +120,15 @@ export function AffiliateProvider({ children }: { children: ReactNode }) {
                 }
 
                 // Get affiliate partner ID first
-                const { data: partnerData } = await supabase
+                const { data: partnerData, error: partnerError } = await supabase
                     .from('affiliate_partners')
                     .select('id')
                     .eq('user_id', user.id)
-                    .single();
+                    .maybeSingle();
+
+                if (partnerError) {
+                    console.warn('[Affiliate] Partner lookup failed', partnerError);
+                }
 
                 if (partnerData?.id) {
                     // Get referrals
@@ -245,4 +249,3 @@ export function useIsApprovedAffiliate() {
     const { isAffiliate, stats } = useAffiliate();
     return isAffiliate && stats?.is_approved === true;
 }
-

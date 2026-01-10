@@ -40,7 +40,7 @@ export async function validatePromoCode(code: string): Promise<boolean> {
             .select('id')
             .ilike('affiliate_code', code)
             .eq('is_approved', true)
-            .single();
+            .maybeSingle();
 
         return !error && !!data;
     } catch {
@@ -56,7 +56,7 @@ export async function getAffiliatePartner(userId: string) {
         .from('affiliate_partners')
         .select('*')
         .eq('user_id', userId)
-        .single();
+        .maybeSingle();
 
     if (error) return null;
     return data;
