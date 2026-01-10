@@ -45,6 +45,33 @@ export interface ValidationResult {
     score: number; // 0-100
 }
 
+type AdLayer = {
+    id?: string;
+    name?: string;
+    type?: string;
+    role?: string;
+    color?: string;
+    fill?: string;
+    bgColor?: string;
+    fontFamily?: string;
+    fontSize?: number;
+    width?: number;
+    height?: number;
+    x?: number;
+    y?: number;
+    text?: string;
+};
+
+type AdDocumentLike = {
+    layers: AdLayer[];
+};
+
+function getLayers(doc: unknown): AdLayer[] {
+    if (!doc || typeof doc !== 'object') return [];
+    const layers = (doc as { layers?: unknown }).layers;
+    return Array.isArray(layers) ? (layers as AdLayer[]) : [];
+}
+
 /**
  * Default brand guidelines template
  */
@@ -102,19 +129,20 @@ function isCombinationForbidden(
  * Validate brand guidelines compliance
  */
 export function validateBrandGuidelines(
-    adDocument: any,
+    adDocument: unknown,
     guidelines: BrandGuidelines = DEFAULT_GUIDELINES
 ): ValidationResult {
     const violations: ValidationResult['violations'] = [];
     let score = 100;
+    const layers = getLayers(adDocument);
 
     // 1. Validate Colors
-    const colorLayers = adDocument.layers.filter((l: any) =>
+    const colorLayers = layers.filter((l) =>
         l.type === 'text' || l.type === 'cta' || l.type === 'shape'
     );
 
     if (guidelines.colors.primary.length > 0) {
-        colorLayers.forEach((layer: any) => {
+        colorLayers.forEach((layer) => {
             const layerColor = layer.color || layer.fill || layer.bgColor;
 
             if (layerColor && !isColorAllowed(layerColor, guidelines.colors.primary)) {
@@ -148,9 +176,9 @@ export function validateBrandGuidelines(
     }
 
     // 2. Validate Typography
-    const textLayers = adDocument.layers.filter((l: any) => l.type === 'text' || l.type === 'cta');
+    const textLayers = layers.filter((l) => l.type === 'text' || l.type === 'cta');
 
-    textLayers.forEach((layer: any) => {
+    textLayers.forEach((layer) => {
         // Check font family
         if (layer.fontFamily && guidelines.typography.allowedFonts.length > 0) {
             if (!guidelines.typography.allowedFonts.includes(layer.fontFamily)) {
@@ -188,13 +216,13 @@ export function validateBrandGuidelines(
     });
 
     // 3. Validate Logo (if present)
-    const logoLayer = adDocument.layers.find((l: any) =>
+    const logoLayer = layers.find((l) =>
         l.name?.toLowerCase().includes('logo') || l.role === 'logo'
     );
 
     if (logoLayer) {
         // Check minimum size
-        const logoSize = Math.min(logoLayer.width, logoLayer.height);
+        const logoSize = Math.min(logoLayer.width ?? 0, logoLayer.height ?? 0);
         if (logoSize < guidelines.logo.minSize) {
             violations.push({
                 rule: 'logo-size',
@@ -206,12 +234,16 @@ export function validateBrandGuidelines(
         }
 
         // Check clear space (naive check - just ensure not overlapping)
-        const hasOverlap = adDocument.layers.some((other: any) => {
+        const hasOverlap = layers.some((other) => {
             if (other.id === logoLayer.id || other.type === 'background') return false;
 
+            const logoX = logoLayer.x ?? 0;
+            const logoY = logoLayer.y ?? 0;
+            const otherX = other.x ?? 0;
+            const otherY = other.y ?? 0;
             const distance = Math.sqrt(
-                Math.pow(other.x - logoLayer.x, 2) +
-                Math.pow(other.y - logoLayer.y, 2)
+                Math.pow(otherX - logoX, 2) +
+                Math.pow(otherY - logoY, 2)
             );
 
             return distance < guidelines.logo.minClearSpace;
@@ -230,7 +262,7 @@ export function validateBrandGuidelines(
 
     // 4. Validate Voice/Tone (if text present)
     if (guidelines.voice.bannedWords.length > 0) {
-        textLayers.forEach((layer: any) => {
+        textLayers.forEach((layer) => {
             if (layer.text) {
                 const text = layer.text.toLowerCase();
                 const found = guidelines.voice.bannedWords.filter(word =>

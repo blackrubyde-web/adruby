@@ -136,7 +136,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     const init = async () => {
       if (env.demoMode) {
-        console.log('[Auth] Demo Mode Enabled - Mocking Auth');
+        console.warn('[Auth] Demo Mode Enabled - Mocking Auth');
         const mockUser: User = {
           id: 'demo-user-123',
           email: 'demo@adruby.ai',
@@ -144,7 +144,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           user_metadata: { full_name: 'Demo User' },
           aud: 'authenticated',
           created_at: new Date().toISOString()
-        } as any;
+        } as User;
 
         const mockSession: Session = {
           access_token: 'demo-token',
@@ -283,7 +283,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return () => {
       cancelled = true;
     };
-  }, [ensureUserProfileExists, loadProfile, user?.id]);
+  }, [ensureUserProfileExists, loadProfile, user?.email, user?.id]);
 
   const signInWithGoogle = useCallback(async (redirectPath?: string) => {
     setAuthError(null);

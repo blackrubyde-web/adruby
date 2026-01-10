@@ -5,7 +5,7 @@ import { Label } from '../ui/label';
 import { Card } from '../layout';
 import { RiskToleranceSlider } from './RiskToleranceSlider';
 import { StrategySimulationPreview } from './StrategySimulationPreview';
-import { ArrowRight, ArrowLeft, Target, Briefcase, Zap, Check, Sparkles, Globe, BarChart3, Loader2 } from 'lucide-react';
+import { ArrowRight, ArrowLeft, Target, Briefcase, Zap, Check, Sparkles, Globe, BarChart3, Loader2, Brain } from 'lucide-react';
 import { toast } from 'sonner';
 
 interface StrategyWizardProps {
@@ -20,12 +20,6 @@ interface StrategyWizardProps {
         max_daily_budget: number;
     } | null;
 }
-
-const STEPS = [
-    { id: 1, title: 'Briefing', icon: Briefcase },
-    { id: 2, title: 'AI Proposal', icon: Sparkles },
-    { id: 3, title: 'Launch', icon: Zap },
-];
 
 export function StrategyWizard({ onComplete, onCancel, initialData }: StrategyWizardProps) {
     const [step, setStep] = useState(1);
@@ -376,6 +370,4 @@ export function StrategyWizard({ onComplete, onCancel, initialData }: StrategyWi
     );
 }
 
-// Helper icon imports that might be missing
-function Brain(props: any) { return <Sparkles {...props} /> } // Fallback if Brain is missing in lucide import, though it was in AdsStrategiesPage. Using Sparkles as Brain placeholder if needed or just use real Brain from lucide
-
+// Brain icon is imported from lucide-react above.
