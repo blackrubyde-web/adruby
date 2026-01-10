@@ -81,7 +81,6 @@ export type PageType =
   | 'payment-cancelled'
   | 'dashboard'
   | 'analytics'
-
   | 'library'
   | 'strategies'
   | 'campaigns'
@@ -91,7 +90,7 @@ export type PageType =
   | 'affiliate'
   | 'profile'
   | 'help'
-  | 'studio'
+  | 'studio'  // ✅ ONLY /studio - removed adbuilder to avoid confusion
   | 'admin'
   | 'campaign-canvas';
 
@@ -107,7 +106,6 @@ const PAGE_PATHS: Record<PageType, string> = {
   'payment-cancelled': '/payment-cancelled',
   dashboard: '/dashboard',
   analytics: '/analytics',
-
   library: '/library',
   strategies: '/strategies',
   campaigns: '/campaigns',
@@ -117,7 +115,7 @@ const PAGE_PATHS: Record<PageType, string> = {
   affiliate: '/affiliate',
   profile: '/profile',
   help: '/help',
-  studio: '/studio',
+  studio: '/studio',  // ✅ ONLY /studio path
   admin: '/admin',
   'campaign-canvas': '/campaign-canvas',
 };
@@ -142,6 +140,11 @@ function normalizePathname(pathname: string) {
 }
 
 function pageFromPathname(pathname: string): PageType {
+  // ✅ FIX: Redirect /adbuilder to /studio
+  if (pathname === '/adbuilder') {
+    pathname = '/studio';
+  }
+
   const normalized = normalizePathname(pathname);
   const match = (Object.entries(PAGE_PATHS) as Array<[PageType, string]>).find(
     ([, p]) => p === normalized
@@ -334,7 +337,7 @@ const DashboardPageContent = memo(function DashboardPageContent({
           <Footer />
         </div>
       );
-    case 'studio':
+    case 'studio':  // ✅ ONLY studio
       return (
         <div className="min-h-screen bg-background flex flex-col">
           <Suspense fallback={pageFallback}>

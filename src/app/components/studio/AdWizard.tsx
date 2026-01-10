@@ -1,11 +1,10 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
-// import { supabase } from '../../lib/supabaseClient';
-import { invokeOpenAIProxy } from '../../lib/api/proxyClient';
-import { Upload, Sparkles, ArrowRight, X, Wand2, Check, Zap, Image as Loader2 } from 'lucide-react';
+import { Upload, Sparkles, ArrowRight, X, Wand2, Check, Zap, Image as Loader2, TrendingUp, Award } from 'lucide-react';
 import { toast } from 'sonner';
 import type { AdDocument, StudioLayer, ImageLayer } from '../../types/studio';
 import { enhanceProductImage } from '../../lib/api/ai-image-enhancement';
 import { removeBackground, blobToBase64 } from '../../lib/ai/bg-removal';
+// generatePremiumAd is now handled via Netlify function
 
 interface AdWizardProps {
     isOpen: boolean;
@@ -82,6 +81,7 @@ export const AdWizard = ({ isOpen, onClose, onComplete }: AdWizardProps) => {
     const [generatedHooks, setGeneratedHooks] = useState<GeneratedHooks | null>(null);
     const [selectedHookIndex, setSelectedHookIndex] = useState(0);
     const [generatedDoc, setGeneratedDoc] = useState<AdDocument | null>(null);
+    const [qualityMetrics, setQualityMetrics] = useState<any>(null);
     const [showResumeDialog, setShowResumeDialog] = useState(false); // Draft Dialog
     const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -247,9 +247,6 @@ export const AdWizard = ({ isOpen, onClose, onComplete }: AdWizardProps) => {
         setGeneratedHooks(null);
 
         try {
-            // Import premium AI generator
-            const { generatePremiumAd } = await import('../../lib/ai/premium-ad-generator');
-
             const { productName, brandName, productDescription, painPoints, usps, targetAudience, offer, socialProof, tone } = formData;
 
             // Prepare user prompt from form data
@@ -258,52 +255,49 @@ export const AdWizard = ({ isOpen, onClose, onComplete }: AdWizardProps) => {
                 painPoints && `Pain Points: ${painPoints}`,
                 usps && `USPs: ${usps}`,
                 targetAudience && `Target: ${targetAudience}`,
-                offer && `Offer: ${offer}`, // Explicitly add to prompt too for context
+                offer && `Offer: ${offer}`,
                 socialProof && `Proof: ${socialProof}`
             ].filter(Boolean).join('. ');
 
-            // console.log('📋 Form data:', { productName, brandName, tone, userPrompt, offer, socialProof });
-
-            // RUN PREMIUM AI 5-STAGE PIPELINE
-            // console.log('🚀 Starting Premium AI Pipeline...');
             toast.info('Starte Premium AI Pipeline...');
 
-            const result = await generatePremiumAd(
-                {
+            // CALL SECURE SERVER-SIDE NETLIFY FUNCTION
+            const response = await fetch('/.netlify/functions/generate-ad', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
                     productName,
                     brandName,
                     userPrompt: userPrompt || 'Create high-converting Meta ad',
                     tone,
-                    imageBase64: uploadedImage || undefined, // Convert null to undefined
-                    enhanceImage: true, // Always enhance for now
-                    // Pass grounded facts explicitly
+                    imageBase64: uploadedImage || undefined,
+                    enhanceImage: true,
                     groundedFacts: {
                         offer: offer || usps || 'Special Offer',
                         proof: socialProof || 'Trusted Brand',
                         painPoints: painPoints ? [painPoints] : undefined
                     },
-                    language: formData.language // NEW
-                },
-                (stage: number, _message: string) => {
-                    // Progress callback
-                    const stageNames = [
-                        'Analysiere Strategie',
-                        'Wähle Template',
-                        'Generiere Copy',
-                        'Erstelle Layout',
-                        'Verarbeite Bild'
-                    ];
-                    // console.log(`Stage ${stage}/5: ${message}`);
-                    toast.info(`${stageNames[stage - 1]}...`);
-                }
-            );
+                    language: formData.language
+                }),
+            });
 
-            // console.log('✅ Premium AI Ad Generated!');
+            if (!response.ok) {
+                const error = await response.json();
+                throw new Error(error.error || `Server error: ${response.status}`);
+            }
+
+            const result = await response.json();
+
+            if (!result.success) {
+                throw new Error(result.error || 'Ad generation failed');
+            }
 
             // Set generated document
             setGeneratedDoc(result.adDocument);
 
-            // Set hooks for display (if needed elsewhere)
+            // Set hooks for display
             setGeneratedHooks({
                 headlines: [result.premiumCopy.headline],
                 descriptions: [result.premiumCopy.description],
@@ -314,262 +308,10 @@ export const AdWizard = ({ isOpen, onClose, onComplete }: AdWizardProps) => {
 
         } catch (error: unknown) {
             const err = error as Error;
-            // console.error('❌ Premium AI generation failed:', err);
-            // console.error('Error stack:', err.stack);
             toast.error(`Generierung fehlgeschlagen: ${err.message || 'Unbekannter Fehler'}`);
         } finally {
             setIsGenerating(false);
             setLoadingStep('idle');
-            // console.log('🏁 Generation finished');
-        }
-    };
-
-    // Fallback: Basic generation (old logic)
-    const _handleBasicGenerate = async () => {
-        setIsGenerating(true);
-        setLoadingStep('image');
-
-        try {
-            // PREMIUM AI IMAGE ENHANCEMENT
-            let finalImage = uploadedImage;
-
-            if (uploadedImage && formData.imageEnhancementPrompt.trim()) {
-                // console.log('🎨 Starting PREMIUM AI image enhancement...');
-                toast.info('Analysiere Bild...');
-
-                try {
-                    const enhancementResult = await enhanceProductImage({
-                        imageBase64: uploadedImage,
-                        userPrompt: formData.imageEnhancementPrompt,
-                        productName: formData.productName,
-                        brandName: formData.brandName,
-                        tone: formData.tone
-                    });
-
-                    finalImage = enhancementResult.enhancedImageUrl;
-                    // console.log('✅ Premium image generated:', enhancementResult.analysisNotes);
-                } catch (imageError: unknown) {
-                    // const err = imageError as Error;
-                    // console.error('Image enhancement failed:', err);
-                    toast.warning('Bild-Verbesserung übersprungen. Nutze Original-Bild.');
-                    // Continue with original image instead of failing completely
-                }
-            }
-
-            // HOOK GENERATION - Premium Ad Copy
-            setLoadingStep('hooks');
-
-            // console.log('✍️ Generating premium ad hooks...');
-            toast.info('Generiere Premium Hooks...');
-
-            const hookPrompt = `You are an ELITE copywriter for premium advertising. Generate high-converting ad copy.
-
-PRODUCT CONTEXT:
-- Product: ${formData.productName}
-${formData.brandName ? `- Brand: ${formData.brandName}` : ''}
-- Description: ${formData.productDescription || 'N/A'}
-- Pain Points: ${formData.painPoints || 'N/A'}
-- Unique Selling Points: ${formData.usps || 'N/A'}
-- Target Audience: ${formData.targetAudience || 'General public'}
-- Tone: ${formData.tone}
-
-REQUIREMENTS:
-- Headlines: 10 attention-grabbing, conversion-optimized headlines (max 8 words each)
-- Descriptions: 5 compelling short descriptions that highlight benefits (max 12 words each)
-- CTAs: 5 action-oriented call-to-actions (max 3 words each)
-
-Make it PREMIUM, ${formData.tone}, and irresistible. Focus on emotional triggers and value propositions.
-
-Generate this EXACT JSON structure:
-{
-  "headlines": ["headline 1", "headline 2", ...],
-  "descriptions": ["description 1", "description 2", ...],
-  "ctas": ["CTA 1", "CTA 2", ...]
-}`;
-
-            const { data: hooksData, error: hooksError } = await invokeOpenAIProxy({
-                endpoint: 'chat/completions',
-                model: 'gpt-4o',
-                messages: [{ role: 'user', content: hookPrompt }],
-                temperature: 0.9,
-                response_format: { type: 'json_object' }
-            });
-
-            if (hooksError) {
-                // console.error('Hook generation error:', hooksError);
-                throw new Error(hooksError.message || 'Hook generation failed');
-            }
-
-            const hooks: GeneratedHooks = JSON.parse(hooksData.choices[0].message.content);
-
-            // Validate hooks
-            if (!hooks.headlines?.length || hooks.headlines.length === 0) {
-                throw new Error('EMPTY_HOOKS');
-            }
-
-            setGeneratedHooks(hooks);
-            // console.log('✅ Premium hooks generated:', hooks.headlines.length, 'headlines');
-
-            // CREATE AD DOCUMENT
-            setLoadingStep('creating');
-            toast.info('Erstelle Ad...');
-            // Create ad document
-            const _selectedTone = TONE_OPTIONS.find(t => t.id === formData.tone);
-            const doc: AdDocument = {
-                id: `ad-${Date.now()}`,
-                name: `${formData.brandName || formData.productName} Ad`,
-                width: 1080,
-                height: 1080,
-                backgroundColor: formData.tone === 'minimal' ? '#ffffff' : '#000000',
-                layers: [
-                    // Professional Image Setup: Background Blur + Product Focus
-                    ...(finalImage ? [
-                        // Layer 1: Blurred Background
-                        {
-                            id: `bg-blur-${Date.now()}`,
-                            type: 'background',
-                            name: 'Background Blur',
-                            x: 0,
-                            y: 0,
-                            width: 1080,
-                            height: 1080,
-                            rotation: 0,
-                            opacity: 0.3,
-                            locked: false,
-                            visible: true,
-                            src: finalImage,
-                            fit: 'cover',
-                            blur: 40
-                        },
-                        // Layer 2: Gradient Overlay
-                        {
-                            id: `overlay-${Date.now()}`,
-                            type: 'overlay',
-                            name: 'Gradient Overlay',
-                            x: 0,
-                            y: 0,
-                            width: 1080,
-                            height: 1080,
-                            rotation: 0,
-                            opacity: 0.6,
-                            locked: false,
-                            visible: true,
-                            fill: formData.tone === 'minimal' ? '#ffffff' : '#000000'
-                        },
-                        // Layer 3: Product Image (Centered & Framed)
-                        {
-                            id: `product-${Date.now()}`,
-                            type: 'product',
-                            name: 'Product Image',
-                            x: 140,
-                            y: 400,
-                            width: 800,
-                            height: 500,
-                            rotation: 0,
-                            opacity: 1,
-                            locked: false,
-                            visible: true,
-                            src: finalImage,
-                            fit: 'contain',
-                            shadowColor: 'rgba(0,0,0,0.3)',
-                            shadowBlur: 30,
-                            shadowOffsetY: 10
-                        }
-                    ] : []),
-                    // Headline
-                    {
-                        id: `text-${Date.now()}`,
-                        type: 'text' as const,
-                        name: 'Headline',
-                        x: 80,
-                        y: 150,
-                        width: 920,
-                        height: 200,
-                        rotation: 0,
-                        opacity: 1,
-                        locked: false,
-                        visible: true,
-                        text: hooks.headlines[0],
-                        fontSize: 96,
-                        fontFamily: 'Inter',
-                        fontWeight: '900',
-                        color: formData.tone === 'minimal' ? '#000000' : '#ffffff',
-                        align: 'left',
-                        lineHeight: 1.1,
-                        shadowColor: formData.tone === 'minimal' ? 'transparent' : 'rgba(0,0,0,0.5)',
-                        shadowBlur: 20
-                    },
-                    // Description
-                    ...(formData.productDescription ? [{
-                        id: `desc-${Date.now()}`,
-                        type: 'text' as const,
-                        name: 'Description',
-                        x: 80,
-                        y: 400,
-                        width: 920,
-                        height: 150,
-                        rotation: 0,
-                        opacity: 1,
-                        locked: false,
-                        visible: true,
-                        text: formData.productDescription,
-                        fontSize: 32,
-                        fontFamily: 'Inter',
-                        fontWeight: '400',
-                        color: formData.tone === 'minimal' ? '#333333' : '#e0e0e0',
-                        align: 'left',
-                        lineHeight: 1.4
-                    }] : []),
-                    // CTA Button
-                    {
-                        id: `cta-${Date.now()}`,
-                        type: 'cta' as const,
-                        name: 'CTA',
-                        x: 80,
-                        y: 880,
-                        width: 400,
-                        height: 100,
-                        rotation: 0,
-                        opacity: 1,
-                        locked: false,
-                        visible: true,
-                        text: 'JETZT ENTDECKEN',
-                        fontSize: 24,
-                        fontFamily: 'Inter',
-                        fontWeight: '700',
-                        color: '#ffffff',
-                        bgColor: formData.tone === 'luxury' ? '#d4af37' : '#000000',
-                        radius: 50,
-                        shadowColor: 'rgba(0,0,0,0.3)',
-                        shadowBlur: 15,
-                        shadowOffsetY: 5
-                    }
-                ] as StudioLayer[]
-            };
-
-            setGeneratedDoc(doc);
-            setIsGenerating(false);
-            setStep(4); // Go to preview instead of directly to canvas
-            // Parent (StudioPage) handles view transition after preview
-        } catch (error) {
-            // console.error('❌ Ad generation failed:', error);
-            setIsGenerating(false);
-            setLoadingStep('idle');
-
-            // Specific error messages
-            const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-
-            if (errorMessage === 'API_KEY_MISSING') {
-                toast.error('OpenAI API Key fehlt! Bitte in Netlify ENV setzen: OPENAI_API_KEY');
-            } else if (errorMessage === 'RATE_LIMIT') {
-                toast.error('Zu viele Anfragen! Bitte warte 1 Minute und versuche es erneut.');
-            } else if (errorMessage === 'EMPTY_HOOKS') {
-                toast.error('KI konnte keine Hooks generieren. Bitte füge mehr Details hinzu.');
-            } else if (errorMessage.includes('network') || errorMessage.includes('fetch')) {
-                toast.error('Netzwerk-Fehler. Bitte Internetverbindung prüfen.');
-            } else {
-                toast.error(`Ad-Generierung fehlgeschlagen: ${errorMessage.substring(0, 100)}`);
-            }
         }
     };
 

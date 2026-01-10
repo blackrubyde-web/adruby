@@ -417,7 +417,7 @@ export function AppleGridDashboard({
   const [windowWidth, setWindowWidth] = useState(typeof window !== 'undefined' ? window.innerWidth : 1200);
   const resizeFrameRef = useRef<number | null>(null);
   const handleCreateCampaign = () => {
-    const url = '/adbuilder';
+    const url = '/studio';  // ✅ Changed from /adbuilder
     window.history.pushState({}, document.title, url);
     window.dispatchEvent(new PopStateEvent('popstate'));
   };

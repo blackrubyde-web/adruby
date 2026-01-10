@@ -16,6 +16,16 @@ export default defineConfig({
       '@': path.resolve(__dirname, './src'),
     },
   },
+  // ✅ ADDED: Proxy Netlify functions during dev
+  server: {
+    proxy: {
+      '/.netlify/functions': {
+        target: 'http://localhost:8888',  // Netlify dev default port
+        changeOrigin: true,
+        secure: false,
+      },
+    },
+  },
   // Aggressive vendor splitting to reduce initial bundle size
   build: {
 

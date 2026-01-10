@@ -3,7 +3,7 @@ create table if not exists public.campaign_drafts (
   user_id uuid references auth.users(id) on delete cascade,
   name text,
   creative_ids text[] not null,
-  strategy_blueprint_id uuid references public.campaign_strategy_blueprints(id) on delete set null,
+  strategy_blueprint_id text references public.strategy_blueprints(id) on delete set null,  -- ✅ FIXED: TEXT → strategy_blueprints (not UUID)
   campaign_spec jsonb,
   status text not null default 'draft',
   created_at timestamptz not null default now(),
