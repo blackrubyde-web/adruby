@@ -88,7 +88,6 @@ export function AffiliateSuccessStories() {
                 </div>
 
             </div>
-        </div>
-        </section >
+        </section>
     );
 }
