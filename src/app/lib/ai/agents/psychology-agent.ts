@@ -294,9 +294,7 @@ function generateHeuristicProfile(input: PsychologyInput): PsychologyAgentResult
     return {
         ocean: {
             openness: isTech ? 0.75 : 0.60,
-            conscientiousness: isLux
-
-ury? 0.70: 0.55,
+            conscientiousness: isLuxury ? 0.70 : 0.55,
             extraversion: isYoung ? 0.70 : 0.50,
             agreeableness: 0.60,
             neuroticism: 0.45
