@@ -20,6 +20,7 @@ export interface TemplateIntelligence {
     id: string;
     sourceFile: string;
     imageUrl?: string;
+    imagePath?: string;
     category: TemplateCategory;
     style: TemplateStyle;
 
@@ -80,6 +81,10 @@ export type TemplateCategory =
     | 'real-estate'
     | 'sport'
     | 'business'
+    | 'ecommerce'
+    | 'dropshipping'
+    | 'tech'
+    | 'marketing'
     | 'beauty'
     | 'food'
     | 'fitness'
@@ -266,7 +271,7 @@ export async function getOptimalTemplates(
     }
 
     // Map product category to template category
-    const templateCategory = mapProductToTemplateCategory(productDNA.semantic.productCategory);
+    const templateCategory = mapProductToTemplateCategory(productDNA);
 
     // Map style DNA to template style
     const templateStyle = mapStyleDNAToTemplateStyle(styleDNA.aesthetic);
@@ -336,6 +341,10 @@ function mapCategory(categoryName: string): TemplateCategory {
 
     if (normalized.includes('travel')) return 'travel';
     if (normalized.includes('fashion')) return 'fashion';
+    if (normalized.includes('e-commerce') || normalized.includes('ecommerce') || normalized.includes('shop') || normalized.includes('store')) return 'ecommerce';
+    if (normalized.includes('dropship')) return 'dropshipping';
+    if (normalized.includes('tech') || normalized.includes('saas') || normalized.includes('software') || normalized.includes('app')) return 'tech';
+    if (normalized.includes('marketing') || normalized.includes('sales') || normalized.includes('lead')) return 'marketing';
     if (normalized.includes('business')) return 'business';
     if (normalized.includes('fitness')) return 'fitness';
     if (normalized.includes('food')) return 'food';
@@ -409,7 +418,21 @@ function estimatePerformance(_analysis: unknown, category: string): TemplateInte
     };
 }
 
-function mapProductToTemplateCategory(productCategory: string): TemplateCategory {
+function mapProductToTemplateCategory(productDNA: ProductDNA): TemplateCategory {
+    const combinedText = [
+        productDNA.semantic.productCategory,
+        productDNA.semantic.subcategory,
+        ...(productDNA.triggers.keywords || [])
+    ]
+        .filter(Boolean)
+        .join(' ')
+        .toLowerCase();
+
+    if (/dropship|drop ship/.test(combinedText)) return 'dropshipping';
+    if (/e-?commerce|shop|store|marketplace/.test(combinedText)) return 'ecommerce';
+    if (/saas|software|app|tech|digital|ai/.test(combinedText)) return 'tech';
+    if (/marketing|sales|lead|conversion|agency/.test(combinedText)) return 'marketing';
+
     const mapping: Record<string, TemplateCategory> = {
         'electronics': 'business',
         'fashion': 'fashion',
@@ -419,7 +442,7 @@ function mapProductToTemplateCategory(productCategory: string): TemplateCategory
         'fitness': 'fitness'
     };
 
-    return mapping[productCategory] || 'other';
+    return mapping[productDNA.semantic.productCategory] || 'other';
 }
 
 function mapStyleDNAToTemplateStyle(aesthetic: string): TemplateStyle {
@@ -438,8 +461,58 @@ async function loadSampleTemplates() {
     }
 
     for (const entry of templateCache) {
-        templateDB.add(entry as TemplateIntelligence);
+        const normalized = normalizeTemplateEntry(entry as TemplateIntelligence);
+        templateDB.add(normalized);
     }
 }
 
-export { templateDB };
+function normalizeTemplateEntry(entry: TemplateIntelligence): TemplateIntelligence {
+    const imagePath = resolveTemplateImagePath(entry);
+    const imageUrl = resolveTemplateImageUrl(entry, imagePath);
+    return {
+        ...entry,
+        imagePath,
+        imageUrl
+    };
+}
+
+function resolveTemplateImagePath(entry: TemplateIntelligence): string | undefined {
+    if (entry.imagePath) {
+        return entry.imagePath.replace(/^\/+/, '');
+    }
+    if (entry.imageUrl?.startsWith('/template-catalog/')) {
+        return entry.imageUrl.replace(/^\/template-catalog\//, '');
+    }
+    if (entry.imageUrl?.startsWith('template-catalog/')) {
+        return entry.imageUrl.replace(/^template-catalog\//, '');
+    }
+    return undefined;
+}
+
+function resolveTemplateImageUrl(
+    entry: TemplateIntelligence,
+    imagePath?: string
+): string | undefined {
+    if (entry.imageUrl && /^https?:\/\//.test(entry.imageUrl)) {
+        return entry.imageUrl;
+    }
+
+    const baseUrl =
+        (typeof process !== 'undefined' && process.env.TEMPLATE_CATALOG_BASE_URL) || '/template-catalog';
+
+    if (imagePath) {
+        return joinUrl(baseUrl, imagePath);
+    }
+
+    if (entry.imageUrl) {
+        return joinUrl(baseUrl, entry.imageUrl);
+    }
+
+    return undefined;
+}
+
+function joinUrl(base: string, filePath: string): string {
+    return `${base.replace(/\/+$/, '')}/${filePath.replace(/^\/+/, '')}`;
+}
+
+export { templateDB, resolveTemplateImageUrl };

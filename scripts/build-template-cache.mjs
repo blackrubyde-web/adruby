@@ -17,14 +17,17 @@ const getArg = (name, fallback) => {
 const dirArg =
   getArg('--dir', '3500+Social Media Templates/3. Fashion Social Media Templates');
 const outArg = getArg('--out', 'src/app/lib/ai/design/template-cache.json');
-const publicSubdirArg = getArg('--public-subdir', 'template-catalog/fashion');
+const catalogBaseArg = getArg('--catalog-base', 'template-catalog');
+const pathPrefixArg = getArg('--path-prefix', '');
 const limitArg = getArg('--limit', '');
+const shouldCopyPublic = !args.includes('--no-copy-public') && !args.includes('--no-copy');
+const shouldUploadSupabase = args.includes('--upload-supabase') || args.includes('--upload');
+const bucketArg = getArg('--bucket', process.env.TEMPLATE_CATALOG_BUCKET || 'template-catalog');
 const limit = limitArg ? Number(limitArg) : Infinity;
+const catalogBase = catalogBaseArg.replace(/^\/+/, '').replace(/\/+$/, '');
 
 const sourceDir = path.resolve(ROOT, dirArg);
 const outPath = path.resolve(ROOT, outArg);
-const publicSubdir = publicSubdirArg.replace(/^\/+/, '').replace(/\/+$/, '');
-const publicDir = path.resolve(ROOT, 'public', publicSubdir);
 
 const isImageFile = (file) => /\.(png|jpe?g)$/i.test(file);
 
@@ -69,6 +72,10 @@ const inferCategory = (name) => {
   if (n.includes('travel')) return 'travel';
   if (n.includes('furniture')) return 'furniture';
   if (n.includes('fashion')) return 'fashion';
+  if (n.includes('e-commerce') || n.includes('ecommerce') || n.includes('shop') || n.includes('store')) return 'ecommerce';
+  if (n.includes('dropship')) return 'dropshipping';
+  if (n.includes('tech') || n.includes('saas') || n.includes('software') || n.includes('app')) return 'tech';
+  if (n.includes('marketing') || n.includes('sales') || n.includes('lead')) return 'marketing';
   if (n.includes('restaurant')) return 'restaurant';
   if (n.includes('podcast')) return 'podcast';
   if (n.includes('real estate')) return 'real-estate';
@@ -87,6 +94,11 @@ const inferCategory = (name) => {
   if (n.includes('car rental') || n.includes('car-rental')) return 'car-rental';
   return 'other';
 };
+
+const folderName = path.basename(sourceDir);
+const defaultPrefix = inferCategory(folderName);
+const pathPrefix = pathPrefixArg || (defaultPrefix !== 'other' ? defaultPrefix : slugify(folderName));
+const publicDir = path.resolve(ROOT, 'public', catalogBase, pathPrefix);
 
 const inferStyle = (name) => {
   const n = name.toLowerCase();
@@ -130,6 +142,19 @@ const toPublicFilename = (filePath) => {
   return `${safeBase}${ext}`;
 };
 
+const joinUrl = (base, filePath) =>
+  `${base.replace(/\/+$/, '')}/${filePath.replace(/^\/+/, '')}`;
+
+const resolveBaseUrl = () => {
+  if (process.env.TEMPLATE_CATALOG_BASE_URL) {
+    return process.env.TEMPLATE_CATALOG_BASE_URL;
+  }
+  if (shouldUploadSupabase && process.env.SUPABASE_URL) {
+    return `${process.env.SUPABASE_URL.replace(/\/+$/, '')}/storage/v1/object/public/${bucketArg}`;
+  }
+  return `/${catalogBase}`;
+};
+
 const buildTemplate = (filePath, folderName) => {
     const relPath = path.relative(ROOT, filePath).replace(/\\/g, '/');
     const baseName = path.basename(filePath, path.extname(filePath));
@@ -146,11 +171,13 @@ const buildTemplate = (filePath, folderName) => {
   const headlineStyle = inferTypography(`${folderName} ${baseName}`);
 
   const publicFile = toPublicFilename(filePath);
-  const imageUrl = `/${publicSubdir}/${publicFile}`.replace(/\\/g, '/');
+  const imagePath = `${pathPrefix}/${publicFile}`.replace(/\\/g, '/');
+  const imageUrl = joinUrl(resolveBaseUrl(), imagePath);
 
   return {
     id: `tmpl-${hash}`,
     sourceFile: relPath,
+    imagePath,
     imageUrl,
     category,
     style,
@@ -197,18 +224,54 @@ if (!fs.existsSync(sourceDir)) {
   process.exit(1);
 }
 
-const folderName = path.basename(sourceDir);
 const files = listImages(sourceDir).slice(0, Number.isFinite(limit) ? limit : Infinity);
 
-fs.mkdirSync(publicDir, { recursive: true });
+if (shouldCopyPublic) {
+  fs.mkdirSync(publicDir, { recursive: true });
+}
 
-const templates = files.map((file) => {
+let supabase = null;
+if (shouldUploadSupabase) {
+  const supabaseUrl = process.env.SUPABASE_URL;
+  const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!supabaseUrl || !supabaseKey) {
+    console.error('Missing SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY for upload.');
+    process.exit(1);
+  }
+  const { createClient } = await import('@supabase/supabase-js');
+  supabase = createClient(supabaseUrl, supabaseKey);
+}
+
+const contentTypeFor = (filePath) => {
+  const ext = path.extname(filePath).toLowerCase();
+  if (ext === '.png') return 'image/png';
+  if (ext === '.webp') return 'image/webp';
+  return 'image/jpeg';
+};
+
+const templates = [];
+for (const file of files) {
   const entry = buildTemplate(file, folderName);
-  const publicFile = entry.imageUrl.replace(`/${publicSubdir}/`, '');
-  const destPath = path.join(publicDir, publicFile);
-  fs.copyFileSync(file, destPath);
-  return entry;
-});
+  const publicFile = toPublicFilename(file);
+  if (shouldCopyPublic) {
+    const destPath = path.join(publicDir, publicFile);
+    fs.copyFileSync(file, destPath);
+  }
+  if (supabase) {
+    const fileBuffer = fs.readFileSync(file);
+    const uploadPath = `${pathPrefix}/${publicFile}`.replace(/\\/g, '/');
+    const { error } = await supabase.storage.from(bucketArg).upload(uploadPath, fileBuffer, {
+      contentType: contentTypeFor(file),
+      cacheControl: '31536000',
+      upsert: true
+    });
+    if (error) {
+      console.error(`Supabase upload failed for ${uploadPath}: ${error.message || error}`);
+      process.exit(1);
+    }
+  }
+  templates.push(entry);
+}
 
 fs.mkdirSync(path.dirname(outPath), { recursive: true });
 fs.writeFileSync(outPath, JSON.stringify(templates, null, 2));

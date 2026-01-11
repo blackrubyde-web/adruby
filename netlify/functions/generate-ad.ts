@@ -1,5 +1,8 @@
 import type { Handler, HandlerEvent } from '@netlify/functions';
 import OpenAI from 'openai';
+import templateCache from '../../src/app/lib/ai/design/template-cache.json';
+import { resolveTemplateImageUrl } from '../../src/app/lib/ai/design/template-intelligence';
+import type { TemplateIntelligence } from '../../src/app/lib/ai/design/template-intelligence';
 
 /**
  * Parse JSON response, handling markdown code fences
@@ -146,7 +149,9 @@ const handler: Handler = async (event: HandlerEvent) => {
                 const baseTemplate = orchestratorResult.baseTemplates.find(
                     (template) => template.id === bestVariation.baseTemplate
                 );
-                templateBackgroundUrl = baseTemplate?.imageUrl;
+                if (baseTemplate) {
+                    templateBackgroundUrl = resolveTemplateImageUrl(baseTemplate) || baseTemplate.imageUrl;
+                }
                 templatePalette = {
                     background: bestVariation.colors.palette[0],
                     text: bestVariation.colors.dominantColor,
@@ -161,6 +166,18 @@ const handler: Handler = async (event: HandlerEvent) => {
             }
         } catch (err) {
             console.warn('[generate-ad] Orchestrator failed, falling back to baseline pipeline:', err?.message || err);
+        }
+
+        if (!templateBackgroundUrl) {
+            const fallback = pickTemplateFallback(request);
+            if (fallback) {
+                templateBackgroundUrl = fallback.imageUrl;
+                templatePalette = {
+                    background: fallback.colors?.palette?.[0],
+                    text: fallback.colors?.dominantColor,
+                    accent: fallback.colors?.accentColor
+                };
+            }
         }
 
         // FALLBACK: Simple copy generation if orchestrator disabled
@@ -515,6 +532,51 @@ function getToneColor(tone: string): string {
         professional: '#F8F9FA',
     };
     return colors[tone] || '#FFFFFF';
+}
+
+type CachedTemplate = {
+    imageUrl?: string;
+    imagePath?: string;
+    category?: string;
+    colors?: {
+        palette?: string[];
+        dominantColor?: string;
+        accentColor?: string;
+    };
+};
+
+function pickTemplateFallback(request: GenerateAdRequest): CachedTemplate | undefined {
+    if (!Array.isArray(templateCache) || templateCache.length === 0) {
+        return undefined;
+    }
+
+    const combined = `${request.productName} ${request.userPrompt || ''}`.toLowerCase();
+    const category = inferTemplateCategory(combined);
+    const pool = templateCache.filter((entry) =>
+        category ? entry.category === category : true
+    ) as CachedTemplate[];
+
+    const candidates = pool.length > 0 ? pool : (templateCache as CachedTemplate[]);
+    const pick = candidates[Math.floor(Math.random() * candidates.length)];
+    const imageUrl = resolveTemplateImageUrl(pick as TemplateIntelligence);
+
+    return {
+        ...pick,
+        imageUrl
+    };
+}
+
+function inferTemplateCategory(text: string): string | undefined {
+    if (/dropship|drop ship/.test(text)) return 'dropshipping';
+    if (/e-?commerce|shop|store|marketplace/.test(text)) return 'ecommerce';
+    if (/saas|software|app|tech|digital|ai/.test(text)) return 'tech';
+    if (/marketing|sales|lead|conversion|agency/.test(text)) return 'marketing';
+    if (/fashion|apparel|streetwear/.test(text)) return 'fashion';
+    if (/beauty|skincare|makeup/.test(text)) return 'beauty';
+    if (/food|restaurant|coffee|drink/.test(text)) return 'food';
+    if (/fitness|gym|sport/.test(text)) return 'fitness';
+    if (/home|furniture|decor/.test(text)) return 'interior-design';
+    return undefined;
 }
 
 export { handler };
