@@ -278,6 +278,10 @@ export async function getOptimalTemplates(
         productDNA
     });
 
+    if (templates.length === 0) {
+        return templateDB.getRandomVariation(count);
+    }
+
     return templates.slice(0, count);
 }
 
