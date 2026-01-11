@@ -208,7 +208,7 @@ export async function creativeSaveToLibrary(params: {
   blueprintId?: string | null;
   score?: number | null;
 }) {
-  const token = await requireAccessToken();
+  await requireAccessToken();
 
   // Direct Supabase Insert (Fixes 404 on deleted endpoint)
   const { data: session } = await supabase.auth.getSession();

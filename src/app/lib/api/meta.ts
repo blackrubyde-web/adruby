@@ -22,7 +22,7 @@ export async function getMetaStatus() {
 
 export async function getMetaAudiences() {
   // Use explicit type validation in the component or return generic for now
-  return apiClient.get<any>("/api/meta-audiences");
+  return apiClient.get<unknown>("/api/meta-audiences");
 }
 
 export async function getMetaAuthUrl() {

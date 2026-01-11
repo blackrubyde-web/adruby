@@ -7,7 +7,7 @@ interface OpenAIProxyError {
 }
 
 /** OpenAI API Response */
-interface OpenAIResponse<T = any> {
+interface OpenAIResponse<T = unknown> {
     data: T | null;
     error: OpenAIProxyError | null;
 }
@@ -30,7 +30,7 @@ interface InvokeOptions {
  * Helper to invoke the local Netlify OpenAI Proxy function
  * Replaces supabase.functions.invoke('openai-proxy')
  */
-export async function invokeOpenAIProxy<T = any>(
+export async function invokeOpenAIProxy<T = unknown>(
     payload: OpenAIProxyPayload,
     options?: InvokeOptions
 ): Promise<OpenAIResponse<T>> {
