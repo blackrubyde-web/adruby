@@ -70,6 +70,13 @@ export type BrandArchetype = 'innovator' | 'ruler' | 'caregiver' | 'rebel' | 'he
 export type MarketPosition = 'disruptor' | 'leader' | 'challenger' | 'niche' | 'follower';
 export type TriggerType = 'scarcity' | 'social_proof' | 'authority' | 'reciprocity' | 'urgency' | 'curiosity' | 'exclusivity';
 
+type ProductDNAInput = {
+    productName: string;
+    productDescription?: string;
+    priceValue?: number;
+    category?: string;
+};
+
 /**
  * Analyze product and extract comprehensive DNA
  */
@@ -83,8 +90,6 @@ export async function analyzeProductDNA(input: {
     apiKey: string;  // Required for OpenAI service
 }): Promise<ProductDNA> {
     const openai = getOpenAIService(input.apiKey);
-
-    console.log('🧬 Analyzing Product DNA for:', input.productName);
 
     // Build comprehensive analysis prompt
     const prompt = buildAnalysisPrompt(input);
@@ -100,11 +105,6 @@ export async function analyzeProductDNA(input: {
 
         // Parse AI response into ProductDNA
         const dna = parseProductDNA(result.content.description, input);
-
-        console.log(`✅ Product DNA extracted: ${dna.semantic.productCategory}`);
-        console.log(`   Price Point: ${dna.semantic.pricePoint}`);
-        console.log(`   Target Age: ${dna.demographics.primaryAge.join('-')}`);
-        console.log(`   Brand Archetype: ${dna.semantic.brandArchetype}`);
 
         return dna;
 
@@ -172,11 +172,9 @@ Return as DETAILED analysis, focusing on psychological and strategic insights.`;
 /**
  * Parse AI response into structured ProductDNA
  */
-function parseProductDNA(response: string, input: any): ProductDNA {
+function parseProductDNA(response: string, input: ProductDNAInput): ProductDNA {
     // Extract insights from AI response
     // This is a simplified parser - in production would use JSON mode
-
-    const lowerResponse = response.toLowerCase();
 
     // Material detection
     let material: MaterialType = 'plastic';
@@ -315,11 +313,11 @@ function extractEmotionalDrivers(text: string): string[] {
     return drivers.length > 0 ? drivers : ['quality', 'value'];
 }
 
-function extractUSPs(text: string): string[] {
+function extractUSPs(_text: string): string[] {
     return ['unique design', 'high quality', 'innovative features']; // Placeholder
 }
 
-function extractDifferentiators(text: string): string[] {
+function extractDifferentiators(_text: string): string[] {
     return ['premium materials', 'advanced technology']; // Placeholder
 }
 
@@ -336,14 +334,14 @@ function extractKeywords(productName: string): string[] {
     return productName.split(' ').filter(w => w.length > 3);
 }
 
-function extractMotivations(text: string): string[] {
+function extractMotivations(_text: string): string[] {
     return ['solve problem', 'improve life', 'status upgrade'];
 }
 
 /**
  * Fallback heuristic DNA generation
  */
-function generateHeuristicDNA(input: any): ProductDNA {
+function generateHeuristicDNA(input: ProductDNAInput): ProductDNA {
     return {
         visual: {
             dominantColors: ['#000000', '#FFFFFF'],
