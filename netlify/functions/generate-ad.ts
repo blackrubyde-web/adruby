@@ -125,6 +125,8 @@ const handler: Handler = async (event: HandlerEvent) => {
 
         // 🆕 MASTER TEMPLATE ORCHESTRATOR (optional - do not hard-fail)
         // Integrates AI systems: Product DNA, Style DNA, Template Intelligence, Variations
+        let templateBackgroundUrl: string | undefined;
+        let templatePalette: { background?: string; text?: string; accent?: string } | undefined;
         try {
             const { orchestrateTemplateGeneration } = await import('../../src/app/lib/ai/design/master-template-orchestrator');
 
@@ -141,6 +143,15 @@ const handler: Handler = async (event: HandlerEvent) => {
 
             const bestVariation = orchestratorResult?.topVariations?.[0];
             if (bestVariation) {
+                const baseTemplate = orchestratorResult.baseTemplates.find(
+                    (template) => template.id === bestVariation.baseTemplate
+                );
+                templateBackgroundUrl = baseTemplate?.imageUrl;
+                templatePalette = {
+                    background: bestVariation.colors.palette[0],
+                    text: bestVariation.colors.dominantColor,
+                    accent: bestVariation.colors.accentColor
+                };
                 console.log(`✅ Best variation selected:`);
                 console.log(`   Quality Score: ${bestVariation.scores.overall}/100`);
                 console.log(`   Uniqueness: ${bestVariation.scores.uniqueness}/100`);
@@ -265,12 +276,18 @@ const handler: Handler = async (event: HandlerEvent) => {
         }
 
         // Build adaptive ad document
+        const backgroundFill = templatePalette?.background || getToneColor(request.tone);
+        const headlineColor = templatePalette?.text || '#000000';
+        const descriptionColor = templatePalette?.text ? templatePalette.text : '#333333';
+        const ctaBg = templatePalette?.accent || '#000000';
+        const ctaTextColor = templatePalette?.accent ? '#FFFFFF' : '#FFFFFF';
+
         const adDocument = {
             id: `ad-${Date.now()}`,
             name: `${request.productName} Ad`,
             width: 1080,
             height: 1080,
-            backgroundColor: getToneColor(request.tone),
+            backgroundColor: backgroundFill,
             layers: [
                 // Background
                 {
@@ -285,12 +302,14 @@ const handler: Handler = async (event: HandlerEvent) => {
                     opacity: 1,
                     locked: false,
                     visible: true,
-                    fill: getToneColor(request.tone),
+                    fill: backgroundFill,
+                    src: templateBackgroundUrl,
+                    fit: 'cover',
                 },
                 // Product image (adaptive position!)
                 ...(request.imageBase64 ? [{
                     id: 'product',
-                    type: 'image',
+                    type: 'product',
                     name: 'Product',
                     x: productX,
                     y: productY,
@@ -320,7 +339,7 @@ const handler: Handler = async (event: HandlerEvent) => {
                     fontSize: 64,
                     fontFamily: 'Inter',
                     fontWeight: '900',
-                    fill: '#000000',
+                    fill: headlineColor,
                     align: productPosition !== 'center' ? 'left' : 'center',
                     lineHeight: 1.1,
                 },
@@ -341,7 +360,7 @@ const handler: Handler = async (event: HandlerEvent) => {
                     fontSize: 24,
                     fontFamily: 'Inter',
                     fontWeight: '400',
-                    fill: '#333333',
+                    fill: descriptionColor,
                     align: productPosition !== 'center' ? 'left' : 'center',
                     lineHeight: 1.4,
                 },
@@ -359,7 +378,7 @@ const handler: Handler = async (event: HandlerEvent) => {
                     locked: false,
                     visible: true,
                     shape: 'rectangle',
-                    fill: '#000000',
+                    fill: ctaBg,
                     cornerRadius: 12,
                 },
                 // CTA Text
@@ -379,7 +398,7 @@ const handler: Handler = async (event: HandlerEvent) => {
                     fontSize: 20,
                     fontFamily: 'Inter',
                     fontWeight: '700',
-                    fill: '#FFFFFF',
+                    fill: ctaTextColor,
                     align: 'center',
                     lineHeight: 3,
                 },

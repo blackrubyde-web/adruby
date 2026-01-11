@@ -19,6 +19,7 @@ import templateCache from './template-cache.json';
 export interface TemplateIntelligence {
     id: string;
     sourceFile: string;
+    imageUrl?: string;
     category: TemplateCategory;
     style: TemplateStyle;
 

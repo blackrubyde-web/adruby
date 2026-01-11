@@ -17,11 +17,14 @@ const getArg = (name, fallback) => {
 const dirArg =
   getArg('--dir', '3500+Social Media Templates/3. Fashion Social Media Templates');
 const outArg = getArg('--out', 'src/app/lib/ai/design/template-cache.json');
+const publicSubdirArg = getArg('--public-subdir', 'template-catalog/fashion');
 const limitArg = getArg('--limit', '');
 const limit = limitArg ? Number(limitArg) : Infinity;
 
 const sourceDir = path.resolve(ROOT, dirArg);
 const outPath = path.resolve(ROOT, outArg);
+const publicSubdir = publicSubdirArg.replace(/^\/+/, '').replace(/\/+$/, '');
+const publicDir = path.resolve(ROOT, 'public', publicSubdir);
 
 const isImageFile = (file) => /\.(png|jpe?g)$/i.test(file);
 
@@ -112,10 +115,25 @@ const inferTypography = (name) => {
   return 'minimal';
 };
 
+const slugify = (value) =>
+  value
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/-+/g, '-')
+    .replace(/(^-|-$)/g, '');
+
+const toPublicFilename = (filePath) => {
+  const rel = path.relative(sourceDir, filePath);
+  const ext = path.extname(rel).toLowerCase();
+  const base = rel.slice(0, rel.length - ext.length);
+  const safeBase = slugify(base.replace(/[\\/]+/g, '-'));
+  return `${safeBase}${ext}`;
+};
+
 const buildTemplate = (filePath, folderName) => {
-  const relPath = path.relative(ROOT, filePath).replace(/\\/g, '/');
-  const baseName = path.basename(filePath, path.extname(filePath));
-  const label = `${folderName} ${baseName}`;
+    const relPath = path.relative(ROOT, filePath).replace(/\\/g, '/');
+    const baseName = path.basename(filePath, path.extname(filePath));
+    const label = `${folderName} ${baseName}`;
   const hash = hashString(relPath);
   const hue = hash % 360;
   const dominant = hslToHex(hue, 55, 45);
@@ -127,9 +145,13 @@ const buildTemplate = (filePath, folderName) => {
   const structure = inferLayout(`${folderName} ${baseName}`);
   const headlineStyle = inferTypography(`${folderName} ${baseName}`);
 
+  const publicFile = toPublicFilename(filePath);
+  const imageUrl = `/${publicSubdir}/${publicFile}`.replace(/\\/g, '/');
+
   return {
     id: `tmpl-${hash}`,
     sourceFile: relPath,
+    imageUrl,
     category,
     style,
     layout: {
@@ -178,7 +200,15 @@ if (!fs.existsSync(sourceDir)) {
 const folderName = path.basename(sourceDir);
 const files = listImages(sourceDir).slice(0, Number.isFinite(limit) ? limit : Infinity);
 
-const templates = files.map((file) => buildTemplate(file, folderName));
+fs.mkdirSync(publicDir, { recursive: true });
+
+const templates = files.map((file) => {
+  const entry = buildTemplate(file, folderName);
+  const publicFile = entry.imageUrl.replace(`/${publicSubdir}/`, '');
+  const destPath = path.join(publicDir, publicFile);
+  fs.copyFileSync(file, destPath);
+  return entry;
+});
 
 fs.mkdirSync(path.dirname(outPath), { recursive: true });
 fs.writeFileSync(outPath, JSON.stringify(templates, null, 2));
