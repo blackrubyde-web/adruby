@@ -430,7 +430,7 @@ async function runPerformanceAgent(
  */
 async function runComplianceAgent(
     copy: { headline: string; description: string; cta: string },
-    input: OrchestratorInput
+    _input: OrchestratorInput
 ): Promise<ComplianceAgentResult> {
     const { checkAdCopy } = await import('../content-safety/profanity-filter');
 
@@ -459,7 +459,7 @@ async function runComplianceAgent(
 async function synthesizeAdDocument(
     input: OrchestratorInput,
     copy: CopyAgentResult,
-    visual: VisualAgentResult,
+    _visual: VisualAgentResult,
     psychology: PsychologyAgentResult
 ): Promise<AdDocument> {
     // Use enhanced layout engine with agent recommendations

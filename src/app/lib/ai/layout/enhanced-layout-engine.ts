@@ -64,6 +64,7 @@ export async function composeAdEnhanced(input: LayoutInput): Promise<EnhancedLay
         // STEP 2: Generate base layout
         const result = await baseComposeAd(enhancedInput);
         const { adDocument, quality, metadata } = result;
+        const enhancedMetadata: EnhancedLayoutOutput['metadata'] = { ...metadata };
 
         // STEP 3: Auto-adjust layout if collisions detected
         try {
@@ -77,7 +78,7 @@ export async function composeAdEnhanced(input: LayoutInput): Promise<EnhancedLay
                 if (adjustmentResult.adjustmentsMade > 0) {
                     adDocument.layers = adjustmentResult.adjustedLayers;
                     quality.suggestions.push(`Applied ${adjustmentResult.adjustmentsMade} auto-adjustments`);
-                    (metadata as any).autoAdjusted = true;
+                    enhancedMetadata.autoAdjusted = true;
                 }
             }
         } catch (error) {
@@ -145,7 +146,7 @@ export async function composeAdEnhanced(input: LayoutInput): Promise<EnhancedLay
                 comprehensiveScore
             },
             metadata: {
-                ...metadata,
+                ...enhancedMetadata,
                 colorsExtracted: !!input.productImage && !input.colors
             }
         };

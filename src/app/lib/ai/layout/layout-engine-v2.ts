@@ -12,8 +12,8 @@
  * Output: Production-ready, accessible, balanced ad layouts
  */
 
-import type { AdDocument, StudioLayer, TextLayer, ImageLayer, CtaLayer } from '../../../types/studio';
-import type { AdFormat, GridConfig } from './grid-system';
+import type { AdDocument, TextLayer, ImageLayer, CtaLayer } from '../../../types/studio';
+import type { AdFormat } from './grid-system';
 import type { TemplatePattern } from './template-library';
 import { getGridConfig, getSafeArea } from './grid-system';
 import { getTemplateByPattern, selectTemplate } from './template-library';

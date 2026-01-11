@@ -9,9 +9,9 @@
  * - Dynamic element sizing
  */
 
-import type { AdDocument, StudioLayer, TextLayer, ImageLayer, CtaLayer, ShapeLayer } from '../../../types/studio';
-import type { AdFormat, GridConfig, GridPosition } from './grid-system';
-import { getGridConfig, calculateGridPosition, getCenteredPosition, LayoutPresets } from './grid-system';
+import type { StudioLayer, TextLayer, ImageLayer, CtaLayer, ShapeLayer } from '../../../types/studio';
+import type { GridConfig } from './grid-system';
+import { calculateGridPosition, LayoutPresets } from './grid-system';
 
 export type TemplatePattern =
     | 'minimal'          // Clean, product-focused (Apple style)
