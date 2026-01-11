@@ -106,14 +106,8 @@ export async function generateAdaptiveTemplate(
     productImageBase64: string,
     styleDNA: StyleDNA
 ): Promise<AdaptiveTemplate> {
-    console.log('🎨 Analyzing product image for adaptive layout...');
-
     // STEP 1: Vision API analysis
     const analysis = await analyzeProductImage(productImageBase64);
-
-    console.log(`   Product position: ${analysis.composition.dominantSide}`);
-    console.log(`   Visual balance: ${analysis.composition.balance}/100`);
-    console.log(`   Open areas: ${analysis.composition.openAreas.join(', ')}`);
 
     // STEP 2: Determine optimal text placement
     const textZones = calculateOptimalTextPlacement(analysis, styleDNA);
@@ -123,8 +117,6 @@ export async function generateAdaptiveTemplate(
 
     // STEP 4: Ensure color harmony
     const harmony = ensureColorHarmony(analysis, styleDNA);
-
-    console.log(`✅ Adaptive template generated (Balance: ${balance.score}/100)`);
 
     return {
         layout: {
@@ -322,7 +314,7 @@ function analyzeComposition(
  */
 function calculateOptimalTextPlacement(
     analysis: ProductImageAnalysis,
-    styleDNA: StyleDNA
+    _styleDNA: StyleDNA
 ): TextZone[] {
     const zones: TextZone[] = [];
     const freeSpaces = analysis.freeSpaces;
@@ -404,7 +396,7 @@ function calculateOptimalTextPlacement(
  */
 function calculateCTAPlacement(
     analysis: ProductImageAnalysis,
-    textZones: TextZone[]
+    _textZones: TextZone[]
 ): { x: number; y: number; width: number; height: number } {
     // CTA usually goes at bottom center
     const bottomSpace = analysis.freeSpaces.find(s => s.region === 'bottom');
@@ -458,8 +450,8 @@ function calculateVisualBalance(
  * Ensure color harmony between product and text
  */
 function ensureColorHarmony(
-    analysis: ProductImageAnalysis,
-    styleDNA: StyleDNA
+    _analysis: ProductImageAnalysis,
+    _styleDNA: StyleDNA
 ): { colorMatch: number; spacingFlow: number; visualRhythm: number } {
     // Simplified harmony calculation
     return {

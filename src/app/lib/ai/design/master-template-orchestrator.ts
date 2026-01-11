@@ -66,12 +66,8 @@ export async function orchestrateTemplateGeneration(
     request: MasterTemplateRequest
 ): Promise<MasterTemplateResult> {
     const startTime = Date.now();
-    console.log('🚀 Master Template Orchestrator started');
-    console.log(`   Product: ${request.productName}`);
-    console.log(`   Target variations: ${request.variationCount || 50}`);
 
     // STAGE 1: Product DNA Analysis
-    console.log('\n📊 STAGE 1: Analyzing Product DNA...');
     const dnaStart = Date.now();
 
     const productDNA = await analyzeProductDNA({
@@ -85,29 +81,19 @@ export async function orchestrateTemplateGeneration(
     });
 
     const dnaTime = Date.now() - dnaStart;
-    console.log(`✅ Product DNA extracted in ${dnaTime}ms`);
-    console.log(`   Category: ${productDNA.semantic.productCategory}`);
-    console.log(`   Price: ${productDNA.semantic.pricePoint}`);
-    console.log(`   Target Age: ${productDNA.demographics.primaryAge.join('-')}`);
 
     // STAGE 2: Style DNA Extraction
-    console.log('\n🎨 STAGE 2: Extracting Style DNA...');
     const styleStart = Date.now();
 
     const styleDNA = extractStyleDNA(productDNA);
 
     const styleTime = Date.now() - styleStart;
-    console.log(`✅ Style DNA extracted in ${styleTime}ms`);
-    console.log(`   Aesthetic: ${styleDNA.aesthetic}`);
-    console.log(`   Color scheme: ${styleDNA.colorStrategy.scheme}`);
-    console.log(`   Typography: ${styleDNA.typography.category}`);
 
     // STAGE 3: Product Image Analysis (if image provided)
     let imageAnalysis: ProductImageAnalysis | undefined;
     let adaptiveLayout: AdaptiveTemplate | undefined;
 
     if (request.productImageBase64) {
-        console.log('\n🖼️  STAGE 3: Analyzing Product Image...');
         const imageStart = Date.now();
 
         adaptiveLayout = await generateAdaptiveTemplate(
@@ -134,12 +120,9 @@ export async function orchestrateTemplateGeneration(
         };
 
         const imageTime = Date.now() - imageStart;
-        console.log(`✅ Image analyzed in ${imageTime}ms`);
-        console.log(`   Balance score: ${adaptiveLayout.balance.score}/100`);
     }
 
     // STAGE 4: Template Intelligence (find best matches)
-    console.log('\n🔍 STAGE 4: Finding Optimal Templates...');
     const templateStart = Date.now();
 
     const baseTemplates = await getOptimalTemplates(
@@ -149,10 +132,8 @@ export async function orchestrateTemplateGeneration(
     );
 
     const templateTime = Date.now() - templateStart;
-    console.log(`✅ Found ${baseTemplates.length} optimal templates in ${templateTime}ms`);
 
     // STAGE 5: Variation Generation
-    console.log('\n🎲 STAGE 5: Generating Variations...');
     const variationStart = Date.now();
 
     const variationCount = request.variationCount || 50;
@@ -172,10 +153,8 @@ export async function orchestrateTemplateGeneration(
     }
 
     const variationTime = Date.now() - variationStart;
-    console.log(`✅ Generated ${allVariations.length} variations in ${variationTime}ms`);
 
     // STAGE 6: Quality Filtering & Ranking
-    console.log('\n⭐ STAGE 6: Ranking by Quality...');
 
     const minQuality = request.minQuality || 70;
     const qualityFiltered = allVariations.filter(v => v.scores.overall >= minQuality);
@@ -186,18 +165,8 @@ export async function orchestrateTemplateGeneration(
     // Take top variations (max 50)
     const topVariations = ranked.slice(0, Math.min(50, variationCount));
 
-    console.log(`✅ Top ${topVariations.length} variations selected`);
-    console.log(`   Best score: ${topVariations[0]?.scores.overall || 0}/100`);
-    console.log(`   Avg score: ${Math.round(topVariations.reduce((sum, v) => sum + v.scores.overall, 0) / topVariations.length)}/100`);
-
     // Final telemetry
     const totalTime = Date.now() - startTime;
-
-    console.log(`\n✨ Master Orchestrator complete in ${totalTime}ms`);
-    console.log(`   Product DNA: ${dnaTime}ms`);
-    console.log(`   Style DNA: ${styleTime}ms`);
-    console.log(`   Template search: ${templateTime}ms`);
-    console.log(`   Variation generation: ${variationTime}ms`);
 
     return {
         productDNA,
