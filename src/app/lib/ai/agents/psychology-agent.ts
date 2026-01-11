@@ -411,20 +411,7 @@ export function adaptCopyToPsychology(
     // This would use AI in production, for now returns adjusted copy
     // Based on psychology insights
 
-    let adjustedCopy = { ...copy };
-
-    // Apply emotional triggers
-    const trigger = psychology.emotional.triggers[0];
-    if (trigger && !copy.headline.toLowerCase().includes(trigger.toLowerCase())) {
-        // Suggest adding trigger word to headline
-        console.log(`💡 Suggestion: Add "${trigger}" to headline`);
-    }
-
-    // Apply persuasion principle
-    const principle = psychology.persuasion.primaryPrinciple;
-    if (principle === 'social_proof' && !/\d+/.test(copy.description)) {
-        console.log('💡 Suggestion: Add social proof numbers');
-    }
+    const adjustedCopy = { ...copy };
 
     return adjustedCopy;
 }

@@ -1,3 +1,5 @@
+import type { AdDocument, CtaLayer, StudioLayer, TextLayer } from '../../../types/studio';
+
 /**
  * KERNING ENGINE
  * Professional letter-pair spacing adjustments
@@ -98,7 +100,7 @@ const ALL_CAPS_ADJUSTMENT = 0.05; // Add 5% spacing for all-caps
 export function calculateKerning(
     text: string,
     fontSize: number,
-    fontFamily: string = 'Inter'
+    _fontFamily: string = 'Inter'
 ): KerningAdjustment[] {
     const adjustments: KerningAdjustment[] = [];
 
@@ -202,20 +204,21 @@ export function getKerningRecommendations(
 /**
  * Batch apply to all text in ad
  */
-export function applyKerningToDocument(adDocument: any): {
-    updatedDocument: any;
+export function applyKerningToDocument(adDocument: AdDocument): {
+    updatedDocument: AdDocument;
     adjustmentsMade: number;
     totalKerningPairs: number;
 } {
     let adjustmentsMade = 0;
     let totalKerningPairs = 0;
 
-    const updatedLayers = adDocument.layers.map((layer: any) => {
+    const updatedLayers = adDocument.layers.map((layer: StudioLayer) => {
         if (layer.type === 'text' || layer.type === 'cta') {
+            const textLayer = layer as TextLayer | CtaLayer;
             const result = applyKerning(
-                layer.text || '',
-                layer.fontSize || 16,
-                layer.letterSpacing || 0
+                textLayer.text || '',
+                textLayer.fontSize || 16,
+                textLayer.letterSpacing || 0
             );
 
             totalKerningPairs += result.adjustments.length;
@@ -223,7 +226,7 @@ export function applyKerningToDocument(adDocument: any): {
             if (result.adjustments.length > 0) {
                 adjustmentsMade++;
                 return {
-                    ...layer,
+                    ...textLayer,
                     letterSpacing: result.adjustedLetterSpacing
                 };
             }
