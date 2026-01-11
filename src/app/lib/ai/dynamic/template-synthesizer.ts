@@ -1,5 +1,5 @@
 import { getOpenAIService } from '../services/openai-service';
-import type { AdDocument } from '../../../types/studio';
+import type { AdDocument, ImageLayer, ShapeLayer, TextLayer } from '../../../types/studio';
 
 /**
  * DYNAMIC TEMPLATE SYNTHESIZER
@@ -122,8 +122,6 @@ export async function synthesizeTemplate(
 ): Promise<GeneratedTemplate> {
     const openai = getOpenAIService();
 
-    console.log('🎨 Template Synthesizer: Generating unique layout...');
-
     // Build comprehensive prompt
     const prompt = buildTemplatePrompt(input);
 
@@ -143,8 +141,6 @@ export async function synthesizeTemplate(
 
         // Validate template
         const validated = validateTemplate(template);
-
-        console.log(`✅ Template Synthesizer: "${validated.name}" generated`);
 
         return validated;
 
@@ -421,7 +417,8 @@ function validateTemplate(template: GeneratedTemplate): GeneratedTemplate {
  * Generate fallback template if AI synthesis fails
  */
 function generateFallbackTemplate(input: TemplateSynthesisInput): GeneratedTemplate {
-    const toneDefaults: Record<string, any> = {
+    type ToneDefaults = { bg: string; text: string; accent: string };
+    const toneDefaults: Record<TemplateSynthesisInput['tone'], ToneDefaults> = {
         minimal: {
             bg: '#FFFFFF',
             text: '#000000',
@@ -449,7 +446,7 @@ function generateFallbackTemplate(input: TemplateSynthesisInput): GeneratedTempl
         }
     };
 
-    const defaults = toneDefaults[input.tone] || toneDefaults.professional;
+    const defaults = toneDefaults[input.tone];
 
     return {
         id: `fallback-${input.tone}-${Date.now()}`,
@@ -570,7 +567,7 @@ export function templateToAdDocument(
 
         // Map layer type to document layer
         if (layer.type === 'background') {
-            doc.layers.push({
+            const backgroundLayer: ImageLayer = {
                 id: layer.id,
                 type: 'background',
                 name: 'Background',
@@ -579,10 +576,11 @@ export function templateToAdDocument(
                 opacity: layer.styling.opacity || 1,
                 locked: false,
                 visible: true,
-                fill: layer.styling.backgroundColor || structure.canvas.backgroundColor
-            } as any);
+                src: ''
+            };
+            doc.layers.push(backgroundLayer);
         } else if (layer.type === 'product' && assets.productImage) {
-            doc.layers.push({
+            const productLayer: ImageLayer = {
                 id: layer.id,
                 type: 'image',
                 name: 'Product',
@@ -593,9 +591,10 @@ export function templateToAdDocument(
                 visible: true,
                 src: assets.productImage,
                 fit: 'contain'
-            } as any);
+            };
+            doc.layers.push(productLayer);
         } else if (layer.type === 'headline') {
-            doc.layers.push({
+            const headlineLayer: TextLayer = {
                 id: layer.id,
                 type: 'text',
                 name: 'Headline',
@@ -609,11 +608,13 @@ export function templateToAdDocument(
                 fontFamily: layer.styling.fontFamily || 'Inter',
                 fontWeight: String(layer.styling.fontWeight || '900'),
                 color: layer.styling.color || '#000000',
+                fill: layer.styling.color || '#000000',
                 align: 'center',
                 lineHeight: 1.1
-            } as any);
+            };
+            doc.layers.push(headlineLayer);
         } else if (layer.type === 'description') {
-            doc.layers.push({
+            const descriptionLayer: TextLayer = {
                 id: layer.id,
                 type: 'text',
                 name: 'Description',
@@ -627,11 +628,13 @@ export function templateToAdDocument(
                 fontFamily: layer.styling.fontFamily || 'Inter',
                 fontWeight: String(layer.styling.fontWeight || '400'),
                 color: layer.styling.color || '#000000',
+                fill: layer.styling.color || '#000000',
                 align: 'center',
                 lineHeight: 1.4
-            } as any);
+            };
+            doc.layers.push(descriptionLayer);
         } else if (layer.type === 'cta') {
-            doc.layers.push({
+            const ctaShape: ShapeLayer = {
                 id: layer.id,
                 type: 'shape',
                 name: 'CTA',
@@ -640,13 +643,13 @@ export function templateToAdDocument(
                 opacity: 1,
                 locked: false,
                 visible: true,
-                shape: 'rectangle',
                 fill: layer.styling.backgroundColor || '#000000',
-                borderRadius: layer.styling.borderRadius || 12
-            } as any);
+                cornerRadius: layer.styling.borderRadius || 12
+            };
+            doc.layers.push(ctaShape);
 
             // Add CTA text on top
-            doc.layers.push({
+            const ctaText: TextLayer = {
                 id: `${layer.id}-text`,
                 type: 'text',
                 name: 'CTA Text',
@@ -660,9 +663,11 @@ export function templateToAdDocument(
                 fontFamily: layer.styling.fontFamily || 'Inter',
                 fontWeight: String(layer.styling.fontWeight || '700'),
                 color: layer.styling.color || '#FFFFFF',
+                fill: layer.styling.color || '#FFFFFF',
                 align: 'center',
                 lineHeight: 1.2
-            } as any);
+            };
+            doc.layers.push(ctaText);
         }
     });
 

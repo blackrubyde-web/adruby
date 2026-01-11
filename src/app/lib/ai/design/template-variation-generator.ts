@@ -335,7 +335,7 @@ function calculateQualityScores(
     colors: ColorMutation,
     layout: LayoutMutation,
     typography: TypographyMutation,
-    elements: ElementMutation
+    _elements: ElementMutation
 ): TemplateVariation['scores'] {
     // Uniqueness: Higher for more extreme mutations
     const uniqueness = 60 + (colors.strategy !== 'shift' ? 20 : 0) + (layout.transformation !== 'none' ? 15 : 0);
@@ -403,7 +403,7 @@ function calculateSimilarity(v1: TemplateVariation, v2: TemplateVariation): numb
 }
 
 // Color manipulation utilities
-function shiftHue(hex: string, degrees: number): string {
+function shiftHue(hex: string, _degrees: number): string {
     // Simplified hue shift (in production would use proper color space)
     return hex; // Placeholder
 }
@@ -431,7 +431,7 @@ function invertColor(hex: string): string {
     return hex; // Placeholder
 }
 
-function calculateColorHarmony(palette: string[]): number {
+function calculateColorHarmony(_palette: string[]): number {
     // Simplified harmony calculation
     return 85; // Placeholder
 }

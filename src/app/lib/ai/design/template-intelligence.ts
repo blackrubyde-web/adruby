@@ -317,7 +317,7 @@ async function getTemplateFiles(categoryPath: string): Promise<string[]> {
     return files;
 }
 
-function generateTemplateId(filePath: string): string {
+function generateTemplateId(_filePath: string): string {
     return `tmpl-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
 }
 
