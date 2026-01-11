@@ -1,4 +1,6 @@
+/* eslint-disable no-console */
 import { SmartLayoutEngine, type SmartLayoutInput } from './smart-layout-engine.ts';
+import type { TextLayer } from '../../types/studio';
 
 /**
  * VERIFICATION SCRIPT
@@ -48,7 +50,9 @@ function runTests() {
             }
 
             // 2. Check Headline Font Size logic
-            const headlineLayer = result.layers.find(l => l.name === 'Headline') as any;
+            const headlineLayer = result.layers.find(
+                (l): l is TextLayer => l.name === 'Headline' && l.type === 'text'
+            );
             if (!headlineLayer) {
                 console.error('FAIL: No Headline layer found');
                 return;

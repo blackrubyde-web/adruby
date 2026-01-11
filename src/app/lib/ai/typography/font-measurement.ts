@@ -44,7 +44,7 @@ function getMeasurementContext(): CanvasRenderingContext2D {
         } else {
             // Server-side: Use approximate calculations
             // (Canvas measurement will happen client-side during preview)
-            measurementContext = null as any;
+            measurementContext = null;
         }
     }
     return measurementContext!;
@@ -144,7 +144,6 @@ export function findOptimalFontSize(
     const lineHeight = constraints.lineHeight || 1.2;
 
     let optimalSize = maxSize;
-    let fits = false;
 
     // Binary search for optimal font size
     let low = minSize;
@@ -152,7 +151,7 @@ export function findOptimalFontSize(
 
     while (low <= high) {
         const mid = Math.floor((low + high) / 2);
-        const { lines, totalHeight } = calculateLineWrap(
+        const { totalHeight } = calculateLineWrap(
             text,
             constraints.maxWidth,
             mid,
@@ -165,7 +164,6 @@ export function findOptimalFontSize(
         if (adjustedHeight <= constraints.maxHeight) {
             // Fits! Try larger
             optimalSize = mid;
-            fits = true;
             low = mid + 1;
         } else {
             // Too big, try smaller
