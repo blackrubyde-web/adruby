@@ -10,8 +10,13 @@
  * - Historical pattern matching
  */
 
-import type { StudioLayer } from '../../../types/studio';
+import type { StudioLayer, TextLayer, CtaLayer } from '../../../types/studio';
 import type { HeatmapPrediction } from './heatmap-predictor';
+
+type TextualLayer = TextLayer | CtaLayer;
+
+const isTextLayer = (layer: StudioLayer): layer is TextLayer => layer.type === 'text';
+const isCtaLayer = (layer: StudioLayer): layer is CtaLayer => layer.type === 'cta';
 
 export interface CTREstimate {
     estimated: number;       // Predicted CTR (0-100%)
@@ -64,7 +69,7 @@ function scoreVisualAppeal(layers: StudioLayer[]): number {
     if (layerTypes.size >= 3) score += 15; // Variety of elements
 
     // Check for visual hierarchy (different font sizes)
-    const textLayers = layers.filter(l => l.type === 'text') as any[];
+    const textLayers = layers.filter(isTextLayer);
     if (textLayers.length >= 2) {
         const fontSizes = textLayers.map(l => l.fontSize || 16);
         const sizeVariety = Math.max(...fontSizes) - Math.min(...fontSizes);
@@ -78,7 +83,9 @@ function scoreVisualAppeal(layers: StudioLayer[]): number {
  * Calculate CTA prominence score
  */
 function scoreCTAProminence(layers: StudioLayer[]): number {
-    const ctaLayer = layers.find(l => l.type === 'cta' || l.role === 'cta') as any;
+    const ctaLayer =
+        layers.find(isCtaLayer) ||
+        layers.find((layer): layer is TextLayer => layer.type === 'text' && layer.role === 'cta');
 
     if (!ctaLayer) return 0;
 
@@ -110,9 +117,16 @@ function scoreCTAProminence(layers: StudioLayer[]): number {
 function scoreCopyQuality(layers: StudioLayer[]): number {
     let score = 0;
 
-    const headlineLayer = layers.find(l => l.role === 'headline') as any;
-    const descLayer = layers.find(l => l.role === 'description') as any;
-    const ctaLayer = layers.find(l => l.type === 'cta' || l.role === 'cta') as any;
+    const headlineLayer = layers.find(
+        (layer): layer is TextLayer => layer.type === 'text' && layer.role === 'headline'
+    );
+    const descLayer = layers.find(
+        (layer): layer is TextLayer => layer.type === 'text' && layer.role === 'description'
+    );
+    const ctaLayer = layers.find(
+        (layer): layer is TextualLayer =>
+            layer.type === 'cta' || (layer.type === 'text' && layer.role === 'cta')
+    );
 
     // Headline (should be concise, 3-8 words ideal)
     if (headlineLayer?.text) {

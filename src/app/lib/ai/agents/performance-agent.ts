@@ -311,7 +311,7 @@ function predictCTR(features: PerformanceFeatures, context: PerformanceInput['co
  */
 function analyzePerformanceFactors(
     features: PerformanceFeatures,
-    input: PerformanceInput
+    _input: PerformanceInput
 ): PerformanceFactors {
     const drivers: PerformanceFactors['topDrivers'] = [];
 

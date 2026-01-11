@@ -55,9 +55,10 @@ function calculateVisualWeight(layer: StudioLayer): number {
 
     // Font weight for text
     if (layer.type === 'text' || layer.type === 'cta') {
-        const fw = (layer as any).fontWeight || 400;
-        const fwNum = typeof fw === 'string' ? 400 : fw;
-        weight *= (fwNum / 400);
+        const fw = layer.fontWeight ?? 400;
+        const fwNum = typeof fw === 'string' ? Number(fw) : fw;
+        const normalized = Number.isFinite(fwNum) ? fwNum : 400;
+        weight *= (normalized / 400);
     }
 
     // Color saturation (brighter = more attention)
@@ -73,7 +74,7 @@ function calculateVisualWeight(layer: StudioLayer): number {
  */
 function detectFPattern(layers: StudioLayer[], width: number, height: number): number {
     const topThird = layers.filter(l => l.y < height / 3);
-    const middleThird = layers.filter(l => l.y >= height / 3 && l.y < 2 * height / 3);
+    const _middleThird = layers.filter(l => l.y >= height / 3 && l.y < 2 * height / 3);
     const leftHalf = layers.filter(l => l.x < width / 2);
 
     // F-pattern: Heavy top, some middle, left-biased

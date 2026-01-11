@@ -135,8 +135,8 @@ export function predictABTest(
 
     if (performances.length >= 2) {
         // Check if top variant's confidence interval doesn't overlap with second
-        const [topLower, topUpper] = topVariant.confidenceInterval;
-        const [secondLower, secondUpper] = secondVariant.confidenceInterval;
+        const [topLower, _topUpper] = topVariant.confidenceInterval;
+        const [_secondLower, secondUpper] = secondVariant.confidenceInterval;
 
         if (topLower > secondUpper) {
             winner = topVariant.variantId;
