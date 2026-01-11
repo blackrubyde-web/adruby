@@ -12,7 +12,6 @@
  * - Error recovery
  */
 
-import type { AdDocument } from '../../../types/studio';
 import type { LayoutInput, LayoutOutput } from '../layout/layout-engine-v2';
 import { composeAd as baseComposeAd } from '../layout/layout-engine-v2';
 
@@ -57,7 +56,6 @@ export async function composeAdEnhanced(input: LayoutInput): Promise<EnhancedLay
                     accent: harmonyScheme.colors[1] || extractedColors.accent
                 };
 
-                console.log('✓ Colors extracted from product image');
             } catch (error) {
                 console.warn('Color extraction failed:', error);
             }
@@ -73,7 +71,6 @@ export async function composeAdEnhanced(input: LayoutInput): Promise<EnhancedLay
             const { getGridConfig } = await import('../layout/grid-system');
 
             if (needsAdjustment(adDocument.layers)) {
-                console.log('⚙️  Auto-adjusting layout...');
                 const config = getGridConfig(input.format || 'square');
                 const adjustmentResult = await autoAdjustLayout(adDocument.layers, config, 5);
 
@@ -81,7 +78,6 @@ export async function composeAdEnhanced(input: LayoutInput): Promise<EnhancedLay
                     adDocument.layers = adjustmentResult.adjustedLayers;
                     quality.suggestions.push(`Applied ${adjustmentResult.adjustmentsMade} auto-adjustments`);
                     (metadata as any).autoAdjusted = true;
-                    console.log(`✓ ${adjustmentResult.adjustmentsMade} adjustments made`);
                 }
             }
         } catch (error) {
@@ -96,8 +92,6 @@ export async function composeAdEnhanced(input: LayoutInput): Promise<EnhancedLay
 
             heatmapScore = heatmapPrediction.overallScore;
             quality.suggestions.push(...heatmapPrediction.insights);
-
-            console.log(`✓ Heatmap score: ${heatmapScore}/100`);
         } catch (error) {
             console.warn('Heatmap prediction skipped:', error);
         }
@@ -110,8 +104,6 @@ export async function composeAdEnhanced(input: LayoutInput): Promise<EnhancedLay
 
             ctrEstimate = ctrResult.estimated;
             quality.suggestions.push(...ctrResult.recommendations);
-
-            console.log(`✓ CTR estimate: ${ctrEstimate.toFixed(2)}%`);
         } catch (error) {
             console.warn('CTR estimation skipped:', error);
         }
@@ -131,8 +123,6 @@ export async function composeAdEnhanced(input: LayoutInput): Promise<EnhancedLay
             if (readabilityScore.overallScore < 70) {
                 quality.suggestions.push(...readabilityScore.recommendations);
             }
-
-            console.log(`✓ Readability grade: ${readabilityGrade}`);
         } catch (error) {
             console.warn('Readability scoring skipped:', error);
         }
@@ -144,8 +134,6 @@ export async function composeAdEnhanced(input: LayoutInput): Promise<EnhancedLay
             (ctrEstimate * 10) * 0.20 + // Scale CTR to 0-100
             (Math.max(0, 100 - readabilityGrade * 10)) * 0.20 // Lower grade = higher score
         );
-
-        console.log(`✅ Comprehensive quality score: ${comprehensiveScore}/100`);
 
         return {
             adDocument,
@@ -171,8 +159,6 @@ export async function composeAdEnhanced(input: LayoutInput): Promise<EnhancedLay
             const recovery = await recoverFromFailure(input, error as Error, 'enhanced-composition');
 
             if (recovery.success && recovery.adDocument) {
-                console.log(`✓ Recovered using fallback (level ${recovery.fallbackLevel})`);
-
                 return {
                     adDocument: recovery.adDocument,
                     quality: {

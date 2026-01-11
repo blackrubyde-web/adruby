@@ -121,8 +121,6 @@ export type EffectType =
  * Extract style DNA from product DNA
  */
 export function extractStyleDNA(productDNA: ProductDNA): StyleDNA {
-    console.log('🎨 Extracting Style DNA...');
-
     // Determine aesthetic based on product attributes
     const aesthetic = determineAesthetic(productDNA);
 
@@ -140,11 +138,6 @@ export function extractStyleDNA(productDNA: ProductDNA): StyleDNA {
 
     // Choose materials
     const materials = selectMaterials(aesthetic, productDNA);
-
-    console.log(`✅ Style DNA: ${aesthetic}`);
-    console.log(`   Color: ${colorStrategy.scheme}, ${colorStrategy.saturation}`);
-    console.log(`   Typography: ${typography.category}`);
-    console.log(`   Energy: ${energy.level}/10`);
 
     return {
         aesthetic,
@@ -282,7 +275,7 @@ function buildColorStrategy(dna: ProductDNA, aesthetic: AestheticStyle): StyleDN
 /**
  * Select typography based on aesthetic
  */
-function selectTypography(aesthetic: AestheticStyle, dna: ProductDNA): StyleDNA['typography'] {
+function selectTypography(aesthetic: AestheticStyle, _dna: ProductDNA): StyleDNA['typography'] {
     const typographyMap: Record<AestheticStyle, {
         category: TypographyCategory;
         pairing: string[];
@@ -465,7 +458,7 @@ function calculateEnergy(dna: ProductDNA, aesthetic: AestheticStyle): StyleDNA['
 /**
  * Select material textures
  */
-function selectMaterials(aesthetic: AestheticStyle, dna: ProductDNA): StyleDNA['materials'] {
+function selectMaterials(aesthetic: AestheticStyle, _dna: ProductDNA): StyleDNA['materials'] {
     const materialsMap: Record<string, StyleDNA['materials']> = {
         'minimal-zen': {
             primary: 'flat',
