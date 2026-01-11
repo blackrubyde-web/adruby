@@ -80,6 +80,8 @@ export const EditorToolbar: React.FC<EditorToolbarProps> = ({
     lastSaved
 }) => {
     const [showMobileMenu, setShowMobileMenu] = useState(false);
+    const [showAIMenu, setShowAIMenu] = useState(false);
+    const [showViewMenu, setShowViewMenu] = useState(false);
 
     return (
         <div className="h-14 md:h-16 border-b border-border/50 flex items-center justify-between px-3 md:px-6 bg-background dark:bg-gradient-to-r dark:from-card dark:via-card dark:to-card/95 backdrop-blur-xl z-30 shrink-0 shadow-sm">
@@ -363,93 +365,81 @@ export const EditorToolbar: React.FC<EditorToolbarProps> = ({
                     )}
                 </div>
 
+
                 {/* AI Dropdown */}
                 <div className="relative">
-                    {(() => {
-                        const [showAIMenu, setShowAIMenu] = useState(false);
-                        return (
-                            <>
-                                <button
-                                    onClick={() => setShowAIMenu(!showAIMenu)}
-                                    className="flex items-center gap-2 px-3 h-9 text-xs font-bold bg-gradient-to-r from-purple-500/20 to-pink-500/20 hover:from-purple-500/30 hover:to-pink-500/30 text-purple-400 rounded-lg transition-all border border-purple-500/20"
-                                >
-                                    <Sparkles className="w-4 h-4" />
-                                    <span>AI</span>
-                                    <ChevronDown className="w-3 h-3" />
-                                </button>
+                    <button
+                        onClick={() => setShowAIMenu(!showAIMenu)}
+                        className="flex items-center gap-2 px-3 h-9 text-xs font-bold bg-gradient-to-r from-purple-500/20 to-pink-500/20 hover:from-purple-500/30 hover:to-pink-500/30 text-purple-400 rounded-lg transition-all border border-purple-500/20"
+                    >
+                        <Sparkles className="w-4 h-4" />
+                        <span>AI</span>
+                        <ChevronDown className="w-3 h-3" />
+                    </button>
 
-                                {showAIMenu && (
-                                    <>
-                                        <div className="fixed inset-0 z-40" onClick={() => setShowAIMenu(false)} />
-                                        <div className="absolute right-0 top-full mt-2 w-56 bg-card/95 backdrop-blur-xl border border-border/50 rounded-xl shadow-2xl z-50 py-1 animate-in fade-in slide-in-from-top-2 duration-200">
-                                            <button onClick={() => { onShowAdWizard(); setShowAIMenu(false); }} className="w-full flex items-center gap-3 px-4 py-2.5 text-sm hover:bg-muted/50 text-foreground transition-colors">
-                                                <PlusCircle className="w-4 h-4 text-emerald-500" />
-                                                <span className="font-medium">Neue Ad</span>
-                                            </button>
-                                            <button onClick={() => { onShowTextToAd(); setShowAIMenu(false); }} className="w-full flex items-center gap-3 px-4 py-2.5 text-sm hover:bg-muted/50 text-foreground transition-colors">
-                                                <Sparkles className="w-4 h-4 text-fuchsia-500" />
-                                                <span className="font-medium">Text→Ad</span>
-                                            </button>
-                                            <div className="h-px bg-border/50 my-1" />
-                                            <button onClick={() => { onAudit(); setShowAIMenu(false); }} className="w-full flex items-center gap-3 px-4 py-2.5 text-sm hover:bg-muted/50 text-foreground transition-colors">
-                                                <ShieldCheck className="w-4 h-4 text-emerald-500" />
-                                                <span className="font-medium">AI Audit</span>
-                                            </button>
-                                            <button onClick={() => { onToggleSuggestions(); setShowAIMenu(false); }} className={`w-full flex items-center gap-3 px-4 py-2.5 text-sm transition-colors ${showSuggestions ? 'bg-violet-500/10' : 'hover:bg-muted/50 text-foreground'}`}>
-                                                <Zap className={`w-4 h-4 ${showSuggestions ? 'text-violet-500' : 'text-muted-foreground'}`} />
-                                                <span className="font-medium">AI Tips</span>
-                                            </button>
-                                            <div className="h-px bg-border/50 my-1" />
-                                            <button onClick={() => { onShowBrand(); setShowAIMenu(false); }} className="w-full flex items-center gap-3 px-4 py-2.5 text-sm hover:bg-muted/50 text-foreground transition-colors">
-                                                <Palette className="w-4 h-4 text-amber-500" />
-                                                <span className="font-medium">Brand Kit</span>
-                                            </button>
-                                        </div>
-                                    </>
-                                )}
-                            </>
-                        );
-                    })()}
+                    {showAIMenu && (
+                        <>
+                            <div className="fixed inset-0 z-40" onClick={() => setShowAIMenu(false)} />
+                            <div className="absolute right-0 top-full mt-2 w-56 bg-card/95 backdrop-blur-xl border border-border/50 rounded-xl shadow-2xl z-50 py-1 animate-in fade-in slide-in-from-top-2 duration-200">
+                                <button onClick={() => { onShowAdWizard(); setShowAIMenu(false); }} className="w-full flex items-center gap-3 px-4 py-2.5 text-sm hover:bg-muted/50 text-foreground transition-colors">
+                                    <PlusCircle className="w-4 h-4 text-emerald-500" />
+                                    <span className="font-medium">Neue Ad</span>
+                                </button>
+                                <button onClick={() => { onShowTextToAd(); setShowAIMenu(false); }} className="w-full flex items-center gap-3 px-4 py-2.5 text-sm hover:bg-muted/50 text-foreground transition-colors">
+                                    <Sparkles className="w-4 h-4 text-fuchsia-500" />
+                                    <span className="font-medium">Text→Ad</span>
+                                </button>
+                                <div className="h-px bg-border/50 my-1" />
+                                <button onClick={() => { onAudit(); setShowAIMenu(false); }} className="w-full flex items-center gap-3 px-4 py-2.5 text-sm hover:bg-muted/50 text-foreground transition-colors">
+                                    <ShieldCheck className="w-4 h-4 text-emerald-500" />
+                                    <span className="font-medium">AI Audit</span>
+                                </button>
+                                <button onClick={() => { onToggleSuggestions(); setShowAIMenu(false); }} className={`w-full flex items-center gap-3 px-4 py-2.5 text-sm transition-colors ${showSuggestions ? 'bg-violet-500/10' : 'hover:bg-muted/50 text-foreground'}`}>
+                                    <Zap className={`w-4 h-4 ${showSuggestions ? 'text-violet-500' : 'text-muted-foreground'}`} />
+                                    <span className="font-medium">AI Tips</span>
+                                </button>
+                                <div className="h-px bg-border/50 my-1" />
+                                <button onClick={() => { onShowBrand(); setShowAIMenu(false); }} className="w-full flex items-center gap-3 px-4 py-2.5 text-sm hover:bg-muted/50 text-foreground transition-colors">
+                                    <Palette className="w-4 h-4 text-amber-500" />
+                                    <span className="font-medium">Brand Kit</span>
+                                </button>
+                            </div>
+                        </>
+                    )}
                 </div>
+
 
                 {/* View Dropdown */}
                 <div className="relative">
-                    {(() => {
-                        const [showViewMenu, setShowViewMenu] = useState(false);
-                        return (
-                            <>
-                                <button
-                                    onClick={() => setShowViewMenu(!showViewMenu)}
-                                    className="flex items-center gap-2 px-3 h-9 text-xs font-bold bg-muted dark:bg-muted hover:bg-muted/80 dark:hover:bg-muted/80 text-foreground rounded-lg transition-all border border-border"
-                                >
-                                    <span>View</span>
-                                    <ChevronDown className="w-3 h-3 text-muted-foreground" />
-                                </button>
+                    <button
+                        onClick={() => setShowViewMenu(!showViewMenu)}
+                        className="flex items-center gap-2 px-3 h-9 text-xs font-bold bg-muted dark:bg-muted hover:bg-muted/80 dark:hover:bg-muted/80 text-foreground rounded-lg transition-all border border-border"
+                    >
+                        <span>View</span>
+                        <ChevronDown className="w-3 h-3 text-muted-foreground" />
+                    </button>
 
-                                {showViewMenu && (
-                                    <>
-                                        <div className="fixed inset-0 z-40" onClick={() => setShowViewMenu(false)} />
-                                        <div className="absolute right-0 top-full mt-2 w-48 bg-card/95 backdrop-blur-xl border border-border/50 rounded-xl shadow-2xl z-50 py-1 animate-in fade-in slide-in-from-top-2 duration-200">
-                                            <button
-                                                onClick={() => { setIsMultiverseMode(!isMultiverseMode); setShowViewMenu(false); }}
-                                                className={`w-full flex items-center gap-3 px-4 py-2.5 text-sm transition-colors ${isMultiverseMode ? 'bg-indigo-500/10 text-indigo-400' : 'hover:bg-muted/50 text-foreground'}`}
-                                            >
-                                                <div className={`w-2 h-2 rounded-full ${isMultiverseMode ? 'bg-indigo-500' : 'bg-muted'}`} />
-                                                <span className="font-medium">Multiverse</span>
-                                            </button>
-                                            <button
-                                                onClick={() => { setIsPreviewMode(!isPreviewMode); if (!isPreviewMode) setIsMultiverseMode(false); setShowViewMenu(false); }}
-                                                className={`w-full flex items-center gap-3 px-4 py-2.5 text-sm transition-colors ${isPreviewMode ? 'bg-primary/10 text-primary' : 'hover:bg-muted/50 text-foreground'}`}
-                                            >
-                                                <div className={`w-2 h-2 rounded-full ${isPreviewMode ? 'bg-primary' : 'bg-muted'}`} />
-                                                <span className="font-medium">Mockup</span>
-                                            </button>
-                                        </div>
-                                    </>
-                                )}
-                            </>
-                        );
-                    })()}
+                    {showViewMenu && (
+                        <>
+                            <div className="fixed inset-0 z-40" onClick={() => setShowViewMenu(false)} />
+                            <div className="absolute right-0 top-full mt-2 w-48 bg-card/95 backdrop-blur-xl border border-border/50 rounded-xl shadow-2xl z-50 py-1 animate-in fade-in slide-in-from-top-2 duration-200">
+                                <button
+                                    onClick={() => { setIsMultiverseMode(!isMultiverseMode); setShowViewMenu(false); }}
+                                    className={`w-full flex items-center gap-3 px-4 py-2.5 text-sm transition-colors ${isMultiverseMode ? 'bg-indigo-500/10 text-indigo-400' : 'hover:bg-muted/50 text-foreground'}`}
+                                >
+                                    <div className={`w-2 h-2 rounded-full ${isMultiverseMode ? 'bg-indigo-500' : 'bg-muted'}`} />
+                                    <span className="font-medium">Multiverse</span>
+                                </button>
+                                <button
+                                    onClick={() => { setIsPreviewMode(!isPreviewMode); if (!isPreviewMode) setIsMultiverseMode(false); setShowViewMenu(false); }}
+                                    className={`w-full flex items-center gap-3 px-4 py-2.5 text-sm transition-colors ${isPreviewMode ? 'bg-primary/10 text-primary' : 'hover:bg-muted/50 text-foreground'}`}
+                                >
+                                    <div className={`w-2 h-2 rounded-full ${isPreviewMode ? 'bg-primary' : 'bg-muted'}`} />
+                                    <span className="font-medium">Mockup</span>
+                                </button>
+                            </div>
+                        </>
+                    )}
                 </div>
 
                 {/* Export Button */}

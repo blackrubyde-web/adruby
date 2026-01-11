@@ -1,4 +1,3 @@
-import { ChevronDown } from 'lucide-react';
 import { useState, useRef, useEffect } from 'react';
 
 interface DropdownMenuProps {
@@ -69,8 +68,8 @@ export const DropdownItem: React.FC<DropdownItemProps> = ({
             }}
             disabled={disabled}
             className={`w-full flex items-center justify-between gap-3 px-4 py-2.5 text-sm transition-colors ${disabled
-                    ? 'opacity-40 cursor-not-allowed'
-                    : 'hover:bg-muted/50 text-foreground'
+                ? 'opacity-40 cursor-not-allowed'
+                : 'hover:bg-muted/50 text-foreground'
                 }`}
         >
             <div className="flex items-center gap-3">
