@@ -14,6 +14,24 @@
 import OpenAI from 'openai';
 import type { GenerationResult } from './openai-service';
 
+/**
+ * Parse JSON response, handling markdown code fences
+ * GPT-4 sometimes wraps JSON in ```json...``` blocks
+ */
+function parseAIResponse(content: string): any {
+    if (!content) return {};
+
+    // Strip markdown code fences if present
+    let cleaned = content.trim();
+    if (cleaned.startsWith('```json')) {
+        cleaned = cleaned.replace(/^```json\s*/, '').replace(/\s*```$/, '');
+    } else if (cleaned.startsWith('```')) {
+        cleaned = cleaned.replace(/^```\s*/, '').replace(/\s*```$/, '');
+    }
+
+    return JSON.parse(cleaned);
+}
+
 export interface ImageAnalysisResult {
     objects: Array<{
         name: string;
@@ -78,7 +96,7 @@ Return JSON:
 
         try {
             const response = await this.client.chat.completions.create({
-                model: 'gpt-4-vision-preview',
+                model: 'gpt-4o',
                 messages: [
                     {
                         role: 'user',
@@ -92,7 +110,7 @@ Return JSON:
                 temperature: 0.3
             });
 
-            const content = JSON.parse(response.choices[0].message.content || '{}');
+            const content = parseAIResponse(response.choices[0].message.content || '{}');
             const usage = response.usage!;
 
             return {
@@ -102,7 +120,7 @@ Return JSON:
                     completionTokens: usage.completion_tokens,
                     totalTokens: usage.total_tokens
                 },
-                cost: (usage.prompt_tokens * 0.01 / 1000) + (usage.completion_tokens * 0.03 / 1000),
+                cost: (usage.prompt_tokens * 0.005 / 1000) + (usage.completion_tokens * 0.015 / 1000),
                 model: response.model,
                 latency: Date.now() - startTime
             };
@@ -151,7 +169,7 @@ Return JSON:
 
         try {
             const response = await this.client.chat.completions.create({
-                model: 'gpt-4-vision-preview',
+                model: 'gpt-4o',
                 messages: [
                     {
                         role: 'user',
@@ -165,7 +183,7 @@ Return JSON:
                 temperature: 0.2
             });
 
-            const content = JSON.parse(response.choices[0].message.content || '{}');
+            const content = parseAIResponse(response.choices[0].message.content || '{}');
             const usage = response.usage!;
 
             return {
@@ -175,7 +193,7 @@ Return JSON:
                     completionTokens: usage.completion_tokens,
                     totalTokens: usage.total_tokens
                 },
-                cost: (usage.prompt_tokens * 0.01 / 1000) + (usage.completion_tokens * 0.03 / 1000),
+                cost: (usage.prompt_tokens * 0.005 / 1000) + (usage.completion_tokens * 0.015 / 1000),
                 model: response.model,
                 latency: Date.now() - startTime
             };
@@ -222,7 +240,7 @@ Return JSON:
 
         try {
             const response = await this.client.chat.completions.create({
-                model: 'gpt-4-vision-preview',
+                model: 'gpt-4o',
                 messages: [
                     {
                         role: 'user',
@@ -236,7 +254,7 @@ Return JSON:
                 temperature: 0.3
             });
 
-            const content = JSON.parse(response.choices[0].message.content || '{}');
+            const content = parseAIResponse(response.choices[0].message.content || '{}');
             const usage = response.usage!;
 
             return {
@@ -246,7 +264,7 @@ Return JSON:
                     completionTokens: usage.completion_tokens,
                     totalTokens: usage.total_tokens
                 },
-                cost: (usage.prompt_tokens * 0.01 / 1000) + (usage.completion_tokens * 0.03 / 1000),
+                cost: (usage.prompt_tokens * 0.005 / 1000) + (usage.completion_tokens * 0.015 / 1000),
                 model: response.model,
                 latency: Date.now() - startTime
             };

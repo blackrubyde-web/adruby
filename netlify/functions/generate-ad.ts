@@ -2,6 +2,24 @@ import type { Handler, HandlerEvent } from '@netlify/functions';
 import OpenAI from 'openai';
 
 /**
+ * Parse JSON response, handling markdown code fences
+ * GPT-4 sometimes wraps JSON in ```json...``` blocks
+ */
+function parseAIResponse(content: string): any {
+    if (!content) return {};
+
+    // Strip markdown code fences if present
+    let cleaned = content.trim();
+    if (cleaned.startsWith('```json')) {
+        cleaned = cleaned.replace(/^```json\s*/, '').replace(/\s*```$/, '');
+    } else if (cleaned.startsWith('```')) {
+        cleaned = cleaned.replace(/^```\s*/, '').replace(/\s*```$/, '');
+    }
+
+    return JSON.parse(cleaned);
+}
+
+/**
  * NETLIFY SERVERLESS FUNCTION: Generate Premium Ad
  * 
  * Secure server-side OpenAI integration
@@ -161,7 +179,7 @@ const handler: Handler = async (event: HandlerEvent) => {
             max_tokens: 1500,
         });
 
-        const copyContent = JSON.parse(copyResponse.choices[0].message.content || '{}');
+        const copyContent = parseAIResponse(copyResponse.choices[0].message.content || '{}');
         const copyUsage = copyResponse.usage!;
         const copyCost = (copyUsage.prompt_tokens * 0.01 / 1000) + (copyUsage.completion_tokens * 0.03 / 1000);
 
@@ -174,7 +192,7 @@ const handler: Handler = async (event: HandlerEvent) => {
         if (request.imageBase64 && request.imageBase64.startsWith('data:image')) {
             try {
                 const visionModels = [
-                    process.env.OPENAI_VISION_MODEL || 'gpt-4-vision-preview',
+                    process.env.OPENAI_VISION_MODEL || 'gpt-4o',
                     'gpt-4o-mini'
                 ];
 
@@ -201,9 +219,9 @@ const handler: Handler = async (event: HandlerEvent) => {
                     temperature: 0.3,
                 });
 
-                imageAnalysis = JSON.parse(visionResponse.choices[0].message.content || '{}');
+                imageAnalysis = parseAIResponse(visionResponse.choices[0].message.content || '{}');
                 const visionUsage = visionResponse.usage!;
-                imageCost = (visionUsage.prompt_tokens * 0.01 / 1000) + (visionUsage.completion_tokens * 0.03 / 1000);
+                imageCost = (visionUsage.prompt_tokens * 0.005 / 1000) + (visionUsage.completion_tokens * 0.015 / 1000);
 
                 console.log(`✅ Image analyzed (Cost: $${imageCost.toFixed(4)})`);
                 console.log(`   Product Position: ${imageAnalysis.productPosition || 'center'}`);

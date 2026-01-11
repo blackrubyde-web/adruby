@@ -45,6 +45,7 @@ export interface CopyGenerationParams {
 const PRICING = {
     'gpt-4-turbo-preview': { input: 0.01 / 1000, output: 0.03 / 1000 },
     'gpt-4-vision-preview': { input: 0.01 / 1000, output: 0.03 / 1000 },
+    'gpt-4o': { input: 0.005 / 1000, output: 0.015 / 1000 },
     'gpt-4': { input: 0.03 / 1000, output: 0.06 / 1000 },
     'gpt-3.5-turbo': { input: 0.0005 / 1000, output: 0.0015 / 1000 }
 };
