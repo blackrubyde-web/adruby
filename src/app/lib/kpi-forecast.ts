@@ -3,7 +3,7 @@
  * Predicts CTR (Click-Through Rate) and ROAS (Return on Ad Spend) based on ad quality metrics
  */
 
-import type { AdDocument, StudioLayer } from '../types/studio';
+import type { AdDocument, CtaLayer, ImageLayer, ShapeLayer, StudioLayer, TextLayer } from '../types/studio';
 
 export interface KPIForecast {
     ctr: {
@@ -44,19 +44,21 @@ interface AdMetrics {
  * Analyze ad document and extract quality metrics
  */
 function analyzeAdDocument(doc: AdDocument): AdMetrics {
-    const imageLayers = doc.layers.filter(l => ['background', 'product', 'overlay', 'logo'].includes(l.type));
-    const textLayers = doc.layers.filter((l: StudioLayer) => l.type === 'text');
-    const ctaLayers = doc.layers.filter(l => l.type === 'cta');
+    const imageLayers = doc.layers.filter(
+        (l): l is ImageLayer => ['background', 'product', 'overlay', 'logo'].includes(l.type)
+    );
+    const textLayers = doc.layers.filter((l): l is TextLayer => l.type === 'text');
+    const ctaLayers = doc.layers.filter((l): l is CtaLayer => l.type === 'cta');
 
     // Find headline (first text layer or largest)
-    const headlineLayer = textLayers.sort((a, b) => (b as any).fontSize - (a as any).fontSize)[0];
-    const headlineText = headlineLayer ? (headlineLayer as any).text : '';
+    const headlineLayer = [...textLayers].sort((a, b) => b.fontSize - a.fontSize)[0];
+    const headlineText = headlineLayer?.text || '';
 
     // Estimate color contrast (simplified)
     const uniqueColors = new Set(
         doc.layers
-            .map(l => (l as any).color || (l as any).fill || (l as any).bgColor)
-            .filter(Boolean)
+            .map(getLayerColor)
+            .filter((color): color is string => typeof color === 'string' && color.length > 0)
     );
 
     return {
@@ -70,6 +72,13 @@ function analyzeAdDocument(doc: AdDocument): AdMetrics {
         hasContrast: uniqueColors.size >= 2,
         colorDiversity: uniqueColors.size,
     };
+}
+
+function getLayerColor(layer: StudioLayer): string | undefined {
+    if ('color' in layer && typeof layer.color === 'string') return layer.color;
+    if ('fill' in layer && typeof layer.fill === 'string') return layer.fill;
+    if ('bgColor' in layer && typeof layer.bgColor === 'string') return layer.bgColor;
+    return undefined;
 }
 
 /**
@@ -232,8 +241,6 @@ function predictCTR(factors: KPIForecast['factors']): KPIForecast['ctr'] {
  */
 function predictROAS(ctr: KPIForecast['ctr'], factors: KPIForecast['factors']): KPIForecast['roas'] {
     // Base ROAS multiplier from CTR
-    const baseMultiplier = ctr.expected * 0.8; // Rough heuristic
-
     // Adjust for ad quality
     const qualityBonus = (
         factors.imageQuality * 0.01 +

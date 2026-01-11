@@ -3,7 +3,7 @@
  * Tracks individual layer changes for precise undo/redo
  */
 
-import type { AdDocument, StudioLayer } from '../types/studio';
+import type { AdDocument } from '../types/studio';
 
 export interface HistoryEntry {
     id: string;

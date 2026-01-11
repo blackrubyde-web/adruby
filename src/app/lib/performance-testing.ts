@@ -5,6 +5,12 @@
 
 import type { AdDocument, StudioLayer, ImageLayer, TextLayer, CtaLayer } from '../types/studio';
 
+type PerformanceWithMemory = Performance & {
+    memory?: {
+        usedJSHeapSize: number;
+    };
+};
+
 /**
  * Generate test document with specified number of layers
  */
@@ -145,9 +151,10 @@ export function measureInteractionLatency(
  * Get memory usage (if available)
  */
 export function getMemoryUsage(): number | undefined {
-    if ('memory' in performance && (performance as any).memory) {
-        const memory = (performance as any).memory;
-        return memory.usedJSHeapSize / (1024 * 1024); // Convert to MB
+    if (typeof performance === 'undefined') return undefined;
+    const perf = performance as PerformanceWithMemory;
+    if (perf.memory?.usedJSHeapSize) {
+        return perf.memory.usedJSHeapSize / (1024 * 1024); // Convert to MB
     }
     return undefined;
 }
