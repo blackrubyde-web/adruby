@@ -54,8 +54,8 @@ function calculateVisualWeight(layer: StudioLayer): number {
 
     // Font weight for text
     if (layer.type === 'text' || layer.type === 'cta') {
-        const fw = (layer as any).fontWeight || 400;
-        const fwNum = typeof fw === 'string' ? 400 : fw;
+        const fontWeight = 'fontWeight' in layer ? layer.fontWeight : 400;
+        const fwNum = typeof fontWeight === 'number' ? fontWeight : 400;
         weight *= (fwNum / 400); // Bold text = more weight
     }
 
@@ -65,7 +65,7 @@ function calculateVisualWeight(layer: StudioLayer): number {
 /**
  * Get element weights for all layers
  */
-function getElementWeights(layers: StudioLayer[], canvasWidth: number, canvasHeight: number): ElementWeight[] {
+function getElementWeights(layers: StudioLayer[], _canvasWidth: number, _canvasHeight: number): ElementWeight[] {
     return layers
         .filter(l => l.visible && l.type !== 'background')
         .map(layer => ({
@@ -105,7 +105,6 @@ function scoreHorizontalBalance(weights: ElementWeight[], canvasWidth: number): 
     if (totalWeight === 0) return { score: 100, leftWeight: 0, rightWeight: 0 };
 
     const leftRatio = leftWeight / totalWeight;
-    const rightRatio = rightWeight / totalWeight;
 
     // Perfect balance = 0.5/0.5
     // Calculate deviation from perfect

@@ -1,12 +1,11 @@
 import { analyzeStrategy, type StrategicProfile } from './strategic-analyzer';
 import { type PremiumCopy } from './copy-generator';
-import { scoreAdQuality } from './vision-qa';
 import type { AdDocument } from '../../types/studio';
 import { removeBackground, blobToBase64 } from './bg-removal';
-import { composeAdEnhanced, generateEnhancedVariants } from './layout/enhanced-layout-engine';
+import { generateEnhancedVariants } from './layout/enhanced-layout-engine';
 import type { LayoutInput } from './layout/layout-engine-v2';
-import { getOpenAIService } from './services/openai-service';
-import { getVisionService } from './services/vision-service';
+import { getOpenAIService, type GenerationResult } from './services/openai-service';
+import { getVisionService, type ImageAnalysisResult } from './services/vision-service';
 import { getTelemetryService } from './telemetry/telemetry-service';
 import { checkAdCopy } from './content-safety/profanity-filter';
 import { validateBrandGuidelines, type BrandGuidelines } from './advanced-color/brand-guidelines';
@@ -96,7 +95,6 @@ export async function generatePremiumAd(
         onProgress?.(2, 'Generating AI copy with GPT-4 Turbo...');
         const openai = getOpenAIService();
 
-        const copyStart = Date.now();
         const copyResult = await openai.generateAdCopy({
             productName: params.productName,
             productDescription: params.userPrompt,
@@ -139,13 +137,12 @@ export async function generatePremiumAd(
 
         // STAGE 3: Image Analysis (Vision API)
         onProgress?.(3, 'Analyzing product image with Vision API...');
-        let imageAnalysis: any = null;
+        let imageAnalysis: GenerationResult<ImageAnalysisResult> | null = null;
         let processedAssets: { originalProduct: string; generatedBackground?: string } | undefined;
 
         if (params.imageBase64) {
             try {
                 const vision = getVisionService();
-                const visionStart = Date.now();
 
                 imageAnalysis = await vision.analyzeProductImage(params.imageBase64);
                 telemetry.trackAPICall(sessionId, 'vision', imageAnalysis.cost, imageAnalysis.latency);
@@ -233,14 +230,6 @@ export async function generatePremiumAd(
         telemetry.trackGenerationComplete(sessionId, bestLayout, totalTime);
 
         const sessionMetrics = telemetry.getSessionMetrics(sessionId);
-
-        console.log('✅ Premium ad generated with full AI integration:', {
-            template: bestLayout.metadata.template,
-            comprehensiveScore: bestLayout.quality.comprehensiveScore,
-            ctrEstimate: bestLayout.quality.ctrEstimate,
-            totalCost: sessionMetrics?.totalCost,
-            generationTime: totalTime
-        });
 
         return {
             adDocument: bestLayout.adDocument,
