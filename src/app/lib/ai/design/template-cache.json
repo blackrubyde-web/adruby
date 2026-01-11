@@ -1,0 +1,3102 @@
+[
+  {
+    "id": "tmpl-1185203989",
+    "sourceFile": "3500+Social Media Templates/3. Fashion Social Media Templates/60 Adorable Fashion Social Media Templates/1.jpg",
+    "category": "fashion",
+    "style": "minimal-clean",
+    "layout": {
+      "structure": "single-focus",
+      "hierarchy": "balanced",
+      "zones": []
+    },
+    "colors": {
+      "palette": [
+        "#4bb234",
+        "#42d78a",
+        "#f4f0f5"
+      ],
+      "dominantColor": "#4bb234",
+      "accentColor": "#42d78a",
+      "temperature": "neutral",
+      "vibrancy": "normal"
+    },
+    "typography": {
+      "headlineStyle": "minimal",
+      "fontPairing": [
+        "Inter",
+        "Inter"
+      ],
+      "textProminence": "moderate",
+      "textPlacement": "center"
+    },
+    "elements": {
+      "hasShapes": false,
+      "hasGradients": false,
+      "hasTextures": false,
+      "hasPatterns": false,
+      "hasIllustrations": false
+    },
+    "complexity": {
+      "overall": 5,
+      "visual": 5,
+      "textual": 5
+    },
+    "performance": {
+      "suitableFor": [
+        "fashion"
+      ],
+      "estimatedCTR": 2.4,
+      "conversionPotential": "medium"
+    }
+  },
+  {
+    "id": "tmpl-1186127510",
+    "sourceFile": "3500+Social Media Templates/3. Fashion Social Media Templates/60 Adorable Fashion Social Media Templates/2.jpg",
+    "category": "fashion",
+    "style": "minimal-clean",
+    "layout": {
+      "structure": "single-focus",
+      "hierarchy": "balanced",
+      "zones": []
+    },
+    "colors": {
+      "palette": [
+        "#3449b2",
+        "#8c42d7",
+        "#f5f4f0"
+      ],
+      "dominantColor": "#3449b2",
+      "accentColor": "#8c42d7",
+      "temperature": "neutral",
+      "vibrancy": "normal"
+    },
+    "typography": {
+      "headlineStyle": "minimal",
+      "fontPairing": [
+        "Inter",
+        "Inter"
+      ],
+      "textProminence": "moderate",
+      "textPlacement": "center"
+    },
+    "elements": {
+      "hasShapes": false,
+      "hasGradients": false,
+      "hasTextures": false,
+      "hasPatterns": false,
+      "hasIllustrations": false
+    },
+    "complexity": {
+      "overall": 5,
+      "visual": 5,
+      "textual": 5
+    },
+    "performance": {
+      "suitableFor": [
+        "fashion"
+      ],
+      "estimatedCTR": 2.4,
+      "conversionPotential": "medium"
+    }
+  },
+  {
+    "id": "tmpl-1187051031",
+    "sourceFile": "3500+Social Media Templates/3. Fashion Social Media Templates/60 Adorable Fashion Social Media Templates/3.jpg",
+    "category": "fashion",
+    "style": "minimal-clean",
+    "layout": {
+      "structure": "single-focus",
+      "hierarchy": "balanced",
+      "zones": []
+    },
+    "colors": {
+      "palette": [
+        "#b23447",
+        "#d78f42",
+        "#f0f5f4"
+      ],
+      "dominantColor": "#b23447",
+      "accentColor": "#d78f42",
+      "temperature": "neutral",
+      "vibrancy": "normal"
+    },
+    "typography": {
+      "headlineStyle": "minimal",
+      "fontPairing": [
+        "Inter",
+        "Inter"
+      ],
+      "textProminence": "moderate",
+      "textPlacement": "center"
+    },
+    "elements": {
+      "hasShapes": false,
+      "hasGradients": false,
+      "hasTextures": false,
+      "hasPatterns": false,
+      "hasIllustrations": false
+    },
+    "complexity": {
+      "overall": 5,
+      "visual": 5,
+      "textual": 5
+    },
+    "performance": {
+      "suitableFor": [
+        "fashion"
+      ],
+      "estimatedCTR": 2.4,
+      "conversionPotential": "medium"
+    }
+  },
+  {
+    "id": "tmpl-1187974552",
+    "sourceFile": "3500+Social Media Templates/3. Fashion Social Media Templates/60 Adorable Fashion Social Media Templates/4.jpg",
+    "category": "fashion",
+    "style": "minimal-clean",
+    "layout": {
+      "structure": "single-focus",
+      "hierarchy": "balanced",
+      "zones": []
+    },
+    "colors": {
+      "palette": [
+        "#44b234",
+        "#42d791",
+        "#f4f0f5"
+      ],
+      "dominantColor": "#44b234",
+      "accentColor": "#42d791",
+      "temperature": "neutral",
+      "vibrancy": "normal"
+    },
+    "typography": {
+      "headlineStyle": "minimal",
+      "fontPairing": [
+        "Inter",
+        "Inter"
+      ],
+      "textProminence": "moderate",
+      "textPlacement": "center"
+    },
+    "elements": {
+      "hasShapes": false,
+      "hasGradients": false,
+      "hasTextures": false,
+      "hasPatterns": false,
+      "hasIllustrations": false
+    },
+    "complexity": {
+      "overall": 5,
+      "visual": 5,
+      "textual": 5
+    },
+    "performance": {
+      "suitableFor": [
+        "fashion"
+      ],
+      "estimatedCTR": 2.4,
+      "conversionPotential": "medium"
+    }
+  },
+  {
+    "id": "tmpl-1188898073",
+    "sourceFile": "3500+Social Media Templates/3. Fashion Social Media Templates/60 Adorable Fashion Social Media Templates/5.jpg",
+    "category": "fashion",
+    "style": "minimal-clean",
+    "layout": {
+      "structure": "single-focus",
+      "hierarchy": "balanced",
+      "zones": []
+    },
+    "colors": {
+      "palette": [
+        "#3442b2",
+        "#9442d7",
+        "#f5f4f0"
+      ],
+      "dominantColor": "#3442b2",
+      "accentColor": "#9442d7",
+      "temperature": "neutral",
+      "vibrancy": "normal"
+    },
+    "typography": {
+      "headlineStyle": "minimal",
+      "fontPairing": [
+        "Inter",
+        "Inter"
+      ],
+      "textProminence": "moderate",
+      "textPlacement": "center"
+    },
+    "elements": {
+      "hasShapes": false,
+      "hasGradients": false,
+      "hasTextures": false,
+      "hasPatterns": false,
+      "hasIllustrations": false
+    },
+    "complexity": {
+      "overall": 5,
+      "visual": 5,
+      "textual": 5
+    },
+    "performance": {
+      "suitableFor": [
+        "fashion"
+      ],
+      "estimatedCTR": 2.4,
+      "conversionPotential": "medium"
+    }
+  },
+  {
+    "id": "tmpl-1190745115",
+    "sourceFile": "3500+Social Media Templates/3. Fashion Social Media Templates/60 Adorable Fashion Social Media Templates/7.jpg",
+    "category": "fashion",
+    "style": "minimal-clean",
+    "layout": {
+      "structure": "single-focus",
+      "hierarchy": "balanced",
+      "zones": []
+    },
+    "colors": {
+      "palette": [
+        "#3eb234",
+        "#42d799",
+        "#f4f0f5"
+      ],
+      "dominantColor": "#3eb234",
+      "accentColor": "#42d799",
+      "temperature": "neutral",
+      "vibrancy": "normal"
+    },
+    "typography": {
+      "headlineStyle": "minimal",
+      "fontPairing": [
+        "Inter",
+        "Inter"
+      ],
+      "textProminence": "moderate",
+      "textPlacement": "center"
+    },
+    "elements": {
+      "hasShapes": false,
+      "hasGradients": false,
+      "hasTextures": false,
+      "hasPatterns": false,
+      "hasIllustrations": false
+    },
+    "complexity": {
+      "overall": 5,
+      "visual": 5,
+      "textual": 5
+    },
+    "performance": {
+      "suitableFor": [
+        "fashion"
+      ],
+      "estimatedCTR": 2.4,
+      "conversionPotential": "medium"
+    }
+  },
+  {
+    "id": "tmpl-1191668636",
+    "sourceFile": "3500+Social Media Templates/3. Fashion Social Media Templates/60 Adorable Fashion Social Media Templates/8.jpg",
+    "category": "fashion",
+    "style": "minimal-clean",
+    "layout": {
+      "structure": "single-focus",
+      "hierarchy": "balanced",
+      "zones": []
+    },
+    "colors": {
+      "palette": [
+        "#343cb2",
+        "#9b42d7",
+        "#f5f4f0"
+      ],
+      "dominantColor": "#343cb2",
+      "accentColor": "#9b42d7",
+      "temperature": "neutral",
+      "vibrancy": "normal"
+    },
+    "typography": {
+      "headlineStyle": "minimal",
+      "fontPairing": [
+        "Inter",
+        "Inter"
+      ],
+      "textProminence": "moderate",
+      "textPlacement": "center"
+    },
+    "elements": {
+      "hasShapes": false,
+      "hasGradients": false,
+      "hasTextures": false,
+      "hasPatterns": false,
+      "hasIllustrations": false
+    },
+    "complexity": {
+      "overall": 5,
+      "visual": 5,
+      "textual": 5
+    },
+    "performance": {
+      "suitableFor": [
+        "fashion"
+      ],
+      "estimatedCTR": 2.4,
+      "conversionPotential": "medium"
+    }
+  },
+  {
+    "id": "tmpl-1100526299",
+    "sourceFile": "3500+Social Media Templates/3. Fashion Social Media Templates/60 Elegant Fashion Social Media Templates/1.jpg",
+    "category": "fashion",
+    "style": "minimal-clean",
+    "layout": {
+      "structure": "single-focus",
+      "hierarchy": "balanced",
+      "zones": []
+    },
+    "colors": {
+      "palette": [
+        "#34b2b0",
+        "#4276d7",
+        "#f5f0f0"
+      ],
+      "dominantColor": "#34b2b0",
+      "accentColor": "#4276d7",
+      "temperature": "neutral",
+      "vibrancy": "normal"
+    },
+    "typography": {
+      "headlineStyle": "minimal",
+      "fontPairing": [
+        "Inter",
+        "Inter"
+      ],
+      "textProminence": "moderate",
+      "textPlacement": "center"
+    },
+    "elements": {
+      "hasShapes": false,
+      "hasGradients": false,
+      "hasTextures": false,
+      "hasPatterns": false,
+      "hasIllustrations": false
+    },
+    "complexity": {
+      "overall": 5,
+      "visual": 5,
+      "textual": 5
+    },
+    "performance": {
+      "suitableFor": [
+        "fashion"
+      ],
+      "estimatedCTR": 2.4,
+      "conversionPotential": "medium"
+    }
+  },
+  {
+    "id": "tmpl-1101449820",
+    "sourceFile": "3500+Social Media Templates/3. Fashion Social Media Templates/60 Elegant Fashion Social Media Templates/2.jpg",
+    "category": "fashion",
+    "style": "minimal-clean",
+    "layout": {
+      "structure": "single-focus",
+      "hierarchy": "balanced",
+      "zones": []
+    },
+    "colors": {
+      "palette": [
+        "#b234b2",
+        "#d74273",
+        "#f0f5f0"
+      ],
+      "dominantColor": "#b234b2",
+      "accentColor": "#d74273",
+      "temperature": "neutral",
+      "vibrancy": "normal"
+    },
+    "typography": {
+      "headlineStyle": "minimal",
+      "fontPairing": [
+        "Inter",
+        "Inter"
+      ],
+      "textProminence": "moderate",
+      "textPlacement": "center"
+    },
+    "elements": {
+      "hasShapes": false,
+      "hasGradients": false,
+      "hasTextures": false,
+      "hasPatterns": false,
+      "hasIllustrations": false
+    },
+    "complexity": {
+      "overall": 5,
+      "visual": 5,
+      "textual": 5
+    },
+    "performance": {
+      "suitableFor": [
+        "fashion"
+      ],
+      "estimatedCTR": 2.4,
+      "conversionPotential": "medium"
+    }
+  },
+  {
+    "id": "tmpl-1102373341",
+    "sourceFile": "3500+Social Media Templates/3. Fashion Social Media Templates/60 Elegant Fashion Social Media Templates/3.jpg",
+    "category": "fashion",
+    "style": "minimal-clean",
+    "layout": {
+      "structure": "single-focus",
+      "hierarchy": "balanced",
+      "zones": []
+    },
+    "colors": {
+      "palette": [
+        "#b0b234",
+        "#71d742",
+        "#f0f0f5"
+      ],
+      "dominantColor": "#b0b234",
+      "accentColor": "#71d742",
+      "temperature": "neutral",
+      "vibrancy": "normal"
+    },
+    "typography": {
+      "headlineStyle": "minimal",
+      "fontPairing": [
+        "Inter",
+        "Inter"
+      ],
+      "textProminence": "moderate",
+      "textPlacement": "center"
+    },
+    "elements": {
+      "hasShapes": false,
+      "hasGradients": false,
+      "hasTextures": false,
+      "hasPatterns": false,
+      "hasIllustrations": false
+    },
+    "complexity": {
+      "overall": 5,
+      "visual": 5,
+      "textual": 5
+    },
+    "performance": {
+      "suitableFor": [
+        "fashion"
+      ],
+      "estimatedCTR": 2.4,
+      "conversionPotential": "medium"
+    }
+  },
+  {
+    "id": "tmpl-1103296862",
+    "sourceFile": "3500+Social Media Templates/3. Fashion Social Media Templates/60 Elegant Fashion Social Media Templates/4.jpg",
+    "category": "fashion",
+    "style": "minimal-clean",
+    "layout": {
+      "structure": "single-focus",
+      "hierarchy": "balanced",
+      "zones": []
+    },
+    "colors": {
+      "palette": [
+        "#34aeb2",
+        "#426ed7",
+        "#f5f0f0"
+      ],
+      "dominantColor": "#34aeb2",
+      "accentColor": "#426ed7",
+      "temperature": "neutral",
+      "vibrancy": "normal"
+    },
+    "typography": {
+      "headlineStyle": "minimal",
+      "fontPairing": [
+        "Inter",
+        "Inter"
+      ],
+      "textProminence": "moderate",
+      "textPlacement": "center"
+    },
+    "elements": {
+      "hasShapes": false,
+      "hasGradients": false,
+      "hasTextures": false,
+      "hasPatterns": false,
+      "hasIllustrations": false
+    },
+    "complexity": {
+      "overall": 5,
+      "visual": 5,
+      "textual": 5
+    },
+    "performance": {
+      "suitableFor": [
+        "fashion"
+      ],
+      "estimatedCTR": 2.4,
+      "conversionPotential": "medium"
+    }
+  },
+  {
+    "id": "tmpl-1104220383",
+    "sourceFile": "3500+Social Media Templates/3. Fashion Social Media Templates/60 Elegant Fashion Social Media Templates/5.jpg",
+    "category": "fashion",
+    "style": "minimal-clean",
+    "layout": {
+      "structure": "single-focus",
+      "hierarchy": "balanced",
+      "zones": []
+    },
+    "colors": {
+      "palette": [
+        "#b234ac",
+        "#d7426c",
+        "#f0f5f0"
+      ],
+      "dominantColor": "#b234ac",
+      "accentColor": "#d7426c",
+      "temperature": "neutral",
+      "vibrancy": "normal"
+    },
+    "typography": {
+      "headlineStyle": "minimal",
+      "fontPairing": [
+        "Inter",
+        "Inter"
+      ],
+      "textProminence": "moderate",
+      "textPlacement": "center"
+    },
+    "elements": {
+      "hasShapes": false,
+      "hasGradients": false,
+      "hasTextures": false,
+      "hasPatterns": false,
+      "hasIllustrations": false
+    },
+    "complexity": {
+      "overall": 5,
+      "visual": 5,
+      "textual": 5
+    },
+    "performance": {
+      "suitableFor": [
+        "fashion"
+      ],
+      "estimatedCTR": 2.4,
+      "conversionPotential": "medium"
+    }
+  },
+  {
+    "id": "tmpl-1106067425",
+    "sourceFile": "3500+Social Media Templates/3. Fashion Social Media Templates/60 Elegant Fashion Social Media Templates/7.jpg",
+    "category": "fashion",
+    "style": "minimal-clean",
+    "layout": {
+      "structure": "single-focus",
+      "hierarchy": "balanced",
+      "zones": []
+    },
+    "colors": {
+      "palette": [
+        "#34a7b2",
+        "#4267d7",
+        "#f5f0f0"
+      ],
+      "dominantColor": "#34a7b2",
+      "accentColor": "#4267d7",
+      "temperature": "neutral",
+      "vibrancy": "normal"
+    },
+    "typography": {
+      "headlineStyle": "minimal",
+      "fontPairing": [
+        "Inter",
+        "Inter"
+      ],
+      "textProminence": "moderate",
+      "textPlacement": "center"
+    },
+    "elements": {
+      "hasShapes": false,
+      "hasGradients": false,
+      "hasTextures": false,
+      "hasPatterns": false,
+      "hasIllustrations": false
+    },
+    "complexity": {
+      "overall": 5,
+      "visual": 5,
+      "textual": 5
+    },
+    "performance": {
+      "suitableFor": [
+        "fashion"
+      ],
+      "estimatedCTR": 2.4,
+      "conversionPotential": "medium"
+    }
+  },
+  {
+    "id": "tmpl-1106990946",
+    "sourceFile": "3500+Social Media Templates/3. Fashion Social Media Templates/60 Elegant Fashion Social Media Templates/8.jpg",
+    "category": "fashion",
+    "style": "minimal-clean",
+    "layout": {
+      "structure": "single-focus",
+      "hierarchy": "balanced",
+      "zones": []
+    },
+    "colors": {
+      "palette": [
+        "#b234a5",
+        "#d74264",
+        "#f0f5f0"
+      ],
+      "dominantColor": "#b234a5",
+      "accentColor": "#d74264",
+      "temperature": "neutral",
+      "vibrancy": "normal"
+    },
+    "typography": {
+      "headlineStyle": "minimal",
+      "fontPairing": [
+        "Inter",
+        "Inter"
+      ],
+      "textProminence": "moderate",
+      "textPlacement": "center"
+    },
+    "elements": {
+      "hasShapes": false,
+      "hasGradients": false,
+      "hasTextures": false,
+      "hasPatterns": false,
+      "hasIllustrations": false
+    },
+    "complexity": {
+      "overall": 5,
+      "visual": 5,
+      "textual": 5
+    },
+    "performance": {
+      "suitableFor": [
+        "fashion"
+      ],
+      "estimatedCTR": 2.4,
+      "conversionPotential": "medium"
+    }
+  },
+  {
+    "id": "tmpl-1532999661",
+    "sourceFile": "3500+Social Media Templates/3. Fashion Social Media Templates/60 Elegant Fashion Social Media Templates 2/1.jpg",
+    "category": "fashion",
+    "style": "minimal-clean",
+    "layout": {
+      "structure": "single-focus",
+      "hierarchy": "balanced",
+      "zones": []
+    },
+    "colors": {
+      "palette": [
+        "#34b260",
+        "#42d4d7",
+        "#f5f0f3"
+      ],
+      "dominantColor": "#34b260",
+      "accentColor": "#42d4d7",
+      "temperature": "neutral",
+      "vibrancy": "normal"
+    },
+    "typography": {
+      "headlineStyle": "minimal",
+      "fontPairing": [
+        "Inter",
+        "Inter"
+      ],
+      "textProminence": "moderate",
+      "textPlacement": "center"
+    },
+    "elements": {
+      "hasShapes": false,
+      "hasGradients": false,
+      "hasTextures": false,
+      "hasPatterns": false,
+      "hasIllustrations": false
+    },
+    "complexity": {
+      "overall": 5,
+      "visual": 5,
+      "textual": 5
+    },
+    "performance": {
+      "suitableFor": [
+        "fashion"
+      ],
+      "estimatedCTR": 2.4,
+      "conversionPotential": "medium"
+    }
+  },
+  {
+    "id": "tmpl-1533923182",
+    "sourceFile": "3500+Social Media Templates/3. Fashion Social Media Templates/60 Elegant Fashion Social Media Templates 2/2.jpg",
+    "category": "fashion",
+    "style": "minimal-clean",
+    "layout": {
+      "structure": "single-focus",
+      "hierarchy": "balanced",
+      "zones": []
+    },
+    "colors": {
+      "palette": [
+        "#6234b2",
+        "#d742d2",
+        "#f3f5f0"
+      ],
+      "dominantColor": "#6234b2",
+      "accentColor": "#d742d2",
+      "temperature": "neutral",
+      "vibrancy": "normal"
+    },
+    "typography": {
+      "headlineStyle": "minimal",
+      "fontPairing": [
+        "Inter",
+        "Inter"
+      ],
+      "textProminence": "moderate",
+      "textPlacement": "center"
+    },
+    "elements": {
+      "hasShapes": false,
+      "hasGradients": false,
+      "hasTextures": false,
+      "hasPatterns": false,
+      "hasIllustrations": false
+    },
+    "complexity": {
+      "overall": 5,
+      "visual": 5,
+      "textual": 5
+    },
+    "performance": {
+      "suitableFor": [
+        "fashion"
+      ],
+      "estimatedCTR": 2.4,
+      "conversionPotential": "medium"
+    }
+  },
+  {
+    "id": "tmpl-1534846703",
+    "sourceFile": "3500+Social Media Templates/3. Fashion Social Media Templates/60 Elegant Fashion Social Media Templates 2/3.jpg",
+    "category": "fashion",
+    "style": "minimal-clean",
+    "layout": {
+      "structure": "single-focus",
+      "hierarchy": "balanced",
+      "zones": []
+    },
+    "colors": {
+      "palette": [
+        "#b26434",
+        "#cfd742",
+        "#f0f3f5"
+      ],
+      "dominantColor": "#b26434",
+      "accentColor": "#cfd742",
+      "temperature": "neutral",
+      "vibrancy": "normal"
+    },
+    "typography": {
+      "headlineStyle": "minimal",
+      "fontPairing": [
+        "Inter",
+        "Inter"
+      ],
+      "textProminence": "moderate",
+      "textPlacement": "center"
+    },
+    "elements": {
+      "hasShapes": false,
+      "hasGradients": false,
+      "hasTextures": false,
+      "hasPatterns": false,
+      "hasIllustrations": false
+    },
+    "complexity": {
+      "overall": 5,
+      "visual": 5,
+      "textual": 5
+    },
+    "performance": {
+      "suitableFor": [
+        "fashion"
+      ],
+      "estimatedCTR": 2.4,
+      "conversionPotential": "medium"
+    }
+  },
+  {
+    "id": "tmpl-1535770224",
+    "sourceFile": "3500+Social Media Templates/3. Fashion Social Media Templates/60 Elegant Fashion Social Media Templates 2/4.jpg",
+    "category": "fashion",
+    "style": "minimal-clean",
+    "layout": {
+      "structure": "single-focus",
+      "hierarchy": "balanced",
+      "zones": []
+    },
+    "colors": {
+      "palette": [
+        "#34b266",
+        "#42cdd7",
+        "#f5f0f3"
+      ],
+      "dominantColor": "#34b266",
+      "accentColor": "#42cdd7",
+      "temperature": "neutral",
+      "vibrancy": "normal"
+    },
+    "typography": {
+      "headlineStyle": "minimal",
+      "fontPairing": [
+        "Inter",
+        "Inter"
+      ],
+      "textProminence": "moderate",
+      "textPlacement": "center"
+    },
+    "elements": {
+      "hasShapes": false,
+      "hasGradients": false,
+      "hasTextures": false,
+      "hasPatterns": false,
+      "hasIllustrations": false
+    },
+    "complexity": {
+      "overall": 5,
+      "visual": 5,
+      "textual": 5
+    },
+    "performance": {
+      "suitableFor": [
+        "fashion"
+      ],
+      "estimatedCTR": 2.4,
+      "conversionPotential": "medium"
+    }
+  },
+  {
+    "id": "tmpl-1536693745",
+    "sourceFile": "3500+Social Media Templates/3. Fashion Social Media Templates/60 Elegant Fashion Social Media Templates 2/5.jpg",
+    "category": "fashion",
+    "style": "minimal-clean",
+    "layout": {
+      "structure": "single-focus",
+      "hierarchy": "balanced",
+      "zones": []
+    },
+    "colors": {
+      "palette": [
+        "#6834b2",
+        "#d742ca",
+        "#f3f5f0"
+      ],
+      "dominantColor": "#6834b2",
+      "accentColor": "#d742ca",
+      "temperature": "neutral",
+      "vibrancy": "normal"
+    },
+    "typography": {
+      "headlineStyle": "minimal",
+      "fontPairing": [
+        "Inter",
+        "Inter"
+      ],
+      "textProminence": "moderate",
+      "textPlacement": "center"
+    },
+    "elements": {
+      "hasShapes": false,
+      "hasGradients": false,
+      "hasTextures": false,
+      "hasPatterns": false,
+      "hasIllustrations": false
+    },
+    "complexity": {
+      "overall": 5,
+      "visual": 5,
+      "textual": 5
+    },
+    "performance": {
+      "suitableFor": [
+        "fashion"
+      ],
+      "estimatedCTR": 2.4,
+      "conversionPotential": "medium"
+    }
+  },
+  {
+    "id": "tmpl-1538540787",
+    "sourceFile": "3500+Social Media Templates/3. Fashion Social Media Templates/60 Elegant Fashion Social Media Templates 2/7.jpg",
+    "category": "fashion",
+    "style": "minimal-clean",
+    "layout": {
+      "structure": "single-focus",
+      "hierarchy": "balanced",
+      "zones": []
+    },
+    "colors": {
+      "palette": [
+        "#34b26c",
+        "#42c5d7",
+        "#f5f0f3"
+      ],
+      "dominantColor": "#34b26c",
+      "accentColor": "#42c5d7",
+      "temperature": "neutral",
+      "vibrancy": "normal"
+    },
+    "typography": {
+      "headlineStyle": "minimal",
+      "fontPairing": [
+        "Inter",
+        "Inter"
+      ],
+      "textProminence": "moderate",
+      "textPlacement": "center"
+    },
+    "elements": {
+      "hasShapes": false,
+      "hasGradients": false,
+      "hasTextures": false,
+      "hasPatterns": false,
+      "hasIllustrations": false
+    },
+    "complexity": {
+      "overall": 5,
+      "visual": 5,
+      "textual": 5
+    },
+    "performance": {
+      "suitableFor": [
+        "fashion"
+      ],
+      "estimatedCTR": 2.4,
+      "conversionPotential": "medium"
+    }
+  },
+  {
+    "id": "tmpl-1539464308",
+    "sourceFile": "3500+Social Media Templates/3. Fashion Social Media Templates/60 Elegant Fashion Social Media Templates 2/8.jpg",
+    "category": "fashion",
+    "style": "minimal-clean",
+    "layout": {
+      "structure": "single-focus",
+      "hierarchy": "balanced",
+      "zones": []
+    },
+    "colors": {
+      "palette": [
+        "#6f34b2",
+        "#d742c3",
+        "#f2f5f0"
+      ],
+      "dominantColor": "#6f34b2",
+      "accentColor": "#d742c3",
+      "temperature": "neutral",
+      "vibrancy": "normal"
+    },
+    "typography": {
+      "headlineStyle": "minimal",
+      "fontPairing": [
+        "Inter",
+        "Inter"
+      ],
+      "textProminence": "moderate",
+      "textPlacement": "center"
+    },
+    "elements": {
+      "hasShapes": false,
+      "hasGradients": false,
+      "hasTextures": false,
+      "hasPatterns": false,
+      "hasIllustrations": false
+    },
+    "complexity": {
+      "overall": 5,
+      "visual": 5,
+      "textual": 5
+    },
+    "performance": {
+      "suitableFor": [
+        "fashion"
+      ],
+      "estimatedCTR": 2.4,
+      "conversionPotential": "medium"
+    }
+  },
+  {
+    "id": "tmpl-2966429974",
+    "sourceFile": "3500+Social Media Templates/3. Fashion Social Media Templates/60 Lovely Fashion Social Media Templates/1.jpg",
+    "category": "fashion",
+    "style": "minimal-clean",
+    "layout": {
+      "structure": "single-focus",
+      "hierarchy": "balanced",
+      "zones": []
+    },
+    "colors": {
+      "palette": [
+        "#6ab234",
+        "#42d764",
+        "#f3f0f5"
+      ],
+      "dominantColor": "#6ab234",
+      "accentColor": "#42d764",
+      "temperature": "neutral",
+      "vibrancy": "normal"
+    },
+    "typography": {
+      "headlineStyle": "minimal",
+      "fontPairing": [
+        "Inter",
+        "Inter"
+      ],
+      "textProminence": "moderate",
+      "textPlacement": "center"
+    },
+    "elements": {
+      "hasShapes": false,
+      "hasGradients": false,
+      "hasTextures": false,
+      "hasPatterns": false,
+      "hasIllustrations": false
+    },
+    "complexity": {
+      "overall": 5,
+      "visual": 5,
+      "textual": 5
+    },
+    "performance": {
+      "suitableFor": [
+        "fashion"
+      ],
+      "estimatedCTR": 2.4,
+      "conversionPotential": "medium"
+    }
+  },
+  {
+    "id": "tmpl-2967353495",
+    "sourceFile": "3500+Social Media Templates/3. Fashion Social Media Templates/60 Lovely Fashion Social Media Templates/2.jpg",
+    "category": "fashion",
+    "style": "minimal-clean",
+    "layout": {
+      "structure": "single-focus",
+      "hierarchy": "balanced",
+      "zones": []
+    },
+    "colors": {
+      "palette": [
+        "#3468b2",
+        "#6742d7",
+        "#f5f3f0"
+      ],
+      "dominantColor": "#3468b2",
+      "accentColor": "#6742d7",
+      "temperature": "neutral",
+      "vibrancy": "normal"
+    },
+    "typography": {
+      "headlineStyle": "minimal",
+      "fontPairing": [
+        "Inter",
+        "Inter"
+      ],
+      "textProminence": "moderate",
+      "textPlacement": "center"
+    },
+    "elements": {
+      "hasShapes": false,
+      "hasGradients": false,
+      "hasTextures": false,
+      "hasPatterns": false,
+      "hasIllustrations": false
+    },
+    "complexity": {
+      "overall": 5,
+      "visual": 5,
+      "textual": 5
+    },
+    "performance": {
+      "suitableFor": [
+        "fashion"
+      ],
+      "estimatedCTR": 2.4,
+      "conversionPotential": "medium"
+    }
+  },
+  {
+    "id": "tmpl-2968277016",
+    "sourceFile": "3500+Social Media Templates/3. Fashion Social Media Templates/60 Lovely Fashion Social Media Templates/3.jpg",
+    "category": "fashion",
+    "style": "minimal-clean",
+    "layout": {
+      "structure": "single-focus",
+      "hierarchy": "balanced",
+      "zones": []
+    },
+    "colors": {
+      "palette": [
+        "#b23466",
+        "#d76942",
+        "#f0f5f3"
+      ],
+      "dominantColor": "#b23466",
+      "accentColor": "#d76942",
+      "temperature": "neutral",
+      "vibrancy": "normal"
+    },
+    "typography": {
+      "headlineStyle": "minimal",
+      "fontPairing": [
+        "Inter",
+        "Inter"
+      ],
+      "textProminence": "moderate",
+      "textPlacement": "center"
+    },
+    "elements": {
+      "hasShapes": false,
+      "hasGradients": false,
+      "hasTextures": false,
+      "hasPatterns": false,
+      "hasIllustrations": false
+    },
+    "complexity": {
+      "overall": 5,
+      "visual": 5,
+      "textual": 5
+    },
+    "performance": {
+      "suitableFor": [
+        "fashion"
+      ],
+      "estimatedCTR": 2.4,
+      "conversionPotential": "medium"
+    }
+  },
+  {
+    "id": "tmpl-2969200537",
+    "sourceFile": "3500+Social Media Templates/3. Fashion Social Media Templates/60 Lovely Fashion Social Media Templates/4.jpg",
+    "category": "fashion",
+    "style": "minimal-clean",
+    "layout": {
+      "structure": "single-focus",
+      "hierarchy": "balanced",
+      "zones": []
+    },
+    "colors": {
+      "palette": [
+        "#64b234",
+        "#42d76c",
+        "#f3f0f5"
+      ],
+      "dominantColor": "#64b234",
+      "accentColor": "#42d76c",
+      "temperature": "neutral",
+      "vibrancy": "normal"
+    },
+    "typography": {
+      "headlineStyle": "minimal",
+      "fontPairing": [
+        "Inter",
+        "Inter"
+      ],
+      "textProminence": "moderate",
+      "textPlacement": "center"
+    },
+    "elements": {
+      "hasShapes": false,
+      "hasGradients": false,
+      "hasTextures": false,
+      "hasPatterns": false,
+      "hasIllustrations": false
+    },
+    "complexity": {
+      "overall": 5,
+      "visual": 5,
+      "textual": 5
+    },
+    "performance": {
+      "suitableFor": [
+        "fashion"
+      ],
+      "estimatedCTR": 2.4,
+      "conversionPotential": "medium"
+    }
+  },
+  {
+    "id": "tmpl-2970124058",
+    "sourceFile": "3500+Social Media Templates/3. Fashion Social Media Templates/60 Lovely Fashion Social Media Templates/5.jpg",
+    "category": "fashion",
+    "style": "minimal-clean",
+    "layout": {
+      "structure": "single-focus",
+      "hierarchy": "balanced",
+      "zones": []
+    },
+    "colors": {
+      "palette": [
+        "#3462b2",
+        "#6e42d7",
+        "#f5f3f0"
+      ],
+      "dominantColor": "#3462b2",
+      "accentColor": "#6e42d7",
+      "temperature": "neutral",
+      "vibrancy": "normal"
+    },
+    "typography": {
+      "headlineStyle": "minimal",
+      "fontPairing": [
+        "Inter",
+        "Inter"
+      ],
+      "textProminence": "moderate",
+      "textPlacement": "center"
+    },
+    "elements": {
+      "hasShapes": false,
+      "hasGradients": false,
+      "hasTextures": false,
+      "hasPatterns": false,
+      "hasIllustrations": false
+    },
+    "complexity": {
+      "overall": 5,
+      "visual": 5,
+      "textual": 5
+    },
+    "performance": {
+      "suitableFor": [
+        "fashion"
+      ],
+      "estimatedCTR": 2.4,
+      "conversionPotential": "medium"
+    }
+  },
+  {
+    "id": "tmpl-2971971100",
+    "sourceFile": "3500+Social Media Templates/3. Fashion Social Media Templates/60 Lovely Fashion Social Media Templates/7.jpg",
+    "category": "fashion",
+    "style": "minimal-clean",
+    "layout": {
+      "structure": "single-focus",
+      "hierarchy": "balanced",
+      "zones": []
+    },
+    "colors": {
+      "palette": [
+        "#5eb234",
+        "#42d773",
+        "#f3f0f5"
+      ],
+      "dominantColor": "#5eb234",
+      "accentColor": "#42d773",
+      "temperature": "neutral",
+      "vibrancy": "normal"
+    },
+    "typography": {
+      "headlineStyle": "minimal",
+      "fontPairing": [
+        "Inter",
+        "Inter"
+      ],
+      "textProminence": "moderate",
+      "textPlacement": "center"
+    },
+    "elements": {
+      "hasShapes": false,
+      "hasGradients": false,
+      "hasTextures": false,
+      "hasPatterns": false,
+      "hasIllustrations": false
+    },
+    "complexity": {
+      "overall": 5,
+      "visual": 5,
+      "textual": 5
+    },
+    "performance": {
+      "suitableFor": [
+        "fashion"
+      ],
+      "estimatedCTR": 2.4,
+      "conversionPotential": "medium"
+    }
+  },
+  {
+    "id": "tmpl-2972894621",
+    "sourceFile": "3500+Social Media Templates/3. Fashion Social Media Templates/60 Lovely Fashion Social Media Templates/8.jpg",
+    "category": "fashion",
+    "style": "minimal-clean",
+    "layout": {
+      "structure": "single-focus",
+      "hierarchy": "balanced",
+      "zones": []
+    },
+    "colors": {
+      "palette": [
+        "#345cb2",
+        "#7642d7",
+        "#f5f3f0"
+      ],
+      "dominantColor": "#345cb2",
+      "accentColor": "#7642d7",
+      "temperature": "neutral",
+      "vibrancy": "normal"
+    },
+    "typography": {
+      "headlineStyle": "minimal",
+      "fontPairing": [
+        "Inter",
+        "Inter"
+      ],
+      "textProminence": "moderate",
+      "textPlacement": "center"
+    },
+    "elements": {
+      "hasShapes": false,
+      "hasGradients": false,
+      "hasTextures": false,
+      "hasPatterns": false,
+      "hasIllustrations": false
+    },
+    "complexity": {
+      "overall": 5,
+      "visual": 5,
+      "textual": 5
+    },
+    "performance": {
+      "suitableFor": [
+        "fashion"
+      ],
+      "estimatedCTR": 2.4,
+      "conversionPotential": "medium"
+    }
+  },
+  {
+    "id": "tmpl-3218121899",
+    "sourceFile": "3500+Social Media Templates/3. Fashion Social Media Templates/60 Marvelous Fashion Social Media Templates/1.jpg",
+    "category": "fashion",
+    "style": "minimal-clean",
+    "layout": {
+      "structure": "single-focus",
+      "hierarchy": "balanced",
+      "zones": []
+    },
+    "colors": {
+      "palette": [
+        "#34b2b0",
+        "#4276d7",
+        "#f5f0f0"
+      ],
+      "dominantColor": "#34b2b0",
+      "accentColor": "#4276d7",
+      "temperature": "neutral",
+      "vibrancy": "normal"
+    },
+    "typography": {
+      "headlineStyle": "minimal",
+      "fontPairing": [
+        "Inter",
+        "Inter"
+      ],
+      "textProminence": "moderate",
+      "textPlacement": "center"
+    },
+    "elements": {
+      "hasShapes": false,
+      "hasGradients": false,
+      "hasTextures": false,
+      "hasPatterns": false,
+      "hasIllustrations": false
+    },
+    "complexity": {
+      "overall": 5,
+      "visual": 5,
+      "textual": 5
+    },
+    "performance": {
+      "suitableFor": [
+        "fashion"
+      ],
+      "estimatedCTR": 2.4,
+      "conversionPotential": "medium"
+    }
+  },
+  {
+    "id": "tmpl-3219045420",
+    "sourceFile": "3500+Social Media Templates/3. Fashion Social Media Templates/60 Marvelous Fashion Social Media Templates/2.jpg",
+    "category": "fashion",
+    "style": "minimal-clean",
+    "layout": {
+      "structure": "single-focus",
+      "hierarchy": "balanced",
+      "zones": []
+    },
+    "colors": {
+      "palette": [
+        "#b234b2",
+        "#d74273",
+        "#f0f5f0"
+      ],
+      "dominantColor": "#b234b2",
+      "accentColor": "#d74273",
+      "temperature": "neutral",
+      "vibrancy": "normal"
+    },
+    "typography": {
+      "headlineStyle": "minimal",
+      "fontPairing": [
+        "Inter",
+        "Inter"
+      ],
+      "textProminence": "moderate",
+      "textPlacement": "center"
+    },
+    "elements": {
+      "hasShapes": false,
+      "hasGradients": false,
+      "hasTextures": false,
+      "hasPatterns": false,
+      "hasIllustrations": false
+    },
+    "complexity": {
+      "overall": 5,
+      "visual": 5,
+      "textual": 5
+    },
+    "performance": {
+      "suitableFor": [
+        "fashion"
+      ],
+      "estimatedCTR": 2.4,
+      "conversionPotential": "medium"
+    }
+  },
+  {
+    "id": "tmpl-3219968941",
+    "sourceFile": "3500+Social Media Templates/3. Fashion Social Media Templates/60 Marvelous Fashion Social Media Templates/3.jpg",
+    "category": "fashion",
+    "style": "minimal-clean",
+    "layout": {
+      "structure": "single-focus",
+      "hierarchy": "balanced",
+      "zones": []
+    },
+    "colors": {
+      "palette": [
+        "#b0b234",
+        "#71d742",
+        "#f0f0f5"
+      ],
+      "dominantColor": "#b0b234",
+      "accentColor": "#71d742",
+      "temperature": "neutral",
+      "vibrancy": "normal"
+    },
+    "typography": {
+      "headlineStyle": "minimal",
+      "fontPairing": [
+        "Inter",
+        "Inter"
+      ],
+      "textProminence": "moderate",
+      "textPlacement": "center"
+    },
+    "elements": {
+      "hasShapes": false,
+      "hasGradients": false,
+      "hasTextures": false,
+      "hasPatterns": false,
+      "hasIllustrations": false
+    },
+    "complexity": {
+      "overall": 5,
+      "visual": 5,
+      "textual": 5
+    },
+    "performance": {
+      "suitableFor": [
+        "fashion"
+      ],
+      "estimatedCTR": 2.4,
+      "conversionPotential": "medium"
+    }
+  },
+  {
+    "id": "tmpl-3220892462",
+    "sourceFile": "3500+Social Media Templates/3. Fashion Social Media Templates/60 Marvelous Fashion Social Media Templates/4.jpg",
+    "category": "fashion",
+    "style": "minimal-clean",
+    "layout": {
+      "structure": "single-focus",
+      "hierarchy": "balanced",
+      "zones": []
+    },
+    "colors": {
+      "palette": [
+        "#34aeb2",
+        "#426ed7",
+        "#f5f0f0"
+      ],
+      "dominantColor": "#34aeb2",
+      "accentColor": "#426ed7",
+      "temperature": "neutral",
+      "vibrancy": "normal"
+    },
+    "typography": {
+      "headlineStyle": "minimal",
+      "fontPairing": [
+        "Inter",
+        "Inter"
+      ],
+      "textProminence": "moderate",
+      "textPlacement": "center"
+    },
+    "elements": {
+      "hasShapes": false,
+      "hasGradients": false,
+      "hasTextures": false,
+      "hasPatterns": false,
+      "hasIllustrations": false
+    },
+    "complexity": {
+      "overall": 5,
+      "visual": 5,
+      "textual": 5
+    },
+    "performance": {
+      "suitableFor": [
+        "fashion"
+      ],
+      "estimatedCTR": 2.4,
+      "conversionPotential": "medium"
+    }
+  },
+  {
+    "id": "tmpl-3221815983",
+    "sourceFile": "3500+Social Media Templates/3. Fashion Social Media Templates/60 Marvelous Fashion Social Media Templates/5.jpg",
+    "category": "fashion",
+    "style": "minimal-clean",
+    "layout": {
+      "structure": "single-focus",
+      "hierarchy": "balanced",
+      "zones": []
+    },
+    "colors": {
+      "palette": [
+        "#b234ac",
+        "#d7426c",
+        "#f0f5f0"
+      ],
+      "dominantColor": "#b234ac",
+      "accentColor": "#d7426c",
+      "temperature": "neutral",
+      "vibrancy": "normal"
+    },
+    "typography": {
+      "headlineStyle": "minimal",
+      "fontPairing": [
+        "Inter",
+        "Inter"
+      ],
+      "textProminence": "moderate",
+      "textPlacement": "center"
+    },
+    "elements": {
+      "hasShapes": false,
+      "hasGradients": false,
+      "hasTextures": false,
+      "hasPatterns": false,
+      "hasIllustrations": false
+    },
+    "complexity": {
+      "overall": 5,
+      "visual": 5,
+      "textual": 5
+    },
+    "performance": {
+      "suitableFor": [
+        "fashion"
+      ],
+      "estimatedCTR": 2.4,
+      "conversionPotential": "medium"
+    }
+  },
+  {
+    "id": "tmpl-3223663025",
+    "sourceFile": "3500+Social Media Templates/3. Fashion Social Media Templates/60 Marvelous Fashion Social Media Templates/7.jpg",
+    "category": "fashion",
+    "style": "minimal-clean",
+    "layout": {
+      "structure": "single-focus",
+      "hierarchy": "balanced",
+      "zones": []
+    },
+    "colors": {
+      "palette": [
+        "#34a7b2",
+        "#4267d7",
+        "#f5f0f0"
+      ],
+      "dominantColor": "#34a7b2",
+      "accentColor": "#4267d7",
+      "temperature": "neutral",
+      "vibrancy": "normal"
+    },
+    "typography": {
+      "headlineStyle": "minimal",
+      "fontPairing": [
+        "Inter",
+        "Inter"
+      ],
+      "textProminence": "moderate",
+      "textPlacement": "center"
+    },
+    "elements": {
+      "hasShapes": false,
+      "hasGradients": false,
+      "hasTextures": false,
+      "hasPatterns": false,
+      "hasIllustrations": false
+    },
+    "complexity": {
+      "overall": 5,
+      "visual": 5,
+      "textual": 5
+    },
+    "performance": {
+      "suitableFor": [
+        "fashion"
+      ],
+      "estimatedCTR": 2.4,
+      "conversionPotential": "medium"
+    }
+  },
+  {
+    "id": "tmpl-3224586546",
+    "sourceFile": "3500+Social Media Templates/3. Fashion Social Media Templates/60 Marvelous Fashion Social Media Templates/8.jpg",
+    "category": "fashion",
+    "style": "minimal-clean",
+    "layout": {
+      "structure": "single-focus",
+      "hierarchy": "balanced",
+      "zones": []
+    },
+    "colors": {
+      "palette": [
+        "#b234a5",
+        "#d74264",
+        "#f0f5f0"
+      ],
+      "dominantColor": "#b234a5",
+      "accentColor": "#d74264",
+      "temperature": "neutral",
+      "vibrancy": "normal"
+    },
+    "typography": {
+      "headlineStyle": "minimal",
+      "fontPairing": [
+        "Inter",
+        "Inter"
+      ],
+      "textProminence": "moderate",
+      "textPlacement": "center"
+    },
+    "elements": {
+      "hasShapes": false,
+      "hasGradients": false,
+      "hasTextures": false,
+      "hasPatterns": false,
+      "hasIllustrations": false
+    },
+    "complexity": {
+      "overall": 5,
+      "visual": 5,
+      "textual": 5
+    },
+    "performance": {
+      "suitableFor": [
+        "fashion"
+      ],
+      "estimatedCTR": 2.4,
+      "conversionPotential": "medium"
+    }
+  },
+  {
+    "id": "tmpl-1983179975",
+    "sourceFile": "3500+Social Media Templates/3. Fashion Social Media Templates/60 Orange Fashion Social Media Templates/1.jpg",
+    "category": "fashion",
+    "style": "minimal-clean",
+    "layout": {
+      "structure": "single-focus",
+      "hierarchy": "balanced",
+      "zones": []
+    },
+    "colors": {
+      "palette": [
+        "#68b234",
+        "#42d767",
+        "#f3f0f5"
+      ],
+      "dominantColor": "#68b234",
+      "accentColor": "#42d767",
+      "temperature": "neutral",
+      "vibrancy": "normal"
+    },
+    "typography": {
+      "headlineStyle": "minimal",
+      "fontPairing": [
+        "Inter",
+        "Inter"
+      ],
+      "textProminence": "moderate",
+      "textPlacement": "center"
+    },
+    "elements": {
+      "hasShapes": false,
+      "hasGradients": false,
+      "hasTextures": false,
+      "hasPatterns": false,
+      "hasIllustrations": false
+    },
+    "complexity": {
+      "overall": 5,
+      "visual": 5,
+      "textual": 5
+    },
+    "performance": {
+      "suitableFor": [
+        "fashion"
+      ],
+      "estimatedCTR": 2.4,
+      "conversionPotential": "medium"
+    }
+  },
+  {
+    "id": "tmpl-1984103496",
+    "sourceFile": "3500+Social Media Templates/3. Fashion Social Media Templates/60 Orange Fashion Social Media Templates/2.jpg",
+    "category": "fashion",
+    "style": "minimal-clean",
+    "layout": {
+      "structure": "single-focus",
+      "hierarchy": "balanced",
+      "zones": []
+    },
+    "colors": {
+      "palette": [
+        "#3466b2",
+        "#6942d7",
+        "#f5f3f0"
+      ],
+      "dominantColor": "#3466b2",
+      "accentColor": "#6942d7",
+      "temperature": "neutral",
+      "vibrancy": "normal"
+    },
+    "typography": {
+      "headlineStyle": "minimal",
+      "fontPairing": [
+        "Inter",
+        "Inter"
+      ],
+      "textProminence": "moderate",
+      "textPlacement": "center"
+    },
+    "elements": {
+      "hasShapes": false,
+      "hasGradients": false,
+      "hasTextures": false,
+      "hasPatterns": false,
+      "hasIllustrations": false
+    },
+    "complexity": {
+      "overall": 5,
+      "visual": 5,
+      "textual": 5
+    },
+    "performance": {
+      "suitableFor": [
+        "fashion"
+      ],
+      "estimatedCTR": 2.4,
+      "conversionPotential": "medium"
+    }
+  },
+  {
+    "id": "tmpl-1985027017",
+    "sourceFile": "3500+Social Media Templates/3. Fashion Social Media Templates/60 Orange Fashion Social Media Templates/3.jpg",
+    "category": "fashion",
+    "style": "minimal-clean",
+    "layout": {
+      "structure": "single-focus",
+      "hierarchy": "balanced",
+      "zones": []
+    },
+    "colors": {
+      "palette": [
+        "#b23464",
+        "#d76c42",
+        "#f0f5f3"
+      ],
+      "dominantColor": "#b23464",
+      "accentColor": "#d76c42",
+      "temperature": "neutral",
+      "vibrancy": "normal"
+    },
+    "typography": {
+      "headlineStyle": "minimal",
+      "fontPairing": [
+        "Inter",
+        "Inter"
+      ],
+      "textProminence": "moderate",
+      "textPlacement": "center"
+    },
+    "elements": {
+      "hasShapes": false,
+      "hasGradients": false,
+      "hasTextures": false,
+      "hasPatterns": false,
+      "hasIllustrations": false
+    },
+    "complexity": {
+      "overall": 5,
+      "visual": 5,
+      "textual": 5
+    },
+    "performance": {
+      "suitableFor": [
+        "fashion"
+      ],
+      "estimatedCTR": 2.4,
+      "conversionPotential": "medium"
+    }
+  },
+  {
+    "id": "tmpl-1985950538",
+    "sourceFile": "3500+Social Media Templates/3. Fashion Social Media Templates/60 Orange Fashion Social Media Templates/4.jpg",
+    "category": "fashion",
+    "style": "minimal-clean",
+    "layout": {
+      "structure": "single-focus",
+      "hierarchy": "balanced",
+      "zones": []
+    },
+    "colors": {
+      "palette": [
+        "#62b234",
+        "#42d76e",
+        "#f3f0f5"
+      ],
+      "dominantColor": "#62b234",
+      "accentColor": "#42d76e",
+      "temperature": "neutral",
+      "vibrancy": "normal"
+    },
+    "typography": {
+      "headlineStyle": "minimal",
+      "fontPairing": [
+        "Inter",
+        "Inter"
+      ],
+      "textProminence": "moderate",
+      "textPlacement": "center"
+    },
+    "elements": {
+      "hasShapes": false,
+      "hasGradients": false,
+      "hasTextures": false,
+      "hasPatterns": false,
+      "hasIllustrations": false
+    },
+    "complexity": {
+      "overall": 5,
+      "visual": 5,
+      "textual": 5
+    },
+    "performance": {
+      "suitableFor": [
+        "fashion"
+      ],
+      "estimatedCTR": 2.4,
+      "conversionPotential": "medium"
+    }
+  },
+  {
+    "id": "tmpl-1986874059",
+    "sourceFile": "3500+Social Media Templates/3. Fashion Social Media Templates/60 Orange Fashion Social Media Templates/5.jpg",
+    "category": "fashion",
+    "style": "minimal-clean",
+    "layout": {
+      "structure": "single-focus",
+      "hierarchy": "balanced",
+      "zones": []
+    },
+    "colors": {
+      "palette": [
+        "#3460b2",
+        "#7142d7",
+        "#f5f3f0"
+      ],
+      "dominantColor": "#3460b2",
+      "accentColor": "#7142d7",
+      "temperature": "neutral",
+      "vibrancy": "normal"
+    },
+    "typography": {
+      "headlineStyle": "minimal",
+      "fontPairing": [
+        "Inter",
+        "Inter"
+      ],
+      "textProminence": "moderate",
+      "textPlacement": "center"
+    },
+    "elements": {
+      "hasShapes": false,
+      "hasGradients": false,
+      "hasTextures": false,
+      "hasPatterns": false,
+      "hasIllustrations": false
+    },
+    "complexity": {
+      "overall": 5,
+      "visual": 5,
+      "textual": 5
+    },
+    "performance": {
+      "suitableFor": [
+        "fashion"
+      ],
+      "estimatedCTR": 2.4,
+      "conversionPotential": "medium"
+    }
+  },
+  {
+    "id": "tmpl-1987797580",
+    "sourceFile": "3500+Social Media Templates/3. Fashion Social Media Templates/60 Orange Fashion Social Media Templates/6.jpg",
+    "category": "fashion",
+    "style": "minimal-clean",
+    "layout": {
+      "structure": "single-focus",
+      "hierarchy": "balanced",
+      "zones": []
+    },
+    "colors": {
+      "palette": [
+        "#b2345e",
+        "#d77342",
+        "#f0f5f3"
+      ],
+      "dominantColor": "#b2345e",
+      "accentColor": "#d77342",
+      "temperature": "neutral",
+      "vibrancy": "normal"
+    },
+    "typography": {
+      "headlineStyle": "minimal",
+      "fontPairing": [
+        "Inter",
+        "Inter"
+      ],
+      "textProminence": "moderate",
+      "textPlacement": "center"
+    },
+    "elements": {
+      "hasShapes": false,
+      "hasGradients": false,
+      "hasTextures": false,
+      "hasPatterns": false,
+      "hasIllustrations": false
+    },
+    "complexity": {
+      "overall": 5,
+      "visual": 5,
+      "textual": 5
+    },
+    "performance": {
+      "suitableFor": [
+        "fashion"
+      ],
+      "estimatedCTR": 2.4,
+      "conversionPotential": "medium"
+    }
+  },
+  {
+    "id": "tmpl-3654624985",
+    "sourceFile": "3500+Social Media Templates/3. Fashion Social Media Templates/60 Orange Fashion Social Media Templates 2/1.jpg",
+    "category": "fashion",
+    "style": "minimal-clean",
+    "layout": {
+      "structure": "single-focus",
+      "hierarchy": "balanced",
+      "zones": []
+    },
+    "colors": {
+      "palette": [
+        "#b26834",
+        "#cad742",
+        "#f0f3f5"
+      ],
+      "dominantColor": "#b26834",
+      "accentColor": "#cad742",
+      "temperature": "neutral",
+      "vibrancy": "normal"
+    },
+    "typography": {
+      "headlineStyle": "minimal",
+      "fontPairing": [
+        "Inter",
+        "Inter"
+      ],
+      "textProminence": "moderate",
+      "textPlacement": "center"
+    },
+    "elements": {
+      "hasShapes": false,
+      "hasGradients": false,
+      "hasTextures": false,
+      "hasPatterns": false,
+      "hasIllustrations": false
+    },
+    "complexity": {
+      "overall": 5,
+      "visual": 5,
+      "textual": 5
+    },
+    "performance": {
+      "suitableFor": [
+        "fashion"
+      ],
+      "estimatedCTR": 2.4,
+      "conversionPotential": "medium"
+    }
+  },
+  {
+    "id": "tmpl-3655548506",
+    "sourceFile": "3500+Social Media Templates/3. Fashion Social Media Templates/60 Orange Fashion Social Media Templates 2/2.jpg",
+    "category": "fashion",
+    "style": "minimal-clean",
+    "layout": {
+      "structure": "single-focus",
+      "hierarchy": "balanced",
+      "zones": []
+    },
+    "colors": {
+      "palette": [
+        "#34b26a",
+        "#42c8d7",
+        "#f5f0f3"
+      ],
+      "dominantColor": "#34b26a",
+      "accentColor": "#42c8d7",
+      "temperature": "neutral",
+      "vibrancy": "normal"
+    },
+    "typography": {
+      "headlineStyle": "minimal",
+      "fontPairing": [
+        "Inter",
+        "Inter"
+      ],
+      "textProminence": "moderate",
+      "textPlacement": "center"
+    },
+    "elements": {
+      "hasShapes": false,
+      "hasGradients": false,
+      "hasTextures": false,
+      "hasPatterns": false,
+      "hasIllustrations": false
+    },
+    "complexity": {
+      "overall": 5,
+      "visual": 5,
+      "textual": 5
+    },
+    "performance": {
+      "suitableFor": [
+        "fashion"
+      ],
+      "estimatedCTR": 2.4,
+      "conversionPotential": "medium"
+    }
+  },
+  {
+    "id": "tmpl-3656472027",
+    "sourceFile": "3500+Social Media Templates/3. Fashion Social Media Templates/60 Orange Fashion Social Media Templates 2/3.jpg",
+    "category": "fashion",
+    "style": "minimal-clean",
+    "layout": {
+      "structure": "single-focus",
+      "hierarchy": "balanced",
+      "zones": []
+    },
+    "colors": {
+      "palette": [
+        "#6c34b2",
+        "#d742c5",
+        "#f3f5f0"
+      ],
+      "dominantColor": "#6c34b2",
+      "accentColor": "#d742c5",
+      "temperature": "neutral",
+      "vibrancy": "normal"
+    },
+    "typography": {
+      "headlineStyle": "minimal",
+      "fontPairing": [
+        "Inter",
+        "Inter"
+      ],
+      "textProminence": "moderate",
+      "textPlacement": "center"
+    },
+    "elements": {
+      "hasShapes": false,
+      "hasGradients": false,
+      "hasTextures": false,
+      "hasPatterns": false,
+      "hasIllustrations": false
+    },
+    "complexity": {
+      "overall": 5,
+      "visual": 5,
+      "textual": 5
+    },
+    "performance": {
+      "suitableFor": [
+        "fashion"
+      ],
+      "estimatedCTR": 2.4,
+      "conversionPotential": "medium"
+    }
+  },
+  {
+    "id": "tmpl-3657395548",
+    "sourceFile": "3500+Social Media Templates/3. Fashion Social Media Templates/60 Orange Fashion Social Media Templates 2/4.jpg",
+    "category": "fashion",
+    "style": "minimal-clean",
+    "layout": {
+      "structure": "single-focus",
+      "hierarchy": "balanced",
+      "zones": []
+    },
+    "colors": {
+      "palette": [
+        "#b26f34",
+        "#c3d742",
+        "#f0f2f5"
+      ],
+      "dominantColor": "#b26f34",
+      "accentColor": "#c3d742",
+      "temperature": "neutral",
+      "vibrancy": "normal"
+    },
+    "typography": {
+      "headlineStyle": "minimal",
+      "fontPairing": [
+        "Inter",
+        "Inter"
+      ],
+      "textProminence": "moderate",
+      "textPlacement": "center"
+    },
+    "elements": {
+      "hasShapes": false,
+      "hasGradients": false,
+      "hasTextures": false,
+      "hasPatterns": false,
+      "hasIllustrations": false
+    },
+    "complexity": {
+      "overall": 5,
+      "visual": 5,
+      "textual": 5
+    },
+    "performance": {
+      "suitableFor": [
+        "fashion"
+      ],
+      "estimatedCTR": 2.4,
+      "conversionPotential": "medium"
+    }
+  },
+  {
+    "id": "tmpl-3658319069",
+    "sourceFile": "3500+Social Media Templates/3. Fashion Social Media Templates/60 Orange Fashion Social Media Templates 2/5.jpg",
+    "category": "fashion",
+    "style": "minimal-clean",
+    "layout": {
+      "structure": "single-focus",
+      "hierarchy": "balanced",
+      "zones": []
+    },
+    "colors": {
+      "palette": [
+        "#34b271",
+        "#42c0d7",
+        "#f5f0f2"
+      ],
+      "dominantColor": "#34b271",
+      "accentColor": "#42c0d7",
+      "temperature": "neutral",
+      "vibrancy": "normal"
+    },
+    "typography": {
+      "headlineStyle": "minimal",
+      "fontPairing": [
+        "Inter",
+        "Inter"
+      ],
+      "textProminence": "moderate",
+      "textPlacement": "center"
+    },
+    "elements": {
+      "hasShapes": false,
+      "hasGradients": false,
+      "hasTextures": false,
+      "hasPatterns": false,
+      "hasIllustrations": false
+    },
+    "complexity": {
+      "overall": 5,
+      "visual": 5,
+      "textual": 5
+    },
+    "performance": {
+      "suitableFor": [
+        "fashion"
+      ],
+      "estimatedCTR": 2.4,
+      "conversionPotential": "medium"
+    }
+  },
+  {
+    "id": "tmpl-3659242590",
+    "sourceFile": "3500+Social Media Templates/3. Fashion Social Media Templates/60 Orange Fashion Social Media Templates 2/6.jpg",
+    "category": "fashion",
+    "style": "minimal-clean",
+    "layout": {
+      "structure": "single-focus",
+      "hierarchy": "balanced",
+      "zones": []
+    },
+    "colors": {
+      "palette": [
+        "#7334b2",
+        "#d742be",
+        "#f2f5f0"
+      ],
+      "dominantColor": "#7334b2",
+      "accentColor": "#d742be",
+      "temperature": "neutral",
+      "vibrancy": "normal"
+    },
+    "typography": {
+      "headlineStyle": "minimal",
+      "fontPairing": [
+        "Inter",
+        "Inter"
+      ],
+      "textProminence": "moderate",
+      "textPlacement": "center"
+    },
+    "elements": {
+      "hasShapes": false,
+      "hasGradients": false,
+      "hasTextures": false,
+      "hasPatterns": false,
+      "hasIllustrations": false
+    },
+    "complexity": {
+      "overall": 5,
+      "visual": 5,
+      "textual": 5
+    },
+    "performance": {
+      "suitableFor": [
+        "fashion"
+      ],
+      "estimatedCTR": 2.4,
+      "conversionPotential": "medium"
+    }
+  },
+  {
+    "id": "tmpl-3660166111",
+    "sourceFile": "3500+Social Media Templates/3. Fashion Social Media Templates/60 Orange Fashion Social Media Templates 2/7.jpg",
+    "category": "fashion",
+    "style": "minimal-clean",
+    "layout": {
+      "structure": "single-focus",
+      "hierarchy": "balanced",
+      "zones": []
+    },
+    "colors": {
+      "palette": [
+        "#b27534",
+        "#bbd742",
+        "#f0f2f5"
+      ],
+      "dominantColor": "#b27534",
+      "accentColor": "#bbd742",
+      "temperature": "neutral",
+      "vibrancy": "normal"
+    },
+    "typography": {
+      "headlineStyle": "minimal",
+      "fontPairing": [
+        "Inter",
+        "Inter"
+      ],
+      "textProminence": "moderate",
+      "textPlacement": "center"
+    },
+    "elements": {
+      "hasShapes": false,
+      "hasGradients": false,
+      "hasTextures": false,
+      "hasPatterns": false,
+      "hasIllustrations": false
+    },
+    "complexity": {
+      "overall": 5,
+      "visual": 5,
+      "textual": 5
+    },
+    "performance": {
+      "suitableFor": [
+        "fashion"
+      ],
+      "estimatedCTR": 2.4,
+      "conversionPotential": "medium"
+    }
+  },
+  {
+    "id": "tmpl-1755638271",
+    "sourceFile": "3500+Social Media Templates/3. Fashion Social Media Templates/60 Pink Fashion Social Media Templates/1.jpg",
+    "category": "fashion",
+    "style": "minimal-clean",
+    "layout": {
+      "structure": "single-focus",
+      "hierarchy": "balanced",
+      "zones": []
+    },
+    "colors": {
+      "palette": [
+        "#b23447",
+        "#d78f42",
+        "#f0f5f4"
+      ],
+      "dominantColor": "#b23447",
+      "accentColor": "#d78f42",
+      "temperature": "neutral",
+      "vibrancy": "normal"
+    },
+    "typography": {
+      "headlineStyle": "minimal",
+      "fontPairing": [
+        "Inter",
+        "Inter"
+      ],
+      "textProminence": "moderate",
+      "textPlacement": "center"
+    },
+    "elements": {
+      "hasShapes": false,
+      "hasGradients": false,
+      "hasTextures": false,
+      "hasPatterns": false,
+      "hasIllustrations": false
+    },
+    "complexity": {
+      "overall": 5,
+      "visual": 5,
+      "textual": 5
+    },
+    "performance": {
+      "suitableFor": [
+        "fashion"
+      ],
+      "estimatedCTR": 2.4,
+      "conversionPotential": "medium"
+    }
+  },
+  {
+    "id": "tmpl-1756561792",
+    "sourceFile": "3500+Social Media Templates/3. Fashion Social Media Templates/60 Pink Fashion Social Media Templates/2.jpg",
+    "category": "fashion",
+    "style": "minimal-clean",
+    "layout": {
+      "structure": "single-focus",
+      "hierarchy": "balanced",
+      "zones": []
+    },
+    "colors": {
+      "palette": [
+        "#44b234",
+        "#42d791",
+        "#f4f0f5"
+      ],
+      "dominantColor": "#44b234",
+      "accentColor": "#42d791",
+      "temperature": "neutral",
+      "vibrancy": "normal"
+    },
+    "typography": {
+      "headlineStyle": "minimal",
+      "fontPairing": [
+        "Inter",
+        "Inter"
+      ],
+      "textProminence": "moderate",
+      "textPlacement": "center"
+    },
+    "elements": {
+      "hasShapes": false,
+      "hasGradients": false,
+      "hasTextures": false,
+      "hasPatterns": false,
+      "hasIllustrations": false
+    },
+    "complexity": {
+      "overall": 5,
+      "visual": 5,
+      "textual": 5
+    },
+    "performance": {
+      "suitableFor": [
+        "fashion"
+      ],
+      "estimatedCTR": 2.4,
+      "conversionPotential": "medium"
+    }
+  },
+  {
+    "id": "tmpl-1757485313",
+    "sourceFile": "3500+Social Media Templates/3. Fashion Social Media Templates/60 Pink Fashion Social Media Templates/3.jpg",
+    "category": "fashion",
+    "style": "minimal-clean",
+    "layout": {
+      "structure": "single-focus",
+      "hierarchy": "balanced",
+      "zones": []
+    },
+    "colors": {
+      "palette": [
+        "#3442b2",
+        "#9442d7",
+        "#f5f4f0"
+      ],
+      "dominantColor": "#3442b2",
+      "accentColor": "#9442d7",
+      "temperature": "neutral",
+      "vibrancy": "normal"
+    },
+    "typography": {
+      "headlineStyle": "minimal",
+      "fontPairing": [
+        "Inter",
+        "Inter"
+      ],
+      "textProminence": "moderate",
+      "textPlacement": "center"
+    },
+    "elements": {
+      "hasShapes": false,
+      "hasGradients": false,
+      "hasTextures": false,
+      "hasPatterns": false,
+      "hasIllustrations": false
+    },
+    "complexity": {
+      "overall": 5,
+      "visual": 5,
+      "textual": 5
+    },
+    "performance": {
+      "suitableFor": [
+        "fashion"
+      ],
+      "estimatedCTR": 2.4,
+      "conversionPotential": "medium"
+    }
+  },
+  {
+    "id": "tmpl-1758408834",
+    "sourceFile": "3500+Social Media Templates/3. Fashion Social Media Templates/60 Pink Fashion Social Media Templates/4.jpg",
+    "category": "fashion",
+    "style": "minimal-clean",
+    "layout": {
+      "structure": "single-focus",
+      "hierarchy": "balanced",
+      "zones": []
+    },
+    "colors": {
+      "palette": [
+        "#b23440",
+        "#d79642",
+        "#f0f5f4"
+      ],
+      "dominantColor": "#b23440",
+      "accentColor": "#d79642",
+      "temperature": "neutral",
+      "vibrancy": "normal"
+    },
+    "typography": {
+      "headlineStyle": "minimal",
+      "fontPairing": [
+        "Inter",
+        "Inter"
+      ],
+      "textProminence": "moderate",
+      "textPlacement": "center"
+    },
+    "elements": {
+      "hasShapes": false,
+      "hasGradients": false,
+      "hasTextures": false,
+      "hasPatterns": false,
+      "hasIllustrations": false
+    },
+    "complexity": {
+      "overall": 5,
+      "visual": 5,
+      "textual": 5
+    },
+    "performance": {
+      "suitableFor": [
+        "fashion"
+      ],
+      "estimatedCTR": 2.4,
+      "conversionPotential": "medium"
+    }
+  },
+  {
+    "id": "tmpl-1759332355",
+    "sourceFile": "3500+Social Media Templates/3. Fashion Social Media Templates/60 Pink Fashion Social Media Templates/5.jpg",
+    "category": "fashion",
+    "style": "minimal-clean",
+    "layout": {
+      "structure": "single-focus",
+      "hierarchy": "balanced",
+      "zones": []
+    },
+    "colors": {
+      "palette": [
+        "#3eb234",
+        "#42d799",
+        "#f4f0f5"
+      ],
+      "dominantColor": "#3eb234",
+      "accentColor": "#42d799",
+      "temperature": "neutral",
+      "vibrancy": "normal"
+    },
+    "typography": {
+      "headlineStyle": "minimal",
+      "fontPairing": [
+        "Inter",
+        "Inter"
+      ],
+      "textProminence": "moderate",
+      "textPlacement": "center"
+    },
+    "elements": {
+      "hasShapes": false,
+      "hasGradients": false,
+      "hasTextures": false,
+      "hasPatterns": false,
+      "hasIllustrations": false
+    },
+    "complexity": {
+      "overall": 5,
+      "visual": 5,
+      "textual": 5
+    },
+    "performance": {
+      "suitableFor": [
+        "fashion"
+      ],
+      "estimatedCTR": 2.4,
+      "conversionPotential": "medium"
+    }
+  },
+  {
+    "id": "tmpl-1760255876",
+    "sourceFile": "3500+Social Media Templates/3. Fashion Social Media Templates/60 Pink Fashion Social Media Templates/6.jpg",
+    "category": "fashion",
+    "style": "minimal-clean",
+    "layout": {
+      "structure": "single-focus",
+      "hierarchy": "balanced",
+      "zones": []
+    },
+    "colors": {
+      "palette": [
+        "#343cb2",
+        "#9b42d7",
+        "#f5f4f0"
+      ],
+      "dominantColor": "#343cb2",
+      "accentColor": "#9b42d7",
+      "temperature": "neutral",
+      "vibrancy": "normal"
+    },
+    "typography": {
+      "headlineStyle": "minimal",
+      "fontPairing": [
+        "Inter",
+        "Inter"
+      ],
+      "textProminence": "moderate",
+      "textPlacement": "center"
+    },
+    "elements": {
+      "hasShapes": false,
+      "hasGradients": false,
+      "hasTextures": false,
+      "hasPatterns": false,
+      "hasIllustrations": false
+    },
+    "complexity": {
+      "overall": 5,
+      "visual": 5,
+      "textual": 5
+    },
+    "performance": {
+      "suitableFor": [
+        "fashion"
+      ],
+      "estimatedCTR": 2.4,
+      "conversionPotential": "medium"
+    }
+  },
+  {
+    "id": "tmpl-1761179397",
+    "sourceFile": "3500+Social Media Templates/3. Fashion Social Media Templates/60 Pink Fashion Social Media Templates/7.jpg",
+    "category": "fashion",
+    "style": "minimal-clean",
+    "layout": {
+      "structure": "single-focus",
+      "hierarchy": "balanced",
+      "zones": []
+    },
+    "colors": {
+      "palette": [
+        "#b2343a",
+        "#d79e42",
+        "#f0f5f5"
+      ],
+      "dominantColor": "#b2343a",
+      "accentColor": "#d79e42",
+      "temperature": "neutral",
+      "vibrancy": "normal"
+    },
+    "typography": {
+      "headlineStyle": "minimal",
+      "fontPairing": [
+        "Inter",
+        "Inter"
+      ],
+      "textProminence": "moderate",
+      "textPlacement": "center"
+    },
+    "elements": {
+      "hasShapes": false,
+      "hasGradients": false,
+      "hasTextures": false,
+      "hasPatterns": false,
+      "hasIllustrations": false
+    },
+    "complexity": {
+      "overall": 5,
+      "visual": 5,
+      "textual": 5
+    },
+    "performance": {
+      "suitableFor": [
+        "fashion"
+      ],
+      "estimatedCTR": 2.4,
+      "conversionPotential": "medium"
+    }
+  },
+  {
+    "id": "tmpl-2125801498",
+    "sourceFile": "3500+Social Media Templates/3. Fashion Social Media Templates/60 Soft Red Fashion Social Media Templates/1.jpg",
+    "category": "fashion",
+    "style": "minimal-clean",
+    "layout": {
+      "structure": "single-focus",
+      "hierarchy": "balanced",
+      "zones": []
+    },
+    "colors": {
+      "palette": [
+        "#b2ae34",
+        "#78d742",
+        "#f0f0f5"
+      ],
+      "dominantColor": "#b2ae34",
+      "accentColor": "#78d742",
+      "temperature": "neutral",
+      "vibrancy": "normal"
+    },
+    "typography": {
+      "headlineStyle": "minimal",
+      "fontPairing": [
+        "Inter",
+        "Inter"
+      ],
+      "textProminence": "moderate",
+      "textPlacement": "center"
+    },
+    "elements": {
+      "hasShapes": false,
+      "hasGradients": false,
+      "hasTextures": false,
+      "hasPatterns": false,
+      "hasIllustrations": false
+    },
+    "complexity": {
+      "overall": 5,
+      "visual": 5,
+      "textual": 5
+    },
+    "performance": {
+      "suitableFor": [
+        "fashion"
+      ],
+      "estimatedCTR": 2.4,
+      "conversionPotential": "medium"
+    }
+  },
+  {
+    "id": "tmpl-2126725019",
+    "sourceFile": "3500+Social Media Templates/3. Fashion Social Media Templates/60 Soft Red Fashion Social Media Templates/2.jpg",
+    "category": "fashion",
+    "style": "minimal-clean",
+    "layout": {
+      "structure": "single-focus",
+      "hierarchy": "balanced",
+      "zones": []
+    },
+    "colors": {
+      "palette": [
+        "#34b2b0",
+        "#4276d7",
+        "#f5f0f0"
+      ],
+      "dominantColor": "#34b2b0",
+      "accentColor": "#4276d7",
+      "temperature": "neutral",
+      "vibrancy": "normal"
+    },
+    "typography": {
+      "headlineStyle": "minimal",
+      "fontPairing": [
+        "Inter",
+        "Inter"
+      ],
+      "textProminence": "moderate",
+      "textPlacement": "center"
+    },
+    "elements": {
+      "hasShapes": false,
+      "hasGradients": false,
+      "hasTextures": false,
+      "hasPatterns": false,
+      "hasIllustrations": false
+    },
+    "complexity": {
+      "overall": 5,
+      "visual": 5,
+      "textual": 5
+    },
+    "performance": {
+      "suitableFor": [
+        "fashion"
+      ],
+      "estimatedCTR": 2.4,
+      "conversionPotential": "medium"
+    }
+  },
+  {
+    "id": "tmpl-2127648540",
+    "sourceFile": "3500+Social Media Templates/3. Fashion Social Media Templates/60 Soft Red Fashion Social Media Templates/3.jpg",
+    "category": "fashion",
+    "style": "minimal-clean",
+    "layout": {
+      "structure": "single-focus",
+      "hierarchy": "balanced",
+      "zones": []
+    },
+    "colors": {
+      "palette": [
+        "#b234b2",
+        "#d74273",
+        "#f0f5f0"
+      ],
+      "dominantColor": "#b234b2",
+      "accentColor": "#d74273",
+      "temperature": "neutral",
+      "vibrancy": "normal"
+    },
+    "typography": {
+      "headlineStyle": "minimal",
+      "fontPairing": [
+        "Inter",
+        "Inter"
+      ],
+      "textProminence": "moderate",
+      "textPlacement": "center"
+    },
+    "elements": {
+      "hasShapes": false,
+      "hasGradients": false,
+      "hasTextures": false,
+      "hasPatterns": false,
+      "hasIllustrations": false
+    },
+    "complexity": {
+      "overall": 5,
+      "visual": 5,
+      "textual": 5
+    },
+    "performance": {
+      "suitableFor": [
+        "fashion"
+      ],
+      "estimatedCTR": 2.4,
+      "conversionPotential": "medium"
+    }
+  },
+  {
+    "id": "tmpl-2128572061",
+    "sourceFile": "3500+Social Media Templates/3. Fashion Social Media Templates/60 Soft Red Fashion Social Media Templates/4.jpg",
+    "category": "fashion",
+    "style": "minimal-clean",
+    "layout": {
+      "structure": "single-focus",
+      "hierarchy": "balanced",
+      "zones": []
+    },
+    "colors": {
+      "palette": [
+        "#b0b234",
+        "#71d742",
+        "#f0f0f5"
+      ],
+      "dominantColor": "#b0b234",
+      "accentColor": "#71d742",
+      "temperature": "neutral",
+      "vibrancy": "normal"
+    },
+    "typography": {
+      "headlineStyle": "minimal",
+      "fontPairing": [
+        "Inter",
+        "Inter"
+      ],
+      "textProminence": "moderate",
+      "textPlacement": "center"
+    },
+    "elements": {
+      "hasShapes": false,
+      "hasGradients": false,
+      "hasTextures": false,
+      "hasPatterns": false,
+      "hasIllustrations": false
+    },
+    "complexity": {
+      "overall": 5,
+      "visual": 5,
+      "textual": 5
+    },
+    "performance": {
+      "suitableFor": [
+        "fashion"
+      ],
+      "estimatedCTR": 2.4,
+      "conversionPotential": "medium"
+    }
+  },
+  {
+    "id": "tmpl-2129495582",
+    "sourceFile": "3500+Social Media Templates/3. Fashion Social Media Templates/60 Soft Red Fashion Social Media Templates/5.jpg",
+    "category": "fashion",
+    "style": "minimal-clean",
+    "layout": {
+      "structure": "single-focus",
+      "hierarchy": "balanced",
+      "zones": []
+    },
+    "colors": {
+      "palette": [
+        "#34aeb2",
+        "#426ed7",
+        "#f5f0f0"
+      ],
+      "dominantColor": "#34aeb2",
+      "accentColor": "#426ed7",
+      "temperature": "neutral",
+      "vibrancy": "normal"
+    },
+    "typography": {
+      "headlineStyle": "minimal",
+      "fontPairing": [
+        "Inter",
+        "Inter"
+      ],
+      "textProminence": "moderate",
+      "textPlacement": "center"
+    },
+    "elements": {
+      "hasShapes": false,
+      "hasGradients": false,
+      "hasTextures": false,
+      "hasPatterns": false,
+      "hasIllustrations": false
+    },
+    "complexity": {
+      "overall": 5,
+      "visual": 5,
+      "textual": 5
+    },
+    "performance": {
+      "suitableFor": [
+        "fashion"
+      ],
+      "estimatedCTR": 2.4,
+      "conversionPotential": "medium"
+    }
+  },
+  {
+    "id": "tmpl-2130419103",
+    "sourceFile": "3500+Social Media Templates/3. Fashion Social Media Templates/60 Soft Red Fashion Social Media Templates/6.jpg",
+    "category": "fashion",
+    "style": "minimal-clean",
+    "layout": {
+      "structure": "single-focus",
+      "hierarchy": "balanced",
+      "zones": []
+    },
+    "colors": {
+      "palette": [
+        "#b234ac",
+        "#d7426c",
+        "#f0f5f0"
+      ],
+      "dominantColor": "#b234ac",
+      "accentColor": "#d7426c",
+      "temperature": "neutral",
+      "vibrancy": "normal"
+    },
+    "typography": {
+      "headlineStyle": "minimal",
+      "fontPairing": [
+        "Inter",
+        "Inter"
+      ],
+      "textProminence": "moderate",
+      "textPlacement": "center"
+    },
+    "elements": {
+      "hasShapes": false,
+      "hasGradients": false,
+      "hasTextures": false,
+      "hasPatterns": false,
+      "hasIllustrations": false
+    },
+    "complexity": {
+      "overall": 5,
+      "visual": 5,
+      "textual": 5
+    },
+    "performance": {
+      "suitableFor": [
+        "fashion"
+      ],
+      "estimatedCTR": 2.4,
+      "conversionPotential": "medium"
+    }
+  },
+  {
+    "id": "tmpl-2131342624",
+    "sourceFile": "3500+Social Media Templates/3. Fashion Social Media Templates/60 Soft Red Fashion Social Media Templates/7.jpg",
+    "category": "fashion",
+    "style": "minimal-clean",
+    "layout": {
+      "structure": "single-focus",
+      "hierarchy": "balanced",
+      "zones": []
+    },
+    "colors": {
+      "palette": [
+        "#a9b234",
+        "#69d742",
+        "#f0f0f5"
+      ],
+      "dominantColor": "#a9b234",
+      "accentColor": "#69d742",
+      "temperature": "neutral",
+      "vibrancy": "normal"
+    },
+    "typography": {
+      "headlineStyle": "minimal",
+      "fontPairing": [
+        "Inter",
+        "Inter"
+      ],
+      "textProminence": "moderate",
+      "textPlacement": "center"
+    },
+    "elements": {
+      "hasShapes": false,
+      "hasGradients": false,
+      "hasTextures": false,
+      "hasPatterns": false,
+      "hasIllustrations": false
+    },
+    "complexity": {
+      "overall": 5,
+      "visual": 5,
+      "textual": 5
+    },
+    "performance": {
+      "suitableFor": [
+        "fashion"
+      ],
+      "estimatedCTR": 2.4,
+      "conversionPotential": "medium"
+    }
+  }
+]

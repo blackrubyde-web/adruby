@@ -14,6 +14,7 @@ import type { StyleDNA } from '../intelligence/style-dna-extractor';
 import type { ProductDNA } from '../intelligence/product-dna-analyzer';
 import * as fs from 'fs';
 import * as path from 'path';
+import templateCache from './template-cache.json';
 
 export interface TemplateIntelligence {
     id: string;
@@ -427,8 +428,13 @@ function mapStyleDNAToTemplateStyle(aesthetic: string): TemplateStyle {
 }
 
 async function loadSampleTemplates() {
-    // Load pre-analyzed sample (in production would load from cache)
-    // For now, no-op - in production would load from JSON cache
+    if (!Array.isArray(templateCache) || templateCache.length === 0) {
+        return;
+    }
+
+    for (const entry of templateCache) {
+        templateDB.add(entry as TemplateIntelligence);
+    }
 }
 
 export { templateDB };
