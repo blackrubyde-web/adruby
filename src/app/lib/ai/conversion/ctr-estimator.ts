@@ -56,7 +56,7 @@ function scoreVisualAppeal(layers: StudioLayer[]): number {
     let score = 0;
 
     // Check for product image
-    const hasProduct = layers.some(l => l.type === 'product' || l.role === 'product');
+    const hasProduct = layers.some(l => l.type === 'product' || l.role === 'product_image');
     if (hasProduct) score += 30;
 
     // Check for CTA

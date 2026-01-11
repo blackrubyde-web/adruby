@@ -9,6 +9,7 @@ import { getOpenAIService } from '../services/openai-service';
  */
 
 export interface PsychologyInput {
+    apiKey: string;
     productName: string;
     productDescription: string;
     productType?: string;
@@ -86,17 +87,16 @@ export interface PsychologyAgentResult {
 export async function analyzePsychology(
     input: PsychologyInput
 ): Promise<PsychologyAgentResult> {
-    const openai = getOpenAIService();
-
     // Build comprehensive psychology analysis prompt
     const prompt = buildPsychologyPrompt(input);
 
     try {
+        const openai = getOpenAIService(input.apiKey);
         const result = await openai.generateAdCopy({
             productName: input.productName,
             productDescription: prompt,
             tone: 'professional',
-            goal: 'analysis',
+            goal: 'consideration',
             language: 'English',
             format: 'json',
             temperature: 0.4 // Balanced: not too creative, but thoughtful
@@ -406,7 +406,7 @@ export function getMessagingSuggestions(ocean: OCEANProfile): string[] {
  */
 export function adaptCopyToPsychology(
     copy: { headline: string; description: string; cta: string },
-    psychology: PsychologyAgentResult
+    _psychology: PsychologyAgentResult
 ): { headline: string; description: string; cta: string } {
     // This would use AI in production, for now returns adjusted copy
     // Based on psychology insights

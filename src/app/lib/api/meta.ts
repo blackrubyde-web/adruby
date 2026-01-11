@@ -14,6 +14,21 @@ export type MetaConnection = {
   meta?: unknown;
 };
 
+export type MetaAudience = {
+  id: string;
+  name: string;
+  type: "website" | "customer_list" | "app_activity" | "offline_activity" | "engagement";
+  size?: number;
+  status?: "ready" | "populating" | "too_small";
+  description?: string;
+  createdAt?: string;
+};
+
+export type MetaAudiencesResponse = {
+  success: boolean;
+  audiences?: MetaAudience[];
+};
+
 export async function getMetaStatus() {
   return apiClient.get<{ connected: boolean; connection: MetaConnection | null }>(
     "/api/meta-status"
@@ -21,8 +36,7 @@ export async function getMetaStatus() {
 }
 
 export async function getMetaAudiences() {
-  // Use explicit type validation in the component or return generic for now
-  return apiClient.get<unknown>("/api/meta-audiences");
+  return apiClient.get<MetaAudiencesResponse>("/api/meta-audiences");
 }
 
 export async function getMetaAuthUrl() {

@@ -258,7 +258,7 @@ export function predictHeatmap(
 
     // Calculate attention scores per element type
     const headlineLayer = layers.find(l => l.role === 'headline');
-    const productLayer = layers.find(l => l.type === 'product' || l.role === 'product');
+    const productLayer = layers.find(l => l.type === 'product' || l.role === 'product_image');
     const descLayer = layers.find(l => l.role === 'description');
 
     const getAttentionForLayer = (layer: StudioLayer | undefined): number => {

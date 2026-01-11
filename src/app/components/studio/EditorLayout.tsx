@@ -457,7 +457,7 @@ export const EditorLayout: React.FC<EditorLayoutProps> = ({ onClose, initialDoc,
     const handleGenerateScene = useCallback(async (_id: string, prompt: string, _style: string) => {
         // Use DALL-E 3 via OpenAI Proxy
         toast.loading("Generating Scene...");
-        const { data, error } = await invokeOpenAIProxy({
+        const { data, error } = await invokeOpenAIProxy<{ data: Array<{ url?: string }> }>({
             endpoint: 'images/generations',
             model: 'dall-e-3',
             prompt: `Generate a high-quality advertising background scene: ${prompt}, style: ${_style}. No text, photorealistic.`,

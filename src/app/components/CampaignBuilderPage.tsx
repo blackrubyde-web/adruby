@@ -20,7 +20,7 @@ import { supabase } from '../lib/supabaseClient';
 import { env } from '../lib/env';
 import { StrategySelector } from './studio/StrategySelector';
 import { useStrategies } from '../hooks/useStrategies';
-import { createCampaign } from '../lib/api/meta';
+import { createCampaign, type MetaTargetingInput } from '../lib/api/meta';
 
 const STATUS_OPTIONS = ['draft', 'ready'] as const;
 
@@ -210,6 +210,23 @@ const normalizeGender = (value?: string | null): "male" | "female" | "all" | und
   const raw = String(value || "").trim().toLowerCase();
   if (raw === "male" || raw === "female" || raw === "all") return raw;
   return undefined;
+};
+
+type MetaPlacement = NonNullable<MetaTargetingInput['placements']>[number];
+
+const normalizePlacements = (placements?: string[] | null): MetaTargetingInput['placements'] => {
+  if (!placements?.length) return undefined;
+  const allowed = new Set<MetaPlacement>([
+    'feed',
+    'stories',
+    'reels',
+    'explore',
+    'audience_network'
+  ]);
+  const filtered = placements.filter(
+    (placement): placement is MetaPlacement => allowed.has(placement as MetaPlacement)
+  );
+  return filtered.length ? filtered : undefined;
 };
 
 const applyStrategyToSpec = (
@@ -521,7 +538,7 @@ export function CampaignBuilderPage() {
                 ageMax,
                 gender,
                 interests: set.targeting?.interests,
-                placements: set.placements,
+                placements: normalizePlacements(set.placements),
               },
               ads: set.ad_ids.map(adId => {
                 const adSpec = campaignSpec.ads.find(a => a.creative_id === adId);

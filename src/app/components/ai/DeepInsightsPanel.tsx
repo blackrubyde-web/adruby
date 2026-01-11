@@ -54,7 +54,9 @@ export function DeepInsightsPanel({ campaign, onClose }: Props) {
             Provide 4-5 deep qualitative insights categorized as 'strength', 'weakness', 'opportunity', or 'threat'.
             Return JSON format: { "insights": [{ "category": "...", "title": "...", "description": "...", "impact": "high/medium/low", "actionable": true, "action": "..." }] }`;
 
-            const { data, error } = await invokeOpenAIProxy({
+            const { data, error } = await invokeOpenAIProxy<{
+                choices: Array<{ message: { content: string } }>;
+            }>({
                 endpoint: 'chat/completions',
                 model: 'gpt-4o',
                 messages: [
@@ -66,7 +68,10 @@ export function DeepInsightsPanel({ campaign, onClose }: Props) {
 
             if (error) throw error;
 
-            const content = data.choices[0].message.content;
+            const content = data?.choices?.[0]?.message?.content;
+            if (!content) {
+                throw new Error('No insights returned');
+            }
             const parsed = JSON.parse(content);
             setInsights(parsed.insights || generateFallbackInsights());
         } catch (error) {
