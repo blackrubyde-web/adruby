@@ -3,6 +3,8 @@
  * Validates all components of the Layout Engine V2
  */
 
+/* eslint-disable no-console */
+
 import { composeAd, generateVariants } from './layout/layout-engine-v2';
 import { scoreVisualBalance } from './quality/visual-balance';
 import { validateContrast } from './color/contrast-validator';

@@ -18,7 +18,7 @@ import type { GenerationResult } from './openai-service';
  * Parse JSON response, handling markdown code fences
  * GPT-4 sometimes wraps JSON in ```json...``` blocks
  */
-function parseAIResponse(content: string): any {
+function parseAIResponse<T>(content: string): T {
     if (!content) return {};
 
     // Strip markdown code fences if present
@@ -29,7 +29,7 @@ function parseAIResponse(content: string): any {
         cleaned = cleaned.replace(/^```\s*/, '').replace(/\s*```$/, '');
     }
 
-    return JSON.parse(cleaned);
+    return JSON.parse(cleaned) as T;
 }
 
 export interface ImageAnalysisResult {
@@ -110,7 +110,7 @@ Return JSON:
                 temperature: 0.3
             });
 
-            const content = parseAIResponse(response.choices[0].message.content || '{}');
+            const content = parseAIResponse<ImageAnalysisResult>(response.choices[0].message.content || '{}');
             const usage = response.usage!;
 
             return {
@@ -124,7 +124,7 @@ Return JSON:
                 model: response.model,
                 latency: Date.now() - startTime
             };
-        } catch (error: any) {
+        } catch (error: unknown) {
             console.error('Vision API Error:', error);
 
             // Fallback response
@@ -183,7 +183,11 @@ Return JSON:
                 temperature: 0.2
             });
 
-            const content = parseAIResponse(response.choices[0].message.content || '{}');
+            const content = parseAIResponse<{
+                logos: Array<{ brand: string; confidence: number }>;
+                text: string[];
+                colors: string[];
+            }>(response.choices[0].message.content || '{}');
             const usage = response.usage!;
 
             return {
@@ -197,7 +201,7 @@ Return JSON:
                 model: response.model,
                 latency: Date.now() - startTime
             };
-        } catch (error: any) {
+        } catch (error: unknown) {
             console.error('Vision API Error:', error);
             return {
                 content: { logos: [], text: [], colors: [] },
@@ -254,7 +258,11 @@ Return JSON:
                 temperature: 0.3
             });
 
-            const content = parseAIResponse(response.choices[0].message.content || '{}');
+            const content = parseAIResponse<{
+                score: number;
+                feedback: string[];
+                improvements: string[];
+            }>(response.choices[0].message.content || '{}');
             const usage = response.usage!;
 
             return {
@@ -268,7 +276,7 @@ Return JSON:
                 model: response.model,
                 latency: Date.now() - startTime
             };
-        } catch (error: any) {
+        } catch (error: unknown) {
             console.error('Vision API Error:', error);
             return {
                 content: {

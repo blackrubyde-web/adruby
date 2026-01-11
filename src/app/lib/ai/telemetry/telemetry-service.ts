@@ -37,9 +37,27 @@ export interface TelemetryEvent {
     timestamp: number;
     userId?: string;
     sessionId?: string;
-    properties: Record<string, any>;
+    properties: Record<string, unknown>;
     metrics?: Partial<TelemetryMetrics>;
 }
+
+type GenerationStartParams = {
+    productName: string;
+    tone?: string;
+    imageBase64?: string | null;
+};
+
+type GenerationCompleteResult = {
+    metadata?: {
+        template?: string;
+        format?: string;
+    };
+    quality?: {
+        comprehensiveScore?: number;
+        balanceScore?: number;
+        ctrEstimate?: number;
+    };
+};
 
 class TelemetryService {
     private events: TelemetryEvent[] = [];
@@ -56,11 +74,6 @@ class TelemetryService {
 
         this.events.push(fullEvent);
 
-        // Log to console in development
-        if (process.env.NODE_ENV === 'development') {
-            console.log('[Telemetry]', fullEvent.name, fullEvent.properties);
-        }
-
         // In production, would send to analytics service (PostHog, Mixpanel, etc.)
         this.sendToAnalytics(fullEvent);
     }
@@ -68,7 +81,7 @@ class TelemetryService {
     /**
      * Track ad generation start
      */
-    trackGenerationStart(sessionId: string, params: any): void {
+    trackGenerationStart(sessionId: string, params: GenerationStartParams): void {
         this.track({
             name: 'ad_generation_started',
             sessionId,
@@ -94,7 +107,7 @@ class TelemetryService {
     /**
      * Track ad generation complete
      */
-    trackGenerationComplete(sessionId: string, result: any, durationMs: number): void {
+    trackGenerationComplete(sessionId: string, result: GenerationCompleteResult, durationMs: number): void {
         const metrics = this.sessionMetrics.get(sessionId) || {};
 
         this.track({
@@ -168,7 +181,7 @@ class TelemetryService {
     /**
      * Track error
      */
-    trackError(sessionId: string, error: Error, context: any): void {
+    trackError(sessionId: string, error: Error, context: unknown): void {
         const metrics = this.sessionMetrics.get(sessionId);
         if (metrics) {
             metrics.errors = (metrics.errors || 0) + 1;
