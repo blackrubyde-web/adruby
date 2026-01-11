@@ -37,9 +37,11 @@ export interface CopyGenerationParams {
     productDescription?: string;
     brandName?: string;
     tone: 'professional' | 'playful' | 'bold' | 'luxury' | 'minimal';
-    goal: 'awareness' | 'consideration' | 'conversion';
+    goal: 'awareness' | 'consideration' | 'conversion' | 'analysis';
     targetAudience?: string;
     language?: string;
+    format?: 'json';
+    temperature?: number;
 }
 
 const PRICING = {
@@ -136,7 +138,7 @@ Return as JSON with structure:
                     { role: 'user', content: userPrompt }
                 ],
                 response_format: { type: 'json_object' },
-                temperature: 0.8,
+                temperature: params.temperature ?? 0.8,
                 max_tokens: 1500
             });
 

@@ -142,7 +142,8 @@ export async function orchestrateTemplateGeneration(
     if (request.productImageBase64) {
         adaptiveLayout = await generateAdaptiveTemplate(
             request.productImageBase64,
-            styleDNA
+            styleDNA,
+            request.apiKey
         );
 
         imageAnalysis = {

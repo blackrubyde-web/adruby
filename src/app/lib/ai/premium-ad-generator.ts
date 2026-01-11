@@ -26,6 +26,7 @@ export interface PremiumAdParams {
     brandName?: string;
     userPrompt: string;
     tone: 'professional' | 'playful' | 'bold' | 'luxury' | 'minimal';
+    apiKey: string;
     imageBase64?: string;
     enhanceImage?: boolean;
     groundedFacts?: {
@@ -76,8 +77,7 @@ export async function generatePremiumAd(
         telemetry.trackGenerationStart(sessionId, {
             productName: params.productName,
             tone: params.tone,
-            hasImage: !!params.imageBase64,
-            language: params.language
+            imageBase64: params.imageBase64
         });
 
         // STAGE 1: Strategic Analysis
@@ -93,7 +93,7 @@ export async function generatePremiumAd(
 
         // STAGE 2: Real AI Copy Generation (OpenAI Service)
         onProgress?.(2, 'Generating AI copy with GPT-4 Turbo...');
-        const openai = getOpenAIService();
+        const openai = getOpenAIService(params.apiKey);
 
         const copyResult = await openai.generateAdCopy({
             productName: params.productName,
@@ -142,7 +142,7 @@ export async function generatePremiumAd(
 
         if (params.imageBase64) {
             try {
-                const vision = getVisionService();
+                const vision = getVisionService(params.apiKey);
 
                 imageAnalysis = await vision.analyzeProductImage(params.imageBase64);
                 telemetry.trackAPICall(sessionId, 'vision', imageAnalysis.cost, imageAnalysis.latency);

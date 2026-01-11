@@ -150,15 +150,19 @@ export async function fetchMetaPerformance(
         }
 
         const insights = campaign.insights;
+        const impressions = insights.impressions ?? 0;
+        const clicks = insights.clicks ?? 0;
+        const spend = insights.spend ?? 0;
+        const purchaseValue = insights.purchase_value ?? 0;
 
         // Calculate metrics from raw data
         return {
-            impressions: insights.impressions || 0,
-            clicks: insights.clicks || 0,
-            ctr: insights.ctr || (insights.clicks / insights.impressions) * 100 || 0,
-            spend: insights.spend || 0,
-            conversions: insights.conversions || insights.actions?.find(a => a.action_type === 'purchase')?.value || 0,
-            roas: insights.roas || (insights.purchase_value / insights.spend) || 0
+            impressions,
+            clicks,
+            ctr: insights.ctr ?? (impressions ? (clicks / impressions) * 100 : 0),
+            spend,
+            conversions: insights.conversions ?? insights.actions?.find(a => a.action_type === 'purchase')?.value ?? 0,
+            roas: insights.roas ?? (spend ? purchaseValue / spend : 0)
         };
     } catch (error) {
         console.error('Error fetching Meta performance:', error);

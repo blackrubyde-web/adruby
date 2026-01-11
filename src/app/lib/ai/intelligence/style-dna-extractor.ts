@@ -144,7 +144,7 @@ export function extractStyleDNA(productDNA: ProductDNA): StyleDNA {
         subAesthetic: getSubAesthetic(aesthetic),
         philosophy: {
             approach: aesthetic.startsWith('minimal') ? 'minimal' : aesthetic.startsWith('maximal') ? 'maximal' : 'balanced',
-            complexity: productDNA.semantic.prickPoint === 'luxury' ? 7 : 5,
+            complexity: productDNA.semantic.pricePoint === 'luxury' ? 7 : 5,
             innovation: productDNA.psychological.aspirationalLevel,
             formality: productDNA.semantic.brandArchetype === 'ruler' ? 9 : productDNA.semantic.brandArchetype === 'jester' ? 2 : 5
         },
@@ -410,7 +410,7 @@ function defineVisualLanguage(aesthetic: AestheticStyle): StyleDNA['visualLangua
         luxury: {
             forms: 'geometric',
             corners: 4,
-            shadows: 'subtle',
+            shadows: 'soft',
             layering: 3,
             asymmetry: 10
         },

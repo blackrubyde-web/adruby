@@ -18,7 +18,9 @@ export interface VisionScore {
  */
 export async function scoreAdQuality(imageUrl: string, context: { product: string, tone: string }): Promise<VisionScore> {
     try {
-        const { data, error } = await invokeOpenAIProxy({
+        const { data, error } = await invokeOpenAIProxy<{
+            choices: Array<{ message: { content: string } }>;
+        }>({
             endpoint: 'chat/completions',
             model: 'gpt-4o', // Capable of Vision
             messages: [
@@ -46,7 +48,11 @@ Return a JSON object with:
 
         if (error) throw error;
 
-        const result = JSON.parse(data.choices[0].message.content);
+        const content = data?.choices?.[0]?.message?.content;
+        if (!content) {
+            throw new Error('No vision QA response');
+        }
+        const result = JSON.parse(content);
         return result;
 
     } catch (_err) {

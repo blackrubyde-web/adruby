@@ -170,7 +170,9 @@ JSON Only. No markdown.
   "recommendedTemplate": "..."
 }`;
 
-    const { data, error } = await invokeOpenAIProxy({
+    const { data, error } = await invokeOpenAIProxy<{
+        choices: Array<{ message: { content: string } }>;
+    }>({
         endpoint: 'chat/completions',
         model: 'gpt-4o',
         messages: [{ role: 'user', content: analysisPrompt }],
@@ -183,7 +185,11 @@ JSON Only. No markdown.
     }
 
     try {
-        const profile = JSON.parse(data.choices[0].message.content);
+        const content = data?.choices?.[0]?.message?.content;
+        if (!content) {
+            throw new Error('No strategy content returned');
+        }
+        const profile = JSON.parse(content);
         const normalizedProfile = normalizeProfile(profile);
 
         // console.log(`✅ Strategy: ${normalizedProfile.designSystem.vibe} | ${normalizedProfile.angle}`);

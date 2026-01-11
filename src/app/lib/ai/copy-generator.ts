@@ -80,7 +80,9 @@ JSON Only.
   "bestVariantIndex": 0
 }`;
 
-    const { data, error } = await invokeOpenAIProxy({
+    const { data, error } = await invokeOpenAIProxy<{
+        choices: Array<{ message: { content: string } }>;
+    }>({
         endpoint: 'chat/completions',
         model: 'gpt-4o',
         messages: [{ role: 'user', content: copyPrompt }],
@@ -92,9 +94,14 @@ JSON Only.
         throw new Error(`Copy generation failed: ${error.message}`);
     }
 
+    const content = data?.choices?.[0]?.message?.content;
+    if (!content) {
+        throw new Error('Copy generation failed: Empty response');
+    }
+
     let response;
     try {
-        response = JSON.parse(data.choices[0].message.content);
+        response = JSON.parse(content);
     } catch (e) {
         throw new Error('Failed to parse AI response: Invalid JSON');
     }

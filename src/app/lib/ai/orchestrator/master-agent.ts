@@ -24,6 +24,7 @@ export interface OrchestratorInput {
     targetAudience?: string;
     language?: string;
     productType?: string;
+    apiKey: string;
     groundedFacts?: {
         offer?: string;
         proof?: string;
@@ -128,7 +129,8 @@ export async function orchestrateAdGeneration(
 
     telemetry.trackGenerationStart(sessionId, {
         productName: input.productName,
-        orchestration: true
+        tone: input.tone,
+        imageBase64: input.imageBase64
     });
 
     try {
@@ -169,7 +171,20 @@ export async function orchestrateAdGeneration(
         );
 
         const totalTime = Date.now() - startTime;
-        telemetry.trackGenerationComplete(sessionId, synthesizedAd, totalTime);
+        telemetry.trackGenerationComplete(
+            sessionId,
+            {
+                metadata: {
+                    template: visualResult.layoutStrategy,
+                    format: 'square'
+                },
+                quality: {
+                    balanceScore: visualResult.compositionScore,
+                    ctrEstimate: performanceResult.predictedCTR
+                }
+            },
+            totalTime
+        );
 
         return {
             copy: copyResult,
@@ -200,7 +215,7 @@ export async function orchestrateAdGeneration(
 async function runPsychologyAgent(
     input: OrchestratorInput
 ): Promise<PsychologyAgentResult> {
-    const openai = getOpenAIService();
+    const openai = getOpenAIService(input.apiKey);
 
     const prompt = `You are a consumer psychology expert. Analyze this target audience and product to create a psychographic profile.
 
@@ -275,7 +290,7 @@ async function runCopyAgent(
     input: OrchestratorInput,
     psychology: PsychologyAgentResult
 ): Promise<CopyAgentResult> {
-    const openai = getOpenAIService();
+    const openai = getOpenAIService(input.apiKey);
 
     // STAGE 1: Generate 20 initial variants
     const prompt = `You are an elite copywriter. Generate 20 high-converting ad copy variants.
@@ -353,7 +368,7 @@ async function runVisualAgent(
     input: OrchestratorInput,
     psychology: PsychologyAgentResult
 ): Promise<VisualAgentResult> {
-    const vision = getVisionService();
+    const vision = getVisionService(input.apiKey);
 
     // If image provided, analyze it
     if (input.imageBase64) {
@@ -447,7 +462,7 @@ async function runComplianceAgent(
         issues: safetyCheck.overall.violations.map(v => ({
             type: 'content_safety',
             severity: 'medium' as const,
-            message: v
+            message: `${v.word} (${v.severity}) ${v.context}`
         })),
         suggestions: []
     };

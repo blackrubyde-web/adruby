@@ -38,7 +38,7 @@ export type LayerBase = {
     zIndex?: number; // Optional
     ai?: AiProvenance;
     // Layout Composer Role (Clean mapping)
-    role?: 'headline' | 'subheadline' | 'description' | 'cta' | 'bg_image' | 'product_image' | 'logo' | 'social_proof' | 'review_text' | 'review_author' | 'code' | 'price';
+    role?: 'headline' | 'subheadline' | 'description' | 'cta' | 'bg_image' | 'product_image' | 'logo' | 'social_proof' | 'review_text' | 'review_author' | 'code' | 'price' | 'badge';
 };
 
 export type ImageLayer = LayerBase & {
@@ -70,12 +70,12 @@ export type TextLayer = LayerBase & {
     type: "text";
     text: string;
     fontFamily: "Inter" | "Roboto" | "System" | "Playfair Display" | "Montserrat" | "Oswald" | "Pacifico" | "Outfit" | string;
-    fontWeight: 400 | 500 | 600 | 700 | 800 | 900 | string; // Allow string for flexibility
+    fontWeight: 300 | 400 | 500 | 600 | 700 | 800 | 900 | string; // Allow string for flexibility
     fontSize: number;
     fontStyle?: "normal" | "italic";
     lineHeight?: number;
     letterSpacing?: number;
-    fill: string;            // hex or token (renamed from color to match Konva/common usage if needed, or keep color) - Adapter code uses fill
+    fill?: string;           // hex or token (renamed from color to match Konva/common usage if needed, or keep color) - Adapter code uses fill
     color?: string;          // Compatibility alias
     textAlign?: "left" | "center" | "right"; // Renamed from align
     align?: "left" | "center" | "right"; // Compatibility alias
@@ -107,7 +107,7 @@ export type CtaLayer = LayerBase & {
     fontSize: number;
     fontWeight: number;
     fontStyle?: "normal" | "italic";
-    lineHeight: number;
+    lineHeight?: number;
     letterSpacing?: number;
     color: string;
 
@@ -157,6 +157,7 @@ export type AdDocument = {
     safeArea?: { top: number; right: number; bottom: number; left: number }; // Optional
     backgroundColor: string;
     layers: StudioLayer[];
+    createdAt?: string;
     meta?: { // Optional
         goal: "conversion" | "awareness" | "launch";
         contextPreset?: "gaming_desk" | "bedroom" | "studio" | "lifestyle";

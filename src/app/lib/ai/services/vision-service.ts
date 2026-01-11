@@ -19,7 +19,7 @@ import type { GenerationResult } from './openai-service';
  * GPT-4 sometimes wraps JSON in ```json...``` blocks
  */
 function parseAIResponse<T>(content: string): T {
-    if (!content) return {};
+    if (!content) return {} as T;
 
     // Strip markdown code fences if present
     let cleaned = content.trim();

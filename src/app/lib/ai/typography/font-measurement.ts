@@ -324,6 +324,8 @@ export function cacheMeasurement(
     // Limit cache size
     if (measurementCache.size > 1000) {
         const firstKey = measurementCache.keys().next().value;
-        measurementCache.delete(firstKey);
+        if (firstKey !== undefined) {
+            measurementCache.delete(firstKey);
+        }
     }
 }

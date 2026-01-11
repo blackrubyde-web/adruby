@@ -63,7 +63,7 @@ export async function generateCompositeScene(
             style: request.tone === 'luxury' ? 'vivid' : 'natural',
         });
 
-        const compositeUrl = response.data[0].url;
+        const compositeUrl = response.data?.[0]?.url;
 
         if (!compositeUrl) {
             throw new Error('No composite image generated');

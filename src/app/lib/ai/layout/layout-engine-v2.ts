@@ -179,7 +179,7 @@ export async function composeAd(input: LayoutInput): Promise<LayoutOutput> {
             ctaLayer.color = ctaColors.textColor;
         }
 
-        if (layer.role === 'product' && layer.type === 'product') {
+        if (layer.role === 'product_image' && layer.type === 'product') {
             const imageLayer = newLayer as ImageLayer;
             if (input.productImage) {
                 imageLayer.src = input.productImage;
@@ -232,7 +232,12 @@ export async function composeAd(input: LayoutInput): Promise<LayoutOutput> {
         height: config.height,
         backgroundColor: colors.background || '#FFFFFF',
         layers: layers,
-        safeArea: getSafeArea(config),
+        safeArea: {
+            top: config.safeZone.top,
+            right: config.safeZone.right,
+            bottom: config.safeZone.bottom,
+            left: config.safeZone.left
+        },
         createdAt: new Date().toISOString()
     };
 

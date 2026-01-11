@@ -19,6 +19,7 @@ import type { AdDocument, ImageLayer, ShapeLayer, TextLayer } from '../../../typ
  */
 
 export interface TemplateSynthesisInput {
+    apiKey: string;
     productName: string;
     productDescription: string;
     brandName?: string;
@@ -120,12 +121,11 @@ export interface TemplateLayer {
 export async function synthesizeTemplate(
     input: TemplateSynthesisInput
 ): Promise<GeneratedTemplate> {
-    const openai = getOpenAIService();
-
     // Build comprehensive prompt
     const prompt = buildTemplatePrompt(input);
 
     try {
+        const openai = getOpenAIService(input.apiKey);
         const result = await openai.generateAdCopy({
             productName: input.productName,
             productDescription: prompt,

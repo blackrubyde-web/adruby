@@ -224,7 +224,9 @@ OUTPUT JSON:
   "reasoning": "Why this variant will convert (1 sentence)"
 }`;
 
-    const { data, error } = await invokeOpenAIProxy({
+    const { data, error } = await invokeOpenAIProxy<{
+        choices: Array<{ message: { content: string } }>;
+    }>({
         endpoint: 'chat/completions',
         model: 'gpt-4o',
         messages: [{ role: 'user', content: prompt }],
@@ -238,7 +240,11 @@ OUTPUT JSON:
     }
 
     try {
-        const response = JSON.parse(data.choices[0].message.content);
+        const content = data?.choices?.[0]?.message?.content;
+        if (!content) {
+            throw new Error('Missing AI response content');
+        }
+        const response = JSON.parse(content);
         return {
             id: `variant_${hookAngle}_${Date.now()}`,
             hookAngle,

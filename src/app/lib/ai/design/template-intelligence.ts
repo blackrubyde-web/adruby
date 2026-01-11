@@ -187,7 +187,8 @@ const templateDB = new TemplateDatabase();
  * Scan and analyze template repository
  */
 export async function scanTemplateRepository(
-    repositoryPath: string = '/Users/home/Desktop/BLACKRUBY/AdRuby/3500+Social Media Templates'
+    repositoryPath: string = '/Users/home/Desktop/BLACKRUBY/AdRuby/3500+Social Media Templates',
+    apiKey?: string
 ): Promise<void> {
     const categories = await getCategories(repositoryPath);
 
@@ -201,7 +202,7 @@ export async function scanTemplateRepository(
             const templatePath = templates[i];
 
             try {
-                const intelligence = await analyzeTemplate(templatePath, category);
+                const intelligence = await analyzeTemplate(templatePath, category, apiKey);
                 templateDB.add(intelligence);
             } catch (error) {
                 console.warn(`   Failed to analyze ${path.basename(templatePath)}:`, error);
@@ -215,19 +216,22 @@ export async function scanTemplateRepository(
  */
 async function analyzeTemplate(
     filePath: string,
-    category: string
+    category: string,
+    apiKey?: string
 ): Promise<TemplateIntelligence> {
-    const vision = getVisionService();
+    if (!apiKey) {
+        throw new Error('OpenAI API key is required for template analysis');
+    }
+
+    const vision = getVisionService(apiKey);
 
     // Read image
     const imageBuffer = fs.readFileSync(filePath);
     const imageBase64 = `data:image/jpeg;base64,${imageBuffer.toString('base64')}`;
 
     // Vision API analysis
-    const analysis = await vision.analyzeImage({
-        imageBase64,
-        features: ['layout', 'colors', 'text', 'objects']
-    });
+    const analysisResult = await vision.analyzeProductImage(imageBase64);
+    const analysis = analysisResult.content;
 
     // Extract intelligence
     const intelligence: TemplateIntelligence = {

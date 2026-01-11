@@ -32,7 +32,7 @@ interface Collision {
  */
 function getPriority(layer: StudioLayer): number {
     if (layer.type === 'cta' || layer.role === 'cta') return 100;
-    if (layer.type === 'product' || layer.role === 'product') return 90;
+    if (layer.type === 'product' || layer.role === 'product_image') return 90;
     if (layer.role === 'headline') return 80;
     if (layer.type === 'text') return 70;
     if (layer.type === 'background') return 0;

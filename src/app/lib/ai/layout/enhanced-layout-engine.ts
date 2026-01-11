@@ -29,6 +29,24 @@ export interface EnhancedLayoutOutput extends LayoutOutput {
     };
 }
 
+type HarmonyContext = 'minimal' | 'bold' | 'luxury' | 'ecommerce' | 'urgency';
+
+const mapToneToHarmonyContext = (tone?: LayoutInput['tone']): HarmonyContext => {
+    switch (tone) {
+        case 'bold':
+            return 'bold';
+        case 'luxury':
+            return 'luxury';
+        case 'playful':
+            return 'urgency';
+        case 'professional':
+            return 'ecommerce';
+        case 'minimal':
+        default:
+            return 'minimal';
+    }
+};
+
 /**
  * Enhanced composition with all advanced features
  */
@@ -45,7 +63,7 @@ export async function composeAdEnhanced(input: LayoutInput): Promise<EnhancedLay
                 const extractedColors = await extractDominantColors(input.productImage);
                 const harmonyScheme = selectHarmonyScheme(
                     extractedColors.primary,
-                    input.tone || 'minimal'
+                    mapToneToHarmonyContext(input.tone)
                 );
 
                 enhancedInput.colors = {

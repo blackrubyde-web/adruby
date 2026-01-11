@@ -1,5 +1,5 @@
 /* eslint-disable no-console */
-import { SmartLayoutEngine, type SmartLayoutInput } from './smart-layout-engine.ts';
+import { SmartLayoutEngine, type SmartLayoutInput } from './smart-layout-engine';
 import type { TextLayer } from '../../types/studio';
 
 /**

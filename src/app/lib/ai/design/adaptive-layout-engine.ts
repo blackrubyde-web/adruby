@@ -104,10 +104,11 @@ export interface TextZone {
  */
 export async function generateAdaptiveTemplate(
     productImageBase64: string,
-    styleDNA: StyleDNA
+    styleDNA: StyleDNA,
+    apiKey: string
 ): Promise<AdaptiveTemplate> {
     // STEP 1: Vision API analysis
-    const analysis = await analyzeProductImage(productImageBase64);
+    const analysis = await analyzeProductImage(productImageBase64, apiKey);
 
     // STEP 2: Determine optimal text placement
     const textZones = calculateOptimalTextPlacement(analysis, styleDNA);
@@ -132,18 +133,23 @@ export async function generateAdaptiveTemplate(
 /**
  * Analyze product image using Vision API
  */
-async function analyzeProductImage(imageBase64: string): Promise<ProductImageAnalysis> {
-    const vision = getVisionService();
-
+async function analyzeProductImage(
+    imageBase64: string,
+    apiKey: string
+): Promise<ProductImageAnalysis> {
     try {
+        const vision = getVisionService(apiKey);
         // Vision API analysis
-        const result = await vision.analyzeImage({
-            imageBase64,
-            features: ['object_detection', 'color_analysis', 'composition']
-        });
+        const result = await vision.analyzeProductImage(imageBase64);
 
         // Extract product bounding box
-        const productBox = result.objects?.[0]?.boundingBox || {
+        const productLocation = result.content.objects?.[0]?.location;
+        const productBox = productLocation ? {
+            x: productLocation.x,
+            y: productLocation.y,
+            width: productLocation.width,
+            height: productLocation.height
+        } : {
             x: 270,
             y: 180,
             width: 540,
@@ -160,7 +166,7 @@ async function analyzeProductImage(imageBase64: string): Promise<ProductImageAna
         const composition = analyzeComposition(productBox, visualWeight);
 
         // Extract colors
-        const colors = result.colors || {
+        const colors = {
             dominant: '#000000',
             accent: '#FFFFFF',
             background: '#F5F5F5',

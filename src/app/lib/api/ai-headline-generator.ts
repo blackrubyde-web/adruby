@@ -131,7 +131,9 @@ export async function generateAffiliateHeadlines(
     const prompt = buildHeadlinePrompt(params);
 
     try {
-        const { data, error } = await invokeOpenAIProxy({
+        const { data, error } = await invokeOpenAIProxy<{
+            choices: Array<{ message: { content: string } }>;
+        }>({
             endpoint: 'chat/completions',
             model: 'gpt-4o',
             messages: [
@@ -156,7 +158,7 @@ export async function generateAffiliateHeadlines(
         }
 
         // Parse AI response
-        const content = data.choices?.[0]?.message?.content;
+        const content = data?.choices?.[0]?.message?.content;
         if (!content) {
             throw new Error('No content in AI response');
         }
