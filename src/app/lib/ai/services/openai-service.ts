@@ -50,6 +50,11 @@ const PRICING = {
     'gpt-3.5-turbo': { input: 0.0005 / 1000, output: 0.0015 / 1000 }
 };
 
+function getErrorMessage(error: unknown): string {
+    if (error instanceof Error) return error.message;
+    return 'Unknown error';
+}
+
 class OpenAIService {
     private client: OpenAI;
     private config: Required<OpenAIConfig>;
@@ -149,9 +154,9 @@ Return as JSON with structure:
                 model: response.model,
                 latency: Date.now() - startTime
             };
-        } catch (error: any) {
+        } catch (error: unknown) {
             console.error('OpenAI API Error:', error);
-            throw new Error(`Failed to generate copy: ${error.message}`);
+            throw new Error(`Failed to generate copy: ${getErrorMessage(error)}`);
         }
     }
 
@@ -194,7 +199,7 @@ Return ONLY the improved headline, nothing else.`;
                 model: response.model,
                 latency: Date.now() - startTime
             };
-        } catch (error: any) {
+        } catch (error: unknown) {
             console.error('OpenAI API Error:', error);
             return {
                 content: headline,
@@ -246,7 +251,7 @@ Return as JSON array: ["CTA 1", "CTA 2", ...]`;
                 model: response.model,
                 latency: Date.now() - startTime
             };
-        } catch (error: any) {
+        } catch (error: unknown) {
             console.error('OpenAI API Error:', error);
             return {
                 content: ['Shop Now', 'Learn More', 'Get Started'],
@@ -301,7 +306,7 @@ Return JSON:
                 model: response.model,
                 latency: Date.now() - startTime
             };
-        } catch (error: any) {
+        } catch (error: unknown) {
             console.error('OpenAI API Error:', error);
             return {
                 content: { sentiment: 'neutral', score: 50, emotions: [] },

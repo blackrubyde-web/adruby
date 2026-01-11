@@ -91,9 +91,10 @@ Requirements:
                 model: 'dall-e-3',
                 latency: Date.now() - startTime
             };
-        } catch (error: any) {
+        } catch (error: unknown) {
+            const message = error instanceof Error ? error.message : 'Unknown error';
             console.error('DALL-E API Error:', error);
-            throw new Error(`Failed to generate background: ${error.message}`);
+            throw new Error(`Failed to generate background: ${message}`);
         }
     }
 
@@ -107,8 +108,9 @@ Requirements:
             // Note: DALL-E 2 variations require PNG format and specific sizing
             // This is a simplified version - production would need proper image preprocessing
 
+            const imageFile = imageUrl as unknown as File;
             const response = await this.client.images.createVariation({
-                image: imageUrl as any, // Needs to be File object in production
+                image: imageFile, // Needs to be File object in production
                 n: Math.min(count, 4), // Max 4 for DALL-E 2
                 size: '1024x1024'
             });
@@ -126,7 +128,7 @@ Requirements:
                 model: 'dall-e-2',
                 latency: Date.now() - startTime
             };
-        } catch (error: any) {
+        } catch (error: unknown) {
             console.error('DALL-E Variation Error:', error);
             return {
                 content: [],

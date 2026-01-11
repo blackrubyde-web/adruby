@@ -140,7 +140,6 @@ function scoreVerticalBalance(weights: ElementWeight[], canvasHeight: number): {
     if (totalWeight === 0) return { score: 100, topWeight: 0, bottomWeight: 0 };
 
     const topRatio = topWeight / totalWeight;
-    const bottomRatio = bottomWeight / totalWeight;
 
     const deviation = Math.abs(topRatio - 0.5);
     const score = Math.max(0, 100 - (deviation * 200));
@@ -181,7 +180,7 @@ function detectOverlaps(weights: ElementWeight[]): {
 /**
  * Score spacing between elements
  */
-function scoreSpacing(weights: ElementWeight[], canvasWidth: number, canvasHeight: number): number {
+function scoreSpacing(weights: ElementWeight[], _canvasWidth: number, _canvasHeight: number): number {
     if (weights.length < 2) return 100;
 
     const margins: number[] = [];
