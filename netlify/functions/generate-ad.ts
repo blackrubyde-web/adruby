@@ -135,7 +135,8 @@ const handler: Handler = async (event: HandlerEvent) => {
                 brandName: request.brandName,
                 tone: request.tone,
                 variationCount: 5,
-                minQuality: 75
+                minQuality: 75,
+                apiKey: apiKey  // Pass API key to orchestrator
             });
 
             const bestVariation = orchestratorResult?.topVariations?.[0];

@@ -80,8 +80,9 @@ export async function analyzeProductDNA(input: {
     brandName?: string;
     priceValue?: number;
     category?: string;
+    apiKey: string;  // Required for OpenAI service
 }): Promise<ProductDNA> {
-    const openai = getOpenAIService();
+    const openai = getOpenAIService(input.apiKey);
 
     console.log('🧬 Analyzing Product DNA for:', input.productName);
 

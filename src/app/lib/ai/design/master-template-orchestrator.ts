@@ -26,6 +26,7 @@ export interface MasterTemplateRequest {
     priceValue?: number;
     category?: string;
     tone?: string;
+    apiKey: string;  // Required for OpenAI service
 
     // Generation params
     variationCount?: number;        // How many variations to generate (default: 50)
@@ -79,7 +80,8 @@ export async function orchestrateTemplateGeneration(
         imageBase64: request.productImageBase64,
         brandName: request.brandName,
         priceValue: request.priceValue,
-        category: request.category
+        category: request.category,
+        apiKey: request.apiKey
     });
 
     const dnaTime = Date.now() - dnaStart;
@@ -221,13 +223,15 @@ export async function orchestrateTemplateGeneration(
  */
 export async function generateTemplatesQuick(
     productName: string,
+    apiKey: string,
     productImageBase64?: string,
     count: number = 20
 ): Promise<TemplateVariation[]> {
     const result = await orchestrateTemplateGeneration({
         productName,
         productImageBase64,
-        variationCount: count
+        variationCount: count,
+        apiKey
     });
 
     return result.topVariations;
