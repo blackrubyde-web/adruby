@@ -89,7 +89,10 @@ export async function saveCampaignPerformance(
     performance: Omit<CampaignPerformance, 'accuracy' | 'lastUpdated'>
 ): Promise<{ success: boolean; error?: string }> {
     try {
-        const accuracy = calculateAccuracy(performance as CampaignPerformance);
+        const accuracy = calculateAccuracy({
+            ...performance,
+            lastUpdated: new Date().toISOString()
+        });
 
         const response = await apiClient.post<{ success: boolean; error?: string }>('/api/campaign-performance', {
             ...performance,
@@ -121,8 +124,19 @@ export async function fetchMetaPerformance(
     campaignId: string
 ): Promise<CampaignPerformance['actual'] | null> {
     try {
+        type MetaAction = { action_type?: string; value?: number };
+        type MetaInsights = {
+            impressions?: number;
+            clicks?: number;
+            ctr?: number;
+            spend?: number;
+            conversions?: number;
+            purchase_value?: number;
+            roas?: number;
+            actions?: MetaAction[];
+        };
         // Build query params and pass to apiClient
-        const data = await apiClient.get<{ campaigns?: Array<{ id: string; insights?: any }> }>(
+        const data = await apiClient.get<{ campaigns?: Array<{ id: string; insights?: MetaInsights }> }>(
             `/.netlify/functions/meta-campaigns?campaignId=${encodeURIComponent(campaignId)}`
         );
 
@@ -143,7 +157,7 @@ export async function fetchMetaPerformance(
             clicks: insights.clicks || 0,
             ctr: insights.ctr || (insights.clicks / insights.impressions) * 100 || 0,
             spend: insights.spend || 0,
-            conversions: insights.conversions || insights.actions?.find((a: any) => a.action_type === 'purchase')?.value || 0,
+            conversions: insights.conversions || insights.actions?.find(a => a.action_type === 'purchase')?.value || 0,
             roas: insights.roas || (insights.purchase_value / insights.spend) || 0
         };
     } catch (error) {

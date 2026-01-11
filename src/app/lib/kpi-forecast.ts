@@ -3,7 +3,7 @@
  * Predicts CTR (Click-Through Rate) and ROAS (Return on Ad Spend) based on ad quality metrics
  */
 
-import type { AdDocument, CtaLayer, ImageLayer, ShapeLayer, StudioLayer, TextLayer } from '../types/studio';
+import type { AdDocument, CtaLayer, ImageLayer, StudioLayer, TextLayer } from '../types/studio';
 
 export interface KPIForecast {
     ctr: {

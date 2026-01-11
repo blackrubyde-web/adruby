@@ -24,13 +24,6 @@ interface EdgeMatch {
 }
 
 /**
- * Check if two numbers are within snap threshold
- */
-function isNearby(a: number, b: number, threshold = SNAP_THRESHOLD): boolean {
-    return Math.abs(a - b) <= threshold;
-}
-
-/**
  * Calculate snap position for dragged layer
  */
 export function calculateSnap(
