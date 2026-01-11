@@ -350,7 +350,7 @@ export function suggestAccessiblePalette(
     }
 
     // Ensure text has high contrast with background
-    const textRgb = hexToRgb(palette.text);
+    const _textRgb = hexToRgb(palette.text);
     const bgBrightness = bgRgb ? getBrightness(bgRgb.r, bgRgb.g, bgRgb.b) : 0.5;
 
     if (bgBrightness > 0.5) {

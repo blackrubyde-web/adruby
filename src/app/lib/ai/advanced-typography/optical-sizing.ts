@@ -129,14 +129,14 @@ export function getOpticalAdjustments(
  * Apply optical adjustments to text layer
  */
 export function applyOpticalSizing(
-    layer: any,
+    layer: { fontSize?: number; fontWeight?: number; role?: string; letterSpacing?: number;[key: string]: unknown },
     fontFamily: string = 'Inter'
-): any {
+): typeof layer & { letterSpacing: number; fontWeight: number; opticalSize: number } {
     const adjustments = getOpticalAdjustments({
         fontSize: layer.fontSize || 16,
         fontFamily,
-        isDisplay: layer.role === 'headline' || layer.fontSize >= 48
-    }, layer.fontWeight);
+        isDisplay: layer.role === 'headline' || (layer.fontSize ?? 16) >= 48
+    }, layer.fontWeight ?? 400);
 
     return {
         ...layer,
@@ -150,15 +150,15 @@ export function applyOpticalSizing(
 /**
  * Batch apply to all text layers
  */
-export function applyOpticalSizingToDocument(adDocument: any): {
-    updatedDocument: any;
+export function applyOpticalSizingToDocument(adDocument: { layers: Array<{ type?: string; fontSize?: number; fontFamily?: string; fontWeight?: number; role?: string; letterSpacing?: number;[key: string]: unknown }> }): {
+    updatedDocument: typeof adDocument;
     adjustmentsMade: number;
     recommendations: string[];
 } {
     let adjustmentsMade = 0;
     const allRecommendations: string[] = [];
 
-    const updatedLayers = adDocument.layers.map((layer: any) => {
+    const updatedLayers = adDocument.layers.map((layer) => {
         if (layer.type === 'text' || layer.type === 'cta') {
             const adjusted = applyOpticalSizing(layer, layer.fontFamily);
 

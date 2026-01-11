@@ -62,9 +62,6 @@ type AdLayer = {
     text?: string;
 };
 
-type AdDocumentLike = {
-    layers: AdLayer[];
-};
 
 function getLayers(doc: unknown): AdLayer[] {
     if (!doc || typeof doc !== 'object') return [];
@@ -194,7 +191,7 @@ export function validateBrandGuidelines(
 
         // Check font sizes
         if (layer.role === 'headline') {
-            if (layer.fontSize > guidelines.typography.headlineMaxSize) {
+            if ((layer.fontSize ?? 0) > guidelines.typography.headlineMaxSize) {
                 violations.push({
                     rule: 'typography-size',
                     severity: 'error',
@@ -203,7 +200,7 @@ export function validateBrandGuidelines(
                 });
                 score -= 10;
             }
-            if (layer.fontSize < guidelines.typography.headlineMinSize) {
+            if ((layer.fontSize ?? 0) < guidelines.typography.headlineMinSize) {
                 violations.push({
                     rule: 'typography-size',
                     severity: 'warning',

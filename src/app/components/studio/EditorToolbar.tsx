@@ -183,187 +183,285 @@ export const EditorToolbar: React.FC<EditorToolbarProps> = ({
 
             {/* Right Section - Desktop */}
             <div className="hidden lg:flex items-center gap-2">
-                {/* Alignment Tools (Visible if onAlign provided) */}
-                {onAlign && (
-                    <div className="flex items-center bg-muted dark:bg-muted rounded-lg p-1 border border-border h-9 mr-2 gap-0.5">
-                        <button onClick={() => onAlign('left')} className="p-1 hover:bg-zinc-200 dark:hover:bg-zinc-800 rounded" title="Align Left">
-                            <AlignLeft className="w-4 h-4 text-muted-foreground" />
-                        </button>
-                        <button onClick={() => onAlign('center')} className="p-1 hover:bg-zinc-200 dark:hover:bg-zinc-800 rounded" title="Align Center">
-                            <AlignCenter className="w-4 h-4 text-muted-foreground" />
-                        </button>
-                        <button onClick={() => onAlign('right')} className="p-1 hover:bg-zinc-200 dark:hover:bg-zinc-800 rounded" title="Align Right">
-                            <AlignRight className="w-4 h-4 text-muted-foreground" />
-                        </button>
-                        <div className="w-[1px] h-4 bg-border mx-1" />
-                        <button onClick={() => onAlign('top')} className="p-1 hover:bg-zinc-200 dark:hover:bg-zinc-800 rounded" title="Align Top">
-                            <AlignStartVertical className="w-4 h-4 text-muted-foreground" />
-                        </button>
-                        <button onClick={() => onAlign('middle')} className="p-1 hover:bg-zinc-200 dark:hover:bg-zinc-800 rounded" title="Align Middle">
-                            <AlignCenter className="w-4 h-4 text-muted-foreground rotate-90" />
-                        </button>
-                        <button onClick={() => onAlign('bottom')} className="p-1 hover:bg-zinc-200 dark:hover:bg-zinc-800 rounded" title="Align Bottom">
-                            <AlignEndVertical className="w-4 h-4 text-muted-foreground" />
-                        </button>
-                    </div>
-                )}
-
-                {/* Distribute Tools */}
-                {onDistribute && (
-                    <div className="flex items-center bg-muted dark:bg-muted rounded-lg p-1 border border-border h-9 mr-2 gap-0.5">
-                        <button onClick={() => onDistribute('horizontal')} className="p-1 hover:bg-zinc-200 dark:hover:bg-zinc-800 rounded" title="Distribute Horizontally">
-                            <MoreHorizontal className="w-4 h-4 text-muted-foreground" />
-                        </button>
-                        <button onClick={() => onDistribute('vertical')} className="p-1 hover:bg-zinc-200 dark:hover:bg-zinc-800 rounded" title="Distribute Vertically">
-                            <MoreHorizontal className="w-4 h-4 text-muted-foreground rotate-90" />
-                        </button>
-                    </div>
-                )}
-
-                {/* Grouping Tools */}
-                {(onGroup || onUngroup) && (
-                    <div className="flex items-center bg-muted dark:bg-muted rounded-lg p-1 border border-border h-9 mr-2 gap-0.5">
-                        {onGroup && (
-                            <button
-                                onClick={onGroup}
-                                disabled={!canGroup}
-                                className={`p-1 rounded ${!canGroup ? 'opacity-30 cursor-not-allowed' : 'hover:bg-zinc-200 dark:hover:bg-zinc-800'}`}
-                                title="Group"
-                            >
-                                <Group className="w-4 h-4 text-muted-foreground" />
-                            </button>
-                        )}
-                        {onUngroup && (
-                            <button
-                                onClick={onUngroup}
-                                disabled={!canUngroup}
-                                className={`p-1 rounded ${!canUngroup ? 'opacity-30 cursor-not-allowed' : 'hover:bg-zinc-200 dark:hover:bg-zinc-800'}`}
-                                title="Ungroup"
-                            >
-                                <Ungroup className="w-4 h-4 text-muted-foreground" />
-                            </button>
-                        )}
-                    </div>
-                )}
-
-                {/* Locking Tools */}
-                {(onLock || onUnlock) && (
-                    <div className="flex items-center bg-muted dark:bg-muted rounded-lg p-1 border border-border h-9 mr-2 gap-0.5">
-                        {onLock && (
-                            <button onClick={onLock} className="p-1 hover:bg-zinc-200 dark:hover:bg-zinc-800 rounded" title="Lock">
-                                <Lock className="w-4 h-4 text-muted-foreground" />
-                            </button>
-                        )}
-                        {onUnlock && (
-                            <button onClick={onUnlock} className="p-1 hover:bg-zinc-200 dark:hover:bg-zinc-800 rounded" title="Unlock">
-                                <Unlock className="w-4 h-4 text-muted-foreground" />
-                            </button>
-                        )}
-                    </div>
-                )}
-
-                {/* Z-Order Tools */}
-                {onLayerOrder && (
-                    <div className="flex items-center bg-muted dark:bg-muted rounded-lg p-1 border border-border h-9 mr-2 gap-0.5">
-                        <button onClick={() => onLayerOrder('front')} className="p-1 hover:bg-zinc-200 dark:hover:bg-zinc-800 rounded" title="Bring to Front">
-                            <ChevronsUp className="w-4 h-4 text-muted-foreground" />
-                        </button>
-                        <button onClick={() => onLayerOrder('forward')} className="p-1 hover:bg-zinc-200 dark:hover:bg-zinc-800 rounded" title="Bring Forward">
-                            <ChevronUp className="w-4 h-4 text-muted-foreground" />
-                        </button>
-                        <button onClick={() => onLayerOrder('backward')} className="p-1 hover:bg-zinc-200 dark:hover:bg-zinc-800 rounded" title="Send Backward">
-                            <ChevronDown className="w-4 h-4 text-muted-foreground" />
-                        </button>
-                        <button onClick={() => onLayerOrder('back')} className="p-1 hover:bg-zinc-200 dark:hover:bg-zinc-800 rounded" title="Send to Back">
-                            <ChevronsDown className="w-4 h-4 text-muted-foreground" />
-                        </button>
-                    </div>
-                )}
-
-                {/* View Modes */}
-                <div className="flex items-center bg-muted dark:bg-muted rounded-lg p-0.5 border border-border h-9">
+                {/* Arrange Dropdown */}
+                <div className="relative">
                     <button
-                        onClick={() => setIsMultiverseMode(!isMultiverseMode)}
-                        className={`px-3 h-full text-[10px] font-bold rounded-md transition-all ${isMultiverseMode
-                            ? 'bg-indigo-600 text-white shadow-sm'
-                            : 'text-muted-foreground hover:text-foreground'
-                            }`}
+                        onClick={() => setShowMobileMenu(!showMobileMenu)}
+                        className="flex items-center gap-2 px-3 h-9 text-xs font-bold bg-muted dark:bg-muted hover:bg-muted/80 dark:hover:bg-muted/80 text-foreground rounded-lg transition-all border border-border"
                     >
-                        Multiverse
+                        <Group className="w-4 h-4 text-muted-foreground" />
+                        <span>Arrange</span>
+                        <ChevronDown className="w-3 h-3 text-muted-foreground" />
                     </button>
-                    <button
-                        onClick={() => {
-                            setIsPreviewMode(!isPreviewMode);
-                            if (!isPreviewMode) setIsMultiverseMode(false);
-                        }}
-                        className={`px-3 h-full text-[10px] font-bold rounded-md transition-all ${isPreviewMode
-                            ? 'bg-primary text-primary-foreground shadow-sm'
-                            : 'text-muted-foreground hover:text-foreground'
-                            }`}
-                    >
-                        Mockup
-                    </button>
+
+                    {showMobileMenu && (
+                        <>
+                            <div
+                                className="fixed inset-0 z-40"
+                                onClick={() => setShowMobileMenu(false)}
+                            />
+                            <div className="absolute right-0 top-full mt-2 w-64 bg-card/95 backdrop-blur-xl border border-border/50 rounded-xl shadow-2xl z-50 py-1 animate-in fade-in slide-in-from-top-2 duration-200">
+                                {/* Align Section */}
+                                {onAlign && (
+                                    <>
+                                        <div className="px-4 py-1.5 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                                            Align
+                                        </div>
+                                        <button onClick={() => { onAlign('left'); setShowMobileMenu(false); }} className="w-full flex items-center justify-between gap-3 px-4 py-2.5 text-sm hover:bg-muted/50 text-foreground transition-colors">
+                                            <div className="flex items-center gap-3">
+                                                <AlignLeft className="w-4 h-4 text-muted-foreground" />
+                                                <span className="font-medium">Left</span>
+                                            </div>
+                                            <kbd className="text-[10px] text-muted-foreground font-mono bg-muted/50 px-1.5 py-0.5 rounded">⌘⇧←</kbd>
+                                        </button>
+                                        <button onClick={() => { onAlign('center'); setShowMobileMenu(false); }} className="w-full flex items-center justify-between gap-3 px-4 py-2.5 text-sm hover:bg-muted/50 text-foreground transition-colors">
+                                            <div className="flex items-center gap-3">
+                                                <AlignCenter className="w-4 h-4 text-muted-foreground" />
+                                                <span className="font-medium">Center</span>
+                                            </div>
+                                            <kbd className="text-[10px] text-muted-foreground font-mono bg-muted/50 px-1.5 py-0.5 rounded">⌘⇧C</kbd>
+                                        </button>
+                                        <button onClick={() => { onAlign('right'); setShowMobileMenu(false); }} className="w-full flex items-center justify-between gap-3 px-4 py-2.5 text-sm hover:bg-muted/50 text-foreground transition-colors">
+                                            <div className="flex items-center gap-3">
+                                                <AlignRight className="w-4 h-4 text-muted-foreground" />
+                                                <span className="font-medium">Right</span>
+                                            </div>
+                                            <kbd className="text-[10px] text-muted-foreground font-mono bg-muted/50 px-1.5 py-0.5 rounded">⌘⇧→</kbd>
+                                        </button>
+                                        <button onClick={() => { onAlign('top'); setShowMobileMenu(false); }} className="w-full flex items-center justify-between gap-3 px-4 py-2.5 text-sm hover:bg-muted/50 text-foreground transition-colors">
+                                            <div className="flex items-center gap-3">
+                                                <AlignStartVertical className="w-4 h-4 text-muted-foreground" />
+                                                <span className="font-medium">Top</span>
+                                            </div>
+                                            <kbd className="text-[10px] text-muted-foreground font-mono bg-muted/50 px-1.5 py-0.5 rounded">⌘⇧↑</kbd>
+                                        </button>
+                                        <button onClick={() => { onAlign('middle'); setShowMobileMenu(false); }} className="w-full flex items-center justify-between gap-3 px-4 py-2.5 text-sm hover:bg-muted/50 text-foreground transition-colors">
+                                            <div className="flex items-center gap-3">
+                                                <AlignCenter className="w-4 h-4 text-muted-foreground rotate-90" />
+                                                <span className="font-medium">Middle</span>
+                                            </div>
+                                            <kbd className="text-[10px] text-muted-foreground font-mono bg-muted/50 px-1.5 py-0.5 rounded">⌘⇧M</kbd>
+                                        </button>
+                                        <button onClick={() => { onAlign('bottom'); setShowMobileMenu(false); }} className="w-full flex items-center justify-between gap-3 px-4 py-2.5 text-sm hover:bg-muted/50 text-foreground transition-colors">
+                                            <div className="flex items-center gap-3">
+                                                <AlignEndVertical className="w-4 h-4 text-muted-foreground" />
+                                                <span className="font-medium">Bottom</span>
+                                            </div>
+                                            <kbd className="text-[10px] text-muted-foreground font-mono bg-muted/50 px-1.5 py-0.5 rounded">⌘⇧↓</kbd>
+                                        </button>
+                                        <div className="h-px bg-border/50 my-1" />
+                                    </>
+                                )}
+
+                                {/* Distribute Section */}
+                                {onDistribute && (
+                                    <>
+                                        <div className="px-4 py-1.5 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                                            Distribute
+                                        </div>
+                                        <button onClick={() => { onDistribute('horizontal'); setShowMobileMenu(false); }} className="w-full flex items-center gap-3 px-4 py-2.5 text-sm hover:bg-muted/50 text-foreground transition-colors">
+                                            <MoreHorizontal className="w-4 h-4 text-muted-foreground" />
+                                            <span className="font-medium">Horizontal</span>
+                                        </button>
+                                        <button onClick={() => { onDistribute('vertical'); setShowMobileMenu(false); }} className="w-full flex items-center gap-3 px-4 py-2.5 text-sm hover:bg-muted/50 text-foreground transition-colors">
+                                            <MoreHorizontal className="w-4 h-4 text-muted-foreground rotate-90" />
+                                            <span className="font-medium">Vertical</span>
+                                        </button>
+                                        <div className="h-px bg-border/50 my-1" />
+                                    </>
+                                )}
+
+                                {/* Group Section */}
+                                {(onGroup || onUngroup) && (
+                                    <>
+                                        {onGroup && (
+                                            <button onClick={() => { onGroup(); setShowMobileMenu(false); }} disabled={!canGroup} className={`w-full flex items-center justify-between gap-3 px-4 py-2.5 text-sm transition-colors ${!canGroup ? 'opacity-40 cursor-not-allowed' : 'hover:bg-muted/50 text-foreground'}`}>
+                                                <div className="flex items-center gap-3">
+                                                    <Group className="w-4 h-4 text-muted-foreground" />
+                                                    <span className="font-medium">Group</span>
+                                                </div>
+                                                <kbd className="text-[10px] text-muted-foreground font-mono bg-muted/50 px-1.5 py-0.5 rounded">⌘G</kbd>
+                                            </button>
+                                        )}
+                                        {onUngroup && (
+                                            <button onClick={() => { onUngroup(); setShowMobileMenu(false); }} disabled={!canUngroup} className={`w-full flex items-center justify-between gap-3 px-4 py-2.5 text-sm transition-colors ${!canUngroup ? 'opacity-40 cursor-not-allowed' : 'hover:bg-muted/50 text-foreground'}`}>
+                                                <div className="flex items-center gap-3">
+                                                    <Ungroup className="w-4 h-4 text-muted-foreground" />
+                                                    <span className="font-medium">Ungroup</span>
+                                                </div>
+                                                <kbd className="text-[10px] text-muted-foreground font-mono bg-muted/50 px-1.5 py-0.5 rounded">⌘⇧G</kbd>
+                                            </button>
+                                        )}
+                                        <div className="h-px bg-border/50 my-1" />
+                                    </>
+                                )}
+
+                                {/* Lock Section */}
+                                {(onLock || onUnlock) && (
+                                    <>
+                                        {onLock && (
+                                            <button onClick={() => { onLock(); setShowMobileMenu(false); }} className="w-full flex items-center gap-3 px-4 py-2.5 text-sm hover:bg-muted/50 text-foreground transition-colors">
+                                                <Lock className="w-4 h-4 text-muted-foreground" />
+                                                <span className="font-medium">Lock</span>
+                                            </button>
+                                        )}
+                                        {onUnlock && (
+                                            <button onClick={() => { onUnlock(); setShowMobileMenu(false); }} className="w-full flex items-center gap-3 px-4 py-2.5 text-sm hover:bg-muted/50 text-foreground transition-colors">
+                                                <Unlock className="w-4 h-4 text-muted-foreground" />
+                                                <span className="font-medium">Unlock</span>
+                                            </button>
+                                        )}
+                                        <div className="h-px bg-border/50 my-1" />
+                                    </>
+                                )}
+
+                                {/* Z-Order Section */}
+                                {onLayerOrder && (
+                                    <>
+                                        <div className="px-4 py-1.5 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                                            Z-Order
+                                        </div>
+                                        <button onClick={() => { onLayerOrder('front'); setShowMobileMenu(false); }} className="w-full flex items-center justify-between gap-3 px-4 py-2.5 text-sm hover:bg-muted/50 text-foreground transition-colors">
+                                            <div className="flex items-center gap-3">
+                                                <ChevronsUp className="w-4 h-4 text-muted-foreground" />
+                                                <span className="font-medium">To Front</span>
+                                            </div>
+                                            <kbd className="text-[10px] text-muted-foreground font-mono bg-muted/50 px-1.5 py-0.5 rounded">⌘]</kbd>
+                                        </button>
+                                        <button onClick={() => { onLayerOrder('forward'); setShowMobileMenu(false); }} className="w-full flex items-center justify-between gap-3 px-4 py-2.5 text-sm hover:bg-muted/50 text-foreground transition-colors">
+                                            <div className="flex items-center gap-3">
+                                                <ChevronUp className="w-4 h-4 text-muted-foreground" />
+                                                <span className="font-medium">Forward</span>
+                                            </div>
+                                            <kbd className="text-[10px] text-muted-foreground font-mono bg-muted/50 px-1.5 py-0.5 rounded">⌘⇧]</kbd>
+                                        </button>
+                                        <button onClick={() => { onLayerOrder('backward'); setShowMobileMenu(false); }} className="w-full flex items-center justify-between gap-3 px-4 py-2.5 text-sm hover:bg-muted/50 text-foreground transition-colors">
+                                            <div className="flex items-center gap-3">
+                                                <ChevronDown className="w-4 h-4 text-muted-foreground" />
+                                                <span className="font-medium">Backward</span>
+                                            </div>
+                                            <kbd className="text-[10px] text-muted-foreground font-mono bg-muted/50 px-1.5 py-0.5 rounded">⌘[</kbd>
+                                        </button>
+                                        <button onClick={() => { onLayerOrder('back'); setShowMobileMenu(false); }} className="w-full flex items-center justify-between gap-3 px-4 py-2.5 text-sm hover:bg-muted/50 text-foreground transition-colors">
+                                            <div className="flex items-center gap-3">
+                                                <ChevronsDown className="w-4 h-4 text-muted-foreground" />
+                                                <span className="font-medium">To Back</span>
+                                            </div>
+                                            <kbd className="text-[10px] text-muted-foreground font-mono bg-muted/50 px-1.5 py-0.5 rounded">⌘⇧[</kbd>
+                                        </button>
+                                        <div className="h-px bg-border/50 my-1" />
+                                    </>
+                                )}
+
+                                {/* Resize */}
+                                <button onClick={() => { onShowResize(); setShowMobileMenu(false); }} className="w-full flex items-center gap-3 px-4 py-2.5 text-sm hover:bg-muted/50 text-foreground transition-colors">
+                                    <Maximize2 className="w-4 h-4 text-muted-foreground" />
+                                    <span className="font-medium">Resize</span>
+                                </button>
+                            </div>
+                        </>
+                    )}
                 </div>
 
-                <button
-                    onClick={onAudit}
-                    className="flex items-center gap-2 px-3 h-9 text-xs font-bold bg-muted dark:bg-muted hover:bg-muted/80 dark:hover:bg-muted/80 text-foreground rounded-lg transition-all border border-border group"
-                >
-                    <ShieldCheck className="w-4 h-4 text-emerald-500 group-hover:scale-110 transition-transform" />
-                    <span className="hidden xl:inline">Audit</span>
-                </button>
+                {/* AI Dropdown */}
+                <div className="relative">
+                    {(() => {
+                        const [showAIMenu, setShowAIMenu] = useState(false);
+                        return (
+                            <>
+                                <button
+                                    onClick={() => setShowAIMenu(!showAIMenu)}
+                                    className="flex items-center gap-2 px-3 h-9 text-xs font-bold bg-gradient-to-r from-purple-500/20 to-pink-500/20 hover:from-purple-500/30 hover:to-pink-500/30 text-purple-400 rounded-lg transition-all border border-purple-500/20"
+                                >
+                                    <Sparkles className="w-4 h-4" />
+                                    <span>AI</span>
+                                    <ChevronDown className="w-3 h-3" />
+                                </button>
 
-                <button
-                    onClick={onShowAdWizard}
-                    className="flex items-center gap-2 px-3 h-9 text-xs font-bold bg-gradient-to-r from-emerald-500 to-teal-500 text-white rounded-lg hover:shadow-lg hover:shadow-emerald-500/30 transition-all"
-                >
-                    <PlusCircle className="w-4 h-4" />
-                    <span className="hidden xl:inline">Neue Ad</span>
-                </button>
+                                {showAIMenu && (
+                                    <>
+                                        <div className="fixed inset-0 z-40" onClick={() => setShowAIMenu(false)} />
+                                        <div className="absolute right-0 top-full mt-2 w-56 bg-card/95 backdrop-blur-xl border border-border/50 rounded-xl shadow-2xl z-50 py-1 animate-in fade-in slide-in-from-top-2 duration-200">
+                                            <button onClick={() => { onShowAdWizard(); setShowAIMenu(false); }} className="w-full flex items-center gap-3 px-4 py-2.5 text-sm hover:bg-muted/50 text-foreground transition-colors">
+                                                <PlusCircle className="w-4 h-4 text-emerald-500" />
+                                                <span className="font-medium">Neue Ad</span>
+                                            </button>
+                                            <button onClick={() => { onShowTextToAd(); setShowAIMenu(false); }} className="w-full flex items-center gap-3 px-4 py-2.5 text-sm hover:bg-muted/50 text-foreground transition-colors">
+                                                <Sparkles className="w-4 h-4 text-fuchsia-500" />
+                                                <span className="font-medium">Text→Ad</span>
+                                            </button>
+                                            <div className="h-px bg-border/50 my-1" />
+                                            <button onClick={() => { onAudit(); setShowAIMenu(false); }} className="w-full flex items-center gap-3 px-4 py-2.5 text-sm hover:bg-muted/50 text-foreground transition-colors">
+                                                <ShieldCheck className="w-4 h-4 text-emerald-500" />
+                                                <span className="font-medium">AI Audit</span>
+                                            </button>
+                                            <button onClick={() => { onToggleSuggestions(); setShowAIMenu(false); }} className={`w-full flex items-center gap-3 px-4 py-2.5 text-sm transition-colors ${showSuggestions ? 'bg-violet-500/10' : 'hover:bg-muted/50 text-foreground'}`}>
+                                                <Zap className={`w-4 h-4 ${showSuggestions ? 'text-violet-500' : 'text-muted-foreground'}`} />
+                                                <span className="font-medium">AI Tips</span>
+                                            </button>
+                                            <div className="h-px bg-border/50 my-1" />
+                                            <button onClick={() => { onShowBrand(); setShowAIMenu(false); }} className="w-full flex items-center gap-3 px-4 py-2.5 text-sm hover:bg-muted/50 text-foreground transition-colors">
+                                                <Palette className="w-4 h-4 text-amber-500" />
+                                                <span className="font-medium">Brand Kit</span>
+                                            </button>
+                                        </div>
+                                    </>
+                                )}
+                            </>
+                        );
+                    })()}
+                </div>
 
-                <button
-                    onClick={onToggleSuggestions}
-                    className={`flex items-center gap-2 px-3 h-9 text-xs font-bold rounded-lg transition-all ${showSuggestions
-                        ? 'bg-violet-500 text-white'
-                        : 'bg-muted dark:bg-muted hover:bg-muted/80 dark:hover:bg-muted/80 text-foreground border border-border'
-                        }`}
-                >
-                    <Zap className={`w-4 h-4 ${showSuggestions ? 'text-white' : 'text-violet-500'}`} />
-                    <span className="hidden xl:inline">AI Tips</span>
-                </button>
+                {/* View Dropdown */}
+                <div className="relative">
+                    {(() => {
+                        const [showViewMenu, setShowViewMenu] = useState(false);
+                        return (
+                            <>
+                                <button
+                                    onClick={() => setShowViewMenu(!showViewMenu)}
+                                    className="flex items-center gap-2 px-3 h-9 text-xs font-bold bg-muted dark:bg-muted hover:bg-muted/80 dark:hover:bg-muted/80 text-foreground rounded-lg transition-all border border-border"
+                                >
+                                    <span>View</span>
+                                    <ChevronDown className="w-3 h-3 text-muted-foreground" />
+                                </button>
 
-                <button
-                    onClick={onShowTextToAd}
-                    className="flex items-center gap-2 px-3 h-9 text-xs font-bold bg-gradient-to-r from-violet-500 to-fuchsia-500 text-white rounded-lg hover:shadow-lg hover:shadow-fuchsia-500/30 transition-all"
-                >
-                    <Sparkles className="w-4 h-4" />
-                    <span className="hidden xl:inline">Text→Ad</span>
-                </button>
+                                {showViewMenu && (
+                                    <>
+                                        <div className="fixed inset-0 z-40" onClick={() => setShowViewMenu(false)} />
+                                        <div className="absolute right-0 top-full mt-2 w-48 bg-card/95 backdrop-blur-xl border border-border/50 rounded-xl shadow-2xl z-50 py-1 animate-in fade-in slide-in-from-top-2 duration-200">
+                                            <button
+                                                onClick={() => { setIsMultiverseMode(!isMultiverseMode); setShowViewMenu(false); }}
+                                                className={`w-full flex items-center gap-3 px-4 py-2.5 text-sm transition-colors ${isMultiverseMode ? 'bg-indigo-500/10 text-indigo-400' : 'hover:bg-muted/50 text-foreground'}`}
+                                            >
+                                                <div className={`w-2 h-2 rounded-full ${isMultiverseMode ? 'bg-indigo-500' : 'bg-muted'}`} />
+                                                <span className="font-medium">Multiverse</span>
+                                            </button>
+                                            <button
+                                                onClick={() => { setIsPreviewMode(!isPreviewMode); if (!isPreviewMode) setIsMultiverseMode(false); setShowViewMenu(false); }}
+                                                className={`w-full flex items-center gap-3 px-4 py-2.5 text-sm transition-colors ${isPreviewMode ? 'bg-primary/10 text-primary' : 'hover:bg-muted/50 text-foreground'}`}
+                                            >
+                                                <div className={`w-2 h-2 rounded-full ${isPreviewMode ? 'bg-primary' : 'bg-muted'}`} />
+                                                <span className="font-medium">Mockup</span>
+                                            </button>
+                                        </div>
+                                    </>
+                                )}
+                            </>
+                        );
+                    })()}
+                </div>
 
-                <button
-                    onClick={onShowBrand}
-                    className="flex items-center gap-2 px-3 h-9 text-xs font-bold bg-muted dark:bg-muted hover:bg-muted/80 dark:hover:bg-muted/80 text-foreground rounded-lg transition-all border border-border group"
-                >
-                    <Palette className="w-4 h-4 text-amber-500 group-hover:scale-110 transition-transform" />
-                    <span className="hidden xl:inline">Brand</span>
-                </button>
-
-                <button
-                    onClick={onShowResize}
-                    className="flex items-center gap-2 px-3 h-9 text-xs font-bold bg-muted dark:bg-muted hover:bg-muted/80 dark:hover:bg-muted/80 text-foreground rounded-lg transition-all border border-border group"
-                >
-                    <Maximize2 className="w-4 h-4 text-cyan-500 group-hover:scale-110 transition-transform" />
-                    <span className="hidden xl:inline">Resize</span>
-                </button>
-
+                {/* Export Button */}
                 <button
                     onClick={onShowExport}
                     className="flex items-center gap-2 px-4 h-9 text-xs font-bold bg-gradient-to-r from-indigo-500 to-purple-600 text-white rounded-lg hover:shadow-lg hover:shadow-purple-500/30 transition-all"
                 >
                     <Download className="w-4 h-4" />
-                    <span className="hidden xl:inline">Export</span>
+                    <span>Export</span>
                 </button>
 
+                {/* Save Button */}
                 <button
                     onClick={() => onSave?.(doc)}
                     className="flex items-center gap-2 px-5 h-9 text-xs font-bold bg-primary text-primary-foreground rounded-lg hover:shadow-lg hover:shadow-primary/20 transition-all"

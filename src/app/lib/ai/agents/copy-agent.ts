@@ -86,9 +86,9 @@ const OPTIMIZED_HOOKS: Record<HookAngle, { name: string; pattern: string }> = {
 export async function generateAdvancedCopyVariants(
     input: CopyGenerationInput
 ): Promise<CopyVariant[]> {
-    const openai = getOpenAIService();
+    const openai = getOpenAIService('');
 
-    console.log('🎯 Copy Agent: Generating 5 optimized variants (parallel)...');
+    // Generating 5 optimized variants in parallel
 
     const hookAngles = Object.keys(OPTIMIZED_HOOKS) as HookAngle[];
 
@@ -101,7 +101,7 @@ export async function generateAdvancedCopyVariants(
             const result = await openai.generateAdCopy({
                 productName: input.productName,
                 productDescription: prompt,
-                tone: input.tone as any,
+                tone: input.tone as 'professional' | 'playful' | 'bold' | 'luxury' | 'minimal',
                 goal: 'conversion',
                 language: input.language || 'German'
             });
@@ -136,7 +136,7 @@ export async function generateAdvancedCopyVariants(
     const results = await Promise.all(variantPromises);
     const variants = results.filter(Boolean) as CopyVariant[];
 
-    console.log(`✅ Copy Agent: Generated ${variants.length} variants`);
+    // Successfully generated variants
 
     // Return sorted by score
     return variants.sort((a, b) => b.scores.total - a.scores.total);
