@@ -49,9 +49,6 @@ export async function generateCompositeScene(
     // STEP 1: Build fusion-optimized prompt
     const fusionPrompt = buildFusionPrompt(request);
 
-    console.log('🎨 Generating composite fusion...');
-    console.log('Prompt:', fusionPrompt);
-
     try {
         // DALL-E 3 with edit mode (if available) or generation with mask
         // Note: DALL-E 3 doesn't have direct edit API yet, so we use generation
@@ -82,8 +79,6 @@ export async function generateCompositeScene(
             colorHarmony: 92
         };
 
-        console.log(`✅ Composite generated (Quality: ${qualityScore}/100)`);
-
         return {
             compositeUrl,
             qualityScore,
@@ -91,9 +86,10 @@ export async function generateCompositeScene(
             reasoning: 'Product integrated with realistic lighting and shadows'
         };
 
-    } catch (error: any) {
+    } catch (error: unknown) {
+        const message = error instanceof Error ? error.message : 'Unknown error';
         console.error('❌ Composite generation failed:', error);
-        throw new Error(`Composite fusion failed: ${error.message}`);
+        throw new Error(`Composite fusion failed: ${message}`);
     }
 }
 
@@ -185,8 +181,6 @@ export async function generateBestComposite(
     apiKey: string,
     candidates: number = 3
 ): Promise<CompositeFusionResult> {
-    console.log(`🎯 Generating ${candidates} composite candidates...`);
-
     const results: CompositeFusionResult[] = [];
 
     // Generate N candidates
@@ -194,7 +188,6 @@ export async function generateBestComposite(
         try {
             const result = await generateCompositeScene(request, apiKey);
             results.push(result);
-            console.log(`✅ Candidate ${i + 1}/${candidates} generated (Score: ${result.qualityScore})`);
         } catch (error) {
             console.warn(`⚠️ Candidate ${i + 1} failed, continuing...`);
         }
@@ -208,8 +201,6 @@ export async function generateBestComposite(
     results.sort((a, b) => b.qualityScore - a.qualityScore);
     const best = results[0];
 
-    console.log(`🏆 Best composite selected (Score: ${best.qualityScore}/100)`);
-
     return best;
 }
 
@@ -218,8 +209,8 @@ export async function generateBestComposite(
  * (Future enhancement - for now returns heuristic scores)
  */
 export async function analyzeCompositeQuality(
-    compositeUrl: string,
-    apiKey: string
+    _compositeUrl: string,
+    _apiKey: string
 ): Promise<CompositeFusionResult['integrationMetrics']> {
     // TODO: Use GPT-4 Vision to analyze:
     // - Edge halos

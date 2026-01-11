@@ -48,8 +48,6 @@ export async function processImage(params: {
     }
 
     try {
-        console.log('✨ Generating Premium Background + Fusion...');
-
         // STEP 1: Generate background scene
         const scenePrompt = `Professional ${params.tone} background for ${params.productName}, style: ${params.designVibe || 'minimalist'}`;
 
@@ -65,8 +63,6 @@ export async function processImage(params: {
 
         if (apiKey && params.cutoutBase64) {
             try {
-                console.log('🎨 Generating commercial fusion composite...');
-
                 // Detect product material (simplified heuristic)
                 const material = detectProductMaterial(params.productName, params.designVibe);
 
@@ -83,8 +79,6 @@ export async function processImage(params: {
 
                 const fusion = await generateCompositeScene(fusionRequest, apiKey);
 
-                console.log(`✅ Fusion generated (Quality: ${fusion.qualityScore}/100)`);
-
                 return {
                     originalProduct: productAsset as string,
                     generatedBackground: bgResult.backgroundImageUrl,
@@ -99,7 +93,6 @@ export async function processImage(params: {
         }
 
         // Fallback: Traditional layering
-        console.log('✅ Background generated (layered approach)');
         return {
             originalProduct: productAsset as string,
             generatedBackground: bgResult.backgroundImageUrl
