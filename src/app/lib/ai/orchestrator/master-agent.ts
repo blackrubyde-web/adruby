@@ -460,7 +460,7 @@ async function synthesizeAdDocument(
     input: OrchestratorInput,
     copy: CopyAgentResult,
     _visual: VisualAgentResult,
-    psychology: PsychologyAgentResult
+    _psychology: PsychologyAgentResult
 ): Promise<AdDocument> {
     // Use enhanced layout engine with agent recommendations
     const { composeAdEnhanced } = await import('../layout/enhanced-layout-engine');

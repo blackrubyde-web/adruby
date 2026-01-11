@@ -16,7 +16,7 @@ interface CacheEntry<T> {
     size: number; // Approximate size in bytes
 }
 
-export class CacheManager<T = any> {
+export class CacheManager<T = unknown> {
     private cache: Map<string, CacheEntry<T>>;
     private maxSize: number; // Maximum cache size in bytes
     private maxAge: number;  // Maximum age in ms
@@ -126,11 +126,9 @@ export class CacheManager<T = any> {
         maxSize: number;
         hitRate: number;
     } {
-        let totalHits = 0;
         let entriesWithHits = 0;
 
         for (const entry of this.cache.values()) {
-            totalHits += entry.hits;
             if (entry.hits > 0) entriesWithHits++;
         }
 
@@ -167,7 +165,7 @@ export const colorExtractionCache = new CacheManager<{
     text: string;
 }>(5 * 1024 * 1024, 30 * 60 * 1000); // 5MB, 30 minutes
 
-export const templateCache = new CacheManager<any>(20 * 1024 * 1024, 60 * 60 * 1000); // 20MB, 1 hour
+export const templateCache = new CacheManager<unknown>(20 * 1024 * 1024, 60 * 60 * 1000); // 20MB, 1 hour
 
 /**
  * Generate cache key for font measurements

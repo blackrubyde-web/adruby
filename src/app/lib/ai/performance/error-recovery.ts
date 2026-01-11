@@ -9,7 +9,7 @@
  * - Retry with exponential backoff
  */
 
-import type { AdDocument, StudioLayer } from '../../../types/studio';
+import type { AdDocument, CtaLayer, ImageLayer, StudioLayer, TextLayer } from '../../../types/studio';
 import type { LayoutInput } from '../layout/layout-engine-v2';
 
 export interface RecoveryResult {
@@ -28,7 +28,7 @@ function createTextOnlyFallback(input: LayoutInput): AdDocument {
     const layers: StudioLayer[] = [];
 
     // Background
-    layers.push({
+    const backgroundLayer: ImageLayer = {
         id: `bg-${timestamp}`,
         type: 'background',
         name: 'Background',
@@ -42,10 +42,11 @@ function createTextOnlyFallback(input: LayoutInput): AdDocument {
         opacity: 1,
         src: '',
         zIndex: 0
-    } as any);
+    };
+    layers.push(backgroundLayer);
 
     // Simple headline
-    layers.push({
+    const headlineLayer: TextLayer = {
         id: `headline-${timestamp}`,
         type: 'text',
         name: 'Headline',
@@ -64,12 +65,14 @@ function createTextOnlyFallback(input: LayoutInput): AdDocument {
         fontWeight: 800,
         align: 'center',
         color: '#000000',
+        fill: '#000000',
         lineHeight: 1.2,
         zIndex: 1
-    } as any);
+    };
+    layers.push(headlineLayer);
 
     // Simple CTA
-    layers.push({
+    const ctaLayer: CtaLayer = {
         id: `cta-${timestamp}`,
         type: 'cta',
         name: 'CTA',
@@ -86,11 +89,13 @@ function createTextOnlyFallback(input: LayoutInput): AdDocument {
         fontSize: 28,
         fontFamily: 'Inter',
         fontWeight: 700,
+        lineHeight: 1.2,
         color: '#FFFFFF',
         bgColor: '#000000',
         radius: 50,
         zIndex: 2
-    } as any);
+    };
+    layers.push(ctaLayer);
 
     return {
         id: `fallback-ad-${timestamp}`,
@@ -163,8 +168,9 @@ export async function recoverFromFailure(
             warnings
         };
 
-    } catch (minimalError: any) {
-        errors.push({ stage: 'minimal-fallback', error: minimalError.message });
+    } catch (minimalError: unknown) {
+        const message = minimalError instanceof Error ? minimalError.message : 'Unknown error';
+        errors.push({ stage: 'minimal-fallback', error: message });
         warnings.push('✗ Minimal template failed');
     }
 
@@ -183,8 +189,9 @@ export async function recoverFromFailure(
             warnings
         };
 
-    } catch (fallbackError: any) {
-        errors.push({ stage: 'text-fallback', error: fallbackError.message });
+    } catch (fallbackError: unknown) {
+        const message = fallbackError instanceof Error ? fallbackError.message : 'Unknown error';
+        errors.push({ stage: 'text-fallback', error: message });
     }
 
     // Complete failure

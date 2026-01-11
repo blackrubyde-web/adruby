@@ -1,6 +1,5 @@
 import { analyzeStrategy, type StrategicProfile } from './strategic-analyzer';
 import { type PremiumCopy } from './copy-generator';
-import { processImage } from './image-processor';
 import { scoreAdQuality } from './vision-qa';
 import type { AdDocument } from '../../types/studio';
 import { removeBackground, blobToBase64 } from './bg-removal';
