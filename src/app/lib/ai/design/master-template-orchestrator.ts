@@ -58,6 +58,52 @@ export interface MasterTemplateResult {
     };
 }
 
+type ExportLayerBase = {
+    id: string;
+    type: 'background' | 'image' | 'text' | 'shape';
+    name: string;
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+    opacity: number;
+};
+
+type ExportBackgroundLayer = ExportLayerBase & {
+    type: 'background';
+    fill: string;
+};
+
+type ExportImageLayer = ExportLayerBase & {
+    type: 'image';
+    src?: string;
+};
+
+type ExportTextLayer = ExportLayerBase & {
+    type: 'text';
+    fontSize: number;
+    fontFamily: string;
+    fill: string;
+    align: 'left' | 'center' | 'right';
+};
+
+type ExportShapeLayer = ExportLayerBase & {
+    type: 'shape';
+    fill: string;
+    cornerRadius: number;
+};
+
+type ExportLayer = ExportBackgroundLayer | ExportImageLayer | ExportTextLayer | ExportShapeLayer;
+
+type ExportAdDocument = {
+    id: string;
+    name: string;
+    width: number;
+    height: number;
+    backgroundColor: string;
+    layers: ExportLayer[];
+};
+
 /**
  * Master orchestration function
  * This is the MAIN entry point for template generation
@@ -94,8 +140,6 @@ export async function orchestrateTemplateGeneration(
     let adaptiveLayout: AdaptiveTemplate | undefined;
 
     if (request.productImageBase64) {
-        const imageStart = Date.now();
-
         adaptiveLayout = await generateAdaptiveTemplate(
             request.productImageBase64,
             styleDNA
@@ -119,7 +163,6 @@ export async function orchestrateTemplateGeneration(
             }
         };
 
-        const imageTime = Date.now() - imageStart;
     }
 
     // STAGE 4: Template Intelligence (find best matches)
@@ -183,9 +226,9 @@ export async function orchestrateTemplateGeneration(
             totalTime,
             templatesAnalyzed: baseTemplates.length,
             variationsGenerated: allVariations.length
-        }
-    };
-}
+            }
+        };
+    }
 
 /**
  * Simplified API for quick template generation
@@ -212,11 +255,11 @@ export async function generateTemplatesQuick(
 export function exportAsAdDocument(
     variation: TemplateVariation,
     productDNA: ProductDNA,
-    styleDNA: StyleDNA,
+    _styleDNA: StyleDNA,
     adaptiveLayout?: AdaptiveTemplate
-): any {
+): ExportAdDocument {
     // Build ad document structure compatible with existing system
-    const doc = {
+    const doc: ExportAdDocument = {
         id: variation.id,
         name: `${productDNA.semantic.productCategory} Ad - ${variation.id}`,
         width: 1080,
@@ -236,8 +279,8 @@ export function exportAsAdDocument(
 function buildLayers(
     variation: TemplateVariation,
     adaptiveLayout?: AdaptiveTemplate
-): any[] {
-    const layers: any[] = [];
+): ExportLayer[] {
+    const layers: ExportLayer[] = [];
 
     // Background layer
     if (variation.colors.backgroundGradient) {
@@ -276,7 +319,8 @@ function buildLayers(
             y: adaptiveLayout.layout.productZone.y,
             width: adaptiveLayout.layout.productZone.width,
             height: adaptiveLayout.layout.productZone.height,
-            opacity: 1
+            opacity: 1,
+            src: ''
         });
 
         // Text zones from adaptive layout

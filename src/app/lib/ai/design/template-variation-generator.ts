@@ -78,8 +78,6 @@ export function generateVariations(
     productAnalysis: ProductImageAnalysis,
     count: number = 20
 ): TemplateVariation[] {
-    console.log(`🎨 Generating ${count} variations from template ${baseTemplate.id}...`);
-
     const variations: TemplateVariation[] = [];
 
     for (let i = 0; i < count; i++) {
@@ -100,8 +98,6 @@ export function generateVariations(
 
     // Remove duplicates (too similar)
     const uniqueVariations = removeSimilar(qualityFiltered);
-
-    console.log(`✅ Generated ${uniqueVariations.length} unique, high-quality variations`);
 
     return uniqueVariations;
 }

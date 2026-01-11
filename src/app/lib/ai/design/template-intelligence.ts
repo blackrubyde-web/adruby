@@ -189,19 +189,11 @@ const templateDB = new TemplateDatabase();
 export async function scanTemplateRepository(
     repositoryPath: string = '/Users/home/Desktop/BLACKRUBY/AdRuby/3500+Social Media Templates'
 ): Promise<void> {
-    console.log('🔍 Scanning template repository...');
-    console.log(`   Path: ${repositoryPath}`);
-
     const categories = await getCategories(repositoryPath);
-    console.log(`   Found ${categories.length} categories`);
-
-    let totalAnalyzed = 0;
 
     for (const category of categories) {
         const categoryPath = path.join(repositoryPath, category);
         const templates = await getTemplateFiles(categoryPath);
-
-        console.log(`   Category: ${category} - ${templates.length} templates`);
 
         // Analyze sample from each category (10 per category to save time)
         const sampleSize = Math.min(10, templates.length);
@@ -211,18 +203,11 @@ export async function scanTemplateRepository(
             try {
                 const intelligence = await analyzeTemplate(templatePath, category);
                 templateDB.add(intelligence);
-                totalAnalyzed++;
-
-                if (totalAnalyzed % 50 === 0) {
-                    console.log(`   Progress: ${totalAnalyzed} templates analyzed...`);
-                }
             } catch (error) {
                 console.warn(`   Failed to analyze ${path.basename(templatePath)}:`, error);
             }
         }
     }
-
-    console.log(`✅ Template analysis complete: ${templateDB.size} templates indexed`);
 }
 
 /**
@@ -271,7 +256,6 @@ export async function getOptimalTemplates(
 ): Promise<TemplateIntelligence[]> {
     // Ensure database is loaded
     if (templateDB.size === 0) {
-        console.log('⚠️ Template database empty, loading samples...');
         await loadSampleTemplates();
     }
 
@@ -288,8 +272,6 @@ export async function getOptimalTemplates(
         complexity: Math.round(styleDNA.philosophy.complexity),
         productDNA
     });
-
-    console.log(`🎯 Found ${templates.length} optimal templates for ${productDNA.semantic.productCategory}`);
 
     return templates.slice(0, count);
 }
@@ -353,7 +335,7 @@ function mapCategory(categoryName: string): TemplateCategory {
     return 'other';
 }
 
-function detectStyle(analysis: any, category: string): TemplateStyle {
+function detectStyle(_analysis: unknown, category: string): TemplateStyle {
     // Heuristic style detection
     // In production, would use ML model
 
@@ -364,7 +346,7 @@ function detectStyle(analysis: any, category: string): TemplateStyle {
     return 'minimal-clean';
 }
 
-function extractLayout(analysis: any): TemplateIntelligence['layout'] {
+function extractLayout(_analysis: unknown): TemplateIntelligence['layout'] {
     return {
         structure: 'single-focus',
         hierarchy: 'balanced',
@@ -372,7 +354,7 @@ function extractLayout(analysis: any): TemplateIntelligence['layout'] {
     };
 }
 
-function extractColors(analysis: any): TemplateIntelligence['colors'] {
+function extractColors(_analysis: unknown): TemplateIntelligence['colors'] {
     return {
         palette: ['#000000', '#FFFFFF'],
         dominantColor: '#000000',
@@ -382,7 +364,7 @@ function extractColors(analysis: any): TemplateIntelligence['colors'] {
     };
 }
 
-function extractTypography(analysis: any): TemplateIntelligence['typography'] {
+function extractTypography(_analysis: unknown): TemplateIntelligence['typography'] {
     return {
         headlineStyle: 'bold',
         fontPairing: ['Inter', 'Inter'],
@@ -391,7 +373,7 @@ function extractTypography(analysis: any): TemplateIntelligence['typography'] {
     };
 }
 
-function detectElements(analysis: any): TemplateIntelligence['elements'] {
+function detectElements(_analysis: unknown): TemplateIntelligence['elements'] {
     return {
         hasShapes: false,
         hasGradients: false,
@@ -401,7 +383,7 @@ function detectElements(analysis: any): TemplateIntelligence['elements'] {
     };
 }
 
-function calculateComplexity(analysis: any): TemplateIntelligence['complexity'] {
+function calculateComplexity(_analysis: unknown): TemplateIntelligence['complexity'] {
     return {
         overall: 5,
         visual: 5,
@@ -409,7 +391,7 @@ function calculateComplexity(analysis: any): TemplateIntelligence['complexity'] 
     };
 }
 
-function estimatePerformance(analysis: any, category: string): TemplateIntelligence['performance'] {
+function estimatePerformance(_analysis: unknown, category: string): TemplateIntelligence['performance'] {
     return {
         suitableFor: [category],
         estimatedCTR: 2.5,
@@ -442,8 +424,7 @@ function mapStyleDNAToTemplateStyle(aesthetic: string): TemplateStyle {
 
 async function loadSampleTemplates() {
     // Load pre-analyzed sample (in production would load from cache)
-    console.log('📦 Loading sample templates from database...');
-    // For now, just log - in production would load from JSON cache
+    // For now, no-op - in production would load from JSON cache
 }
 
 export { templateDB };
