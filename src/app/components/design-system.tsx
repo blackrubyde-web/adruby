@@ -12,6 +12,7 @@ import { Input as UIInput } from './ui/input';
 export const tokens = {
   container: "max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8",
   marketingContainer: "max-w-7xl mx-auto px-4 sm:px-6 lg:px-8",
+  sectionSpacing: "py-20 sm:py-24",
 };
 
 // ============================================
@@ -106,4 +107,3 @@ export function Chip({
 
 export { Input as UIInput } from './ui/input';
 export { Badge } from './ui/badge';
-

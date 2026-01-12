@@ -10,7 +10,7 @@ import { Input } from '../ui/input';
 import { Label } from '../ui/label';
 import { Textarea } from '../ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
-import { Card } from '../layout';
+import { Card } from '../ui/card';
 import { supabase } from '../../lib/supabaseClient';
 import { useAuthState } from '../../contexts/AuthContext';
 import { useAffiliate } from '../../contexts/AffiliateContext';

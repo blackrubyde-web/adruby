@@ -1,8 +1,7 @@
 import { createContext, useContext, useState, ReactNode, useEffect, useMemo } from 'react';
 import { toast } from 'sonner';
 import { supabase } from '../../lib/supabaseClient';
-import { useStrategies } from '../../hooks/useStrategies';
-import { StrategyBlueprint } from '../../lib/ai/strategic-analyzer';
+import { useStrategies, type StrategyBlueprint } from '../../hooks/useStrategies';
 
 // --- TYPES ---
 export type CampaignStatus = 'draft' | 'ready';

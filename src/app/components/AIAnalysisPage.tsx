@@ -18,16 +18,10 @@ import {
   Zap,
 
   Rocket,
-  Settings,
   Sliders,
-  DollarSign,
-  Gauge,
-  AlertTriangle
 } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from './ui/dialog';
 import { Label } from './ui/label';
-import { Input } from './ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 import { Slider } from './ui/slider';
 import { toast } from 'sonner';
 import { DashboardShell } from './layout/DashboardShell';

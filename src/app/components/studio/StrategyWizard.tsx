@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { Label } from '../ui/label';
-import { Card } from '../layout';
+import { Card } from '../ui/card';
 import { RiskToleranceSlider } from './RiskToleranceSlider';
 import { StrategySimulationPreview } from './StrategySimulationPreview';
 import { ArrowRight, ArrowLeft, Target, Briefcase, Zap, Check, Sparkles, Globe, BarChart3, Loader2, Brain } from 'lucide-react';
