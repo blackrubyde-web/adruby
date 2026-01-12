@@ -284,29 +284,49 @@ export const AdWizard = ({ isOpen, onClose, onComplete }: AdWizardProps) => {
 
             if (!response.ok) {
                 const error = await response.json();
+                console.error('[AdWizard] Server error:', error);
                 throw new Error(error.error || `Server error: ${response.status}`);
             }
 
             const result = await response.json();
+            console.log('[AdWizard] Received response:', result);
 
             if (!result.success) {
+                console.error('[AdWizard] Generation failed:', result);
                 throw new Error(result.error || 'Ad generation failed');
             }
+
+            if (!result.adDocument) {
+                console.error('[AdWizard] No adDocument in result');
+                throw new Error('No ad document returned');
+            }
+
+            console.log('[AdWizard] Setting generated document:', result.adDocument);
 
             // Set generated document
             setGeneratedDoc(result.adDocument);
 
             // Set hooks for display
-            setGeneratedHooks({
-                headlines: [result.premiumCopy.headline],
-                descriptions: [result.premiumCopy.description],
-                ctas: [result.premiumCopy.cta]
-            });
+            if (result.premiumCopy) {
+                setGeneratedHooks({
+                    headlines: [result.premiumCopy.headline],
+                    descriptions: [result.premiumCopy.description],
+                    ctas: [result.premiumCopy.cta]
+                });
+            } else {
+                console.warn('[AdWizard] No premiumCopy, using defaults');
+                setGeneratedHooks({
+                    headlines: ['Special Offer'],
+                    descriptions: ['Check it out'],
+                    ctas: ['Shop Now']
+                });
+            }
 
             toast.success('Premium Ad erstellt! 🎉');
 
         } catch (error: unknown) {
             const err = error as Error;
+            console.error('[AdWizard] Error in handleGenerate:', err);
             toast.error(`Generierung fehlgeschlagen: ${err.message || 'Unbekannter Fehler'}`);
         } finally {
             setIsGenerating(false);
