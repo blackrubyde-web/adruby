@@ -16,10 +16,24 @@ import {
   Users,
   ShieldCheck,
   Zap,
+
   Rocket,
+  Settings,
+  Sliders,
+  DollarSign,
+  Gauge,
+  AlertTriangle
 } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from './ui/dialog';
+import { Label } from './ui/label';
+import { Input } from './ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
+import { Slider } from './ui/slider';
 import { toast } from 'sonner';
-import { PageShell, HeroHeader, Card, Chip } from './layout';
+import { DashboardShell } from './layout/DashboardShell';
+import { Card } from './ui/card';
+import { Button } from './ui/button';
+import { Badge } from './ui/badge';
 import { Progress } from './ui/progress';
 import { supabase } from '../lib/supabaseClient';
 import { env } from '../lib/env';
@@ -117,6 +131,15 @@ export function AIAnalysisPage() {
   const [isApplying, setIsApplying] = useState(false);
   const [aiAnalysisCache, setAiAnalysisCache] = useState<Record<string, AIAnalysis>>({});
   const [aiPowered, setAiPowered] = useState(false);
+
+  // Strategy Config State
+  const [showStrategyParams, setShowStrategyParams] = useState(false);
+  const [strategyConfig, setStrategyConfig] = useState({
+    risk_tolerance: 'medium', // low, medium, high
+    scale_speed: 'medium', // slow, medium, aggressive
+    target_roas: 3.0,
+    max_daily_budget_increase: 20
+  });
 
   // Helper to apply AI recommendations to Meta
   const applyRecommendations = async () => {
@@ -223,11 +246,6 @@ export function AIAnalysisPage() {
         return;
       }
 
-      // Get active strategy if any
-      const activeStrategy = strategies.find(s =>
-        campaignsToAnalyze.some(c => c.strategyId === s.id)
-      );
-
       const res = await fetch(apiUrl, {
         method: 'POST',
         headers: {
@@ -247,12 +265,12 @@ export function AIAnalysisPage() {
             impressions: c.impressions,
             cpc: c.clicks > 0 ? c.spend / c.clicks : 0,
           })),
-          strategy: activeStrategy ? {
-            name: activeStrategy.title,
-            description: activeStrategy.raw_content_markdown,
-            autopilot_config: activeStrategy.autopilot_config,
-            industry_type: activeStrategy.industry_type,
-          } : null
+          strategy: {
+            name: 'Custom AdRuby Pro Analysis',
+            description: 'AdRuby Pro Strategy Engine',
+            autopilot_config: strategyConfig,
+            industry_type: 'general',
+          }
         }),
       });
 
@@ -860,56 +878,70 @@ export function AIAnalysisPage() {
       : ['Keine Daten verfügbar. Verbinde Meta oder starte einen Sync.'];
 
   return (
-    <PageShell>
-      <HeroHeader
-        title="AI Analysis & Autopilot"
-        subtitle={`AI-powered insights analyzing ${campaigns.length} campaigns, ${totalAdSets} ad sets, and ${totalAds} ads`}
-        chips={
-          <>
-            <Chip>€{(totalSpend / 1000).toFixed(1)}K Spend</Chip>
-            <Chip>€{(totalRevenue / 1000).toFixed(1)}K Revenue</Chip>
-            <Chip>{totalRoas.toFixed(2)}x ROAS</Chip>
-            <Chip>{allRecommendations.length} AI Insights</Chip>
-            {aiPowered && <Chip variant="neutral" icon={<Brain className="w-3 h-3" />}>GPT-4o Powered</Chip>}
-            <div className={`px-2 py-0.5 rounded-full text-xs font-bold border flex items-center gap-1.5 ${autopilotEnabled ? 'bg-violet-500/10 text-violet-400 border-violet-500/20' : 'bg-muted text-muted-foreground border-transparent'}`}>
-              <ShieldCheck className="w-3 h-3" />
-              {autopilotEnabled ? 'AUTOPILOT ON' : 'AUTOPILOT OFF'}
-            </div>
-          </>
-        }
-        actions={
-          <>
-            <button
-              onClick={isSyncing ? cancelSync : runSync}
-              className="px-3.5 py-2 bg-muted hover:bg-muted/80 rounded-lg font-semibold text-sm transition-all flex items-center gap-2"
-            >
-              <RefreshCw className={`w-4 h-4 ${isSyncing ? 'animate-spin' : ''}`} />
-              <span className="text-sm font-medium">{isSyncing ? 'Cancel Sync' : 'Sync Data'}</span>
-            </button>
-            <button
-              onClick={handleExportReport}
-              className="px-4 py-2 bg-gradient-to-r from-primary to-primary/80 text-primary-foreground rounded-lg hover:scale-[1.02] transition-all duration-300 shadow-lg shadow-primary/30 flex items-center gap-2 text-sm font-semibold"
-            >
-              <Download className="w-4 h-4" />
-              <span>Export Report</span>
-            </button>
-            <button
-              onClick={() => runAIAnalysis(metaCampaigns)}
-              disabled={isAnalyzingAI}
-              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 flex items-center gap-2 text-sm font-semibold"
-            >
-              {isAnalyzingAI ? 'Analyzing…' : 'Run AI Analysis'}
-            </button>
-            <button
-              onClick={applyRecommendations}
-              disabled={isApplying || !Object.keys(aiAnalysisCache).length}
-              className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 flex items-center gap-2 text-sm font-semibold"
-            >
-              {isApplying ? 'Applying…' : 'Apply Recommendations'}
-            </button>
-          </>
-        }
-      />
+    <DashboardShell
+      title="AI Analysis & Autopilot"
+      subtitle={`AI-powered insights analyzing ${campaigns.length} campaigns, ${totalAdSets} ad sets, and ${totalAds} ads`}
+      headerChips={
+        <div className="flex flex-wrap gap-2 items-center">
+          <Badge variant="outline" className="text-xs">€{(totalSpend / 1000).toFixed(1)}K Spend</Badge>
+          <Badge variant="outline" className="text-xs">€{(totalRevenue / 1000).toFixed(1)}K Revenue</Badge>
+          <Badge variant="outline" className="text-xs">{totalRoas.toFixed(2)}x ROAS</Badge>
+          <Badge variant="outline" className="text-xs">{allRecommendations.length} AI Insights</Badge>
+          {aiPowered && <Badge variant="secondary" className="gap-1"><Brain className="w-3 h-3" /> GPT-4o Powered</Badge>}
+          <Badge variant={autopilotEnabled ? "default" : "secondary"} className={`gap-1 ${autopilotEnabled ? 'bg-violet-500/10 text-violet-400 border-violet-500/20' : ''}`}>
+            <ShieldCheck className="w-3 h-3" />
+            {autopilotEnabled ? 'AUTOPILOT ON' : 'AUTOPILOT OFF'}
+          </Badge>
+        </div>
+      }
+      headerActions={
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setShowStrategyParams(true)}
+            className="gap-2 hidden md:flex"
+          >
+            <Sliders className="w-4 h-4 text-muted-foreground" />
+            Strategy Config
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={isSyncing ? cancelSync : runSync}
+            className="gap-2"
+          >
+            <RefreshCw className={`w-4 h-4 ${isSyncing ? 'animate-spin' : ''}`} />
+            {isSyncing ? 'Cancel Sync' : 'Sync Data'}
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleExportReport}
+            className="gap-2"
+          >
+            <Download className="w-4 h-4" />
+            Export Report
+          </Button>
+          <Button
+            size="sm"
+            onClick={() => runAIAnalysis(metaCampaigns)}
+            disabled={isAnalyzingAI}
+            className="bg-blue-600 hover:bg-blue-700 text-white gap-2"
+          >
+            {isAnalyzingAI ? 'Analyzing…' : 'Run AI Analysis'}
+          </Button>
+          <Button
+            size="sm"
+            onClick={applyRecommendations}
+            disabled={isApplying || !Object.keys(aiAnalysisCache).length}
+            className="bg-green-600 hover:bg-green-700 text-white gap-2"
+          >
+            {isApplying ? 'Applying…' : 'Apply Recommendations'}
+          </Button>
+        </div>
+      }
+    >
 
       {/* AUTOPILOT CONTROL CENTER */}
       <div className="mb-8 p-1 relative overflow-hidden rounded-[32px] bg-gradient-to-b from-white/5 to-transparent border border-white/5">
@@ -1067,6 +1099,86 @@ export function AIAnalysisPage() {
           </Card>
 
           {/* FIX 4A: Desktop Table - Hidden on Mobile */}
+          <Dialog open={showStrategyParams} onOpenChange={setShowStrategyParams}>
+            <DialogContent className="glass border-primary/20 max-w-lg">
+              <DialogHeader>
+                <DialogTitle className="flex items-center gap-2 text-xl">
+                  <Brain className="w-5 h-5 text-primary" />
+                  AI Strategy Configuration
+                </DialogTitle>
+                <DialogDescription>
+                  Fine-tune the "Pro Marketer" engine logic.
+                </DialogDescription>
+              </DialogHeader>
+
+              <div className="space-y-6 py-4">
+                <div className="space-y-3">
+                  <Label className="flex items-center justify-between">
+                    <span>Risk Tolerance</span>
+                    <span className="text-xs text-muted-foreground uppercase">{strategyConfig.risk_tolerance}</span>
+                  </Label>
+                  <div className="grid grid-cols-3 gap-2">
+                    {['low', 'medium', 'high'].map((risk) => (
+                      <div
+                        key={risk}
+                        onClick={() => setStrategyConfig(p => ({ ...p, risk_tolerance: risk }))}
+                        className={`cursor-pointer border rounded-lg p-3 text-center text-sm transition-all ${strategyConfig.risk_tolerance === risk
+                          ? 'bg-primary/20 border-primary text-primary font-bold'
+                          : 'bg-muted/20 border-transparent hover:bg-muted/40'
+                          }`}
+                      >
+                        {risk.charAt(0).toUpperCase() + risk.slice(1)}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="space-y-3">
+                  <Label className="flex items-center justify-between">
+                    <span>Scale Speed</span>
+                    <span className="text-xs text-muted-foreground uppercase">{strategyConfig.scale_speed}</span>
+                  </Label>
+                  <div className="grid grid-cols-3 gap-2">
+                    {['slow', 'medium', 'aggressive'].map((speed) => (
+                      <div
+                        key={speed}
+                        onClick={() => setStrategyConfig(p => ({ ...p, scale_speed: speed }))}
+                        className={`cursor-pointer border rounded-lg p-3 text-center text-sm transition-all ${strategyConfig.scale_speed === speed
+                          ? 'bg-blue-500/20 border-blue-500 text-blue-500 font-bold'
+                          : 'bg-muted/20 border-transparent hover:bg-muted/40'
+                          }`}
+                      >
+                        {speed.charAt(0).toUpperCase() + speed.slice(1)}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="space-y-4">
+                  <div className="flex justify-between">
+                    <Label>Target ROAS</Label>
+                    <span className="font-mono text-sm">{strategyConfig.target_roas.toFixed(1)}x</span>
+                  </div>
+                  <Slider
+                    min={1.0}
+                    max={10.0}
+                    step={0.1}
+                    value={[strategyConfig.target_roas]}
+                    onValueChange={([val]) => setStrategyConfig(p => ({ ...p, target_roas: val }))}
+                    className="py-2"
+                  />
+                </div>
+              </div>
+
+              <DialogFooter>
+                <Button variant="ghost" onClick={() => setShowStrategyParams(false)}>Cancel</Button>
+                <Button className="bg-gradient-to-r from-primary to-rose-600 text-white" onClick={() => { setShowStrategyParams(false); runAIAnalysis(metaCampaigns); }}>
+                  <Rocket className="w-4 h-4 mr-2" />
+                  Save & Run Analysis
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
           <Card className="hidden lg:block overflow-hidden p-0">
             {/* Table Header */}
             <div className="bg-muted/30 border-b border-border/30 p-4">
@@ -1671,6 +1783,6 @@ export function AIAnalysisPage() {
           </>
         )}
       </div>
-    </PageShell>
+    </DashboardShell>
   );
 }

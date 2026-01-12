@@ -13,10 +13,15 @@ import {
   ShieldCheck,
   ListChecks,
   Wand2,
+  Users,
+  X,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useOverview } from '../hooks/useOverview';
-import { PageShell, HeroHeader, Card, Chip } from './layout';
+import { DashboardShell } from './layout/DashboardShell';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from './ui/card';
+import { Button } from './ui/button';
+import { Badge } from './ui/badge';
 import { useAuthActions, useAuthState } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabaseClient';
 import { ReferralServicesWidget } from './referral/ReferralServicesWidget';
@@ -46,7 +51,7 @@ type ChannelFilter = 'meta' | 'google' | 'tiktok';
 
 function ChartPlaceholder({ title }: { title: string }) {
   return (
-    <div className="h-[280px] rounded-2xl border border-border/60 bg-muted/30 animate-pulse flex items-center justify-center">
+    <div className="h-[280px] rounded-2xl border border-border/60 bg-muted/10 animate-pulse flex items-center justify-center">
       <span className="text-sm text-muted-foreground">{title}</span>
     </div>
   );
@@ -82,7 +87,7 @@ export function OverviewPage({ onNavigate }: OverviewPageProps) {
       completed: false,
       actionLabel: 'Create',
       onAction: () => {
-        onNavigate('adbuilder');
+        onNavigate('studio');
       },
     },
     {
@@ -92,7 +97,7 @@ export function OverviewPage({ onNavigate }: OverviewPageProps) {
       completed: false,
       actionLabel: 'Generate',
       onAction: () => {
-        onNavigate('adbuilder');
+        onNavigate('studio');
       },
     },
     {
@@ -102,7 +107,7 @@ export function OverviewPage({ onNavigate }: OverviewPageProps) {
       completed: false,
       actionLabel: 'Enable',
       onAction: () => {
-        onNavigate('strategies');
+        onNavigate('aianalysis');
       },
     },
   ]);
@@ -266,7 +271,7 @@ export function OverviewPage({ onNavigate }: OverviewPageProps) {
       priority: 'medium',
       cta: 'Open builder',
       icon: <Wand2 className="w-5 h-5 text-primary" />,
-      onClick: () => onNavigate('adbuilder'),
+      onClick: () => onNavigate('studio'),
     },
     {
       id: 'campaign-review',
@@ -335,19 +340,19 @@ export function OverviewPage({ onNavigate }: OverviewPageProps) {
   };
 
   return (
-    <PageShell>
-      <HeroHeader
-        title="Overview"
-        subtitle="Here's what's happening with your campaigns today"
-        chips={
-          <div className="flex flex-wrap gap-2">
-            <Chip>{metaConnected ? 'Meta connected' : 'Meta not connected'}</Chip>
-            <Chip>Range: {dateFilter}</Chip>
-            <Chip>Channel: {channelFilter}</Chip>
-          </div>
-        }
-      />
-
+    <DashboardShell
+      title="Overview"
+      subtitle="Here's what's happening with your campaigns today"
+      headerChips={
+        <div className="flex flex-wrap gap-2">
+          <Badge variant={metaConnected ? "secondary" : "default"} className="px-3 py-1">
+            {metaConnected ? 'Meta connected' : 'Meta not connected'}
+          </Badge>
+          <Badge variant="outline" className="px-3 py-1">Range: {dateFilter}</Badge>
+          <Badge variant="outline" className="px-3 py-1">Channel: {channelFilter}</Badge>
+        </div>
+      }
+    >
       {/* Filters */}
       <div className="flex items-center gap-3">
         {/* Date Filter */}
@@ -355,7 +360,7 @@ export function OverviewPage({ onNavigate }: OverviewPageProps) {
           <select
             value={dateFilter}
             onChange={(e) => setDateFilter(e.target.value as DateFilter)}
-            className="appearance-none pl-3 pr-8 py-2 bg-card border border-border rounded-lg text-sm font-medium text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 cursor-pointer active:scale-[0.98] transition-transform"
+            className="appearance-none pl-3 pr-8 py-2 bg-card border border-border rounded-lg text-sm font-medium text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 cursor-pointer active:scale-[0.98] transition-all shadow-sm"
           >
             <option value="today">Today</option>
             <option value="7d">Last 7 days</option>
@@ -369,7 +374,7 @@ export function OverviewPage({ onNavigate }: OverviewPageProps) {
           <select
             value={channelFilter}
             onChange={(e) => setChannelFilter(e.target.value as ChannelFilter)}
-            className="appearance-none pl-3 pr-8 py-2 bg-card border border-border rounded-lg text-sm font-medium text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 cursor-pointer active:scale-[0.98] transition-transform"
+            className="appearance-none pl-3 pr-8 py-2 bg-card border border-border rounded-lg text-sm font-medium text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 cursor-pointer active:scale-[0.98] transition-all shadow-sm"
           >
             <option value="meta">Meta Ads</option>
             <option value="google">Google Ads</option>
@@ -382,46 +387,48 @@ export function OverviewPage({ onNavigate }: OverviewPageProps) {
       {/* KPI Cards Row */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5">
         {kpis.map((kpi, index) => (
-          <Card key={index} className="p-5 hover:-translate-y-0.5 transition-all duration-300">
-            {/* Accent Line */}
-            <div className="absolute inset-x-0 top-0 h-[2px] rounded-t-xl bg-primary/40" />
+          <Card key={index} variant="glass" className="hover:-translate-y-0.5 transition-all duration-300">
+            {/* Accent Line - replaced with simpler border-t highlight via class if needed, or keep the div */}
+            <div className="absolute inset-x-0 top-0 h-[3px] rounded-t-xl bg-gradient-to-r from-primary/40 to-primary/10" />
 
-            {/* Content */}
-            <div className="flex items-start justify-between">
-              <div className="flex-1">
-                <div className="text-sm text-muted-foreground mb-2">{kpi.label}</div>
-                <div className="text-2xl sm:text-3xl font-semibold tracking-tight text-foreground mb-2">
-                  {kpi.value}
+            <CardContent className="p-5 pt-6">
+              <div className="flex items-start justify-between">
+                <div className="flex-1">
+                  <div className="text-body-sm text-muted-foreground mb-2 font-medium">{kpi.label}</div>
+                  <div className="text-h3 text-foreground mb-2">
+                    {kpi.value}
+                  </div>
+                  <div className="flex items-center gap-2 text-xs">
+                    <span
+                      className={`flex items-center gap-1 font-medium px-1.5 py-0.5 rounded-md ${kpi.isPositive
+                        ? 'text-green-600 bg-green-500/10'
+                        : 'text-muted-foreground bg-muted/50'
+                        }`}
+                    >
+                      {kpi.isPositive ? (
+                        <TrendingUp className="w-3 h-3" />
+                      ) : (
+                        <TrendingDown className="w-3 h-3" />
+                      )}
+                      {kpi.change}
+                    </span>
+                    <span className="text-muted-foreground">{kpi.comparison}</span>
+                  </div>
                 </div>
-                <div className="flex items-center gap-2 text-xs">
-                  <span
-                    className={`flex items-center gap-1 font-medium ${kpi.isPositive ? 'text-green-600' : 'text-muted-foreground'
-                      }`}
-                  >
-                    {kpi.isPositive ? (
-                      <TrendingUp className="w-3 h-3" />
-                    ) : (
-                      <TrendingDown className="w-3 h-3" />
-                    )}
-                    {kpi.change}
-                  </span>
-                  <span className="text-muted-foreground">{kpi.comparison}</span>
+
+                <div className="h-10 w-10 rounded-xl bg-primary/10 border border-primary/10 flex items-center justify-center shrink-0 shadow-sm">
+                  {kpi.icon}
                 </div>
               </div>
-
-              {/* Icon Badge */}
-              <div className="h-10 w-10 rounded-xl bg-primary/10 border border-primary/15 flex items-center justify-center shrink-0">
-                {kpi.icon}
-              </div>
-            </div>
+            </CardContent>
           </Card>
         ))}
       </div>
 
       {/* Charts Section - Shopify Style (KPIs → Charts → Tasks) */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-5 mb-6 sm:mb-8">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
         {/* Spend vs Revenue - 2/3 width */}
-        <div className="lg:col-span-2">
+        <div className="lg:col-span-2 space-y-6">
           <Suspense fallback={<ChartPlaceholder title="Loading spend vs revenue" />}>
             <LazySpendRevenueChart
               points={data?.timeseries ?? []}
@@ -431,10 +438,83 @@ export function OverviewPage({ onNavigate }: OverviewPageProps) {
               metaConnected={metaConnected}
             />
           </Suspense>
+
+          {/* Getting Started Card */}
+          <Card variant="glass" className="group">
+            <CardContent className="p-6 sm:p-8">
+              <div className="flex items-center justify-between gap-4 mb-6">
+                <div>
+                  <h2 className="text-h5 text-foreground mb-1">
+                    Getting Started
+                  </h2>
+                  <p className="text-body-sm text-muted-foreground">
+                    Unlock the full power in 5 minutes
+                  </p>
+                </div>
+                <Badge variant="secondary" className="text-sm px-3 py-1">
+                  {completedSteps}/{totalSteps}
+                </Badge>
+              </div>
+
+              {/* Progress Bar */}
+              <div className="h-2 bg-muted rounded-full overflow-hidden mb-6">
+                <div
+                  className="h-full bg-gradient-to-r from-primary to-rose-500 transition-all duration-500"
+                  style={{ width: `${progressPercentage}%` }}
+                />
+              </div>
+
+              {/* Checklist Steps */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {checklistSteps.map((step) => (
+                  <div
+                    key={step.id}
+                    className={`flex items-start gap-3 p-4 rounded-xl border transition-all duration-200 ${step.completed
+                      ? 'bg-muted/30 border-border/50'
+                      : 'bg-background/50 border-border hover:border-primary/30 hover:shadow-sm'
+                      }`}
+                  >
+                    <div className="pt-0.5 shrink-0">
+                      {step.completed ? (
+                        <CheckCircle2 className="w-5 h-5 text-green-600" />
+                      ) : (
+                        <Circle className="w-5 h-5 text-muted-foreground" />
+                      )}
+                    </div>
+
+                    <div className="flex-1 min-w-0">
+                      <div
+                        className={`font-semibold text-sm mb-0.5 ${step.completed
+                          ? 'text-muted-foreground line-through'
+                          : 'text-foreground'
+                          }`}
+                      >
+                        {step.title}
+                      </div>
+                      <div className="text-xs text-muted-foreground mb-3 leading-relaxed">
+                        {step.description}
+                      </div>
+
+                      {!step.completed && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={step.onAction}
+                          className="w-full h-8 text-xs"
+                        >
+                          {step.actionLabel}
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
         </div>
 
-        {/* ROAS Trend - 1/3 width */}
-        <div className="lg:col-span-1">
+        {/* Right Column: ROAS, Referral, Actions */}
+        <div className="lg:col-span-1 space-y-6">
           <Suspense fallback={<ChartPlaceholder title="Loading ROAS trend" />}>
             <LazyRoasMiniChart
               points={(data?.timeseries ?? []).map(p => ({ ts: p.ts, roas: p.roas }))}
@@ -444,408 +524,256 @@ export function OverviewPage({ onNavigate }: OverviewPageProps) {
               metaConnected={metaConnected}
             />
           </Suspense>
-        </div>
-      </div>
 
-      {/* Referral Services Widget - Only shows if user was referred */}
-      <ReferralServicesWidget />
+          <ReferralServicesWidget />
 
-      {/* Action Center */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-5 mb-6 sm:mb-8">
-        <div className="rounded-2xl bg-card/70 backdrop-blur border border-border/50 shadow-[0_1px_0_rgba(255,255,255,0.5),0_12px_30px_rgba(0,0,0,0.06)] p-6">
-          <div className="flex items-start justify-between mb-5">
-            <div>
-              <h3 className="text-base font-semibold tracking-tight text-foreground mb-1">
-                Action Center
-              </h3>
-              <p className="text-sm text-muted-foreground">
-                Focused next steps to improve results
-              </p>
-            </div>
-            <div className="h-10 w-10 rounded-xl bg-primary/10 border border-primary/15 flex items-center justify-center">
-              <ListChecks className="w-5 h-5 text-primary" />
-            </div>
-          </div>
-
-          <div className="space-y-3">
-            {actions.map((item) => (
-              <div
-                key={item.id}
-                className="flex flex-col sm:flex-row sm:items-center gap-3 rounded-xl border border-border/60 bg-background/70 p-4"
-              >
-                <div className="flex items-start gap-3 flex-1">
-                  <div className="h-10 w-10 rounded-xl bg-primary/10 border border-primary/15 flex items-center justify-center">
-                    {item.icon}
-                  </div>
-                  <div>
-                    <div className="flex items-center gap-2 mb-1">
-                      <span className="text-sm font-semibold text-foreground">{item.title}</span>
-                      <span
-                        className={`rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase ${item.priority === 'high'
-                          ? 'bg-red-500/10 text-red-500 border border-red-500/20'
-                          : item.priority === 'medium'
-                            ? 'bg-amber-500/10 text-amber-500 border border-amber-500/20'
-                            : 'bg-green-500/10 text-green-500 border border-green-500/20'
-                          }`}
-                      >
-                        {item.priority}
-                      </span>
-                    </div>
-                    <p className="text-xs text-muted-foreground">{item.description}</p>
-                  </div>
+          {/* Action Center */}
+          <Card variant="glass">
+            <CardHeader className="pb-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle className="text-base">Action Center</CardTitle>
+                  <CardDescription>Focused next steps</CardDescription>
                 </div>
-                <button
-                  onClick={item.onClick}
-                  className="w-full sm:w-auto px-3 py-2 bg-muted hover:bg-muted/80 border border-border text-xs font-semibold rounded-lg transition-all"
-                >
-                  {item.cta}
-                </button>
+                <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center">
+                  <ListChecks className="w-4 h-4 text-primary" />
+                </div>
               </div>
-            ))}
-          </div>
-        </div>
-
-        <div className="rounded-2xl bg-card/70 backdrop-blur border border-border/50 shadow-[0_1px_0_rgba(255,255,255,0.5),0_12px_30px_rgba(0,0,0,0.06)] p-6">
-          <div className="flex items-start justify-between mb-5">
-            <div>
-              <h3 className="text-base font-semibold tracking-tight text-foreground mb-1">
-                Goals & Guardrails
-              </h3>
-              <p className="text-sm text-muted-foreground">
-                Stay within budget and hit your ROAS target
-              </p>
-            </div>
-            <div className="h-10 w-10 rounded-xl bg-primary/10 border border-primary/15 flex items-center justify-center">
-              <ShieldCheck className="w-5 h-5 text-primary" />
-            </div>
-          </div>
-
-          <div className="space-y-4">
-            <div>
-              <div className="flex items-center justify-between text-xs mb-1.5">
-                <span className="text-muted-foreground">ROAS target</span>
-                <span className="font-semibold text-foreground">
-                  {(data?.kpis.roas ?? 0).toFixed(2)}x / {roasTarget.toFixed(1)}x
-                </span>
-              </div>
-              <div className="h-2 rounded-full bg-muted overflow-hidden">
-                <div className="h-full bg-primary" style={{ width: `${roasProgress}%` }} />
-              </div>
-            </div>
-
-            <div>
-              <div className="flex items-center justify-between text-xs mb-1.5">
-                <span className="text-muted-foreground">Spend cap</span>
-                <span className="font-semibold text-foreground">
-                  {formatCurrency(data?.kpis.spend ?? 0)} / {formatCurrency(spendCap)}
-                </span>
-              </div>
-              <div className="h-2 rounded-full bg-muted overflow-hidden">
-                <div className="h-full bg-amber-500" style={{ width: `${spendProgress}%` }} />
-              </div>
-            </div>
-
-            <div>
-              <div className="flex items-center justify-between text-xs mb-1.5">
-                <span className="text-muted-foreground">Revenue goal</span>
-                <span className="font-semibold text-foreground">
-                  {formatCurrency(data?.kpis.revenue ?? 0)} / {formatCurrency(revenueGoal)}
-                </span>
-              </div>
-              <div className="h-2 rounded-full bg-muted overflow-hidden">
-                <div className="h-full bg-green-500" style={{ width: `${revenueProgress}%` }} />
-              </div>
-            </div>
-
-            <button
-              onClick={handleOpenGoals}
-              className="w-full px-3 py-2 bg-background hover:bg-muted border border-border text-xs font-semibold rounded-lg transition-all"
-            >
-              Edit goals
-            </button>
-          </div>
-        </div>
-      </div>
-
-      {/* Getting Started Card (Shopify-style) */}
-      <div className="rounded-2xl bg-card/70 backdrop-blur border border-border/50 shadow-[0_1px_0_rgba(255,255,255,0.5),0_12px_30px_rgba(0,0,0,0.06)] hover:shadow-[0_1px_0_rgba(255,255,255,0.6),0_18px_50px_rgba(0,0,0,0.10)] transition-all duration-300 p-6 sm:p-8 mb-6 sm:mb-8">
-        {/* Header */}
-        <div className="flex items-center justify-between gap-4 mb-5">
-          <div>
-            <h2 className="text-lg font-semibold tracking-tight text-foreground mb-1">
-              Getting Started
-            </h2>
-            <p className="text-sm text-muted-foreground">
-              Unlock the full power in 5 minutes
-            </p>
-          </div>
-          <div className="text-sm font-medium text-muted-foreground whitespace-nowrap">
-            {completedSteps}/{totalSteps}
-          </div>
-        </div>
-
-        {/* Progress Bar */}
-        <div className="h-2 bg-muted rounded-full overflow-hidden mb-6">
-          <div
-            className="h-full bg-primary/80 transition-all duration-500"
-            style={{ width: `${progressPercentage}%` }}
-          />
-        </div>
-
-        {/* Checklist Steps - 2 Column Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-          {checklistSteps.map((step) => (
-            <div
-              key={step.id}
-              className={`flex items-start gap-3 p-4 rounded-xl border transition-all duration-300 hover:-translate-y-0.5 ${step.completed
-                ? 'bg-muted/30 border-border/50'
-                : 'bg-background border-border hover:border-border/80'
-                }`}
-            >
-              {/* Checkbox */}
-              <div className="pt-0.5 shrink-0">
-                {step.completed ? (
-                  <CheckCircle2 className="w-5 h-5 text-green-600" />
-                ) : (
-                  <Circle className="w-5 h-5 text-muted-foreground" />
-                )}
-              </div>
-
-              {/* Content */}
-              <div className="flex-1 min-w-0">
+            </CardHeader>
+            <CardContent className="space-y-3">
+              {actions.map((item) => (
                 <div
-                  className={`font-semibold tracking-tight mb-0.5 ${step.completed
-                    ? 'text-muted-foreground line-through'
-                    : 'text-foreground'
-                    }`}
+                  key={item.id}
+                  className="flex flex-col gap-3 rounded-xl border border-border/50 bg-background/50 p-4 hover:bg-background/80 transition-colors"
                 >
-                  {step.title}
-                </div>
-                <div className="text-xs text-muted-foreground mb-3">
-                  {step.description}
-                </div>
-
-                {/* Action Button */}
-                {!step.completed && (
-                  <button
-                    onClick={step.onAction}
-                    className="w-full px-3 py-1.5 bg-background hover:bg-muted border border-border text-foreground text-xs font-medium rounded-lg transition-all active:scale-[0.98]"
+                  <div className="flex items-start gap-3">
+                    <div className="h-8 w-8 rounded-lg bg-primary/10 border border-primary/10 flex items-center justify-center shrink-0">
+                      {item.icon}
+                    </div>
+                    <div>
+                      <div className="flex items-center gap-2 mb-1 flex-wrap">
+                        <span className="text-sm font-semibold text-foreground">{item.title}</span>
+                        <Badge
+                          variant={item.priority === 'high' ? 'destructive' : item.priority === 'medium' ? 'secondary' : 'default'}
+                          className="text-[10px] h-5 px-1.5"
+                        >
+                          {item.priority}
+                        </Badge>
+                      </div>
+                      <p className="text-xs text-muted-foreground leading-relaxed">{item.description}</p>
+                    </div>
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={item.onClick}
+                    className="w-full h-8 text-xs bg-muted/50 hover:bg-primary hover:text-primary-foreground"
                   >
-                    {step.actionLabel}
-                  </button>
-                )}
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* Lightweight Insights Section */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-5">
-        {/* Top Performing Campaign */}
-        <div className="rounded-2xl bg-card/70 backdrop-blur border border-border/50 shadow-[0_1px_0_rgba(255,255,255,0.5),0_12px_30px_rgba(0,0,0,0.06)] hover:shadow-[0_1px_0_rgba(255,255,255,0.6),0_18px_50px_rgba(0,0,0,0.10)] transition-all duration-300 hover:-translate-y-0.5 p-6">
-          <div className="flex items-start justify-between mb-4">
-            <div className="flex-1">
-              <h3 className="text-base font-semibold tracking-tight text-foreground mb-1">
-                Top Performing Campaign Today
-              </h3>
-              <p className="text-sm text-muted-foreground">
-                Highest ROAS in the last 24 hours
-              </p>
-            </div>
-            <div className="h-10 w-10 rounded-xl bg-primary/10 border border-primary/15 flex items-center justify-center shrink-0">
-              <Target className="w-5 h-5 text-primary" />
-            </div>
-          </div>
-
-          <div className="space-y-3">
-            <div>
-              <div className="text-lg font-semibold tracking-tight text-foreground mb-2">
-                {topCampaign.name}
-              </div>
-
-              {/* Visual Element: ROAS Badge */}
-              <div className="flex items-center gap-2 mb-3">
-                <span className="px-2 py-1 rounded-full text-xs bg-green-500/10 text-green-600 border border-green-500/20 font-medium">
-                  Top performer
-                </span>
-                <span className="text-xs text-muted-foreground">High confidence</span>
-              </div>
-
-              <div className="flex items-center gap-4 text-sm flex-wrap">
-                <span className="text-muted-foreground">
-                  ROAS:{' '}
-                  <span className="font-semibold tracking-tight text-foreground">
-                    {topCampaign.roas}x
-                  </span>
-                </span>
-                <span className="text-muted-foreground">
-                  Spend:{' '}
-                  <span className="font-mono text-foreground">
-                    €{(topCampaign.spend / 1000).toFixed(1)}K
-                  </span>
-                </span>
-                <span className="text-muted-foreground">
-                  Revenue:{' '}
-                  <span className="font-mono text-foreground">
-                    €{(topCampaign.revenue / 1000).toFixed(1)}K
-                  </span>
-                </span>
-              </div>
-            </div>
-
-            <button
-              onClick={() => onNavigate('campaigns')}
-              className="inline-flex items-center gap-2 text-sm font-medium text-primary hover:text-primary/80 transition-colors"
-            >
-              View all campaigns
-              <ArrowRight className="w-4 h-4" />
-            </button>
-          </div>
-        </div>
-
-        {/* Best Creative (AI Score) */}
-        <div className="rounded-2xl bg-card/70 backdrop-blur border border-border/50 shadow-[0_1px_0_rgba(255,255,255,0.5),0_12px_30px_rgba(0,0,0,0.06)] hover:shadow-[0_1px_0_rgba(255,255,255,0.6),0_18px_50px_rgba(0,0,0,0.10)] transition-all duration-300 hover:-translate-y-0.5 p-6">
-          <div className="flex items-start justify-between mb-4">
-            <div className="flex-1">
-              <h3 className="text-base font-semibold tracking-tight text-foreground mb-1">
-                Best Creative (AI Score)
-              </h3>
-              <p className="text-sm text-muted-foreground">
-                Highest AI performance score
-              </p>
-            </div>
-            <div className="h-10 w-10 rounded-xl bg-primary/10 border border-primary/15 flex items-center justify-center shrink-0">
-              <Sparkles className="w-5 h-5 text-primary" />
-            </div>
-          </div>
-
-          <div className="space-y-3">
-            <div>
-              <div className="text-lg font-semibold tracking-tight text-foreground mb-2">
-                {bestCreative.name}
-              </div>
-
-              {/* Visual Element: AI Badge + Progress */}
-              <div className="flex items-center gap-2 mb-3">
-                <span className="px-2 py-1 rounded-full text-xs bg-primary/10 text-primary border border-primary/15 font-medium">
-                  AI insight
-                </span>
-                <span className="text-xs text-muted-foreground">High confidence</span>
-              </div>
-
-              {/* AI Score Progress Bar */}
-              <div className="mb-3">
-                <div className="flex items-center justify-between text-xs mb-1.5">
-                  <span className="text-muted-foreground">Performance Score</span>
-                  <span className="font-semibold tracking-tight text-primary">{bestCreative.aiScore}/100</span>
+                    {item.cta}
+                  </Button>
                 </div>
-                <div className="h-2 bg-muted rounded-full overflow-hidden">
-                  <div
-                    className="h-full bg-primary transition-all duration-500"
-                    style={{ width: `${bestCreative.aiScore}%` }}
-                  />
+              ))}
+            </CardContent>
+          </Card>
+
+          {/* Goals */}
+          <Card variant="glass">
+            <CardHeader className="pb-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle className="text-base">Goals</CardTitle>
+                  <CardDescription>Budget & ROAS targets</CardDescription>
+                </div>
+                <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center">
+                  <ShieldCheck className="w-4 h-4 text-primary" />
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {/* ROAS */}
+              <div className="space-y-2">
+                <div className="flex justify-between text-xs">
+                  <span className="text-muted-foreground font-medium">ROAS Target</span>
+                  <span className="font-bold">{(data?.kpis.roas ?? 0).toFixed(2)}x / {roasTarget.toFixed(1)}x</span>
+                </div>
+                <div className="h-2 rounded-full bg-muted overflow-hidden">
+                  <div className="h-full bg-primary" style={{ width: `${roasProgress}%` }} />
                 </div>
               </div>
 
-              <div className="flex items-center gap-4 text-sm flex-wrap">
-                <span className="text-muted-foreground">
-                  CTR:{' '}
-                  <span className="font-mono text-foreground">
-                    {bestCreative.ctr}%
-                  </span>
-                </span>
-                <span className="text-muted-foreground">
-                  Conv:{' '}
-                  <span className="font-mono text-foreground">
-                    {bestCreative.conversions}
-                  </span>
-                </span>
+              {/* Spend */}
+              <div className="space-y-2">
+                <div className="flex justify-between text-xs">
+                  <span className="text-muted-foreground font-medium">Spend Cap</span>
+                  <span className="font-bold">{formatCurrency(data?.kpis.spend ?? 0)} / {formatCurrency(spendCap)}</span>
+                </div>
+                <div className="h-2 rounded-full bg-muted overflow-hidden">
+                  <div className="h-full bg-amber-500" style={{ width: `${spendProgress}%` }} />
+                </div>
               </div>
-            </div>
 
-            <button
-              onClick={() => onNavigate('analytics')}
-              className="inline-flex items-center gap-2 text-sm font-medium text-primary hover:text-primary/80 transition-colors"
-            >
-              View analytics
-              <ArrowRight className="w-4 h-4" />
-            </button>
-          </div>
+              {/* Revenue */}
+              <div className="space-y-2">
+                <div className="flex justify-between text-xs">
+                  <span className="text-muted-foreground font-medium">Revenue Goal</span>
+                  <span className="font-bold">{formatCurrency(data?.kpis.revenue ?? 0)} / {formatCurrency(revenueGoal)}</span>
+                </div>
+                <div className="h-2 rounded-full bg-muted overflow-hidden">
+                  <div className="h-full bg-green-500" style={{ width: `${revenueProgress}%` }} />
+                </div>
+              </div>
+
+              <Button variant="outline" size="sm" className="w-full text-xs" onClick={handleOpenGoals}>
+                Edit Goals
+              </Button>
+            </CardContent>
+          </Card>
         </div>
       </div>
 
-      {isEditingGoals && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4">
-          <div className="w-full max-w-lg rounded-2xl bg-card border border-border/50 shadow-xl p-6">
+      {/* Insights Section */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 mt-6">
+        {/* Top Campaign */}
+        <Card variant="glass" className="hover:border-primary/20 transition-colors">
+          <CardContent className="p-6">
             <div className="flex items-start justify-between mb-4">
               <div>
-                <h3 className="text-lg font-semibold text-foreground">Edit goals</h3>
-                <p className="text-sm text-muted-foreground">Update your targets for this workspace.</p>
+                <h3 className="text-h5 text-foreground">Top Campaign</h3>
+                <p className="text-body-sm text-muted-foreground">Highest ROAS (24h)</p>
               </div>
-              <button
-                onClick={() => setIsEditingGoals(false)}
-                className="h-9 w-9 rounded-lg border border-border/60 text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-colors"
-                aria-label="Close"
-              >
-                ×
-              </button>
+              <Badge variant="default" className="bg-green-500/10 text-green-600 border-green-500/20 hover:bg-green-500/20">
+                Top Performer
+              </Badge>
             </div>
 
             <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-semibold text-foreground mb-2">ROAS target</label>
-                <input
-                  type="number"
-                  min="0"
-                  step="0.1"
-                  value={goalDraft.roasTarget}
-                  onChange={(e) => setGoalDraft({ ...goalDraft, roasTarget: e.target.value })}
-                  className="w-full px-4 py-3 bg-muted/50 border border-border/50 rounded-xl text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
-                />
+              <div className="text-xl font-bold text-foreground">{topCampaign.name}</div>
+              <div className="grid grid-cols-3 gap-4">
+                <div>
+                  <div className="text-xs text-muted-foreground mb-1">ROAS</div>
+                  <div className="text-lg font-bold text-primary">{topCampaign.roas}x</div>
+                </div>
+                <div>
+                  <div className="text-xs text-muted-foreground mb-1">Spend</div>
+                  <div className="text-lg font-bold">€{(topCampaign.spend / 1000).toFixed(1)}K</div>
+                </div>
+                <div>
+                  <div className="text-xs text-muted-foreground mb-1">Revenue</div>
+                  <div className="text-lg font-bold">€{(topCampaign.revenue / 1000).toFixed(1)}K</div>
+                </div>
               </div>
+              <Button
+                variant="ghost"
+                className="w-full justify-between text-primary hover:text-primary hover:bg-primary/5 group"
+                onClick={() => onNavigate('campaigns')}
+              >
+                View Campaign <ArrowRight className="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" />
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Best Creative */}
+        <Card variant="glass" className="hover:border-primary/20 transition-colors">
+          <CardContent className="p-6">
+            <div className="flex items-start justify-between mb-4">
               <div>
-                <label className="block text-sm font-semibold text-foreground mb-2">Spend cap (€)</label>
-                <input
-                  type="number"
-                  min="0"
-                  step="1"
-                  value={goalDraft.spendCap}
-                  onChange={(e) => setGoalDraft({ ...goalDraft, spendCap: e.target.value })}
-                  className="w-full px-4 py-3 bg-muted/50 border border-border/50 rounded-xl text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
-                />
+                <h3 className="text-h5 text-foreground">Best Creative</h3>
+                <p className="text-body-sm text-muted-foreground">Highest AI Score</p>
               </div>
-              <div>
-                <label className="block text-sm font-semibold text-foreground mb-2">Revenue goal (€)</label>
-                <input
-                  type="number"
-                  min="0"
-                  step="1"
-                  value={goalDraft.revenueGoal}
-                  onChange={(e) => setGoalDraft({ ...goalDraft, revenueGoal: e.target.value })}
-                  className="w-full px-4 py-3 bg-muted/50 border border-border/50 rounded-xl text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
-                />
-              </div>
+              <Badge variant="default" className="bg-primary/10 text-primary border-primary/20 hover:bg-primary/20">
+                AI Insight
+              </Badge>
             </div>
 
-            <div className="flex items-center justify-end gap-3 mt-6">
-              <button
-                onClick={() => setIsEditingGoals(false)}
-                className="px-4 py-2.5 bg-muted hover:bg-muted/80 rounded-xl text-sm font-semibold"
+            <div className="space-y-4">
+              <div className="text-xl font-bold text-foreground">{bestCreative.name}</div>
+
+              <div className="space-y-2">
+                <div className="flex justify-between text-xs font-medium">
+                  <span>Performance Score</span>
+                  <span className="text-primary">{bestCreative.aiScore}/100</span>
+                </div>
+                <div className="h-2 rounded-full bg-muted overflow-hidden">
+                  <div className="h-full bg-primary" style={{ width: `${bestCreative.aiScore}%` }} />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <div className="text-xs text-muted-foreground mb-1">CTR</div>
+                  <div className="text-lg font-bold">{bestCreative.ctr}%</div>
+                </div>
+                <div>
+                  <div className="text-xs text-muted-foreground mb-1">Conversions</div>
+                  <div className="text-lg font-bold">{bestCreative.conversions}</div>
+                </div>
+              </div>
+
+              <Button
+                variant="ghost"
+                className="w-full justify-between text-primary hover:text-primary hover:bg-primary/5 group"
+                onClick={() => onNavigate('analytics')}
               >
-                Cancel
-              </button>
-              <button
-                onClick={handleSaveGoals}
-                disabled={isSavingGoals}
-                className="px-5 py-2.5 bg-primary text-primary-foreground rounded-xl text-sm font-semibold hover:scale-105 transition-all disabled:opacity-60"
-              >
-                {isSavingGoals ? 'Saving…' : 'Save goals'}
-              </button>
+                View Analytics <ArrowRight className="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" />
+              </Button>
             </div>
-          </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {isEditingGoals && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4 backdrop-blur-sm animate-in fade-in duration-200">
+          <Card className="w-full max-w-lg shadow-2xl border-primary/20">
+            <CardHeader>
+              <div className="flex items-start justify-between">
+                <div>
+                  <CardTitle>Edit goals</CardTitle>
+                  <CardDescription>Update your targets for this workspace</CardDescription>
+                </div>
+                <Button variant="ghost" size="icon" onClick={() => setIsEditingGoals(false)}>
+                  <X className="w-4 h-4" />
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-2">
+                <label className="text-sm font-medium">ROAS Target</label>
+                <input
+                  type="number"
+                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                  value={goalDraft.roasTarget}
+                  onChange={(e) => setGoalDraft({ ...goalDraft, roasTarget: e.target.value })}
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Spend Cap</label>
+                <input
+                  type="number"
+                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                  value={goalDraft.spendCap}
+                  onChange={(e) => setGoalDraft({ ...goalDraft, spendCap: e.target.value })}
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Revenue Goal</label>
+                <input
+                  type="number"
+                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                  value={goalDraft.revenueGoal}
+                  onChange={(e) => setGoalDraft({ ...goalDraft, revenueGoal: e.target.value })}
+                />
+              </div>
+              <div className="flex justify-end gap-3 pt-4">
+                <Button variant="outline" onClick={() => setIsEditingGoals(false)}>Cancel</Button>
+                <Button onClick={handleSaveGoals} disabled={isSavingGoals}>
+                  {isSavingGoals ? 'Saving...' : 'Save Goals'}
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
         </div>
       )}
-    </PageShell>
+    </DashboardShell>
   );
 }

@@ -1,8 +1,10 @@
 // Text-to-Ad AI Generator
-// Takes a product description and generates a complete ad layout
+// Takes a product description and generates a complete ad layout using Premium Templates
 
-import type { AdDocument, StudioLayer } from '../../types/studio';
+import type { AdDocument } from '../../types/studio';
 import { apiClient } from '../../utils/apiClient';
+import { AD_TEMPLATES, AdTemplate } from './presets';
+import { injectContentIntoTemplate } from './TemplateEngine';
 
 export interface TextToAdRequest {
     description: string;
@@ -31,8 +33,8 @@ export async function generateAdContent(request: TextToAdRequest): Promise<Gener
 
 Return a JSON object with EXACTLY this structure:
 {
-    "headline": "A short, punchy headline (max 6 words)",
-    "subheadline": "A supporting line (max 12 words)",
+    "headline": "A short, punchy headline (max 6 words) for a Facebook Ad image",
+    "subheadline": "A supporting line (max 12 words) focusing on benefit or problem/solution",
     "ctaText": "Call-to-action button text (max 3 words)",
     "suggestedColors": {
         "background": "#hexcode (dark for modern, light for classic)",
@@ -44,7 +46,7 @@ Return a JSON object with EXACTLY this structure:
 
 Style: ${style}
 ${niche ? `Industry: ${niche}` : ''}
-Be direct, use power words, create urgency.`;
+Be direct. Use "Hook -> Benefit" structure. Avoid generic fluff.`;
 
     try {
         const data = await apiClient.post<{ text: string }>(
@@ -57,11 +59,16 @@ Be direct, use power words, create urgency.`;
         );
         try {
             // Parse the JSON from the response
-            const parsed = JSON.parse(data.text);
+            let cleanedText = data.text.trim();
+            // Remove markdown code blocks if present
+            if (cleanedText.startsWith('```')) {
+                cleanedText = cleanedText.replace(/^```json/, '').replace(/^```/, '').replace(/```$/, '');
+            }
+
+            const parsed = JSON.parse(cleanedText);
             return parsed;
-        } catch {
-            // If parsing fails, use fallback
-            console.warn('Failed to parse AI response, using fallback');
+        } catch (e) {
+            console.warn('Failed to parse AI response, using fallback', e);
         }
     } catch (e) {
         console.warn('AI request failed:', e);
@@ -92,7 +99,6 @@ function generateFallbackContent(description: string, style: string): GeneratedA
 
     const headlines = [
         'Transform Your World',
-        'The Future Starts Here',
         'Unlock Your Potential',
         'Experience Excellence',
         'Elevate Your Life'
@@ -107,7 +113,7 @@ function generateFallbackContent(description: string, style: string): GeneratedA
     };
 }
 
-// Image candidates for different niches
+// Image candidates for different niches (Fallback if template doesn't have one)
 const NICHE_IMAGES: Record<string, string[]> = {
     fitness: [
         'https://images.unsplash.com/photo-1534438327276-14e5300c3a48?q=80&w=1080&auto=format&fit=crop',
@@ -118,20 +124,20 @@ const NICHE_IMAGES: Record<string, string[]> = {
         'https://images.unsplash.com/photo-1504674900247-0877df9cc836?q=80&w=1080&auto=format&fit=crop',
         'https://images.unsplash.com/photo-1555939594-58d7cb561ad1?q=80&w=1080&auto=format&fit=crop'
     ],
-    saas: [
+    saas: [ // Tech / Laptop shots
         'https://images.unsplash.com/photo-1519389950473-47ba0277781c?q=80&w=1080&auto=format&fit=crop',
-        'https://images.unsplash.com/photo-1460925895917-afdab827c52f?q=80&w=1080&auto=format&fit=crop'
+        'https://images.unsplash.com/photo-1551288049-bebda4e38f71?q=80&w=1080&auto=format&fit=crop'
     ],
     ecommerce: [
-        'https://images.unsplash.com/photo-1441986300917-64674bd600d8?q=80&w=1080&auto=format&fit=crop',
-        'https://images.unsplash.com/photo-1523275335684-37898b6baf30?q=80&w=1080&auto=format&fit=crop'
+        'https://images.unsplash.com/photo-1523275335684-37898b6baf30?q=80&w=1080&auto=format&fit=crop',
+        'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?q=80&w=1080&auto=format&fit=crop'
     ],
     coach: [
         'https://images.unsplash.com/photo-1517245386807-bb43f82c33c4?q=80&w=1080&auto=format&fit=crop',
         'https://images.unsplash.com/photo-1521737604893-d14cc237f11d?q=80&w=1080&auto=format&fit=crop'
     ],
     realestate: [
-        'https://images.unsplash.com/photo-1560518883-ce09059eeffa?q=80&w=1080&auto=format&fit=crop'
+        'https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?q=80&w=1080&auto=format&fit=crop'
     ],
     event: [
         'https://images.unsplash.com/photo-1492684223066-81342ee5ff30?q=80&w=1080&auto=format&fit=crop'
@@ -143,7 +149,7 @@ const NICHE_IMAGES: Record<string, string[]> = {
         'https://images.unsplash.com/photo-1581092921461-eab62e97a782?q=80&w=1080&auto=format&fit=crop'
     ],
     job: [
-        'https://images.unsplash.com/photo-1521791136064-7986c2920216?q=80&w=1080&auto=format&fit=crop'
+        'https://images.unsplash.com/photo-1497215728101-856f4ea42174?q=80&w=1080&auto=format&fit=crop'
     ]
 };
 
@@ -155,132 +161,41 @@ export function createAdFromContent(
     const { width, height } = format;
     const isVertical = height > width;
 
-    // Calculate responsive positions
-    const padding = Math.min(width, height) * 0.08;
-    const headlineY = isVertical ? height * 0.35 : height * 0.3;
-    const subheadlineY = headlineY + (isVertical ? 140 : 100);
-    const ctaY = isVertical ? height * 0.75 : height * 0.7;
+    // 1. Select a Template
+    // Prioritize templates matching the suggested niche
+    const nicheTemplates = AD_TEMPLATES.filter(t => t.niche === content.suggestedNiche);
 
-    // Select background image based on niche
+    // If no niche match, or we want randomness, allow fallback to generic ecommerce/saas as they are versatile
+    const candidateTemplates = nicheTemplates.length > 0
+        ? nicheTemplates
+        : AD_TEMPLATES.filter(t => ['ecommerce', 'saas'].includes(t.niche));
+
+    // Fallback if still empty (shouldn't happen)
+    const templatesToUse = candidateTemplates.length > 0 ? candidateTemplates : AD_TEMPLATES;
+
+    // Pick random
+    const selectedTemplate = templatesToUse[Math.floor(Math.random() * templatesToUse.length)];
+
+    // 2. Resolve Image (if template needs one and we want to freshen it)
+    // For now, we prefer the template's carefully curated image if it's there,
+    // but many templates might reuse the same image. To keep it "fresh", we pick a niche image.
+
     const nicheImages = NICHE_IMAGES[content.suggestedNiche] || NICHE_IMAGES.ecommerce;
     const randomImage = nicheImages[Math.floor(Math.random() * nicheImages.length)];
 
-    const layers: Partial<StudioLayer>[] = [
-        // Background Image
-        {
-            id: `bg_${Date.now()}`,
-            type: 'product',
-            name: 'Background',
-            x: 0,
-            y: 0,
-            width: width,
-            height: height,
-            src: randomImage,
-            visible: true,
-            locked: true,
-            zIndex: 0,
-            rotation: 0,
-            opacity: 1 // Full opacity image
-        },
-        // Dark Overlay for readability
-        {
-            id: `overlay_${Date.now()}`,
-            type: 'cta', // Using rect as overlay (hack reusing cta type or could assume background shape)
-            // But we don't have a 'shape' type exposed easily here, but we can use a "cta" style block without text or use the background color
-            // Actually, let's use a CTA layer as a dimmer.
-            name: 'Dimmer',
-            x: 0,
-            y: 0,
-            width: width,
-            height: height,
-            text: '',
-            fontSize: 0,
-            fontWeight: 400,
-            fontFamily: 'Inter',
-            color: 'transparent',
-            bgColor: '#000000',
-            radius: 0,
-            visible: true,
-            locked: true,
-            zIndex: 1,
-            rotation: 0,
-            opacity: 0.6 // 60% dark overlay
-        },
-        // Headline
-        {
-            id: `headline_${Date.now()}`,
-            type: 'text',
-            name: 'Headline',
-            x: padding,
-            y: headlineY,
-            width: width - padding * 2,
-            height: 150,
-            text: content.headline.toUpperCase(),
-            fontSize: isVertical ? 72 : 64,
-            fontWeight: 900,
-            fontFamily: 'Inter',
-            color: '#FFFFFF', // Always white on dark overlay
-            align: 'center',
-            visible: true,
-            locked: false,
-            zIndex: 10,
-            rotation: 0,
-            opacity: 1,
-            lineHeight: 1.0,
-            letterSpacing: -2
-        },
-        // Subheadline
-        {
-            id: `subheadline_${Date.now() + 1}`,
-            type: 'text',
-            name: 'Subheadline',
-            x: padding,
-            y: subheadlineY,
-            width: width - padding * 2,
-            height: 60,
-            text: content.subheadline,
-            fontSize: 24,
-            fontWeight: 500,
-            fontFamily: 'Inter',
-            color: '#EEEEEE',
-            align: 'center',
-            visible: true,
-            locked: false,
-            zIndex: 11,
-            rotation: 0,
-            opacity: 0.9,
-            lineHeight: 1.3,
-            letterSpacing: 0
-        },
-        // CTA Button
-        {
-            id: `cta_${Date.now() + 2}`,
-            type: 'cta',
-            name: 'CTA Button',
-            x: width / 2 - 150,
-            y: ctaY,
-            width: 300,
-            height: 70,
-            text: content.ctaText.toUpperCase(),
-            fontSize: 20,
-            fontWeight: 800,
-            fontFamily: 'Inter',
-            color: '#FFFFFF',
-            bgColor: content.suggestedColors.accent,
-            radius: 16,
-            visible: true,
-            locked: false,
-            zIndex: 20,
-            rotation: 0,
-            opacity: 1
-        }
-    ];
+    // 3. Inject Content
+    const doc = injectContentIntoTemplate(selectedTemplate.document, content, {
+        targetImage: randomImage,
+        niche: content.suggestedNiche
+    });
 
-    return {
-        name: 'Generated Ad',
-        width,
-        height,
-        backgroundColor: content.suggestedColors.background,
-        layers: layers as StudioLayer[]
-    };
+    // 4. Ensure Format Matches (Resize/Crop) - Basic scaling
+    // Only simple overrides for now: set doc width/height
+    doc.width = width;
+    doc.height = height;
+
+    // 5. Assign Name
+    doc.name = selectedTemplate.name + ' (AI)';
+
+    return doc;
 }

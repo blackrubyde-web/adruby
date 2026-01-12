@@ -63,8 +63,39 @@ export async function handler(event) {
 
     if (openAiKey) {
         try {
+            const systemPrompt = `You are a World-Class Media Buyer & Strategist for Meta Ads.
+Your goal is to maximize ROAS and Scale based on a specific Strategy Profile.
+
+STRATEGY CONTEXT:
+Risk Tolerance: ${strategy?.autopilot_config?.risk_tolerance || 'medium'} (low=safe, medium=balanced, high=aggressive)
+Scale Speed: ${strategy?.autopilot_config?.scale_speed || 'medium'} (slow=10%, medium=20%, fast=30%, aggressive=50%+)
+Target ROAS: ${strategy?.autopilot_config?.target_roas || 3.0}
+
+RULES:
+1. If "Aggressive" scale is set, recommend "duplicate" for any ad set with ROAS > Target (even slightly).
+2. If "Conservative" (Low Risk), only scale if ROAS is > 1.5x Target.
+3. If ROAS < 1.0, ALWAYS recommend "kill" unless specific "high risk" strategy allows learning.
+4. Provide a SHORT, strategic reason (German language).
+5. "expectedImpact" should be specific numbers based on the Scale Speed (e.g. "+30% Budget").
+
+5. "expectedImpact" should be specific numbers based on the Scale Speed (e.g. "+30% Budget").
+
+Return a JSON object with an "analyses" key containing the array:
+{
+  "analyses": [
+    {
+      "campaignId": "string",
+      "recommendation": "kill" | "duplicate" | "increase" | "decrease",
+      "confidence": number (0-100),
+      "reason": "string (German)",
+      "expectedImpact": "string (German)",
+      "details": ["string"]
+    }
+  ]
+}`;
+
             const messages = [
-                { role: 'system', content: 'You are an AI that provides concise campaign performance recommendations. Return a JSON array of objects with fields: campaignId, recommendation (one of "kill", "duplicate", "increase", "decrease"), confidence (0‑100), reason, expectedImpact, details (array of strings). Use German language for reason and expectedImpact.' },
+                { role: 'system', content: systemPrompt },
                 { role: 'user', content: JSON.stringify({ campaigns, strategy }, null, 2) }
             ];
 
@@ -75,10 +106,10 @@ export async function handler(event) {
                     Authorization: `Bearer ${openAiKey}`,
                 },
                 body: JSON.stringify({
-                    model: 'gpt-4o-mini',
+                    model: 'gpt-4o',
                     messages,
                     temperature: 0.2,
-                    max_tokens: 1500,
+                    response_format: { type: "json_object" }
                 }),
             });
 
@@ -87,7 +118,8 @@ export async function handler(event) {
 
             // The assistant should return a JSON string in its content.
             const content = data.choices?.[0]?.message?.content?.trim();
-            analyses = JSON.parse(content);
+            const parsed = JSON.parse(content);
+            analyses = parsed.analyses || [];
             aiPowered = true;
         } catch (err) {
             console.error('OpenAI error, falling back to rule‑based analysis:', err);

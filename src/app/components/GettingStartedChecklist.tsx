@@ -78,11 +78,11 @@ export function GettingStartedChecklist({ onComplete, onDismiss, onNavigate }: G
 
     // Navigate based on action
     if (item.id === 'create-campaign') {
-      onNavigate?.('adbuilder');
+      onNavigate?.('studio');
     } else if (item.id === 'explore-analytics') {
       onNavigate?.('analytics');
     } else if (item.id === 'set-strategy') {
-      onNavigate?.('strategies');
+      onNavigate?.('aianalysis');
     } else if (item.id === 'connect-account') {
       onNavigate?.('settings');
     }
@@ -140,11 +140,10 @@ export function GettingStartedChecklist({ onComplete, onDismiss, onNavigate }: G
         {items.map((item) => (
           <div
             key={item.id}
-            className={`flex items-start gap-3 p-3 rounded-lg border backdrop-blur-sm transition-all duration-300 min-w-0 ${
-              item.completed
-                ? 'bg-muted/50 border-border/50'
-                : 'bg-card/50 border-border/80 hover:border-primary/30 hover:shadow-md hover:shadow-primary/5'
-            }`}
+            className={`flex items-start gap-3 p-3 rounded-lg border backdrop-blur-sm transition-all duration-300 min-w-0 ${item.completed
+              ? 'bg-muted/50 border-border/50'
+              : 'bg-card/50 border-border/80 hover:border-primary/30 hover:shadow-md hover:shadow-primary/5'
+              }`}
           >
             {/* Checkbox */}
             <button
@@ -161,9 +160,8 @@ export function GettingStartedChecklist({ onComplete, onDismiss, onNavigate }: G
             {/* Content */}
             <div className="flex-1 min-w-0">
               <h4
-                className={`font-medium mb-1 truncate ${
-                  item.completed ? 'text-muted-foreground line-through' : 'text-foreground'
-                }`}
+                className={`font-medium mb-1 truncate ${item.completed ? 'text-muted-foreground line-through' : 'text-foreground'
+                  }`}
               >
                 {item.title}
               </h4>

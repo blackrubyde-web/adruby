@@ -21,16 +21,10 @@ import {
   Quote,
   TrendingUp,
 } from 'lucide-react';
+import { Card } from './ui/card';
 import { ImageWithFallback } from './figma/ImageWithFallback';
-import {
-  PageContainer,
-  SectionHeader,
-  Card,
-  PricingCard,
-  SecondaryButton,
-  Tabs,
-  tokens,
-} from './design-system';
+import { PageContainer, SectionHeader, SecondaryButton } from './design-system';
+import { PricingCard, Tabs } from './landing/MarketingComponents';
 import { TryItLiveSection } from './landing/TryItLiveSection';
 import { BeforeAfterSection } from './landing/BeforeAfterSection';
 import { RealUseCasesSection } from './landing/RealUseCasesSection';
@@ -485,8 +479,8 @@ export function LandingPage({ onGetStarted, onLogin }: LandingPageProps) {
       {/* ============================================
           AD CREATIVE GALLERY - Hidden
           ============================================ */}
-      <section className={tokens.sectionSpacing + " hidden"}>
-        <div className={tokens.marketingContainer}>
+      <section className={"py-24 sm:py-32 hidden"}>
+        <div className={"max-w-7xl mx-auto px-6"}>
           <SectionHeader
             title="AI-generated ad creatives"
             subtitle="Real ads created by AdRuby in seconds"
@@ -524,7 +518,7 @@ export function LandingPage({ onGetStarted, onLogin }: LandingPageProps) {
               </>
             )}
 
-            <div className={tokens.card + " overflow-hidden"}>
+            <div className={"bg-card border border-border/10 shadow-lg rounded-xl overflow-hidden"}>
               {/* Ad Header */}
               <div className="p-3 flex items-center gap-2.5 border-b border-border/60">
                 <div className="w-9 h-9 rounded-full bg-gradient-to-br from-primary to-purple-600 flex items-center justify-center flex-shrink-0">

@@ -3,6 +3,7 @@ import { Upload, Sparkles, ArrowRight, X, Wand2, Check, Zap, Image as Loader2 } 
 import { toast } from 'sonner';
 import type { AdDocument, ImageLayer } from '../../types/studio';
 import { removeBackground, blobToBase64 } from '../../lib/ai/bg-removal';
+import { CanvasStage } from './CanvasStage';
 // generatePremiumAd is now handled via Netlify function
 
 interface AdWizardProps {
@@ -725,69 +726,15 @@ export const AdWizard = ({ isOpen, onClose, onComplete }: AdWizardProps) => {
                             </div>
 
                             <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 h-[500px] overflow-y-auto">
-                                {/* Left: Simplified Ad Preview (With Image Support) */}
-                                <div className="lg:col-span-7 space-y-4">
-                                    <div className="aspect-square rounded-2xl overflow-hidden border-2 border-border shadow-2xl relative" style={{ backgroundColor: generatedDoc.backgroundColor }}>
-                                        {/* Render Image Layers First */}
-                                        {generatedDoc.layers
-                                            .filter(l => (l.type === 'product' || l.type === 'background') && (l as ImageLayer).src)
-                                            .map((layer) => {
-                                                const imgLayer = layer as ImageLayer;
-                                                return (
-                                                    <img
-                                                        key={imgLayer.id}
-                                                        src={imgLayer.src}
-                                                        alt={imgLayer.name}
-                                                        className="absolute"
-                                                        style={{
-                                                            left: `${(imgLayer.x / generatedDoc.width) * 100}%`,
-                                                            top: `${(imgLayer.y / generatedDoc.height) * 100}%`,
-                                                            width: `${(imgLayer.width / generatedDoc.width) * 100}%`,
-                                                            height: `${(imgLayer.height / generatedDoc.height) * 100}%`,
-                                                            objectFit: imgLayer.type === 'background' ? 'cover' : 'contain',
-                                                            opacity: imgLayer.opacity,
-                                                            transform: `rotate(${imgLayer.rotation}deg)`
-                                                        }}
-                                                    />
-                                                );
-                                            })}
-                                        {/* Overlay Layer if exists */}
-                                        {generatedDoc.layers.filter(l => l.type === 'overlay').map((layer: unknown) => {
-                                            const overlayLayer = layer as ImageLayer;
-                                            return (
-                                                <div
-                                                    key={overlayLayer.id}
-                                                    className="absolute inset-0 pointer-events-none"
-                                                    style={{
-                                                        backgroundColor: (overlayLayer as unknown as { fill: string }).fill,
-                                                        opacity: overlayLayer.opacity
-                                                    }}
-                                                />
-                                            );
-                                        })}
-
-                                        <div className="relative w-full h-full p-16 flex flex-col z-20">
-                                            {/* Headline */}
-                                            <h2 className="text-5xl md:text-6xl font-black leading-tight mb-auto drop-shadow-lg" style={{
-                                                color: formData.tone === 'minimal' ? '#000000' : '#ffffff',
-                                                textShadow: formData.tone !== 'minimal' ? '0 2px 10px rgba(0,0,0,0.5)' : 'none'
-                                            }}>
-                                                {generatedHooks.headlines[selectedHookIndex]}
-                                            </h2>
-
-                                            {/* Description */}
-                                            <p className="text-xl md:text-2xl mb-8 drop-shadow-md font-medium" style={{
-                                                color: formData.tone === 'minimal' ? '#333333' : '#e0e0e0',
-                                                textShadow: formData.tone !== 'minimal' ? '0 2px 5px rgba(0,0,0,0.5)' : 'none'
-                                            }}>
-                                                {generatedHooks.descriptions[Math.min(selectedHookIndex, generatedHooks.descriptions.length - 1)]}
-                                            </p>
-
-                                            {/* CTA Button */}
-                                            <div className="px-10 py-5 bg-black dark:bg-white text-white dark:text-black rounded-full text-xl md:text-2xl font-bold shadow-2xl inline-block self-start hover:scale-105 transition-transform duration-300">
-                                                {generatedHooks.ctas[Math.min(selectedHookIndex, generatedHooks.ctas.length - 1)]}
-                                            </div>
-                                        </div>
+                                {/* Left: PREMIUM CANVAS PREVIEW */}
+                                <div className="lg:col-span-7 space-y-4 bg-muted/5 dark:bg-muted/10 rounded-3xl flex items-center justify-center p-8 border border-border">
+                                    <div className="relative shadow-[0_20px_50px_-12px_rgba(0,0,0,0.5)] rounded-lg overflow-hidden ring-4 ring-black/5 dark:ring-white/10" style={{ width: 500, height: 500 }}>
+                                        <CanvasStage
+                                            doc={generatedDoc}
+                                            scale={500 / generatedDoc.width}
+                                            selectedLayerIds={[]}
+                                            preview={true}
+                                        />
                                     </div>
                                 </div>
 

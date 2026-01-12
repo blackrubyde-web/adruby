@@ -18,7 +18,10 @@ import {
   CheckCircle2,
 } from 'lucide-react';
 import { toast } from 'sonner';
-import { PageShell, HeroHeader } from './layout';
+import { DashboardShell } from './layout/DashboardShell';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from './ui/card';
+import { Button } from './ui/button';
+import { Badge } from './ui/badge';
 import { BillingPanel } from './BillingPanel';
 import { connectMeta, disconnectMeta, getMetaAuthUrl, syncMeta } from '../lib/api/meta';
 import { useMetaConnection } from '../hooks/useMetaConnection';
@@ -415,52 +418,50 @@ export function SettingsPage() {
   };
 
   const tabs: { id: SettingsTab; label: string; icon: React.ReactNode }[] = [
-    { id: 'account', label: 'Account', icon: <User className="w-5 h-5" /> },
-    { id: 'integrations', label: 'Integrations', icon: <Link2 className="w-5 h-5" /> },
-    { id: 'notifications', label: 'Notifications', icon: <Bell className="w-5 h-5" /> },
-    { id: 'appearance', label: 'Appearance', icon: <Palette className="w-5 h-5" /> },
-    { id: 'billing', label: 'Billing', icon: <CreditCard className="w-5 h-5" /> },
-    { id: 'security', label: 'Security', icon: <Shield className="w-5 h-5" /> },
+    { id: 'account', label: 'Account', icon: <User className="w-4 h-4" /> },
+    { id: 'integrations', label: 'Integrations', icon: <Link2 className="w-4 h-4" /> },
+    { id: 'notifications', label: 'Notifications', icon: <Bell className="w-4 h-4" /> },
+    { id: 'appearance', label: 'Appearance', icon: <Palette className="w-4 h-4" /> },
+    { id: 'billing', label: 'Billing', icon: <CreditCard className="w-4 h-4" /> },
+    { id: 'security', label: 'Security', icon: <Shield className="w-4 h-4" /> },
   ];
 
   return (
-    <PageShell>
-      <HeroHeader
-        title="Settings"
-        subtitle="Manage your account settings and integrations"
-      />
+    <DashboardShell
+      title="Settings"
+      subtitle="Manage your account settings and integrations"
+    >
 
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
         {/* Sidebar Navigation */}
         <div className="lg:col-span-1">
-          <div className="backdrop-blur-xl bg-card/60 rounded-2xl border border-border/50 shadow-xl p-2 sticky top-24">
+          <Card variant="glass" className="sticky top-24" padding="sm">
             <nav className="space-y-1">
               {tabs.map((tab) => (
                 <button
                   key={tab.id}
                   onClick={() => setActiveTab(tab.id)}
-                  className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold transition-all ${
-                    activeTab === tab.id
-                      ? 'bg-primary text-primary-foreground shadow-lg shadow-primary/30'
+                  className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold transition-all ${activeTab === tab.id
+                      ? 'bg-primary text-primary-foreground shadow-lg shadow-primary/20'
                       : 'text-muted-foreground hover:bg-muted/50 hover:text-foreground'
-                  }`}
+                    }`}
                 >
                   {tab.icon}
                   {tab.label}
                 </button>
               ))}
             </nav>
-          </div>
+          </Card>
         </div>
 
         {/* Content Area */}
         <div className="lg:col-span-3">
-          <div className="backdrop-blur-xl bg-card/60 rounded-2xl border border-border/50 shadow-xl">
+          <Card variant="glass" padding="default">
             {/* Account Settings */}
             {activeTab === 'account' && (
-              <div className="p-8">
-                <div className="mb-6">
-                  <h2 className="text-2xl font-bold text-foreground mb-2">Account Settings</h2>
+              <div className="space-y-6">
+                <div className="mb-4">
+                  <h2 className="text-xl font-bold text-foreground">Account Settings</h2>
                   <p className="text-sm text-muted-foreground">Manage your personal information</p>
                 </div>
 
@@ -469,7 +470,7 @@ export function SettingsPage() {
                   <div>
                     <label className="block text-sm font-semibold text-foreground mb-3">Profile Picture</label>
                     <div className="flex items-center gap-4">
-                      <div className="w-20 h-20 rounded-full bg-primary/20 flex items-center justify-center text-primary text-2xl font-bold overflow-hidden">
+                      <div className="w-20 h-20 rounded-full bg-primary/20 flex items-center justify-center text-primary text-2xl font-bold overflow-hidden border-2 border-primary/10">
                         {avatarUrl ? (
                           <img src={avatarUrl} alt="Profile avatar" className="w-full h-full object-cover" />
                         ) : (
@@ -477,13 +478,13 @@ export function SettingsPage() {
                         )}
                       </div>
                       <div>
-                        <button
+                        <Button
+                          variant="outline"
                           onClick={handleAvatarClick}
                           disabled={isUploadingAvatar}
-                          className="px-4 py-2 bg-muted hover:bg-muted/80 rounded-lg text-sm font-semibold transition-all disabled:opacity-60"
                         >
                           {isUploadingAvatar ? 'Uploading…' : 'Upload New'}
-                        </button>
+                        </Button>
                         <p className="text-xs text-muted-foreground mt-2">JPG, PNG or GIF. Max 2MB.</p>
                         <input
                           ref={fileInputRef}
@@ -503,7 +504,7 @@ export function SettingsPage() {
                       type="text"
                       value={accountData.name}
                       onChange={(e) => setAccountData({ ...accountData, name: e.target.value })}
-                      className="w-full px-4 py-3 bg-muted/50 border border-border/50 rounded-xl text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
+                      className="w-full px-4 py-3 bg-muted/50 border border-border/50 rounded-xl text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all"
                     />
                   </div>
 
@@ -514,7 +515,7 @@ export function SettingsPage() {
                       type="email"
                       value={accountData.email}
                       onChange={(e) => setAccountData({ ...accountData, email: e.target.value })}
-                      className="w-full px-4 py-3 bg-muted/50 border border-border/50 rounded-xl text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
+                      className="w-full px-4 py-3 bg-muted/50 border border-border/50 rounded-xl text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all"
                     />
                   </div>
 
@@ -525,7 +526,7 @@ export function SettingsPage() {
                       type="text"
                       value={accountData.company}
                       onChange={(e) => setAccountData({ ...accountData, company: e.target.value })}
-                      className="w-full px-4 py-3 bg-muted/50 border border-border/50 rounded-xl text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
+                      className="w-full px-4 py-3 bg-muted/50 border border-border/50 rounded-xl text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all"
                     />
                   </div>
 
@@ -535,7 +536,7 @@ export function SettingsPage() {
                     <select
                       value={accountData.timezone}
                       onChange={(e) => setAccountData({ ...accountData, timezone: e.target.value })}
-                      className="w-full px-4 py-3 bg-muted/50 border border-border/50 rounded-xl text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
+                      className="w-full px-4 py-3 bg-muted/50 border border-border/50 rounded-xl text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all"
                     >
                       <option value="Europe/Berlin">Europe/Berlin (GMT+1)</option>
                       <option value="Europe/London">Europe/London (GMT+0)</option>
@@ -545,51 +546,52 @@ export function SettingsPage() {
                   </div>
 
                   {/* Save Button */}
-                  <button
+                  <Button
                     onClick={handleSaveAccount}
                     disabled={isSaving}
-                    className="w-full md:w-auto px-6 py-3 bg-primary text-primary-foreground rounded-xl font-semibold hover:scale-105 transition-all shadow-lg shadow-primary/30 disabled:opacity-50 flex items-center justify-center gap-2"
+                    className="w-full md:w-auto"
                   >
                     {isSaving ? (
-                      <>
-                        <div className="w-5 h-5 border-2 border-primary-foreground/30 border-t-primary-foreground rounded-full animate-spin" />
-                        Saving...
-                      </>
+                      'Saving...'
                     ) : (
                       <>
-                        <Save className="w-5 h-5" />
+                        <Save className="w-4 h-4 mr-2" />
                         Save Changes
                       </>
                     )}
-                  </button>
+                  </Button>
                 </div>
               </div>
             )}
 
             {/* Integrations */}
             {activeTab === 'integrations' && (
-              <div className="p-8">
-                <div className="mb-6">
-                  <h2 className="text-2xl font-bold text-foreground mb-2">Integrations</h2>
+              <div className="space-y-6">
+                <div className="mb-4">
+                  <h2 className="text-xl font-bold text-foreground">Integrations</h2>
                   <p className="text-sm text-muted-foreground">Connect your advertising accounts and platforms</p>
                 </div>
 
                 <div className="space-y-6">
                   {/* Facebook/Meta Integration */}
-                  <div className="p-6 bg-gradient-to-br from-blue-500/10 to-transparent border-2 border-blue-500/20 rounded-2xl">
-                    <div className="flex items-start justify-between mb-4">
+                  <div className="p-6 bg-gradient-to-br from-blue-500/10 to-transparent border border-blue-500/20 rounded-2xl relative overflow-hidden">
+                    <div className="absolute top-0 right-0 p-4 opacity-10">
+                      <Facebook className="w-24 h-24 text-blue-500" />
+                    </div>
+
+                    <div className="flex items-start justify-between mb-6 relative z-10">
                       <div className="flex items-center gap-4">
-                        <div className="w-14 h-14 bg-[#1877F2] rounded-2xl flex items-center justify-center">
-                          <Facebook className="w-8 h-8 text-white" />
+                        <div className="w-12 h-12 bg-[#1877F2] rounded-xl flex items-center justify-center shadow-lg shadow-blue-500/20">
+                          <Facebook className="w-6 h-6 text-white" />
                         </div>
                         <div>
                           <h3 className="text-lg font-bold text-foreground flex items-center gap-2">
                             Facebook Ads
                             {facebookConnected && (
-                              <span className="flex items-center gap-1 px-2 py-1 bg-green-500/20 text-green-500 rounded-full text-xs font-semibold">
+                              <Badge variant="secondary" className="bg-green-500/10 text-green-600 border-green-500/20 gap-1 pl-2">
                                 <CheckCircle2 className="w-3 h-3" />
                                 Connected
-                              </span>
+                              </Badge>
                             )}
                           </h3>
                           <p className="text-sm text-muted-foreground">
@@ -600,9 +602,9 @@ export function SettingsPage() {
                     </div>
 
                     {facebookConnected ? (
-                      <div className="space-y-4">
+                      <div className="space-y-4 relative z-10">
                         {/* Connected Account Info */}
-                        <div className="p-4 bg-background/50 rounded-xl space-y-3">
+                        <div className="p-4 bg-background/50 rounded-xl space-y-3 border border-border/50">
                           <div className="flex items-center justify-between">
                             <span className="text-sm text-muted-foreground">Account Name</span>
                             <span className="text-sm font-semibold text-foreground">{selectedAdAccountName}</span>
@@ -620,89 +622,64 @@ export function SettingsPage() {
                             </span>
                           </div>
                           <div className="flex items-center justify-between">
-                            <span className="text-sm text-muted-foreground">Last Sync</span>
-                            <span className="text-sm font-semibold text-foreground">
-                              {formatDate(facebookAccount?.last_sync_at)}
-                            </span>
-                          </div>
-                          <div className="flex items-center justify-between">
                             <span className="text-sm text-muted-foreground">Status</span>
                             <span className="flex items-center gap-1 text-sm font-semibold text-green-500">
-                              <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
+                              <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
                               Active
                             </span>
                           </div>
                         </div>
 
                         {metaError && (
-                          <div className="p-3 bg-red-500/10 border border-red-500/30 rounded-lg text-xs text-red-500">
+                          <div className="p-3 bg-red-500/10 border border-red-500/30 rounded-lg text-xs text-red-500 flex items-center gap-2">
+                            <AlertCircle className="w-4 h-4" />
                             {metaError}
                           </div>
                         )}
 
-                        {/* Permissions */}
-                        <div className="p-4 bg-background/50 rounded-xl">
-                          <h4 className="text-sm font-semibold text-foreground mb-3">Granted Permissions</h4>
-                          <div className="space-y-2">
-                            {[
-                              'Read ad campaigns',
-                              'Read ad insights',
-                              'Access ad account data',
-                              'View billing information',
-                            ].map((permission, i) => (
-                              <div key={i} className="flex items-center gap-2 text-sm">
-                                <Check className="w-4 h-4 text-green-500" />
-                                <span className="text-muted-foreground">{permission}</span>
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-
                         {/* Actions */}
                         <div className="flex gap-3">
-                          <button
+                          <Button
+                            variant="secondary"
                             onClick={handleMetaSync}
                             disabled={isSyncing}
-                            className="flex-1 px-4 py-2.5 bg-muted hover:bg-muted/80 rounded-xl text-sm font-semibold transition-all flex items-center justify-center gap-2 disabled:opacity-60"
+                            className="flex-1 gap-2"
                           >
                             <Zap className="w-4 h-4" />
                             {isSyncing ? 'Syncing…' : 'Sync Now'}
-                          </button>
-                          <button
+                          </Button>
+                          <Button
+                            variant="destructive"
                             onClick={handleFacebookDisconnect}
-                            className="flex-1 px-4 py-2.5 bg-red-500/10 hover:bg-red-500/20 text-red-500 rounded-xl text-sm font-semibold transition-all flex items-center justify-center gap-2"
+                            className="flex-1 gap-2 bg-red-500/10 text-red-500 hover:bg-red-500/20 border-red-500/20"
                           >
                             <X className="w-4 h-4" />
                             Disconnect
-                          </button>
+                          </Button>
                         </div>
                       </div>
                     ) : (
-                      <div className="space-y-4">
-                        <div className="p-4 bg-background/50 rounded-xl">
-                          <h4 className="text-sm font-semibold text-foreground mb-2">What you'll get:</h4>
-                          <ul className="space-y-2">
-                            {[
-                              'Automatic campaign data sync',
-                              'Real-time performance metrics',
-                              'AI-powered optimization insights',
-                              'Automated reporting',
-                            ].map((feature, i) => (
-                              <li key={i} className="flex items-center gap-2 text-sm text-muted-foreground">
-                                <Check className="w-4 h-4 text-primary" />
-                                {feature}
-                              </li>
-                            ))}
-                          </ul>
-                        </div>
+                      <div className="space-y-4 relative z-10">
+                        <ul className="space-y-2 mb-4">
+                          {[
+                            'Automatic campaign data sync',
+                            'Real-time performance metrics',
+                            'AI-powered optimization insights',
+                          ].map((feature, i) => (
+                            <li key={i} className="flex items-center gap-2 text-sm text-muted-foreground">
+                              <Check className="w-4 h-4 text-primary" />
+                              {feature}
+                            </li>
+                          ))}
+                        </ul>
 
-                        <button
+                        <Button
                           onClick={handleFacebookConnect}
-                          className="w-full px-6 py-3 bg-[#1877F2] hover:bg-[#1877F2]/90 text-white rounded-xl font-semibold transition-all shadow-lg flex items-center justify-center gap-2"
+                          className="w-full bg-[#1877F2] hover:bg-[#1877F2]/90 text-white gap-2 shadow-md"
                         >
-                          <Facebook className="w-5 h-5" />
+                          <Facebook className="w-4 h-4" />
                           Connect Facebook Account
-                        </button>
+                        </Button>
 
                         {metaError && (
                           <div className="p-3 bg-red-500/10 border border-red-500/30 rounded-lg text-xs text-red-500">
@@ -710,48 +687,26 @@ export function SettingsPage() {
                           </div>
                         )}
 
-                        <p className="text-xs text-muted-foreground text-center">
-                          By connecting, you agree to share your ad data with our platform
+                        <p className="text-[10px] text-center text-muted-foreground/60 w-full">
+                          Read-only access to campaign data.
                         </p>
                       </div>
                     )}
                   </div>
 
                   {/* Google Ads Integration (Placeholder) */}
-                  <div className="p-6 bg-gradient-to-br from-red-500/10 to-transparent border-2 border-border/30 rounded-2xl opacity-60">
-                    <div className="flex items-start justify-between mb-4">
+                  <div className="p-6 bg-muted/20 border border-border/50 rounded-2xl opacity-60">
+                    <div className="flex items-start justify-between">
                       <div className="flex items-center gap-4">
-                        <div className="w-14 h-14 bg-muted rounded-2xl flex items-center justify-center">
-                          <Globe className="w-8 h-8 text-muted-foreground" />
+                        <div className="w-12 h-12 bg-muted rounded-xl flex items-center justify-center">
+                          <Globe className="w-6 h-6 text-muted-foreground" />
                         </div>
                         <div>
                           <h3 className="text-lg font-bold text-foreground flex items-center gap-2">
                             Google Ads
-                            <span className="px-2 py-1 bg-muted rounded-full text-xs font-semibold text-muted-foreground">
-                              Coming Soon
-                            </span>
+                            <Badge variant="outline" className="text-[10px] h-5">Coming Soon</Badge>
                           </h3>
                           <p className="text-sm text-muted-foreground">Google Ads integration will be available soon</p>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* TikTok Ads Integration (Placeholder) */}
-                  <div className="p-6 bg-gradient-to-br from-pink-500/10 to-transparent border-2 border-border/30 rounded-2xl opacity-60">
-                    <div className="flex items-start justify-between mb-4">
-                      <div className="flex items-center gap-4">
-                        <div className="w-14 h-14 bg-muted rounded-2xl flex items-center justify-center">
-                          <Zap className="w-8 h-8 text-muted-foreground" />
-                        </div>
-                        <div>
-                          <h3 className="text-lg font-bold text-foreground flex items-center gap-2">
-                            TikTok Ads
-                            <span className="px-2 py-1 bg-muted rounded-full text-xs font-semibold text-muted-foreground">
-                              Coming Soon
-                            </span>
-                          </h3>
-                          <p className="text-sm text-muted-foreground">TikTok Ads integration will be available soon</p>
                         </div>
                       </div>
                     </div>
@@ -762,16 +717,15 @@ export function SettingsPage() {
 
             {/* Notifications */}
             {activeTab === 'notifications' && (
-              <div className="p-8">
-                <div className="mb-6">
-                  <h2 className="text-2xl font-bold text-foreground mb-2">Notifications</h2>
+              <div className="space-y-6">
+                <div className="mb-4">
+                  <h2 className="text-xl font-bold text-foreground">Notifications</h2>
                   <p className="text-sm text-muted-foreground">Manage how you receive notifications</p>
                 </div>
 
                 <div className="space-y-6">
-                  {/* Email Notifications */}
                   <div>
-                    <h3 className="text-lg font-semibold text-foreground mb-4">Email Notifications</h3>
+                    <h3 className="text-sm font-semibold text-foreground mb-4 uppercase tracking-wider opacity-70">Email Notifications</h3>
                     <div className="space-y-4">
                       {[
                         { id: 'emailAlerts', label: 'Email Alerts', description: 'Receive important alerts via email' },
@@ -780,10 +734,10 @@ export function SettingsPage() {
                         { id: 'weeklyReport', label: 'Weekly Report', description: 'Weekly summary of your campaigns' },
                         { id: 'campaignUpdates', label: 'Campaign Updates', description: 'Updates when campaigns start or end' },
                       ].map((item) => (
-                        <div key={item.id} className="flex items-center justify-between p-4 bg-muted/30 rounded-xl">
+                        <div key={item.id} className="flex items-center justify-between p-4 bg-muted/20 rounded-xl border border-border/40 hover:bg-muted/30 transition-colors">
                           <div>
-                            <div className="font-semibold text-foreground">{item.label}</div>
-                            <div className="text-sm text-muted-foreground">{item.description}</div>
+                            <div className="font-semibold text-foreground text-sm">{item.label}</div>
+                            <div className="text-xs text-muted-foreground">{item.description}</div>
                           </div>
                           <label className="relative inline-flex items-center cursor-pointer">
                             <input
@@ -794,30 +748,29 @@ export function SettingsPage() {
                               }
                               className="sr-only peer"
                             />
-                            <div className="w-11 h-6 bg-muted peer-focus:ring-2 peer-focus:ring-primary/50 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
+                            <div className="w-10 h-6 bg-muted peer-focus:ring-2 peer-focus:ring-primary/20 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
                           </label>
                         </div>
                       ))}
                     </div>
                   </div>
 
-                  <button
+                  <Button
                     onClick={handleSaveNotifications}
                     disabled={isSaving}
-                    className="w-full md:w-auto px-6 py-3 bg-primary text-primary-foreground rounded-xl font-semibold hover:scale-105 transition-all shadow-lg shadow-primary/30 flex items-center justify-center gap-2 disabled:opacity-50"
                   >
-                    <Save className="w-5 h-5" />
+                    <Save className="w-4 h-4 mr-2" />
                     Save Preferences
-                  </button>
+                  </Button>
                 </div>
               </div>
             )}
 
             {/* Appearance */}
             {activeTab === 'appearance' && (
-              <div className="p-8">
-                <div className="mb-6">
-                  <h2 className="text-2xl font-bold text-foreground mb-2">Appearance</h2>
+              <div className="space-y-6">
+                <div className="mb-4">
+                  <h2 className="text-xl font-bold text-foreground">Appearance</h2>
                   <p className="text-sm text-muted-foreground">Customize how the platform looks</p>
                 </div>
 
@@ -833,13 +786,12 @@ export function SettingsPage() {
                         <button
                           key={option.id}
                           onClick={() => setAppearance({ ...appearance, theme: option.id as AppearanceSettings['theme'] })}
-                          className={`p-4 rounded-xl border-2 transition-all ${
-                            appearance.theme === option.id
-                              ? 'border-primary bg-primary/10'
-                              : 'border-border/30 bg-muted/30 hover:bg-muted/50'
-                          }`}
+                          className={`p-4 rounded-xl border-2 transition-all flex flex-col items-center justify-center gap-2 h-28 ${appearance.theme === option.id
+                              ? 'border-primary bg-primary/5'
+                              : 'border-border/30 bg-muted/20 hover:bg-muted/40'
+                            }`}
                         >
-                          <div className="text-3xl mb-2">{option.icon}</div>
+                          <div className="text-2xl">{option.icon}</div>
                           <div className="font-semibold text-foreground">{option.label}</div>
                         </button>
                       ))}
@@ -852,7 +804,7 @@ export function SettingsPage() {
                     <select
                       value={appearance.language}
                       onChange={(e) => setAppearance({ ...appearance, language: e.target.value })}
-                      className="w-full px-4 py-3 bg-muted/50 border border-border/50 rounded-xl text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
+                      className="w-full px-4 py-3 bg-muted/50 border border-border/50 rounded-xl text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all"
                     >
                       <option value="de">Deutsch</option>
                       <option value="en">English</option>
@@ -861,234 +813,95 @@ export function SettingsPage() {
                     </select>
                   </div>
 
-                  {/* Compact Mode */}
-                  <div className="flex items-center justify-between p-4 bg-muted/30 rounded-xl">
-                    <div>
-                      <div className="font-semibold text-foreground">Compact Mode</div>
-                      <div className="text-sm text-muted-foreground">Reduce spacing and padding</div>
-                    </div>
-                    <label className="relative inline-flex items-center cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={appearance.compactMode}
-                        onChange={(e) => setAppearance({ ...appearance, compactMode: e.target.checked })}
-                        className="sr-only peer"
-                      />
-                      <div className="w-11 h-6 bg-muted peer-focus:ring-2 peer-focus:ring-primary/50 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
-                    </label>
-                  </div>
-
-                  <button
+                  <Button
                     onClick={handleSaveAppearance}
                     disabled={isSaving}
-                    className="w-full md:w-auto px-6 py-3 bg-primary text-primary-foreground rounded-xl font-semibold hover:scale-105 transition-all shadow-lg shadow-primary/30 flex items-center justify-center gap-2 disabled:opacity-50"
                   >
-                    <Save className="w-5 h-5" />
+                    <Save className="w-4 h-4 mr-2" />
                     Save Preferences
-                  </button>
+                  </Button>
                 </div>
               </div>
             )}
 
             {/* Billing */}
             {activeTab === 'billing' && (
-              <div className="p-8">
+              <div className="p-2">
                 <BillingPanel />
-
-                {false && (
-                  <>
-                <div className="mb-6">
-                  <h2 className="text-2xl font-bold text-foreground mb-2">Billing & Subscription</h2>
-                  <p className="text-sm text-muted-foreground">Manage your subscription and payment methods</p>
-                </div>
-
-                <div className="space-y-6">
-                  {/* Current Plan */}
-                  <div className="p-6 bg-gradient-to-br from-primary/10 to-transparent border-2 border-primary/20 rounded-2xl">
-                    <div className="flex items-start justify-between mb-4">
-                      <div>
-                        <h3 className="text-xl font-bold text-foreground">Professional Plan</h3>
-                        <p className="text-sm text-muted-foreground">Billed monthly</p>
-                      </div>
-                      <div className="text-right">
-                        <div className="text-3xl font-bold text-foreground">€99</div>
-                        <div className="text-sm text-muted-foreground">per month</div>
-                      </div>
-                    </div>
-
-                    <div className="space-y-2 mb-4">
-                      {[
-                        'Unlimited campaigns',
-                        'AI-powered insights',
-                        'Priority support',
-                        'Advanced analytics',
-                      ].map((feature, i) => (
-                        <div key={i} className="flex items-center gap-2 text-sm">
-                          <Check className="w-4 h-4 text-primary" />
-                          <span className="text-foreground">{feature}</span>
-                        </div>
-                      ))}
-                    </div>
-
-                    <div className="flex gap-3">
-                      <button className="flex-1 px-4 py-2.5 bg-primary text-primary-foreground rounded-xl text-sm font-semibold hover:scale-105 transition-all">
-                        Upgrade Plan
-                      </button>
-                      <button className="flex-1 px-4 py-2.5 bg-muted hover:bg-muted/80 rounded-xl text-sm font-semibold transition-all">
-                        View All Plans
-                      </button>
-                    </div>
-                  </div>
-
-                  {/* Payment Method */}
-                  <div>
-                    <h3 className="text-lg font-semibold text-foreground mb-4">Payment Method</h3>
-                    <div className="p-4 bg-muted/30 rounded-xl flex items-center justify-between">
-                      <div className="flex items-center gap-4">
-                        <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-500 rounded-lg flex items-center justify-center">
-                          <CreditCard className="w-6 h-6 text-white" />
-                        </div>
-                        <div>
-                          <div className="font-semibold text-foreground">Visa •••• 4242</div>
-                          <div className="text-sm text-muted-foreground">Expires 12/2025</div>
-                        </div>
-                      </div>
-                      <button className="px-4 py-2 bg-muted hover:bg-muted/80 rounded-lg text-sm font-semibold transition-all">
-                        Update
-                      </button>
-                    </div>
-                  </div>
-
-                  {/* Billing History */}
-                  <div>
-                    <h3 className="text-lg font-semibold text-foreground mb-4">Billing History</h3>
-                    <div className="space-y-3">
-                      {[
-                        { date: 'Jan 1, 2024', amount: '€99.00', status: 'Paid' },
-                        { date: 'Dec 1, 2023', amount: '€99.00', status: 'Paid' },
-                        { date: 'Nov 1, 2023', amount: '€99.00', status: 'Paid' },
-                      ].map((invoice, i) => (
-                        <div key={i} className="p-4 bg-muted/30 rounded-xl flex items-center justify-between">
-                          <div>
-                            <div className="font-semibold text-foreground">{invoice.date}</div>
-                            <div className="text-sm text-muted-foreground">{invoice.amount}</div>
-                          </div>
-                          <div className="flex items-center gap-3">
-                            <span className="px-3 py-1 bg-green-500/20 text-green-500 rounded-full text-xs font-semibold">
-                              {invoice.status}
-                            </span>
-                            <button className="text-sm text-primary hover:underline flex items-center gap-1">
-                              Download
-                              <ExternalLink className="w-3 h-3" />
-                            </button>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-                  </>
-                )}
               </div>
             )}
 
             {/* Security */}
             {activeTab === 'security' && (
-              <div className="p-8">
-                <div className="mb-6">
-                  <h2 className="text-2xl font-bold text-foreground mb-2">Security</h2>
+              <div className="space-y-6">
+                <div className="mb-4">
+                  <h2 className="text-xl font-bold text-foreground">Security</h2>
                   <p className="text-sm text-muted-foreground">Manage your account security settings</p>
                 </div>
 
                 <div className="space-y-6">
                   {/* Change Password */}
                   <div>
-                    <h3 className="text-lg font-semibold text-foreground mb-4">Change Password</h3>
+                    <h3 className="text-sm font-semibold text-foreground mb-4 uppercase tracking-wider opacity-70">Change Password</h3>
                     <div className="space-y-4">
-                      <div>
-                        <label className="block text-sm font-semibold text-foreground mb-2">Current Password</label>
-                        <input
-                          type="password"
-                          placeholder="Enter current password"
-                          value={passwordData.current}
-                          onChange={(e) => setPasswordData({ ...passwordData, current: e.target.value })}
-                          className="w-full px-4 py-3 bg-muted/50 border border-border/50 rounded-xl text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-sm font-semibold text-foreground mb-2">New Password</label>
-                        <input
-                          type="password"
-                          placeholder="Enter new password"
-                          value={passwordData.next}
-                          onChange={(e) => setPasswordData({ ...passwordData, next: e.target.value })}
-                          className="w-full px-4 py-3 bg-muted/50 border border-border/50 rounded-xl text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-sm font-semibold text-foreground mb-2">Confirm Password</label>
-                        <input
-                          type="password"
-                          placeholder="Confirm new password"
-                          value={passwordData.confirm}
-                          onChange={(e) => setPasswordData({ ...passwordData, confirm: e.target.value })}
-                          className="w-full px-4 py-3 bg-muted/50 border border-border/50 rounded-xl text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
-                        />
-                      </div>
-                      <button
+                      <input
+                        type="password"
+                        placeholder="Current Password"
+                        value={passwordData.current}
+                        onChange={(e) => setPasswordData({ ...passwordData, current: e.target.value })}
+                        className="w-full px-4 py-3 bg-muted/50 border border-border/50 rounded-xl text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
+                      />
+                      <input
+                        type="password"
+                        placeholder="New Password"
+                        value={passwordData.next}
+                        onChange={(e) => setPasswordData({ ...passwordData, next: e.target.value })}
+                        className="w-full px-4 py-3 bg-muted/50 border border-border/50 rounded-xl text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
+                      />
+                      <input
+                        type="password"
+                        placeholder="Confirm New Password"
+                        value={passwordData.confirm}
+                        onChange={(e) => setPasswordData({ ...passwordData, confirm: e.target.value })}
+                        className="w-full px-4 py-3 bg-muted/50 border border-border/50 rounded-xl text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
+                      />
+                      <Button
                         onClick={handlePasswordUpdate}
                         disabled={isSaving}
-                        className="px-6 py-3 bg-primary text-primary-foreground rounded-xl font-semibold hover:scale-105 transition-all shadow-lg shadow-primary/30 disabled:opacity-50"
                       >
                         Update Password
-                      </button>
+                      </Button>
                     </div>
-                  </div>
-
-                  {/* Two-Factor Authentication */}
-                  <div className="p-6 bg-muted/30 rounded-xl">
-                    <div className="flex items-start justify-between mb-4">
-                      <div>
-                        <h3 className="text-lg font-semibold text-foreground mb-1">Two-Factor Authentication</h3>
-                        <p className="text-sm text-muted-foreground">Add an extra layer of security to your account</p>
-                      </div>
-                      <span className="px-3 py-1 bg-red-500/20 text-red-500 rounded-full text-xs font-semibold">
-                        Disabled
-                      </span>
-                    </div>
-                    <button
-                      disabled
-                      className="px-4 py-2.5 bg-muted text-muted-foreground rounded-xl text-sm font-semibold cursor-not-allowed"
-                    >
-                      2FA coming soon
-                    </button>
                   </div>
 
                   {/* Danger Zone */}
-                  <div className="p-6 bg-red-500/5 border-2 border-red-500/20 rounded-2xl">
+                  <div className="p-6 bg-red-500/5 border border-red-500/10 rounded-2xl mt-8">
                     <div className="flex items-start gap-3 mb-4">
-                      <AlertCircle className="w-6 h-6 text-red-500 flex-shrink-0 mt-1" />
+                      <div className="p-2 bg-red-500/10 rounded-full shrink-0">
+                        <AlertCircle className="w-5 h-5 text-red-500" />
+                      </div>
                       <div>
-                        <h3 className="text-lg font-semibold text-foreground mb-1">Danger Zone</h3>
-                        <p className="text-sm text-muted-foreground mb-4">
+                        <h3 className="text-base font-semibold text-foreground mb-1">Danger Zone</h3>
+                        <p className="text-sm text-muted-foreground mb-4 leading-relaxed">
                           Once you delete your account, there is no going back. Please be certain.
                         </p>
-                        <button
+                        <Button
+                          variant="destructive"
                           disabled
-                          className="px-4 py-2.5 bg-red-500/10 text-red-500/60 rounded-xl text-sm font-semibold transition-all flex items-center gap-2 cursor-not-allowed"
+                          className="opacity-70"
                         >
-                          <Trash2 className="w-4 h-4" />
+                          <Trash2 className="w-4 h-4 mr-2" />
                           Delete Account
-                        </button>
+                        </Button>
                       </div>
                     </div>
                   </div>
                 </div>
               </div>
             )}
-          </div>
+          </Card>
         </div>
       </div>
-    </PageShell>
+    </DashboardShell>
   );
 }

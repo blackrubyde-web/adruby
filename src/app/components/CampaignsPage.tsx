@@ -1,7 +1,10 @@
-import { Search, MoreVertical, Play, Pause, Copy, Trash2, TrendingUp, TrendingDown } from 'lucide-react';
+import { Search, MoreVertical, Play, Pause, Copy, Trash2, TrendingUp, TrendingDown, Plus } from 'lucide-react';
 import { useCallback, useMemo, useState } from 'react';
 import { toast } from 'sonner';
-import { PageShell, HeroHeader, Card } from './layout';
+import { DashboardShell } from './layout/DashboardShell';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from './ui/card';
+import { Button } from './ui/button';
+import { Badge } from './ui/badge';
 import { useMetaCampaigns, type MetaCampaign } from '../hooks/useMetaCampaigns';
 import { useMetaConnection } from '../hooks/useMetaConnection';
 import type { MetaApplyAction } from '../lib/api/meta';
@@ -80,42 +83,39 @@ export function CampaignsPage() {
   };
 
   return (
-    <PageShell>
-      <HeroHeader
-        title="Campaigns"
-        subtitle="Manage and optimize your Meta Ads campaigns."
-        actions={
-          <button
-            onClick={handleCreateCampaign}
-            className="px-4 py-2 bg-primary text-primary-foreground rounded-lg text-sm font-semibold hover:bg-primary/90 transition-colors"
-          >
-            Neue Kampagne
-          </button>
-        }
-      />
+    <DashboardShell
+      title="Campaigns"
+      subtitle="Manage and optimize your Meta Ads campaigns."
+      headerActions={
+        <Button onClick={handleCreateCampaign} className="gap-2">
+          <Plus className="w-4 h-4" />
+          Neue Kampagne
+        </Button>
+      }
+    >
 
       {/* Stats Overview */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-        <Card className="p-4">
-          <div className="text-2xl text-foreground font-bold mb-1">{stats.total}</div>
-          <div className="text-sm text-muted-foreground">Total Campaigns</div>
+        <Card variant="glass" padding="default">
+          <div className="text-2xl text-foreground font-bold mb-1 tracking-tight">{stats.total}</div>
+          <div className="text-sm text-muted-foreground font-medium">Total Campaigns</div>
         </Card>
-        <Card className="p-4">
-          <div className="text-2xl text-foreground font-bold mb-1">{stats.active}</div>
-          <div className="text-sm text-muted-foreground">Active</div>
+        <Card variant="glass" padding="default">
+          <div className="text-2xl text-green-600 font-bold mb-1 tracking-tight">{stats.active}</div>
+          <div className="text-sm text-muted-foreground font-medium">Active</div>
         </Card>
-        <Card className="p-4">
-          <div className="text-2xl text-foreground font-bold mb-1">{stats.paused}</div>
-          <div className="text-sm text-muted-foreground">Paused</div>
+        <Card variant="glass" padding="default">
+          <div className="text-2xl text-orange-500 font-bold mb-1 tracking-tight">{stats.paused}</div>
+          <div className="text-sm text-muted-foreground font-medium">Paused</div>
         </Card>
-        <Card className="p-4">
-          <div className="text-2xl text-foreground font-bold mb-1">{formatCurrency(stats.totalSpend)}</div>
-          <div className="text-sm text-muted-foreground">Total Spend</div>
+        <Card variant="glass" padding="default">
+          <div className="text-2xl text-foreground font-bold mb-1 tracking-tight">{formatCurrency(stats.totalSpend)}</div>
+          <div className="text-sm text-muted-foreground font-medium">Total Spend</div>
         </Card>
       </div>
 
       {/* Filters and Search */}
-      <div className="bg-card border border-border rounded-xl p-4 mb-8">
+      <Card variant="glass" className="mb-8" padding="default">
         <div className="flex flex-col md:flex-row items-center justify-between gap-4">
           {/* Search */}
           <div className="flex-1 relative w-full">
@@ -125,7 +125,7 @@ export function CampaignsPage() {
               placeholder="Search campaigns..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 bg-input border border-border rounded-lg text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all placeholder:text-muted-foreground"
+              className="w-full pl-10 pr-4 py-2 bg-background/50 border border-border rounded-lg text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all placeholder:text-muted-foreground"
             />
           </div>
 
@@ -145,37 +145,36 @@ export function CampaignsPage() {
             ))}
           </div>
         </div>
-      </div>
+      </Card>
 
       {error && (
-        <Card className="p-4 border border-red-500/30 bg-red-500/5 text-red-500 mb-8">
+        <Card className="p-4 border border-red-500/30 bg-red-500/5 text-red-500 mb-8" variant="flat">
           {error}
         </Card>
       )}
 
       {loading && (
-        <Card className="p-4 border border-border bg-card text-sm text-muted-foreground mb-8">
+        <Card className="p-4 border border-border bg-card text-sm text-muted-foreground mb-8" variant="flat">
           Lade Kampagnen…
         </Card>
       )}
 
       {!loading && campaigns.length === 0 && (
-        <Card className="p-5 border border-border/60 bg-card mb-8 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-          <div>
-            <div className="text-base font-semibold text-foreground">Noch keine Kampagnen</div>
-            <div className="text-sm text-muted-foreground">Erstelle eine Kampagne und pushe sie direkt zu Meta.</div>
-          </div>
-          <button
-            onClick={handleCreateCampaign}
-            className="px-4 py-2 bg-primary text-primary-foreground rounded-lg text-sm font-semibold hover:bg-primary/90 transition-colors"
-          >
-            Kampagne erstellen
-          </button>
+        <Card variant="glass" className="mb-8">
+          <CardContent className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 p-8">
+            <div>
+              <div className="text-lg font-semibold text-foreground mb-1">Noch keine Kampagnen</div>
+              <div className="text-sm text-muted-foreground">Erstelle eine Kampagne und pushe sie direkt zu Meta.</div>
+            </div>
+            <Button onClick={handleCreateCampaign}>
+              Neuen Kampagne erstellen
+            </Button>
+          </CardContent>
         </Card>
       )}
 
       {/* Campaigns Table */}
-      <Card className="overflow-hidden">
+      <Card variant="glass" className="overflow-hidden" padding="none">
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead>
@@ -202,93 +201,112 @@ export function CampaignsPage() {
                     <td className="p-4">
                       <div>
                         <div className="text-foreground font-medium mb-1">{campaign.name}</div>
-                        <div className="text-xs text-muted-foreground">
+                        <div className="text-xs text-muted-foreground font-mono opacity-70">
                           {campaign.id}
                         </div>
                       </div>
                     </td>
                     <td className="p-4">
-                      <span
-                        className={`px-3 py-1 rounded-full text-xs font-medium inline-flex items-center gap-1.5 ${normalizedStatus === 'active'
-                          ? 'bg-green-500/20 text-green-500'
-                          : normalizedStatus === 'paused'
-                            ? 'bg-orange-500/20 text-orange-500'
-                            : 'bg-muted/50 text-muted-foreground'
-                          }`}
+                      <Badge
+                        variant={
+                          normalizedStatus === 'active' ? 'default' :
+                            normalizedStatus === 'paused' ? 'secondary' : 'outline'
+                        }
+                        className={`
+                          ${normalizedStatus === 'active' ? 'bg-green-500/10 text-green-600 border-green-500/20 hover:bg-green-500/20' : ''}
+                          ${normalizedStatus === 'paused' ? 'bg-orange-500/10 text-orange-600 border-orange-500/20 hover:bg-orange-500/20' : ''}
+                        `}
                       >
-                        <div className="w-1.5 h-1.5 rounded-full bg-current" />
+                        {normalizedStatus === 'active' && <div className="w-1.5 h-1.5 rounded-full bg-green-500 mr-2 animate-pulse" />}
                         {normalizedStatus}
-                      </span>
+                      </Badge>
                     </td>
-                    <td className="p-4 text-right text-foreground">
+                    <td className="p-4 text-right text-foreground font-medium">
                       {formatCurrency(campaign.spend)}
                     </td>
-                    <td className="p-4 text-right text-foreground">
+                    <td className="p-4 text-right text-muted-foreground">
                       {formatCompact(campaign.impressions)}
                     </td>
-                    <td className="p-4 text-right text-foreground">
+                    <td className="p-4 text-right text-muted-foreground">
                       {formatCompact(campaign.clicks)}
                     </td>
                     <td className="p-4 text-right">
                       <div className="flex items-center justify-end gap-1">
-                        <span className="text-foreground">{formatPct(campaign.ctr)}</span>
-                        {campaign.roas >= 1 ? (
-                          <TrendingUp className="w-4 h-4 text-green-500" />
-                        ) : (
-                          <TrendingDown className="w-4 h-4 text-red-500" />
-                        )}
+                        <span className="text-foreground font-medium">{formatPct(campaign.ctr)}</span>
                       </div>
                     </td>
                     <td className="p-4 text-right">
-                      <span className="text-foreground font-semibold">{campaign.roas}x</span>
+                      <div className="flex items-center justify-end gap-1">
+                        <span className={`font-bold ${campaign.roas >= 2.5 ? 'text-green-600' : 'text-foreground'}`}>{campaign.roas}x</span>
+                        {campaign.roas >= 1 ? (
+                          <TrendingUp className="w-3 h-3 text-green-500" />
+                        ) : (
+                          <TrendingDown className="w-3 h-3 text-red-500" />
+                        )}
+                      </div>
                     </td>
                     <td className="p-4 text-right text-foreground">
                       {formatCompact(campaign.conversions)}
                     </td>
                     <td className="p-4">
-                      <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                         {normalizedStatus === 'active' ? (
-                          <button
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 hover:text-orange-500"
                             onClick={() => handleAction(campaign, 'pause')}
                             disabled={isBusy(campaign.id, 'pause')}
-                            className="p-2 hover:bg-muted rounded-lg transition-colors disabled:opacity-50"
                             title="Pause"
                           >
-                            <Pause className="w-4 h-4 text-muted-foreground hover:text-primary" />
-                          </button>
+                            <Pause className="w-4 h-4" />
+                          </Button>
                         ) : normalizedStatus === 'paused' ? (
-                          <button
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 hover:text-green-500"
                             onClick={() => handleAction(campaign, 'resume')}
                             disabled={isBusy(campaign.id, 'resume')}
-                            className="p-2 hover:bg-muted rounded-lg transition-colors disabled:opacity-50"
                             title="Resume"
                           >
-                            <Play className="w-4 h-4 text-muted-foreground hover:text-primary" />
-                          </button>
+                            <Play className="w-4 h-4" />
+                          </Button>
                         ) : null}
-                        <button
+
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8"
                           onClick={() => handleAction(campaign, 'duplicate')}
                           disabled={isBusy(campaign.id, 'duplicate')}
-                          className="p-2 hover:bg-muted rounded-lg transition-colors disabled:opacity-50"
                           title="Duplicate"
                         >
-                          <Copy className="w-4 h-4 text-muted-foreground hover:text-primary" />
-                        </button>
-                        <button
+                          <Copy className="w-4 h-4" />
+                        </Button>
+
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 hover:text-destructive"
                           onClick={() => handleAction(campaign, 'delete')}
                           disabled={isBusy(campaign.id, 'delete')}
-                          className="p-2 hover:bg-muted rounded-lg transition-colors disabled:opacity-50"
                           title="Delete"
                         >
-                          <Trash2 className="w-4 h-4 text-muted-foreground hover:text-primary" />
-                        </button>
-                        <button
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+
+                        <div className="w-px h-4 bg-border mx-1" />
+
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8"
                           onClick={() => openMetaCampaign(campaign.id)}
-                          className="p-2 hover:bg-muted rounded-lg transition-colors"
                           title="View in Meta"
                         >
-                          <MoreVertical className="w-4 h-4 text-muted-foreground hover:text-primary" />
-                        </button>
+                          <MoreVertical className="w-4 h-4" />
+                        </Button>
                       </div>
                     </td>
                   </tr>
@@ -298,6 +316,6 @@ export function CampaignsPage() {
           </table>
         </div>
       </Card>
-    </PageShell>
+    </DashboardShell>
   );
 }

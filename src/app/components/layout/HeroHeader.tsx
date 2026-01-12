@@ -1,43 +1,56 @@
 import { memo } from 'react';
+import { cn } from '../../lib/utils';
 
 export const HeroHeader = memo(function HeroHeader({
   title,
   subtitle,
   actions,
   chips,
+  className,
 }: {
   title: string;
   subtitle?: string;
   actions?: React.ReactNode;
   chips?: React.ReactNode;
+  className?: string;
 }) {
   return (
-    <div className="relative overflow-hidden rounded-2xl border border-border/60 bg-card shadow-[0_1px_0_rgba(255,255,255,0.6),0_16px_40px_rgba(0,0,0,0.08)]">
+    <div className={cn("relative overflow-hidden rounded-2xl border border-border/50 bg-card shadow-sm", className)}>
+      {/* Premium Gradient Background - Subtle & Professional */}
       <div
-        className="absolute inset-x-0 top-0 h-[2px]"
+        className="absolute inset-0 opacity-[0.03] dark:opacity-[0.08]"
         style={{
-          background:
-            'linear-gradient(90deg, #C80000, #ff6b6b, #ffd93d, #6bcf7f, #4d96ff, #9b59b6, #C80000)',
+          background: 'radial-gradient(circle at top right, var(--primary), transparent 60%)',
         }}
       />
-      <div className="absolute -top-24 -right-24 h-56 w-56 rounded-full bg-primary/10 blur-3xl" />
-      <div className="absolute -bottom-28 -left-28 h-72 w-72 rounded-full bg-purple-500/10 blur-3xl" />
+
+      {/* Accent Line - Refined Ruby Gradient */}
+      <div
+        className="absolute inset-x-0 top-0 h-[1px] opacity-70"
+        style={{
+          background: 'linear-gradient(90deg, transparent, var(--primary), transparent)',
+        }}
+      />
 
       <div className="relative p-6 sm:p-8">
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-          <div className="min-w-0">
-            <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight text-foreground truncate">
+        <div className="flex flex-col gap-6 sm:flex-row sm:items-start sm:justify-between">
+          <div className="min-w-0 max-w-3xl space-y-2">
+            <h1 className="text-3xl font-bold tracking-tight text-foreground text-balance-header animate-fade-in-up">
               {title}
             </h1>
             {subtitle && (
-              <p className="text-sm sm:text-base text-muted-foreground mt-1">
+              <p className="text-base text-muted-foreground leading-relaxed max-w-2xl animate-fade-in-up delay-100">
                 {subtitle}
               </p>
             )}
-            {chips && <div className="mt-4 flex flex-wrap gap-2">{chips}</div>}
+            {chips && <div className="mt-5 flex flex-wrap gap-2 animate-fade-in-up delay-200">{chips}</div>}
           </div>
 
-          {actions && <div className="shrink-0 flex gap-2">{actions}</div>}
+          {actions && (
+            <div className="shrink-0 flex gap-3 items-center animate-fade-in-up delay-300">
+              {actions}
+            </div>
+          )}
         </div>
       </div>
     </div>

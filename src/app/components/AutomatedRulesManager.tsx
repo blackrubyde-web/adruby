@@ -1,6 +1,6 @@
 import { Zap, Shield, TrendingUp, Power, Brain } from 'lucide-react';
 import { AutopilotActivityFeed } from './dashboard/AutopilotActivityFeed';
-import { Card } from './layout';
+import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 
 export function AutomatedRulesManager() {
   return (

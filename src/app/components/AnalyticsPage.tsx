@@ -2,10 +2,12 @@ import { lazy, Suspense, useEffect, useRef, useState } from 'react';
 import { DashboardCustomizer, DashboardSection } from './DashboardCustomizer';
 import { ReorderableWidget } from './ReorderableWidget';
 import { TimeRangeFilter } from './TimeRangeFilter';
-import { Eye, MousePointerClick, DollarSign, TrendingUp, LayoutGrid } from 'lucide-react';
+import { Eye, MousePointerClick, DollarSign, TrendingUp, LayoutGrid, BarChart3, LineChart } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from './ui/button';
-import { PageShell, HeroHeader, Card, Chip } from './layout';
+import { Badge } from './ui/badge';
+import { DashboardShell } from './layout/DashboardShell';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from './ui/card';
 import { useAnalyticsData } from '../hooks/useAnalyticsData';
 
 const LazyNotificationBanner = lazy(() =>
@@ -53,7 +55,7 @@ const LazyAppleGridDashboard = lazy(() =>
 
 function WidgetPlaceholder({ title }: { title: string }) {
   return (
-    <div className="min-h-[220px] rounded-2xl border border-border/60 bg-muted/30 animate-pulse flex items-center justify-center">
+    <div className="min-h-[220px] rounded-2xl border border-border/60 bg-muted/10 animate-pulse flex items-center justify-center">
       <span className="text-sm text-muted-foreground">{title}</span>
     </div>
   );
@@ -291,7 +293,7 @@ export function AnalyticsPage() {
   // Render individual widget content based on section ID
   const renderPreview = (node: JSX.Element) => (
     <div className="relative">
-      <div className="absolute right-3 top-3 rounded-full bg-amber-500/20 text-amber-600 text-xs px-2 py-1 border border-amber-500/30">
+      <div className="absolute right-3 top-3 rounded-full bg-amber-500/20 text-amber-600 text-xs px-2 py-1 border border-amber-500/30 font-medium z-10">
         Preview
       </div>
       {node}
@@ -302,7 +304,7 @@ export function AnalyticsPage() {
     switch (sectionId) {
       case 'notifications':
         return (
-          <Card className="hidden md:block overflow-hidden">
+          <Card variant="glass" className="hidden md:block overflow-hidden" padding="none">
             <Suspense fallback={<WidgetPlaceholder title="Loading alerts..." />}>
               {renderPreview(<LazyNotificationBanner />)}
             </Suspense>
@@ -311,7 +313,7 @@ export function AnalyticsPage() {
 
       case 'performance-score':
         return (
-          <Card className="hidden md:block p-6">
+          <Card variant="glass" className="hidden md:block" padding="default">
             <Suspense fallback={<WidgetPlaceholder title="Loading score..." />}>
               {renderPreview(<LazyPerformanceScore />)}
             </Suspense>
@@ -320,7 +322,7 @@ export function AnalyticsPage() {
 
       case 'budget-tracker':
         return (
-          <Card className="hidden md:block p-6">
+          <Card variant="glass" className="hidden md:block" padding="default">
             <Suspense fallback={<WidgetPlaceholder title="Loading budget..." />}>
               {renderPreview(<LazyBudgetTracker />)}
             </Suspense>
@@ -329,90 +331,90 @@ export function AnalyticsPage() {
 
       case 'metrics':
         return (
-          <Card className="p-6 md:p-8">
-            <div className="flex flex-col md:flex-row md:items-center justify-between mb-6 gap-3">
-              <div className="min-w-0">
-                <h3 className="text-lg font-bold text-foreground mb-1">Campaign Performance</h3>
-                <p className="text-sm text-muted-foreground">Real-time analytics overview</p>
-              </div>
-              <div className="px-3 py-1.5 bg-muted border border-border rounded-lg w-fit">
-                <span className="text-xs text-foreground font-medium whitespace-nowrap">
+          <Card variant="glass" padding="none">
+            <CardContent className="p-6 md:p-8">
+              <div className="flex flex-col md:flex-row md:items-center justify-between mb-6 gap-3">
+                <div className="min-w-0">
+                  <h3 className="text-lg font-bold text-foreground mb-1">Campaign Performance</h3>
+                  <p className="text-sm text-muted-foreground">Real-time analytics overview</p>
+                </div>
+                <Badge variant={loading ? "outline" : "default"} className={`${!loading ? "bg-green-500/10 text-green-600 border-green-500/20" : ""}`}>
                   {loading ? '● Loading' : '● Live'}
-                </span>
+                </Badge>
               </div>
-            </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6 mb-6 md:mb-8">
-              <div className="p-5 md:p-6 rounded-lg bg-muted/30 border border-border">
-                <div className="text-3xl md:text-4xl text-foreground mb-2 font-bold">
-                  {formatCurrency(totalSpend)}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6 mb-6 md:mb-8">
+                <div className="p-5 md:p-6 rounded-xl bg-muted/30 border border-border/50">
+                  <div className="text-3xl md:text-4xl text-foreground mb-2 font-bold tracking-tight">
+                    {formatCurrency(totalSpend)}
+                  </div>
+                  <div className="text-sm text-muted-foreground mb-2 font-medium">Total Ad Spend</div>
+                  <div className="text-xs text-muted-foreground">
+                    Daily avg: {formatCurrency(dailySpendAvg)}
+                  </div>
                 </div>
-                <div className="text-sm text-muted-foreground mb-2">Total Ad Spend</div>
-                <div className="text-xs text-muted-foreground">
-                  Daily avg: {formatCurrency(dailySpendAvg)}
+                <div className="p-5 md:p-6 rounded-xl bg-muted/30 border border-border/50">
+                  <div className="text-3xl md:text-4xl text-foreground mb-2 font-bold tracking-tight">
+                    {formatCurrency(totalRevenue)}
+                  </div>
+                  <div className="text-sm text-muted-foreground mb-2 font-medium">Total Revenue</div>
+                  <div className="text-xs text-muted-foreground">
+                    Return on investment: {(summary?.roas ?? 0).toFixed(2)}x
+                  </div>
                 </div>
               </div>
-              <div className="p-5 md:p-6 rounded-lg bg-muted/30 border border-border">
-                <div className="text-3xl md:text-4xl text-foreground mb-2 font-bold">
-                  {formatCurrency(totalRevenue)}
-                </div>
-                <div className="text-sm text-muted-foreground mb-2">Total Revenue</div>
-                <div className="text-xs text-muted-foreground">
-                  Return on investment: {(summary?.roas ?? 0).toFixed(2)}x
-                </div>
-              </div>
-            </div>
 
-            <Suspense fallback={<WidgetPlaceholder title="Loading metrics..." />}>
-              <div className="grid grid-cols-1 gap-4">
-                <LazyAdMetricsCard
-                  title="Impressions"
-                  value={formatCompact(totalImpressions)}
-                  subValue={`Clicks: ${formatCompact(totalClicks)}`}
-                  percentage={formatDeltaPct(summary?.deltas?.impressions)}
-                  isPositive={(summary?.deltas?.impressions ?? 0) >= 0}
-                  icon={<Eye className="w-5 h-5" />}
-                  color="#3b82f6"
-                  tooltip="Total number of times your ads were shown to users"
-                />
-                <LazyAdMetricsCard
-                  title="Click-through rate"
-                  value={`${(summary?.ctr ?? 0).toFixed(2)}%`}
-                  subValue={`Impressions: ${formatCompact(totalImpressions)}`}
-                  percentage={formatDeltaPct(summary?.deltas?.ctr)}
-                  isPositive={(summary?.deltas?.ctr ?? 0) >= 0}
-                  icon={<MousePointerClick className="w-5 h-5" />}
-                  color="#10b981"
-                  tooltip="Percentage of impressions that resulted in clicks"
-                />
-                <LazyAdMetricsCard
-                  title="Cost per acquisition"
-                  value={formatCurrency(averageCpa)}
-                  subValue={`Conversions: ${formatCompact(totalConversions)}`}
-                  percentage={formatDeltaPct(summary?.deltas?.cpa)}
-                  isPositive={(summary?.deltas?.cpa ?? 0) <= 0}
-                  icon={<DollarSign className="w-5 h-5" />}
-                  color="#f59e0b"
-                  tooltip="Average cost you pay for each conversion"
-                />
-                <LazyAdMetricsCard
-                  title="Return on ad spend"
-                  value={`${(summary?.roas ?? 0).toFixed(2)}x`}
-                  subValue={`Revenue: ${formatCurrency(totalRevenue)}`}
-                  percentage={formatDeltaPct(summary?.deltas?.roas)}
-                  isPositive={(summary?.deltas?.roas ?? 0) >= 0}
-                  icon={<TrendingUp className="w-5 h-5" />}
-                  color="#8b5cf6"
-                  tooltip="Revenue generated for every dollar spent on advertising"
-                />
-              </div>
-            </Suspense>
+              <Suspense fallback={<WidgetPlaceholder title="Loading metrics..." />}>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <LazyAdMetricsCard
+                    title="Impressions"
+                    value={formatCompact(totalImpressions)}
+                    subValue={`Clicks: ${formatCompact(totalClicks)}`}
+                    percentage={formatDeltaPct(summary?.deltas?.impressions)}
+                    isPositive={(summary?.deltas?.impressions ?? 0) >= 0}
+                    icon={<Eye className="w-5 h-5" />}
+                    color="#3b82f6"
+                    tooltip="Total number of times your ads were shown to users"
+                  />
+                  <LazyAdMetricsCard
+                    title="Click-through rate"
+                    value={`${(summary?.ctr ?? 0).toFixed(2)}%`}
+                    subValue={`Impressions: ${formatCompact(totalImpressions)}`}
+                    percentage={formatDeltaPct(summary?.deltas?.ctr)}
+                    isPositive={(summary?.deltas?.ctr ?? 0) >= 0}
+                    icon={<MousePointerClick className="w-5 h-5" />}
+                    color="#10b981"
+                    tooltip="Percentage of impressions that resulted in clicks"
+                  />
+                  <LazyAdMetricsCard
+                    title="Cost per acquisition"
+                    value={formatCurrency(averageCpa)}
+                    subValue={`Conversions: ${formatCompact(totalConversions)}`}
+                    percentage={formatDeltaPct(summary?.deltas?.cpa)}
+                    isPositive={(summary?.deltas?.cpa ?? 0) <= 0}
+                    icon={<DollarSign className="w-5 h-5" />}
+                    color="#f59e0b"
+                    tooltip="Average cost you pay for each conversion"
+                  />
+                  <LazyAdMetricsCard
+                    title="Return on ad spend"
+                    value={`${(summary?.roas ?? 0).toFixed(2)}x`}
+                    subValue={`Revenue: ${formatCurrency(totalRevenue)}`}
+                    percentage={formatDeltaPct(summary?.deltas?.roas)}
+                    isPositive={(summary?.deltas?.roas ?? 0) >= 0}
+                    icon={<TrendingUp className="w-5 h-5" />}
+                    color="#8b5cf6"
+                    tooltip="Revenue generated for every dollar spent on advertising"
+                  />
+                </div>
+              </Suspense>
+            </CardContent>
           </Card>
         );
 
       case 'ai-insights':
         return (
-          <Card className="overflow-hidden">
+          <Card variant="glass" className="overflow-hidden" padding="none">
             <Suspense fallback={<WidgetPlaceholder title="Loading AI insights..." />}>
               {renderPreview(<LazyAIInsightsPanel />)}
             </Suspense>
@@ -421,7 +423,7 @@ export function AnalyticsPage() {
 
       case 'performance-chart':
         return (
-          <Card className="overflow-hidden">
+          <Card variant="glass" className="overflow-hidden" padding="none">
             <Suspense fallback={<WidgetPlaceholder title="Loading chart..." />}>
               <LazyPerformanceChart
                 current={data?.timeseries.current ?? []}
@@ -437,7 +439,7 @@ export function AnalyticsPage() {
 
       case 'audience-breakdown':
         return (
-          <Card className="p-6">
+          <Card variant="glass" padding="default">
             <Suspense fallback={<WidgetPlaceholder title="Loading audience..." />}>
               {renderPreview(<LazyAudienceBreakdown />)}
             </Suspense>
@@ -446,7 +448,7 @@ export function AnalyticsPage() {
 
       case 'conversion-funnel':
         return (
-          <Card className="p-6">
+          <Card variant="glass" padding="default">
             <Suspense fallback={<WidgetPlaceholder title="Loading funnel..." />}>
               {renderPreview(<LazyConversionFunnel />)}
             </Suspense>
@@ -455,7 +457,7 @@ export function AnalyticsPage() {
 
       case 'performance-heatmap':
         return (
-          <Card className="p-6">
+          <Card variant="glass" padding="default">
             <Suspense fallback={<WidgetPlaceholder title="Loading heatmap..." />}>
               {renderPreview(<LazyPerformanceHeatmap />)}
             </Suspense>
@@ -464,7 +466,7 @@ export function AnalyticsPage() {
 
       case 'predictive-analytics':
         return (
-          <Card className="p-6">
+          <Card variant="glass" padding="default">
             <Suspense fallback={<WidgetPlaceholder title="Loading forecast..." />}>
               {renderPreview(<LazyPredictiveAnalytics />)}
             </Suspense>
@@ -473,7 +475,7 @@ export function AnalyticsPage() {
 
       case 'strategy-insights':
         return (
-          <Card>
+          <Card variant="glass" padding="none">
             <Suspense fallback={<WidgetPlaceholder title="Loading strategies..." />}>
               {renderPreview(<LazyStrategyInsights />)}
             </Suspense>
@@ -482,7 +484,7 @@ export function AnalyticsPage() {
 
       case 'campaigns-table':
         return (
-          <Card className="overflow-hidden">
+          <Card variant="glass" className="overflow-hidden" padding="none">
             <Suspense fallback={<WidgetPlaceholder title="Loading campaigns..." />}>
               <LazyCampaignsTable campaigns={data?.campaigns ?? []} />
             </Suspense>
@@ -491,7 +493,7 @@ export function AnalyticsPage() {
 
       case 'automations':
         return (
-          <Card className="p-6">
+          <Card variant="glass" padding="default">
             <Suspense fallback={<WidgetPlaceholder title="Loading automations..." />}>
               {renderPreview(<LazyAutomatedRulesManager />)}
             </Suspense>
@@ -504,17 +506,21 @@ export function AnalyticsPage() {
   };
 
   return (
-    <PageShell>
-      <HeroHeader
-        title="Analytics"
-        subtitle="Performance insights, trends, and campaign reporting."
-        chips={
-          <div className="flex flex-wrap gap-2">
-            <Chip>{useGridLayout ? '📊 Grid' : '📋 List'}</Chip>
-            <Chip>{timeRange === '7d' ? '7 Days' : timeRange === '30d' ? '30 Days' : '90 Days'}</Chip>
-          </div>
-        }
-      />
+    <DashboardShell
+      title="Analytics"
+      subtitle="Performance insights, trends, and campaign reporting."
+      headerChips={
+        <div className="flex flex-wrap gap-2">
+          <Badge variant="outline" className="gap-1">
+            {useGridLayout ? <LayoutGrid className="w-3 h-3" /> : <BarChart3 className="w-3 h-3" />}
+            {useGridLayout ? 'Grid' : 'List'}
+          </Badge>
+          <Badge variant="outline">
+            {timeRange === '7d' ? '7 Days' : timeRange === '30d' ? '30 Days' : '90 Days'}
+          </Badge>
+        </div>
+      }
+    >
 
       {/* ═══════════════════════════════════════════════════════════
           MOBILE-FIRST ANALYTICS CONTROLS
@@ -523,58 +529,59 @@ export function AnalyticsPage() {
           ═══════════════════════════════════════════════════════════ */}
 
       {/* MOBILE CONTROLS - Simplified */}
-      <Card className="block md:hidden p-4">
+      <Card className="block md:hidden p-4 mb-4" variant="glass" padding="sm">
         {/* Compact Time Range & Compare Toggle */}
         <div className="flex items-center gap-2 w-full">
           <select
             value={timeRange}
             onChange={(e) => setTimeRange(e.target.value as '7d' | '30d' | '90d' | 'custom')}
-            className="flex-1 px-3 py-2 bg-card border border-border rounded-lg text-sm font-medium text-foreground focus:outline-none focus:ring-2 focus:ring-primary min-w-0"
+            className="flex-1 px-3 py-2 bg-card/50 border border-border rounded-lg text-sm font-medium text-foreground focus:outline-none focus:ring-2 focus:ring-primary min-w-0"
           >
             <option value="7d">Last 7 Days</option>
             <option value="30d">Last 30 Days</option>
             <option value="90d">Last 90 Days</option>
           </select>
-          <button
+          <Button
+            variant={isComparing ? "default" : "outline"}
+            size="sm"
             onClick={() => setIsComparing(!isComparing)}
-            className={`flex-shrink-0 px-3 py-2 rounded-lg text-sm font-medium border transition-colors ${isComparing
-              ? 'bg-primary text-primary-foreground border-primary'
-              : 'bg-card text-foreground border-border'
-              }`}
+            className="h-[38px]"
           >
             Compare
-          </button>
+          </Button>
         </div>
       </Card>
 
       {/* DESKTOP CONTROL PANEL */}
-      <Card className="hidden md:block p-6">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
-          <div>
-            <h3 className="text-lg font-bold text-foreground mb-1">Customize Your Workspace</h3>
-            <p className="text-sm text-muted-foreground">Add widgets, change layout, and configure data views</p>
+      <Card className="hidden md:block mb-6" variant="glass">
+        <CardContent className="p-6">
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
+            <div>
+              <h3 className="text-lg font-bold text-foreground mb-1">Customize Your Workspace</h3>
+              <p className="text-sm text-muted-foreground">Add widgets, change layout, and configure data views</p>
+            </div>
+            <div className="flex items-center gap-3">
+              <Button
+                onClick={handleToggleGridLayout}
+                variant={useGridLayout ? 'default' : 'outline'}
+                className={useGridLayout ? 'bg-primary text-primary-foreground' : ''}
+              >
+                <LayoutGrid className="w-4 h-4 mr-2" />
+                Grid Layout
+              </Button>
+              <DashboardCustomizer
+                sections={dashboardSections}
+                onToggleSection={handleToggleSection}
+                onResetToDefaults={handleResetToDefaults}
+              />
+            </div>
           </div>
-          <div className="flex items-center gap-3">
-            <Button
-              onClick={handleToggleGridLayout}
-              variant={useGridLayout ? 'default' : 'outline'}
-              className={useGridLayout ? 'bg-primary text-primary-foreground' : ''}
-            >
-              <LayoutGrid className="w-4 h-4 mr-2" />
-              Grid Layout
-            </Button>
-            <DashboardCustomizer
-              sections={dashboardSections}
-              onToggleSection={handleToggleSection}
-              onResetToDefaults={handleResetToDefaults}
-            />
-          </div>
-        </div>
 
-        <TimeRangeFilter
-          onRangeChange={setTimeRange}
-          onCompareToggle={setIsComparing}
-        />
+          <TimeRangeFilter
+            onRangeChange={setTimeRange}
+            onCompareToggle={setIsComparing}
+          />
+        </CardContent>
       </Card>
 
       {/* ═══════════════════════════════════════════════════════════
@@ -584,7 +591,7 @@ export function AnalyticsPage() {
           ═══════════════════════════════════════════════════════════ */}
 
       {/* MOBILE WIDGET STACK - Vertical, No Grid */}
-      <div className="block md:hidden space-y-4 w-full overflow-x-hidden">
+      <div className="block md:hidden space-y-4 w-full overflow-x-hidden pb-8">
         {visibleSections.map((section) => (
           <div key={section.id} className="animate-in fade-in slide-in-from-bottom-2 duration-300 w-full overflow-x-hidden">
             {renderWidgetContent(section.id)}
@@ -592,7 +599,7 @@ export function AnalyticsPage() {
         ))}
 
         {/* Mobile Hint - Customize on Desktop */}
-        <div className="p-4 bg-muted/50 border border-border rounded-xl text-center">
+        <div className="p-4 bg-muted/30 border border-dashed border-border rounded-xl text-center">
           <p className="text-sm text-muted-foreground">
             💡 Customize widgets and layout on desktop
           </p>
@@ -600,7 +607,7 @@ export function AnalyticsPage() {
       </div>
 
       {/* DESKTOP LAYOUT - Grid or List with Reorder */}
-      <div className="hidden md:block">
+      <div className="hidden md:block pb-10">
         {useGridLayout ? (
           <Suspense fallback={<WidgetPlaceholder title="Loading grid..." />}>
             <LazyAppleGridDashboard />
@@ -622,6 +629,6 @@ export function AnalyticsPage() {
           </div>
         )}
       </div>
-    </PageShell>
+    </DashboardShell>
   );
 }

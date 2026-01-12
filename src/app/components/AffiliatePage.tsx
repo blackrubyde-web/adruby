@@ -14,7 +14,8 @@ import {
   Rocket
 } from 'lucide-react';
 import { toast } from 'sonner';
-import { PageShell, Card, HeroHeader } from './layout';
+import { PageShell, HeroHeader } from './layout';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from './ui/card';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { useAffiliate } from '../contexts/AffiliateContext';
 import { supabase } from '../lib/supabaseClient';

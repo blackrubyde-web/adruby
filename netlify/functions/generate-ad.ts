@@ -3,6 +3,8 @@ import OpenAI from 'openai';
 import templateCache from '../../src/app/lib/ai/design/template-cache.json';
 import { resolveTemplateImageUrl } from '../../src/app/lib/ai/design/template-intelligence';
 import type { TemplateIntelligence } from '../../src/app/lib/ai/design/template-intelligence';
+import { AD_TEMPLATES } from '../../src/app/components/studio/presets';
+import { injectContentIntoTemplate } from '../../src/app/components/studio/TemplateEngine';
 
 /**
  * Parse JSON response, handling markdown code fences
@@ -260,172 +262,55 @@ const handler: Handler = async (event: HandlerEvent) => {
             }
         }
 
-        // 🆕 ADAPTIVE LAYOUT based on image analysis
-        const productPosition = imageAnalysis?.productPosition || 'center';
-        const textZone = imageAnalysis?.suggestedTextZone || 'bottom';
+        // 🆕 PREMIUM TEMPLATE ENGINE
+        // Replaces legacy "Adaptive Layout" with "Meta Performance Templates" from presets.ts
 
-        // Calculate adaptive positions
-        let productX = 180, productY = 180;
-        let headlineX = 60, headlineY = 700;
-        let descX = 90, descY = 840;
+        // 1. Determine Context
+        const inferredNiche = inferTemplateCategory(request.productName + ' ' + request.userPrompt) || 'ecommerce';
 
-        if (productPosition === 'left') {
-            // Product left → Text right
-            productX = 60;
-            productY = 180;
-            headlineX = 580;
-            headlineY = 200;
-            descX = 580;
-            descY = 350;
-        } else if (productPosition === 'right') {
-            // Product right → Text left
-            productX = 600;
-            productY = 180;
-            headlineX = 60;
-            headlineY = 200;
-            descX = 60;
-            descY = 350;
-        } else if (textZone === 'top') {
-            // Product bottom → Text top
-            headlineY = 100;
-            descY = 250;
-            productY = 500;
-        }
+        // 2. Select Template
+        // Prioritize templates matching inferred niche, fallback to generic high-performers
+        const nicheTemplates = AD_TEMPLATES.filter(t => t.niche === inferredNiche || t.niche === 'ecommerce');
+        const candidateTemplates = nicheTemplates.length > 0 ? nicheTemplates : AD_TEMPLATES;
+        const selectedTemplate = candidateTemplates[Math.floor(Math.random() * candidateTemplates.length)];
 
-        // Build adaptive ad document
-        const backgroundFill = templatePalette?.background || getToneColor(request.tone);
-        const headlineColor = templatePalette?.text || '#000000';
-        const descriptionColor = templatePalette?.text ? templatePalette.text : '#333333';
-        const ctaBg = templatePalette?.accent || '#000000';
-        const ctaTextColor = templatePalette?.accent ? '#FFFFFF' : '#FFFFFF';
-
-        const adDocument = {
-            id: `ad-${Date.now()}`,
-            name: `${request.productName} Ad`,
-            width: 1080,
-            height: 1080,
-            backgroundColor: backgroundFill,
-            layers: [
-                // Background
-                {
-                    id: 'bg',
-                    type: 'background',
-                    name: 'Background',
-                    x: 0,
-                    y: 0,
-                    width: 1080,
-                    height: 1080,
-                    rotation: 0,
-                    opacity: 1,
-                    locked: false,
-                    visible: true,
-                    fill: backgroundFill,
-                    src: templateBackgroundUrl,
-                    fit: 'cover',
-                },
-                // Product image (adaptive position!)
-                ...(request.imageBase64 ? [{
-                    id: 'product',
-                    type: 'product',
-                    name: 'Product',
-                    x: productX,
-                    y: productY,
-                    width: productPosition !== 'center' ? 450 : 720,
-                    height: 450,
-                    rotation: 0,
-                    opacity: 1,
-                    locked: false,
-                    visible: true,
-                    src: request.imageBase64,
-                    fit: 'contain',
-                }] : []),
-                // Headline (adaptive position!)
-                {
-                    id: 'headline',
-                    type: 'text',
-                    name: 'Headline',
-                    x: headlineX,
-                    y: headlineY,
-                    width: productPosition !== 'center' ? 450 : 960,
-                    height: 120,
-                    rotation: 0,
-                    opacity: 1,
-                    locked: false,
-                    visible: true,
-                    text: copyContent.headline || 'Your Headline',
-                    fontSize: 64,
-                    fontFamily: 'Inter',
-                    fontWeight: '900',
-                    fill: headlineColor,
-                    align: productPosition !== 'center' ? 'left' : 'center',
-                    lineHeight: 1.1,
-                },
-                // Description (adaptive position!)
-                {
-                    id: 'description',
-                    type: 'text',
-                    name: 'Description',
-                    x: descX,
-                    y: descY,
-                    width: productPosition !== 'center' ? 450 : 900,
-                    height: 80,
-                    rotation: 0,
-                    opacity: 1,
-                    locked: false,
-                    visible: true,
-                    text: copyContent.description || 'Description',
-                    fontSize: 24,
-                    fontFamily: 'Inter',
-                    fontWeight: '400',
-                    fill: descriptionColor,
-                    align: productPosition !== 'center' ? 'left' : 'center',
-                    lineHeight: 1.4,
-                },
-                // CTA Button Background
-                {
-                    id: 'cta-bg',
-                    type: 'shape',
-                    name: 'CTA Background',
-                    x: 390,
-                    y: 960,
-                    width: 300,
-                    height: 60,
-                    rotation: 0,
-                    opacity: 1,
-                    locked: false,
-                    visible: true,
-                    shape: 'rectangle',
-                    fill: ctaBg,
-                    cornerRadius: 12,
-                },
-                // CTA Text
-                {
-                    id: 'cta-text',
-                    type: 'text',
-                    name: 'CTA',
-                    x: 390,
-                    y: 960,
-                    width: 300,
-                    height: 60,
-                    rotation: 0,
-                    opacity: 1,
-                    locked: false,
-                    visible: true,
-                    text: copyContent.cta || 'Shop Now',
-                    fontSize: 20,
-                    fontFamily: 'Inter',
-                    fontWeight: '700',
-                    fill: ctaTextColor,
-                    align: 'center',
-                    lineHeight: 3,
-                },
-            ],
+        // 3. Prepare Content Package
+        const generatedContent = {
+            headline: copyContent.headline || 'Your Headline',
+            subheadline: copyContent.subheadline || 'Subheadline',
+            ctaText: copyContent.cta || 'Shop Now',
+            suggestedColors: {
+                background: templatePalette?.background || getToneColor(request.tone),
+                primary: templatePalette?.text || '#ffffff',
+                accent: templatePalette?.accent || '#000000'
+            },
+            suggestedNiche: inferredNiche
         };
+
+        // 4. Inject Content
+        // We use the orchestrator's resolved image (templateBackgroundUrl) if no user image provided.
+        // If user provided image (request.imageBase64), we prioritize that.
+        const targetImage = request.imageBase64 || templateBackgroundUrl;
+
+        const adDocument = injectContentIntoTemplate(selectedTemplate.document, generatedContent, {
+            targetImage: targetImage,
+            niche: inferredNiche
+        });
+
+        // 5. Final Polish
+        adDocument.id = `ad-${Date.now()}`;
+        adDocument.name = `${request.productName} (${selectedTemplate.name})`;
+        // Ensure dimensions match request (standard 1080x1080 for now)
+        adDocument.width = 1080;
+        adDocument.height = 1080;
+        if (templatePalette?.background && !adDocument.backgroundColor) {
+            adDocument.backgroundColor = templatePalette.background;
+        }
 
         const totalTime = Date.now() - startTime;
         const totalCost = copyCost + imageCost;
 
-        console.log(`✨ Ad generated with ADAPTIVE LAYOUT in ${totalTime}ms (Cost: $${totalCost.toFixed(4)})`);
+        console.log(`✨ Ad generated with PREMIUM ENGINE in ${totalTime}ms (Template: ${selectedTemplate.name})`);
 
         // Return response
         const response: GenerateAdResponse = {
