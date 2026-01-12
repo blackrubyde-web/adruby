@@ -96,12 +96,35 @@ export const PropertiesPanel = ({ layer, onChange, onGenerate, onAdapt: _onAdapt
                     await onGenerate?.(layer.id, 'bg');
                     break;
                 case 'rewrite':
-                    await onGenerate?.(layer.id, 'text');
+                    // NEW: Call AI Magic Netlify Function
+                    if (textLayer) {
+                        const response = await fetch('/.netlify/functions/ai-magic-text', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                currentText: textLayer.text,
+                                context: layer.type === 'cta' ? 'cta' : 'headline',
+                                tone: 'professional',
+                                language: 'de'
+                            })
+                        });
+
+                        if (!response.ok) {
+                            throw new Error('AI Magic failed');
+                        }
+
+                        const result = await response.json();
+                        // Apply the primary suggestion
+                        onChange?.(layer.id, { text: result.primary } as Partial<StudioLayer>);
+                    }
                     break;
                 case 'enhance':
                     await onEnhanceImage?.(layer.id);
                     break;
             }
+        } catch (error) {
+            console.error('[AI Magic]', error);
+            // Fallback toast notification would go here
         } finally {
             setIsProcessing(false);
             setShowAIModal(false);
