@@ -138,7 +138,10 @@ export const ASSET_TYPES = [
     'comparisonTable',
     'benefitStack',
     'featureChips',
-    'statsCard'
+    'statsCard',
+
+    // Core assets
+    'background'
 ] as const;
 
 export type AssetType = typeof ASSET_TYPES[number];
