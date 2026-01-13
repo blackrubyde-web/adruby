@@ -222,6 +222,26 @@ const handler: Handler = async (event: HandlerEvent) => {
                     productCutout: request.imageBase64 || ''
                 };
 
+                // SMART ASSET PROCESSING
+                // If it's a SaaS/App and we have a user image (screenshot), wrap it in a laptop mock
+                if (businessModel === 'saas' && request.imageBase64) {
+                    console.log('💻 Applying smart laptop mock wrapper for SaaS screenshot');
+                    // We need to import renderDeviceMock dynamically or use what's available
+                    // Since we can't easily import here without circular deps if not careful, 
+                    // we'll rely on renderAssets doing it if we passed it as a requirement?
+                    // actually we can just import it.
+                    const { renderDeviceMock } = require('../../src/app/lib/render/asset-registry');
+                    try {
+                        const mockUrl = renderDeviceMock({
+                            image: request.imageBase64,
+                            type: 'laptop'
+                        });
+                        availableAssets.productCutout = mockUrl;
+                    } catch (e) {
+                        console.warn('Failed to wrap asset in device mock:', e);
+                    }
+                }
+
                 console.log(`🎨 Rendered ${Object.keys(renderedAssets).length} assets for spec`);
 
                 addStageTelemetry(telemetry, 'assetRendering', {

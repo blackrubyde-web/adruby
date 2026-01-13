@@ -319,6 +319,65 @@ function renderPlaceholderCard(params: { text: string; width?: number; height?: 
     return `data:image/svg+xml;base64,${Buffer.from(svg).toString('base64')}`;
 }
 
+/**
+ * Wraps a screenshot in a sleek device frame (Laptop/Browser)
+ */
+export function renderDeviceMock(params: { image: string, type: 'laptop' | 'browser' | 'mobile' }): string {
+    const { image, type } = params;
+
+    // MacBook Pro Style Frame SVG
+    // Note: We use an <image> tag inside SVG to embed the user's screenshot
+    // The screenshot needs to be base64.
+
+    const width = 800;
+    const height = 500;
+
+    let svgContent = '';
+
+    if (type === 'laptop') {
+        const screenW = 640;
+        const screenH = 400;
+        const padX = (width - screenW) / 2;
+        const padY = 40;
+
+        svgContent = `
+            <!-- Laptop Base -->
+            <defs>
+                <linearGradient id="laptopGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+                    <stop offset="0%" stop-color="#E0E0E0"/>
+                    <stop offset="100%" stop-color="#B0B0B0"/>
+                </linearGradient>
+            </defs>
+            
+            <!-- Lid -->
+            <rect x="${padX - 20}" y="${padY - 20}" width="${screenW + 40}" height="${screenH + 40}" rx="16" fill="#1A1A1A"/>
+            
+            <!-- Screen Area (The Screenshot) -->
+            <image x="${padX}" y="${padY}" width="${screenW}" height="${screenH}" preserveAspectRatio="xMidYMid slice" href="${image}" clip-path="inset(0px round 4px)"/>
+            
+            <!-- Glare/Reflection overlay -->
+            <rect x="${padX}" y="${padY}" width="${screenW}" height="${screenH}" fill="url(#glare)" opacity="0.1" pointer-events="none"/>
+            <defs>
+                <linearGradient id="glare" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" stop-color="#FFFFFF" stop-opacity="0.8"/>
+                    <stop offset="50%" stop-color="#FFFFFF" stop-opacity="0"/>
+                </linearGradient>
+            </defs>
+
+            <!-- Bottom Base -->
+            <path d="M ${padX - 20} ${padY + screenH + 20} L ${padX + screenW + 20} ${padY + screenH + 20} L ${padX + screenW + 20} ${padY + screenH + 35} L ${padX - 20} ${padY + screenH + 35} Z" fill="#C0C0C0"/>
+            <path d="M ${padX - 20} ${padY + screenH + 35} L ${padX + screenW + 20} ${padY + screenH + 35} L ${padX + screenW - 40} ${padY + screenH + 45} L ${padX + 40} ${padY + screenH + 45} Z" fill="#A0A0A0"/>
+        `;
+    }
+
+    const svg = `
+<svg width="${width}" height="${height}" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+    ${svgContent}
+</svg>`.trim();
+
+    return `data:image/svg+xml;base64,${Buffer.from(svg).toString('base64')}`;
+}
+
 function renderComparisonTable(params: any): string {
     // Simplified comparison - would be more sophisticated in production
     return renderSimpleListCard({
