@@ -84,15 +84,6 @@ body,
   --container-width-sm: 1200px;
   --container-width-md: 1400px;
   --container-width-lg: 1600px;
-}
-
-@media (min-width: 768px) {
-  :root {
-    --header-height: 80px;
-  }
-}
-  --container-width-md: 1400px;
-  --container-width-lg: 1600px;
 
   /* Sidebar (Light Mode) */
   --sidebar: #ffffff;
@@ -103,6 +94,12 @@ body,
   --sidebar-accent-foreground: #09090b;
   --sidebar-border: #e4e4e7;
   --sidebar-ring: #be123c;
+}
+
+@media (min-width: 768px) {
+  :root {
+    --header-height: 80px;
+  }
 }
 
 .dark {
