@@ -12,18 +12,18 @@ import type { BusinessModel, CreativeSpecRequest } from './types';
 // ============================================================================
 
 export function buildMasterPrompt(request: CreativeSpecRequest): string {
-    const {
-        productName,
-        brandName,
-        userPrompt,
-        tone,
-        language = 'de',
-        platform = 'meta_feed',
-        ratio = '1:1',
-        groundedFacts
-    } = request;
+  const {
+    productName,
+    brandName,
+    userPrompt,
+    tone,
+    language = 'de',
+    platform = 'meta_feed',
+    ratio = '1:1',
+    groundedFacts
+  } = request;
 
-    return `You are a performance marketer and creative strategist.
+  return `You are a performance marketer and creative strategist.
 Return only valid JSON that matches the CreativeSpec schema.
 You do not invent metrics, testimonials, or claims. Use grounded facts exactly as provided.
 
@@ -60,7 +60,7 @@ ${groundedFacts?.features?.length ? `**Features (GROUNDED FACTS):** ${groundedFa
   "niche": "specific niche/category",
   "platform": "${platform}",
   "ratio": "${ratio}",
-  "language": "${language}",
+  "language": "${language}",  // CRITICAL: Use exact ISO code ${language}, NOT full language name! Max 5 chars!
   "audience": {
     "persona": "target audience description",
     "sophistication": "unaware|problem_aware|solution_aware|product_aware",
@@ -118,8 +118,8 @@ Return ONLY the JSON, no additional text.`;
 // ============================================================================
 
 export function getBusinessModelAddendum(businessModel: BusinessModel): string {
-    const addenda: Record<BusinessModel, string> = {
-        ecommerce: `
+  const addenda: Record<BusinessModel, string> = {
+    ecommerce: `
 **E-COMMERCE CREATIVE STRATEGY:**
 
 **Preferred Patterns:**
@@ -147,7 +147,7 @@ export function getBusinessModelAddendum(businessModel: BusinessModel): string {
 - CTA: specific action verb ("Jetzt ansehen", "In den Korb", NOT generic "Click here")
 `,
 
-        saas: `
+    saas: `
 **SAAS CREATIVE STRATEGY:**
 
 **Preferred Patterns:**
@@ -173,7 +173,7 @@ export function getBusinessModelAddendum(businessModel: BusinessModel): string {
 - proofLine: use real customer count or usage stat if provided, else omit
 `,
 
-        local: `
+    local: `
 **LOCAL/GASTRO CREATIVE STRATEGY:**
 
 **Preferred Patterns:**
@@ -199,7 +199,7 @@ export function getBusinessModelAddendum(businessModel: BusinessModel): string {
 - Keep copy local and immediate: "5 Minuten entfernt", "Heute geöffnet bis 22 Uhr"
 `,
 
-        coach: `
+    coach: `
 **COACH/EXPERT CREATIVE STRATEGY:**
 
 **Preferred Patterns:**
@@ -225,7 +225,7 @@ export function getBusinessModelAddendum(businessModel: BusinessModel): string {
 - CTA: "Kostenloses Erstgespräch", "Webinar ansehen", "Mehr erfahren"
 `,
 
-        agency: `
+    agency: `
 **AGENCY/B2B SERVICES CREATIVE STRATEGY:**
 
 **Preferred Patterns:**
@@ -249,7 +249,7 @@ export function getBusinessModelAddendum(businessModel: BusinessModel): string {
 - CTA: "Audit buchen", "Case Study ansehen", "Gespräch vereinbaren"
 `,
 
-        info: `
+    info: `
 **INFO/EDUCATION CREATIVE STRATEGY:**
 
 **Preferred Patterns:**
@@ -272,9 +272,9 @@ export function getBusinessModelAddendum(businessModel: BusinessModel): string {
 - CTA: "Jetzt ansehen", "Webinar sichern", "Inhalte anschauen", "Kurs starten"
 - Avoid: over-promising results
 `
-    };
+  };
 
-    return addenda[businessModel] || '';
+  return addenda[businessModel] || '';
 }
 
 // ============================================================================
@@ -282,28 +282,28 @@ export function getBusinessModelAddendum(businessModel: BusinessModel): string {
 // ============================================================================
 
 export interface TightenCopyRequest {
-    copy: {
-        headline: string;
-        subheadline?: string;
-        body?: string;
-        cta: string;
-        bullets?: string[];
-        chips?: string[];
-    };
-    constraints: {
-        headline_max_chars: number;
-        subheadline_max_chars?: number;
-        cta_max_chars: number;
-        max_bullets?: number;
-    };
-    language: string;
-    tone: string;
+  copy: {
+    headline: string;
+    subheadline?: string;
+    body?: string;
+    cta: string;
+    bullets?: string[];
+    chips?: string[];
+  };
+  constraints: {
+    headline_max_chars: number;
+    subheadline_max_chars?: number;
+    cta_max_chars: number;
+    max_bullets?: number;
+  };
+  language: string;
+  tone: string;
 }
 
 export function buildTightenCopyPrompt(request: TightenCopyRequest): string {
-    const { copy, constraints, language, tone } = request;
+  const { copy, constraints, language, tone } = request;
 
-    return `You compress ad copy to fit strict character/line limits while keeping meaning and tone.
+  return `You compress ad copy to fit strict character/line limits while keeping meaning and tone.
 Return JSON only. No new claims.
 
 **Given Copy:**
@@ -349,16 +349,16 @@ Return ONLY the JSON, no additional text.`;
  * Build complete prompt for CreativeSpec generation
  */
 export function buildCreativeSpecPrompt(
-    request: CreativeSpecRequest,
-    businessModel?: BusinessModel
+  request: CreativeSpecRequest,
+  businessModel?: BusinessModel
 ): string {
-    const masterPrompt = buildMasterPrompt(request);
+  const masterPrompt = buildMasterPrompt(request);
 
-    // If businessModel is known, append specific addendum
-    if (businessModel) {
-        const addendum = getBusinessModelAddendum(businessModel);
-        return `${masterPrompt}\n\n${addendum}`;
-    }
+  // If businessModel is known, append specific addendum
+  if (businessModel) {
+    const addendum = getBusinessModelAddendum(businessModel);
+    return `${masterPrompt}\n\n${addendum}`;
+  }
 
-    return masterPrompt;
+  return masterPrompt;
 }
