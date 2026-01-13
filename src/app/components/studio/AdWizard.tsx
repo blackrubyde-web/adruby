@@ -262,7 +262,8 @@ export const AdWizard = ({ isOpen, onClose, onComplete }: AdWizardProps) => {
             toast.info('Starte Premium AI Pipeline...');
 
             // CALL SECURE SERVER-SIDE NETLIFY FUNCTION
-            const response = await fetch('/.netlify/functions/generate-ad', {
+            // SWITCHED TO NEW Universal Ad Creative Engine Endpoint
+            const response = await fetch('/.netlify/functions/generate-ad-new', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -273,13 +274,15 @@ export const AdWizard = ({ isOpen, onClose, onComplete }: AdWizardProps) => {
                     userPrompt: userPrompt || 'Create high-converting Meta ad',
                     tone,
                     imageBase64: uploadedImage || undefined,
-                    enhanceImage: true,
+                    // enhanceImage: true, // Not supported in new pipeline yet
                     groundedFacts: {
                         offer: offer || usps || 'Special Offer',
                         proof: socialProof || 'Trusted Brand',
                         painPoints: painPoints ? [painPoints] : undefined
                     },
-                    language: formData.language
+                    language: formData.language,
+                    variantCount: 3, // Request 3 variants
+                    debug: false     // Disable debug for production
                 }),
             });
 
@@ -297,31 +300,34 @@ export const AdWizard = ({ isOpen, onClose, onComplete }: AdWizardProps) => {
                 throw new Error(result.error || 'Ad generation failed');
             }
 
-            if (!result.adDocument) {
-                console.error('[AdWizard] No adDocument in result');
-                throw new Error('No ad document returned');
+            // NEW: Handle array of documents
+            const docs = result.adDocuments;
+            if (!docs || docs.length === 0) {
+                console.error('[AdWizard] No adDocuments returned');
+                throw new Error('No ad documents returned');
             }
 
-            console.log('[AdWizard] Setting generated document:', result.adDocument);
+            console.log(`[AdWizard] Received ${docs.length} variants`);
 
-            // Set generated document
-            setGeneratedDoc(result.adDocument);
+            // Store all variants
+            setAllVariants(docs);
+            setSelectedVariantIndex(0); // Select best (first) by default
 
-            // Set hooks for display
-            if (result.premiumCopy) {
-                setGeneratedHooks({
-                    headlines: [result.premiumCopy.headline],
-                    descriptions: [result.premiumCopy.description],
-                    ctas: [result.premiumCopy.cta]
-                });
-            } else {
-                console.warn('[AdWizard] No premiumCopy, using defaults');
-                setGeneratedHooks({
-                    headlines: ['Special Offer'],
-                    descriptions: ['Check it out'],
-                    ctas: ['Shop Now']
-                });
-            }
+            // Set generated document (first one)
+            const bestDoc = docs[0];
+            setGeneratedDoc(bestDoc);
+
+            // Extract copy from the first variant for the hooks panel
+            // The new pipeline doesn't return separate hooks, so we extract from layers
+            const headline = bestDoc.layers.find((l: any) => l.role === 'headline')?.text || 'Special Offer';
+            const description = bestDoc.layers.find((l: any) => l.role === 'description' || l.role === 'subheadline')?.text || 'Check it out';
+            const cta = bestDoc.layers.find((l: any) => l.role === 'cta')?.text || 'Shop Now';
+
+            setGeneratedHooks({
+                headlines: [headline],
+                descriptions: [description],
+                ctas: [cta]
+            });
 
             toast.success('Premium Ad erstellt! 🎉');
 
@@ -734,17 +740,82 @@ export const AdWizard = ({ isOpen, onClose, onComplete }: AdWizardProps) => {
                     )}
 
                     {/* Step 4: Preview & Hook Selection */}
+                    {/* Step 4: Preview & Hook Selection */}
                     {step === 4 && generatedDoc && generatedHooks ? (
                         <div className="py-4 md:py-6 space-y-6 animate-in fade-in duration-500 h-full overflow-hidden">
-                            <div className="text-center space-y-1 mb-4">
+                            <div className="text-center space-y-1 mb-2">
                                 <h3 className="text-xl md:text-2xl font-black text-foreground flex items-center justify-center gap-3">
                                     <Sparkles className="w-6 h-6 text-primary" />
-                                    Deine Ad ist fertig!
+                                    Deine Premium Ads sind fertig!
                                 </h3>
                                 <p className="text-sm text-muted-foreground">
-                                    Wähle die besten Hooks für deine Kampagne
+                                    Wähle aus {allVariants.length} KI-optimierten Varianten
                                 </p>
                             </div>
+
+                            {/* START: Premium Variant Selector */}
+                            {allVariants.length > 1 && (
+                                <div className="flex justify-center mb-4">
+                                    <div className="flex gap-3 bg-muted/30 p-1.5 rounded-2xl border border-border/50">
+                                        {allVariants.map((variant, index) => {
+                                            const score = variant.meta?.qualityScore || 0;
+                                            const isBest = index === 0; // First is always best sorted
+
+                                            // Color coding based on score
+                                            let scoreColor = 'text-muted-foreground';
+                                            if (score >= 90) scoreColor = 'text-emerald-500';
+                                            else if (score >= 80) scoreColor = 'text-primary';
+
+                                            return (
+                                                <button
+                                                    key={index}
+                                                    onClick={() => {
+                                                        setSelectedVariantIndex(index);
+                                                        setGeneratedDoc(variant);
+
+                                                        // Update hooks from this variant
+                                                        const h = variant.layers.find((l: any) => l.role === 'headline')?.text || '';
+                                                        const d = variant.layers.find((l: any) => l.role === 'description' || l.role === 'subheadline')?.text || '';
+                                                        const c = variant.layers.find((l: any) => l.role === 'cta')?.text || '';
+
+                                                        setGeneratedHooks({
+                                                            headlines: [h].filter(Boolean),
+                                                            descriptions: [d].filter(Boolean),
+                                                            ctas: [c].filter(Boolean)
+                                                        });
+                                                    }}
+                                                    className={`
+                                                        relative px-4 py-2 rounded-xl text-sm font-medium transition-all duration-300 flex items-center gap-3
+                                                        ${selectedVariantIndex === index
+                                                            ? 'bg-background shadow-sm ring-1 ring-border text-foreground'
+                                                            : 'hover:bg-background/50 text-muted-foreground hover:text-foreground'
+                                                        }
+                                                    `}
+                                                >
+                                                    <span className="flex items-center gap-2">
+                                                        Variante {index + 1}
+                                                        {isBest && (
+                                                            <span className="text-[10px] bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400 px-1.5 py-0.5 rounded font-bold">
+                                                                BEST
+                                                            </span>
+                                                        )}
+                                                    </span>
+
+                                                    {/* Quality Score Badge */}
+                                                    {score > 0 && (
+                                                        <div className={`flex items-center gap-1 text-xs font-bold ${scoreColor}`}>
+                                                            <Zap className="w-3 h-3" />
+                                                            {score}
+                                                            <span className="text-[10px] opacity-60">/100</span>
+                                                        </div>
+                                                    )}
+                                                </button>
+                                            );
+                                        })}
+                                    </div>
+                                </div>
+                            )}
+                            {/* END: Premium Variant Selector */}
 
                             <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 h-[500px] overflow-y-auto">
                                 {/* Left: PREMIUM CANVAS PREVIEW */}
