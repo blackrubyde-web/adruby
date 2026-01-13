@@ -192,27 +192,71 @@ async function assembleDocument(
     // Set basic properties
     document.id = `ad_${Date.now()}`;
     document.name = `${spec.businessModel}_${spec.creativePattern}`;
-    document.width = template.ratio === '1:1' ? 1080 : template.ratio === '4:5' ? 1080 : 1080;
-    document.height = template.ratio === '1:1' ? 1080 : template.ratio === '4:5' ? 1350 : 1920;
 
-    // Inject copy into layers
+    // 1. APPLY THEME & COLORS (From Spec)
+    const palette = spec.style.palette || ['#000000', '#FFFFFF', '#FF0000'];
+    const textSafe = spec.style.textSafe || ['#000000', '#FFFFFF'];
+
+    // Background Color
+    const bgLayer = document.layers.find(l => l.type === 'background');
+    if (bgLayer && !bgLayer.src && palette[0]) {
+        bgLayer.fill = palette[0];
+        // If palette has a specific background color intended, use that. 
+        // Usually palette[0] is primary, palette[1] secondary. 
+        // Let's look for a light/dark mode preference or just default to white/off-white if not specified, 
+        // but here we want to use the AI's suggestion.
+        document.backgroundColor = palette[0];
+    }
+
+    // 2. INJECT CONTENT & APPLY TYPOGRAPHY
     for (const layer of document.layers) {
+        // Text Layers
         if (layer.type === 'text') {
             if (layer.role === 'headline') {
                 layer.text = spec.copy.headline;
+                layer.color = textSafe[0]; // Primary text color
             } else if (layer.role === 'subheadline') {
                 layer.text = spec.copy.subheadline || '';
+                layer.color = textSafe.length > 1 ? textSafe[1] : textSafe[0];
             } else if (layer.role === 'description' || layer.role === 'body') {
-                layer.text = spec.copy.body || '';
+                // If it's a list (benefits), format it
+                if (spec.copy.bullets && spec.copy.bullets.length > 0) {
+                    layer.text = spec.copy.bullets.map(b => `✓ ${b}`).join('\n');
+                } else {
+                    layer.text = spec.copy.body || '';
+                }
+                layer.color = textSafe.length > 1 ? textSafe[1] : textSafe[0];
             } else if (layer.role === 'social_proof') {
                 layer.text = spec.copy.proofLine || '';
+                layer.color = textSafe.length > 1 ? textSafe[1] : textSafe[0];
+            } else if (layer.role === 'badge' || layer.role === 'offer') {
+                if (spec.groundedFacts?.offer) {
+                    layer.text = spec.groundedFacts.offer;
+                }
+                layer.color = '#FFFFFF'; // Badges usually white text
             }
-        } else if (layer.type === 'cta') {
+        }
+
+        // CTA Layer
+        else if (layer.type === 'cta') {
             layer.text = spec.copy.cta;
+            if (palette.length > 2) {
+                layer.bgColor = palette[2] || '#000000'; // Accent color for CTA
+            }
+            layer.color = '#FFFFFF'; // White text on colored button
+        }
+
+        // Shape Layers (e.g. Badges)
+        else if (layer.type === 'shape') {
+            if (layer.role === 'badge' || layer.name.toLowerCase().includes('badge')) {
+                if (palette.length > 2) {
+                    layer.fill = palette[2] || '#FF0000'; // Accent color
+                }
+            }
         }
     }
 
-    // Inject assets
+    // 3. INJECT ASSETS
     for (const layer of document.layers) {
         if (layer.type === 'product' || layer.type === 'image' || layer.type === 'background') {
             // Map layer role to asset type
