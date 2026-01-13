@@ -372,6 +372,9 @@ export interface CreativeSpecRequest {
         mustAvoid?: string[];
         mustInclude?: string[];
     };
+
+    // Optional: Vision Input
+    imageBase64?: string;
 }
 
 /**

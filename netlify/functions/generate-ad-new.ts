@@ -177,7 +177,8 @@ const handler: Handler = async (event: HandlerEvent) => {
             platform,
             ratio,
             language,
-            groundedFacts
+            groundedFacts,
+            imageBase64: request.imageBase64 // Forward image for Vision Analysis
         };
 
         const specResult = await generateCreativeSpecs(specRequest, {
