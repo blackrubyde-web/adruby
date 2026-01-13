@@ -395,7 +395,7 @@
   }
 
   /* Reduce vertical length on mobile */
-  section {
+  .landing-page section {
     padding-top: 3rem !important;
     padding-bottom: 3rem !important;
   }

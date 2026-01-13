@@ -250,7 +250,7 @@ export function LandingPage({ onGetStarted, onLogin }: LandingPageProps) {
   ];
 
   return (
-    <div className="min-h-screen w-full bg-background landing-page">
+    <div className="landing-theme-root min-h-screen w-full bg-black font-sans text-foreground overflow-x-hidden selection:bg-rose-500/30 landing-page">
       {/* ============================================
           NAVIGATION
           ============================================ */}
