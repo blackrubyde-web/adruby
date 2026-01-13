@@ -181,8 +181,8 @@ export const ECOMMERCE_PRODUCT_FOCUS: TemplateCapsule = {
                 fontFamily: 'Inter',
                 fontWeight: 500,
                 fontSize: 24,
-                color: '#333333',
-                fill: '#333333',
+                color: '#222222',
+                fill: '#222222',
                 align: 'left',
                 lineHeight: 1.6,
                 role: 'description'
@@ -314,7 +314,7 @@ export const ECOMMERCE_OFFER_BURST: TemplateCapsule = {
         name: 'Offer Burst + Price Anchor',
         width: 1080,
         height: 1080,
-        backgroundColor: '#FFF8F0',
+        backgroundColor: '#FFFFFF',
         layers: [
             {
                 id: 'bg',
@@ -368,7 +368,7 @@ export const ECOMMERCE_OFFER_BURST: TemplateCapsule = {
                 color: '#FFFFFF',
                 fill: '#FFFFFF',
                 align: 'center',
-                role: 'badge'
+                role: 'offer'
             },
             {
                 id: 'product',
@@ -450,7 +450,7 @@ export const ECOMMERCE_OFFER_BURST: TemplateCapsule = {
                 fontSize: 20,
                 fontWeight: 700,
                 color: '#FFFFFF',
-                bgColor: '#FF3B30',
+                bgColor: '#DC2626',
                 radius: 12,
                 role: 'cta'
             }
