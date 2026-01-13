@@ -52,11 +52,11 @@ const TONE_OPTIONS = [
 ];
 
 const LANGUAGES = [
-    { id: 'German', label: '🇩🇪 Deutsch' },
-    { id: 'English', label: '🇺🇸 English' },
-    { id: 'French', label: '🇫🇷 Français' },
-    { id: 'Spanish', label: '🇪🇸 Español' },
-    { id: 'Italian', label: '🇮🇹 Italiano' }
+    { id: 'de', label: '🇩🇪 Deutsch' },
+    { id: 'en', label: '🇺🇸 English' },
+    { id: 'fr', label: '🇫🇷 Français' },
+    { id: 'es', label: '🇪🇸 Español' },
+    { id: 'it', label: '🇮🇹 Italiano' }
 ];
 
 export const AdWizard = ({ isOpen, onClose, onComplete }: AdWizardProps) => {
@@ -74,7 +74,7 @@ export const AdWizard = ({ isOpen, onClose, onComplete }: AdWizardProps) => {
         offer: '',
         socialProof: '',
         tone: 'professional',
-        language: 'German',
+        language: 'de',
     });
     const [isGenerating, setIsGenerating] = useState(false);
     const [isRemovingBg, setIsRemovingBg] = useState(false); // New state for BG removal loading
@@ -82,6 +82,11 @@ export const AdWizard = ({ isOpen, onClose, onComplete }: AdWizardProps) => {
     const [generatedHooks, setGeneratedHooks] = useState<GeneratedHooks | null>(null);
     const [selectedHookIndex, setSelectedHookIndex] = useState(0);
     const [generatedDoc, setGeneratedDoc] = useState<AdDocument | null>(null);
+
+    // NEW: Multi-Variant State
+    const [allVariants, setAllVariants] = useState<AdDocument[]>([]);
+    const [selectedVariantIndex, setSelectedVariantIndex] = useState(0);
+
     const [showResumeDialog, setShowResumeDialog] = useState(false); // Draft Dialog
     const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -135,7 +140,7 @@ export const AdWizard = ({ isOpen, onClose, onComplete }: AdWizardProps) => {
             offer: '',
             socialProof: '',
             tone: 'professional',
-            language: 'German',
+            language: 'de',
         });
     };
 
@@ -357,7 +362,7 @@ export const AdWizard = ({ isOpen, onClose, onComplete }: AdWizardProps) => {
                 offer: '',
                 socialProof: '',
                 tone: 'professional',
-                language: 'German',
+                language: 'de',
             });
             setIsExiting(false);
             onClose();

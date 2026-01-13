@@ -32,7 +32,8 @@ export const CREATIVE_ANGLES = [
     'demo',
     'before_after',
     'comparison',
-    'price_anchor'
+    'price_anchor',
+    'offer'  // HOTFIX: AI was generating this, add to valid enums
 ] as const;
 
 export type CreativeAngle = typeof CREATIVE_ANGLES[number];
