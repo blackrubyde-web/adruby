@@ -240,7 +240,7 @@ const DashboardPageContent = memo(function DashboardPageContent({
   switch (currentPage) {
     case 'dashboard':
       return (
-        <div className="min-h-screen" style={{ paddingTop: 'var(--header-height)' }}>
+        <div className="min-h-screen pt-0 md:pt-[var(--header-height)]">
           <Suspense fallback={pageFallback}>
             <OverviewPage onNavigate={(page, query) => onNavigate(page as PageType, query)} />
           </Suspense>
@@ -248,7 +248,7 @@ const DashboardPageContent = memo(function DashboardPageContent({
       );
     case 'analytics':
       return (
-        <div className="min-h-screen" style={{ paddingTop: 'var(--header-height)' }}>
+        <div className="min-h-screen pt-0 md:pt-[var(--header-height)]">
           <Suspense fallback={pageFallback}>
             <LazyAnalyticsPage />
           </Suspense>
@@ -259,7 +259,7 @@ const DashboardPageContent = memo(function DashboardPageContent({
 
     case 'campaigns':
       return (
-        <div className="min-h-screen" style={{ paddingTop: 'var(--header-height)' }}>
+        <div className="min-h-screen pt-0 md:pt-[var(--header-height)]">
           <Suspense fallback={pageFallback}>
             <CampaignsPage />
           </Suspense>
@@ -268,7 +268,7 @@ const DashboardPageContent = memo(function DashboardPageContent({
       );
     case 'campaign-builder':
       return (
-        <div className="min-h-screen" style={{ paddingTop: 'var(--header-height)' }}>
+        <div className="min-h-screen pt-0 md:pt-[var(--header-height)]">
           <Suspense fallback={pageFallback}>
             <CampaignBuilderPage />
           </Suspense>
@@ -277,7 +277,7 @@ const DashboardPageContent = memo(function DashboardPageContent({
       );
     case 'aianalysis':
       return (
-        <div className="min-h-screen" style={{ paddingTop: 'var(--header-height)' }}>
+        <div className="min-h-screen pt-0 md:pt-[var(--header-height)]">
           <Suspense fallback={pageFallback}>
             <LazyAIAnalysisPage />
           </Suspense>
@@ -286,7 +286,7 @@ const DashboardPageContent = memo(function DashboardPageContent({
       );
     case 'settings':
       return (
-        <div className="min-h-screen" style={{ paddingTop: 'var(--header-height)' }}>
+        <div className="min-h-screen pt-0 md:pt-[var(--header-height)]">
           <Suspense fallback={pageFallback}>
             <SettingsPage />
           </Suspense>
@@ -295,7 +295,7 @@ const DashboardPageContent = memo(function DashboardPageContent({
       );
     case 'affiliate':
       return (
-        <div className="min-h-screen" style={{ paddingTop: 'var(--header-height)' }}>
+        <div className="min-h-screen pt-0 md:pt-[var(--header-height)]">
           <Suspense fallback={pageFallback}>
             <AffiliatePage />
           </Suspense>
@@ -304,7 +304,7 @@ const DashboardPageContent = memo(function DashboardPageContent({
       );
     case 'profile':
       return (
-        <div className="min-h-screen" style={{ paddingTop: 'var(--header-height)' }}>
+        <div className="min-h-screen pt-0 md:pt-[var(--header-height)]">
           <Suspense fallback={pageFallback}>
             <ProfilePage onNavigate={onNavigate} />
           </Suspense>
@@ -313,7 +313,7 @@ const DashboardPageContent = memo(function DashboardPageContent({
       );
     case 'help':
       return (
-        <div className="min-h-screen" style={{ paddingTop: 'var(--header-height)' }}>
+        <div className="min-h-screen pt-0 md:pt-[var(--header-height)]">
           <Suspense fallback={pageFallback}>
             <HelpSupportPage />
           </Suspense>
@@ -323,7 +323,7 @@ const DashboardPageContent = memo(function DashboardPageContent({
 
     case 'library':
       return (
-        <div className="min-h-screen" style={{ paddingTop: 'var(--header-height)' }}>
+        <div className="min-h-screen pt-0 md:pt-[var(--header-height)]">
           <Suspense fallback={pageFallback}>
             <CreativeLibraryPage />
           </Suspense>
@@ -340,7 +340,7 @@ const DashboardPageContent = memo(function DashboardPageContent({
       );
     case 'admin':
       return (
-        <div className="min-h-screen" style={{ paddingTop: 'var(--header-height)' }}>
+        <div className="min-h-screen pt-0 md:pt-[var(--header-height)]">
           <Suspense fallback={pageFallback}>
             <LazyAdminDashboardPage />
           </Suspense>

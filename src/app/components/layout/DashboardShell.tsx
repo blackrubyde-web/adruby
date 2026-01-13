@@ -22,7 +22,7 @@ export function DashboardShell({
     hero,
 }: DashboardShellProps) {
     return (
-        <div className={cn("w-full max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-8 space-y-8 animate-fade-in-up", className)}>
+        <div className={cn("w-full max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 pt-0 pb-4 sm:py-8 space-y-6 sm:space-y-8 animate-fade-in-up", className)}>
             {/* 
         If a custom hero is provided, render it.
         Otherwise, if title is provided, render the standard HeroHeader.
@@ -38,7 +38,7 @@ export function DashboardShell({
                 />
             ) : null}
 
-            <div className="space-y-8">
+            <div className="space-y-6 sm:space-y-8">
                 {children}
             </div>
         </div>
