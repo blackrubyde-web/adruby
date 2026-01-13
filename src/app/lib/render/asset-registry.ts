@@ -117,7 +117,7 @@ export async function renderAsset(requirement: AssetRequirement): Promise<string
         // ========================================================================
         // LOCAL/GASTRO
         // ========================================================================
-        case 'menuCard':
+        case 'menuCard': {
             // Simple menu list card
             const menuItems = params.items || [
                 'Burger Classic - €12,90',
@@ -131,8 +131,9 @@ export async function renderAsset(requirement: AssetRequirement): Promise<string
                 width: params.width || 400,
                 height: params.height || 300
             });
+        }
 
-        case 'hoursCard':
+        case 'hoursCard': {
             const hours = params.hours || [
                 'Mo-Fr: 11:00 - 22:00',
                 'Sa-So: 12:00 - 23:00'
@@ -144,6 +145,7 @@ export async function renderAsset(requirement: AssetRequirement): Promise<string
                 width: params.width || 300,
                 height: params.height || 200
             });
+        }
 
         case 'mapCard':
             // Placeholder: would integrate with Google Maps Static API
@@ -187,7 +189,7 @@ export async function renderAsset(requirement: AssetRequirement): Promise<string
         case 'comparisonTable':
             return renderComparisonTable(params);
 
-        case 'benefitStack':
+        case 'benefitStack': {
             const benefits = params.benefits || [
                 '✓ Schnelle Lieferung',
                 '✓ 30 Tage Rückgabe',
@@ -200,6 +202,7 @@ export async function renderAsset(requirement: AssetRequirement): Promise<string
                 width: params.width || 350,
                 height: params.height || 200
             });
+        }
 
         case 'featureChips':
             return renderFeatureChips(params);

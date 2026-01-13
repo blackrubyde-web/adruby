@@ -151,7 +151,7 @@ export function scoreTemplate(
 ): TemplateScoringResult {
     const { spec, measuredCopy, availableAssets } = context;
 
-    let breakdown = {
+    const breakdown = {
         businessModelMatch: 0,
         patternMatch: 0,
         assetAvailability: 0,
