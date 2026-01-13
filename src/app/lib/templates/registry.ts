@@ -368,7 +368,7 @@ export const ECOMMERCE_OFFER_BURST: TemplateCapsule = {
                 color: '#FFFFFF',
                 fill: '#FFFFFF',
                 align: 'center',
-                role: 'offer'
+                role: 'badge'
             },
             {
                 id: 'product',
