@@ -640,13 +640,32 @@ export const ECOMMERCE_UGC_FRAME: TemplateCapsule = {
 };
 
 import { ECOMMERCE_FEATURE_SCATTER } from './registry-feature';
+import { ECOMMERCE_RETAIL_LAUNCH, ECOMMERCE_NUTRITION_PROOF } from './registry-premium';
 
-// Export registry with all 10 templates
-export const TEMPLATE_REGISTRY: TemplateCapsule[] = [
+// ... (existing exports)
+
+/**
+ * Registry of all available template capsules
+ */
+export const TEMPLATE_REGISTRY: Record<string, TemplateCapsule> = {
+    // E-Commerce
+    [ECOMMERCE_PRODUCT_FOCUS.id]: ECOMMERCE_PRODUCT_FOCUS,
+    [ECOMMERCE_OFFER_BURST.id]: ECOMMERCE_OFFER_BURST,
+    [ECOMMERCE_UGC_FRAME.id]: ECOMMERCE_UGC_FRAME,
+    [ECOMMERCE_FEATURE_SCATTER.id]: ECOMMERCE_FEATURE_SCATTER,
+    [ECOMMERCE_RETAIL_LAUNCH.id]: ECOMMERCE_RETAIL_LAUNCH, // NEW
+    [ECOMMERCE_NUTRITION_PROOF.id]: ECOMMERCE_NUTRITION_PROOF, // NEW
+
+    // ... other templates
+};
+
+export const ALL_TEMPLATES = [
     ECOMMERCE_PRODUCT_FOCUS,
     ECOMMERCE_OFFER_BURST,
     ECOMMERCE_UGC_FRAME,
     ECOMMERCE_FEATURE_SCATTER,
+    ECOMMERCE_RETAIL_LAUNCH, // NEW
+    ECOMMERCE_NUTRITION_PROOF, // NEW
     ...ADDITIONAL_TEMPLATES
 ];
 

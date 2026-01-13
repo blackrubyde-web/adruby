@@ -94,6 +94,7 @@ export type ShapeLayer = LayerBase & {
     stroke?: string;
     strokeWidth?: number;
     cornerRadius?: number;
+    path?: string; // NEW: SVG Path data for complex shapes (arrows, blobs)
     shadowColor?: string;
     shadowBlur?: number;
     shadowOffsetX?: number;
