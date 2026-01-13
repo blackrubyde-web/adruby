@@ -149,6 +149,8 @@ export async function assembleWithRetry(
 
                 // No fix available or fix didn't work, try next template
                 console.warn(`⚠️ Template ${template.id} failed validation, trying next template`);
+                console.log(`📋 Validation issues for ${template.id}:`, JSON.stringify(issues, null, 2));
+                console.log(`📊 Quality score: ${score.overall} (min: ${minQualityScore})`);
                 break;
 
             } catch (error) {
