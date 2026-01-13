@@ -59,7 +59,7 @@ export const Header = memo(function Header({
         {/* Mobile Burger Menu */}
         <button
           onClick={onToggleMobileSidebar}
-          className="md:hidden w-10 h-10 rounded-lg border border-border bg-card hover:bg-muted flex items-center justify-center transition-colors"
+          className="md:hidden w-10 h-10 rounded-lg border border-border bg-card hover:bg-muted flex items-center justify-center transition-colors cursor-pointer z-50"
         >
           <Menu className="w-5 h-5 text-foreground" />
         </button>
@@ -77,7 +77,7 @@ export const Header = memo(function Header({
         {/* Theme Toggle */}
         <button
           onClick={toggleTheme}
-          className="w-10 h-10 rounded-lg border border-border bg-card hover:bg-muted flex items-center justify-center transition-colors"
+          className="w-10 h-10 rounded-lg border border-border bg-card hover:bg-muted flex items-center justify-center transition-colors cursor-pointer"
           title={theme === 'dark' ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
         >
           {theme === 'dark' ? (
