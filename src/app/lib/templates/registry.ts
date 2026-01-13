@@ -639,11 +639,14 @@ export const ECOMMERCE_UGC_FRAME: TemplateCapsule = {
     }
 };
 
+import { ECOMMERCE_FEATURE_SCATTER } from './registry-feature';
+
 // Export registry with all 10 templates
 export const TEMPLATE_REGISTRY: TemplateCapsule[] = [
     ECOMMERCE_PRODUCT_FOCUS,
     ECOMMERCE_OFFER_BURST,
     ECOMMERCE_UGC_FRAME,
+    ECOMMERCE_FEATURE_SCATTER,
     ...ADDITIONAL_TEMPLATES
 ];
 
