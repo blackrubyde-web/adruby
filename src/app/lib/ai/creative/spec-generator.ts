@@ -124,6 +124,31 @@ export async function generateCreativeSpecs(
     // Build prompt
     const prompt = buildCreativeSpecPrompt(request, businessModel);
 
+    // Build user message content (Text or Text+Image)
+    let userContent: any = prompt;
+
+    if (request.imageBase64) {
+        console.log('👁️ Vision Analysis Enabled: Sending image to GPT-4o');
+        userContent = [
+            {
+                type: "text",
+                text: `${prompt}\n\nIMPORTANT: I have attached an image of the product/asset. Analyze it deeply. 
+                1. Identify the product type (e.g. software dashboard, physical product, food).
+                2. Describe its visual style (e.g. dark mode, vibrant, minimal, industrial).
+                3. Based on the image, choose the most appropriate 'creativePattern', 'colors', and 'background' style.
+                4. If it looks like a software screenshot, use the 'saas' business model patterns.
+                5. If it looks like a physical product without background, suggest a fitting environment.`
+            },
+            {
+                type: "image_url",
+                image_url: {
+                    url: request.imageBase64, // Data URL is expected here
+                    detail: "low" // Low detail is usually enough for style/type + faster/cheaper
+                }
+            }
+        ];
+    }
+
     // Generate multiple variants by varying temperature/seed
     for (let i = 0; i < variantCount; i++) {
         let attemptCount = 0;
@@ -138,142 +163,103 @@ export async function generateCreativeSpecs(
                             role: 'system',
                             content: 'You are an expert performance marketing creative strategist. Return only valid JSON.'
                         },
-                        // Build user message content (Text or Text+Image)
-                        let userContent: any = prompt;
-
-                    if(request.imageBase64) {
-                        console.log('👁️ Vision Analysis Enabled: Sending image to GPT-4o');
-                userContent = [
-                    {
-                        type: "text",
-                        text: `${prompt}\n\nIMPORTANT: I have attached an image of the product/asset. Analyze it deeply. 
-                1. Identify the product type (e.g. software dashboard, physical product, food).
-                2. Describe its visual style (e.g. dark mode, vibrant, minimal, industrial).
-                3. Based on the image, choose the most appropriate 'creativePattern', 'colors', and 'background' style.
-                4. If it looks like a software screenshot, use the 'saas' business model patterns.
-                5. If it looks like a physical product without background, suggest a fitting environment.`
-                    },
-                    {
-                        type: "image_url",
-                        image_url: {
-                            url: request.imageBase64, // Data URL is expected here
-                            detail: "low" // Low detail is usually enough for style/type + faster/cheaper
+                        {
+                            role: 'user',
+                            content: userContent
                         }
-                    }
-                ];
-            }
+                    ],
+                    response_format: { type: 'json_object' },
+                    temperature: temperature + (i * 0.05), // Slight temp variation per variant
+                    max_tokens: 2000,
+                    seed: 1000 + i // Different seed per variant for diversity
+                });
 
-    // Generate multiple variants by varying temperature/seed
-    for (let i = 0; i < variantCount; i++) {
-                let attemptCount = 0;
-                let validated: ValidatedCreativeSpec | null = null;
+                apiCalls++;
+                const usage = response.usage;
+                if (usage) {
+                    // Estimate cost (gpt-4o pricing: $5/1M input, $15/1M output)
+                    const inputCost = (usage.prompt_tokens / 1_000_000) * 5;
+                    const outputCost = (usage.completion_tokens / 1_000_000) * 15;
+                    totalCost += inputCost + outputCost;
 
-                while (attemptCount < maxRetries && !validated?.isValid) {
-                    try {
-                        const response = await openai.chat.completions.create({
-                            model,
-                            messages: [
-                                {
-                                    role: 'system',
-                                    content: 'You are an expert performance marketing creative strategist. Return only valid JSON.'
-                                },
-                                {
-                                    role: 'user',
-                                    content: userContent
-                                }
-                            ],
-                            response_format: { type: 'json_object' },
-                            temperature: temperature + (i * 0.05), // Slight temp variation per variant
-                            max_tokens: 2000,
-                            seed: 1000 + i // Different seed per variant for diversity
-                        });
-
-                        apiCalls++;
-                        const usage = response.usage;
-                        if (usage) {
-                            // Estimate cost (gpt-4o pricing: $5/1M input, $15/1M output)
-                            const inputCost = (usage.prompt_tokens / 1_000_000) * 5;
-                            const outputCost = (usage.completion_tokens / 1_000_000) * 15;
-                            totalCost += inputCost + outputCost;
-
-                            // BLOCKER FIX: Budget enforcement
-                            if (totalCost > maxBudgetUSD) {
-                                console.warn(`⚠️ Budget exceeded: $${totalCost.toFixed(4)} > $${maxBudgetUSD.toFixed(4)}`);
-                                console.warn(`   Stopping after ${specs.length} valid specs (requested ${variantCount})`);
-                                break; // Exit variant generation loop
-                            }
-                        }
-
-                        const content = response.choices[0].message.content;
-                        if (!content) {
-                            throw new Error('Empty response from OpenAI');
-                        }
-
-                        // Parse JSON
-                        const parsed = JSON.parse(content);
-
-                        // Validate against schema
-                        validated = validateCreativeSpec(parsed);
-                        validationAttempts++;
-
-                        if (!validated.isValid) {
-                            console.warn(`⚠️ Spec variant ${i + 1} validation failed (attempt ${attemptCount + 1}):`, validated.errors);
-                            attemptCount++;
-                        } else {
-                            // Add metadata
-                            parsed.meta = {
-                                generatedAt: new Date().toISOString(),
-                                seed: 1000 + i,
-                                variant: i + 1
-                            };
-                            specs.push(parsed);
-                            console.log(`✅ Spec variant ${i + 1} validated successfully`);
-                        }
-
-                    } catch (error) {
-                        console.error(`❌ Error generating spec variant ${i + 1}:`, error);
-                        attemptCount++;
+                    // BLOCKER FIX: Budget enforcement
+                    if (totalCost > maxBudgetUSD) {
+                        console.warn(`⚠️ Budget exceeded: $${totalCost.toFixed(4)} > $${maxBudgetUSD.toFixed(4)}`);
+                        console.warn(`   Stopping after ${specs.length} valid specs (requested ${variantCount})`);
+                        break; // Exit variant generation loop
                     }
                 }
 
-                // If still invalid after retries, store for debugging
-                if (validated && !validated.isValid) {
-                    invalidSpecs.push({
-                        spec: validated.spec,
-                        errors: validated.errors
-                    });
+                const content = response.choices[0].message.content;
+                if (!content) {
+                    throw new Error('Empty response from OpenAI');
                 }
+
+                // Parse JSON
+                const parsed = JSON.parse(content);
+
+                // Validate against schema
+                validated = validateCreativeSpec(parsed);
+                validationAttempts++;
+
+                if (!validated.isValid) {
+                    console.warn(`⚠️ Spec variant ${i + 1} validation failed (attempt ${attemptCount + 1}):`, validated.errors);
+                    attemptCount++;
+                } else {
+                    // Add metadata
+                    parsed.meta = {
+                        generatedAt: new Date().toISOString(),
+                        seed: 1000 + i,
+                        variant: i + 1
+                    };
+                    specs.push(parsed);
+                    console.log(`✅ Spec variant ${i + 1} validated successfully`);
+                }
+
+            } catch (error) {
+                console.error(`❌ Error generating spec variant ${i + 1}:`, error);
+                attemptCount++;
             }
-
-            const totalTime = Date.now() - startTime;
-
-            console.log(`✨ Generated ${specs.length}/${variantCount} valid CreativeSpecs in ${totalTime}ms`);
-            console.log(`💰 Total cost: $${totalCost.toFixed(4)} (${apiCalls} API calls)`);
-
-            return {
-                specs,
-                validSpecs: specs,
-                invalidSpecs,
-                telemetry: {
-                    totalCost,
-                    totalTime,
-                    apiCalls,
-                    validationAttempts
-                }
-            };
         }
 
-        /**
-         * Generate a single CreativeSpec (simplified API)
-         */
-        export async function generateSingleSpec(
-            request: CreativeSpecRequest,
-            options: SpecGenerationOptions
-        ): Promise<CreativeSpec | null> {
-            const result = await generateCreativeSpecs(request, {
-                ...options,
-                variantCount: 1
+        // If still invalid after retries, store for debugging
+        if (validated && !validated.isValid) {
+            invalidSpecs.push({
+                spec: validated.spec,
+                errors: validated.errors
             });
-
-            return result.validSpecs[0] || null;
         }
+    }
+
+    const totalTime = Date.now() - startTime;
+
+    console.log(`✨ Generated ${specs.length}/${variantCount} valid CreativeSpecs in ${totalTime}ms`);
+    console.log(`💰 Total cost: $${totalCost.toFixed(4)} (${apiCalls} API calls)`);
+
+    return {
+        specs,
+        validSpecs: specs,
+        invalidSpecs,
+        telemetry: {
+            totalCost,
+            totalTime,
+            apiCalls,
+            validationAttempts
+        }
+    };
+}
+
+/**
+ * Generate a single CreativeSpec (simplified API)
+ */
+export async function generateSingleSpec(
+    request: CreativeSpecRequest,
+    options: SpecGenerationOptions
+): Promise<CreativeSpec | null> {
+    const result = await generateCreativeSpecs(request, {
+        ...options,
+        variantCount: 1
+    });
+
+    return result.validSpecs[0] || null;
+}
