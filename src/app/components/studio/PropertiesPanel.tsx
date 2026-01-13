@@ -2,6 +2,7 @@ import { useState, type ComponentType, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 import { Type, Image as ImageIcon, LayoutTemplate, Sparkles, Hash, AlignLeft, AlignCenter, AlignRight, Bold, Italic, ChevronDown, ChevronUp, Wand2, X } from 'lucide-react';
 import type { StudioLayer, TextLayer, ImageLayer, CtaLayer, ShapeLayer } from '../../types/studio';
+import { SelectField } from '../ui/select-field';
 
 interface PropertiesPanelProps {
     layer?: StudioLayer;
@@ -392,13 +393,13 @@ export const PropertiesPanel = ({ layer, onChange, onGenerate, onAdapt: _onAdapt
                             </div>
 
                             <div className="space-y-3 pt-2">
-                                <select
-                                    className="w-full bg-muted/50 border border-border rounded-xl px-3 py-2.5 text-sm"
+                                <SelectField
+                                    className="bg-muted/50 text-sm py-2.5 px-3 rounded-xl"
                                     value={textFontFamily}
                                     onChange={(e) => handleChange('fontFamily', e.target.value)}
                                 >
                                     {FONTS.map(f => <option key={f} value={f}>{f}</option>)}
-                                </select>
+                                </SelectField>
 
                                 <div className="flex gap-2">
                                     <div className="flex bg-muted rounded-xl p-1 flex-1">

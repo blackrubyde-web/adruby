@@ -2,6 +2,7 @@ import { memo } from 'react';
 import { Settings, Target, Users, DollarSign, MapPin, Image, Type, Link2, Sparkles, AlertTriangle, CheckCircle2, Info } from 'lucide-react';
 import { useCampaignCanvas } from './CampaignCanvasContext';
 import type { CampaignObjective, BidStrategy } from './types';
+import { SelectField } from '../ui/select-field';
 
 const OBJECTIVES: { value: CampaignObjective; label: string; icon: string }[] = [
     { value: 'CONVERSIONS', label: 'Conversions', icon: '🎯' },
@@ -61,15 +62,15 @@ export const PropertiesPanel = memo(function PropertiesPanel() {
                     {/* Objective */}
                     <div className="space-y-1.5">
                         <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Objective</label>
-                        <select
+                        <SelectField
                             value={config.objective}
                             onChange={(e) => updateNodeData(selectedNode.id, { type: 'campaign', config: { ...config, objective: e.target.value as CampaignObjective } })}
-                            className="w-full px-3 py-2 bg-muted/50 border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
+                            className="bg-muted/50 text-sm py-2 px-3 rounded-lg"
                         >
                             {OBJECTIVES.map((o) => (
                                 <option key={o.value} value={o.value}>{o.icon} {o.label}</option>
                             ))}
-                        </select>
+                        </SelectField>
                     </div>
 
                     {/* Budget */}
@@ -78,14 +79,15 @@ export const PropertiesPanel = memo(function PropertiesPanel() {
                             <DollarSign className="w-3 h-3" /> Budget
                         </label>
                         <div className="flex gap-2">
-                            <select
+                            <SelectField
                                 value={config.budgetType}
                                 onChange={(e) => updateNodeData(selectedNode.id, { type: 'campaign', config: { ...config, budgetType: e.target.value as 'daily' | 'lifetime' } })}
-                                className="flex-1 px-3 py-2 bg-muted/50 border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
+                                wrapperClassName="flex-1"
+                                className="bg-muted/50 text-sm py-2 px-3 rounded-lg"
                             >
                                 <option value="daily">Daily</option>
                                 <option value="lifetime">Lifetime</option>
-                            </select>
+                            </SelectField>
                             <div className="relative flex-1">
                                 <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">€</span>
                                 <input
@@ -110,15 +112,15 @@ export const PropertiesPanel = memo(function PropertiesPanel() {
                     {/* Bid Strategy */}
                     <div className="space-y-1.5">
                         <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Bid Strategy</label>
-                        <select
+                        <SelectField
                             value={config.bidStrategy}
                             onChange={(e) => updateNodeData(selectedNode.id, { type: 'campaign', config: { ...config, bidStrategy: e.target.value as BidStrategy } })}
-                            className="w-full px-3 py-2 bg-muted/50 border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
+                            className="bg-muted/50 text-sm py-2 px-3 rounded-lg"
                         >
                             {BID_STRATEGIES.map((b) => (
                                 <option key={b.value} value={b.value}>{b.label}</option>
                             ))}
-                        </select>
+                        </SelectField>
                     </div>
                 </div>
 
@@ -200,18 +202,18 @@ export const PropertiesPanel = memo(function PropertiesPanel() {
                     {/* Gender */}
                     <div className="space-y-1.5">
                         <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Gender</label>
-                        <select
+                        <SelectField
                             value={config.targeting.gender}
                             onChange={(e) => updateNodeData(selectedNode.id, {
                                 ...nodeData,
                                 config: { ...config, targeting: { ...config.targeting, gender: e.target.value as 'all' | 'male' | 'female' } }
                             })}
-                            className="w-full px-3 py-2 bg-muted/50 border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
+                            className="bg-muted/50 text-sm py-2 px-3 rounded-lg"
                         >
                             <option value="all">All</option>
                             <option value="male">Male</option>
                             <option value="female">Female</option>
-                        </select>
+                        </SelectField>
                     </div>
 
                     {/* Interests */}
@@ -300,10 +302,10 @@ export const PropertiesPanel = memo(function PropertiesPanel() {
                     {/* CTA */}
                     <div className="space-y-1.5">
                         <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Call to Action</label>
-                        <select
+                        <SelectField
                             value={config.cta}
                             onChange={(e) => updateNodeData(selectedNode.id, { ...nodeData, config: { ...config, cta: e.target.value } })}
-                            className="w-full px-3 py-2 bg-muted/50 border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
+                            className="bg-muted/50 text-sm py-2 px-3 rounded-lg"
                         >
                             <option value="Learn More">Learn More</option>
                             <option value="Shop Now">Shop Now</option>
@@ -311,7 +313,7 @@ export const PropertiesPanel = memo(function PropertiesPanel() {
                             <option value="Get Offer">Get Offer</option>
                             <option value="Book Now">Book Now</option>
                             <option value="Contact Us">Contact Us</option>
-                        </select>
+                        </SelectField>
                     </div>
 
                     {/* Destination URL */}

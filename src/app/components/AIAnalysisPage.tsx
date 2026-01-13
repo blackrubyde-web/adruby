@@ -29,6 +29,7 @@ import { Card } from './ui/card';
 import { Button } from './ui/button';
 import { Badge } from './ui/badge';
 import { Progress } from './ui/progress';
+import { SelectField } from './ui/select-field';
 import { supabase } from '../lib/supabaseClient';
 import { env } from '../lib/env';
 import { useMetaCampaigns } from '../hooks/useMetaCampaigns';
@@ -889,7 +890,7 @@ export function AIAnalysisPage() {
         </div>
       }
       headerActions={
-        <div className="flex items-center gap-2">
+        <div className="grid w-full grid-cols-2 gap-2 sm:flex sm:w-auto sm:flex-wrap">
           <Button
             variant="outline"
             size="sm"
@@ -903,7 +904,7 @@ export function AIAnalysisPage() {
             variant="outline"
             size="sm"
             onClick={isSyncing ? cancelSync : runSync}
-            className="gap-2"
+            className="gap-2 w-full sm:w-auto"
           >
             <RefreshCw className={`w-4 h-4 ${isSyncing ? 'animate-spin' : ''}`} />
             {isSyncing ? 'Cancel Sync' : 'Sync Data'}
@@ -912,7 +913,7 @@ export function AIAnalysisPage() {
             variant="outline"
             size="sm"
             onClick={handleExportReport}
-            className="gap-2"
+            className="gap-2 w-full sm:w-auto"
           >
             <Download className="w-4 h-4" />
             Export Report
@@ -921,7 +922,7 @@ export function AIAnalysisPage() {
             size="sm"
             onClick={() => runAIAnalysis(metaCampaigns)}
             disabled={isAnalyzingAI}
-            className="bg-blue-600 hover:bg-blue-700 text-white gap-2"
+            className="bg-blue-600 hover:bg-blue-700 text-white gap-2 w-full sm:w-auto"
           >
             {isAnalyzingAI ? 'Analyzing…' : 'Run AI Analysis'}
           </Button>
@@ -929,7 +930,7 @@ export function AIAnalysisPage() {
             size="sm"
             onClick={applyRecommendations}
             disabled={isApplying || !Object.keys(aiAnalysisCache).length}
-            className="bg-green-600 hover:bg-green-700 text-white gap-2"
+            className="bg-green-600 hover:bg-green-700 text-white gap-2 w-full sm:w-auto"
           >
             {isApplying ? 'Applying…' : 'Apply Recommendations'}
           </Button>
@@ -988,9 +989,9 @@ export function AIAnalysisPage() {
           </div>
 
           {/* Actions */}
-          <div className="flex items-center gap-4 w-full md:w-auto">
+          <div className="flex flex-col sm:flex-row sm:items-center gap-3 w-full md:w-auto">
             <button
-              className="h-10 rounded-full px-4 border border-white/10 hover:bg-white/5 hover:text-white hover:border-violet-500/50 transition-all group disabled:opacity-50 text-sm font-semibold"
+              className="h-10 w-full sm:w-auto rounded-full px-4 border border-white/10 hover:bg-white/5 hover:text-white hover:border-violet-500/50 transition-all group disabled:opacity-50 text-sm font-semibold flex items-center justify-center"
               onClick={handleScaleWinners}
               disabled={!autopilotEnabled || !hasAutopilotData}
             >
@@ -998,7 +999,7 @@ export function AIAnalysisPage() {
               Scale Winners (+20%)
             </button>
 
-            <div className="h-12 w-[1px] bg-white/10 mx-2 hidden md:block" />
+            <div className="h-12 w-[1px] bg-white/10 mx-2 hidden sm:block" />
 
             <div className="flex flex-col items-center gap-2">
               <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
@@ -1068,16 +1069,17 @@ export function AIAnalysisPage() {
                 />
               </div>
 
-              <select
+              <SelectField
                 value={filterStatus}
                 onChange={(e) => setFilterStatus(e.target.value as typeof filterStatus)}
-                className="w-full sm:w-auto px-3.5 py-2 bg-muted/50 border border-border/50 rounded-lg text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 text-sm"
+                wrapperClassName="w-full sm:w-auto"
+                className="bg-muted/50 text-sm py-2 px-3.5 rounded-lg"
               >
                 <option value="all">All Status</option>
                 <option value="active">Active</option>
                 <option value="paused">Paused</option>
                 <option value="learning">Learning</option>
-              </select>
+              </SelectField>
 
               <button
                 onClick={() => setShowAIPanel(!showAIPanel)}
@@ -1230,16 +1232,17 @@ export function AIAnalysisPage() {
                             </span>
                           </div>
                           <div className="col-span-1 flex justify-center">
-                            <select
+                            <SelectField
                               value={campaign.strategyId || ''}
                               onChange={(e) => handleStrategyChange(campaign.id, e.target.value, 'campaign')}
-                              className="px-2 py-1 bg-muted/50 border border-border/50 rounded text-xs focus:outline-none focus:ring-1 focus:ring-primary/50"
+                              className="bg-muted/50 px-2 py-1 pr-7 text-xs rounded-md"
+                              iconClassName="h-3 w-3 right-2"
                             >
                               <option value="">No Strategy</option>
                               {strategies.map(s => (
                                 <option key={s.id} value={s.id}>{s.title}</option>
                               ))}
-                            </select>
+                            </SelectField>
                           </div>
                         </div>
                       </div>
@@ -1278,16 +1281,17 @@ export function AIAnalysisPage() {
                                 </span>
                               </div>
                               <div className="col-span-1 flex justify-center">
-                                <select
+                                <SelectField
                                   value={adSet.strategyId || campaign.strategyId || ''}
                                   onChange={(e) => handleStrategyChange(adSet.id, e.target.value, 'adset')}
-                                  className="px-2 py-1 bg-muted/50 border border-border/50 rounded text-xs focus:outline-none focus:ring-1 focus:ring-primary/50"
+                                  className="bg-muted/50 px-2 py-1 pr-7 text-xs rounded-md"
+                                  iconClassName="h-3 w-3 right-2"
                                 >
                                   <option value="">Inherit</option>
                                   {strategies.map(s => (
                                     <option key={s.id} value={s.id}>{s.title}</option>
                                   ))}
-                                </select>
+                                </SelectField>
                               </div>
                             </div>
                           </div>
@@ -1326,16 +1330,17 @@ export function AIAnalysisPage() {
                                     </span>
                                   </div>
                                   <div className="col-span-1 flex justify-center">
-                                    <select
+                                    <SelectField
                                       value={ad.strategyId || adSet.strategyId || campaign.strategyId || ''}
                                       onChange={(e) => handleStrategyChange(ad.id, e.target.value, 'ad')}
-                                      className="px-2 py-1 bg-muted/50 border border-border/50 rounded text-xs focus:outline-none focus:ring-1 focus:ring-primary/50"
+                                      className="bg-muted/50 px-2 py-1 pr-7 text-xs rounded-md"
+                                      iconClassName="h-3 w-3 right-2"
                                     >
                                       <option value="">Inherit</option>
                                       {strategies.map(s => (
                                         <option key={s.id} value={s.id}>{s.title}</option>
                                       ))}
-                                    </select>
+                                    </SelectField>
                                   </div>
                                 </div>
                               </div>
@@ -1385,14 +1390,14 @@ export function AIAnalysisPage() {
                         </div>
 
                         <div className="mt-3">
-                          <select
+                          <SelectField
                             value={campaign.strategyId || ''}
                             onChange={(e) => handleStrategyChange(campaign.id, e.target.value, 'campaign')}
-                            className="w-full px-3 py-2 bg-muted/50 border border-border/50 rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-primary/50"
+                            className="bg-muted/50 text-sm py-2 px-3 rounded-lg"
                           >
                             <option value="">No Strategy</option>
                             {strategies.map(s => <option key={s.id} value={s.id}>{s.title}</option>)}
-                          </select>
+                          </SelectField>
                         </div>
                       </div>
                     </div>
@@ -1426,14 +1431,14 @@ export function AIAnalysisPage() {
                               </div>
 
                               <div className="mt-3">
-                                <select
+                                <SelectField
                                   value={adSet.strategyId || campaign.strategyId || ''}
                                   onChange={(e) => handleStrategyChange(adSet.id, e.target.value, 'adset')}
-                                  className="w-full px-3 py-2 bg-muted/50 border border-border/50 rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-primary/50"
+                                  className="bg-muted/50 text-sm py-2 px-3 rounded-lg"
                                 >
                                   <option value="">Inherit</option>
                                   {strategies.map(s => <option key={s.id} value={s.id}>{s.title}</option>)}
-                                </select>
+                                </SelectField>
                               </div>
 
                               {adSet.expanded && (
@@ -1452,14 +1457,14 @@ export function AIAnalysisPage() {
                                               <span className="text-muted-foreground">ROAS <span className="text-foreground font-mono font-bold">{ad.roas.toFixed(2)}x</span></span>
                                             </div>
                                             <div className="mt-2">
-                                              <select
+                                              <SelectField
                                                 value={ad.strategyId || adSet.strategyId || campaign.strategyId || ''}
                                                 onChange={(e) => handleStrategyChange(ad.id, e.target.value, 'ad')}
-                                                className="w-full px-3 py-2 bg-muted/50 border border-border/50 rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-primary/50"
+                                                className="bg-muted/50 text-sm py-2 px-3 rounded-lg"
                                               >
                                                 <option value="">Inherit</option>
                                                 {strategies.map(s => <option key={s.id} value={s.id}>{s.title}</option>)}
-                                              </select>
+                                              </SelectField>
                                             </div>
                                           </div>
 

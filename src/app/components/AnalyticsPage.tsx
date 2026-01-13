@@ -8,6 +8,7 @@ import { Button } from './ui/button';
 import { Badge } from './ui/badge';
 import { DashboardShell } from './layout/DashboardShell';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from './ui/card';
+import { SelectField } from './ui/select-field';
 import { useAnalyticsData } from '../hooks/useAnalyticsData';
 
 const LazyNotificationBanner = lazy(() =>
@@ -532,15 +533,16 @@ export function AnalyticsPage() {
       <Card className="block md:hidden p-4 mb-4" variant="glass" padding="sm">
         {/* Compact Time Range & Compare Toggle */}
         <div className="flex items-center gap-2 w-full">
-          <select
+          <SelectField
             value={timeRange}
             onChange={(e) => setTimeRange(e.target.value as '7d' | '30d' | '90d' | 'custom')}
-            className="flex-1 px-3 py-2 bg-card/50 border border-border rounded-lg text-sm font-medium text-foreground focus:outline-none focus:ring-2 focus:ring-primary min-w-0"
+            wrapperClassName="flex-1 min-w-0"
+            className="bg-card/50 text-sm py-2 px-3 rounded-lg"
           >
             <option value="7d">Last 7 Days</option>
             <option value="30d">Last 30 Days</option>
             <option value="90d">Last 90 Days</option>
-          </select>
+          </SelectField>
           <Button
             variant={isComparing ? "default" : "outline"}
             size="sm"

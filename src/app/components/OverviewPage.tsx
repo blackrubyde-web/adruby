@@ -9,7 +9,6 @@ import {
   ArrowRight,
   Sparkles,
   Zap,
-  ChevronDown,
   ShieldCheck,
   ListChecks,
   Wand2,
@@ -22,6 +21,7 @@ import { DashboardShell } from './layout/DashboardShell';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from './ui/card';
 import { Button } from './ui/button';
 import { Badge } from './ui/badge';
+import { SelectField } from './ui/select-field';
 import { useAuthActions, useAuthState } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabaseClient';
 import { ReferralServicesWidget } from './referral/ReferralServicesWidget';
@@ -356,32 +356,28 @@ export function OverviewPage({ onNavigate }: OverviewPageProps) {
       {/* Filters */}
       <div className="flex items-center gap-3">
         {/* Date Filter */}
-        <div className="relative">
-          <select
-            value={dateFilter}
-            onChange={(e) => setDateFilter(e.target.value as DateFilter)}
-            className="appearance-none pl-3 pr-8 py-2 bg-card border border-border rounded-lg text-sm font-medium text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 cursor-pointer active:scale-[0.98] transition-all shadow-sm"
-          >
-            <option value="today">Today</option>
-            <option value="7d">Last 7 days</option>
-            <option value="30d">Last 30 days</option>
-          </select>
-          <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
-        </div>
+        <SelectField
+          value={dateFilter}
+          onChange={(e) => setDateFilter(e.target.value as DateFilter)}
+          className="text-sm py-2 px-3 rounded-lg"
+          wrapperClassName="min-w-[140px]"
+        >
+          <option value="today">Today</option>
+          <option value="7d">Last 7 days</option>
+          <option value="30d">Last 30 days</option>
+        </SelectField>
 
         {/* Channel Filter */}
-        <div className="relative">
-          <select
-            value={channelFilter}
-            onChange={(e) => setChannelFilter(e.target.value as ChannelFilter)}
-            className="appearance-none pl-3 pr-8 py-2 bg-card border border-border rounded-lg text-sm font-medium text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 cursor-pointer active:scale-[0.98] transition-all shadow-sm"
-          >
-            <option value="meta">Meta Ads</option>
-            <option value="google">Google Ads</option>
-            <option value="tiktok">TikTok Ads</option>
-          </select>
-          <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
-        </div>
+        <SelectField
+          value={channelFilter}
+          onChange={(e) => setChannelFilter(e.target.value as ChannelFilter)}
+          className="text-sm py-2 px-3 rounded-lg"
+          wrapperClassName="min-w-[140px]"
+        >
+          <option value="meta">Meta Ads</option>
+          <option value="google">Google Ads</option>
+          <option value="tiktok">TikTok Ads</option>
+        </SelectField>
       </div>
 
       {/* KPI Cards Row */}

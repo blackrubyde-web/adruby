@@ -29,7 +29,7 @@ export function AffiliateSuccessStories() {
     ];
 
     return (
-        <section className="py-24 relative overflow-hidden">
+        <section className="py-16 sm:py-24 relative overflow-hidden">
             {/* Background Elements */}
             <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[1000px] h-[600px] bg-rose-600/5 blur-[120px] rounded-full pointer-events-none" />
 
@@ -38,7 +38,7 @@ export function AffiliateSuccessStories() {
                     <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-rose-500/10 border border-rose-500/20 text-rose-400 text-xs font-bold uppercase tracking-wider mb-6">
                         <Star className="w-3 h-3" /> Partner Stories
                     </div>
-                    <h2 className="text-4xl sm:text-5xl font-black text-white mb-6">
+                    <h2 className="text-3xl sm:text-5xl font-black text-white mb-6">
                         Erfolgsgeschichten <br />
                         <span className="text-transparent bg-clip-text bg-gradient-to-r from-rose-500 to-orange-500">unserer Partner</span>
                     </h2>

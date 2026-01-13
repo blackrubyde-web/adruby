@@ -130,12 +130,12 @@ export function CampaignsPage() {
           </div>
 
           {/* Status Filter Tabs */}
-          <div className="flex items-center gap-1 bg-muted/50 p-1 rounded-lg">
+          <div className="flex flex-wrap items-center gap-1 bg-muted/50 p-1 rounded-lg w-full md:w-auto">
             {(['all', 'active', 'paused', 'completed'] as const).map((status) => (
               <button
                 key={status}
                 onClick={() => setStatusFilter(status)}
-                className={`px-3 py-1.5 rounded-md text-xs font-medium transition-all ${statusFilter === status
+                className={`flex-1 md:flex-none px-3 py-1.5 rounded-md text-xs font-medium transition-all ${statusFilter === status
                   ? 'bg-background text-foreground shadow-sm'
                   : 'text-muted-foreground hover:text-foreground hover:bg-background/50'
                   }`}
@@ -173,149 +173,257 @@ export function CampaignsPage() {
         </Card>
       )}
 
-      {/* Campaigns Table */}
-      <Card variant="glass" className="overflow-hidden" padding="none">
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead>
-              <tr className="border-b border-border/30 bg-muted/5">
-                <th className="text-left p-4 text-sm font-semibold text-muted-foreground">Campaign</th>
-                <th className="text-left p-4 text-sm font-semibold text-muted-foreground">Status</th>
-                <th className="text-right p-4 text-sm font-semibold text-muted-foreground">Spend</th>
-                <th className="text-right p-4 text-sm font-semibold text-muted-foreground">Impressions</th>
-                <th className="text-right p-4 text-sm font-semibold text-muted-foreground">Clicks</th>
-                <th className="text-right p-4 text-sm font-semibold text-muted-foreground">CTR</th>
-                <th className="text-right p-4 text-sm font-semibold text-muted-foreground">ROAS</th>
-                <th className="text-right p-4 text-sm font-semibold text-muted-foreground">Conversions</th>
-                <th className="text-right p-4 text-sm font-semibold text-muted-foreground">Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredCampaigns.map((campaign) => {
-                const normalizedStatus = normalizeStatus(campaign.status);
-                return (
-                  <tr
-                    key={campaign.id}
-                    className="border-b border-border/20 hover:bg-muted/5 transition-colors group"
-                  >
-                    <td className="p-4">
-                      <div>
-                        <div className="text-foreground font-medium mb-1">{campaign.name}</div>
-                        <div className="text-xs text-muted-foreground font-mono opacity-70">
-                          {campaign.id}
+      {/* Campaigns Table (Desktop) */}
+      <div className="hidden md:block">
+        <Card variant="glass" className="overflow-hidden" padding="none">
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead>
+                <tr className="border-b border-border/30 bg-muted/5">
+                  <th className="text-left p-4 text-sm font-semibold text-muted-foreground">Campaign</th>
+                  <th className="text-left p-4 text-sm font-semibold text-muted-foreground">Status</th>
+                  <th className="text-right p-4 text-sm font-semibold text-muted-foreground">Spend</th>
+                  <th className="text-right p-4 text-sm font-semibold text-muted-foreground">Impressions</th>
+                  <th className="text-right p-4 text-sm font-semibold text-muted-foreground">Clicks</th>
+                  <th className="text-right p-4 text-sm font-semibold text-muted-foreground">CTR</th>
+                  <th className="text-right p-4 text-sm font-semibold text-muted-foreground">ROAS</th>
+                  <th className="text-right p-4 text-sm font-semibold text-muted-foreground">Conversions</th>
+                  <th className="text-right p-4 text-sm font-semibold text-muted-foreground">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filteredCampaigns.map((campaign) => {
+                  const normalizedStatus = normalizeStatus(campaign.status);
+                  return (
+                    <tr
+                      key={campaign.id}
+                      className="border-b border-border/20 hover:bg-muted/5 transition-colors group"
+                    >
+                      <td className="p-4">
+                        <div>
+                          <div className="text-foreground font-medium mb-1">{campaign.name}</div>
+                          <div className="text-xs text-muted-foreground font-mono opacity-70">
+                            {campaign.id}
+                          </div>
                         </div>
-                      </div>
-                    </td>
-                    <td className="p-4">
-                      <Badge
-                        variant={
-                          normalizedStatus === 'active' ? 'default' :
-                            normalizedStatus === 'paused' ? 'secondary' : 'outline'
-                        }
-                        className={`
+                      </td>
+                      <td className="p-4">
+                        <Badge
+                          variant={
+                            normalizedStatus === 'active' ? 'default' :
+                              normalizedStatus === 'paused' ? 'secondary' : 'outline'
+                          }
+                          className={`
                           ${normalizedStatus === 'active' ? 'bg-green-500/10 text-green-600 border-green-500/20 hover:bg-green-500/20' : ''}
                           ${normalizedStatus === 'paused' ? 'bg-orange-500/10 text-orange-600 border-orange-500/20 hover:bg-orange-500/20' : ''}
                         `}
-                      >
-                        {normalizedStatus === 'active' && <div className="w-1.5 h-1.5 rounded-full bg-green-500 mr-2 animate-pulse" />}
-                        {normalizedStatus}
-                      </Badge>
-                    </td>
-                    <td className="p-4 text-right text-foreground font-medium">
-                      {formatCurrency(campaign.spend)}
-                    </td>
-                    <td className="p-4 text-right text-muted-foreground">
-                      {formatCompact(campaign.impressions)}
-                    </td>
-                    <td className="p-4 text-right text-muted-foreground">
-                      {formatCompact(campaign.clicks)}
-                    </td>
-                    <td className="p-4 text-right">
-                      <div className="flex items-center justify-end gap-1">
-                        <span className="text-foreground font-medium">{formatPct(campaign.ctr)}</span>
-                      </div>
-                    </td>
-                    <td className="p-4 text-right">
-                      <div className="flex items-center justify-end gap-1">
-                        <span className={`font-bold ${campaign.roas >= 2.5 ? 'text-green-600' : 'text-foreground'}`}>{campaign.roas}x</span>
-                        {campaign.roas >= 1 ? (
-                          <TrendingUp className="w-3 h-3 text-green-500" />
-                        ) : (
-                          <TrendingDown className="w-3 h-3 text-red-500" />
-                        )}
-                      </div>
-                    </td>
-                    <td className="p-4 text-right text-foreground">
-                      {formatCompact(campaign.conversions)}
-                    </td>
-                    <td className="p-4">
-                      <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                        {normalizedStatus === 'active' ? (
+                        >
+                          {normalizedStatus === 'active' && <div className="w-1.5 h-1.5 rounded-full bg-green-500 mr-2 animate-pulse" />}
+                          {normalizedStatus}
+                        </Badge>
+                      </td>
+                      <td className="p-4 text-right text-foreground font-medium">
+                        {formatCurrency(campaign.spend)}
+                      </td>
+                      <td className="p-4 text-right text-muted-foreground">
+                        {formatCompact(campaign.impressions)}
+                      </td>
+                      <td className="p-4 text-right text-muted-foreground">
+                        {formatCompact(campaign.clicks)}
+                      </td>
+                      <td className="p-4 text-right">
+                        <div className="flex items-center justify-end gap-1">
+                          <span className="text-foreground font-medium">{formatPct(campaign.ctr)}</span>
+                        </div>
+                      </td>
+                      <td className="p-4 text-right">
+                        <div className="flex items-center justify-end gap-1">
+                          <span className={`font-bold ${campaign.roas >= 2.5 ? 'text-green-600' : 'text-foreground'}`}>{campaign.roas}x</span>
+                          {campaign.roas >= 1 ? (
+                            <TrendingUp className="w-3 h-3 text-green-500" />
+                          ) : (
+                            <TrendingDown className="w-3 h-3 text-red-500" />
+                          )}
+                        </div>
+                      </td>
+                      <td className="p-4 text-right text-foreground">
+                        {formatCompact(campaign.conversions)}
+                      </td>
+                      <td className="p-4">
+                        <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                          {normalizedStatus === 'active' ? (
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8 hover:text-orange-500"
+                              onClick={() => handleAction(campaign, 'pause')}
+                              disabled={isBusy(campaign.id, 'pause')}
+                              title="Pause"
+                            >
+                              <Pause className="w-4 h-4" />
+                            </Button>
+                          ) : normalizedStatus === 'paused' ? (
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8 hover:text-green-500"
+                              onClick={() => handleAction(campaign, 'resume')}
+                              disabled={isBusy(campaign.id, 'resume')}
+                              title="Resume"
+                            >
+                              <Play className="w-4 h-4" />
+                            </Button>
+                          ) : null}
+
                           <Button
                             variant="ghost"
                             size="icon"
-                            className="h-8 w-8 hover:text-orange-500"
-                            onClick={() => handleAction(campaign, 'pause')}
-                            disabled={isBusy(campaign.id, 'pause')}
-                            title="Pause"
+                            className="h-8 w-8"
+                            onClick={() => handleAction(campaign, 'duplicate')}
+                            disabled={isBusy(campaign.id, 'duplicate')}
+                            title="Duplicate"
                           >
-                            <Pause className="w-4 h-4" />
+                            <Copy className="w-4 h-4" />
                           </Button>
-                        ) : normalizedStatus === 'paused' ? (
+
                           <Button
                             variant="ghost"
                             size="icon"
-                            className="h-8 w-8 hover:text-green-500"
-                            onClick={() => handleAction(campaign, 'resume')}
-                            disabled={isBusy(campaign.id, 'resume')}
-                            title="Resume"
+                            className="h-8 w-8 hover:text-destructive"
+                            onClick={() => handleAction(campaign, 'delete')}
+                            disabled={isBusy(campaign.id, 'delete')}
+                            title="Delete"
                           >
-                            <Play className="w-4 h-4" />
+                            <Trash2 className="w-4 h-4" />
                           </Button>
-                        ) : null}
 
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-8 w-8"
-                          onClick={() => handleAction(campaign, 'duplicate')}
-                          disabled={isBusy(campaign.id, 'duplicate')}
-                          title="Duplicate"
-                        >
-                          <Copy className="w-4 h-4" />
-                        </Button>
+                          <div className="w-px h-4 bg-border mx-1" />
 
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-8 w-8 hover:text-destructive"
-                          onClick={() => handleAction(campaign, 'delete')}
-                          disabled={isBusy(campaign.id, 'delete')}
-                          title="Delete"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8"
+                            onClick={() => openMetaCampaign(campaign.id)}
+                            title="View in Meta"
+                          >
+                            <MoreVertical className="w-4 h-4" />
+                          </Button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </Card>
+      </div>
 
-                        <div className="w-px h-4 bg-border mx-1" />
+      {/* Campaigns Cards (Mobile) */}
+      <div className="md:hidden space-y-3">
+        {filteredCampaigns.map((campaign) => {
+          const normalizedStatus = normalizeStatus(campaign.status);
+          return (
+            <Card key={campaign.id} variant="glass" className="p-4">
+              <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0">
+                  <div className="text-foreground font-semibold truncate">{campaign.name}</div>
+                  <div className="text-xs text-muted-foreground font-mono truncate">{campaign.id}</div>
+                </div>
+                <Badge
+                  variant={
+                    normalizedStatus === 'active' ? 'default' :
+                      normalizedStatus === 'paused' ? 'secondary' : 'outline'
+                  }
+                  className={`
+                    ${normalizedStatus === 'active' ? 'bg-green-500/10 text-green-600 border-green-500/20' : ''}
+                    ${normalizedStatus === 'paused' ? 'bg-orange-500/10 text-orange-600 border-orange-500/20' : ''}
+                  `}
+                >
+                  {normalizedStatus}
+                </Badge>
+              </div>
 
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-8 w-8"
-                          onClick={() => openMetaCampaign(campaign.id)}
-                          title="View in Meta"
-                        >
-                          <MoreVertical className="w-4 h-4" />
-                        </Button>
-                      </div>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
-      </Card>
+              <div className="mt-4 grid grid-cols-2 gap-3 text-xs">
+                <div className="rounded-lg border border-border/30 bg-muted/30 p-3">
+                  <div className="text-muted-foreground">Spend</div>
+                  <div className="text-foreground font-semibold">{formatCurrency(campaign.spend)}</div>
+                </div>
+                <div className="rounded-lg border border-border/30 bg-muted/30 p-3">
+                  <div className="text-muted-foreground">Impressions</div>
+                  <div className="text-foreground font-semibold">{formatCompact(campaign.impressions)}</div>
+                </div>
+                <div className="rounded-lg border border-border/30 bg-muted/30 p-3">
+                  <div className="text-muted-foreground">CTR</div>
+                  <div className="text-foreground font-semibold">{formatPct(campaign.ctr)}</div>
+                </div>
+                <div className="rounded-lg border border-border/30 bg-muted/30 p-3">
+                  <div className="text-muted-foreground">ROAS</div>
+                  <div className="text-foreground font-semibold">{campaign.roas}x</div>
+                </div>
+              </div>
+
+              <div className="mt-4 flex flex-wrap items-center gap-2">
+                {normalizedStatus === 'active' ? (
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    className="h-9 w-9"
+                    onClick={() => handleAction(campaign, 'pause')}
+                    disabled={isBusy(campaign.id, 'pause')}
+                    title="Pause"
+                  >
+                    <Pause className="w-4 h-4" />
+                  </Button>
+                ) : normalizedStatus === 'paused' ? (
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    className="h-9 w-9"
+                    onClick={() => handleAction(campaign, 'resume')}
+                    disabled={isBusy(campaign.id, 'resume')}
+                    title="Resume"
+                  >
+                    <Play className="w-4 h-4" />
+                  </Button>
+                ) : null}
+
+                <Button
+                  variant="outline"
+                  size="icon"
+                  className="h-9 w-9"
+                  onClick={() => handleAction(campaign, 'duplicate')}
+                  disabled={isBusy(campaign.id, 'duplicate')}
+                  title="Duplicate"
+                >
+                  <Copy className="w-4 h-4" />
+                </Button>
+
+                <Button
+                  variant="outline"
+                  size="icon"
+                  className="h-9 w-9 text-destructive"
+                  onClick={() => handleAction(campaign, 'delete')}
+                  disabled={isBusy(campaign.id, 'delete')}
+                  title="Delete"
+                >
+                  <Trash2 className="w-4 h-4" />
+                </Button>
+
+                <Button
+                  variant="outline"
+                  size="icon"
+                  className="h-9 w-9"
+                  onClick={() => openMetaCampaign(campaign.id)}
+                  title="View in Meta"
+                >
+                  <MoreVertical className="w-4 h-4" />
+                </Button>
+              </div>
+            </Card>
+          );
+        })}
+      </div>
     </DashboardShell>
   );
 }

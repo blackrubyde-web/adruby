@@ -4,6 +4,7 @@ import { toast } from 'sonner';
 import type { AdDocument, ImageLayer } from '../../types/studio';
 import { removeBackground, blobToBase64 } from '../../lib/ai/bg-removal';
 import { CanvasStage } from './CanvasStage';
+import { SelectField } from '../ui/select-field';
 // generatePremiumAd is now handled via Netlify function
 
 interface AdWizardProps {
@@ -547,15 +548,15 @@ export const AdWizard = ({ isOpen, onClose, onComplete }: AdWizardProps) => {
                                         <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground group-focus-within:text-primary transition-colors">
                                             Sprache
                                         </label>
-                                        <select
+                                        <SelectField
                                             value={formData.language}
                                             onChange={(e) => updateField('language', e.target.value)}
-                                            className="w-full bg-muted/50 dark:bg-muted/30 border border-border rounded-xl px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-transparent transition-all hover:bg-muted/70 dark:hover:bg-muted/50 appearance-none"
+                                            className="bg-muted/50 dark:bg-muted/30 text-sm py-2 px-3 rounded-xl"
                                         >
                                             {LANGUAGES.map(lang => (
                                                 <option key={lang.id} value={lang.id}>{lang.label}</option>
                                             ))}
-                                        </select>
+                                        </SelectField>
                                     </div>
                                 </div>
 

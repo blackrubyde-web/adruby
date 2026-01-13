@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { ArrowRight, Lock, CheckCircle2, Loader2, Sparkles } from 'lucide-react';
 import { PrimaryButton } from '../design-system';
+import { SelectField } from '../ui/select-field';
 
 interface TryItLiveSectionProps {
   onGetStarted: () => void;
@@ -108,28 +109,30 @@ export function TryItLiveSection({ onGetStarted }: TryItLiveSectionProps) {
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="text-sm font-bold text-white/70 uppercase tracking-wide mb-3 block">Plattform</label>
-                  <select
+                  <SelectField
                     value={livePlatform}
                     onChange={(e) => setLivePlatform(e.target.value)}
-                    className="w-full px-5 py-3 rounded-xl bg-white/5 border border-white/10 text-white focus:outline-none focus:border-[#FF1F1F]/50 appearance-none cursor-pointer hover:bg-white/10 transition-colors"
+                    className="bg-white/5 border-white/10 text-white hover:border-[#FF1F1F]/50 focus:ring-[#FF1F1F]/40"
+                    iconClassName="text-white/60"
                   >
                     <option className="bg-black">Facebook Ads</option>
                     <option className="bg-black">Instagram Ads</option>
                     <option className="bg-black">LinkedIn Ads</option>
                     <option className="bg-black">TikTok Ads</option>
-                  </select>
+                  </SelectField>
                 </div>
                 <div>
                   <label className="text-sm font-bold text-white/70 uppercase tracking-wide mb-3 block">Ziel</label>
-                  <select
+                  <SelectField
                     value={liveGoal}
                     onChange={(e) => setLiveGoal(e.target.value)}
-                    className="w-full px-5 py-3 rounded-xl bg-white/5 border border-white/10 text-white focus:outline-none focus:border-[#FF1F1F]/50 appearance-none cursor-pointer hover:bg-white/10 transition-colors"
+                    className="bg-white/5 border-white/10 text-white hover:border-[#FF1F1F]/50 focus:ring-[#FF1F1F]/40"
+                    iconClassName="text-white/60"
                   >
                     <option className="bg-black">Sales (Conversions)</option>
                     <option className="bg-black">Leads</option>
                     <option className="bg-black">Traffic</option>
-                  </select>
+                  </SelectField>
                 </div>
               </div>
 

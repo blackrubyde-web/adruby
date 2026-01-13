@@ -137,7 +137,7 @@ function AffiliateMarketingView({ onNavigate, onSignIn, onGetStarted, heroRef, i
         <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20 brightness-100 contrast-150 mix-blend-overlay" />
       </div>
 
-      <section ref={heroRef} className="relative z-10 pt-32 pb-20 sm:pt-48 sm:pb-32">
+      <section ref={heroRef} className="relative z-10 pt-24 pb-16 sm:pt-40 sm:pb-24">
         <div className="landing-container">
           <div className="max-w-4xl mx-auto text-center animate-in fade-in slide-in-from-bottom-8 duration-700">
             <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/5 border border-white/10 backdrop-blur-md mb-8">
@@ -145,12 +145,12 @@ function AffiliateMarketingView({ onNavigate, onSignIn, onGetStarted, heroRef, i
               <span className="text-sm font-medium text-white/80">AdRuby Partner Program</span>
             </div>
 
-            <h1 className="text-5xl sm:text-7xl font-black tracking-tighter mb-8 text-white">
+            <h1 className="text-4xl sm:text-6xl lg:text-7xl font-black tracking-tighter mb-6 text-white">
               Verdiene an <br />
               <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-teal-500">jedem Ad-Spend.</span>
             </h1>
 
-            <p className="text-xl text-white/60 mb-12 max-w-2xl mx-auto">
+            <p className="text-base sm:text-xl text-white/60 mb-10 max-w-2xl mx-auto">
               Empfiehl das mächtigste Ad-Tool der Welt und erhalte 30% Lifetime-Provision.
               Deine Community spart Zeit, du baust passives Einkommen auf.
             </p>
@@ -158,11 +158,11 @@ function AffiliateMarketingView({ onNavigate, onSignIn, onGetStarted, heroRef, i
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <button
                 onClick={onGetStarted}
-                className="px-8 py-4 bg-white text-black rounded-full font-bold text-lg hover:scale-105 transition-all shadow-[0_0_40px_rgba(255,255,255,0.3)]"
+                className="w-full sm:w-auto px-8 py-4 bg-white text-black rounded-full font-bold text-lg hover:scale-105 transition-all shadow-[0_0_40px_rgba(255,255,255,0.3)]"
               >
                 Partner werden
               </button>
-              <button onClick={onSignIn} className="px-8 py-4 bg-white/5 backdrop-blur-md border border-white/10 text-white rounded-full font-bold text-lg hover:bg-white/10 transition-all">
+              <button onClick={onSignIn} className="w-full sm:w-auto px-8 py-4 bg-white/5 backdrop-blur-md border border-white/10 text-white rounded-full font-bold text-lg hover:bg-white/10 transition-all">
                 Login für Partner
               </button>
             </div>
@@ -171,7 +171,7 @@ function AffiliateMarketingView({ onNavigate, onSignIn, onGetStarted, heroRef, i
       </section>
 
       {/* Benefits Grid */}
-      <section className="py-24 relative z-10">
+      <section className="py-16 sm:py-24 relative z-10">
         <div className="landing-container">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div
@@ -212,7 +212,7 @@ function AffiliateMarketingView({ onNavigate, onSignIn, onGetStarted, heroRef, i
       <AffiliateSuccessStories />
 
       {/* Partner Application Form Wrapper */}
-      <section className="py-24 relative z-10">
+      <section className="py-16 sm:py-24 relative z-10">
         <div className="landing-container">
           <div className="max-w-4xl mx-auto text-center mb-16">
             <div className="w-16 h-16 bg-white/10 rounded-2xl flex items-center justify-center mx-auto mb-6 backdrop-blur-md border border-white/10">
@@ -342,12 +342,12 @@ function AffiliateDashboard({
       </div>
 
       <Card className="p-6">
-        <div className="flex items-center justify-between mb-6">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
           <div>
             <h3 className="text-lg font-semibold">Earnings Overview</h3>
             <p className="text-sm text-muted-foreground">Track your affiliate performance over time</p>
           </div>
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2">
             {(['7d', '30d', 'all'] as const).map((range) => (
               <button
                 key={range}

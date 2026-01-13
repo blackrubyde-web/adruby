@@ -2,6 +2,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '.
 import { Button } from './ui/button';
 import { Progress } from './ui/progress';
 import { Badge } from './ui/badge';
+import { SelectField } from './ui/select-field';
 import { MiniSparkline } from './MiniSparkline';
 import { Search, Play, Pause, Trash2, MoreVertical } from 'lucide-react';
 import { useState } from 'react';
@@ -260,17 +261,18 @@ export function CampaignsTable({
             className="w-full pl-10 pr-4 py-2 bg-background border border-border rounded-lg focus:outline-none focus:border-primary/50 transition-colors text-sm"
           />
         </div>
-        <select
+        <SelectField
           value={statusFilter}
           onChange={(e) => setStatusFilter(e.target.value)}
-          className="px-3 md:px-4 py-2 bg-background border border-border rounded-lg focus:outline-none focus:border-primary/50 transition-colors text-sm w-full md:w-auto"
+          wrapperClassName="w-full md:w-auto"
+          className="bg-background text-sm py-2 px-3 rounded-lg"
         >
           <option value="all">All Status</option>
           <option value="live">Live</option>
           <option value="paused">Paused</option>
           <option value="scheduled">Scheduled</option>
           <option value="completed">Completed</option>
-        </select>
+        </SelectField>
       </div>
 
       {/* Bulk Actions Bar */}

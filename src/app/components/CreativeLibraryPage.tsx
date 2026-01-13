@@ -1,11 +1,13 @@
-import { ImageIcon, Upload, Search, Eye, Download, Trash2, Star, Grid3x3, List, Video, FileText, Copy, Edit2, MousePointerClick, TrendingUp, CheckSquare } from 'lucide-react';
+import { ImageIcon, Upload, Search, Eye, Download, Trash2, Star, Grid3x3, List, Video, FileText, Copy, Edit2, MousePointerClick, TrendingUp, CheckSquare, Sparkles, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
-import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type ChangeEvent } from 'react';
+import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type ChangeEvent } from 'react';
 import { FixedSizeGrid } from 'react-window';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { EmptyState } from './EmptyState';
 import { supabase } from '../lib/supabaseClient';
+import { creativeSaveToLibrary } from '../lib/api/creative';
+import type { AdDocument, ImageLayer, StudioLayer, TextLayer } from '../types/studio';
 
 interface Creative {
   id: string;
@@ -28,6 +30,9 @@ interface Creative {
   isFavorite: boolean;
 }
 
+const EditorLayout = lazy(() => import('./studio/EditorLayout').then(mod => ({ default: mod.EditorLayout })));
+const AdWizard = lazy(() => import('./studio/AdWizard').then(mod => ({ default: mod.AdWizard })));
+
 export function CreativeLibraryPage() {
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [creatives, setCreatives] = useState<Creative[]>([]);
@@ -40,6 +45,8 @@ export function CreativeLibraryPage() {
   });
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedType, setSelectedType] = useState<Creative['type'] | 'all'>('all');
+  const [studioView, setStudioView] = useState<'idle' | 'wizard' | 'editor'>('idle');
+  const [studioDoc, setStudioDoc] = useState<AdDocument | undefined>(undefined);
 
   const [isUploading, setIsUploading] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
@@ -56,6 +63,7 @@ export function CreativeLibraryPage() {
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [selectionMode, setSelectionMode] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [reloadTick, setReloadTick] = useState(0);
 
   interface CreativeRow {
     id: string;
@@ -180,7 +188,7 @@ export function CreativeLibraryPage() {
     return () => {
       mounted = false;
     };
-  }, [favoriteIds, mapCreativeRow]);
+  }, [favoriteIds, mapCreativeRow, reloadTick]);
 
   const filteredCreatives = useMemo(() => {
     return creatives.filter(creative => {
@@ -310,6 +318,61 @@ export function CreativeLibraryPage() {
       }
     })();
   }, [creatives, favoriteIds, mapCreativeRow]);
+
+  const handleCreateAd = useCallback(() => {
+    setStudioView('wizard');
+  }, []);
+
+  const handleWizardComplete = useCallback((doc: AdDocument) => {
+    setStudioDoc(doc);
+    setStudioView('editor');
+  }, []);
+
+  const handleStudioClose = useCallback(() => {
+    setStudioDoc(undefined);
+    setStudioView('idle');
+  }, []);
+
+  const handleStudioSave = useCallback(async (doc: AdDocument) => {
+    try {
+      const headlineLayer = doc.layers.find((l: StudioLayer) =>
+        l.type === 'text' && (l.name.toLowerCase().includes('headline') || (l as TextLayer).fontSize > 40)
+      );
+      const descLayer = doc.layers.find((l: StudioLayer) => l.type === 'text' && l.id !== headlineLayer?.id);
+      const ctaLayer = doc.layers.find((l: StudioLayer) => l.type === 'cta' || l.name.toLowerCase().includes('cta'));
+      const imageLayer = doc.layers.find((l: StudioLayer) => l.type === 'product' || l.type === 'background');
+
+      const payload = {
+        createdFrom: 'studio',
+        lifecycle: { status: 'active' },
+        productName: doc.name || 'AdRuby Design',
+        targetAudience: doc.meta?.mood || 'General',
+        headline: (headlineLayer as TextLayer)?.text || 'New Creative',
+        description: (descLayer as TextLayer)?.text || '',
+        cta: (ctaLayer as TextLayer)?.text || 'Learn More',
+        copy: {
+          hook: (headlineLayer as TextLayer)?.text || 'New Creative',
+          primary_text: (descLayer as TextLayer)?.text || '',
+          cta: (ctaLayer as TextLayer)?.text || 'Learn More',
+        },
+        thumbnail: (imageLayer as ImageLayer)?.src || null,
+        doc_snapshot: doc,
+      };
+
+      await creativeSaveToLibrary({
+        output: payload,
+        blueprintId: doc.meta?.blueprintId,
+        score: doc.meta?.score,
+      });
+
+      toast.success('Ad saved to library.');
+      setReloadTick((prev) => prev + 1);
+      handleStudioClose();
+    } catch (err) {
+      console.error('Failed to save ad:', err);
+      toast.error(err instanceof Error ? err.message : 'Failed to save ad.');
+    }
+  }, [handleStudioClose]);
 
   const handleUploadClick = useCallback(() => {
     fileInputRef.current?.click();
@@ -538,6 +601,15 @@ export function CreativeLibraryPage() {
     [],
   );
 
+  const LoadingFallback = () => (
+    <div className="flex items-center justify-center min-h-screen bg-background text-primary">
+      <div className="flex flex-col items-center gap-4">
+        <Loader2 className="w-10 h-10 animate-spin" />
+        <p className="text-sm font-medium text-muted-foreground animate-pulse">Lade Studio...</p>
+      </div>
+    </div>
+  );
+
   // Memoized row component for list view to avoid re-renders when unrelated state changes
   const CreativeListRow = useCallback(
     (props: { creative: Creative }) => {
@@ -639,11 +711,12 @@ export function CreativeLibraryPage() {
   }, []);
 
   const gridGap = 24;
-  const cardWidth = 360;
-  const cardHeight = 520;
+  const isNarrowGrid = gridWidth < 640;
+  const cardWidth = isNarrowGrid ? Math.min(gridWidth, Math.max(220, gridWidth - gridGap * 2)) : 360;
+  const cardHeight = isNarrowGrid ? 480 : 520;
   const gridColumnCount = Math.max(1, Math.floor((gridWidth + gridGap) / (cardWidth + gridGap)));
   const gridRowCount = Math.ceil(filteredCreatives.length / gridColumnCount);
-  const gridHeight = Math.max(480, Math.min(900, viewportHeight - 260));
+  const gridHeight = Math.max(360, Math.min(isNarrowGrid ? 720 : 900, viewportHeight - (isNarrowGrid ? 220 : 260)));
 
   const renderGridCell = ({
     columnIndex,
@@ -815,45 +888,55 @@ export function CreativeLibraryPage() {
         onChange={handleFileChange}
       />
       {/* Hero Header */}
-      <div className="backdrop-blur-xl bg-card/60 rounded-2xl border border-border/50 shadow-xl p-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
-        <div className="flex items-start justify-between mb-6">
+      <div className="backdrop-blur-xl bg-card/60 rounded-2xl border border-border/50 shadow-xl p-5 sm:p-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
           <div>
-            <h1 className="text-foreground mb-2 bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">
+            <h1 className="text-2xl sm:text-3xl font-semibold text-foreground mb-2 bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">
               Creative Library
             </h1>
             <p className="text-muted-foreground">
               Manage and analyze all your ad creatives in one place
             </p>
           </div>
-          <Button
-            onClick={handleUploadClick}
-            disabled={isUploading}
-            className="bg-gradient-to-r from-primary to-primary/80 text-primary-foreground hover:opacity-90 disabled:opacity-60"
-          >
-            <Upload className="w-4 h-4 mr-2" />
-            {isUploading ? 'Uploading…' : 'Upload Creative'}
-          </Button>
+          <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+            <Button
+              onClick={handleCreateAd}
+              className="bg-gradient-to-r from-rose-500 to-red-600 text-white hover:opacity-90"
+            >
+              <Sparkles className="w-4 h-4 mr-2" />
+              Neue Ad erstellen
+            </Button>
+            <Button
+              onClick={handleUploadClick}
+              disabled={isUploading}
+              variant="outline"
+              className="border-border/60"
+            >
+              <Upload className="w-4 h-4 mr-2" />
+              {isUploading ? 'Uploading…' : 'Upload Creative'}
+            </Button>
+          </div>
         </div>
 
         {/* Stats Grid */}
-        <div className="grid grid-cols-5 gap-4">
-          <div className="p-4 rounded-xl bg-gradient-to-br from-primary/10 to-transparent border border-border/30">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-4">
+          <div className="p-3 sm:p-4 rounded-xl bg-gradient-to-br from-primary/10 to-transparent border border-border/30">
             <div className="text-2xl text-foreground font-bold mb-1">{stats.total}</div>
             <div className="text-sm text-muted-foreground">Total Creatives</div>
           </div>
-          <div className="p-4 rounded-xl bg-gradient-to-br from-blue-500/10 to-transparent border border-border/30">
+          <div className="p-3 sm:p-4 rounded-xl bg-gradient-to-br from-blue-500/10 to-transparent border border-border/30">
             <div className="text-2xl text-foreground font-bold mb-1">{stats.images}</div>
             <div className="text-sm text-muted-foreground">Images</div>
           </div>
-          <div className="p-4 rounded-xl bg-gradient-to-br from-purple-500/10 to-transparent border border-border/30">
+          <div className="p-3 sm:p-4 rounded-xl bg-gradient-to-br from-purple-500/10 to-transparent border border-border/30">
             <div className="text-2xl text-foreground font-bold mb-1">{stats.videos}</div>
             <div className="text-sm text-muted-foreground">Videos</div>
           </div>
-          <div className="p-4 rounded-xl bg-gradient-to-br from-green-500/10 to-transparent border border-border/30">
+          <div className="p-3 sm:p-4 rounded-xl bg-gradient-to-br from-green-500/10 to-transparent border border-border/30">
             <div className="text-2xl text-foreground font-bold mb-1">{stats.carousels}</div>
             <div className="text-sm text-muted-foreground">Carousels</div>
           </div>
-          <div className="p-4 rounded-xl bg-gradient-to-br from-orange-500/10 to-transparent border border-border/30">
+          <div className="p-3 sm:p-4 rounded-xl bg-gradient-to-br from-orange-500/10 to-transparent border border-border/30">
             <div className="text-2xl text-foreground font-bold mb-1">{stats.avgROAS}x</div>
             <div className="text-sm text-muted-foreground">Avg. ROAS</div>
           </div>
@@ -880,9 +963,9 @@ export function CreativeLibraryPage() {
 
       {/* Filters & Search */}
       <div className="bg-card border border-border rounded-xl p-4">
-        <div className="flex items-center justify-between gap-4">
+        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
           {/* Search */}
-          <div className="flex-1 relative">
+          <div className="flex-1 relative min-w-0">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
             <Input
               value={searchQuery}
@@ -892,8 +975,8 @@ export function CreativeLibraryPage() {
             />
           </div>
 
-          {/* Type Filter */}
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
+            {/* Type Filter */}
             {(['all', 'image', 'video', 'carousel'] as const).map((type) => (
               <button
                 key={type}
@@ -906,43 +989,43 @@ export function CreativeLibraryPage() {
                 {type === 'all' ? 'All' : type.charAt(0).toUpperCase() + type.slice(1)}
               </button>
             ))}
-          </div>
 
-          {/* View Mode Toggle */}
-          <div className="flex items-center gap-1 bg-muted rounded-lg p-1">
+            {/* View Mode Toggle */}
+            <div className="flex items-center gap-1 bg-muted rounded-lg p-1">
+              <button
+                onClick={() => setViewMode('grid')}
+                className={`p-2 rounded transition-colors ${viewMode === 'grid' ? 'bg-card shadow-sm' : 'hover:bg-card/50'
+                  }`}
+              >
+                <Grid3x3 className="w-4 h-4 text-foreground" />
+              </button>
+              <button
+                onClick={() => setViewMode('list')}
+                className={`p-2 rounded transition-colors ${viewMode === 'list' ? 'bg-card shadow-sm' : 'hover:bg-card/50'
+                  }`}
+              >
+                <List className="w-4 h-4 text-foreground" />
+              </button>
+            </div>
+
+            {/* Selection Mode Toggle */}
             <button
-              onClick={() => setViewMode('grid')}
-              className={`p-2 rounded transition-colors ${viewMode === 'grid' ? 'bg-card shadow-sm' : 'hover:bg-card/50'
+              onClick={() => selectionMode ? clearSelection() : setSelectionMode(true)}
+              className={`px-4 py-2 rounded-lg text-sm font-medium flex items-center gap-2 transition-all ${selectionMode
+                ? 'bg-primary/10 text-primary border border-primary/30'
+                : 'bg-muted text-muted-foreground hover:bg-muted/80'
                 }`}
             >
-              <Grid3x3 className="w-4 h-4 text-foreground" />
-            </button>
-            <button
-              onClick={() => setViewMode('list')}
-              className={`p-2 rounded transition-colors ${viewMode === 'list' ? 'bg-card shadow-sm' : 'hover:bg-card/50'
-                }`}
-            >
-              <List className="w-4 h-4 text-foreground" />
+              <CheckSquare className="w-4 h-4" />
+              {selectionMode ? `${selectedIds.length} ausgewählt` : 'Auswählen'}
             </button>
           </div>
-
-          {/* Selection Mode Toggle */}
-          <button
-            onClick={() => selectionMode ? clearSelection() : setSelectionMode(true)}
-            className={`px-4 py-2 rounded-lg text-sm font-medium flex items-center gap-2 transition-all ${selectionMode
-              ? 'bg-primary/10 text-primary border border-primary/30'
-              : 'bg-muted text-muted-foreground hover:bg-muted/80'
-              }`}
-          >
-            <CheckSquare className="w-4 h-4" />
-            {selectionMode ? `${selectedIds.length} ausgewählt` : 'Auswählen'}
-          </button>
         </div>
       </div>
 
       {/* Selection Bar */}
       {selectedIds.length > 0 && (
-        <div className="sticky top-20 z-20 p-4 rounded-xl border border-red-500/30 bg-red-500/5 flex items-center justify-between gap-4">
+        <div className="sticky top-20 z-20 p-4 rounded-xl border border-red-500/30 bg-red-500/5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl bg-red-500/10 flex items-center justify-center">
               <Trash2 className="w-5 h-5 text-red-500" />
@@ -956,23 +1039,23 @@ export function CreativeLibraryPage() {
               </div>
             </div>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full sm:w-auto">
             <button
               onClick={selectAll}
-              className="px-3 py-2 bg-muted hover:bg-muted/80 border border-border rounded-lg text-xs font-semibold"
+              className="px-3 py-2 bg-muted hover:bg-muted/80 border border-border rounded-lg text-xs font-semibold w-full sm:w-auto"
             >
               Alle auswählen ({filteredCreatives.length})
             </button>
             <button
               onClick={clearSelection}
-              className="px-3 py-2 bg-muted hover:bg-muted/80 border border-border rounded-lg text-xs font-semibold"
+              className="px-3 py-2 bg-muted hover:bg-muted/80 border border-border rounded-lg text-xs font-semibold w-full sm:w-auto"
             >
               Auswahl aufheben
             </button>
             <button
               onClick={handleBulkDelete}
               disabled={isDeleting}
-              className="px-4 py-2 bg-red-500 text-white rounded-lg text-xs font-semibold hover:bg-red-600 transition-colors disabled:opacity-50"
+              className="px-4 py-2 bg-red-500 text-white rounded-lg text-xs font-semibold hover:bg-red-600 transition-colors disabled:opacity-50 w-full sm:w-auto"
             >
               {isDeleting ? 'Löschen...' : `${selectedIds.length} löschen`}
             </button>
@@ -981,7 +1064,7 @@ export function CreativeLibraryPage() {
       )}
 
 
-      {viewMode === 'grid' ? (
+      {viewMode === 'grid' || isNarrowGrid ? (
         <div ref={gridRef} className="w-full">
           {gridWidth > 0 && (
             <FixedSizeGrid
@@ -1073,6 +1156,26 @@ export function CreativeLibraryPage() {
               </button>
             </div>
           </div>
+        </div>
+      )}
+
+      {studioView !== 'idle' && (
+        <div className="fixed inset-0 z-[9999] bg-background overflow-hidden">
+          <Suspense fallback={<LoadingFallback />}>
+            {studioView === 'wizard' ? (
+              <AdWizard
+                isOpen={true}
+                onClose={handleStudioClose}
+                onComplete={handleWizardComplete}
+              />
+            ) : (
+              <EditorLayout
+                onClose={handleStudioClose}
+                onSave={handleStudioSave}
+                initialDoc={studioDoc}
+              />
+            )}
+          </Suspense>
         </div>
       )}
     </div>

@@ -47,7 +47,7 @@ export const HeroHeader = memo(function HeroHeader({
           </div>
 
           {actions && (
-            <div className="shrink-0 flex gap-3 items-center animate-fade-in-up delay-300">
+            <div className="shrink-0 flex flex-wrap gap-3 items-center w-full sm:w-auto sm:justify-end animate-fade-in-up delay-300">
               {actions}
             </div>
           )}

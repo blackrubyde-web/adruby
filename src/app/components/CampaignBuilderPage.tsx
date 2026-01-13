@@ -16,6 +16,7 @@ import {
 import { toast } from 'sonner';
 import { memo } from 'react';
 import { PageShell, HeroHeader } from './layout';
+import { SelectField } from './ui/select-field';
 import { supabase } from '../lib/supabaseClient';
 import { env } from '../lib/env';
 import { StrategySelector } from './studio/StrategySelector';
@@ -700,15 +701,16 @@ export function CampaignBuilderPage() {
                         <h2 className="text-2xl md:text-3xl font-black tracking-tight bg-gradient-to-br from-white to-white/60 bg-clip-text text-transparent">Kampagne starten</h2>
                         <p className="text-muted-foreground mt-2 text-base">Lege die Basis-Daten für deine Kampagne fest.</p>
                       </div>
-                      <select
+                      <SelectField
                         value={draft.status}
                         onChange={(e) => setDraft((prev) => (prev ? { ...prev, status: e.target.value as CampaignStatus } : prev))}
-                        className="px-3 py-1.5 bg-muted/50 border border-border rounded-lg text-sm font-medium focus:ring-2 focus:ring-primary/50 outline-none hover:bg-muted transition-colors text-foreground"
+                        className="bg-muted/50 text-sm py-1.5 px-3 rounded-lg font-medium"
+                        iconClassName="h-3 w-3 right-2"
                       >
                         {STATUS_OPTIONS.map((option) => (
                           <option key={option} value={option} className="bg-popover text-popover-foreground">{option.toUpperCase()}</option>
                         ))}
-                      </select>
+                      </SelectField>
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -738,28 +740,28 @@ export function CampaignBuilderPage() {
                       <div className="space-y-4">
                         <div className="space-y-2">
                           <label className="text-sm font-bold uppercase tracking-widest text-muted-foreground ml-1">Objective</label>
-                          <select
+                          <SelectField
                             value={campaignSpec.campaign.objective || 'OUTCOME_SALES'}
                             onChange={(e) => setCampaignSpec((prev) => ({ ...prev, campaign: { ...prev.campaign, objective: e.target.value } }))}
-                            className="w-full px-4 py-3 bg-muted/30 border border-border rounded-xl text-foreground focus:ring-2 focus:ring-primary/50 outline-none transition-all hover:bg-muted/50 appearance-none text-sm"
+                            className="bg-muted/30 text-sm py-3 px-4 rounded-xl"
                           >
                             <option value="OUTCOME_SALES" className="bg-popover text-popover-foreground">Sales</option>
                             <option value="OUTCOME_LEADS" className="bg-popover text-popover-foreground">Leads</option>
                             <option value="OUTCOME_TRAFFIC" className="bg-popover text-popover-foreground">Traffic</option>
                             <option value="OUTCOME_AWARENESS" className="bg-popover text-popover-foreground">Awareness</option>
-                          </select>
+                          </SelectField>
                         </div>
                         <div className="space-y-2">
                           <label className="text-sm font-bold uppercase tracking-widest text-muted-foreground ml-1">Bid Strategy</label>
-                          <select
+                          <SelectField
                             value={campaignSpec.campaign.bid_strategy || 'LOWEST_COST_WITHOUT_CAP'}
                             onChange={(e) => setCampaignSpec((prev) => ({ ...prev, campaign: { ...prev.campaign, bid_strategy: e.target.value } }))}
-                            className="w-full px-4 py-3 bg-muted/30 border border-border rounded-xl text-foreground focus:ring-2 focus:ring-primary/50 outline-none transition-all hover:bg-muted/50 appearance-none text-sm"
+                            className="bg-muted/30 text-sm py-3 px-4 rounded-xl"
                           >
                             <option value="LOWEST_COST_WITHOUT_CAP" className="bg-popover text-popover-foreground">Lowest Cost (Auto)</option>
                             <option value="COST_CAP" className="bg-popover text-popover-foreground">Cost Cap</option>
                             <option value="BID_CAP" className="bg-popover text-popover-foreground">Bid Cap</option>
-                          </select>
+                          </SelectField>
                         </div>
                       </div>
                     </div>

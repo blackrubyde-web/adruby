@@ -22,6 +22,7 @@ import { DashboardShell } from './layout/DashboardShell';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from './ui/card';
 import { Button } from './ui/button';
 import { Badge } from './ui/badge';
+import { SelectField } from './ui/select-field';
 import { BillingPanel } from './BillingPanel';
 import { connectMeta, disconnectMeta, getMetaAuthUrl, syncMeta } from '../lib/api/meta';
 import { useMetaConnection } from '../hooks/useMetaConnection';
@@ -533,16 +534,16 @@ export function SettingsPage() {
                   {/* Timezone */}
                   <div>
                     <label className="block text-sm font-semibold text-foreground mb-2">Timezone</label>
-                    <select
+                    <SelectField
                       value={accountData.timezone}
                       onChange={(e) => setAccountData({ ...accountData, timezone: e.target.value })}
-                      className="w-full px-4 py-3 bg-muted/50 border border-border/50 rounded-xl text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all"
+                      className="bg-muted/50"
                     >
                       <option value="Europe/Berlin">Europe/Berlin (GMT+1)</option>
                       <option value="Europe/London">Europe/London (GMT+0)</option>
                       <option value="America/New_York">America/New York (GMT-5)</option>
                       <option value="America/Los_Angeles">America/Los Angeles (GMT-8)</option>
-                    </select>
+                    </SelectField>
                   </div>
 
                   {/* Save Button */}
@@ -801,16 +802,16 @@ export function SettingsPage() {
                   {/* Language */}
                   <div>
                     <label className="block text-sm font-semibold text-foreground mb-2">Language</label>
-                    <select
+                    <SelectField
                       value={appearance.language}
                       onChange={(e) => setAppearance({ ...appearance, language: e.target.value })}
-                      className="w-full px-4 py-3 bg-muted/50 border border-border/50 rounded-xl text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all"
+                      className="bg-muted/50"
                     >
                       <option value="de">Deutsch</option>
                       <option value="en">English</option>
                       <option value="es">Español</option>
                       <option value="fr">Français</option>
-                    </select>
+                    </SelectField>
                   </div>
 
                   <Button
