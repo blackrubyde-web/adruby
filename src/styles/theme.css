@@ -250,6 +250,17 @@ body,
     background-image: var(--background-gradient);
     background-attachment: fixed;
   }
+
+  .toaster {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 1000;
+  }
+
+  .toaster > * {
+    pointer-events: auto;
+  }
 }
 
 
