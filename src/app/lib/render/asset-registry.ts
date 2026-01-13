@@ -24,6 +24,17 @@ export async function renderAsset(requirement: AssetRequirement): Promise<string
 
     switch (type) {
         // ========================================================================
+        // BACKGROUNDS
+        // ========================================================================
+        case 'background':
+            return renderAbstractBackground({
+                width: params.width || 1080,
+                height: params.height || 1080,
+                palette: params.palette || ['#000000', '#333333'],
+                style: params.style || 'gradient'
+            });
+
+        // ========================================================================
         // BADGES
         // ========================================================================
         case 'offerBadge':
@@ -339,30 +350,68 @@ function escapeXml(text: string): string {
         .replace(/</g, '&lt;')
         .replace(/>/g, '&gt;')
         .replace(/"/g, '&quot;')
-        .replace(/'/g, '&apos;');
-}
+    function renderAbstractBackground(params: any): string {
+        const { width, height, palette, style } = params;
 
-// ============================================================================
-// BATCH RENDERING
-// ============================================================================
+        // Safety check for palette
+        const nicePalette = (palette && palette.length > 0) ? palette : ['#F8F9FA', '#E9ECEF'];
+        const c1 = nicePalette[0];
+        const c2 = nicePalette.length > 1 ? nicePalette[1] : c1;
+        const c3 = nicePalette.length > 2 ? nicePalette[2] : c2;
 
-/**
- * Render multiple assets in parallel
- */
-export async function renderAssets(
-    requirements: AssetRequirement[]
-): Promise<Record<string, string>> {
-    const results: Record<string, string> = {};
+        let svgContent = '';
 
-    for (const req of requirements) {
-        try {
-            const dataUrl = await renderAsset(req);
-            results[req.type] = dataUrl;
-        } catch (error) {
-            console.error(`Failed to render asset ${req.type}:`, error);
-            results[req.type] = renderPlaceholderCard({ text: `Error: ${req.type}` });
+        if (style === 'abstract' || style === 'pattern') {
+            // Organic Blob / Abstract shapes
+            svgContent = `
+            <rect width="${width}" height="${height}" fill="${c1}"/>
+            <circle cx="0" cy="0" r="${width * 0.8}" fill="${c2}" opacity="0.4"/>
+            <circle cx="${width}" cy="${height}" r="${width * 0.6}" fill="${c3}" opacity="0.3"/>
+            <circle cx="${width * 0.8}" cy="${height * 0.2}" r="${width * 0.3}" fill="${c2}" opacity="0.2"/>
+        `;
+        } else {
+            // Default: Smooth subtle gradient
+            const id = `grad_${Math.random().toString(36).substr(2, 5)}`;
+            svgContent = `
+            <defs>
+                <linearGradient id="${id}" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" stop-color="${c1}" />
+                    <stop offset="100%" stop-color="${c2}" />
+                </linearGradient>
+            </defs>
+            <rect width="${width}" height="${height}" fill="url(#${id})"/>
+        `;
         }
+
+        const svg = `
+<svg width="${width}" height="${height}" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none">
+    ${svgContent}
+</svg>`.trim();
+
+        return `data:image/svg+xml;base64,${Buffer.from(svg).toString('base64')}`;
     }
 
-    return results;
-}
+    // ============================================================================
+    // BATCH RENDERING
+    // ============================================================================
+
+    /**
+     * Render multiple assets in parallel
+     */
+    export async function renderAssets(
+        requirements: AssetRequirement[]
+    ): Promise<Record<string, string>> {
+        const results: Record<string, string> = {};
+
+        for (const req of requirements) {
+            try {
+                const dataUrl = await renderAsset(req);
+                results[req.type] = dataUrl;
+            } catch (error) {
+                console.error(`Failed to render asset ${req.type}:`, error);
+                results[req.type] = renderPlaceholderCard({ text: `Error: ${req.type}` });
+            }
+        }
+
+        return results;
+    }
