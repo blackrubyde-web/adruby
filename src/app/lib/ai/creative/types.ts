@@ -534,6 +534,11 @@ export function validateCreativeSpec(spec: unknown): ValidatedCreativeSpec {
         };
     } catch (error) {
         if (error instanceof z.ZodError) {
+            // Log detailed validation errors for debugging
+            console.error('❌ CreativeSpec Validation Failed:');
+            console.error('Errors:', JSON.stringify(error.errors, null, 2));
+            console.error('Failed spec sample:', JSON.stringify(spec, null, 2).slice(0, 500));
+
             return {
                 spec: spec as CreativeSpec,
                 isValid: false,
