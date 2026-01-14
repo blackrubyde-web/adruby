@@ -107,6 +107,25 @@ export type SavedAd = {
     thumbnail?: string | null;
 };
 
+type CreativeRow = {
+    id: string;
+    outputs?: Record<string, unknown> | null;
+    inputs?: Record<string, unknown> | null;
+    created_at?: string | null;
+    saved?: boolean | null;
+    thumbnail?: string | null;
+};
+
+type CreativeCopy = {
+    hook?: string;
+    primary_text?: string;
+    cta?: string;
+};
+
+type CreativeVariant = {
+    copy?: CreativeCopy;
+};
+
 // --- CONTEXT STATE ---
 interface CampaignBuilderState {
     // Data
@@ -158,21 +177,42 @@ export const useCampaignBuilder = () => {
 };
 
 // --- HELPER MAPPERS (Moved from Page) ---
-const mapCreativeRow = (row: any): SavedAd | null => {
+const mapCreativeRow = (row: CreativeRow): SavedAd | null => {
     if (!row) return null;
     const inputs = row.inputs || null;
     const output = row.outputs || null;
-    // ... Simplified mapping logic to avoid huge bloat, assume typical structure
+    const brief = (output as { brief?: { product?: { name?: string }; audience?: { summary?: string } } } | null)?.brief;
     const creative =
-        Array.isArray((output as any)?.creatives)
-            ? (output as any).creatives?.[0]
-            : Array.isArray((output as any)?.variants)
-                ? (output as any).variants?.[0]
+        Array.isArray((output as { creatives?: CreativeVariant[] } | null)?.creatives)
+            ? (output as { creatives?: CreativeVariant[] }).creatives?.[0]
+            : Array.isArray((output as { variants?: CreativeVariant[] } | null)?.variants)
+                ? (output as { variants?: CreativeVariant[] }).variants?.[0]
                 : null;
 
-    const headline = creative?.copy?.hook || inputs?.headline || inputs?.title || 'Untitled Ad';
-    const description = creative?.copy?.primary_text || inputs?.description || '';
-    const cta = creative?.copy?.cta || inputs?.cta || 'Learn More';
+    const headline =
+        creative?.copy?.hook ||
+        (inputs as { headline?: string; title?: string } | null)?.headline ||
+        (inputs as { title?: string } | null)?.title ||
+        'Untitled Ad';
+    const description =
+        creative?.copy?.primary_text ||
+        (inputs as { description?: string } | null)?.description ||
+        '';
+    const cta =
+        creative?.copy?.cta ||
+        (inputs as { cta?: string } | null)?.cta ||
+        'Learn More';
+    const productName =
+        brief?.product?.name ||
+        (inputs as { productName?: string; brandName?: string } | null)?.productName ||
+        (inputs as { brandName?: string } | null)?.brandName ||
+        'Produkt';
+    const targetAudience =
+        brief?.audience?.summary ||
+        (inputs as { targetAudience?: string } | null)?.targetAudience ||
+        'Zielgruppe';
+    const lifecycle = (inputs as { lifecycle?: { status?: SavedAd['status'] } } | null)?.lifecycle;
+    const status = lifecycle?.status || (row.saved ? 'active' : 'draft');
     const thumbnail = row.thumbnail ?? null;
 
     return {
@@ -181,9 +221,9 @@ const mapCreativeRow = (row: any): SavedAd | null => {
         headline,
         description,
         cta,
-        productName: inputs?.productName || 'Product',
-        targetAudience: inputs?.targetAudience || 'Audience',
-        status: row.saved ? 'active' : 'draft',
+        productName,
+        targetAudience,
+        status,
         createdAt: row.created_at || new Date().toISOString(),
         thumbnail,
     };

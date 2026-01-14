@@ -1,7 +1,7 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
 import { Upload, Sparkles, ArrowRight, X, Wand2, Check, Zap, Image as Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
-import type { AdDocument, ImageLayer } from '../../types/studio';
+import type { AdDocument } from '../../types/studio';
 import { removeBackground, blobToBase64 } from '../../lib/ai/bg-removal';
 import { CanvasStage } from './CanvasStage';
 import { SelectField } from '../ui/select-field';
@@ -58,6 +58,19 @@ const LANGUAGES = [
     { id: 'es', label: '🇪🇸 Español' },
     { id: 'it', label: '🇮🇹 Italiano' }
 ];
+
+type LayerRole = NonNullable<AdDocument['layers'][number]['role']>;
+type TextualLayer = Extract<AdDocument['layers'][number], { text: string }>;
+
+const getLayerText = (layers: AdDocument['layers'], roles: LayerRole[]): string => {
+    const layer = layers.find(
+        (item): item is TextualLayer =>
+            (item.type === 'text' || item.type === 'cta') &&
+            item.role !== undefined &&
+            roles.includes(item.role)
+    );
+    return layer?.text || '';
+};
 
 export const AdWizard = ({ isOpen, onClose, onComplete }: AdWizardProps) => {
     const [step, setStep] = useState<WizardStep>(1);
@@ -324,9 +337,9 @@ export const AdWizard = ({ isOpen, onClose, onComplete }: AdWizardProps) => {
 
             // Extract copy from the first variant for the hooks panel
             // The new pipeline doesn't return separate hooks, so we extract from layers
-            const headline = bestDoc.layers.find((l: any) => l.role === 'headline')?.text || 'Special Offer';
-            const description = bestDoc.layers.find((l: any) => l.role === 'description' || l.role === 'subheadline')?.text || 'Check it out';
-            const cta = bestDoc.layers.find((l: any) => l.role === 'cta')?.text || 'Shop Now';
+            const headline = getLayerText(bestDoc.layers, ['headline']) || 'Special Offer';
+            const description = getLayerText(bestDoc.layers, ['description', 'subheadline']) || 'Check it out';
+            const cta = getLayerText(bestDoc.layers, ['cta']) || 'Shop Now';
 
             setGeneratedHooks({
                 headlines: [headline],
@@ -763,7 +776,7 @@ export const AdWizard = ({ isOpen, onClose, onComplete }: AdWizardProps) => {
                                 <div className="flex justify-center mb-4">
                                     <div className="flex gap-3 bg-muted/30 p-1.5 rounded-2xl border border-border/50">
                                         {allVariants.map((variant, index) => {
-                                            const score = variant.meta?.qualityScore || 0;
+                                            const score = variant.meta?.qualityScore ?? variant.meta?.score ?? 0;
                                             const isBest = index === 0; // First is always best sorted
 
                                             // Color coding based on score
@@ -779,9 +792,9 @@ export const AdWizard = ({ isOpen, onClose, onComplete }: AdWizardProps) => {
                                                         setGeneratedDoc(variant);
 
                                                         // Update hooks from this variant
-                                                        const h = variant.layers.find((l: any) => l.role === 'headline')?.text || '';
-                                                        const d = variant.layers.find((l: any) => l.role === 'description' || l.role === 'subheadline')?.text || '';
-                                                        const c = variant.layers.find((l: any) => l.role === 'cta')?.text || '';
+                                                        const h = getLayerText(variant.layers, ['headline']);
+                                                        const d = getLayerText(variant.layers, ['description', 'subheadline']);
+                                                        const c = getLayerText(variant.layers, ['cta']);
 
                                                         setGeneratedHooks({
                                                             headlines: [h].filter(Boolean),

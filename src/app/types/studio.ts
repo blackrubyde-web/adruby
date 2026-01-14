@@ -38,12 +38,13 @@ export type LayerBase = {
     zIndex?: number; // Optional
     ai?: AiProvenance;
     // Layout Composer Role (Clean mapping)
-    role?: 'headline' | 'subheadline' | 'description' | 'cta' | 'bg_image' | 'product_image' | 'logo' | 'social_proof' | 'review_text' | 'review_author' | 'code' | 'price' | 'badge';
+    role?: 'headline' | 'subheadline' | 'description' | 'body' | 'cta' | 'bg_image' | 'product_image' | 'logo' | 'social_proof' | 'review_text' | 'review_author' | 'code' | 'price' | 'badge' | 'offer';
 };
 
 export type ImageLayer = LayerBase & {
     type: "background" | "product" | "overlay" | "logo" | "image"; // Added image
     src: string;              // url
+    fill?: string;            // Optional solid fill (used for background layers)
     fit?: "cover" | "contain"; // Optional
     maskRadius?: number;      // for pill masks etc.
     clipShape?: 'none' | 'circle' | 'rect' | 'rounded'; // New: Shape Masking
@@ -167,5 +168,6 @@ export type AdDocument = {
         textInImage?: "none" | "minimal" | "custom";
         blueprintId?: string;
         score?: number;
+        qualityScore?: number;
     };
 };

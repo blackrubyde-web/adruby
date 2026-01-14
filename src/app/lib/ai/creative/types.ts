@@ -236,6 +236,14 @@ export interface CreativeSpec {
         required: AssetRequirement[];
     };
 
+    // Grounded facts (optional, for safe claims)
+    groundedFacts?: {
+        offer?: string;
+        proof?: string;
+        painPoints?: string[];
+        features?: string[];
+    };
+
     // Constraints
     constraints: CopyConstraints & {
         forbiddenStyles?: StylePreferences['forbiddenStyles'];
@@ -327,6 +335,13 @@ export const CreativeSpecSchema = z.object({
     assets: z.object({
         required: z.array(AssetRequirementSchema)
     }),
+
+    groundedFacts: z.object({
+        offer: z.string().optional(),
+        proof: z.string().optional(),
+        painPoints: z.array(z.string()).optional(),
+        features: z.array(z.string()).optional()
+    }).optional(),
 
     constraints: CopyConstraintsSchema.extend({
         forbiddenStyles: z.array(z.enum(['gradients', 'illustrations', 'patterns'])).optional(),

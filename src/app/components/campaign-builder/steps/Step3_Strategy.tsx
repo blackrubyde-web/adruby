@@ -3,19 +3,12 @@ import { Button } from '../../ui/button';
 import { ArrowRight, Sliders, ShieldCheck, TrendingUp, Zap } from 'lucide-react';
 import { Card } from '../../ui/card';
 import { toast } from 'sonner';
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from "../../ui/select";
 import { Slider } from '../../ui/slider';
 import { useState } from 'react';
 import { Badge } from '../../ui/badge';
 
 export const Step3_Strategy = () => {
-    const { campaignSpec, setCampaignSpec, handleNext } = useCampaignBuilder();
+    const { campaignSpec, handleNext } = useCampaignBuilder();
 
     // Local state for strategy tweaks (could be moved to context if needed globally)
     const [riskTolerance, setRiskTolerance] = useState('medium');

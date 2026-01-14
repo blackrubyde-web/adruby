@@ -4,7 +4,7 @@
  * Bounded retry loop with automatic fixes (tightenCopy, template swap, etc.)
  */
 
-import type { AdDocument } from '../../types/studio';
+import type { AdDocument, ImageLayer } from '../../types/studio';
 import type { TemplateCapsule } from '../templates/types';
 import type { CreativeSpec, CopyContent } from '../ai/creative/types';
 import type { TemplateScoringResult } from '../templates/scoring';
@@ -198,7 +198,7 @@ async function assembleDocument(
     const textSafe = spec.style.textSafe || ['#000000', '#FFFFFF'];
 
     // Background Color
-    const bgLayer = document.layers.find(l => l.type === 'background');
+    const bgLayer = document.layers.find((layer): layer is ImageLayer => layer.type === 'background');
     if (bgLayer && !bgLayer.src && palette[0]) {
         bgLayer.fill = palette[0];
         // If palette has a specific background color intended, use that. 
