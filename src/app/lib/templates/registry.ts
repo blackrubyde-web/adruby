@@ -2,7 +2,14 @@ import type { TemplateCapsule } from './types';
 import type { AdDocument } from '../../types/studio';
 import { ADDITIONAL_TEMPLATES } from './registry-extended';
 import { ECOMMERCE_FEATURE_SCATTER } from './registry-feature';
-import { ECOMMERCE_RETAIL_LAUNCH, ECOMMERCE_NUTRITION_PROOF } from './registry-premium';
+import {
+    ECOMMERCE_RETAIL_LAUNCH,
+    ECOMMERCE_NUTRITION_PROOF,
+    ECOMMERCE_VEHICLE_RING,
+    ECOMMERCE_EXPLODED_STACK,
+    ECOMMERCE_LIFESTYLE_MATERIAL,
+    SAAS_4_STEP_GRID
+} from './registry-premium';
 
 // ============================================================================
 // E-COMMERCE TEMPLATES (5)
@@ -640,16 +647,6 @@ export const ECOMMERCE_UGC_FRAME: TemplateCapsule = {
         knownGoodFor: ['social proof', 'ugc style', 'mobile-first']
     }
 };
-
-import { ECOMMERCE_FEATURE_SCATTER } from './registry-feature';
-import {
-    ECOMMERCE_RETAIL_LAUNCH,
-    ECOMMERCE_NUTRITION_PROOF,
-    ECOMMERCE_VEHICLE_RING,
-    ECOMMERCE_EXPLODED_STACK,
-    ECOMMERCE_LIFESTYLE_MATERIAL,
-    SAAS_4_STEP_GRID
-} from './registry-premium';
 
 /**
  * Registry of all available template capsules

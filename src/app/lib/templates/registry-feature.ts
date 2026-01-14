@@ -81,6 +81,9 @@ export const ECOMMERCE_FEATURE_SCATTER: TemplateCapsule = {
             headline: 40, // Features act as headlines
             cta: 25
         },
+        maxLines: {
+            headline: 2
+        },
         minFontSize: 24,
         hierarchyRules: {
             headlineShouldDominate: true,
