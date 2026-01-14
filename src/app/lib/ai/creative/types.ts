@@ -366,8 +366,8 @@ const CopyConstraintsSchema = z.object({
 });
 
 const StylePreferencesSchema = z.object({
-    palette: z.array(z.string().regex(/^#[0-9A-Fa-f]{6}$/)).optional(),
-    textSafe: z.array(z.string().regex(/^#[0-9A-Fa-f]{6}$/)).optional(),
+    palette: z.array(z.string()).optional().transform(colors => colors?.filter(c => /^#[0-9A-Fa-f]{6}$/.test(c))),
+    textSafe: z.array(z.string()).optional().transform(colors => colors?.filter(c => /^#[0-9A-Fa-f]{6}$/.test(c))),
     forbiddenStyles: z.array(z.enum(['gradients', 'illustrations', 'patterns'])).optional(),
     mustAvoidClaims: z.array(z.string()).optional(),
     readabilityMin: z.number().min(1).max(21).optional()
