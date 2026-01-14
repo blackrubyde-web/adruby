@@ -311,8 +311,6 @@ export const AdWizard = ({ isOpen, onClose, onComplete }: AdWizardProps) => {
             }
 
             const result = await response.json();
-            console.log('[AdWizard] Received response:', result);
-
             if (!result.success) {
                 console.error('[AdWizard] Generation failed:', result);
                 throw new Error(result.error || 'Ad generation failed');
@@ -324,8 +322,6 @@ export const AdWizard = ({ isOpen, onClose, onComplete }: AdWizardProps) => {
                 console.error('[AdWizard] No adDocuments returned');
                 throw new Error('No ad documents returned');
             }
-
-            console.log(`[AdWizard] Received ${docs.length} variants`);
 
             // Store all variants
             setAllVariants(docs);

@@ -1,9 +1,8 @@
 import { useCampaignBuilder } from '../CampaignBuilderContext';
 import { Button } from '../../ui/button';
-import { Rocket, Target, CreditCard, Layers, Megaphone, Loader2 } from 'lucide-react';
+import { Rocket, Target, Megaphone, Loader2 } from 'lucide-react';
 import { Card } from '../../ui/card';
 import { useState } from 'react';
-import { toast } from 'sonner';
 
 export const Step4_Review = () => {
     const { campaignSpec, selectedIds, ads, isSaving, saveDraft } = useCampaignBuilder();

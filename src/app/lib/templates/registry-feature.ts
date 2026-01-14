@@ -20,7 +20,7 @@ export const ECOMMERCE_FEATURE_SCATTER: TemplateCapsule = {
 
     supportedBusinessModels: ['ecommerce', 'saas'],
     supportedPatterns: [
-        'ecommerce_feature_stack', // We'll map to this
+        'ecommerce_benefit_stack',
         'ecommerce_product_focus'
     ],
 
@@ -34,7 +34,7 @@ export const ECOMMERCE_FEATURE_SCATTER: TemplateCapsule = {
         },
         // Feature Top Left
         {
-            id: 'f1',
+            id: 'secondary',
             bbox: { x: 50, y: 200, width: 300, height: 150 },
             rules: { maxChars: 60, priority: 8 },
             contentType: 'text',
@@ -42,7 +42,7 @@ export const ECOMMERCE_FEATURE_SCATTER: TemplateCapsule = {
         },
         // Feature Top Right
         {
-            id: 'f2',
+            id: 'secondary',
             bbox: { x: 730, y: 200, width: 300, height: 150 },
             rules: { maxChars: 60, priority: 8 },
             contentType: 'text',
@@ -50,7 +50,7 @@ export const ECOMMERCE_FEATURE_SCATTER: TemplateCapsule = {
         },
         // Feature Bottom Left
         {
-            id: 'f3',
+            id: 'secondary',
             bbox: { x: 50, y: 600, width: 300, height: 150 },
             rules: { maxChars: 60, priority: 7 },
             contentType: 'text',
@@ -58,7 +58,7 @@ export const ECOMMERCE_FEATURE_SCATTER: TemplateCapsule = {
         },
         // Feature Bottom Right
         {
-            id: 'f4',
+            id: 'secondary',
             bbox: { x: 730, y: 600, width: 300, height: 150 },
             rules: { maxChars: 60, priority: 7 },
             contentType: 'text',

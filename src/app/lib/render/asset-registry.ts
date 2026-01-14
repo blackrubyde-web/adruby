@@ -9,6 +9,8 @@ import type { AssetRequirement } from '../ai/creative/types';
 import { renderBadge, renderOfferBadge, renderUrgencyBadge } from './cards/badge';
 import { renderMessengerMock, renderWhatsAppFlowMock } from './mocks/messenger';
 import { renderDashboardCard, renderStatsCard } from './mocks/dashboard';
+import type { MessengerMockParams } from './mocks/messenger';
+import type { DashboardCardParams } from './mocks/dashboard';
 import { renderTestimonialCard } from './cards/testimonial';
 
 // ============================================================================
@@ -60,10 +62,21 @@ export async function renderAsset(requirement: AssetRequirement): Promise<string
         // SAAS MOCKS
         // ========================================================================
         case 'messengerMock':
-            if (params.messages) {
-                return renderMessengerMock(params);
-            } else if (params.steps) {
-                return renderWhatsAppFlowMock(params);
+            if (Array.isArray(params.messages)) {
+                const messengerParams: MessengerMockParams = {
+                    messages: params.messages,
+                    title: params.title,
+                    theme: params.theme,
+                    width: params.width,
+                    height: params.height
+                };
+                return renderMessengerMock(messengerParams);
+            } else if (Array.isArray(params.steps)) {
+                return renderWhatsAppFlowMock({
+                    steps: params.steps,
+                    width: params.width,
+                    height: params.height
+                });
             }
             // Default example
             return renderMessengerMock({
@@ -79,8 +92,15 @@ export async function renderAsset(requirement: AssetRequirement): Promise<string
             });
 
         case 'dashboardCard':
-            if (params.metrics) {
-                return renderDashboardCard(params);
+            if (Array.isArray(params.metrics)) {
+                const dashboardParams: DashboardCardParams = {
+                    title: params.title || 'Performance',
+                    metrics: params.metrics as DashboardCardParams['metrics'],
+                    theme: params.theme,
+                    width: params.width,
+                    height: params.height
+                };
+                return renderDashboardCard(dashboardParams);
             }
             // Default example
             return renderDashboardCard({
@@ -219,7 +239,12 @@ export async function renderAsset(requirement: AssetRequirement): Promise<string
             return renderFeatureChips(params);
 
         case 'statsCard':
-            return renderStatsCard(params);
+            return renderStatsCard({
+                stat: typeof params.stat === 'string' ? params.stat : String(params.stat ?? ''),
+                label: typeof params.label === 'string' ? params.label : String(params.label ?? ''),
+                width: params.width,
+                height: params.height
+            });
 
         // ========================================================================
         // PRODUCT (handled by image injection, not rendered here)

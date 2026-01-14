@@ -1,9 +1,8 @@
-import { ReactNode } from 'react';
+import { ReactNode, type ComponentPropsWithoutRef } from 'react';
 import { cn } from '../lib/utils';
 import { Card as UICard } from './ui/card';
 import { Button as UIButton } from './ui/button';
 import { Badge as UIBadge } from './ui/badge';
-import { Input as UIInput } from './ui/input';
 
 // ============================================
 // DEPRECATED TOKENS - USE TAILWIND UTILITIES
@@ -68,12 +67,14 @@ export function FeatureCard({ children, className }: { children: ReactNode; clas
 // BUTTONS
 // ============================================
 
-export function PrimaryButton({ children, onClick, className }: any) {
-  return <UIButton variant="default" onClick={onClick} className={className}>{children}</UIButton>;
+type ButtonProps = Omit<ComponentPropsWithoutRef<typeof UIButton>, 'variant'>;
+
+export function PrimaryButton({ children, ...props }: ButtonProps) {
+  return <UIButton {...props} variant="default">{children}</UIButton>;
 }
 
-export function SecondaryButton({ children, onClick, className }: any) {
-  return <UIButton variant="secondary" onClick={onClick} className={className}>{children}</UIButton>;
+export function SecondaryButton({ children, ...props }: ButtonProps) {
+  return <UIButton {...props} variant="secondary">{children}</UIButton>;
 }
 
 // ============================================

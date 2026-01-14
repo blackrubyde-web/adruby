@@ -106,8 +106,8 @@ export interface ValidationResult {
     score: QualityScore;
     timestamp: string;
     meta?: {
-        validationTime: number;  // ms
-        checksRun: number;
+        validationTime?: number;  // ms
+        checksRun?: number;
     };
 }
 

@@ -85,14 +85,10 @@ function processLayer(layer: StudioLayer, content: GeneratedAdContent, options: 
     }
 
     // --- RECURSIVE GROUP HANDLING ---
-    if (layer.type === 'group' && 'children' in layer) {
-        // Handle groups recursively
-        const group = layer as any;
-        if (group.children) {
-            group.children = group.children.map((child: StudioLayer) =>
-                processLayer(child, content, options)
-            );
-        }
+    if (layer.type === 'group') {
+        layer.children = layer.children.map((child: StudioLayer) =>
+            processLayer(child, content, options)
+        );
     }
 
     return layer;
