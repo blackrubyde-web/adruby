@@ -5,6 +5,7 @@
  * These prompts drive the LLM to produce deterministic, structured blueprints.
  */
 
+import { ASSET_TYPES } from './types';
 import type { BusinessModel, CreativeSpec, CreativeSpecRequest } from './types';
 import type { TemplateCapsule } from '../../templates/types';
 
@@ -52,7 +53,8 @@ ${groundedFacts?.features?.length ? `**Features (GROUNDED FACTS):** ${groundedFa
 6. Define required assets (deterministic mocks/cards) based on creativePattern.
 7. Provide constraints for headline/subheadline/cta lengths appropriate for ratio.
 8. Specify "forbiddenStyles" appropriate for conversion (avoid clutter for most business models).
-9. Return ONLY valid JSON matching this structure.
+9. assets.required[].type MUST be one of: ${ASSET_TYPES.join(' | ')}.
+10. Return ONLY valid JSON matching this structure.
 
 **Expected JSON Structure:**
 \`\`\`json
@@ -67,7 +69,7 @@ ${groundedFacts?.features?.length ? `**Features (GROUNDED FACTS):** ${groundedFa
     "sophistication": "unaware|problem_aware|solution_aware|product_aware",
     "objections": ["objection1", "objection2"]
   },
-  "angle": "pain_relief|desire|social_proof|urgency|authority|gift|demo|before_after|comparison|price_anchor",
+  "angle": "pain_relief|desire|social_proof|urgency|authority|gift|demo|before_after|comparison|price_anchor|offer",
   "creativePattern": "pattern_from_businessModel",
   "copy": {
     "headline": "attention-grabbing headline",
@@ -246,7 +248,7 @@ export function getBusinessModelAddendum(businessModel: BusinessModel): string {
 **Assets to Define:**
 - resultsCard: ONLY if real results provided, otherwise omit
 - calendarCard: for booking
-- processSteps: 3-step process visualization
+- benefitStack: 3-step process visualization
 
 **Constraints:**
 - headline: problem → solution angle
@@ -268,9 +270,9 @@ export function getBusinessModelAddendum(businessModel: BusinessModel): string {
 - Address objections: time, relevance, difficulty level
 
 **Assets to Define:**
-- curriculumCard: module list
-- outcomesCard: learning outcomes (non-numeric benefits)
-- webinarCard: for live/recorded webinars
+- benefitStack: module list or outcomes (non-numeric benefits)
+- featureChips: key topics/skills (max 3)
+- calendarCard: for live/recorded webinar CTAs
 
 **Constraints:**
 - CTA: "Jetzt ansehen", "Webinar sichern", "Inhalte anschauen", "Kurs starten"

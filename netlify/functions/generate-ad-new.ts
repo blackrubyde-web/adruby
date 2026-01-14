@@ -212,11 +212,15 @@ const handler: Handler = async (event: HandlerEvent) => {
             retryAttempts: 0
         };
 
-        for (let i = 0; i < specResult.validSpecs.slice(0, variantCount).length; i++) {
-            const spec = specResult.validSpecs[i];
-            const renderedAssets = assetsPerSpec[i];
+        const specsToProcess = specResult.validSpecs.slice(0, variantCount);
+
+        for (let i = 0; i < specsToProcess.length; i++) {
+            const spec = specsToProcess[i];
 
             try {
+                const stage3Start = Date.now();
+                const renderedAssets = await renderAssets(spec.assets.required);
+
                 const availableAssets = {
                     ...renderedAssets,
                     // Add user-provided product image if available

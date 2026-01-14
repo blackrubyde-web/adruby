@@ -5,14 +5,24 @@
  */
 
 import OpenAI from 'openai';
+import {
+    ASSET_TYPES,
+    CREATIVE_ANGLES,
+    CREATIVE_PATTERNS,
+    PLATFORMS,
+    validateCreativeSpec
+} from './types';
 import type {
+    AssetRequirement,
+    AssetType,
+    BusinessModel,
+    CreativeAngle,
+    CreativePattern,
     CreativeSpec,
     CreativeSpecRequest,
-    BusinessModel,
+    Platform,
+    Ratio,
     ValidatedCreativeSpec
-} from './types';
-import {
-    validateCreativeSpec
 } from './types';
 import { buildCreativeSpecPrompt, buildPremiumFixPrompt } from './prompts';
 
@@ -91,6 +101,702 @@ type UserContent =
         | { type: "text"; text: string }
         | { type: "image_url"; image_url: { url: string; detail?: "low" | "high" | "auto" } }
     >;
+
+const HEX_COLOR_REGEX = /^#[0-9A-Fa-f]{6}$/;
+
+const DEFAULT_CONSTRAINTS_BY_RATIO: Record<Ratio, {
+    maxChars: { headline: number; subheadline?: number; body?: number; cta: number };
+    maxLines?: { headline: number; subheadline?: number; body?: number };
+    minFontSize?: number;
+}> = {
+    '1:1': {
+        maxChars: { headline: 60, subheadline: 110, body: 160, cta: 24 },
+        maxLines: { headline: 2, subheadline: 2, body: 3 },
+        minFontSize: 18
+    },
+    '4:5': {
+        maxChars: { headline: 65, subheadline: 120, body: 180, cta: 26 },
+        maxLines: { headline: 2, subheadline: 3, body: 4 },
+        minFontSize: 18
+    },
+    '9:16': {
+        maxChars: { headline: 70, subheadline: 140, body: 220, cta: 28 },
+        maxLines: { headline: 3, subheadline: 3, body: 5 },
+        minFontSize: 18
+    }
+};
+
+const DEFAULT_STYLE_BY_TONE: Record<CreativeSpecRequest['tone'], { palette: string[]; textSafe: string[] }> = {
+    professional: { palette: ['#0B2545', '#13315C', '#EEF2F6'], textSafe: ['#0B2545', '#FFFFFF'] },
+    playful: { palette: ['#FF6B6B', '#FFD93D', '#4D96FF'], textSafe: ['#1E1E1E', '#FFFFFF'] },
+    bold: { palette: ['#111111', '#FF3B30', '#F5F5F5'], textSafe: ['#111111', '#FFFFFF'] },
+    luxury: { palette: ['#0B0B0B', '#C9A227', '#F5F0E6'], textSafe: ['#0B0B0B', '#FFFFFF'] },
+    minimal: { palette: ['#111111', '#F2F2F2', '#CFCFCF'], textSafe: ['#111111', '#FFFFFF'] }
+};
+
+const ASSET_TYPE_ALIASES: Record<string, AssetType> = {
+    product: 'productCutout',
+    productcutout: 'productCutout',
+    productimage: 'productCutout',
+    productphoto: 'productCutout',
+    productpicture: 'productCutout',
+    productimg: 'productCutout',
+    backgroundimage: 'background',
+    bg: 'background',
+    offer: 'offerBadge',
+    discount: 'discountBadge',
+    urgency: 'urgencyBadge',
+    testimonial: 'testimonialCard',
+    review: 'reviewCard',
+    socialproof: 'testimonialCard',
+    stats: 'statsCard',
+    comparison: 'comparisonTable',
+    benefits: 'benefitStack',
+    benefitstack: 'benefitStack',
+    features: 'featureChips',
+    featurechips: 'featureChips',
+    steps: 'featureChips',
+    chat: 'messengerMock',
+    whatsapp: 'messengerMock',
+    dashboard: 'dashboardCard',
+    invoice: 'invoicePreview',
+    menu: 'menuCard',
+    map: 'mapCard',
+    hours: 'hoursCard',
+    dish: 'dishPhoto',
+    portrait: 'portraitFrame',
+    authority: 'authoritySlide',
+    results: 'resultsCard',
+    calendar: 'calendarCard',
+    curriculum: 'benefitStack',
+    curriculumcard: 'benefitStack',
+    outcomes: 'benefitStack',
+    outcomescard: 'benefitStack',
+    webinar: 'calendarCard',
+    webinarcard: 'calendarCard',
+    processsteps: 'benefitStack'
+};
+
+const PLATFORM_ALIASES: Record<string, Platform> = {
+    instagramstory: 'meta_story',
+    igstory: 'meta_story',
+    story: 'meta_story',
+    facebookfeed: 'meta_feed',
+    instagramfeed: 'meta_feed',
+    metafeed: 'meta_feed',
+    display: 'google_display',
+    tiktok: 'tiktok_feed'
+};
+
+const DEFAULT_ASSETS_BY_PATTERN: Record<CreativePattern, AssetType[]> = {
+    ecommerce_product_focus: ['productCutout', 'background'],
+    ecommerce_offer_burst: ['productCutout', 'offerBadge', 'background'],
+    ecommerce_ugc_frame: ['productCutout', 'background'],
+    ecommerce_before_after: ['comparisonTable', 'productCutout', 'background'],
+    ecommerce_benefit_stack: ['productCutout', 'benefitStack', 'background'],
+    ecommerce_giftable: ['productCutout', 'background'],
+    ecommerce_comparison: ['comparisonTable', 'productCutout', 'background'],
+    ecommerce_feature_stack: ['productCutout', 'featureChips', 'background'],
+    saas_ui_proof: ['dashboardCard', 'background'],
+    saas_whatsapp_flow: ['messengerMock', 'background'],
+    saas_time_saving: ['dashboardCard', 'statsCard', 'background'],
+    saas_lead_capture: ['dashboardCard', 'background'],
+    saas_workflow_steps: ['messengerMock', 'featureChips', 'background'],
+    saas_feature_grid: ['featureChips', 'dashboardCard', 'background'],
+    local_menu_feature: ['menuCard', 'background'],
+    local_map_hours: ['mapCard', 'hoursCard', 'background'],
+    local_offer_coupon: ['menuCard', 'offerBadge', 'background'],
+    local_social_proof: ['testimonialCard', 'background'],
+    coach_authority_slide: ['authoritySlide', 'portraitFrame', 'background'],
+    coach_transformation: ['comparisonTable', 'background'],
+    coach_testimonial: ['testimonialCard', 'portraitFrame', 'background'],
+    agency_results_card: ['resultsCard', 'background'],
+    agency_case_study: ['resultsCard', 'background'],
+    agency_offer_audit: ['calendarCard', 'background'],
+    info_curriculum: ['benefitStack', 'featureChips', 'background'],
+    info_outcomes: ['benefitStack', 'background'],
+    info_webinar: ['calendarCard', 'background']
+};
+
+function normalizeKey(value: string): string {
+    return value.toLowerCase().replace(/[^a-z0-9]/g, '');
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+    return !!value && typeof value === 'object' && !Array.isArray(value);
+}
+
+function getString(value: unknown, fallback: string): string {
+    if (typeof value === 'string') {
+        const trimmed = value.trim();
+        if (trimmed) {
+            return trimmed;
+        }
+    }
+    return fallback;
+}
+
+function getOptionalString(value: unknown): string | undefined {
+    if (typeof value === 'string') {
+        const trimmed = value.trim();
+        if (trimmed) {
+            return trimmed;
+        }
+    }
+    return undefined;
+}
+
+function toStringArray(value: unknown, fallback: string[] = []): string[] {
+    if (!Array.isArray(value)) return fallback;
+    return value.filter((item): item is string => typeof item === 'string' && item.trim().length > 0);
+}
+
+function toNumber(value: unknown, fallback: number): number {
+    if (typeof value === 'number' && Number.isFinite(value) && value > 0) {
+        return value;
+    }
+    return fallback;
+}
+
+function toOptionalNumber(value: unknown): number | undefined {
+    if (typeof value === 'number' && Number.isFinite(value) && value > 0) {
+        return value;
+    }
+    return undefined;
+}
+
+function clampText(value: string, maxLength: number): string {
+    if (value.length <= maxLength) return value;
+    return value.slice(0, maxLength).trim();
+}
+
+function normalizeLanguage(value: unknown, fallback: string): string {
+    if (typeof value !== 'string') return fallback;
+    const normalized = value.trim().toLowerCase();
+    if (normalized === 'deutsch' || normalized === 'german') return 'de';
+    if (normalized === 'english' || normalized === 'en-us' || normalized === 'en_gb') return 'en';
+    if (normalized.length >= 2 && normalized.length <= 5) {
+        return normalized;
+    }
+    return fallback;
+}
+
+function normalizePlatform(value: unknown, fallback: Platform): Platform {
+    if (typeof value !== 'string') return fallback;
+    const key = normalizeKey(value);
+    const alias = PLATFORM_ALIASES[key];
+    if (alias) return alias;
+    const direct = PLATFORMS.find((platform) => normalizeKey(platform) === key);
+    return direct ?? fallback;
+}
+
+function normalizeRatio(value: unknown, fallback: Ratio): Ratio {
+    if (typeof value === 'string') {
+        const normalized = value.toLowerCase().replace(/\s+/g, '');
+        if (normalized.includes('9:16') || normalized.includes('9x16') || normalized.includes('vertical') || normalized.includes('story')) {
+            return '9:16';
+        }
+        if (normalized.includes('4:5') || normalized.includes('4x5') || normalized.includes('portrait')) {
+            return '4:5';
+        }
+        if (normalized.includes('1:1') || normalized.includes('1x1') || normalized.includes('square')) {
+            return '1:1';
+        }
+    }
+    return fallback;
+}
+
+function getDefaultAngle(
+    request: CreativeSpecRequest,
+    groundedFacts?: CreativeSpec['groundedFacts']
+): CreativeAngle {
+    if (groundedFacts?.offer) return 'offer';
+    if (groundedFacts?.proof) return 'social_proof';
+    if (request.userPrompt.toLowerCase().includes('vorher') && request.userPrompt.toLowerCase().includes('nachher')) {
+        return 'before_after';
+    }
+    return 'pain_relief';
+}
+
+function normalizeAngle(value: unknown, fallback: CreativeAngle): CreativeAngle {
+    if (typeof value !== 'string') return fallback;
+    const normalized = value.trim().toLowerCase().replace(/[\s-]+/g, '_');
+    if ((CREATIVE_ANGLES as readonly string[]).includes(normalized)) {
+        return normalized as CreativeAngle;
+    }
+    const simplified = normalizeKey(normalized);
+    if (simplified.includes('offer') || simplified.includes('discount') || simplified.includes('deal')) {
+        return 'offer';
+    }
+    if (simplified.includes('price') || simplified.includes('cost')) {
+        return 'price_anchor';
+    }
+    if (simplified.includes('social') || simplified.includes('proof') || simplified.includes('testimonial') || simplified.includes('review')) {
+        return 'social_proof';
+    }
+    if (simplified.includes('urgent') || simplified.includes('limited') || simplified.includes('last')) {
+        return 'urgency';
+    }
+    if (simplified.includes('before') && simplified.includes('after')) {
+        return 'before_after';
+    }
+    if (simplified.includes('compare') || simplified.includes('versus') || simplified.includes('vs')) {
+        return 'comparison';
+    }
+    if (simplified.includes('gift')) {
+        return 'gift';
+    }
+    if (simplified.includes('authority') || simplified.includes('expert')) {
+        return 'authority';
+    }
+    if (simplified.includes('demo') || simplified.includes('how')) {
+        return 'demo';
+    }
+    return fallback;
+}
+
+function getDefaultPattern(
+    request: CreativeSpecRequest,
+    businessModel: BusinessModel,
+    groundedFacts?: CreativeSpec['groundedFacts']
+): CreativePattern {
+    const prompt = request.userPrompt.toLowerCase();
+    switch (businessModel) {
+        case 'ecommerce':
+            if (groundedFacts?.offer) return 'ecommerce_offer_burst';
+            if (prompt.includes('vorher') && prompt.includes('nachher')) return 'ecommerce_before_after';
+            if (prompt.includes('vergleich') || prompt.includes('vs')) return 'ecommerce_comparison';
+            if (prompt.includes('geschenk') || prompt.includes('gift')) return 'ecommerce_giftable';
+            if (prompt.includes('feature') || prompt.includes('funktion')) return 'ecommerce_feature_stack';
+            return 'ecommerce_product_focus';
+        case 'saas':
+            if (prompt.includes('whatsapp') || prompt.includes('chat')) return 'saas_whatsapp_flow';
+            if (prompt.includes('workflow') || prompt.includes('step') || prompt.includes('schritt')) return 'saas_workflow_steps';
+            if (prompt.includes('grid') || prompt.includes('matrix')) return 'saas_feature_grid';
+            if (prompt.includes('lead') || prompt.includes('trial') || prompt.includes('demo')) return 'saas_lead_capture';
+            if (prompt.includes('zeit') || prompt.includes('time')) return 'saas_time_saving';
+            return 'saas_ui_proof';
+        case 'local':
+            if (groundedFacts?.offer) return 'local_offer_coupon';
+            if (prompt.includes('öffnungs') || prompt.includes('hours') || prompt.includes('map')) return 'local_map_hours';
+            return 'local_menu_feature';
+        case 'coach':
+            if (groundedFacts?.proof) return 'coach_testimonial';
+            return 'coach_authority_slide';
+        case 'agency':
+            if (groundedFacts?.proof) return 'agency_results_card';
+            return 'agency_offer_audit';
+        case 'info':
+            if (prompt.includes('webinar')) return 'info_webinar';
+            if (prompt.includes('outcome') || prompt.includes('ergebnis')) return 'info_outcomes';
+            return 'info_curriculum';
+        default:
+            return 'ecommerce_product_focus';
+    }
+}
+
+function normalizePattern(
+    value: unknown,
+    fallback: CreativePattern,
+    businessModel: BusinessModel
+): CreativePattern {
+    if (typeof value !== 'string') return fallback;
+    const normalized = value.trim().toLowerCase().replace(/[\s-]+/g, '_');
+    if ((CREATIVE_PATTERNS as readonly string[]).includes(normalized)) {
+        const pattern = normalized as CreativePattern;
+        if (pattern.startsWith(`${businessModel}_`)) {
+            return pattern;
+        }
+    }
+    const simplified = normalizeKey(normalized);
+    if (businessModel === 'ecommerce') {
+        if (simplified.includes('offer') || simplified.includes('discount')) return 'ecommerce_offer_burst';
+        if (simplified.includes('ugc')) return 'ecommerce_ugc_frame';
+        if (simplified.includes('beforeafter')) return 'ecommerce_before_after';
+        if (simplified.includes('benefit')) return 'ecommerce_benefit_stack';
+        if (simplified.includes('gift')) return 'ecommerce_giftable';
+        if (simplified.includes('compare') || simplified.includes('comparison')) return 'ecommerce_comparison';
+        if (simplified.includes('feature') || simplified.includes('scatter')) return 'ecommerce_feature_stack';
+        return 'ecommerce_product_focus';
+    }
+    if (businessModel === 'saas') {
+        if (simplified.includes('whatsapp') || simplified.includes('chat')) return 'saas_whatsapp_flow';
+        if (simplified.includes('workflow') || simplified.includes('steps')) return 'saas_workflow_steps';
+        if (simplified.includes('feature') || simplified.includes('grid')) return 'saas_feature_grid';
+        if (simplified.includes('lead') || simplified.includes('ebook') || simplified.includes('trial')) return 'saas_lead_capture';
+        if (simplified.includes('time') || simplified.includes('saving')) return 'saas_time_saving';
+        return 'saas_ui_proof';
+    }
+    if (businessModel === 'local') {
+        if (simplified.includes('map') || simplified.includes('hours')) return 'local_map_hours';
+        if (simplified.includes('offer') || simplified.includes('coupon')) return 'local_offer_coupon';
+        if (simplified.includes('proof') || simplified.includes('review')) return 'local_social_proof';
+        return 'local_menu_feature';
+    }
+    if (businessModel === 'coach') {
+        if (simplified.includes('testimonial') || simplified.includes('proof')) return 'coach_testimonial';
+        if (simplified.includes('transform') || simplified.includes('beforeafter')) return 'coach_transformation';
+        return 'coach_authority_slide';
+    }
+    if (businessModel === 'agency') {
+        if (simplified.includes('case')) return 'agency_case_study';
+        if (simplified.includes('result')) return 'agency_results_card';
+        return 'agency_offer_audit';
+    }
+    if (businessModel === 'info') {
+        if (simplified.includes('webinar')) return 'info_webinar';
+        if (simplified.includes('outcome')) return 'info_outcomes';
+        return 'info_curriculum';
+    }
+    return fallback;
+}
+
+function normalizeConstraints(raw: unknown, ratio: Ratio) {
+    const defaults = DEFAULT_CONSTRAINTS_BY_RATIO[ratio];
+    const rawConstraints = isRecord(raw) ? raw : {};
+    const rawMaxChars = isRecord(rawConstraints.maxChars) ? rawConstraints.maxChars : {};
+    const rawMaxLines = isRecord(rawConstraints.maxLines) ? rawConstraints.maxLines : {};
+
+    const maxChars = {
+        headline: toNumber(rawMaxChars.headline, defaults.maxChars.headline),
+        subheadline: toOptionalNumber(rawMaxChars.subheadline) ?? defaults.maxChars.subheadline,
+        body: toOptionalNumber(rawMaxChars.body) ?? defaults.maxChars.body,
+        cta: toNumber(rawMaxChars.cta, defaults.maxChars.cta)
+    };
+
+    const maxLines = defaults.maxLines ? {
+        headline: toNumber(rawMaxLines.headline, defaults.maxLines.headline),
+        subheadline: toOptionalNumber(rawMaxLines.subheadline) ?? defaults.maxLines.subheadline,
+        body: toOptionalNumber(rawMaxLines.body) ?? defaults.maxLines.body
+    } : undefined;
+
+    const forbiddenStyles = toStringArray(rawConstraints.forbiddenStyles).filter(
+        (style): style is 'gradients' | 'illustrations' | 'patterns' =>
+            style === 'gradients' || style === 'illustrations' || style === 'patterns'
+    );
+
+    const mustAvoidClaims = toStringArray(rawConstraints.mustAvoidClaims);
+
+    return {
+        maxChars,
+        maxLines,
+        minFontSize: toOptionalNumber(rawConstraints.minFontSize) ?? defaults.minFontSize,
+        forbiddenStyles: forbiddenStyles.length ? forbiddenStyles : undefined,
+        mustAvoidClaims: mustAvoidClaims.length ? mustAvoidClaims : undefined,
+        readabilityMin: toOptionalNumber(rawConstraints.readabilityMin)
+    };
+}
+
+function buildFallbackCopy(
+    request: CreativeSpecRequest,
+    constraints: ReturnType<typeof normalizeConstraints>,
+    groundedFacts?: CreativeSpec['groundedFacts']
+): CreativeSpec['copy'] {
+    const toneCtaMap: Record<CreativeSpecRequest['tone'], string> = {
+        professional: 'Jetzt ansehen',
+        playful: 'Jetzt testen',
+        bold: 'Jetzt holen',
+        luxury: 'Mehr erfahren',
+        minimal: 'Mehr dazu'
+    };
+
+    const headlineBase = groundedFacts?.offer
+        ? `Jetzt ${groundedFacts.offer}`
+        : groundedFacts?.features?.[0]
+            ? `${request.productName}: ${groundedFacts.features[0]}`
+            : `${request.productName} entdecken`;
+
+    const subheadlineBase = groundedFacts?.proof || request.userPrompt;
+
+    const headlineLimit = Math.min(constraints.maxChars.headline, 120);
+    const subheadlineLimit = Math.min(constraints.maxChars.subheadline ?? 150, 150);
+    const ctaLimit = Math.min(constraints.maxChars.cta, 40);
+
+    const copy: CreativeSpec['copy'] = {
+        headline: clampText(headlineBase, headlineLimit),
+        cta: clampText(toneCtaMap[request.tone], ctaLimit)
+    };
+
+    const subheadline = clampText(subheadlineBase, subheadlineLimit);
+    if (subheadline) {
+        copy.subheadline = subheadline;
+    }
+
+    const bullets = groundedFacts?.features ? groundedFacts.features.slice(0, 3) : [];
+    if (bullets.length) {
+        copy.bullets = bullets;
+    }
+
+    const chips = groundedFacts?.painPoints ? groundedFacts.painPoints.slice(0, 3) : [];
+    if (chips.length) {
+        copy.chips = chips;
+    }
+
+    if (groundedFacts?.proof) {
+        copy.proofLine = groundedFacts.proof;
+    }
+
+    return copy;
+}
+
+function normalizeCopy(
+    raw: unknown,
+    request: CreativeSpecRequest,
+    constraints: ReturnType<typeof normalizeConstraints>,
+    groundedFacts?: CreativeSpec['groundedFacts']
+): CreativeSpec['copy'] {
+    const fallback = buildFallbackCopy(request, constraints, groundedFacts);
+    const rawCopy = isRecord(raw) ? raw : {};
+
+    const headlineLimit = Math.min(constraints.maxChars.headline, 120);
+    const subheadlineLimit = Math.min(constraints.maxChars.subheadline ?? 150, 150);
+    const bodyLimit = Math.min(constraints.maxChars.body ?? 300, 300);
+    const ctaLimit = Math.min(constraints.maxChars.cta, 40);
+
+    const headline = clampText(getString(rawCopy.headline, fallback.headline), headlineLimit);
+    const cta = clampText(getString(rawCopy.cta, fallback.cta), ctaLimit);
+    const subheadline = getOptionalString(rawCopy.subheadline) ?? fallback.subheadline;
+    const body = getOptionalString(rawCopy.body) ?? fallback.body;
+
+    const copy: CreativeSpec['copy'] = {
+        headline,
+        cta
+    };
+
+    if (subheadline) {
+        copy.subheadline = clampText(subheadline, subheadlineLimit);
+    }
+    if (body) {
+        copy.body = clampText(body, bodyLimit);
+    }
+
+    const bullets = toStringArray(rawCopy.bullets, fallback.bullets ?? []).slice(0, 3);
+    if (bullets.length) {
+        copy.bullets = bullets;
+    }
+
+    const chips = toStringArray(rawCopy.chips, fallback.chips ?? []).slice(0, 3);
+    if (chips.length) {
+        copy.chips = chips;
+    }
+
+    const proofLine = getOptionalString(rawCopy.proofLine) ?? fallback.proofLine;
+    if (proofLine) {
+        copy.proofLine = clampText(proofLine, 100);
+    }
+
+    const disclaimers = toStringArray(rawCopy.disclaimers, fallback.disclaimers ?? []).slice(0, 2);
+    if (disclaimers.length) {
+        copy.disclaimers = disclaimers;
+    }
+
+    return copy;
+}
+
+function coerceAssetType(value: unknown): AssetType | null {
+    if (typeof value !== 'string') return null;
+    const key = normalizeKey(value);
+    const direct = ASSET_TYPES.find((type) => normalizeKey(type) === key);
+    if (direct) return direct;
+    const alias = ASSET_TYPE_ALIASES[key];
+    return alias ?? null;
+}
+
+function normalizeAssets(
+    raw: unknown,
+    creativePattern: CreativePattern,
+    businessModel: BusinessModel,
+    groundedFacts?: CreativeSpec['groundedFacts']
+): AssetRequirement[] {
+    const requirements: AssetRequirement[] = [];
+    const seen = new Set<AssetType>();
+    const rawAssets = isRecord(raw) ? raw : {};
+
+    const rawRequired = Array.isArray(rawAssets.required) ? rawAssets.required : [];
+    for (const entry of rawRequired) {
+        if (!isRecord(entry)) continue;
+        const type = coerceAssetType(entry.type);
+        if (!type || seen.has(type)) continue;
+        const params = isRecord(entry.params) ? entry.params : undefined;
+        const optional = typeof entry.optional === 'boolean' ? entry.optional : undefined;
+        const requirement: AssetRequirement = { type };
+        if (params) {
+            requirement.params = params;
+        }
+        if (optional !== undefined) {
+            requirement.optional = optional;
+        }
+        requirements.push(requirement);
+        seen.add(type);
+    }
+
+    const defaults = DEFAULT_ASSETS_BY_PATTERN[creativePattern] ?? [];
+    for (const type of defaults) {
+        if (!seen.has(type)) {
+            requirements.push({ type });
+            seen.add(type);
+        }
+    }
+
+    if (groundedFacts?.offer && !seen.has('offerBadge')) {
+        requirements.push({ type: 'offerBadge' });
+        seen.add('offerBadge');
+    }
+
+    if (groundedFacts?.proof && !seen.has('testimonialCard')) {
+        requirements.push({ type: 'testimonialCard' });
+        seen.add('testimonialCard');
+    }
+
+    if (businessModel === 'ecommerce' && !seen.has('productCutout')) {
+        requirements.push({ type: 'productCutout' });
+        seen.add('productCutout');
+    }
+
+    if (requirements.length === 0) {
+        requirements.push({ type: 'background' });
+    }
+
+    return requirements;
+}
+
+function normalizeStyle(raw: unknown, tone: CreativeSpecRequest['tone']) {
+    const rawStyle = isRecord(raw) ? raw : {};
+    const defaultStyle = DEFAULT_STYLE_BY_TONE[tone];
+
+    const palette = toStringArray(rawStyle.palette, defaultStyle.palette).filter((color) => HEX_COLOR_REGEX.test(color));
+    const textSafe = toStringArray(rawStyle.textSafe, defaultStyle.textSafe).filter((color) => HEX_COLOR_REGEX.test(color));
+    const forbiddenStyles = toStringArray(rawStyle.forbiddenStyles).filter(
+        (style): style is 'gradients' | 'illustrations' | 'patterns' =>
+            style === 'gradients' || style === 'illustrations' || style === 'patterns'
+    );
+    const mustAvoidClaims = toStringArray(rawStyle.mustAvoidClaims);
+    const readabilityMin = toOptionalNumber(rawStyle.readabilityMin);
+
+    return {
+        palette: palette.length ? palette : defaultStyle.palette,
+        textSafe: textSafe.length ? textSafe : defaultStyle.textSafe,
+        forbiddenStyles: forbiddenStyles.length ? forbiddenStyles : undefined,
+        mustAvoidClaims: mustAvoidClaims.length ? mustAvoidClaims : undefined,
+        readabilityMin
+    };
+}
+
+function normalizeTemplateHints(raw: unknown) {
+    const hints = isRecord(raw) ? raw : {};
+
+    const preferTextPlacement = getOptionalString(hints.preferTextPlacement);
+    const preferHeroSize = getOptionalString(hints.preferHeroSize);
+    const preferHeroPosition = getOptionalString(hints.preferHeroPosition);
+
+    const templateHints: CreativeSpec['templateHints'] = {};
+    if (preferTextPlacement === 'top' || preferTextPlacement === 'bottom' || preferTextPlacement === 'left' || preferTextPlacement === 'right') {
+        templateHints.preferTextPlacement = preferTextPlacement;
+    }
+    if (preferHeroSize === 'small' || preferHeroSize === 'medium' || preferHeroSize === 'large') {
+        templateHints.preferHeroSize = preferHeroSize;
+    }
+    if (preferHeroPosition === 'left' || preferHeroPosition === 'center' || preferHeroPosition === 'right') {
+        templateHints.preferHeroPosition = preferHeroPosition;
+    }
+
+    return templateHints;
+}
+
+function normalizeAudience(
+    raw: unknown,
+    request: CreativeSpecRequest,
+    language: string,
+    groundedFacts?: CreativeSpec['groundedFacts']
+): CreativeSpec['audience'] {
+    const rawAudience = isRecord(raw) ? raw : {};
+
+    const defaultPersona = language.startsWith('de')
+        ? `Menschen, die ${request.productName} suchen`
+        : `People looking for ${request.productName}`;
+
+    const persona = getString(rawAudience.persona, defaultPersona);
+    const sophistication = getOptionalString(rawAudience.sophistication);
+    const objections = toStringArray(rawAudience.objections, groundedFacts?.painPoints ?? []).slice(0, 5);
+
+    const audience: CreativeSpec['audience'] = {
+        persona,
+        sophistication: (sophistication === 'unaware' || sophistication === 'problem_aware' || sophistication === 'solution_aware' || sophistication === 'product_aware')
+            ? sophistication
+            : 'problem_aware',
+        objections
+    };
+
+    return audience;
+}
+
+function normalizeGroundedFacts(
+    raw: unknown,
+    request: CreativeSpecRequest
+): CreativeSpec['groundedFacts'] | undefined {
+    const rawFacts = isRecord(raw) ? raw : {};
+    const requestFacts = request.groundedFacts;
+
+    const offer = getOptionalString(rawFacts.offer) ?? requestFacts?.offer;
+    const proof = getOptionalString(rawFacts.proof) ?? requestFacts?.proof;
+    const painPoints = toStringArray(rawFacts.painPoints, requestFacts?.painPoints ?? []);
+    const features = toStringArray(rawFacts.features, requestFacts?.features ?? []);
+
+    if (!offer && !proof && painPoints.length === 0 && features.length === 0) {
+        return undefined;
+    }
+
+    return {
+        offer,
+        proof,
+        painPoints: painPoints.length ? painPoints : undefined,
+        features: features.length ? features : undefined
+    };
+}
+
+function normalizeCreativeSpec(
+    raw: unknown,
+    request: CreativeSpecRequest,
+    businessModel: BusinessModel
+): CreativeSpec {
+    const rawSpec = isRecord(raw) ? raw : {};
+    const groundedFacts = normalizeGroundedFacts(rawSpec.groundedFacts, request);
+
+    const platform = normalizePlatform(rawSpec.platform, request.platform ?? 'meta_feed');
+    const ratio = normalizeRatio(rawSpec.ratio, request.ratio ?? '1:1');
+    const language = normalizeLanguage(rawSpec.language, request.language ?? 'de');
+
+    const constraints = normalizeConstraints(rawSpec.constraints, ratio);
+    const copy = normalizeCopy(rawSpec.copy, request, constraints, groundedFacts);
+    const angle = normalizeAngle(rawSpec.angle, getDefaultAngle(request, groundedFacts));
+    const creativePattern = normalizePattern(
+        rawSpec.creativePattern,
+        getDefaultPattern(request, businessModel, groundedFacts),
+        businessModel
+    );
+
+    const assets = normalizeAssets(rawSpec.assets, creativePattern, businessModel, groundedFacts);
+    const style = normalizeStyle(rawSpec.style, request.tone);
+    const templateHints = normalizeTemplateHints(rawSpec.templateHints);
+    const audience = normalizeAudience(rawSpec.audience, request, language, groundedFacts);
+
+    return {
+        businessModel,
+        niche: getString(rawSpec.niche, request.productName),
+        platform,
+        ratio,
+        language,
+        audience,
+        angle,
+        creativePattern,
+        copy,
+        assets: { required: assets },
+        groundedFacts,
+        constraints,
+        style,
+        templateHints
+    };
+}
 
 /**
  * Generate CreativeSpec blueprints from request
@@ -196,8 +902,9 @@ export async function generateCreativeSpecs(
                     throw new Error('Empty response from OpenAI');
                 }
 
-                // Parse initial Draft
-                let currentSpec = JSON.parse(content) as CreativeSpec;
+                // Parse and normalize initial draft
+                let currentSpec = normalizeCreativeSpec(JSON.parse(content), request, businessModel);
+                let premiumFixApplied = false;
 
                 // =================================================================
                 // PREMIUM FIX STEP (The "High-Fidelity" Pass)
@@ -230,9 +937,10 @@ export async function generateCreativeSpecs(
                         const fixedContent = fixResponse.choices[0].message.content;
                         if (fixedContent) {
                             const fixedSpec = JSON.parse(fixedContent) as Partial<CreativeSpec>;
-                            // Merge relevant fields to keep any context the fixer might have dropped (though strictly it shouldn't)
-                            // We trust the fixer mostly, but ensure businessModel stays
-                            currentSpec = { ...currentSpec, ...fixedSpec, businessModel: currentSpec.businessModel };
+                            // Merge relevant fields to keep any context the fixer might have dropped
+                            const mergedSpec = { ...currentSpec, ...fixedSpec, businessModel: currentSpec.businessModel };
+                            currentSpec = normalizeCreativeSpec(mergedSpec, request, businessModel);
+                            premiumFixApplied = true;
                         }
                     } catch (fixError) {
                         // Fallback to currentSpec (Draft) if fix fails
@@ -251,7 +959,7 @@ export async function generateCreativeSpecs(
                         generatedAt: new Date().toISOString(),
                         seed: 1000 + i,
                         variant: i + 1,
-                        isPremiumFixed: true // Mark as upgraded
+                        isPremiumFixed: premiumFixApplied
                     };
                     specs.push(currentSpec);
                 }
@@ -266,6 +974,25 @@ export async function generateCreativeSpecs(
             invalidSpecs.push({
                 spec: validated.spec,
                 errors: validated.errors
+            });
+        }
+    }
+
+    if (specs.length === 0) {
+        const fallbackSpec = normalizeCreativeSpec({}, request, businessModel);
+        const fallbackValidation = validateCreativeSpec(fallbackSpec);
+        if (fallbackValidation.isValid) {
+            fallbackSpec.meta = {
+                generatedAt: new Date().toISOString(),
+                seed: 0,
+                variant: 1,
+                isPremiumFixed: false
+            };
+            specs.push(fallbackSpec);
+        } else {
+            invalidSpecs.push({
+                spec: fallbackValidation.spec,
+                errors: fallbackValidation.errors
             });
         }
     }
