@@ -365,3 +365,143 @@ export function buildCreativeSpecPrompt(
 
   return masterPrompt;
 }
+
+// ============================================================================
+// PREMIUM CREATIVE FIX PROMPT (v1)
+// ============================================================================
+
+export interface PremiumFixRequest {
+  spec: any; // The raw or validated spec to fix
+  templateCapsule: any; // The target template (optional context)
+}
+
+export function buildPremiumFixPrompt(request: PremiumFixRequest): string {
+  const { spec, templateCapsule } = request;
+
+  return `You are a Principal Creative Director + Visual Systems Architect
+specialized in premium, high-performing ad creatives for Meta, TikTok and Display.
+
+You are NOT generating a new idea.
+You are FIXING and HARDENING an existing CreativeSpec so it can be rendered
+pixel-accurately into a premium, editable ad canvas.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+INPUT
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+1) Existing CreativeSpec JSON: 
+\`\`\`json
+${JSON.stringify(spec, null, 2)}
+\`\`\`
+
+2) Target Template Context: 
+${templateCapsule ? `Template ID: ${templateCapsule.id}\nRatio: ${templateCapsule.ratio}` : 'No specific template forced, but assume 1:1 Premium Layout.'}
+
+3) Business Model: ${spec.businessModel}
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+YOUR MISSION
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Upgrade the CreativeSpec to PREMIUM QUALITY.
+Add missing visual constraints, lock layout geometry, and ensure 1:1 reproducibility.
+
+You MUST NOT:
+- invent new claims
+- invent new metrics
+- change the core idea/angle
+- break JSON validity
+
+You MAY:
+- rephrase copy ONLY if it improves fit or hierarchy
+- reduce or split text to fit visual structure
+- add missing visual metadata
+- normalize structure to template capabilities
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+MANDATORY PREMIUM STRUCTURE
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+You MUST output a CreativeSpec that includes ALL of the following blocks.
+If any are missing, ADD them.
+
+1) visualIntent (REQUIRED)
+2) layoutGeometry (REQUIRED)
+3) hierarchyRules (REQUIRED)
+4) calloutRules (if callouts exist)
+5) densityAndSpacing (REQUIRED)
+6) renderGuards (REQUIRED)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+1) VISUAL INTENT (NON-NEGOTIABLE)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+"visualIntent": {
+  "composition": "centered | left-heavy | right-heavy | grid | radial | stacked",
+  "heroRole": "packshot | lifestyle | handheld | ui_mock | environment",
+  "attentionAnchor": "headline | product | badge | price | visual",
+  "supportingElements": ["allowed elements array"],
+  "visualMood": "clean | playful | premium | bold | minimal",
+  "inspirationClass": "string description"
+}
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+2) LAYOUT GEOMETRY (PIXEL-AWARE)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+"layoutGeometry": {
+  "heroZone": { "position": "center", "widthPct": 0.28, "heightPct": 0.42 },
+  "textZones": ["allowed areas"],
+  "forbiddenZones": ["areas to avoid"],
+  "overlapPolicy": "never | allowed_for_badges_only | allowed"
+}
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+3) HIERARCHY RULES
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+"hierarchyRules": {
+  "primaryElement": "headline",
+  "secondaryElement": "hero",
+  "tertiaryElements": ["callouts"],
+  "scaleRatios": { "headlineToCallout": 2.4 },
+  "readingOrder": ["headline", "hero", "cta"]
+}
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+4) CALLOUT RULES (IF APPLICABLE)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+"calloutRules": {
+  "maxCallouts": 6,
+  "connectorType": "curved_arrow | dotted_line | straight | none",
+  "markerStyle": "dot | ring | none",
+  "labelMaxChars": 22,
+  "labelMaxLines": 2,
+  "placementLogic": "radial | column | free | stacked"
+}
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+5) DENSITY & SPACING
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+"densityAndSpacing": {
+  "densityLevel": "low | medium | high",
+  "maxTextElements": 9,
+  "minWhitespacePct": 0.28,
+  "safeMarginEnforced": true
+}
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+6) RENDER GUARDS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+"renderGuards": {
+  "minContrastRatio": 4.5,
+  "noTextOverflow": true,
+  "noElementCollision": true,
+  "killIfMissingHero": true
+}
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+OUTPUT RULES
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+- Return ONLY valid JSON
+- Preserve all existing valid fields (especially 'copy' and 'assets')
+- Add the new premium blocks
+- Do NOT output any text outside the JSON block`;
+}
