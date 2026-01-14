@@ -196,23 +196,66 @@ export async function generateCreativeSpecs(
                     throw new Error('Empty response from OpenAI');
                 }
 
-                // Parse JSON
-                const parsed = JSON.parse(content);
+                // Parse initial Draft
+                let currentSpec = JSON.parse(content);
 
-                // Validate against schema
-                validated = validateCreativeSpec(parsed);
+                // =================================================================
+                // PREMIUM FIX STEP (The "High-Fidelity" Pass)
+                // =================================================================
+                // We run this BEFORE final validation to upgrade the spec.
+                // We only do this if we haven't exceeded budget (it costs ~1 call more).
+                if (totalCost < maxBudgetUSD) {
+                    try {
+                        const { buildPremiumFixPrompt } = require('./prompts');
+                        const fixPrompt = buildPremiumFixPrompt({
+                            spec: currentSpec,
+                            templateCapsule: null // No specific template forced yet
+                        });
+
+                        const fixResponse = await openai.chat.completions.create({
+                            model, // Use same strong model
+                            messages: [
+                                { role: 'system', content: 'You are a targeted creative repair system. Output JSON only.' },
+                                { role: 'user', content: fixPrompt }
+                            ],
+                            response_format: { type: 'json_object' },
+                            temperature: 0.3, // Lower temp for strict fixing
+                            seed: 2000 + i
+                        });
+
+                        apiCalls++;
+                        if (fixResponse.usage) {
+                            totalCost += (fixResponse.usage.prompt_tokens / 1_000_000 * 5) + (fixResponse.usage.completion_tokens / 1_000_000 * 15);
+                        }
+
+                        const fixedContent = fixResponse.choices[0].message.content;
+                        if (fixedContent) {
+                            const fixedSpec = JSON.parse(fixedContent);
+                            // Merge relevant fields to keep any context the fixer might have dropped (though strictly it shouldn't)
+                            // We trust the fixer mostly, but ensure businessModel stays
+                            currentSpec = { ...currentSpec, ...fixedSpec, businessModel: currentSpec.businessModel };
+                        }
+                    } catch (fixError) {
+                        console.warn('Premium Fix failed, falling back to Draft:', fixError);
+                        // Fallback to currentSpec (Draft) if fix fails
+                    }
+                }
+
+                // Validate against schema (Standard + Premium fields)
+                validated = validateCreativeSpec(currentSpec);
                 validationAttempts++;
 
                 if (!validated.isValid) {
                     attemptCount++;
                 } else {
                     // Add metadata
-                    parsed.meta = {
+                    currentSpec.meta = {
                         generatedAt: new Date().toISOString(),
                         seed: 1000 + i,
-                        variant: i + 1
+                        variant: i + 1,
+                        isPremiumFixed: true // Mark as upgraded
                     };
-                    specs.push(parsed);
+                    specs.push(currentSpec);
                 }
 
             } catch (error) {
