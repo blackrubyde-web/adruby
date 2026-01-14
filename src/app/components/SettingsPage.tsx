@@ -8,7 +8,6 @@ import {
   Trash2,
   Check,
   X,
-  ExternalLink,
   AlertCircle,
   Save,
   Facebook,
@@ -19,7 +18,7 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { DashboardShell } from './layout/DashboardShell';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from './ui/card';
+import { Card } from './ui/card';
 import { Button } from './ui/button';
 import { Badge } from './ui/badge';
 import { SelectField } from './ui/select-field';

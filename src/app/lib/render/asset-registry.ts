@@ -408,9 +408,11 @@ function escapeXml(text: string): string {
         .replace(/&/g, '&amp;')
         .replace(/</g, '&lt;')
         .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;')
-    function renderAbstractBackground(params: any): string {
-        const { width, height, palette, style } = params;
+        .replace(/"/g, '&quot;');
+}
+
+function renderAbstractBackground(params: any): string {
+    const { width, height, palette, style } = params;
 
         // Safety check for palette
         const nicePalette = (palette && palette.length > 0) ? palette : ['#F8F9FA', '#E9ECEF'];
@@ -447,8 +449,8 @@ function escapeXml(text: string): string {
     ${svgContent}
 </svg>`.trim();
 
-        return `data:image/svg+xml;base64,${Buffer.from(svg).toString('base64')}`;
-    }
+    return `data:image/svg+xml;base64,${Buffer.from(svg).toString('base64')}`;
+}
 
     // ============================================================================
     // BATCH RENDERING

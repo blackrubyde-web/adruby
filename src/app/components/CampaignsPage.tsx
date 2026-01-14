@@ -2,7 +2,7 @@ import { Search, MoreVertical, Play, Pause, Copy, Trash2, TrendingUp, TrendingDo
 import { useCallback, useMemo, useState } from 'react';
 import { toast } from 'sonner';
 import { DashboardShell } from './layout/DashboardShell';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from './ui/card';
+import { Card, CardContent } from './ui/card';
 import { Button } from './ui/button';
 import { Badge } from './ui/badge';
 import { useMetaCampaigns, type MetaCampaign } from '../hooks/useMetaCampaigns';

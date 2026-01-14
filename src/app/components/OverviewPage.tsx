@@ -7,12 +7,10 @@ import {
   CheckCircle2,
   Circle,
   ArrowRight,
-  Sparkles,
   Zap,
   ShieldCheck,
   ListChecks,
   Wand2,
-  Users,
   X,
 } from 'lucide-react';
 import { toast } from 'sonner';
