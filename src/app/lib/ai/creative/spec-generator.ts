@@ -16,13 +16,19 @@ import type {
     AssetRequirement,
     AssetType,
     BusinessModel,
+    CalloutRules,
     CreativeAngle,
     CreativePattern,
     CreativeSpec,
     CreativeSpecRequest,
+    DensityAndSpacing,
+    HierarchyRules,
+    LayoutGeometry,
     Platform,
     Ratio,
-    ValidatedCreativeSpec
+    RenderGuards,
+    ValidatedCreativeSpec,
+    VisualIntent
 } from './types';
 import { buildCreativeSpecPrompt, buildPremiumFixPrompt } from './prompts';
 
@@ -754,17 +760,17 @@ function normalizeGroundedFacts(
     };
 }
 
-function normalizePremiumVisualIntent(raw: unknown): CreativeSpec['visualIntent'] {
+function normalizePremiumVisualIntent(raw: unknown): VisualIntent | undefined {
     if (!isRecord(raw)) return undefined;
 
-    const compositionMap: Record<string, CreativeSpec['visualIntent']['composition']> = {
+    const compositionMap: Record<string, VisualIntent['composition']> = {
         centered: 'centered', center: 'centered',
         leftheavy: 'left-heavy', left: 'left-heavy',
         rightheavy: 'right-heavy', right: 'right-heavy',
         grid: 'grid', radial: 'radial', stacked: 'stacked'
     };
 
-    const heroRoleMap: Record<string, CreativeSpec['visualIntent']['heroRole']> = {
+    const heroRoleMap: Record<string, VisualIntent['heroRole']> = {
         packshot: 'packshot', product: 'packshot',
         lifestyle: 'lifestyle',
         handheld: 'handheld',
@@ -772,13 +778,13 @@ function normalizePremiumVisualIntent(raw: unknown): CreativeSpec['visualIntent'
         environment: 'environment'
     };
 
-    const anchorMap: Record<string, CreativeSpec['visualIntent']['attentionAnchor']> = {
+    const anchorMap: Record<string, VisualIntent['attentionAnchor']> = {
         headline: 'headline', text: 'headline',
         product: 'product', hero: 'product',
         badge: 'badge', price: 'price', visual: 'visual'
     };
 
-    const moodMap: Record<string, CreativeSpec['visualIntent']['visualMood']> = {
+    const moodMap: Record<string, VisualIntent['visualMood']> = {
         clean: 'clean', playful: 'playful',
         premium: 'premium', bold: 'bold', minimal: 'minimal'
     };
@@ -800,7 +806,7 @@ function normalizePremiumVisualIntent(raw: unknown): CreativeSpec['visualIntent'
     };
 }
 
-function normalizePremiumLayoutGeometry(raw: unknown): CreativeSpec['layoutGeometry'] {
+function normalizePremiumLayoutGeometry(raw: unknown): LayoutGeometry | undefined {
     if (!isRecord(raw)) return undefined;
 
     const rawHero = isRecord(raw.heroZone) ? raw.heroZone : {};
@@ -831,7 +837,7 @@ function normalizePremiumLayoutGeometry(raw: unknown): CreativeSpec['layoutGeome
     };
 }
 
-function normalizePremiumHierarchyRules(raw: unknown): CreativeSpec['hierarchyRules'] {
+function normalizePremiumHierarchyRules(raw: unknown): HierarchyRules | undefined {
     if (!isRecord(raw)) return undefined;
 
     const primaryElement = getString(raw.primaryElement, 'headline');
@@ -849,7 +855,7 @@ function normalizePremiumHierarchyRules(raw: unknown): CreativeSpec['hierarchyRu
     };
 }
 
-function normalizePremiumCalloutRules(raw: unknown): CreativeSpec['calloutRules'] {
+function normalizePremiumCalloutRules(raw: unknown): CalloutRules | undefined {
     if (!isRecord(raw)) return undefined;
 
     const connectorMap: Record<string, 'curved_arrow' | 'dotted_line' | 'straight' | 'none'> = {
@@ -884,7 +890,7 @@ function normalizePremiumCalloutRules(raw: unknown): CreativeSpec['calloutRules'
     };
 }
 
-function normalizePremiumDensityAndSpacing(raw: unknown): CreativeSpec['densityAndSpacing'] {
+function normalizePremiumDensityAndSpacing(raw: unknown): DensityAndSpacing | undefined {
     if (!isRecord(raw)) return undefined;
 
     const densityMap: Record<string, 'low' | 'medium' | 'high'> = {
@@ -904,7 +910,7 @@ function normalizePremiumDensityAndSpacing(raw: unknown): CreativeSpec['densityA
     };
 }
 
-function normalizePremiumRenderGuards(raw: unknown): CreativeSpec['renderGuards'] {
+function normalizePremiumRenderGuards(raw: unknown): RenderGuards | undefined {
     if (!isRecord(raw)) return undefined;
 
     const minContrastRatio = toNumber(raw.minContrastRatio, 4.5);
