@@ -754,6 +754,174 @@ function normalizeGroundedFacts(
     };
 }
 
+function normalizePremiumVisualIntent(raw: unknown): CreativeSpec['visualIntent'] {
+    if (!isRecord(raw)) return undefined;
+
+    const compositionMap: Record<string, CreativeSpec['visualIntent']['composition']> = {
+        centered: 'centered', center: 'centered',
+        leftheavy: 'left-heavy', left: 'left-heavy',
+        rightheavy: 'right-heavy', right: 'right-heavy',
+        grid: 'grid', radial: 'radial', stacked: 'stacked'
+    };
+
+    const heroRoleMap: Record<string, CreativeSpec['visualIntent']['heroRole']> = {
+        packshot: 'packshot', product: 'packshot',
+        lifestyle: 'lifestyle',
+        handheld: 'handheld',
+        uimock: 'ui_mock', ui: 'ui_mock', dashboard: 'ui_mock',
+        environment: 'environment'
+    };
+
+    const anchorMap: Record<string, CreativeSpec['visualIntent']['attentionAnchor']> = {
+        headline: 'headline', text: 'headline',
+        product: 'product', hero: 'product',
+        badge: 'badge', price: 'price', visual: 'visual'
+    };
+
+    const moodMap: Record<string, CreativeSpec['visualIntent']['visualMood']> = {
+        clean: 'clean', playful: 'playful',
+        premium: 'premium', bold: 'bold', minimal: 'minimal'
+    };
+
+    const composition = compositionMap[normalizeKey(String(raw.composition || ''))] || 'centered';
+    const heroRole = heroRoleMap[normalizeKey(String(raw.heroRole || ''))] || 'packshot';
+    const attentionAnchor = anchorMap[normalizeKey(String(raw.attentionAnchor || ''))] || 'headline';
+    const visualMood = moodMap[normalizeKey(String(raw.visualMood || ''))] || 'clean';
+    const supportingElements = toStringArray(raw.supportingElements, []);
+    const inspirationClass = getOptionalString(raw.inspirationClass);
+
+    return {
+        composition,
+        heroRole,
+        attentionAnchor,
+        supportingElements,
+        visualMood,
+        inspirationClass
+    };
+}
+
+function normalizePremiumLayoutGeometry(raw: unknown): CreativeSpec['layoutGeometry'] {
+    if (!isRecord(raw)) return undefined;
+
+    const rawHero = isRecord(raw.heroZone) ? raw.heroZone : {};
+    const positionMap: Record<string, 'center' | 'left' | 'right' | 'top'> = {
+        center: 'center', centered: 'center',
+        left: 'left', right: 'right', top: 'top'
+    };
+
+    const position = positionMap[normalizeKey(String(rawHero.position || ''))] || 'center';
+    const widthPct = toNumber(rawHero.widthPct, 0.35);
+    const heightPct = toNumber(rawHero.heightPct, 0.45);
+
+    const textZones = toStringArray(raw.textZones, ['top_left', 'bottom']);
+    const forbiddenZones = toStringArray(raw.forbiddenZones);
+
+    const overlapPolicyMap: Record<string, 'never' | 'allowed_for_badges_only' | 'allowed'> = {
+        never: 'never',
+        'allowedfor badgesonly': 'allowed_for_badges_only',
+        allowed: 'allowed'
+    };
+    const overlapPolicy = overlapPolicyMap[normalizeKey(String(raw.overlapPolicy || ''))] || 'never';
+
+    return {
+        heroZone: { position, widthPct, heightPct },
+        textZones,
+        forbiddenZones: forbiddenZones.length ? forbiddenZones : undefined,
+        overlapPolicy
+    };
+}
+
+function normalizePremiumHierarchyRules(raw: unknown): CreativeSpec['hierarchyRules'] {
+    if (!isRecord(raw)) return undefined;
+
+    const primaryElement = getString(raw.primaryElement, 'headline');
+    const secondaryElement = getString(raw.secondaryElement, 'hero');
+    const tertiaryElements = toStringArray(raw.tertiaryElements);
+    const scaleRatios = isRecord(raw.scaleRatios) ? raw.scaleRatios as Record<string, number> : undefined;
+    const readingOrder = toStringArray(raw.readingOrder, ['headline', 'hero', 'cta']);
+
+    return {
+        primaryElement,
+        secondaryElement,
+        tertiaryElements: tertiaryElements.length ? tertiaryElements : undefined,
+        scaleRatios,
+        readingOrder
+    };
+}
+
+function normalizePremiumCalloutRules(raw: unknown): CreativeSpec['calloutRules'] {
+    if (!isRecord(raw)) return undefined;
+
+    const connectorMap: Record<string, 'curved_arrow' | 'dotted_line' | 'straight' | 'none'> = {
+        curvedarrow: 'curved_arrow', curved: 'curved_arrow', arrow: 'curved_arrow',
+        dottedline: 'dotted_line', dotted: 'dotted_line',
+        straight: 'straight', line: 'straight',
+        none: 'none'
+    };
+
+    const markerMap: Record<string, 'dot' | 'ring' | 'none'> = {
+        dot: 'dot', ring: 'ring', circle: 'ring', none: 'none'
+    };
+
+    const placementMap: Record<string, 'radial' | 'column' | 'free' | 'stacked'> = {
+        radial: 'radial', column: 'column', free: 'free', stacked: 'stacked'
+    };
+
+    const maxCallouts = toNumber(raw.maxCallouts, 4);
+    const connectorType = connectorMap[normalizeKey(String(raw.connectorType || ''))] || 'dotted_line';
+    const markerStyle = markerMap[normalizeKey(String(raw.markerStyle || ''))] || 'ring';
+    const labelMaxChars = toOptionalNumber(raw.labelMaxChars);
+    const labelMaxLines = toOptionalNumber(raw.labelMaxLines);
+    const placementLogic = placementMap[normalizeKey(String(raw.placementLogic || ''))];
+
+    return {
+        maxCallouts,
+        connectorType,
+        markerStyle,
+        labelMaxChars,
+        labelMaxLines,
+        placementLogic
+    };
+}
+
+function normalizePremiumDensityAndSpacing(raw: unknown): CreativeSpec['densityAndSpacing'] {
+    if (!isRecord(raw)) return undefined;
+
+    const densityMap: Record<string, 'low' | 'medium' | 'high'> = {
+        low: 'low', medium: 'medium', high: 'high'
+    };
+
+    const densityLevel = densityMap[normalizeKey(String(raw.densityLevel || ''))] || 'medium';
+    const maxTextElements = toOptionalNumber(raw.maxTextElements);
+    const minWhitespacePct = toOptionalNumber(raw.minWhitespacePct);
+    const safeMarginEnforced = typeof raw.safeMarginEnforced === 'boolean' ? raw.safeMarginEnforced : undefined;
+
+    return {
+        densityLevel,
+        maxTextElements,
+        minWhitespacePct,
+        safeMarginEnforced
+    };
+}
+
+function normalizePremiumRenderGuards(raw: unknown): CreativeSpec['renderGuards'] {
+    if (!isRecord(raw)) return undefined;
+
+    const minContrastRatio = toNumber(raw.minContrastRatio, 4.5);
+    const noTextOverflow = typeof raw.noTextOverflow === 'boolean' ? raw.noTextOverflow : undefined;
+    const noElementCollision = typeof raw.noElementCollision === 'boolean' ? raw.noElementCollision : undefined;
+    const noGenericBackgroundOnly = typeof raw.noGenericBackgroundOnly === 'boolean' ? raw.noGenericBackgroundOnly : undefined;
+    const killIfMissingHero = typeof raw.killIfMissingHero === 'boolean' ? raw.killIfMissingHero : undefined;
+
+    return {
+        minContrastRatio,
+        noTextOverflow,
+        noElementCollision,
+        noGenericBackgroundOnly,
+        killIfMissingHero
+    };
+}
+
 function normalizeCreativeSpec(
     raw: unknown,
     request: CreativeSpecRequest,
@@ -780,6 +948,14 @@ function normalizeCreativeSpec(
     const templateHints = normalizeTemplateHints(rawSpec.templateHints);
     const audience = normalizeAudience(rawSpec.audience, request, language, groundedFacts);
 
+    // PREMIUM FIELDS
+    const visualIntent = normalizePremiumVisualIntent(rawSpec.visualIntent);
+    const layoutGeometry = normalizePremiumLayoutGeometry(rawSpec.layoutGeometry);
+    const hierarchyRules = normalizePremiumHierarchyRules(rawSpec.hierarchyRules);
+    const calloutRules = normalizePremiumCalloutRules(rawSpec.calloutRules);
+    const densityAndSpacing = normalizePremiumDensityAndSpacing(rawSpec.densityAndSpacing);
+    const renderGuards = normalizePremiumRenderGuards(rawSpec.renderGuards);
+
     return {
         businessModel,
         niche: getString(rawSpec.niche, request.productName),
@@ -794,7 +970,13 @@ function normalizeCreativeSpec(
         groundedFacts,
         constraints,
         style,
-        templateHints
+        templateHints,
+        visualIntent,
+        layoutGeometry,
+        hierarchyRules,
+        calloutRules,
+        densityAndSpacing,
+        renderGuards
     };
 }
 
