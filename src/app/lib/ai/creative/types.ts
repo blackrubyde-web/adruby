@@ -259,12 +259,73 @@ export interface CreativeSpec {
     // Template selection hints
     templateHints: TemplateHints;
 
+    // PREMIUM: Visual Fidelity & Layout Control
+    visualIntent?: VisualIntent;
+    layoutGeometry?: LayoutGeometry;
+    hierarchyRules?: HierarchyRules;
+    calloutRules?: CalloutRules;
+    densityAndSpacing?: DensityAndSpacing;
+    renderGuards?: RenderGuards;
+
     // Metadata
     meta?: {
         generatedAt?: string;
         seed?: number;
         variant?: number;
     };
+}
+
+// PREMIUM INTERFACES
+export interface VisualIntent {
+    composition: 'centered' | 'left-heavy' | 'right-heavy' | 'grid' | 'radial' | 'stacked';
+    heroRole: 'packshot' | 'lifestyle' | 'handheld' | 'ui_mock' | 'environment';
+    attentionAnchor: 'headline' | 'product' | 'badge' | 'price' | 'visual';
+    supportingElements: string[];
+    visualMood: 'clean' | 'playful' | 'premium' | 'bold' | 'minimal';
+    inspirationClass?: string;
+}
+
+export interface LayoutGeometry {
+    heroZone: {
+        position: 'center' | 'left' | 'right' | 'top';
+        widthPct: number;
+        heightPct: number;
+    };
+    textZones: string[];
+    forbiddenZones?: string[];
+    overlapPolicy?: 'never' | 'allowed_for_badges_only' | 'allowed';
+}
+
+export interface HierarchyRules {
+    primaryElement: string;
+    secondaryElement: string;
+    tertiaryElements?: string[];
+    scaleRatios?: Record<string, number>;
+    readingOrder: string[];
+}
+
+export interface CalloutRules {
+    maxCallouts: number;
+    connectorType: 'curved_arrow' | 'dotted_line' | 'straight' | 'none';
+    markerStyle: 'dot' | 'ring' | 'none';
+    labelMaxChars?: number;
+    labelMaxLines?: number;
+    placementLogic?: 'radial' | 'column' | 'free' | 'stacked';
+}
+
+export interface DensityAndSpacing {
+    densityLevel: 'low' | 'medium' | 'high';
+    maxTextElements?: number;
+    minWhitespacePct?: number;
+    safeMarginEnforced?: boolean;
+}
+
+export interface RenderGuards {
+    minContrastRatio: number;
+    noTextOverflow?: boolean;
+    noElementCollision?: boolean;
+    noGenericBackgroundOnly?: boolean;
+    killIfMissingHero?: boolean;
 }
 
 // ============================================================================
