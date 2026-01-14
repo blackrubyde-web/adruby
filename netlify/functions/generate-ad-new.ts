@@ -121,7 +121,7 @@ const handler: Handler = async (event: HandlerEvent) => {
             productName,
             brandName,
             userPrompt,
-            tone,
+            tone: rawTone,
             platform = 'meta_feed',
             ratio = '1:1',
             language = 'de',
@@ -140,6 +140,16 @@ const handler: Handler = async (event: HandlerEvent) => {
                     error: 'Missing required fields: productName, userPrompt'
                 }),
             };
+        }
+
+        // ✅ FIX 1: Validate and normalize tone with fallback
+        const VALID_TONES = ['professional', 'playful', 'bold', 'luxury', 'minimal'] as const;
+        const tone = (rawTone && VALID_TONES.includes(rawTone as any))
+            ? rawTone as typeof VALID_TONES[number]
+            : 'professional';
+
+        if (rawTone && !VALID_TONES.includes(rawTone as any)) {
+            console.warn(`⚠️ Invalid tone "${rawTone}", using fallback "professional"`);
         }
 
         const apiKey = process.env.OPENAI_API_KEY;
@@ -221,10 +231,10 @@ const handler: Handler = async (event: HandlerEvent) => {
                 const stage3Start = Date.now();
                 const renderedAssets = await renderAssets(spec.assets.required);
 
+                // ✅ FIX 2: Only add productCutout if actually present (not empty string)
                 const availableAssets = {
                     ...renderedAssets,
-                    // Add user-provided product image if available
-                    productCutout: request.imageBase64 || ''
+                    ...(request.imageBase64 && request.imageBase64.trim() !== '' && { productCutout: request.imageBase64 })
                 };
 
                 // SMART ASSET PROCESSING
@@ -247,7 +257,12 @@ const handler: Handler = async (event: HandlerEvent) => {
                     }
                 }
 
-                console.log(`🎨 Rendered ${Object.keys(renderedAssets).length} assets for spec`);
+                // ✅ FIX 2: Filter out empty/null assets before scoring
+                const filteredAssets = Object.fromEntries(
+                    Object.entries(availableAssets).filter(([_, value]) => value && value.trim() !== '')
+                );
+
+                console.log(`🎨 Rendered ${Object.keys(filteredAssets).length} assets for spec:`, Object.keys(filteredAssets));
 
                 addStageTelemetry(telemetry, 'assetRendering', {
                     time: Date.now() - stage3Start,
@@ -263,7 +278,7 @@ const handler: Handler = async (event: HandlerEvent) => {
                 const scoringContext: TemplateScoringContext = {
                     spec,
                     measuredCopy,
-                    availableAssets: Object.keys(availableAssets)
+                    availableAssets: Object.keys(filteredAssets)  // ✅ FIX 2: Use filteredAssets!
                 };
 
                 const scoredTemplates = scoreTemplates(TEMPLATE_REGISTRY, scoringContext);

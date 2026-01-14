@@ -248,14 +248,63 @@ async function assembleDocument(
     }
 
     // 3. INJECT ASSETS
+    // ✅ FIX 3: Map ALL asset types, not just product_image and bg_image
     for (const layer of document.layers) {
         if (layer.type === 'product' || layer.type === 'image' || layer.type === 'background') {
-            // Map layer role to asset type
-            const assetType = layer.role === 'product_image' ? 'productCutout' :
-                layer.role === 'bg_image' ? 'background' :
-                    layer.type;
+            // Expanded asset role mapping
+            const roleToAssetMap: Record<string, string> = {
+                'product_image': 'productCutout',
+                'hero': 'productCutout',
+                'cutout': 'productCutout',
+                'bg_image': 'background',
+                'background': 'background',
+                // ✅ NEW: Non-product asset roles
+                'messenger_mock': 'messengerMock',
+                'chat_proof': 'messengerMock',
+                'whatsapp_mock': 'messengerMock',
+                'dashboard_card': 'dashboardCard',
+                'ui_proof': 'dashboardCard',
+                'saas_mock': 'dashboardCard',
+                'invoice_preview': 'invoicePreview',
+                'document_proof': 'invoicePreview',
+                'testimonial_card': 'testimonialCard',
+                'social_proof_card': 'testimonialCard',
+                'review_card': 'reviewCard',
+                'rating_proof': 'reviewCard',
+                'offer_badge': 'offerBadge',
+                'discount_badge': 'discountBadge',
+                'sale_badge': 'discountBadge',
+                'urgency_badge': 'urgencyBadge',
+                'limited_badge': 'urgencyBadge',
+                'menu_card': 'menuCard',
+                'dish_menu': 'menuCard',
+                'map_card': 'mapCard',
+                'location_proof': 'mapCard',
+                'hours_card': 'hoursCard',
+                'opening_hours': 'hoursCard',
+                'dish_photo': 'dishPhoto',
+                'food_image': 'dishPhoto',
+                'portrait_frame': 'portraitFrame',
+                'founder_image': 'portraitFrame',
+                'results_card': 'resultsCard',
+                'stats_proof': 'resultsCard',
+                'authority_slide': 'authoritySlide',
+                'credentials': 'authoritySlide',
+                'calendar_card': 'calendarCard',
+                'webinar_date': 'calendarCard',
+                'comparison_table': 'comparisonTable',
+                'vs_table': 'comparisonTable',
+                'benefit_stack': 'benefitStack',
+                'feature_list': 'benefitStack',
+                'feature_chips': 'featureChips',
+                'tags': 'featureChips',
+                'stats_card': 'statsCard',
+                'metrics': 'statsCard'
+            };
 
-            if (availableAssets[assetType]) {
+            const assetType = layer.role ? roleToAssetMap[layer.role] : layer.type;
+
+            if (assetType && availableAssets[assetType]) {
                 layer.src = availableAssets[assetType];
             }
         }

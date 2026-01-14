@@ -111,11 +111,16 @@ export function scoreTemplates(
     templates: TemplateCapsule[],
     context: TemplateScoringContext
 ): TemplateScoringResult[] {
-    // PREFILTER 1: Ratio mismatch = instant disqualification
-    const eligibleByRatio = templates.filter(t => t.ratio === context.spec.ratio);
+    // ✅ FIX 4: Prefilter - Ratio mismatch + Empty templates
+    const eligibleByRatio = templates.filter(t =>
+        t.ratio === context.spec.ratio &&
+        t.document?.layers &&
+        t.document.layers.length > 0  // Filter empty templates!
+    );
 
     if (eligibleByRatio.length === 0) {
-        console.warn(`⚠️ No templates available for ratio ${context.spec.ratio}`);
+        console.warn(`⚠️ No valid templates found for ratio ${context.spec.ratio}`);
+        console.warn(`Total templates: ${templates.length}, With matching ratio: ${templates.filter(t => t.ratio === context.spec.ratio).length}, Non-empty after filter: ${eligibleByRatio.length}`);
         // Will score all templates but they'll have penalties
     }
 
