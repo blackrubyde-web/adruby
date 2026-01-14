@@ -416,6 +416,59 @@ export const CreativeSpecSchema = z.object({
 
     templateHints: TemplateHintsSchema,
 
+    // PREMIUM: Visual Fidelity
+    visualIntent: z.object({
+        composition: z.enum(['centered', 'left-heavy', 'right-heavy', 'grid', 'radial', 'stacked']),
+        heroRole: z.enum(['packshot', 'lifestyle', 'handheld', 'ui_mock', 'environment']),
+        attentionAnchor: z.enum(['headline', 'product', 'badge', 'price', 'visual']),
+        supportingElements: z.array(z.string()),
+        visualMood: z.enum(['clean', 'playful', 'premium', 'bold', 'minimal']),
+        inspirationClass: z.string().optional()
+    }).optional(),
+
+    layoutGeometry: z.object({
+        heroZone: z.object({
+            position: z.enum(['center', 'left', 'right', 'top']),
+            widthPct: z.number(),
+            heightPct: z.number()
+        }),
+        textZones: z.array(z.string()),
+        forbiddenZones: z.array(z.string()).optional(),
+        overlapPolicy: z.enum(['never', 'allowed_for_badges_only', 'allowed']).optional()
+    }).optional(),
+
+    hierarchyRules: z.object({
+        primaryElement: z.string(),
+        secondaryElement: z.string(),
+        tertiaryElements: z.array(z.string()).optional(),
+        scaleRatios: z.record(z.number()).optional(),
+        readingOrder: z.array(z.string())
+    }).optional(),
+
+    calloutRules: z.object({
+        maxCallouts: z.number(),
+        connectorType: z.enum(['curved_arrow', 'dotted_line', 'straight', 'none']),
+        markerStyle: z.enum(['dot', 'ring', 'none']),
+        labelMaxChars: z.number().optional(),
+        labelMaxLines: z.number().optional(),
+        placementLogic: z.enum(['radial', 'column', 'free', 'stacked']).optional()
+    }).optional(),
+
+    densityAndSpacing: z.object({
+        densityLevel: z.enum(['low', 'medium', 'high']),
+        maxTextElements: z.number().optional(),
+        minWhitespacePct: z.number().optional(),
+        safeMarginEnforced: z.boolean().optional()
+    }).optional(),
+
+    renderGuards: z.object({
+        minContrastRatio: z.number(),
+        noTextOverflow: z.boolean().optional(),
+        noElementCollision: z.boolean().optional(),
+        noGenericBackgroundOnly: z.boolean().optional(),
+        killIfMissingHero: z.boolean().optional()
+    }).optional(),
+
     meta: z.object({
         generatedAt: z.string().optional(),
         seed: z.number().optional(),
