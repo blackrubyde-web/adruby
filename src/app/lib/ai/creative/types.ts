@@ -47,6 +47,7 @@ export const CREATIVE_PATTERNS = [
     'ecommerce_benefit_stack',
     'ecommerce_giftable',
     'ecommerce_comparison',
+    'ecommerce_feature_stack', // NEW: For Scatter/Exploded templates
 
     // SaaS patterns
     'saas_ui_proof',
@@ -54,6 +55,7 @@ export const CREATIVE_PATTERNS = [
     'saas_time_saving',
     'saas_lead_capture',
     'saas_workflow_steps',
+    'saas_feature_grid', // NEW: For 4-Step Grid templates
 
     // Local/Gastro patterns
     'local_menu_feature',

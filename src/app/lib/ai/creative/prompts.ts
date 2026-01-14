@@ -129,6 +129,7 @@ export function getBusinessModelAddendum(businessModel: BusinessModel): string {
 - ecommerce_giftable: Gift angle ("Perfect for...")
 - ecommerce_benefit_stack: Product + benefit bullets
 - ecommerce_comparison: Before/after or vs alternative
+- ecommerce_feature_stack: High-density feature layout (scattered/exploded) - BEST FOR: complex products, tech, supplements
 
 **Copy Guidelines:**
 - Emphasize: benefit, use case, offer (if real), shipping clarity (only if provided)
@@ -148,13 +149,15 @@ export function getBusinessModelAddendum(businessModel: BusinessModel): string {
 `,
 
     saas: `
-**SAAS CREATIVE STRATEGY:**
+**SAAS / APP CREATIVE STRATEGY:**
 
 **Preferred Patterns:**
-- saas_ui_proof: Show the product interface (mock)
-- saas_whatsapp_flow: Messaging flow mock (e.g. automation steps)
-- saas_time_saving: Emphasize efficiency ("10 hours → 10 minutes")
-- saas_workflow_steps: 3-step visual flow
+- saas_ui_proof: Hero UI screenshot + key benefit
+- saas_time_saving: "Save X hours" angle
+- saas_workflow_steps: 1-2-3 step visualization
+- saas_feature_grid: 4-Step Grid / Feature Matrix - BEST FOR: describing workflows or complex value props
+- saas_lead_capture: E-book / Whitepaper / Trial magnet
+- saas_whatsapp_flow: Chat interface simulation (if applicable)
 
 **Copy Guidelines:**
 - Be pragmatic, not aspirational: "automatisch", "direkt", "weniger manuell"
