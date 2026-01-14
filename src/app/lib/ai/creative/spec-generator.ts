@@ -12,8 +12,7 @@ import type {
     ValidatedCreativeSpec
 } from './types';
 import {
-    validateCreativeSpec,
-    BUSINESS_MODELS
+    validateCreativeSpec
 } from './types';
 import { buildCreativeSpecPrompt } from './prompts';
 
@@ -77,7 +76,7 @@ export interface SpecGenerationOptions {
 export interface SpecGenerationResult {
     specs: CreativeSpec[];
     validSpecs: CreativeSpec[];
-    invalidSpecs: Array<{ spec: any; errors: any }>;
+    invalidSpecs: Array<{ spec: unknown; errors: unknown }>;
     telemetry: {
         totalCost: number;
         totalTime: number;
@@ -85,6 +84,13 @@ export interface SpecGenerationResult {
         validationAttempts: number;
     };
 }
+
+type UserContent =
+    | string
+    | Array<
+        | { type: "text"; text: string }
+        | { type: "image_url"; image_url: { url: string; detail?: "low" | "high" | "auto" } }
+    >;
 
 /**
  * Generate CreativeSpec blueprints from request
@@ -112,11 +118,9 @@ export async function generateCreativeSpecs(
         request.userPrompt
     );
 
-    console.log(`🧠 Generating ${variantCount} CreativeSpec variants for businessModel: ${businessModel}`);
-
     const openai = new OpenAI({ apiKey });
     const specs: CreativeSpec[] = [];
-    const invalidSpecs: Array<{ spec: any; errors: any }> = [];
+    const invalidSpecs: Array<{ spec: unknown; errors: unknown }> = [];
     let totalCost = 0;
     let apiCalls = 0;
     let validationAttempts = 0;
@@ -125,10 +129,9 @@ export async function generateCreativeSpecs(
     const prompt = buildCreativeSpecPrompt(request, businessModel);
 
     // Build user message content (Text or Text+Image)
-    let userContent: any = prompt;
+    let userContent: UserContent = prompt;
 
     if (request.imageBase64) {
-        console.log('👁️ Vision Analysis Enabled: Sending image to GPT-4o');
         userContent = [
             {
                 type: "text",
@@ -184,8 +187,6 @@ export async function generateCreativeSpecs(
 
                     // BLOCKER FIX: Budget enforcement
                     if (totalCost > maxBudgetUSD) {
-                        console.warn(`⚠️ Budget exceeded: $${totalCost.toFixed(4)} > $${maxBudgetUSD.toFixed(4)}`);
-                        console.warn(`   Stopping after ${specs.length} valid specs (requested ${variantCount})`);
                         break; // Exit variant generation loop
                     }
                 }
@@ -203,7 +204,6 @@ export async function generateCreativeSpecs(
                 validationAttempts++;
 
                 if (!validated.isValid) {
-                    console.warn(`⚠️ Spec variant ${i + 1} validation failed (attempt ${attemptCount + 1}):`, validated.errors);
                     attemptCount++;
                 } else {
                     // Add metadata
@@ -213,11 +213,9 @@ export async function generateCreativeSpecs(
                         variant: i + 1
                     };
                     specs.push(parsed);
-                    console.log(`✅ Spec variant ${i + 1} validated successfully`);
                 }
 
             } catch (error) {
-                console.error(`❌ Error generating spec variant ${i + 1}:`, error);
                 attemptCount++;
             }
         }
@@ -232,9 +230,6 @@ export async function generateCreativeSpecs(
     }
 
     const totalTime = Date.now() - startTime;
-
-    console.log(`✨ Generated ${specs.length}/${variantCount} valid CreativeSpecs in ${totalTime}ms`);
-    console.log(`💰 Total cost: $${totalCost.toFixed(4)} (${apiCalls} API calls)`);
 
     return {
         specs,

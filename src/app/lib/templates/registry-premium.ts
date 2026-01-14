@@ -35,14 +35,14 @@ export const ECOMMERCE_RETAIL_LAUNCH: TemplateCapsule = {
             layerId: 'headline'
         },
         {
-            id: 'featureLeft',
+            id: 'secondary',
             bbox: { x: 50, y: 500, width: 300, height: 100 },
             rules: { maxChars: 40, priority: 8 },
             contentType: 'text',
             layerId: 'featureLeft'
         },
         {
-            id: 'featureRight',
+            id: 'secondary',
             bbox: { x: 730, y: 500, width: 300, height: 100 },
             rules: { maxChars: 40, priority: 8 },
             contentType: 'text',
@@ -63,7 +63,7 @@ export const ECOMMERCE_RETAIL_LAUNCH: TemplateCapsule = {
     copyConstraints: {
         maxChars: { headline: 40, cta: 15 },
         minFontSize: 24,
-        hierarchyRules: { headlineShouldDominate: true }
+        hierarchyRules: { headlineShouldDominate: true, ctaShouldStandOut: true }
     },
 
     layoutConstraints: {
@@ -358,11 +358,11 @@ export const ECOMMERCE_VEHICLE_RING: TemplateCapsule = {
             layerId: 'vehicle'
         },
         // 5 Radial Features
-        { id: 'f1', bbox: { x: 100, y: 300, width: 140, height: 140 }, rules: {}, contentType: 'badge', layerId: 'feature1' },
-        { id: 'f2', bbox: { x: 840, y: 300, width: 140, height: 140 }, rules: {}, contentType: 'badge', layerId: 'feature2' },
-        { id: 'f3', bbox: { x: 50, y: 560, width: 140, height: 140 }, rules: {}, contentType: 'badge', layerId: 'feature3' },
-        { id: 'f4', bbox: { x: 890, y: 560, width: 140, height: 140 }, rules: {}, contentType: 'badge', layerId: 'feature4' },
-        { id: 'f5', bbox: { x: 470, y: 720, width: 140, height: 140 }, rules: {}, contentType: 'badge', layerId: 'feature5' },
+        { id: 'badges', bbox: { x: 100, y: 300, width: 140, height: 140 }, rules: {}, contentType: 'badge', layerId: 'feature1' },
+        { id: 'badges', bbox: { x: 840, y: 300, width: 140, height: 140 }, rules: {}, contentType: 'badge', layerId: 'feature2' },
+        { id: 'badges', bbox: { x: 50, y: 560, width: 140, height: 140 }, rules: {}, contentType: 'badge', layerId: 'feature3' },
+        { id: 'badges', bbox: { x: 890, y: 560, width: 140, height: 140 }, rules: {}, contentType: 'badge', layerId: 'feature4' },
+        { id: 'badges', bbox: { x: 470, y: 720, width: 140, height: 140 }, rules: {}, contentType: 'badge', layerId: 'feature5' },
 
         {
             id: 'cta',
@@ -416,28 +416,28 @@ export const ECOMMERCE_VEHICLE_RING: TemplateCapsule = {
 
             // Feature Badges (Circles with text)
             // F1 Top Left
-            { id: 'f1bg', type: 'shape', name: 'F1 BG', x: 100, y: 300, width: 140, height: 140, zIndex: 6, fill: '#FFFFFF', stroke: '#5A3B2E', strokeWidth: 2, cornerRadius: 70, visible: true, locked: false },
-            { id: 'f1txt', type: 'text', name: 'F1 Text', x: 110, y: 350, width: 120, height: 40, zIndex: 7, text: 'Custom\nPaint', fontSize: 24, align: 'center', fill: '#5A3B2E', visible: true, locked: false, role: 'description' },
+            { id: 'f1bg', type: 'shape', name: 'F1 BG', x: 100, y: 300, width: 140, height: 140, zIndex: 6, fill: '#FFFFFF', stroke: '#5A3B2E', strokeWidth: 2, cornerRadius: 70, visible: true, locked: false, rotation: 0, opacity: 1 },
+            { id: 'f1txt', type: 'text', name: 'F1 Text', x: 110, y: 350, width: 120, height: 40, zIndex: 7, visible: true, locked: false, rotation: 0, opacity: 1, text: 'Custom\nPaint', fontFamily: 'Inter', fontWeight: 700, fontSize: 24, align: 'center', fill: '#5A3B2E', role: 'description' },
 
             // F2 Top Right
-            { id: 'f2bg', type: 'shape', name: 'F2 BG', x: 840, y: 300, width: 140, height: 140, zIndex: 6, fill: '#FFFFFF', stroke: '#5A3B2E', strokeWidth: 2, cornerRadius: 70, visible: true, locked: false },
-            { id: 'f2txt', type: 'text', name: 'F2 Text', x: 850, y: 350, width: 120, height: 40, zIndex: 7, text: 'Turbo\nCharged', fontSize: 24, align: 'center', fill: '#5A3B2E', visible: true, locked: false, role: 'description' },
+            { id: 'f2bg', type: 'shape', name: 'F2 BG', x: 840, y: 300, width: 140, height: 140, zIndex: 6, fill: '#FFFFFF', stroke: '#5A3B2E', strokeWidth: 2, cornerRadius: 70, visible: true, locked: false, rotation: 0, opacity: 1 },
+            { id: 'f2txt', type: 'text', name: 'F2 Text', x: 850, y: 350, width: 120, height: 40, zIndex: 7, visible: true, locked: false, rotation: 0, opacity: 1, text: 'Turbo\nCharged', fontFamily: 'Inter', fontWeight: 700, fontSize: 24, align: 'center', fill: '#5A3B2E', role: 'description' },
 
             // F3 Bottom Left
-            { id: 'f3bg', type: 'shape', name: 'F3 BG', x: 50, y: 560, width: 140, height: 140, zIndex: 6, fill: '#FFFFFF', stroke: '#5A3B2E', strokeWidth: 2, cornerRadius: 70, visible: true, locked: false },
-            { id: 'f3txt', type: 'text', name: 'F3 Text', x: 60, y: 610, width: 120, height: 40, zIndex: 7, text: 'Sport\nSeats', fontSize: 24, align: 'center', fill: '#5A3B2E', visible: true, locked: false, role: 'description' },
+            { id: 'f3bg', type: 'shape', name: 'F3 BG', x: 50, y: 560, width: 140, height: 140, zIndex: 6, fill: '#FFFFFF', stroke: '#5A3B2E', strokeWidth: 2, cornerRadius: 70, visible: true, locked: false, rotation: 0, opacity: 1 },
+            { id: 'f3txt', type: 'text', name: 'F3 Text', x: 60, y: 610, width: 120, height: 40, zIndex: 7, visible: true, locked: false, rotation: 0, opacity: 1, text: 'Sport\nSeats', fontFamily: 'Inter', fontWeight: 700, fontSize: 24, align: 'center', fill: '#5A3B2E', role: 'description' },
 
             // F4 Bottom Right
-            { id: 'f4bg', type: 'shape', name: 'F4 BG', x: 890, y: 560, width: 140, height: 140, zIndex: 6, fill: '#FFFFFF', stroke: '#5A3B2E', strokeWidth: 2, cornerRadius: 70, visible: true, locked: false },
-            { id: 'f4txt', type: 'text', name: 'F4 Text', x: 900, y: 610, width: 120, height: 40, zIndex: 7, text: 'Carbon\nFiber', fontSize: 24, align: 'center', fill: '#5A3B2E', visible: true, locked: false, role: 'description' },
+            { id: 'f4bg', type: 'shape', name: 'F4 BG', x: 890, y: 560, width: 140, height: 140, zIndex: 6, fill: '#FFFFFF', stroke: '#5A3B2E', strokeWidth: 2, cornerRadius: 70, visible: true, locked: false, rotation: 0, opacity: 1 },
+            { id: 'f4txt', type: 'text', name: 'F4 Text', x: 900, y: 610, width: 120, height: 40, zIndex: 7, visible: true, locked: false, rotation: 0, opacity: 1, text: 'Carbon\nFiber', fontFamily: 'Inter', fontWeight: 700, fontSize: 24, align: 'center', fill: '#5A3B2E', role: 'description' },
 
             // F5 Bottom Center
-            { id: 'f5bg', type: 'shape', name: 'F5 BG', x: 470, y: 720, width: 140, height: 140, zIndex: 6, fill: '#FFFFFF', stroke: '#5A3B2E', strokeWidth: 2, cornerRadius: 70, visible: true, locked: false },
-            { id: 'f5txt', type: 'text', name: 'F5 Text', x: 480, y: 770, width: 120, height: 40, zIndex: 7, text: 'Limited\nEdition', fontSize: 24, align: 'center', fill: '#5A3B2E', visible: true, locked: false, role: 'description' },
+            { id: 'f5bg', type: 'shape', name: 'F5 BG', x: 470, y: 720, width: 140, height: 140, zIndex: 6, fill: '#FFFFFF', stroke: '#5A3B2E', strokeWidth: 2, cornerRadius: 70, visible: true, locked: false, rotation: 0, opacity: 1 },
+            { id: 'f5txt', type: 'text', name: 'F5 Text', x: 480, y: 770, width: 120, height: 40, zIndex: 7, visible: true, locked: false, rotation: 0, opacity: 1, text: 'Limited\nEdition', fontFamily: 'Inter', fontWeight: 700, fontSize: 24, align: 'center', fill: '#5A3B2E', role: 'description' },
 
             // Footer CTA
-            { id: 'footerBg', type: 'shape', name: 'Footer', x: 0, y: 940, width: 1080, height: 140, zIndex: 8, fill: '#6A4A3C', visible: true, locked: true },
-            { id: 'footerText', type: 'cta', name: 'Footer Text', x: 100, y: 980, width: 880, height: 60, zIndex: 9, text: 'ENTER TO WIN NOW', fontSize: 42, fontWeight: 700, fill: '#FFFFFF', align: 'center', visible: true, locked: false, role: 'cta' }
+            { id: 'footerBg', type: 'shape', name: 'Footer', x: 0, y: 940, width: 1080, height: 140, zIndex: 8, fill: '#6A4A3C', visible: true, locked: true, rotation: 0, opacity: 1 },
+            { id: 'footerText', type: 'cta', name: 'Footer Text', x: 100, y: 980, width: 880, height: 60, zIndex: 9, visible: true, locked: false, rotation: 0, opacity: 1, text: 'ENTER TO WIN NOW', fontFamily: 'Inter', fontSize: 42, fontWeight: 700, color: '#FFFFFF', fill: '#FFFFFF', align: 'center', role: 'cta' }
         ]
     }
 };
@@ -459,15 +459,15 @@ export const ECOMMERCE_EXPLODED_STACK: TemplateCapsule = {
     version: 1,
 
     supportedBusinessModels: ['ecommerce'],
-    supportedPatterns: ['ecommerce_feature_stack'],
+    supportedPatterns: ['ecommerce_benefit_stack', 'ecommerce_product_focus'],
 
     zones: [
         { id: 'headline', bbox: { x: 120, y: 80, width: 840, height: 100 }, rules: {}, contentType: 'text', layerId: 'headline' },
-        { id: 'product', bbox: { x: 80, y: 240, width: 520, height: 520 }, rules: {}, contentType: 'image', layerId: 'product' },
+        { id: 'hero', bbox: { x: 80, y: 240, width: 520, height: 520 }, rules: {}, contentType: 'image', layerId: 'product' },
         // Stack Right
-        { id: 'f1', bbox: { x: 660, y: 300, width: 300, height: 60 }, rules: {}, contentType: 'text', layerId: 'f1' },
-        { id: 'f2', bbox: { x: 660, y: 440, width: 300, height: 60 }, rules: {}, contentType: 'text', layerId: 'f2' },
-        { id: 'f3', bbox: { x: 660, y: 580, width: 300, height: 60 }, rules: {}, contentType: 'text', layerId: 'f3' },
+        { id: 'secondary', bbox: { x: 660, y: 300, width: 300, height: 60 }, rules: {}, contentType: 'text', layerId: 'f1' },
+        { id: 'secondary', bbox: { x: 660, y: 440, width: 300, height: 60 }, rules: {}, contentType: 'text', layerId: 'f2' },
+        { id: 'secondary', bbox: { x: 660, y: 580, width: 300, height: 60 }, rules: {}, contentType: 'text', layerId: 'f3' },
 
         { id: 'cta', bbox: { x: 0, y: 940, width: 1080, height: 140 }, rules: {}, contentType: 'text', layerId: 'cta' }
     ],
@@ -475,7 +475,7 @@ export const ECOMMERCE_EXPLODED_STACK: TemplateCapsule = {
     requiredAssets: ['productCutout'],
     optionalAssets: [],
 
-    copyConstraints: { maxChars: { headline: 40 }, minFontSize: 24 },
+    copyConstraints: { maxChars: { headline: 40, cta: 30 }, minFontSize: 24 },
     layoutConstraints: { safeMargins: { top: 60, right: 60, bottom: 60, left: 60 }, minCTAWidth: 400, maxDensity: 7, minContrast: 4.5 },
     stylingTokens: { paletteSlots: ['background', 'text', 'line'], typographySlots: ['headlineFont'] },
 
@@ -484,31 +484,31 @@ export const ECOMMERCE_EXPLODED_STACK: TemplateCapsule = {
         name: 'Exploded Feature Stack',
         width: 1080, height: 1080, backgroundColor: '#F4FAF8',
         layers: [
-            { id: 'bg', type: 'background', name: 'BG', x: 0, y: 0, width: 1080, height: 1080, src: '', fill: '#F4FAF8', visible: true, locked: true },
+            { id: 'bg', type: 'background', name: 'BG', x: 0, y: 0, width: 1080, height: 1080, zIndex: 0, visible: true, locked: true, rotation: 0, opacity: 1, src: '', fill: '#F4FAF8', fit: 'cover' },
             // Headline
-            { id: 'headline', type: 'text', name: 'Headline', x: 120, y: 80, width: 840, height: 100, text: 'BUILT TO LAST', fontSize: 64, fontWeight: 700, fill: '#004A3C', align: 'left', role: 'headline', visible: true, locked: false },
+            { id: 'headline', type: 'text', name: 'Headline', x: 120, y: 80, width: 840, height: 100, zIndex: 10, visible: true, locked: false, rotation: 0, opacity: 1, text: 'BUILT TO LAST', fontFamily: 'Inter', fontSize: 64, fontWeight: 700, fill: '#004A3C', align: 'left', role: 'headline' },
 
             // Product Left
-            { id: 'product', type: 'product', name: 'Product', x: 80, y: 240, width: 520, height: 520, src: '', fit: 'contain', role: 'product_image', visible: true, locked: false },
+            { id: 'product', type: 'product', name: 'Product', x: 80, y: 240, width: 520, height: 520, zIndex: 5, visible: true, locked: false, rotation: 0, opacity: 1, src: '', fit: 'contain', role: 'product_image' },
 
             // Feature 1
-            { id: 'f1', type: 'text', name: 'Feature 1', x: 660, y: 300, width: 300, height: 60, text: 'Windproof Frame', fontSize: 32, fontWeight: 600, fill: '#004A3C', align: 'left', role: 'description', visible: true, locked: false },
+            { id: 'f1', type: 'text', name: 'Feature 1', x: 660, y: 300, width: 300, height: 60, zIndex: 10, visible: true, locked: false, rotation: 0, opacity: 1, text: 'Windproof Frame', fontFamily: 'Inter', fontSize: 32, fontWeight: 600, fill: '#004A3C', align: 'left', role: 'description' },
             // Line 1
-            { id: 'l1', type: 'shape', name: 'Line 1', x: 500, y: 330, width: 140, height: 2, fill: '#004A3C', visible: true, locked: true },
+            { id: 'l1', type: 'shape', name: 'Line 1', x: 500, y: 330, width: 140, height: 2, zIndex: 6, visible: true, locked: true, rotation: 0, opacity: 1, fill: '#004A3C' },
 
             // Feature 2
-            { id: 'f2', type: 'text', name: 'Feature 2', x: 660, y: 460, width: 300, height: 60, text: 'Compact Design', fontSize: 32, fontWeight: 600, fill: '#004A3C', align: 'left', role: 'description', visible: true, locked: false },
+            { id: 'f2', type: 'text', name: 'Feature 2', x: 660, y: 460, width: 300, height: 60, zIndex: 10, visible: true, locked: false, rotation: 0, opacity: 1, text: 'Compact Design', fontFamily: 'Inter', fontSize: 32, fontWeight: 600, fill: '#004A3C', align: 'left', role: 'description' },
             // Line 2
-            { id: 'l2', type: 'shape', name: 'Line 2', x: 520, y: 490, width: 120, height: 2, fill: '#004A3C', visible: true, locked: true },
+            { id: 'l2', type: 'shape', name: 'Line 2', x: 520, y: 490, width: 120, height: 2, zIndex: 6, visible: true, locked: true, rotation: 0, opacity: 1, fill: '#004A3C' },
 
             // Feature 3
-            { id: 'f3', type: 'text', name: 'Feature 3', x: 660, y: 620, width: 300, height: 60, text: 'Lifetime Warranty', fontSize: 32, fontWeight: 600, fill: '#004A3C', align: 'left', role: 'description', visible: true, locked: false },
+            { id: 'f3', type: 'text', name: 'Feature 3', x: 660, y: 620, width: 300, height: 60, zIndex: 10, visible: true, locked: false, rotation: 0, opacity: 1, text: 'Lifetime Warranty', fontFamily: 'Inter', fontSize: 32, fontWeight: 600, fill: '#004A3C', align: 'left', role: 'description' },
             // Line 3
-            { id: 'l3', type: 'shape', name: 'Line 3', x: 500, y: 650, width: 140, height: 2, fill: '#004A3C', visible: true, locked: true },
+            { id: 'l3', type: 'shape', name: 'Line 3', x: 500, y: 650, width: 140, height: 2, zIndex: 6, visible: true, locked: true, rotation: 0, opacity: 1, fill: '#004A3C' },
 
             // Footer
-            { id: 'footerBg', type: 'shape', name: 'Footer', x: 0, y: 940, width: 1080, height: 140, zIndex: 8, fill: '#004A3C', visible: true, locked: true },
-            { id: 'footerText', type: 'cta', name: 'Footer Text', x: 100, y: 980, width: 880, height: 60, zIndex: 9, text: 'SHOP THE SALE', fontSize: 42, fontWeight: 700, fill: '#FFFFFF', align: 'center', visible: true, locked: false, role: 'cta' }
+            { id: 'footerBg', type: 'shape', name: 'Footer', x: 0, y: 940, width: 1080, height: 140, zIndex: 8, fill: '#004A3C', visible: true, locked: true, rotation: 0, opacity: 1 },
+            { id: 'footerText', type: 'cta', name: 'Footer Text', x: 100, y: 980, width: 880, height: 60, zIndex: 9, visible: true, locked: false, rotation: 0, opacity: 1, text: 'SHOP THE SALE', fontFamily: 'Inter', fontSize: 42, fontWeight: 700, color: '#FFFFFF', fill: '#FFFFFF', align: 'center', role: 'cta' }
         ]
     }
 };

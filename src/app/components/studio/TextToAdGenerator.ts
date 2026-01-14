@@ -3,7 +3,7 @@
 
 import type { AdDocument } from '../../types/studio';
 import { apiClient } from '../../utils/apiClient';
-import { AD_TEMPLATES, AdTemplate } from './presets';
+import { AD_TEMPLATES } from './presets';
 import { injectContentIntoTemplate } from './TemplateEngine';
 
 export interface TextToAdRequest {
@@ -159,8 +159,6 @@ export function createAdFromContent(
     format: { width: number; height: number } = { width: 1080, height: 1080 }
 ): Partial<AdDocument> {
     const { width, height } = format;
-    const isVertical = height > width;
-
     // 1. Select a Template
     // Prioritize templates matching the suggested niche
     const nicheTemplates = AD_TEMPLATES.filter(t => t.niche === content.suggestedNiche);

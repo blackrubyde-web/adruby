@@ -112,6 +112,8 @@ export type CtaLayer = LayerBase & {
     lineHeight?: number;
     letterSpacing?: number;
     color: string;
+    fill?: string; // Compatibility alias for text color
+    align?: "left" | "center" | "right";
 
     // Shadow Props
     shadowColor?: string;
