@@ -824,7 +824,9 @@ function normalizePremiumLayoutGeometry(raw: unknown): LayoutGeometry | undefine
 
     const overlapPolicyMap: Record<string, 'never' | 'allowed_for_badges_only' | 'allowed'> = {
         never: 'never',
-        'allowedfor badgesonly': 'allowed_for_badges_only',
+        allowedforbadgesonly: 'allowed_for_badges_only',
+        allowedbadgesonly: 'allowed_for_badges_only',
+        badgesonly: 'allowed_for_badges_only',
         allowed: 'allowed'
     };
     const overlapPolicy = overlapPolicyMap[normalizeKey(String(raw.overlapPolicy || ''))] || 'never';
