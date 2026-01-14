@@ -650,6 +650,9 @@ export const ECOMMERCE_UGC_FRAME: TemplateCapsule = {
 
 /**
  * Registry of all available template capsules
+ * 
+ * ✅ FIX 5: Excluded ADDITIONAL_TEMPLATES (registry-extended) because they have layers: []
+ * These templates cannot work until layers are implemented.
  */
 export const TEMPLATE_REGISTRY: TemplateCapsule[] = [
     // E-Commerce Standard
@@ -668,9 +671,9 @@ export const TEMPLATE_REGISTRY: TemplateCapsule[] = [
     // SaaS Premium
     SAAS_4_STEP_GRID,
 
-    // Additional
-    ...ADDITIONAL_TEMPLATES
-];
+    // ❌ EXCLUDED: registry-extended templates have empty layers
+    // ...ADDITIONAL_TEMPLATES
+].filter(t => t.document?.layers && t.document.layers.length > 0);  // ✅ Double-check filter
 
 export const ALL_TEMPLATES = TEMPLATE_REGISTRY;
 

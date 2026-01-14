@@ -1020,6 +1020,7 @@ export async function generateCreativeSpecs(
     let totalCost = 0;
     let apiCalls = 0;
     let validationAttempts = 0;
+    let budgetExceeded = false;  // ✅ FIX 8: Track budget state
 
     // Build prompt
     const prompt = buildCreativeSpecPrompt(request, businessModel);
@@ -1049,7 +1050,7 @@ export async function generateCreativeSpecs(
     }
 
     // Generate multiple variants by varying temperature/seed
-    for (let i = 0; i < variantCount; i++) {
+    for (let i = 0; i < variantCount && !budgetExceeded; i++) {  // ✅ FIX 8: Check budget flag
         let attemptCount = 0;
         let validated: ValidatedCreativeSpec | null = null;
 
@@ -1081,9 +1082,11 @@ export async function generateCreativeSpecs(
                     const outputCost = (usage.completion_tokens / 1_000_000) * 15;
                     totalCost += inputCost + outputCost;
 
-                    // BLOCKER FIX: Budget enforcement
+                    // ✅ FIX 8: Budget enforcement - set flag to break outer loop
                     if (totalCost > maxBudgetUSD) {
-                        break; // Exit variant generation loop
+                        budgetExceeded = true;
+                        console.warn(`⚠️ Budget cap reached ($${totalCost.toFixed(4)} > $${maxBudgetUSD}), stopping variant generation`);
+                        break;
                     }
                 }
 

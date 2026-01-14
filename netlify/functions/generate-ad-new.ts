@@ -283,8 +283,18 @@ const handler: Handler = async (event: HandlerEvent) => {
 
                 const scoredTemplates = scoreTemplates(TEMPLATE_REGISTRY, scoringContext);
 
-                // Get top 3 templates
-                const topTemplates = scoredTemplates.slice(0, 3);
+                // ✅ FIX 9: Filter by canBeAssembled - only select templates with all required assets
+                const assemblableTemplates = scoredTemplates.filter(st => st.canBeAssembled);
+
+                if (assemblableTemplates.length === 0) {
+                    console.warn('⚠️ No assemblable templates found! All templates missing required assets.');
+                    console.warn('Available assets:', Object.keys(filteredAssets));
+                    console.warn('Top template requirements:', scoredTemplates[0]?.template.requiredAssets);
+                }
+
+                const topTemplates = assemblableTemplates.length > 0
+                    ? assemblableTemplates.slice(0, 3)
+                    : scoredTemplates.slice(0, 3);  // Fallback to best-effort if none assemblable
 
                 console.log(`🏆 Top template: ${topTemplates[0]?.template.name} (score: ${topTemplates[0]?.score})`);
 
