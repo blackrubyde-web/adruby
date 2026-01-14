@@ -6,7 +6,7 @@
 
 import type { AdDocument, ImageLayer } from '../../types/studio';
 import type { TemplateCapsule } from '../templates/types';
-import type { CreativeSpec, CopyContent } from '../ai/creative/types';
+import type { CreativeSpec } from '../ai/creative/types';
 import type { TemplateScoringResult } from '../templates/scoring';
 import type { RetryContext, RetryAttempt, ValidationIssue } from './types';
 import { validateAdDocument } from './validators';
@@ -101,7 +101,6 @@ export async function assembleWithRetry(
 
                 // Check if successful
                 if (attempt.success) {
-                    console.log(`✅ Assembly successful on attempt ${retryContext.currentRetry}`);
                     return {
                         document,
                         success: true,
@@ -123,8 +122,6 @@ export async function assembleWithRetry(
                         subheadline_max_chars: template.copyConstraints.maxChars.subheadline,
                         cta_max_chars: template.copyConstraints.maxChars.cta
                     })) {
-                        console.log(`🔧 Attempting tightenCopy fix for template ${template.id}`);
-
                         const result = await tightenCopy(
                             currentSpec.copy,
                             {
@@ -148,13 +145,9 @@ export async function assembleWithRetry(
                 }
 
                 // No fix available or fix didn't work, try next template
-                console.warn(`⚠️ Template ${template.id} failed validation, trying next template`);
-                console.log(`📋 Validation issues for ${template.id}:`, JSON.stringify(issues, null, 2));
-                console.log(`📊 Quality score: ${score.overall} (min: ${minQualityScore})`);
                 break;
 
             } catch (error) {
-                console.error(`❌ Error assembling with template ${template.id}:`, error);
                 retryContext.lastError = error instanceof Error ? error.message : String(error);
                 break;
             }
@@ -162,8 +155,6 @@ export async function assembleWithRetry(
     }
 
     // All retries exhausted
-    console.error(`❌ All ${retryContext.currentRetry} retry attempts failed`);
-
     return {
         document: null,
         success: false,

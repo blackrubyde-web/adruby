@@ -55,7 +55,7 @@ export interface ValidationIssue {
     affectedLayer?: string;
     affectedZone?: string;
     suggestedFix?: string;
-    details?: Record<string, any>;
+    details?: Record<string, unknown>;
 }
 
 export const ValidationIssueSchema = z.object({
@@ -65,7 +65,7 @@ export const ValidationIssueSchema = z.object({
     affectedLayer: z.string().optional(),
     affectedZone: z.string().optional(),
     suggestedFix: z.string().optional(),
-    details: z.record(z.any()).optional()
+    details: z.record(z.unknown()).optional()
 });
 
 // ============================================================================

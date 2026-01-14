@@ -16,8 +16,6 @@ import { getErrorCount, getWarningCount, scoreToGrade } from './types';
  */
 export function calculateQualityScore(issues: ValidationIssue[]): QualityScore {
     const errorCount = getErrorCount(issues);
-    const warningCount = getWarningCount(issues);
-
     // Start with perfect score
     let textQuality = 100;
     let layoutQuality = 100;

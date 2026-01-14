@@ -9,9 +9,10 @@ import type { AssetRequirement } from '../ai/creative/types';
 import { renderBadge, renderOfferBadge, renderUrgencyBadge } from './cards/badge';
 import { renderMessengerMock, renderWhatsAppFlowMock } from './mocks/messenger';
 import { renderDashboardCard, renderStatsCard } from './mocks/dashboard';
-import type { MessengerMockParams } from './mocks/messenger';
-import type { DashboardCardParams } from './mocks/dashboard';
 import { renderTestimonialCard } from './cards/testimonial';
+import type { BadgeParams } from './cards/badge';
+import type { MessengerMessage, MessengerMockParams } from './mocks/messenger';
+import type { DashboardCardParams, DashboardMetric } from './mocks/dashboard';
 
 // ============================================================================
 // ASSET RENDERING
@@ -22,7 +23,52 @@ import { renderTestimonialCard } from './cards/testimonial';
  * Returns data URL (base64 encoded image)
  */
 export async function renderAsset(requirement: AssetRequirement): Promise<string> {
-    const { type, params = {} } = requirement;
+    const { type } = requirement;
+    const params: Record<string, unknown> = requirement.params ?? {};
+
+    const getString = (value: unknown, fallback: string): string =>
+        typeof value === 'string' ? value : fallback;
+    const getOptionalString = (value: unknown): string | undefined =>
+        typeof value === 'string' ? value : undefined;
+    const getNumber = (value: unknown, fallback: number): number =>
+        typeof value === 'number' ? value : fallback;
+    const getOptionalNumber = (value: unknown): number | undefined =>
+        typeof value === 'number' ? value : undefined;
+    const getStringArray = (value: unknown, fallback: string[]): string[] =>
+        Array.isArray(value) ? value.filter((item): item is string => typeof item === 'string') : fallback;
+    const getTheme = (value: unknown): 'light' | 'dark' | undefined =>
+        value === 'light' || value === 'dark' ? value : undefined;
+    const getBadgeOverrides = (value: Record<string, unknown>): Partial<BadgeParams> => ({
+        width: getOptionalNumber(value.width),
+        height: getOptionalNumber(value.height),
+        backgroundColor: getOptionalString(value.backgroundColor),
+        textColor: getOptionalString(value.textColor),
+        rotation: getOptionalNumber(value.rotation)
+    });
+    const isMessengerMessage = (value: unknown): value is MessengerMessage => {
+        if (!value || typeof value !== 'object') return false;
+        const record = value as Record<string, unknown>;
+        return (record.sender === 'bot' || record.sender === 'user') && typeof record.text === 'string';
+    };
+    const getMessengerMessages = (value: unknown): MessengerMessage[] | undefined => {
+        if (!Array.isArray(value)) return undefined;
+        const messages = value.filter(isMessengerMessage);
+        return messages.length ? messages : undefined;
+    };
+    const isDashboardMetric = (value: unknown): value is DashboardMetric => {
+        if (!value || typeof value !== 'object') return false;
+        const record = value as Record<string, unknown>;
+        const trend = record.trend;
+        return typeof record.label === 'string' &&
+            typeof record.value === 'string' &&
+            (trend === undefined || trend === 'up' || trend === 'down' || trend === 'neutral') &&
+            (record.trendValue === undefined || typeof record.trendValue === 'string');
+    };
+    const getDashboardMetrics = (value: unknown): DashboardMetric[] | undefined => {
+        if (!Array.isArray(value)) return undefined;
+        const metrics = value.filter(isDashboardMetric);
+        return metrics.length ? metrics : undefined;
+    };
 
     switch (type) {
         // ========================================================================
@@ -30,52 +76,61 @@ export async function renderAsset(requirement: AssetRequirement): Promise<string
         // ========================================================================
         case 'background':
             return renderAbstractBackground({
-                width: params.width || 1080,
-                height: params.height || 1080,
-                palette: params.palette || ['#000000', '#333333'],
-                style: params.style || 'gradient'
+                width: getNumber(params.width, 1080),
+                height: getNumber(params.height, 1080),
+                palette: getStringArray(params.palette, ['#000000', '#333333']),
+                style: getString(params.style, 'gradient')
             });
 
         // ========================================================================
         // BADGES
         // ========================================================================
-        case 'offerBadge':
+        case 'offerBadge': {
+            const badgeOverrides = getBadgeOverrides(params);
             return renderOfferBadge(
-                params.text || '-20%',
-                params
+                getString(params.text, '-20%'),
+                badgeOverrides
             );
+        }
 
-        case 'discountBadge':
+        case 'discountBadge': {
+            const badgeOverrides = getBadgeOverrides(params);
             return renderBadge({
-                text: params.text || 'SALE',
+                text: getString(params.text, 'SALE'),
                 type: 'discount',
-                ...params
+                ...badgeOverrides
             });
+        }
 
-        case 'urgencyBadge':
+        case 'urgencyBadge': {
+            const badgeOverrides = getBadgeOverrides(params);
             return renderUrgencyBadge(
-                params.text || 'NUR HEUTE',
-                params
+                getString(params.text, 'NUR HEUTE'),
+                badgeOverrides
             );
+        }
 
         // ========================================================================
         // SAAS MOCKS
         // ========================================================================
-        case 'messengerMock':
-            if (Array.isArray(params.messages)) {
+        case 'messengerMock': {
+            const messages = getMessengerMessages(params.messages);
+            if (messages) {
                 const messengerParams: MessengerMockParams = {
-                    messages: params.messages,
-                    title: params.title,
-                    theme: params.theme,
-                    width: params.width,
-                    height: params.height
+                    messages,
+                    title: getOptionalString(params.title),
+                    theme: getTheme(params.theme),
+                    width: getOptionalNumber(params.width),
+                    height: getOptionalNumber(params.height)
                 };
                 return renderMessengerMock(messengerParams);
-            } else if (Array.isArray(params.steps)) {
+            }
+            const steps = getStringArray(params.steps, []);
+            if (steps.length > 0) {
                 return renderWhatsAppFlowMock({
-                    steps: params.steps,
-                    width: params.width,
-                    height: params.height
+                    steps,
+                    width: getOptionalNumber(params.width),
+                    height: getOptionalNumber(params.height)
                 });
             }
             // Default example
@@ -85,46 +140,49 @@ export async function renderAsset(requirement: AssetRequirement): Promise<string
                     { sender: 'user', text: 'Ich brauche eine Rechnung' },
                     { sender: 'bot', text: 'Kein Problem! Rechnung wird erstellt...' }
                 ],
-                title: params.title || 'Chat',
-                theme: params.theme,
-                width: params.width,
-                height: params.height
+                title: getString(params.title, 'Chat'),
+                theme: getTheme(params.theme),
+                width: getOptionalNumber(params.width),
+                height: getOptionalNumber(params.height)
             });
+        }
 
-        case 'dashboardCard':
-            if (Array.isArray(params.metrics)) {
+        case 'dashboardCard': {
+            const metrics = getDashboardMetrics(params.metrics);
+            if (metrics) {
                 const dashboardParams: DashboardCardParams = {
-                    title: params.title || 'Performance',
-                    metrics: params.metrics as DashboardCardParams['metrics'],
-                    theme: params.theme,
-                    width: params.width,
-                    height: params.height
+                    title: getString(params.title, 'Performance'),
+                    metrics,
+                    theme: getTheme(params.theme),
+                    width: getOptionalNumber(params.width),
+                    height: getOptionalNumber(params.height)
                 };
                 return renderDashboardCard(dashboardParams);
             }
             // Default example
             return renderDashboardCard({
-                title: params.title || 'Performance',
+                title: getString(params.title, 'Performance'),
                 metrics: [
                     { label: 'Umsatz', value: '€12.450', trend: 'up', trendValue: '+24%' },
                     { label: 'Bestellungen', value: '342', trend: 'up', trendValue: '+12%' }
                 ],
-                theme: params.theme,
-                width: params.width,
-                height: params.height
+                theme: getTheme(params.theme),
+                width: getOptionalNumber(params.width),
+                height: getOptionalNumber(params.height)
             });
+        }
 
         case 'invoicePreview':
             // Simplified invoice card (similar to dashboard card)
             return renderDashboardCard({
                 title: 'Rechnung #1234',
                 metrics: [
-                    { label: 'Betrag', value: params.amount || '€299,00' },
-                    { label: 'Status', value: params.status || 'Bezahlt' }
+                    { label: 'Betrag', value: getString(params.amount, '€299,00') },
+                    { label: 'Status', value: getString(params.status, 'Bezahlt') }
                 ],
-                theme: params.theme,
-                width: params.width || 300,
-                height: params.height || 200
+                theme: getTheme(params.theme),
+                width: getNumber(params.width, 300),
+                height: getNumber(params.height, 200)
             });
 
         // ========================================================================
@@ -132,13 +190,13 @@ export async function renderAsset(requirement: AssetRequirement): Promise<string
         // ========================================================================
         case 'testimonialCard':
             return renderTestimonialCard({
-                quote: params.quote || 'Absolut begeistert! Genau das, was ich gesucht habe.',
-                author: params.author || 'Max M.',
-                title: params.title,
-                rating: params.rating || 5,
-                theme: params.theme,
-                width: params.width,
-                height: params.height
+                quote: getString(params.quote, 'Absolut begeistert! Genau das, was ich gesucht habe.'),
+                author: getString(params.author, 'Max M.'),
+                title: getOptionalString(params.title),
+                rating: typeof params.rating === 'number' ? params.rating : 5,
+                theme: getTheme(params.theme),
+                width: getOptionalNumber(params.width),
+                height: getOptionalNumber(params.height)
             });
 
         case 'reviewCard':
@@ -150,40 +208,40 @@ export async function renderAsset(requirement: AssetRequirement): Promise<string
         // ========================================================================
         case 'menuCard': {
             // Simple menu list card
-            const menuItems = params.items || [
+            const menuItems = getStringArray(params.items, [
                 'Burger Classic - €12,90',
                 'Pizza Margherita - €10,50',
                 'Caesar Salad - €9,90'
-            ];
+            ]);
 
             return renderSimpleListCard({
-                title: params.title || 'Speisekarte',
+                title: getString(params.title, 'Speisekarte'),
                 items: menuItems,
-                width: params.width || 400,
-                height: params.height || 300
+                width: getNumber(params.width, 400),
+                height: getNumber(params.height, 300)
             });
         }
 
         case 'hoursCard': {
-            const hours = params.hours || [
+            const hours = getStringArray(params.hours, [
                 'Mo-Fr: 11:00 - 22:00',
                 'Sa-So: 12:00 - 23:00'
-            ];
+            ]);
 
             return renderSimpleListCard({
                 title: 'Öffnungszeiten',
                 items: hours,
-                width: params.width || 300,
-                height: params.height || 200
+                width: getNumber(params.width, 300),
+                height: getNumber(params.height, 200)
             });
         }
 
         case 'mapCard':
             // Placeholder: would integrate with Google Maps Static API
             return renderPlaceholderCard({
-                text: '📍 ' + (params.address || 'Hauptstraße 123, 10115 Berlin'),
-                width: params.width || 400,
-                height: params.height || 300
+                text: `📍 ${getString(params.address, 'Hauptstraße 123, 10115 Berlin')}`,
+                width: getNumber(params.width, 400),
+                height: getNumber(params.height, 300)
             });
 
         // ========================================================================
@@ -191,59 +249,66 @@ export async function renderAsset(requirement: AssetRequirement): Promise<string
         // ========================================================================
         case 'resultsCard':
             return renderDashboardCard({
-                title: params.title || 'Ergebnisse',
-                metrics: params.metrics || [
-                    { label: 'ROI', value: params.roi || '+240%', trend: 'up' },
-                    { label: 'Leads', value: params.leads || '1.2K', trend: 'up', trendValue: '+89%' }
+                title: getString(params.title, 'Ergebnisse'),
+                metrics: getDashboardMetrics(params.metrics) || [
+                    { label: 'ROI', value: getString(params.roi, '+240%'), trend: 'up' },
+                    { label: 'Leads', value: getString(params.leads, '1.2K'), trend: 'up', trendValue: '+89%' }
                 ],
-                theme: params.theme,
-                width: params.width,
-                height: params.height
+                theme: getTheme(params.theme),
+                width: getOptionalNumber(params.width),
+                height: getOptionalNumber(params.height)
             });
 
         case 'authoritySlide':
             // Placeholder for credentials/authority content
             return renderSimpleListCard({
-                title: params.name || 'Expertise',
-                items: params.credentials || [
+                title: getString(params.name, 'Expertise'),
+                items: getStringArray(params.credentials, [
                     '✓ 10+ Jahre Erfahrung',
                     '✓ 500+ Kunden betreut',
                     '✓ Zertifizierter Experte'
-                ],
-                width: params.width || 400,
-                height: params.height || 300
+                ]),
+                width: getNumber(params.width, 400),
+                height: getNumber(params.height, 300)
             });
 
         // ========================================================================
         // UNIVERSAL
         // ========================================================================
         case 'comparisonTable':
-            return renderComparisonTable(params);
+            return renderComparisonTable({
+                width: getOptionalNumber(params.width),
+                height: getOptionalNumber(params.height)
+            });
 
         case 'benefitStack': {
-            const benefits = params.benefits || [
+            const benefits = getStringArray(params.benefits, [
                 '✓ Schnelle Lieferung',
                 '✓ 30 Tage Rückgabe',
                 '✓ Premium Qualität'
-            ];
+            ]);
 
             return renderSimpleListCard({
                 title: '',
                 items: benefits,
-                width: params.width || 350,
-                height: params.height || 200
+                width: getNumber(params.width, 350),
+                height: getNumber(params.height, 200)
             });
         }
 
         case 'featureChips':
-            return renderFeatureChips(params);
+            return renderFeatureChips({
+                chips: getStringArray(params.chips, ['Feature 1', 'Feature 2', 'Feature 3']),
+                width: getOptionalNumber(params.width),
+                height: getOptionalNumber(params.height)
+            });
 
         case 'statsCard':
             return renderStatsCard({
-                stat: typeof params.stat === 'string' ? params.stat : String(params.stat ?? ''),
-                label: typeof params.label === 'string' ? params.label : String(params.label ?? ''),
-                width: params.width,
-                height: params.height
+                stat: getString(params.stat, ''),
+                label: getString(params.label, ''),
+                width: getOptionalNumber(params.width),
+                height: getOptionalNumber(params.height)
             });
 
         // ========================================================================
@@ -268,10 +333,10 @@ export async function renderAsset(requirement: AssetRequirement): Promise<string
         case 'calendarCard':
             return renderSimpleCard({
                 icon: '📅',
-                title: params.title || 'Termin buchen',
-                text: params.text || 'Kostenloses Erstgespräch',
-                width: params.width || 300,
-                height: params.height || 150
+                title: getString(params.title, 'Termin buchen'),
+                text: getString(params.text, 'Kostenloses Erstgespräch'),
+                width: getNumber(params.width, 300),
+                height: getNumber(params.height, 150)
             });
 
         default:
@@ -403,7 +468,7 @@ export function renderDeviceMock(params: { image: string, type: 'laptop' | 'brow
     return `data:image/svg+xml;base64,${Buffer.from(svg).toString('base64')}`;
 }
 
-function renderComparisonTable(params: any): string {
+function renderComparisonTable(params: { width?: number; height?: number }): string {
     // Simplified comparison - would be more sophisticated in production
     return renderSimpleListCard({
         title: 'Vorher vs. Nachher',
@@ -412,19 +477,19 @@ function renderComparisonTable(params: any): string {
             '❌ Alt: 2h Zeit → ✅ Neu: 5min',
             '❌ Alt: Fehleranfällig → ✅ Neu: Zuverlässig'
         ],
-        width: params.width || 400,
-        height: params.height || 250
+        width: params.width ?? 400,
+        height: params.height ?? 250
     });
 }
 
-function renderFeatureChips(params: any): string {
-    const chips = params.chips || ['Feature 1', 'Feature 2', 'Feature 3'];
+function renderFeatureChips(params: { chips?: string[]; width?: number; height?: number }): string {
+    const chips = params.chips ?? ['Feature 1', 'Feature 2', 'Feature 3'];
 
     return renderSimpleListCard({
         title: '',
         items: chips.map((chip: string) => `◆ ${chip}`),
-        width: params.width || 400,
-        height: params.height || 150
+        width: params.width ?? 400,
+        height: params.height ?? 150
     });
 }
 

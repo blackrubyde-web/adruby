@@ -15,7 +15,7 @@
 import type { AdDocument, TextLayer, ImageLayer, CtaLayer } from '../../../types/studio';
 import type { AdFormat } from './grid-system';
 import type { TemplatePattern } from './template-library';
-import { getGridConfig, getSafeArea } from './grid-system';
+import { getGridConfig } from './grid-system';
 import { getTemplateByPattern, selectTemplate } from './template-library';
 import { findOptimalFontSize, getFontPairing, getOptimalLetterSpacing } from '../typography/font-measurement';
 import { validateContrast, autoAdjustContrast, getAccessibleTextColor, getSafeCTAColor } from '../color/contrast-validator';

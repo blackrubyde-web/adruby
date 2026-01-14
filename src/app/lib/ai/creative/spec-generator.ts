@@ -14,7 +14,7 @@ import type {
 import {
     validateCreativeSpec
 } from './types';
-import { buildCreativeSpecPrompt } from './prompts';
+import { buildCreativeSpecPrompt, buildPremiumFixPrompt } from './prompts';
 
 // ============================================================================
 // BUSINESS MODEL INFERENCE
@@ -197,7 +197,7 @@ export async function generateCreativeSpecs(
                 }
 
                 // Parse initial Draft
-                let currentSpec = JSON.parse(content);
+                let currentSpec = JSON.parse(content) as CreativeSpec;
 
                 // =================================================================
                 // PREMIUM FIX STEP (The "High-Fidelity" Pass)
@@ -206,7 +206,6 @@ export async function generateCreativeSpecs(
                 // We only do this if we haven't exceeded budget (it costs ~1 call more).
                 if (totalCost < maxBudgetUSD) {
                     try {
-                        const { buildPremiumFixPrompt } = require('./prompts');
                         const fixPrompt = buildPremiumFixPrompt({
                             spec: currentSpec,
                             templateCapsule: null // No specific template forced yet
@@ -230,13 +229,12 @@ export async function generateCreativeSpecs(
 
                         const fixedContent = fixResponse.choices[0].message.content;
                         if (fixedContent) {
-                            const fixedSpec = JSON.parse(fixedContent);
+                            const fixedSpec = JSON.parse(fixedContent) as Partial<CreativeSpec>;
                             // Merge relevant fields to keep any context the fixer might have dropped (though strictly it shouldn't)
                             // We trust the fixer mostly, but ensure businessModel stays
                             currentSpec = { ...currentSpec, ...fixedSpec, businessModel: currentSpec.businessModel };
                         }
                     } catch (fixError) {
-                        console.warn('Premium Fix failed, falling back to Draft:', fixError);
                         // Fallback to currentSpec (Draft) if fix fails
                     }
                 }

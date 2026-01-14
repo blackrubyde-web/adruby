@@ -150,14 +150,14 @@ export type AssetType = typeof ASSET_TYPES[number];
 
 export interface AssetRequirement {
     type: AssetType;
-    params?: Record<string, any>;
+    params?: Record<string, unknown>;
     optional?: boolean;
 }
 
 // Zod schema for AssetRequirement
 export const AssetRequirementSchema = z.object({
     type: z.enum(ASSET_TYPES),
-    params: z.record(z.any()).optional(),
+    params: z.record(z.unknown()).optional(),
     optional: z.boolean().optional()
 });
 
@@ -272,6 +272,7 @@ export interface CreativeSpec {
         generatedAt?: string;
         seed?: number;
         variant?: number;
+        isPremiumFixed?: boolean;
     };
 }
 

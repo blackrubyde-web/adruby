@@ -5,7 +5,8 @@
  * These prompts drive the LLM to produce deterministic, structured blueprints.
  */
 
-import type { BusinessModel, CreativeSpecRequest } from './types';
+import type { BusinessModel, CreativeSpec, CreativeSpecRequest } from './types';
+import type { TemplateCapsule } from '../../templates/types';
 
 // ============================================================================
 // MASTER PROMPT (UNIVERSAL)
@@ -371,8 +372,8 @@ export function buildCreativeSpecPrompt(
 // ============================================================================
 
 export interface PremiumFixRequest {
-  spec: any; // The raw or validated spec to fix
-  templateCapsule: any; // The target template (optional context)
+  spec: CreativeSpec; // The raw or validated spec to fix
+  templateCapsule: TemplateCapsule | null; // The target template (optional context)
 }
 
 export function buildPremiumFixPrompt(request: PremiumFixRequest): string {

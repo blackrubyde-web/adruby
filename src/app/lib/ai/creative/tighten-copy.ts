@@ -126,21 +126,17 @@ export async function tightenCopy(
 
             if (headlineOk && subheadlineOk && ctaOk) {
                 result = parsed;
-                console.log(`✅ Copy tightened successfully (attempt ${attemptCount + 1})`);
             } else {
-                console.warn(`⚠️ Tightened copy still exceeds limits (attempt ${attemptCount + 1})`);
                 attemptCount++;
             }
 
         } catch (error) {
-            console.error(`❌ Error tightening copy (attempt ${attemptCount + 1}):`, error);
             attemptCount++;
         }
     }
 
     // If all retries failed, apply deterministic truncation as fallback
     if (!result) {
-        console.warn('⚠️ LLM tightening failed, applying deterministic truncation');
         result = {
             headline: copy.headline.substring(0, constraints.headline_max_chars),
             subheadline: copy.subheadline ?
