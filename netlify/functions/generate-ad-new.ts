@@ -82,7 +82,8 @@ function parseAIResponse(content: string): any {
     return JSON.parse(cleaned);
 }
 
-const VISION_IMAGE_DATA_URL = /^data:image\/(png|jpeg|jpg|webp|gif);base64,/i;
+const VISION_IMAGE_DATA_URL = /^data:image\/(png|jpeg|jpg|webp|gif);base64,(.+)$/i;
+const BASE64_BODY = /^[A-Za-z0-9+/]+={0,2}$/;
 const HTTP_URL = /^https?:\/\//i;
 
 function detectImageMime(base64: string): 'image/png' | 'image/jpeg' | 'image/webp' | 'image/gif' | undefined {
@@ -93,15 +94,32 @@ function detectImageMime(base64: string): 'image/png' | 'image/jpeg' | 'image/we
     return undefined;
 }
 
+function normalizeDataUrl(input: string): string | undefined {
+    const match = VISION_IMAGE_DATA_URL.exec(input.trim());
+    if (!match) return undefined;
+    const rawMime = match[1].toLowerCase();
+    const mime = rawMime === 'jpg' ? 'jpeg' : rawMime;
+    const body = match[2].replace(/\s/g, '');
+    if (!BASE64_BODY.test(body)) return undefined;
+    return `data:image/${mime};base64,${body}`;
+}
+
+function normalizeRawBase64(input: string): string | undefined {
+    const compact = input.trim().replace(/\s/g, '');
+    if (!compact || !BASE64_BODY.test(compact)) return undefined;
+    const mime = detectImageMime(compact) ?? 'image/jpeg';
+    return `data:${mime};base64,${compact}`;
+}
+
 function normalizeImageForAssets(input?: string): string | undefined {
     if (!input) return undefined;
     const trimmed = input.trim();
     if (!trimmed) return undefined;
     if (HTTP_URL.test(trimmed)) return trimmed;
-    if (/^data:image\//i.test(trimmed)) return trimmed;
-    const compact = trimmed.replace(/\s/g, '');
-    const mime = detectImageMime(compact) ?? 'image/jpeg';
-    return `data:${mime};base64,${compact}`;
+    if (trimmed.startsWith('data:')) {
+        return normalizeDataUrl(trimmed);
+    }
+    return normalizeRawBase64(trimmed);
 }
 
 function normalizeImageForVision(input?: string): string | undefined {
@@ -110,11 +128,9 @@ function normalizeImageForVision(input?: string): string | undefined {
     if (!trimmed) return undefined;
     if (HTTP_URL.test(trimmed)) return trimmed;
     if (trimmed.startsWith('data:')) {
-        return VISION_IMAGE_DATA_URL.test(trimmed) ? trimmed : undefined;
+        return normalizeDataUrl(trimmed);
     }
-    const compact = trimmed.replace(/\s/g, '');
-    const mime = detectImageMime(compact);
-    return mime ? `data:${mime};base64,${compact}` : undefined;
+    return normalizeRawBase64(trimmed);
 }
 
 // ============================================================================
@@ -396,6 +412,11 @@ const handler: Handler = async (event: HandlerEvent) => {
                     console.log(`✅ Successfully assembled document (quality: ${assemblyResult.finalValidation?.score})`);
                 } else {
                     console.warn(`⚠️ Failed to assemble document after ${assemblyResult.retryContext.currentRetry} retries`);
+                    console.warn(`Last error: ${assemblyResult.retryContext.lastError}`);
+                    if (assemblyResult.retryContext.attempts.length > 0) {
+                        const lastAttempt = assemblyResult.retryContext.attempts[assemblyResult.retryContext.attempts.length - 1];
+                        console.warn(`Last attempt issues:`, lastAttempt.issues);
+                    }
                 }
 
             } catch (error) {
@@ -458,6 +479,7 @@ const handler: Handler = async (event: HandlerEvent) => {
             body: JSON.stringify({
                 success: false,
                 error: error.message || 'Internal server error',
+                stack: error.stack, // DEBUG: Expose stack trace
                 telemetry
             } as GenerateAdResponse),
         };
