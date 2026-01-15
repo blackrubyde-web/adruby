@@ -82,6 +82,41 @@ function parseAIResponse(content: string): any {
     return JSON.parse(cleaned);
 }
 
+const VISION_IMAGE_DATA_URL = /^data:image\/(png|jpeg|jpg|webp|gif);base64,/i;
+const HTTP_URL = /^https?:\/\//i;
+
+function detectImageMime(base64: string): 'image/png' | 'image/jpeg' | 'image/webp' | 'image/gif' | undefined {
+    if (base64.startsWith('/9j/')) return 'image/jpeg';
+    if (base64.startsWith('iVBORw0KGgo')) return 'image/png';
+    if (base64.startsWith('R0lGOD')) return 'image/gif';
+    if (base64.startsWith('UklGR')) return 'image/webp';
+    return undefined;
+}
+
+function normalizeImageForAssets(input?: string): string | undefined {
+    if (!input) return undefined;
+    const trimmed = input.trim();
+    if (!trimmed) return undefined;
+    if (HTTP_URL.test(trimmed)) return trimmed;
+    if (/^data:image\//i.test(trimmed)) return trimmed;
+    const compact = trimmed.replace(/\s/g, '');
+    const mime = detectImageMime(compact) ?? 'image/jpeg';
+    return `data:${mime};base64,${compact}`;
+}
+
+function normalizeImageForVision(input?: string): string | undefined {
+    if (!input) return undefined;
+    const trimmed = input.trim();
+    if (!trimmed) return undefined;
+    if (HTTP_URL.test(trimmed)) return trimmed;
+    if (trimmed.startsWith('data:')) {
+        return VISION_IMAGE_DATA_URL.test(trimmed) ? trimmed : undefined;
+    }
+    const compact = trimmed.replace(/\s/g, '');
+    const mime = detectImageMime(compact);
+    return mime ? `data:${mime};base64,${compact}` : undefined;
+}
+
 // ============================================================================
 // MAIN HANDLER
 // ============================================================================
@@ -152,6 +187,17 @@ const handler: Handler = async (event: HandlerEvent) => {
             console.warn(`⚠️ Invalid tone "${rawTone}", using fallback "professional"`);
         }
 
+        const assetImageBase64 = normalizeImageForAssets(request.imageBase64);
+        const visionImageBase64 = normalizeImageForVision(request.imageBase64);
+
+        if (request.imageBase64 && !assetImageBase64) {
+            console.warn('⚠️ imageBase64 was provided but could not be normalized for assets; skipping product image.');
+        }
+
+        if (request.imageBase64 && !visionImageBase64) {
+            console.warn('⚠️ imageBase64 format is not supported for vision analysis; skipping image analysis.');
+        }
+
         const apiKey = process.env.OPENAI_API_KEY;
         if (!apiKey) {
             throw new Error('OPENAI_API_KEY not configured');
@@ -188,7 +234,7 @@ const handler: Handler = async (event: HandlerEvent) => {
             ratio,
             language,
             groundedFacts,
-            imageBase64: request.imageBase64 // Forward image for Vision Analysis
+            imageBase64: visionImageBase64 // Forward image for Vision Analysis
         };
 
         const specResult = await generateCreativeSpecs(specRequest, {
@@ -234,12 +280,12 @@ const handler: Handler = async (event: HandlerEvent) => {
                 // ✅ FIX 2: Only add productCutout if actually present (not empty string)
                 const availableAssets = {
                     ...renderedAssets,
-                    ...(request.imageBase64 && request.imageBase64.trim() !== '' && { productCutout: request.imageBase64 })
+                    ...(assetImageBase64 && { productCutout: assetImageBase64 })
                 };
 
                 // SMART ASSET PROCESSING
                 // If it's a SaaS/App and we have a user image (screenshot), wrap it in a laptop mock
-                if (businessModel === 'saas' && request.imageBase64) {
+                if (businessModel === 'saas' && assetImageBase64) {
                     console.log('💻 Applying smart laptop mock wrapper for SaaS screenshot');
                     // We need to import renderDeviceMock dynamically or use what's available
                     // Since we can't easily import here without circular deps if not careful, 
@@ -248,7 +294,7 @@ const handler: Handler = async (event: HandlerEvent) => {
                     const { renderDeviceMock } = require('../../src/app/lib/render/asset-registry');
                     try {
                         const mockUrl = renderDeviceMock({
-                            image: request.imageBase64,
+                            image: assetImageBase64,
                             type: 'laptop'
                         });
                         availableAssets.productCutout = mockUrl;
