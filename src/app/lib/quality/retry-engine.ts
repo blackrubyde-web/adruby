@@ -302,11 +302,16 @@ async function assembleDocument(
         // CTA Layer
         else if (layer.type === 'cta') {
             layer.text = applyZoneTextLimits(layer.id, spec.copy.cta);
-            if (palette.length > 2) {
-                layer.bgColor = palette[2] || '#000000'; // Accent color for CTA
+
+            // Set default bgColor if missing
+            if (!layer.bgColor) {
+                layer.bgColor = palette.length > 2 ? palette[2] || '#000000' : '#000000';
             }
-            layer.color = ensureContrast(layer.color || '#FFFFFF', layer.bgColor || baseBackground);
-            layer.fill = layer.color;
+
+            // Ensure text color has good contrast with background
+            const adjustedTextColor = ensureContrast(layer.color || '#FFFFFF', layer.bgColor);
+            layer.color = adjustedTextColor;
+            layer.fill = adjustedTextColor;
         }
 
         // Shape Layers (e.g. Badges)
