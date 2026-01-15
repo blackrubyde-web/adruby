@@ -10,6 +10,7 @@ import {
     ECOMMERCE_LIFESTYLE_MATERIAL,
     SAAS_4_STEP_GRID
 } from './registry-premium';
+import { ECOMMERCE_FEATURE_CALLOUT_DIAGRAM } from './registry-feature-callout';
 
 // ============================================================================
 // E-COMMERCE TEMPLATES (5)
@@ -670,6 +671,9 @@ export const TEMPLATE_REGISTRY: TemplateCapsule[] = [
 
     // SaaS Premium
     SAAS_4_STEP_GRID,
+
+    // NEW: Feature Callout Diagram (YETI/Yoga Mat style)
+    ECOMMERCE_FEATURE_CALLOUT_DIAGRAM,
 
     // ❌ EXCLUDED: registry-extended templates have empty layers
     // ...ADDITIONAL_TEMPLATES
