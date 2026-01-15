@@ -67,6 +67,7 @@ export async function assembleWithRetry(
     };
 
     let currentSpec = { ...spec };
+    let bestCandidate: { document: AdDocument; issues: ValidationIssue[]; score: number } | null = null;
 
     // Try each template in order of score
     for (let templateIndex = 0; templateIndex < Math.min(scoredTemplates.length, maxRetries); templateIndex++) {
@@ -99,6 +100,14 @@ export async function assembleWithRetry(
                 };
 
                 retryContext.attempts.push(attempt);
+
+                if (!hasErrors(issues) && (!bestCandidate || score.overall > bestCandidate.score)) {
+                    bestCandidate = {
+                        document,
+                        issues,
+                        score: score.overall
+                    };
+                }
 
                 // Check if successful
                 if (attempt.success) {
@@ -156,6 +165,18 @@ export async function assembleWithRetry(
     }
 
     // All retries exhausted
+    if (bestCandidate) {
+        return {
+            document: bestCandidate.document,
+            success: true,
+            retryContext,
+            finalValidation: {
+                issues: bestCandidate.issues,
+                score: bestCandidate.score
+            }
+        };
+    }
+
     return {
         document: null,
         success: false,
@@ -208,12 +229,12 @@ async function assembleDocument(
     };
 
     const minContrast = template.layoutConstraints?.minContrast ?? 4.5;
-    const baseBackground = document.backgroundColor || palette[0] || '#FFFFFF';
     const isHexColor = (value: string): boolean =>
         /^#([0-9a-f]{3}|[0-9a-f]{6})$/i.test(value);
     const resolveBackground = (value?: string): string => {
         if (value && isHexColor(value)) return value;
-        if (isHexColor(baseBackground)) return baseBackground;
+        const currentBackground = document.backgroundColor || palette[0];
+        if (currentBackground && isHexColor(currentBackground)) return currentBackground;
         return '#FFFFFF';
     };
     const ensureContrast = (color: string | undefined, background: string | undefined): string => {

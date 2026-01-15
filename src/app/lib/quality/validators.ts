@@ -89,8 +89,9 @@ export function validateTextOverflow(
 
 function estimateLineCount(text: string, fontSize: number, width: number): number {
     const avgCharWidth = fontSize * 0.6;
-    const charsPerLine = Math.floor(width / avgCharWidth);
-    return Math.ceil(text.length / charsPerLine);
+    const charsPerLine = Math.max(1, Math.floor(width / avgCharWidth));
+    const lines = text.split('\n');
+    return lines.reduce((sum, line) => sum + Math.ceil(line.length / charsPerLine), 0);
 }
 
 // ============================================================================
@@ -113,7 +114,9 @@ export function validateCollisions(
 ): ValidationIssue[] {
     const issues: ValidationIssue[] = [];
 
-    const layers = document.layers.filter(layer => layer.visible && layer.type !== 'background');
+    const layers = document.layers.filter(
+        layer => layer.visible && (layer.type === 'text' || layer.type === 'cta' || layer.type === 'logo')
+    );
 
     for (let i = 0; i < layers.length; i++) {
         for (let j = i + 1; j < layers.length; j++) {
