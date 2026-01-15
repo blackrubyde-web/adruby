@@ -209,6 +209,16 @@ async function assembleDocument(
             } else if (layer.role === 'subheadline') {
                 layer.text = spec.copy.subheadline || '';
                 layer.color = textSafe.length > 1 ? textSafe[1] : textSafe[0];
+            } else if (layer.role === 'cta') {
+                layer.text = spec.copy.cta;
+                if (!layer.color && layer.fill) {
+                    layer.color = layer.fill;
+                } else if (!layer.color) {
+                    layer.color = '#FFFFFF';
+                }
+                if (!layer.fill && layer.color) {
+                    layer.fill = layer.color;
+                }
             } else if (layer.role === 'description' || layer.role === 'body') {
                 // If it's a list (benefits), format it
                 if (spec.copy.bullets && spec.copy.bullets.length > 0) {
@@ -235,6 +245,7 @@ async function assembleDocument(
                 layer.bgColor = palette[2] || '#000000'; // Accent color for CTA
             }
             layer.color = '#FFFFFF'; // White text on colored button
+            layer.fill = layer.color;
         }
 
         // Shape Layers (e.g. Badges)
@@ -245,6 +256,48 @@ async function assembleDocument(
                 }
             }
         }
+    }
+
+    const hasCtaLayer = document.layers.some(layer =>
+        layer.visible && (layer.type === 'cta' || (layer.type === 'text' && layer.role === 'cta'))
+    );
+
+    if (!hasCtaLayer && spec.copy.cta) {
+        const docWidth = document.width || 1080;
+        const docHeight = document.height || 1080;
+        const safeMargins = template.layoutConstraints?.safeMargins || { top: 40, right: 40, bottom: 40, left: 40 };
+        const minCtaWidth = template.layoutConstraints?.minCTAWidth || 200;
+        const minCtaHeight = template.layoutConstraints?.minCTAHeight || 60;
+        const ctaWidth = Math.max(minCtaWidth, Math.round(docWidth * 0.4));
+        const ctaHeight = Math.max(minCtaHeight, 60);
+        const ctaX = Math.round((docWidth - ctaWidth) / 2);
+        const ctaY = Math.max(safeMargins.top, Math.round(docHeight - safeMargins.bottom - ctaHeight));
+        const ctaBg = palette.length > 2 ? palette[2] || '#000000' : '#000000';
+
+        document.layers.push({
+            id: `cta_${Date.now()}`,
+            type: 'cta',
+            name: 'CTA',
+            x: ctaX,
+            y: ctaY,
+            width: ctaWidth,
+            height: ctaHeight,
+            zIndex: 50,
+            visible: true,
+            locked: false,
+            rotation: 0,
+            opacity: 1,
+            text: spec.copy.cta,
+            fontFamily: 'Inter',
+            fontWeight: 700,
+            fontSize: Math.max(24, Math.round(ctaHeight * 0.45)),
+            color: '#FFFFFF',
+            fill: '#FFFFFF',
+            align: 'center',
+            bgColor: ctaBg,
+            radius: Math.round(ctaHeight / 2),
+            role: 'cta'
+        });
     }
 
     // 3. INJECT ASSETS

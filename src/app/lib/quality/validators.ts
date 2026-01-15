@@ -383,7 +383,9 @@ export function validateCTA(
 ): ValidationIssue[] {
     const issues: ValidationIssue[] = [];
 
-    const ctaLayers = document.layers.filter(layer => layer.type === 'cta' && layer.visible);
+    const ctaLayers = document.layers.filter(layer =>
+        layer.visible && (layer.type === 'cta' || (layer.type === 'text' && layer.role === 'cta'))
+    );
 
     if (ctaLayers.length === 0) {
         issues.push({
