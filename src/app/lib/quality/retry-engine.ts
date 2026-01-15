@@ -254,6 +254,8 @@ async function assembleDocument(
         document.backgroundColor = palette[0];
     }
 
+    const baseBackground = resolveBackground(document.backgroundColor);
+
     // 2. INJECT CONTENT & APPLY TYPOGRAPHY
     for (const layer of document.layers) {
         // Text Layers

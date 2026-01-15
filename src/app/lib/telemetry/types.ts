@@ -89,19 +89,19 @@ export const PipelineTelemetrySchema = z.object({
 // ============================================================================
 
 export interface DebugArtifacts {
-    specs?: any[];               // Generated CreativeSpecs
-    scoredTemplates?: any[];     // Template scoring results
-    validationResults?: any[];   // Validation results per attempt
-    retryLog?: any[];            // Retry attempt log
-    rawResponses?: any[];        // Raw LLM responses (if enabled)
+    specs?: unknown[];               // Generated CreativeSpecs
+    scoredTemplates?: unknown[];     // Template scoring results
+    validationResults?: unknown[];   // Validation results per attempt
+    retryLog?: unknown[];            // Retry attempt log
+    rawResponses?: unknown[];        // Raw LLM responses (if enabled)
 }
 
 export const DebugArtifactsSchema = z.object({
-    specs: z.array(z.any()).optional(),
-    scoredTemplates: z.array(z.any()).optional(),
-    validationResults: z.array(z.any()).optional(),
-    retryLog: z.array(z.any()).optional(),
-    rawResponses: z.array(z.any()).optional()
+    specs: z.array(z.unknown()).optional(),
+    scoredTemplates: z.array(z.unknown()).optional(),
+    validationResults: z.array(z.unknown()).optional(),
+    retryLog: z.array(z.unknown()).optional(),
+    rawResponses: z.array(z.unknown()).optional()
 });
 
 // ============================================================================

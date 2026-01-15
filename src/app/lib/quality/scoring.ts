@@ -5,7 +5,7 @@
  */
 
 import type { ValidationResult, ValidationIssue, QualityScore } from './types';
-import { getErrorCount, getWarningCount, scoreToGrade } from './types';
+import { getErrorCount, scoreToGrade } from './types';
 
 // ============================================================================
 // QUALITY SCORING

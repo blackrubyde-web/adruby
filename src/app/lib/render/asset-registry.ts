@@ -501,7 +501,7 @@ function escapeXml(text: string): string {
         .replace(/"/g, '&quot;');
 }
 
-function renderAbstractBackground(params: any): string {
+function renderAbstractBackground(params: { width: number; height: number; palette: string[]; style: string }): string {
     const { width, height, palette, style } = params;
 
         // Safety check for palette

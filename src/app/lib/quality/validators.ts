@@ -110,7 +110,7 @@ interface BBox {
  */
 export function validateCollisions(
     document: AdDocument,
-    template: TemplateCapsule
+    _template: TemplateCapsule
 ): ValidationIssue[] {
     const issues: ValidationIssue[] = [];
 

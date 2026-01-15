@@ -58,7 +58,7 @@ export function renderMessengerMock(params: MessengerMockParams): string {
 
     let yPosition = headerHeight + 20;
 
-    const messageBubbles = messages.map((msg, index) => {
+    const messageBubbles = messages.map((msg, _index) => {
         const isUser = msg.sender === 'user';
         const bubbleBg = isUser ? colors.userBubble : colors.botBubble;
         const textColor = isUser ? colors.userText : colors.botText;

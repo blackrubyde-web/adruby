@@ -100,7 +100,7 @@ export function renderTestimonialCard(params: TestimonialCardParams): string {
     fill="${colors.text}"
   >
     <tspan x="20" dy="0">${wrapText(quote, width - 40, 14)[0]}</tspan>
-    ${wrapText(quote, width - 40, 14).slice(1, 3).map((line, i) =>
+    ${wrapText(quote, width - 40, 14).slice(1, 3).map((line, _i) =>
         `<tspan x="20" dy="20">${escapeXml(line)}</tspan>`
     ).join('')}
   </text>
