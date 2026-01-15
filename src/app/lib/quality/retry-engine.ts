@@ -13,6 +13,7 @@ import { validateAdDocument } from './validators';
 import { calculateQualityScore } from './scoring';
 import { hasErrors } from './types';
 import { tightenCopy, needsTightening } from '../ai/creative/tighten-copy';
+import { autoAdjustContrast, getAccessibleTextColor } from '../ai/color/contrast-validator';
 
 // ============================================================================
 // ASSEMBLY CONTEXT
@@ -188,6 +189,39 @@ async function assembleDocument(
     const palette = spec.style.palette || ['#000000', '#FFFFFF', '#FF0000'];
     const textSafe = spec.style.textSafe || ['#000000', '#FFFFFF'];
 
+    const applyZoneTextLimits = (layerId: string, text: string): string => {
+        const zone = template.zones.find(z => z.layerId === layerId);
+        if (!zone || !zone.rules) return text;
+
+        let result = text;
+        if (zone.rules.maxLines && result.includes('\n')) {
+            const lines = result.split('\n');
+            if (lines.length > zone.rules.maxLines) {
+                result = lines.slice(0, zone.rules.maxLines).join('\n');
+            }
+        }
+        if (zone.rules.maxChars && result.length > zone.rules.maxChars) {
+            result = result.slice(0, zone.rules.maxChars).trim();
+        }
+
+        return result;
+    };
+
+    const minContrast = template.layoutConstraints?.minContrast ?? 4.5;
+    const baseBackground = document.backgroundColor || palette[0] || '#FFFFFF';
+    const isHexColor = (value: string): boolean =>
+        /^#([0-9a-f]{3}|[0-9a-f]{6})$/i.test(value);
+    const resolveBackground = (value?: string): string => {
+        if (value && isHexColor(value)) return value;
+        if (isHexColor(baseBackground)) return baseBackground;
+        return '#FFFFFF';
+    };
+    const ensureContrast = (color: string | undefined, background: string | undefined): string => {
+        const bg = resolveBackground(background);
+        const base = color && isHexColor(color) ? color : getAccessibleTextColor(bg);
+        return autoAdjustContrast(base, bg, minContrast);
+    };
+
     // Background Color
     const bgLayer = document.layers.find((layer): layer is ImageLayer => layer.type === 'background');
     if (bgLayer && !bgLayer.src && palette[0]) {
@@ -204,13 +238,13 @@ async function assembleDocument(
         // Text Layers
         if (layer.type === 'text') {
             if (layer.role === 'headline') {
-                layer.text = spec.copy.headline;
+                layer.text = applyZoneTextLimits(layer.id, spec.copy.headline);
                 layer.color = textSafe[0]; // Primary text color
             } else if (layer.role === 'subheadline') {
-                layer.text = spec.copy.subheadline || '';
+                layer.text = applyZoneTextLimits(layer.id, spec.copy.subheadline || '');
                 layer.color = textSafe.length > 1 ? textSafe[1] : textSafe[0];
             } else if (layer.role === 'cta') {
-                layer.text = spec.copy.cta;
+                layer.text = applyZoneTextLimits(layer.id, spec.copy.cta);
                 if (!layer.color && layer.fill) {
                     layer.color = layer.fill;
                 } else if (!layer.color) {
@@ -222,29 +256,33 @@ async function assembleDocument(
             } else if (layer.role === 'description' || layer.role === 'body') {
                 // If it's a list (benefits), format it
                 if (spec.copy.bullets && spec.copy.bullets.length > 0) {
-                    layer.text = spec.copy.bullets.map(b => `✓ ${b}`).join('\n');
+                    layer.text = applyZoneTextLimits(layer.id, spec.copy.bullets.map(b => `✓ ${b}`).join('\n'));
                 } else {
-                    layer.text = spec.copy.body || '';
+                    layer.text = applyZoneTextLimits(layer.id, spec.copy.body || '');
                 }
                 layer.color = textSafe.length > 1 ? textSafe[1] : textSafe[0];
             } else if (layer.role === 'social_proof') {
-                layer.text = spec.copy.proofLine || '';
+                layer.text = applyZoneTextLimits(layer.id, spec.copy.proofLine || '');
                 layer.color = textSafe.length > 1 ? textSafe[1] : textSafe[0];
             } else if (layer.role === 'badge' || layer.role === 'offer') {
                 if (spec.groundedFacts?.offer) {
-                    layer.text = spec.groundedFacts.offer;
+                    layer.text = applyZoneTextLimits(layer.id, spec.groundedFacts.offer);
                 }
                 layer.color = '#FFFFFF'; // Badges usually white text
             }
+
+            const adjusted = ensureContrast(layer.color || layer.fill, baseBackground);
+            layer.color = adjusted;
+            layer.fill = adjusted;
         }
 
         // CTA Layer
         else if (layer.type === 'cta') {
-            layer.text = spec.copy.cta;
+            layer.text = applyZoneTextLimits(layer.id, spec.copy.cta);
             if (palette.length > 2) {
                 layer.bgColor = palette[2] || '#000000'; // Accent color for CTA
             }
-            layer.color = '#FFFFFF'; // White text on colored button
+            layer.color = ensureContrast(layer.color || '#FFFFFF', layer.bgColor || baseBackground);
             layer.fill = layer.color;
         }
 
