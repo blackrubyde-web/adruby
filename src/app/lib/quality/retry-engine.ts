@@ -243,15 +243,21 @@ async function assembleDocument(
         return autoAdjustContrast(base, bg, minContrast);
     };
 
-    // Background Color
+    // Background Color & Image
     const bgLayer = document.layers.find((layer): layer is ImageLayer => layer.type === 'background');
-    if (bgLayer && !bgLayer.src && palette[0]) {
-        bgLayer.fill = palette[0];
-        // If palette has a specific background color intended, use that. 
-        // Usually palette[0] is primary, palette[1] secondary. 
-        // Let's look for a light/dark mode preference or just default to white/off-white if not specified, 
-        // but here we want to use the AI's suggestion.
-        document.backgroundColor = palette[0];
+    if (bgLayer) {
+        // Priority: 1) Background asset 2) Palette color 3) Fallback white
+        if (availableAssets['background']) {
+            bgLayer.src = availableAssets['background'];
+            bgLayer.fit = 'cover'; // Fill entire canvas
+            document.backgroundColor = palette[0] || '#F5F5F5';
+        } else if (!bgLayer.src && palette[0]) {
+            bgLayer.fill = palette[0];
+            document.backgroundColor = palette[0];
+        } else if (!bgLayer.src && !bgLayer.fill) {
+            bgLayer.fill = '#F5F5F5'; // Fallback to light gray
+            document.backgroundColor = '#F5F5F5';
+        }
     }
 
     const baseBackground = resolveBackground(document.backgroundColor);
@@ -430,6 +436,15 @@ async function assembleDocument(
 
             if (assetType && availableAssets[assetType]) {
                 layer.src = availableAssets[assetType];
+
+                // ✅ CRITICAL FIX: Preserve aspect ratio for product/image layers
+                if (layer.type === 'product' || layer.type === 'image') {
+                    layer.fit = 'contain'; // Prevent squashing - maintain aspect ratio
+                }
+                // Background layers should fill
+                else if (layer.type === 'background') {
+                    layer.fit = 'cover';
+                }
             }
         }
     }
