@@ -18,7 +18,7 @@ export const NormalizedBriefSchema = z
     brand: z.object({ name: z.string().min(1) }),
     product: z.object({
       name: z.string().min(1),
-      url: z.string().url().nullable(),
+      url: z.string().nullable(),
       category: z.string().nullable(),
     }),
     goal: GoalEnum,
