@@ -153,6 +153,29 @@ const CtaItem = ({ layer }: { layer: CtaLayer }) => {
 };
 
 const ShapeItem = ({ layer }: { layer: ShapeLayer }) => {
+    // If layer has a path, render as Line (for arrows, curves, etc)
+    if (layer.path) {
+        // Parse SVG path to points for Konva Line
+        // Simple path parser for basic paths like "M 0 20 L 50 80" or "M 0 20 Q 50 20 100 60"
+        const points = parseSVGPathToPoints(layer.path);
+
+        return (
+            <Line
+                points={points}
+                stroke={layer.stroke || layer.fill}
+                strokeWidth={layer.strokeWidth || 2}
+                opacity={layer.opacity}
+                shadowColor={layer.shadowColor}
+                shadowBlur={layer.shadowBlur}
+                shadowOffsetX={layer.shadowOffsetX}
+                shadowOffsetY={layer.shadowOffsetY}
+                lineCap="round"
+                lineJoin="round"
+            />
+        );
+    }
+
+    // Otherwise render as Rect (default)
     return (
         <Rect
             x={0}
@@ -171,6 +194,39 @@ const ShapeItem = ({ layer }: { layer: ShapeLayer }) => {
         />
     );
 };
+
+// Helper: Parse simple SVG path to Konva points array
+function parseSVGPathToPoints(path: string): number[] {
+    const points: number[] = [];
+    const commands = path.match(/[MLQ]\s*[-\d.\s,]+/gi) || [];
+
+    commands.forEach(cmd => {
+        const type = cmd[0];
+        const coords = cmd.slice(1).trim().split(/[\s,]+/).map(Number);
+
+        if (type === 'M' || type === 'L') {
+            // Move or Line: add x, y
+            points.push(coords[0], coords[1]);
+        } else if (type === 'Q') {
+            // Quadratic curve: approximate with multiple points
+            // Q has control point + end point
+            if (points.length >= 2) {
+                const startX = points[points.length - 2];
+                const startY = points[points.length - 1];
+                const [cpX, cpY, endX, endY] = coords;
+
+                // Sample 10 points along the curve
+                for (let t = 0.1; t <= 1; t += 0.1) {
+                    const x = (1 - t) * (1 - t) * startX + 2 * (1 - t) * t * cpX + t * t * endX;
+                    const y = (1 - t) * (1 - t) * startY + 2 * (1 - t) * t * cpY + t * t * endY;
+                    points.push(x, y);
+                }
+            }
+        }
+    });
+
+    return points;
+}
 
 // Recursive Layer Node
 const LayerNode = ({
