@@ -91,12 +91,6 @@ function estimateLines(text: string, charsPerLine: number): number {
     return Math.ceil(text.length / charsPerLine);
 }
 
-function estimateLinesWithFont(text: string, fontSize: number, width: number): number {
-    const avgCharWidth = fontSize * 0.6; // approximate
-    const charsPerLine = Math.floor(width / avgCharWidth);
-    return Math.ceil(text.length / charsPerLine);
-}
-
 // ============================================================================
 // TEMPLATE SCORING
 // ============================================================================
@@ -325,7 +319,7 @@ function scoreStyleHarmony(
 
     // Check forbidden styles
     if (spec.style.forbiddenStyles) {
-        const hasForbidden = spec.style.forbiddenStyles.some(style => {
+        const hasForbidden = spec.style.forbiddenStyles.some(_style => {
             // Check if template violates forbidden styles
             // (This would need template metadata about style features)
             return false; // Placeholder

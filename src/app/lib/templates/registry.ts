@@ -1,6 +1,5 @@
 import type { TemplateCapsule } from './types';
-import type { AdDocument } from '../../types/studio';
-import { ADDITIONAL_TEMPLATES } from './registry-extended';
+import type { BusinessModel, CreativePattern } from '../ai/creative/types';
 import { ECOMMERCE_FEATURE_SCATTER } from './registry-feature';
 import {
     ECOMMERCE_RETAIL_LAUNCH,
@@ -694,10 +693,10 @@ export function getTemplateById(id: string): TemplateCapsule | undefined {
  * Get templates by business model
  */
 export function getTemplatesByBusinessModel(
-    businessModel: string
+    businessModel: BusinessModel
 ): TemplateCapsule[] {
     return TEMPLATE_REGISTRY.filter(t =>
-        t.supportedBusinessModels.includes(businessModel as any)
+        t.supportedBusinessModels.includes(businessModel)
     );
 }
 
@@ -705,10 +704,10 @@ export function getTemplatesByBusinessModel(
  * Get templates by pattern
  */
 export function getTemplatesByPattern(
-    pattern: string
+    pattern: CreativePattern
 ): TemplateCapsule[] {
     return TEMPLATE_REGISTRY.filter(t =>
-        t.supportedPatterns.includes(pattern as any)
+        t.supportedPatterns.includes(pattern)
     );
 }
 

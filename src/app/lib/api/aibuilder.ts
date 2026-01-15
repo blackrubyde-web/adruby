@@ -3,8 +3,8 @@
  * Client-seitige API für Netlify Functions
  */
 
-import { supabase } from '../lib/supabaseClient';
-import type { AdGenerationParams, AdGenerationResponse, TranscriptionResponse } from '../types/aibuilder';
+import { supabase } from '../supabaseClient';
+import type { AdGenerationParams, AdGenerationResponse, TranscriptionResponse } from '../../types/aibuilder';
 
 const API_BASE = '/.netlify/functions';
 

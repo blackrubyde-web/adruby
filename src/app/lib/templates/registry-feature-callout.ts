@@ -37,14 +37,14 @@ export const ECOMMERCE_FEATURE_CALLOUT_DIAGRAM: TemplateCapsule = {
             layerId: 'product'
         },
         // 6 Feature Callout positions (radial around product)
-        { id: 'feature', bbox: { x: 60, y: 220, width: 200, height: 80 }, rules: {}, contentType: 'text', layerId: 'featureTopLeft' },
-        { id: 'feature', bbox: { x: 820, y: 220, width: 200, height: 80 }, rules: {}, contentType: 'text', layerId: 'featureTopRight' },
-        { id: 'feature', bbox: { x: 50, y: 480, width: 200, height: 80 }, rules: {}, contentType: 'text', layerId: 'featureLeft' },
-        { id: 'feature', bbox: { x: 830, y: 480, width: 200, height: 80 }, rules: {}, contentType: 'text', layerId: 'featureRight' },
-        { id: 'feature', bbox: { x: 60, y: 800, width: 200, height: 80 }, rules: {}, contentType: 'text', layerId: 'featureBottomLeft' },
-        { id: 'feature', bbox: { x: 820, y: 800, width: 200, height: 80 }, rules: {}, contentType: 'text', layerId: 'featureBottomRight' },
+        { id: 'secondary', bbox: { x: 60, y: 220, width: 200, height: 80 }, rules: {}, contentType: 'text', layerId: 'featureTopLeft' },
+        { id: 'secondary', bbox: { x: 820, y: 220, width: 200, height: 80 }, rules: {}, contentType: 'text', layerId: 'featureTopRight' },
+        { id: 'secondary', bbox: { x: 50, y: 480, width: 200, height: 80 }, rules: {}, contentType: 'text', layerId: 'featureLeft' },
+        { id: 'secondary', bbox: { x: 830, y: 480, width: 200, height: 80 }, rules: {}, contentType: 'text', layerId: 'featureRight' },
+        { id: 'secondary', bbox: { x: 60, y: 800, width: 200, height: 80 }, rules: {}, contentType: 'text', layerId: 'featureBottomLeft' },
+        { id: 'secondary', bbox: { x: 820, y: 800, width: 200, height: 80 }, rules: {}, contentType: 'text', layerId: 'featureBottomRight' },
         {
-            id: 'footer',
+            id: 'body',
             bbox: { x: 280, y: 940, width: 520, height: 100 },
             rules: { priority: 8 },
             contentType: 'text',

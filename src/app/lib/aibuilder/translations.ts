@@ -2,7 +2,12 @@
  * AI Ad Builder - Translations (DE/EN)
  */
 
-export const translations = {
+interface TranslationNode {
+    [key: string]: string | TranslationNode;
+}
+type TranslationLanguage = 'de' | 'en';
+
+export const translations: Record<TranslationLanguage, TranslationNode> = {
     de: {
         // Page Title
         pageTitle: 'AI Ad Builder',
@@ -150,12 +155,21 @@ export const translations = {
     },
 };
 
-export function t(key, lang = 'de', replacements = {}) {
+export function t(
+    key: string,
+    lang: TranslationLanguage = 'de',
+    replacements: Record<string, string | number> = {}
+): string {
     const keys = key.split('.');
-    let value = translations[lang];
+    let value: string | TranslationNode | undefined = translations[lang];
 
     for (const k of keys) {
-        value = value?.[k];
+        if (value && typeof value === 'object' && k in value) {
+            value = value[k];
+        } else {
+            value = undefined;
+            break;
+        }
     }
 
     if (typeof value !== 'string') return key;
