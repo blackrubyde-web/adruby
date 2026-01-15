@@ -380,7 +380,7 @@ const handler: Handler = async (event: HandlerEvent) => {
                     availableAssets,
                     apiKey,
                     maxRetries: 3,
-                    minQualityScore: 70
+                    minQualityScore: 50  // Lowered from 70 to allow best-candidate fallback
                 };
 
                 const assemblyResult: AssemblyResult = await assembleWithRetry(assemblyContext);
