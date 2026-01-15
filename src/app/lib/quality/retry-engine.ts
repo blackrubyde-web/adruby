@@ -324,8 +324,13 @@ async function assembleDocument(
         }
     }
 
+    // Check if CTA already exists (prevent duplicates)
     const hasCtaLayer = document.layers.some(layer =>
-        layer.visible && (layer.type === 'cta' || (layer.type === 'text' && layer.role === 'cta'))
+        layer.visible && (
+            layer.type === 'cta' ||
+            (layer.type === 'text' && layer.role === 'cta') ||
+            layer.role === 'cta'
+        )
     );
 
     if (!hasCtaLayer && spec.copy.cta) {

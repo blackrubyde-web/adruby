@@ -22,10 +22,35 @@ export interface ContrastResult {
 }
 
 /**
+ * Normalize color input (handle transparent, rgb, etc)
+ */
+function normalizeColor(color: string): string | null {
+    if (!color || color.toLowerCase() === 'transparent' || color === 'none') {
+        return null; // Cannot calculate contrast for transparent
+    }
+
+    // Already hex
+    if (/^#[0-9a-f]{6}$/i.test(color)) {
+        return color;
+    }
+
+    // 3-digit hex
+    if (/^#[0-9a-f]{3}$/i.test(color)) {
+        const [, r, g, b] = /^#([0-9a-f])([0-9a-f])([0-9a-f])$/i.exec(color)!;
+        return `#${r}${r}${g}${g}${b}${b}`;
+    }
+
+    return null; // Unsupported format
+}
+
+/**
  * Convert hex color to RGB
  */
 function hexToRgb(hex: string): { r: number; g: number; b: number } | null {
-    const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+    const normalized = normalizeColor(hex);
+    if (!normalized) return null;
+
+    const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(normalized);
     return result ? {
         r: parseInt(result[1], 16),
         g: parseInt(result[2], 16),
@@ -65,8 +90,16 @@ function getLuminance(color: string): number {
  * Calculate contrast ratio between two colors (WCAG formula)
  */
 export function getContrastRatio(foreground: string, background: string): number {
-    const lum1 = getLuminance(foreground);
-    const lum2 = getLuminance(background);
+    // Handle invalid/transparent colors
+    const fgNorm = normalizeColor(foreground);
+    const bgNorm = normalizeColor(background);
+
+    if (!fgNorm || !bgNorm) {
+        return 1; // Minimum contrast for invalid colors
+    }
+
+    const lum1 = getLuminance(fgNorm);
+    const lum2 = getLuminance(bgNorm);
 
     const lighter = Math.max(lum1, lum2);
     const darker = Math.min(lum1, lum2);
