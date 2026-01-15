@@ -1,5 +1,5 @@
 import { memo, useCallback, useState } from 'react';
-import { BarChart3, Layers, Brain, Settings, LogOut, X, BarChart2, Gift, BookOpen, Palette, Shield, type LucideIcon } from 'lucide-react';
+import { BarChart3, Layers, Brain, Settings, LogOut, X, BarChart2, Gift, BookOpen, Palette, Shield, Wand2, type LucideIcon } from 'lucide-react';
 import { PageType } from '../App';
 import { useAdmin } from '../contexts/AdminContext';
 import { cn } from '../lib/utils';
@@ -18,12 +18,14 @@ type NavItem = {
   icon: LucideIcon;
   label: string;
   page: PageType;
+  badge?: string;
 };
 
 const CORE_WORKFLOW: NavItem[] = [
   { icon: BarChart3, label: 'Dashboard', page: 'dashboard' },
   { icon: BarChart2, label: 'Analytics', page: 'analytics' },
   { icon: Palette, label: 'Creative Studio', page: 'studio' },
+  { icon: Wand2, label: 'AI Ad Builder', page: 'aibuilder', badge: 'New' },
   { icon: Layers, label: 'Campaigns', page: 'campaigns' },
   { icon: Brain, label: 'AI Analysis', page: 'aianalysis' },
   { icon: BookOpen, label: 'Creative Library', page: 'library' },
@@ -95,6 +97,13 @@ export const Sidebar = memo(function Sidebar({
         >
           {item.label}
         </span>
+
+        {/* Badge for "New" items */}
+        {item.badge && showLabels && (
+          <span className="ml-auto px-1.5 py-0.5 text-[10px] font-bold bg-primary/20 text-primary rounded uppercase tracking-wide">
+            {item.badge}
+          </span>
+        )}
       </button>
     );
   }, [currentPage, handleNavigate, showLabels, isMobileOpen]);

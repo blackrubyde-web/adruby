@@ -90,7 +90,8 @@ export type PageType =
   | 'affiliate'
   | 'profile'
   | 'help'
-  | 'studio'  // ✅ ONLY /studio - removed adbuilder to avoid confusion
+  | 'studio'
+  | 'aibuilder'  // AI Ad Builder
   | 'admin'
   | 'campaign-canvas';
 
@@ -115,7 +116,8 @@ const PAGE_PATHS: Record<PageType, string> = {
   affiliate: '/affiliate',
   profile: '/profile',
   help: '/help',
-  studio: '/studio',  // ✅ ONLY /studio path
+  studio: '/studio',
+  aibuilder: '/aibuilder',  // AI Ad Builder path
   admin: '/admin',
   'campaign-canvas': '/campaign-canvas',
 };
@@ -330,12 +332,21 @@ const DashboardPageContent = memo(function DashboardPageContent({
           <Footer />
         </div>
       );
-    case 'studio':  // ✅ ONLY studio
+    case 'studio':
       return (
         <div className="min-h-screen bg-background flex flex-col">
           <Suspense fallback={pageFallback}>
             <LazyStudioPage />
           </Suspense>
+        </div>
+      );
+    case 'aibuilder':
+      return (
+        <div className="min-h-screen pt-0 md:pt-[var(--header-height)]">
+          <Suspense fallback={pageFallback}>
+            <LazyAIAdBuilderPage />
+          </Suspense>
+          <Footer />
         </div>
       );
     case 'admin':
@@ -369,6 +380,9 @@ const LazyAIAnalysisPage = lazy(() =>
 );
 const LazyStudioPage = lazy(() =>
   import('./components/StudioPage').then((mod) => ({ default: mod.StudioPage }))
+);
+const LazyAIAdBuilderPage = lazy(() =>
+  import('./components/AIAdBuilderPage').then((mod) => ({ default: mod.AIAdBuilderPage }))
 );
 const LazyAdminDashboardPage = lazy(() =>
   import('./components/AdminDashboardPage').then((mod) => ({ default: mod.AdminDashboardPage }))

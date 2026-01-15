@@ -1,0 +1,29 @@
+{
+    "name": "ai-ad-builder-backend",
+    "version": "1.0.0",
+    "description": "Backend für AI Ad Builder mit OpenAI Integration",
+    "main": "server.js",
+    "type": "module",
+    "scripts": {
+        "start": "node server.js",
+        "dev": "node --watch server.js"
+    },
+    "keywords": [
+        "ai",
+        "ads",
+        "openai",
+        "marketing"
+    ],
+    "author": "",
+    "license": "MIT",
+    "dependencies": {
+        "express": "^4.18.2",
+        "cors": "^2.8.5",
+        "dotenv": "^16.3.1",
+        "openai": "^4.25.0",
+        "multer": "^1.4.5-lts.1",
+        "sharp": "^0.33.1",
+        "form-data": "^4.0.0",
+        "uuid": "^9.0.1"
+    }
+}
