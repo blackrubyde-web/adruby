@@ -1,23 +1,25 @@
 /**
- * AI Ad Builder - Enhanced Main Generation Function
- * 100% improved with retry logic, caching, parallel processing, quality scoring
+ * AI Ad Builder - Enterprise Main Generation Function
+ * Full enterprise support: validation, credit reservation, rate limiting, DB persistence
  */
 
 import { getOpenAiClient, getOpenAiModel, generateHeroImage } from './_shared/openai.js';
 import { buildPromptFromForm, buildPromptFromFreeText, enhanceImagePrompt } from './_shared/aiAdPromptBuilder.js';
 import { getUserProfile } from './_shared/auth.js';
-import { assertAndConsumeCredits } from './_shared/credits.js';
+import { CREDIT_COSTS, reserveCredits, confirmCredits, refundCredits, checkRateLimit } from './_shared/credits.js';
 import { supabaseAdmin } from './_shared/clients.js';
 import { withRetry } from './_shared/aiAd/retry.js';
 import { scoreAdQuality, validateAdContent, predictEngagement } from './_shared/aiAd/quality-scorer.js';
 import { adCache } from './_shared/aiAd/cache.js';
+import { validateAdRequest } from './_shared/aiAd/schemas.js';
 
-const CREDIT_COST = 10;
 const QUALITY_THRESHOLD = 7;
-const MAX_RETRIES = 2;
+const MAX_QUALITY_RETRIES = 2;
+const ACTION_NAME = 'ai_ad_generate';
 
 export const handler = async (event) => {
     const startTime = Date.now();
+    let creditReservation = null;
 
     // CORS Headers
     const headers = {
@@ -40,10 +42,33 @@ export const handler = async (event) => {
     }
 
     try {
-        const body = JSON.parse(event.body || '{}');
-        const { mode, language = 'de' } = body;
+        // 1. Parse and validate input with Zod
+        let rawBody;
+        try {
+            rawBody = JSON.parse(event.body || '{}');
+        } catch {
+            return {
+                statusCode: 400,
+                headers,
+                body: JSON.stringify({ error: 'Invalid JSON body' }),
+            };
+        }
 
-        // Auth & Credit Check
+        const validation = validateAdRequest(rawBody);
+        if (!validation.success) {
+            return {
+                statusCode: 400,
+                headers,
+                body: JSON.stringify({
+                    error: 'Validation failed',
+                    details: validation.error.details
+                }),
+            };
+        }
+        const body = validation.data;
+        const { mode, language } = body;
+
+        // 2. Authenticate user
         const authHeader = event.headers.authorization || event.headers.Authorization;
         const user = await getUserProfile(authHeader);
 
@@ -55,43 +80,48 @@ export const handler = async (event) => {
             };
         }
 
-        if (user.credits < CREDIT_COST) {
+        console.log('[AI Ad Generate] Request from user:', user.id, 'mode:', mode);
+
+        // 3. Rate limiting check
+        const rateLimit = await checkRateLimit(user.id, ACTION_NAME);
+        if (!rateLimit.ok) {
+            return {
+                statusCode: 429,
+                headers,
+                body: JSON.stringify({
+                    error: 'Rate limit exceeded',
+                    reason: rateLimit.reason,
+                    retryAfter: rateLimit.resetInSeconds
+                }),
+            };
+        }
+
+        // 4. Reserve credits BEFORE generation
+        const creditCost = CREDIT_COSTS[ACTION_NAME];
+        try {
+            creditReservation = await reserveCredits(user.id, ACTION_NAME);
+        } catch (creditError) {
             return {
                 statusCode: 402,
                 headers,
                 body: JSON.stringify({
                     error: 'Insufficient credits',
-                    required: CREDIT_COST,
-                    available: user.credits,
+                    message: creditError.message,
+                    required: creditCost,
+                    available: user.credits
                 }),
             };
         }
 
-        // Build Prompts
+        // 5. Build prompts
         let promptData;
         if (mode === 'form') {
             promptData = buildPromptFromForm(body);
-        } else if (mode === 'free') {
-            const { text, template } = body;
-            if (!text) {
-                return {
-                    statusCode: 400,
-                    headers,
-                    body: JSON.stringify({ error: 'Missing text for free mode' }),
-                };
-            }
-            promptData = buildPromptFromFreeText(text, template, language);
         } else {
-            return {
-                statusCode: 400,
-                headers,
-                body: JSON.stringify({ error: 'Invalid mode' }),
-            };
+            promptData = buildPromptFromFreeText(body.text, body.template, language);
         }
 
-        console.log('[AI Ad Generate] Starting generation for user:', user.id, 'mode:', mode);
-
-        // Check cache
+        // 6. Check cache
         const cacheKey = adCache.generateKey('ad', {
             mode,
             language,
@@ -102,6 +132,8 @@ export const handler = async (event) => {
         const cached = adCache.get(cacheKey);
         if (cached) {
             console.log('[AI Ad Generate] Cache HIT - returning cached result');
+            // Refund credits for cached results
+            await refundCredits(creditReservation);
             return {
                 statusCode: 200,
                 headers,
@@ -120,16 +152,15 @@ export const handler = async (event) => {
         const openai = getOpenAiClient();
         const model = getOpenAiModel();
 
-        // Quality loop: retry if quality score too low
+        // 7. Quality loop: retry if quality score too low
         let adCopy;
         let qualityScore;
         let attempt = 0;
 
-        while (attempt < MAX_RETRIES) {
+        while (attempt < MAX_QUALITY_RETRIES) {
             attempt++;
-            console.log(`[AI Ad Generate] Quality attempt ${attempt}/${MAX_RETRIES}`);
+            console.log(`[AI Ad Generate] Quality attempt ${attempt}/${MAX_QUALITY_RETRIES}`);
 
-            // GPT-4 for Ad Copy with retry logic
             const copyResponse = await withRetry(
                 async () => {
                     return await openai.chat.completions.create({
@@ -139,7 +170,7 @@ export const handler = async (event) => {
                             { role: 'user', content: promptData.user },
                         ],
                         response_format: { type: 'json_object' },
-                        temperature: 0.7 + (attempt * 0.1), // Increase creativity on retries
+                        temperature: 0.7 + (attempt * 0.1),
                         max_tokens: 1000,
                     });
                 },
@@ -148,35 +179,33 @@ export const handler = async (event) => {
 
             adCopy = JSON.parse(copyResponse.choices[0].message.content);
 
-            // Validate structure
             try {
                 validateAdContent(adCopy);
             } catch (err) {
                 console.warn('[AI Ad Generate] Invalid structure:', err.message);
-                if (attempt === MAX_RETRIES) throw err;
+                if (attempt === MAX_QUALITY_RETRIES) throw err;
                 continue;
             }
 
-            // Score quality
             const quality = scoreAdQuality(adCopy);
             qualityScore = quality.score;
 
             console.log('[AI Ad Generate] Quality score:', qualityScore, 'Issues:', quality.issues);
 
-            if (quality.passed || attempt === MAX_RETRIES) {
-                break; // Accept result
+            if (quality.passed || attempt === MAX_QUALITY_RETRIES) {
+                break;
             }
 
             console.log('[AI Ad Generate] Quality too low, retrying...');
         }
 
-        // Parallel: Generate image while we have the copy
+        // 8. Generate image
         const enhancedImagePrompt = enhanceImagePrompt(
             adCopy.imagePrompt || promptData.user,
             promptData.template
         );
 
-        console.log('[AI Ad Generate] Starting parallel image generation');
+        console.log('[AI Ad Generate] Starting image generation');
 
         const imageResult = await withRetry(
             async () => {
@@ -189,7 +218,7 @@ export const handler = async (event) => {
             { maxRetries: 2, initialDelay: 2000 }
         );
 
-        // Upload to Supabase Storage
+        // 9. Upload to Supabase Storage
         const timestamp = Date.now();
         const filename = `ai-ad-${user.id}-${timestamp}.png`;
         const storagePath = `ai-ads/${filename}`;
@@ -206,7 +235,6 @@ export const handler = async (event) => {
             throw new Error('Image upload failed: ' + uploadError.message);
         }
 
-        // Get public URL
         const { data: urlData } = supabaseAdmin.storage
             .from('creative-images')
             .getPublicUrl(storagePath);
@@ -215,17 +243,48 @@ export const handler = async (event) => {
 
         console.log('[AI Ad Generate] Image uploaded:', imageUrl);
 
-        // Predict engagement
-        const engagementScore = predictEngagement(adCopy, body.targetAudience);
+        // 10. Predict engagement (returns object with score, factors, prediction)
+        const engagement = predictEngagement(adCopy, body.targetAudience);
+        const engagementScore = engagement.score;
 
-        // Deduct credits using existing credit system
-        try {
-            await assertAndConsumeCredits(user.id, 'creative_generate');
-        } catch (creditError) {
-            console.warn('[AI Ad Generate] Credit deduction failed (non-blocking):', creditError.message);
+        // 11. Confirm credits (generation successful)
+        await confirmCredits(creditReservation);
+
+        // Get quality grade from score
+        const quality = scoreAdQuality(adCopy);
+        const qualityGrade = quality.grade;
+
+        // 12. Save to database
+        const generationRecord = {
+            user_id: user.id,
+            type: 'ad',
+            input: { mode, language, template: body.template, ...body },
+            output: {
+                headline: adCopy.headline,
+                slogan: adCopy.slogan,
+                description: adCopy.description,
+                cta: adCopy.cta,
+                imageUrl,
+                imagePrompt: adCopy.imagePrompt,
+                qualityGrade,
+                engagementFactors: engagement.factors
+            },
+            quality_score: qualityScore,
+            engagement_score: engagementScore,
+            credits_used: creditCost,
+            template_id: promptData.template.id,
+            generation_time_ms: Date.now() - startTime
+        };
+
+        const { error: saveError } = await supabaseAdmin
+            .from('ai_generations')
+            .insert(generationRecord);
+
+        if (saveError) {
+            console.error('[AI Ad Generate] DB save failed (non-blocking):', saveError.message);
         }
 
-        // Prepare response
+        // 13. Prepare response
         const result = {
             success: true,
             data: {
@@ -236,7 +295,7 @@ export const handler = async (event) => {
                 imageUrl,
                 imagePrompt: adCopy.imagePrompt,
                 template: promptData.template.id,
-                creditsUsed: CREDIT_COST,
+                creditsUsed: creditCost,
                 qualityScore,
                 engagementScore,
             },
@@ -248,9 +307,9 @@ export const handler = async (event) => {
             },
         };
 
-        // Cache result (don't cache if quality was poor)
+        // 14. Cache result if quality is good
         if (qualityScore >= QUALITY_THRESHOLD) {
-            adCache.set(cacheKey, result, 3600000); // 1 hour
+            adCache.set(cacheKey, result, 3600000);
         }
 
         console.log('[AI Ad Generate] SUCCESS - Time:', result.metadata.generationTime, 'ms');
@@ -263,6 +322,12 @@ export const handler = async (event) => {
 
     } catch (error) {
         console.error('[AI Ad Generate] Error:', error);
+
+        // REFUND credits on failure
+        if (creditReservation) {
+            await refundCredits(creditReservation);
+            console.log('[AI Ad Generate] Credits refunded due to error');
+        }
 
         // Categorize error
         let errorMessage = 'Ad generation failed';
@@ -277,6 +342,9 @@ export const handler = async (event) => {
         } else if (error.message?.includes('timeout')) {
             errorMessage = 'Generation took too long. Please try again.';
             statusCode = 504;
+        } else if (error.message?.includes('Insufficient credits')) {
+            errorMessage = error.message;
+            statusCode = 402;
         }
 
         return {
