@@ -6,8 +6,8 @@
 import { getOpenAiClient, getOpenAiModel, generateHeroImage } from './_shared/openai.js';
 import { buildPromptFromForm, buildPromptFromFreeText, enhanceImagePrompt } from './_shared/aiAdPromptBuilder.js';
 import { getUserProfile } from './_shared/auth.js';
-import { deductCredits } from './_shared/credits.js';
-import { uploadToStorage } from './_shared/storage.js';
+import { assertAndConsumeCredits } from './_shared/credits.js';
+import { supabaseAdmin } from './_shared/clients.js';
 import { withRetry } from './_shared/aiAd/retry.js';
 import { scoreAdQuality, validateAdContent, predictEngagement } from './_shared/aiAd/quality-scorer.js';
 import { adCache } from './_shared/aiAd/cache.js';
@@ -189,32 +189,41 @@ export const handler = async (event) => {
             { maxRetries: 2, initialDelay: 2000 }
         );
 
-        // Upload to Supabase
+        // Upload to Supabase Storage
         const timestamp = Date.now();
         const filename = `ai-ad-${user.id}-${timestamp}.png`;
+        const storagePath = `ai-ads/${filename}`;
 
-        const imageUrl = await uploadToStorage({
-            bucket: 'creative-images',
-            path: `ai-ads/${filename}`,
-            data: Buffer.from(imageResult.b64, 'base64'),
-            contentType: 'image/png',
-        });
+        const { error: uploadError } = await supabaseAdmin.storage
+            .from('creative-images')
+            .upload(storagePath, Buffer.from(imageResult.b64, 'base64'), {
+                contentType: 'image/png',
+                upsert: false,
+            });
+
+        if (uploadError) {
+            console.error('[AI Ad Generate] Upload failed:', uploadError.message);
+            throw new Error('Image upload failed: ' + uploadError.message);
+        }
+
+        // Get public URL
+        const { data: urlData } = supabaseAdmin.storage
+            .from('creative-images')
+            .getPublicUrl(storagePath);
+
+        const imageUrl = urlData?.publicUrl;
 
         console.log('[AI Ad Generate] Image uploaded:', imageUrl);
 
         // Predict engagement
         const engagementScore = predictEngagement(adCopy, body.targetAudience);
 
-        // Deduct credits
-        await deductCredits(user.id, CREDIT_COST, {
-            reason: 'AI Ad Generation',
-            metadata: {
-                mode,
-                template: promptData.template.id,
-                qualityScore,
-                engagementScore,
-            },
-        });
+        // Deduct credits using existing credit system
+        try {
+            await assertAndConsumeCredits(user.id, 'creative_generate');
+        } catch (creditError) {
+            console.warn('[AI Ad Generate] Credit deduction failed (non-blocking):', creditError.message);
+        }
 
         // Prepare response
         const result = {

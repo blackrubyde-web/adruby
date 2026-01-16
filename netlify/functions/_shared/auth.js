@@ -34,3 +34,46 @@ export async function requireUserId(event) {
   return { ok: true, userId: resolved.userId, userEmail: resolved.userEmail };
 }
 
+/**
+ * Get user profile with credits - for AI Ad Builder
+ */
+export async function getUserProfile(authHeader) {
+  if (!authHeader?.startsWith("Bearer ")) {
+    return null;
+  }
+
+  const token = authHeader.slice("Bearer ".length).trim();
+  if (!token) return null;
+
+  try {
+    const { data: authData, error: authError } = await supabaseAdmin.auth.getUser(token);
+    if (authError || !authData?.user?.id) {
+      console.warn("[Auth] getUserProfile: Invalid token");
+      return null;
+    }
+
+    const userId = authData.user.id;
+
+    // Get profile with credits
+    const { data: profile, error: profileError } = await supabaseAdmin
+      .from("user_profiles")
+      .select("id, email, credits, subscription_status")
+      .eq("id", userId)
+      .single();
+
+    if (profileError) {
+      console.warn("[Auth] getUserProfile: Profile not found", profileError.message);
+      return { id: userId, email: authData.user.email, credits: 0 };
+    }
+
+    return {
+      id: userId,
+      email: profile.email || authData.user.email,
+      credits: profile.credits || 0,
+      subscriptionStatus: profile.subscription_status,
+    };
+  } catch (err) {
+    console.error("[Auth] getUserProfile error:", err);
+    return null;
+  }
+}

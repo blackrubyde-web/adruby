@@ -3,7 +3,7 @@
  * Advanced prompt engineering with few-shot examples and constraints
  */
 
-import { getTemplate } from '../aiAdTemplates.js';
+import { getTemplate } from './aiAdTemplates.js';
 
 /**
  * Few-shot examples for better ad generation
