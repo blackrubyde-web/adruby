@@ -8,6 +8,7 @@ import { getOpenAiClient, getOpenAiModel, generateHeroImage } from './_shared/op
 import { enhanceImagePrompt } from './_shared/aiAdPromptBuilder.js';
 import { buildCreativeBrief, buildPromptFromBrief, qualityGate } from './_shared/creativeBriefBuilder.js';
 import { autoComposeAdPrompt, getLayoutOptions } from './_shared/compositionEngine.js';
+import { masterCreativeEngine, getAllLayouts } from './_shared/masterCreativeEngine.js';
 import { getUserProfile } from './_shared/auth.js';
 import { assertAndConsumeCredits, CREDIT_COSTS } from './_shared/credits.js';
 import { supabaseAdmin } from './_shared/clients.js';
@@ -131,7 +132,47 @@ export const handler = async (event) => {
         const promptData = buildPromptFromBrief(creativeBrief);
         console.log('[AI Ad Generate] Using style:', promptData.style?.name);
 
-        // Build layout-based composition for designer-level graphics
+        // ========================================
+        // MASTER CREATIVE ENGINE v2 (Intelligent System)
+        // Handles: Industry detection, Color harmony, Layout selection, Typography, Variations
+        // ========================================
+        const masterOutput = masterCreativeEngine({
+            // Product info
+            productName: body.productName || 'Product',
+            productDescription: body.text || body.usp,
+            productImageUrl: body.productImageUrl,
+            visionDescription: visionDescription,
+
+            // User preferences
+            industry: body.industry,
+            targetAudience: body.targetAudience,
+            goal: body.goal || 'conversion',
+            tone: body.tone || 'professional',
+            language: language,
+
+            // Optional overrides
+            layoutId: body.layoutId,
+            colorOverride: body.brandColor,
+            fontPairingId: body.fontPairingId,
+
+            // Content
+            headline: body.headline,
+            subheadline: body.subheadline,
+            features: body.features || [],
+            cta: body.cta,
+            badge: body.badge,
+            testimonial: body.testimonial,
+        });
+
+        console.log('[AI Ad Generate] Master Engine output:', {
+            industry: masterOutput.metadata?.industry,
+            layout: masterOutput.metadata?.layout,
+            colorPalette: masterOutput.metadata?.colorPalette?.primary,
+            creativeScore: masterOutput.creativeScore?.score,
+            variationsCount: masterOutput.variations?.length,
+        });
+
+        // Build layout-based composition for designer-level graphics (fallback/hybrid)
         const layoutComposition = autoComposeAdPrompt({
             layoutId: body.layoutId, // Optional: user-selected layout
             product: {
@@ -154,7 +195,7 @@ export const handler = async (event) => {
             isMinimal: body.template === 'minimalist_elegant',
         });
 
-        console.log('[AI Ad Generate] Using layout:', layoutComposition.metadata?.layoutName || 'auto-selected');
+        console.log('[AI Ad Generate] Using layout:', masterOutput.metadata?.layoutName || layoutComposition.metadata?.layoutName || 'auto-selected');
 
         const openai = getOpenAiClient();
         const model = getOpenAiModel();
@@ -198,12 +239,20 @@ export const handler = async (event) => {
             if (quality.passed || attempt === MAX_QUALITY_RETRIES) break;
         }
 
-        // Generate image with layout-based composition
-        // Priority: 1) Layout composition (designer-level), 2) AI-generated imagePrompt, 3) Basic prompt
+        // Generate image with intelligent prompt selection
+        // Priority: 1) Master Engine (full intelligence), 2) Layout composition, 3) Enhanced AI prompt
         let imagePrompt;
-        if (layoutComposition?.prompt && (body.features?.length > 0 || body.layoutId)) {
+        let promptSource;
+
+        if (masterOutput?.imagePrompt) {
+            // Use Master Creative Engine output (full intelligence: industry, color, typography)
+            imagePrompt = masterOutput.imagePrompt;
+            promptSource = 'master-engine';
+            console.log('[AI Ad Generate] Using Master Engine prompt (industry:', masterOutput.metadata?.industry, ')');
+        } else if (layoutComposition?.prompt && (body.features?.length > 0 || body.layoutId)) {
             // Use layout composition for structured ads with features
             imagePrompt = layoutComposition.prompt;
+            promptSource = 'layout-composition';
             console.log('[AI Ad Generate] Using layout-based prompt');
         } else {
             // Fall back to enhanced AI-generated prompt
@@ -211,6 +260,7 @@ export const handler = async (event) => {
                 adCopy.imagePrompt || promptData.user,
                 promptData.template
             );
+            promptSource = 'enhanced-ai';
             console.log('[AI Ad Generate] Using enhanced AI prompt');
         }
 
