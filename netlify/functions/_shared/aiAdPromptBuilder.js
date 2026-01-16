@@ -416,37 +416,88 @@ function getAdvancedFrameworkGuidelines(framework, language) {
 }
 
 /**
- * Enhanced image prompt with professional photography direction
+ * Enhanced image prompt with 10/10 commercial photography direction
+ * Optimized for DALL-E 3 vivid mode and Meta Ads
  */
 export function enhanceImagePrompt(basePrompt, template) {
+    // Professional photography styles by template type
     const photographyStyles = {
-        product_launch: 'professional product photography, studio lighting setup, commercial advertising style, clean white or gradient background, hero shot composition',
-        limited_offer: 'dynamic energetic composition, bold vibrant colors, sense of urgency and excitement, promotional advertising aesthetic, eye-catching contrast',
-        testimonial: 'authentic lifestyle photography, natural window lighting, real person in genuine setting, warm and relatable atmosphere, documentary style',
-        before_after: 'split composition showing transformation, clear visual contrast, dramatic before-after narrative, transformation focused imagery',
-        seasonal: 'festive seasonal atmosphere, appropriate holiday elements, warm inviting color palette, celebratory mood, holiday marketing aesthetic',
-        b2b_solution: 'corporate professional aesthetic, modern office environment, clean minimalist design, business professional subjects, trust-building imagery',
-        lifestyle: 'aspirational lifestyle scene, beautiful natural setting, magazine editorial quality, aspirational yet attainable, lifestyle brand aesthetic',
+        product_launch: `award-winning product photography, premium hero shot, 
+            three-point studio lighting with softbox key light and rim lighting, 
+            floating product composition, subtle reflection on surface, 
+            clean gradient background transitioning from white to soft gray,
+            shallow depth of field f/1.8, commercial advertising quality`,
+
+        limited_offer: `high-impact promotional photography, dynamic diagonal composition,
+            bold saturated colors, sense of urgency and excitement,
+            dramatic lighting with strong contrast, eye-catching visual hierarchy,
+            premium sale aesthetic, attention-grabbing commercial style`,
+
+        testimonial: `authentic lifestyle photography, real genuine moment,
+            natural golden hour window lighting, warm skin tones,
+            environmental portrait in relatable setting,
+            documentary style with commercial polish, genuine emotion`,
+
+        before_after: `split screen transformation photography, 
+            dramatic contrast between states, clear visual storytelling,
+            consistent lighting across both sides, powerful before-after narrative`,
+
+        seasonal: `festive atmospheric photography, seasonal color palette,
+            warm inviting lighting with bokeh elements, celebratory mood,
+            premium holiday marketing aesthetic, cozy yet aspirational`,
+
+        b2b_solution: `corporate photography with modern edge, 
+            confident professional in premium workspace,
+            clean lines and minimalist design, trust-building aesthetic,
+            natural daylight with professional finish`,
+
+        lifestyle: `aspirational lifestyle photography, magazine editorial quality,
+            beautiful natural setting with perfect golden hour light,
+            aspirational yet attainable subject, premium brand aesthetic,
+            cinematic composition with rule of thirds`
     };
 
+    // Technical quality specs for DALL-E 3
     const technicalSpecs = [
-        'high quality 4K resolution',
-        'commercial advertising grade',
-        'photorealistic rendering',
-        'suitable for Meta/Facebook/Instagram Ads',
-        'CRITICAL: absolutely no text, no words, no letters, no logos, no watermarks in image',
-        'no UI elements or overlays',
-        'clean professional finish'
+        'ultra high resolution 4K',
+        'shot on Hasselblad H6D-100c',
+        'professional commercial advertising grade',
+        'photorealistic hyperreal rendering',
+        'perfect exposure and color grading',
+        'crisp sharp focus on subject',
+        'premium Meta Ads optimized'
+    ];
+
+    // Critical negative prompts to avoid AI artifacts
+    const avoidDirectives = [
+        'CRITICAL: absolutely no text, words, letters, numbers, or typography anywhere',
+        'no logos, watermarks, stamps, or signatures',
+        'no UI elements, buttons, or overlays',
+        'no distorted faces or hands',
+        'no weird artifacts or mutations',
+        'clean professional composition'
     ];
 
     const style = photographyStyles[template.id] || photographyStyles.product_launch;
 
-    // Clean and enhance the base prompt
+    // Clean the base prompt
     const cleanedPrompt = basePrompt
         .replace(/no text/gi, '')
         .replace(/no logos/gi, '')
         .replace(/no watermarks/gi, '')
+        .replace(/\s+/g, ' ')
         .trim();
 
-    return `Professional advertising image: ${cleanedPrompt}. ${style}. ${template.visualGuidelines}. ${technicalSpecs.join(', ')}.`;
+    // Build the master prompt
+    return `Masterpiece commercial advertisement image for Meta/Instagram: 
+${cleanedPrompt}. 
+
+Photography style: ${style}. 
+
+Visual guidelines: ${template.visualGuidelines || 'clean, modern, premium aesthetic'}. 
+
+Technical: ${technicalSpecs.join(', ')}. 
+
+${avoidDirectives.join('. ')}.`;
 }
+
