@@ -5,7 +5,8 @@
  */
 
 import { getOpenAiClient, getOpenAiModel, generateHeroImage } from './_shared/openai.js';
-import { buildPromptFromForm, buildPromptFromFreeText, enhanceImagePrompt } from './_shared/aiAdPromptBuilder.js';
+import { enhanceImagePrompt } from './_shared/aiAdPromptBuilder.js';
+import { buildCreativeBrief, buildPromptFromBrief, qualityGate } from './_shared/creativeBriefBuilder.js';
 import { getUserProfile } from './_shared/auth.js';
 import { assertAndConsumeCredits, CREDIT_COSTS } from './_shared/credits.js';
 import { supabaseAdmin } from './_shared/clients.js';
@@ -108,46 +109,26 @@ export const handler = async (event) => {
             }
         }
 
-        // Build prompts (incorporating vision data)
-        let promptData;
-        const enrichedBody = { ...body };
+        // Build Creative Brief (Enterprise Creative Engine v2)
+        console.log('[AI Ad Generate] Building Creative Brief...');
+        const creativeBrief = buildCreativeBrief({
+            mode,
+            language,
+            productName: body.productName,
+            productDescription: body.text || body.usp,
+            industry: body.industry,
+            targetAudience: body.targetAudience,
+            usp: body.usp,
+            tone: body.tone,
+            goal: body.goal,
+            template: body.template,
+            text: body.text,
+            productImageUrl: body.productImageUrl,
+            visionDescription: visionDescription,
+        });
 
-        // Inject vision description into product inputs
-        if (visionDescription) {
-            if (mode === 'form') {
-                enrichedBody.productName = `${body.productName || 'Product'} (${visionDescription})`;
-            } else {
-                enrichedBody.text = `${body.text}. Visual Product Description: ${visionDescription}`;
-            }
-        }
-
-        if (mode === 'form') {
-            promptData = buildPromptFromForm(enrichedBody);
-        } else {
-            promptData = buildPromptFromFreeText(enrichedBody.text, enrichedBody.template, language);
-        }
-
-        // Override user prompt in promptData if vision description exists to enforce product look
-        if (visionDescription) {
-            // MAXIMUM PRIORITY: Force DALL-E 3 to NOT alter the product
-            promptData.user += `
-
-🚨 CRITICAL PRODUCT INTEGRITY RULES (HIGHEST PRIORITY):
-The HERO PRODUCT must appear EXACTLY as described below. This is NON-NEGOTIABLE:
-
-PRODUCT DESCRIPTION (DO NOT ALTER):
-${visionDescription}
-
-STRICT REQUIREMENTS:
-1. The product's SHAPE, GEOMETRY, and PROPORTIONS must be IDENTICAL.
-2. The product's COLORS must be EXACT (no color shifts, no 'improvements').
-3. The product's LOGOS, TEXT, and MARKINGS must be PRESERVED exactly.
-4. The product's MATERIAL TEXTURE must match (matte stays matte, glossy stays glossy).
-5. ONLY the BACKGROUND, LIGHTING, and CAMERA ANGLE may change.
-6. The product is the UNTOUCHABLE ANCHOR - everything else adapts to it.
-
-If in doubt, prioritize ACCURACY over AESTHETICS.`;
-        }
+        const promptData = buildPromptFromBrief(creativeBrief);
+        console.log('[AI Ad Generate] Using style:', promptData.style?.name);
 
         const openai = getOpenAiClient();
         const model = getOpenAiModel();
