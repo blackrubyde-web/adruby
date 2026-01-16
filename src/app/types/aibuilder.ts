@@ -36,6 +36,7 @@ export interface AdGenerationParams {
 }
 
 export interface AdGenerationResult {
+    id?: string;
     headline: string;
     slogan: string;
     description: string;
@@ -44,14 +45,20 @@ export interface AdGenerationResult {
     imagePrompt: string;
     template: string;
     creditsUsed: number;
+    qualityScore?: number;
+    engagementScore?: number;
 }
 
 export interface AdGenerationResponse {
     success: boolean;
+    jobId?: string;
+    status?: 'processing' | 'complete' | 'error';
     data: AdGenerationResult;
     metadata: {
         model: string;
         timestamp: number;
+        generationTime?: number;
+        savedToLibrary?: boolean;
     };
 }
 

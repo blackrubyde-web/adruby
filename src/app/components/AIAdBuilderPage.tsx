@@ -25,7 +25,7 @@ type Step = 'input' | 'generating' | 'result';
 
 export function AIAdBuilderPage() {
     const { profile } = useAuthState();
-    const { refreshProfile } = useAuthActions();
+    const { refreshProfile: _refreshProfile } = useAuthActions();
     const credits = profile?.credits ?? 0;
 
     const [language, setLanguage] = useState<Language>('de');
@@ -34,7 +34,7 @@ export function AIAdBuilderPage() {
     const [loading, setLoading] = useState(false);
     const [result, setResult] = useState<AdGenerationResult | null>(null);
     const [error, setError] = useState<string | null>(null);
-    const [productImage, setProductImage] = useState<File | null>(null);
+    const [_productImage, setProductImage] = useState<File | null>(null);
     const [productImagePreview, setProductImagePreview] = useState<string | null>(null);
 
     const handleImageUpload = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
