@@ -88,7 +88,7 @@ export const handler = async (event) => {
                     messages: [
                         {
                             role: 'system',
-                            content: 'You are an expert product photographer. Analyze the product in this image in EXTREME detail for a DALL-E 3 prompt. Focus ONLY on the product (shape, materials, colors, logos, textures). Ignore the background. Output a dense, comma-separated visual description.'
+                            content: 'You are an expert product photographer and technical inspector. Analyze the product in this image. Describe its EXACT geometry, colors (hex codes if possible), material textures, and logos. Be extremely precise about what defines this specific object. Ignore the background completely. Start with "A photo-realistic..."'
                         },
                         {
                             role: 'user',
@@ -129,8 +129,24 @@ export const handler = async (event) => {
 
         // Override user prompt in promptData if vision description exists to enforce product look
         if (visionDescription) {
-            // We ensure the image prompt strictly uses the vision description
-            promptData.user += `\n\nCRITICAL VISUAL REQUIREMENT: The product in the image MUST look exactly like this: ${visionDescription}`;
+            // MAXIMUM PRIORITY: Force DALL-E 3 to NOT alter the product
+            promptData.user += `
+
+🚨 CRITICAL PRODUCT INTEGRITY RULES (HIGHEST PRIORITY):
+The HERO PRODUCT must appear EXACTLY as described below. This is NON-NEGOTIABLE:
+
+PRODUCT DESCRIPTION (DO NOT ALTER):
+${visionDescription}
+
+STRICT REQUIREMENTS:
+1. The product's SHAPE, GEOMETRY, and PROPORTIONS must be IDENTICAL.
+2. The product's COLORS must be EXACT (no color shifts, no 'improvements').
+3. The product's LOGOS, TEXT, and MARKINGS must be PRESERVED exactly.
+4. The product's MATERIAL TEXTURE must match (matte stays matte, glossy stays glossy).
+5. ONLY the BACKGROUND, LIGHTING, and CAMERA ANGLE may change.
+6. The product is the UNTOUCHABLE ANCHOR - everything else adapts to it.
+
+If in doubt, prioritize ACCURACY over AESTHETICS.`;
         }
 
         const openai = getOpenAiClient();

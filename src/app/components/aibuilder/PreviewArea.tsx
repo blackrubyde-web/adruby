@@ -86,7 +86,7 @@ export function PreviewArea({ language, result, loading, error }: PreviewAreaPro
                     <p className="text-sm text-white whitespace-pre-wrap leading-relaxed">{result.description}</p>
                 </div>
 
-                {/* Image */}
+                {/* Image with Text Overlay */}
                 {result.imageUrl && (
                     <div className="relative aspect-square w-full bg-black/50">
                         <img
@@ -94,6 +94,21 @@ export function PreviewArea({ language, result, loading, error }: PreviewAreaPro
                             alt="Ad Creative"
                             className="w-full h-full object-cover"
                         />
+                        {/* Text Overlay Layer - Conversion-Optimized */}
+                        <div className="absolute inset-0 flex flex-col justify-between p-4 pointer-events-none">
+                            {/* Top Badge */}
+                            <div className="flex justify-end">
+                                <div className="bg-red-600 text-white text-xs font-bold px-3 py-1.5 rounded-md shadow-lg uppercase tracking-wide">
+                                    {language === 'de' ? 'Limitiert' : 'Limited'}
+                                </div>
+                            </div>
+                            {/* Bottom Headline Overlay */}
+                            <div className="bg-gradient-to-t from-black/80 via-black/40 to-transparent -mx-4 -mb-4 p-4 pt-12">
+                                <h3 className="text-white font-bold text-xl leading-tight drop-shadow-lg">
+                                    {result.headline}
+                                </h3>
+                            </div>
+                        </div>
                     </div>
                 )}
 
