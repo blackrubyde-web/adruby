@@ -9,6 +9,14 @@
 [functions]
   directory = "netlify/functions-build"
   node_bundler = "zisi"
+  external_node_modules = ["sharp"]
+
+# Extend timeout for AI functions (default is 10s)
+[functions."ai-ad-generate"]
+  external_node_modules = ["sharp"]
+  
+# Note: Function timeout requires Netlify Pro plan for > 10s
+# If on free plan, the function may still timeout
 
 [[redirects]]
   from = "/api/creative/analyze"

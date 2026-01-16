@@ -79,8 +79,12 @@ export async function generateHeroImage({
     prompt,
     size,
     quality: safeQuality,
-    style: "vivid", // More dramatic, hyper-real - perfect for ads
   };
+
+  // Only DALL-E 3 supports vivid style
+  if (model === "dall-e-3") {
+    params.style = "vivid";
+  }
 
   // DALL-E 3 does not strictly support 'seed' for deterministic generation in the same way 
   // as some other endpoints, but the API accepts it. Not strictly enforced.
