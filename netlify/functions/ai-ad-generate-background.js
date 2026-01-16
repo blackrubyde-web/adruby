@@ -7,6 +7,7 @@
 import { getOpenAiClient, getOpenAiModel, generateHeroImage } from './_shared/openai.js';
 import { enhanceImagePrompt } from './_shared/aiAdPromptBuilder.js';
 import { buildCreativeBrief, buildPromptFromBrief, qualityGate } from './_shared/creativeBriefBuilder.js';
+import { autoComposeAdPrompt, getLayoutOptions } from './_shared/compositionEngine.js';
 import { getUserProfile } from './_shared/auth.js';
 import { assertAndConsumeCredits, CREDIT_COSTS } from './_shared/credits.js';
 import { supabaseAdmin } from './_shared/clients.js';
@@ -130,6 +131,31 @@ export const handler = async (event) => {
         const promptData = buildPromptFromBrief(creativeBrief);
         console.log('[AI Ad Generate] Using style:', promptData.style?.name);
 
+        // Build layout-based composition for designer-level graphics
+        const layoutComposition = autoComposeAdPrompt({
+            layoutId: body.layoutId, // Optional: user-selected layout
+            product: {
+                name: body.productName || 'Product',
+                description: body.text || body.usp,
+            },
+            features: body.features || [], // Array of feature strings
+            headline: body.headline,
+            subheadline: body.subheadline,
+            cta: body.cta || 'Jetzt entdecken',
+            badge: body.badge,
+            visionDescription: visionDescription,
+            brandColor: body.brandColor,
+            language: language,
+            tone: body.tone,
+            // Auto-detect layout type based on content
+            hasMultipleFeatures: (body.features?.length || 0) >= 3,
+            isSale: body.goal === 'sale' || body.template === 'urgency_sale',
+            isAnnouncement: body.goal === 'announcement',
+            isMinimal: body.template === 'minimalist_elegant',
+        });
+
+        console.log('[AI Ad Generate] Using layout:', layoutComposition.metadata?.layoutName || 'auto-selected');
+
         const openai = getOpenAiClient();
         const model = getOpenAiModel();
 
@@ -172,11 +198,21 @@ export const handler = async (event) => {
             if (quality.passed || attempt === MAX_QUALITY_RETRIES) break;
         }
 
-        // Generate image
-        const imagePrompt = enhanceImagePrompt(
-            adCopy.imagePrompt || promptData.user,
-            promptData.template
-        );
+        // Generate image with layout-based composition
+        // Priority: 1) Layout composition (designer-level), 2) AI-generated imagePrompt, 3) Basic prompt
+        let imagePrompt;
+        if (layoutComposition?.prompt && (body.features?.length > 0 || body.layoutId)) {
+            // Use layout composition for structured ads with features
+            imagePrompt = layoutComposition.prompt;
+            console.log('[AI Ad Generate] Using layout-based prompt');
+        } else {
+            // Fall back to enhanced AI-generated prompt
+            imagePrompt = enhanceImagePrompt(
+                adCopy.imagePrompt || promptData.user,
+                promptData.template
+            );
+            console.log('[AI Ad Generate] Using enhanced AI prompt');
+        }
 
         console.log('[AI Ad Generate] Generating image...');
 
