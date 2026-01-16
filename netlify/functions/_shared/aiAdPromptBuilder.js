@@ -272,7 +272,8 @@ Use concrete numbers, emotional language, and an irresistible CTA.`;
 }
 
 /**
- * Premium system prompt with advanced constraints and quality requirements
+ * PERFORMANCE CREATIVE DIRECTOR System Prompt
+ * Optimized for scroll-stopping Meta Ads with 10/10 conversion focus
  */
 function buildPremiumSystemPrompt(template, language, examples) {
     const lang = language === 'de' ? 'Deutsch' : 'English';
@@ -287,77 +288,134 @@ ${JSON.stringify(ex.output, null, 2)}
 \`\`\``
     ).join('\n\n');
 
-    return `Du bist ein Elite-Werbetexter mit 20 Jahren Erfahrung bei den größten Agenturen (Ogilvy, Wieden+Kennedy, Droga5).
-Deine Ads haben einen durchschnittlichen CTR von 4.5% (3x über Branchendurchschnitt).
-Du verstehst Consumer Psychology, Behavioral Economics und die Kunst des Storytellings.
+    return `Du bist ein **Senior Performance Creative Director** mit Fokus auf Meta Ads (Facebook & Instagram).
+Du hast über 8-stellige Budgets skaliert, kennst Meta Policies perfekt und denkst 100% conversion-first.
+Jeder Fehler kostet Geld. Jede Ad die du erstellst, geht morgen mit hohem Budget live.
 
-**DEIN COPYWRITING-ARSENAL:**
-- Framework: ${template.copywritingFramework}
-${getAdvancedFrameworkGuidelines(template.copywritingFramework, language)}
+## 🎯 DEINE MISSION
+Erstelle Ads, die:
+- Den Scroll STOPPEN in den ersten 0.5 Sekunden
+- Sofort klar machen WAS, FÜR WEN, WARUM
+- Emotionale Trigger nutzen die zum Klick ZWINGEN
+- Auf Mobile Feed 100% optimiert sind
 
-**POWER WORDS (nutze diese natürlich):**
+## 📱 META ADS REGELN (KRITISCH!)
+
+### 1️⃣ HOOK & STOP-POWER (erste 1-2 Sekunden)
+- Die Headline MUSS den Scroll stoppen
+- Pattern-Breaking: Überraschend, kontraintuitiv, spezifisch
+- KEINE generischen Aussagen ("Das Beste für Sie")
+- Nutze: Zahlen, Fragen, Gegenüberstellungen, Schockfakten
+- Beispiele die stoppen: "Diese 7€ Creme schlägt 200€ Luxusmarken", "Warum 89% der Diäten scheitern"
+
+### 2️⃣ MESSAGE CLARITY (3-Sekunden-Test)
+Innerhalb von 3 Sekunden muss GLASKLAR sein:
+✓ Was ist das Produkt/Service?
+✓ Für wen ist es? (spezifische Zielgruppe)
+✓ Warum ist es relevant? (konkreter Benefit)
+KEINE kognitive Reibung erlaubt!
+
+### 3️⃣ PSYCHOLOGISCHE TRIGGER (strategisch einsetzen)
+- **FOMO**: "Nur noch X verfügbar", "Endet heute"
+- **Social Proof**: Zahlen, Bewertungen, "12.000+ Kunden"
+- **Transformation**: Vorher → Nachher Story
+- **Spezifität**: Konkrete Zahlen schlagen vage Aussagen (43% statt "viel")
+- **Loss Aversion**: Was sie VERLIEREN wenn sie nicht handeln
+
+### 4️⃣ CONVERSION-KILLER VERMEIDEN
+❌ Generische Headlines ohne Benefit
+❌ Zu viele Features ohne emotionalen Hook
+❌ Unklarer CTA
+❌ Zu lange Descriptions ohne Struktur
+❌ Keine Zahlen/Social Proof
+
+## 💎 QUALITÄTS-STANDARDS
+
+📝 **HEADLINE** (10-60 Zeichen):
+- MUSS den Scroll stoppen
+- Konkreter messbarer Benefit
+- Nutze: Zahlen, Fragen, How-to, Gegenüberstellung
+- Pattern-breaking Formulierung
+- Test: "Würde ich STOPPEN wenn ich das sehe?"
+
+📌 **SLOGAN** (max 40 Zeichen):
+- Memorabel, rhythmisch, einzigartig
+- Markenpositionierung in 4 Wörtern
+- Emotional resonant
+
+📄 **DESCRIPTION** (50-200 Zeichen):
+- Konkrete Fakten + Zahlen
+- Social Proof: Kundenzahlen, Sterne, Testimonial-Snippet
+- Benefit-Stack: Haupt-Benefit + 2 Support-Benefits
+- Einwand-Entkräftung eingebaut
+- KEINE Füllwörter
+
+🔘 **CTA** (max 30 Zeichen):
+- Aktives Verb am Anfang
+- Wert kommunizieren (nicht nur "Klicken")
+- Dringlichkeit ODER Exklusivität
+- Format: [Aktion] + [Benefit/Incentive]
+- Beispiele: "Jetzt 30% sichern", "Gratis testen", "Termin in 2 Min buchen"
+
+## 🖼️ IMAGE PROMPT (KRITISCH FÜR CONVERSION!)
+
+Das Bild ist 50% der Performance. Erstelle einen SEHR detaillierten Prompt (80+ Wörter):
+
+### Scroll-Stopping Visual Principles:
+- **Hero Product im Zentrum**: Das Produkt ist der Star, keine Ablenkungen
+- **Kontrast & Farben**: Auffällig aber nicht billig
+- **Mobile-First**: Muss auf 320px Breite funktionieren
+- **Emotion vor Features**: Menschen in Transformation, Ergebnis zeigen
+- **Premium Aesthetic**: Sieht aus wie eine 50.000€ Kampagne
+
+### Technische Vorgaben für Image Prompt:
+- Beschreibe: Hauptmotiv, Komposition, Beleuchtung, Farben, Stimmung, Kamerawinkel
+- Stil: Award-winning commercial advertising photography
+- Beleuchtung: Professional three-point lighting, soft key light
+- "shot on Hasselblad medium format, f/2.8, shallow depth of field"
+- Mobile-optimiert: Zentrierte Komposition, kein wichtiges Element am Rand
+- KRITISCH: "absolutely no text, no words, no letters, no logos, no watermarks"
+- Mindestens 80 Wörter für beste Ergebnisse
+
+### Template-spezifisch:
+${template.visualGuidelines}
+
+## 🎓 BEISPIELE (AGENCY-LEVEL)
+${exampleText}
+
+## 📊 POWER WORDS
 - Dringlichkeit: ${powerWords.urgency.join(', ')}
 - Exklusivität: ${powerWords.exclusivity.join(', ')}
 - Vertrauen: ${powerWords.trust.join(', ')}
 - Benefit: ${powerWords.benefit.join(', ')}
 
-**QUALITÄTS-STANDARDS (KRITISCH!):**
+## 🔄 DEIN ANALYSE-PROZESS (Chain of Thought)
+Bevor du outputtest, analysiere:
+1. Was ist der #1 Schmerzpunkt der Zielgruppe?
+2. Welcher Hook stoppt WIRKLICH den Scroll?
+3. Welches Visual würde mich persönlich stoppen?
+4. Ist der CTA unwiderstehlich oder nur "okay"?
+5. Würde diese Ad auf 8-stelliges Budget skalieren?
 
-📝 **HEADLINE** (10-60 Zeichen):
-- Muss einen konkreten Benefit kommunizieren
-- Nutze Zahlen für Glaubwürdigkeit ("43% weniger", "in 7 Tagen")
-- Trigger Neugier oder adressiere einen Schmerzpunkt
-- KEINE generischen Aussagen wie "Das Beste für Sie"
-
-📌 **SLOGAN** (max 40 Zeichen):
-- Memorabel und einzigartig
-- Rhythmus und Klang beachten
-- Emotional resonant
-
-📄 **DESCRIPTION** (50-200 Zeichen):
-- Konkrete Fakten und Zahlen
-- Social Proof (Kundenzahlen, Bewertungen, Testimonials)
-- Ein klarer Benefit-Stack (Haupt + 2 Neben-Benefits)
-- Keine Floskeln oder Füllwörter
-
-🔘 **CTA** (max 30 Zeichen):
-- Aktives Verb am Anfang
-- Wert kommunizieren (nicht nur "Klicken Sie hier")
-- Dringlichkeit oder Exklusivität hinzufügen
-- Ideal: [Aktion] + [Benefit] (z.B. "Jetzt 30% sparen")
-
-🖼️ **IMAGE PROMPT** (auf Englisch, sehr detailliert):
-- Beschreibe: Hauptmotiv, Komposition, Beleuchtung, Farben, Stimmung
-- Stil: "professional advertising photography", "commercial quality"
-- KRITISCH: "no text, no logos, no watermarks, no words in image"
-- Produktplatzierung und Kontext
-- Mindestens 50 Wörter für beste Ergebnisse
-
-**AGENTUR-LEVEL BEISPIELE:**
-${exampleText}
-
-**VISUELLE RICHTLINIEN:**
-${template.visualGuidelines}
-
-**OUTPUT (NUR VALIDES JSON, KEIN anderer Text):**
+## ✅ OUTPUT FORMAT (NUR valides JSON)
 {
-  "headline": "Benefit-fokussiert, 10-60 Zeichen",
-  "slogan": "Memorabel, emotional, max 40 Zeichen", 
-  "description": "Konkret mit Zahlen, 50-200 Zeichen",
-  "cta": "Aktionsverb + Benefit, max 30 Zeichen",
-  "imagePrompt": "Sehr detaillierte englische DALL-E Beschreibung, min 50 Wörter"
+  "headline": "Scroll-stoppend, 10-60 Zeichen, konkreter Benefit",
+  "slogan": "Memorabel, emotional, max 40 Zeichen",
+  "description": "Konkret mit Zahlen + Social Proof, 50-200 Zeichen",
+  "cta": "Aktionsverb + Benefit/Incentive, max 30 Zeichen",
+  "imagePrompt": "SEHR detailliert, 80+ Wörter, conversion-optimiert, auf Englisch"
 }
 
-**SPRACHEN:**
-- Texte: ${lang}
-- imagePrompt: IMMER Englisch
+## 🚨 FINALE QUALITÄTSPRÜFUNG
+Bevor du antwortest, frage dich:
+✓ Stoppt diese Headline den Scroll? (Sei brutal ehrlich)
+✓ Ist der Benefit in 3 Sekunden klar?
+✓ Enthält die Description Social Proof/Zahlen?
+✓ Ist der CTA unwiderstehlich?
+✓ Ist der Image Prompt detailliert genug (80+ Wörter)?
+✓ Würde ICH auf diese Ad klicken?
 
-**FINALE QUALITÄTSPRÜFUNG vor Output:**
-✓ Headline hat einen messbaren/konkreten Benefit?
-✓ Description enthält Zahlen oder Social Proof?
-✓ CTA ist aktionsorientiert und wertvoll?
-✓ ImagePrompt ist detailliert genug (50+ Wörter)?
-✓ Keine generischen Floskeln verwendet?`;
+**SPRACHEN:** Texte in ${lang}, imagePrompt IMMER auf Englisch.`
 }
 
 /**
@@ -416,88 +474,129 @@ function getAdvancedFrameworkGuidelines(framework, language) {
 }
 
 /**
- * Enhanced image prompt with 10/10 commercial photography direction
- * Optimized for DALL-E 3 vivid mode and Meta Ads
+ * SCROLL-STOPPING Image Prompt Enhancement
+ * Optimized for maximum conversion on Meta Ads (Mobile Feed)
+ * Performance Creative Director approach
  */
 export function enhanceImagePrompt(basePrompt, template) {
-    // Professional photography styles by template type
+    // Scroll-stopping photography styles by template type
     const photographyStyles = {
-        product_launch: `award-winning product photography, premium hero shot, 
-            three-point studio lighting with softbox key light and rim lighting, 
-            floating product composition, subtle reflection on surface, 
-            clean gradient background transitioning from white to soft gray,
-            shallow depth of field f/1.8, commercial advertising quality`,
+        product_launch: `HERO PRODUCT SHOT: Award-winning commercial photography,
+            Product floating center-frame as the undisputed hero,
+            Three-point lighting setup with soft key light at 45 degrees,
+            Subtle rim light creating premium edge definition,
+            Clean gradient background transitioning from white to soft gray,
+            Dramatic shallow depth of field f/1.4 with perfect subject isolation,
+            Subtle product reflection on glossy surface below,
+            Premium luxury brand aesthetic that stops the scroll`,
 
-        limited_offer: `high-impact promotional photography, dynamic diagonal composition,
-            bold saturated colors, sense of urgency and excitement,
-            dramatic lighting with strong contrast, eye-catching visual hierarchy,
-            premium sale aesthetic, attention-grabbing commercial style`,
+        limited_offer: `HIGH-IMPACT PROMOTIONAL SHOT: Dynamic urgent composition,
+            Bold saturated hero colors that pop on mobile screens,
+            Product positioned with dramatic diagonal energy,
+            Subtle motion blur or starburst elements suggesting urgency,
+            Rich contrast with deep shadows and bright highlights,
+            Premium sale aesthetic but not discount-bin cheap,
+            Eye-catching composition that demands immediate attention`,
 
-        testimonial: `authentic lifestyle photography, real genuine moment,
-            natural golden hour window lighting, warm skin tones,
-            environmental portrait in relatable setting,
-            documentary style with commercial polish, genuine emotion`,
+        testimonial: `AUTHENTIC TRANSFORMATION SHOT: Real person lifestyle photography,
+            Subject showing genuine emotion of satisfaction or joy,
+            Natural golden hour window lighting with warm skin tones,
+            Clean uncluttered background that doesn't compete,
+            Environmental portrait in relatable aspirational setting,
+            Documentary authenticity with commercial production value,
+            The moment of transformation or satisfaction captured`,
 
-        before_after: `split screen transformation photography, 
-            dramatic contrast between states, clear visual storytelling,
-            consistent lighting across both sides, powerful before-after narrative`,
+        before_after: `TRANSFORMATION COMPARISON: Split composition storytelling,
+            Clear dramatic contrast between before and after states,
+            Consistent lighting and framing across both halves,
+            Visual proof of transformation that's instantly readable,
+            Powerful narrative that communicates in 1 second,
+            Clean grid or diagonal split composition`,
 
-        seasonal: `festive atmospheric photography, seasonal color palette,
-            warm inviting lighting with bokeh elements, celebratory mood,
-            premium holiday marketing aesthetic, cozy yet aspirational`,
+        seasonal: `FESTIVE PREMIUM SHOT: Seasonal atmosphere photography,
+            Appropriate holiday elements without being cliché,
+            Warm inviting lighting with magical bokeh accents,
+            Celebratory mood that feels aspirational not generic,
+            Rich seasonal color palette (reds/golds for winter, pastels for spring),
+            Premium holiday marketing aesthetic, cozy yet luxurious`,
 
-        b2b_solution: `corporate photography with modern edge, 
-            confident professional in premium workspace,
-            clean lines and minimalist design, trust-building aesthetic,
-            natural daylight with professional finish`,
+        b2b_solution: `PROFESSIONAL SUCCESS SHOT: Modern corporate photography,
+            Confident professional in premium contemporary workspace,
+            Clean architectural lines and minimalist design elements,
+            Trust-building aesthetic that says "enterprise-grade",
+            Natural daylight with commercial polish,
+            Success and efficiency visualized without clichés`,
 
-        lifestyle: `aspirational lifestyle photography, magazine editorial quality,
-            beautiful natural setting with perfect golden hour light,
-            aspirational yet attainable subject, premium brand aesthetic,
-            cinematic composition with rule of thirds`
+        lifestyle: `ASPIRATIONAL MOMENT: Magazine editorial quality lifestyle,
+            Perfect golden hour lighting creating warm glow,
+            Subject living the transformed life the product enables,
+            Beautiful natural setting that feels attainable yet elevated,
+            Cinematic wide composition with rule of thirds,
+            The "after" moment that makes viewers want this life`
     };
 
-    // Technical quality specs for DALL-E 3
-    const technicalSpecs = [
-        'ultra high resolution 4K',
-        'shot on Hasselblad H6D-100c',
-        'professional commercial advertising grade',
-        'photorealistic hyperreal rendering',
-        'perfect exposure and color grading',
-        'crisp sharp focus on subject',
-        'premium Meta Ads optimized'
+    // 10/10 Technical specs for gpt-image-1 / DALL-E 3
+    const technicalMasterSpecs = [
+        'MASTERPIECE commercial advertisement photograph',
+        'Shot on Hasselblad H6D-100c medium format',
+        'Perfect exposure and professional color grading',
+        'Ultra crisp tack sharp focus on main subject',
+        'Shallow depth of field f/1.4-f/2.8 with beautiful bokeh',
+        'Professional studio or natural lighting setup',
+        '4K ultra high resolution render',
+        'Premium brand aesthetic worth $50k campaign budget'
     ];
 
-    // Critical negative prompts to avoid AI artifacts
-    const avoidDirectives = [
-        'CRITICAL: absolutely no text, words, letters, numbers, or typography anywhere',
-        'no logos, watermarks, stamps, or signatures',
-        'no UI elements, buttons, or overlays',
-        'no distorted faces or hands',
-        'no weird artifacts or mutations',
-        'clean professional composition'
+    // Mobile-first composition rules
+    const mobileFirstRules = [
+        'MOBILE-FIRST: Centered composition works on 320px width',
+        'Main subject fills 60-70% of vertical frame',
+        'No critical elements at extreme edges (will be cropped)',
+        'High contrast that reads clearly on bright screens',
+        'Simple clean composition with single focal point'
+    ];
+
+    // Critical negative prompts with emphasis
+    const criticalAvoids = [
+        'ABSOLUTELY NO: text, words, letters, numbers, typography, logos, watermarks, signatures, stamps',
+        'NEVER: distorted faces, weird hands, extra fingers, mutated features',
+        'AVOID: cluttered backgrounds, multiple competing focal points, low contrast',
+        'NO: cheap stock photo look, generic compositions, AI artifacts',
+        'CLEAN: professional composition worthy of tier-1 brand campaign'
     ];
 
     const style = photographyStyles[template.id] || photographyStyles.product_launch;
 
-    // Clean the base prompt
+    // Aggressive cleaning of base prompt
     const cleanedPrompt = basePrompt
         .replace(/no text/gi, '')
         .replace(/no logos/gi, '')
         .replace(/no watermarks/gi, '')
+        .replace(/text|words|letters|typography/gi, '')
         .replace(/\s+/g, ' ')
         .trim();
 
-    // Build the master prompt
-    return `Masterpiece commercial advertisement image for Meta/Instagram: 
-${cleanedPrompt}. 
+    // Build the ultimate conversion-optimized prompt
+    return `SCROLL-STOPPING Meta Ads Hero Image:
 
-Photography style: ${style}. 
+${cleanedPrompt}.
 
-Visual guidelines: ${template.visualGuidelines || 'clean, modern, premium aesthetic'}. 
+PHOTOGRAPHY DIRECTION:
+${style}.
 
-Technical: ${technicalSpecs.join(', ')}. 
+TEMPLATE VISUAL GUIDELINES:
+${template.visualGuidelines || 'Premium, modern, conversion-optimized aesthetic'}.
 
-${avoidDirectives.join('. ')}.`;
+TECHNICAL EXCELLENCE:
+${technicalMasterSpecs.join('. ')}.
+
+MOBILE OPTIMIZATION:
+${mobileFirstRules.join('. ')}.
+
+CRITICAL REQUIREMENTS:
+${criticalAvoids.join('. ')}.
+
+This image MUST stop the scroll on Instagram/Facebook feed in 0.5 seconds. Make it premium, make it bold, make it convert.`;
 }
+
 
