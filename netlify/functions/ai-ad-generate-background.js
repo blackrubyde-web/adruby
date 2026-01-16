@@ -65,8 +65,8 @@ export const handler = async (event) => {
             };
         }
 
-        // Create job record
-        const jobId = crypto.randomUUID();
+        // Create job record using client-provided jobId or generate new one
+        const jobId = body.jobId || crypto.randomUUID();
         await supabaseAdmin.from('generated_creatives').insert({
             id: jobId,
             user_id: user.id,

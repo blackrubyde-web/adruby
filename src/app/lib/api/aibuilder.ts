@@ -1,13 +1,13 @@
 /**
  * AI Ad Builder - API Client with Background Function Polling
- * Calls background function and polls for completion
+ * Generates jobId client-side since Netlify background functions return empty 202
  */
 
 import { supabase } from '../supabaseClient';
 import type { AdGenerationParams, AdGenerationResponse } from '../../types/aibuilder';
 
 const API_BASE = '/.netlify/functions';
-const POLL_INTERVAL = 2000; // 2 seconds
+const POLL_INTERVAL = 2500; // 2.5 seconds
 const MAX_POLL_TIME = 180000; // 3 minutes max
 
 /**
@@ -19,44 +19,73 @@ async function getAuthToken(): Promise<string | null> {
 }
 
 /**
+ * Generate a UUID for the job
+ */
+function generateJobId(): string {
+    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
+        const r = Math.random() * 16 | 0;
+        const v = c === 'x' ? r : (r & 0x3 | 0x8);
+        return v.toString(16);
+    });
+}
+
+/**
  * Poll for job completion
  */
 async function pollJobStatus(jobId: string, token: string | null): Promise<AdGenerationResponse> {
     const startTime = Date.now();
+    let pollCount = 0;
 
     while (Date.now() - startTime < MAX_POLL_TIME) {
         await new Promise(resolve => setTimeout(resolve, POLL_INTERVAL));
+        pollCount++;
 
-        const statusResponse = await fetch(`${API_BASE}/ai-ad-status?id=${jobId}`, {
-            method: 'GET',
-            headers: {
-                'Content-Type': 'application/json',
-                ...(token && { Authorization: `Bearer ${token}` }),
-            },
-        });
+        console.log(`[AI Ad Builder] Polling status... (attempt ${pollCount})`);
 
-        if (!statusResponse.ok) {
-            const errorData = await statusResponse.json().catch(() => ({}));
-            throw new Error(errorData.error || 'Status check failed');
+        try {
+            const statusResponse = await fetch(`${API_BASE}/ai-ad-status?id=${jobId}`, {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json',
+                    ...(token && { Authorization: `Bearer ${token}` }),
+                },
+            });
+
+            if (!statusResponse.ok) {
+                const errorData = await statusResponse.json().catch(() => ({}));
+                // 404 means job not created yet, keep polling
+                if (statusResponse.status === 404 && pollCount < 5) {
+                    console.log('[AI Ad Builder] Job not found yet, waiting...');
+                    continue;
+                }
+                throw new Error(errorData.error || 'Status check failed');
+            }
+
+            const statusData = await statusResponse.json();
+
+            if (statusData.status === 'complete') {
+                console.log('[AI Ad Builder] Generation complete!');
+                return {
+                    success: true,
+                    status: 'complete',
+                    data: statusData.data,
+                    metadata: statusData.metadata || {},
+                };
+            }
+
+            if (statusData.status === 'error') {
+                throw new Error(statusData.error || 'Generation failed');
+            }
+
+            // Still processing, continue polling
+        } catch (err) {
+            // Network errors - continue polling
+            if (pollCount < 3) {
+                console.log('[AI Ad Builder] Network error, retrying...');
+                continue;
+            }
+            throw err;
         }
-
-        const statusData = await statusResponse.json();
-
-        if (statusData.status === 'complete') {
-            return {
-                success: true,
-                status: 'complete',
-                data: statusData.data,
-                metadata: statusData.metadata || {},
-            };
-        }
-
-        if (statusData.status === 'error') {
-            throw new Error(statusData.error || 'Generation failed');
-        }
-
-        // Still processing, continue polling
-        console.log('[AI Ad Builder] Still processing...');
     }
 
     throw new Error('Generation timeout - please try again');
@@ -71,6 +100,10 @@ export async function generateAd(params: AdGenerationParams): Promise<AdGenerati
 
     const token = await getAuthToken();
 
+    // Generate jobId client-side (Netlify background functions return empty 202)
+    const jobId = generateJobId();
+    console.log('[AI Ad Builder] Starting job:', jobId);
+
     // Start generation with background function
     const response = await fetch(`${API_BASE}/ai-ad-generate-background`, {
         method: 'POST',
@@ -79,37 +112,23 @@ export async function generateAd(params: AdGenerationParams): Promise<AdGenerati
             ...(token && { Authorization: `Bearer ${token}` }),
         },
         body: JSON.stringify({
+            jobId, // Pass jobId so backend uses same ID
             mode,
             language,
             ...rest,
         }),
     });
 
-    // Handle immediate errors (auth, validation, credits)
+    // Handle immediate errors (auth, validation, credits) - these have JSON body
     if (!response.ok && response.status !== 202) {
         const error = await response.json().catch(() => ({ error: 'Unknown error' }));
         throw new Error(error.error || error.message || 'Ad generation failed');
     }
 
-    const data = await response.json();
-
-    // Background function returns 202 immediately - poll for completion
-    if (response.status === 202 && data.jobId) {
-        console.log('[AI Ad Builder] Job started:', data.jobId);
-        return pollJobStatus(data.jobId, token);
-    }
-
-    // Direct response (if function returns complete result)
-    if (data.status === 'complete' && data.data) {
-        return data;
-    }
-
-    // Fallback to polling if we have a jobId
-    if (data.jobId) {
-        return pollJobStatus(data.jobId, token);
-    }
-
-    throw new Error('Invalid response from server');
+    // For 202 or 200 - start polling with our jobId
+    // (Background functions return empty body, so don't try to parse)
+    console.log('[AI Ad Builder] Background job started, polling for status...');
+    return pollJobStatus(jobId, token);
 }
 
 /**
