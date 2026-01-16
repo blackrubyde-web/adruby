@@ -2,6 +2,11 @@
 -- Prevents race conditions from parallel requests
 -- Run this in Supabase SQL Editor
 
+-- Drop existing functions if they have different signatures
+DROP FUNCTION IF EXISTS consume_credits_atomic(UUID, INTEGER);
+DROP FUNCTION IF EXISTS ensure_user_profile_exists();
+DROP FUNCTION IF EXISTS add_affiliate_earning(UUID, NUMERIC);
+
 -- 1. Create atomic credit consumption function
 CREATE OR REPLACE FUNCTION consume_credits_atomic(
   p_user_id UUID,

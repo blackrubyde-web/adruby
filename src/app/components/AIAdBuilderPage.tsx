@@ -17,11 +17,17 @@ import { FreeTextInputMode } from './aibuilder/FreeTextInputMode';
 import { PreviewArea } from './aibuilder/PreviewArea';
 import { Button } from './ui/button';
 import { cn } from '../lib/utils';
+import { useAuthState, useAuthActions } from '../contexts/AuthContext';
+import { supabase } from '../lib/supabaseClient';
 import type { Language, InputMode, AdGenerationResult, FormInputData, FreeTextInputData } from '../types/aibuilder';
 
 type Step = 'input' | 'generating' | 'result';
 
 export function AIAdBuilderPage() {
+    const { profile } = useAuthState();
+    const { refreshProfile } = useAuthActions();
+    const credits = profile?.credits ?? 0;
+
     const [language, setLanguage] = useState<Language>('de');
     const [mode, setMode] = useState<InputMode>('form');
     const [step, setStep] = useState<Step>('input');
@@ -86,8 +92,21 @@ export function AIAdBuilderPage() {
     };
 
     const handleSaveToLibrary = async () => {
-        if (!result) return;
-        toast.success(t('savedToLibrary', language));
+        if (!result?.id) {
+            toast.error(language === 'de' ? 'Keine Ad zum Speichern' : 'No ad to save');
+            return;
+        }
+        try {
+            const { error } = await supabase
+                .from('generated_creatives')
+                .update({ saved: true })
+                .eq('id', result.id);
+            if (error) throw error;
+            toast.success(t('savedToLibrary', language));
+        } catch (err) {
+            console.error('Save error:', err);
+            toast.error(language === 'de' ? 'Speichern fehlgeschlagen' : 'Save failed');
+        }
     };
 
     const handleDownload = () => {
@@ -124,7 +143,7 @@ export function AIAdBuilderPage() {
                             {/* Credits Badge */}
                             <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 bg-primary/10 rounded-full text-sm">
                                 <Zap className="w-4 h-4 text-primary" />
-                                <span className="font-medium">10 Credits</span>
+                                <span className="font-medium">{credits} Credits</span>
                             </div>
 
                             {/* Language Toggle */}
