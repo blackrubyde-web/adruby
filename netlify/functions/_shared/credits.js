@@ -10,51 +10,54 @@ export const CREDIT_COSTS = {
 };
 
 /**
- * Deduct credits using the existing AdRuby RPC system
- * Works with both consume_credits and deduct_credits RPCs
+ * Deduct credits from user_profiles table
+ * This is the simple, direct approach that works with AdRuby's existing system
  */
 export async function assertAndConsumeCredits(userId, action) {
   const cost = CREDIT_COSTS[action];
-  if (!cost) throw new Error(`Unknown credit action: ${action}`);
-
-  // Try consume_credits RPC first, fallback to deduct_credits
-  const tryRpc = async (fn) => {
-    const payload =
-      fn === "deduct_credits"
-        ? {
-          p_user_id: userId,
-          p_action_type: action,
-          p_credits_to_deduct: cost,
-          p_description: action,
-        }
-        : {
-          p_user_id: userId,
-          p_amount: cost,
-          p_reason: action,
-        };
-
-    const { data, error } = await supabaseAdmin.rpc(fn, payload);
-    return { data, error };
-  };
-
-  try {
-    let result = await tryRpc("consume_credits");
-    if (result.error) {
-      result = await tryRpc("deduct_credits");
-    }
-
-    if (result.error) {
-      throw new Error(`Credits RPC failed: ${result.error.message}`);
-    }
-
-    if (result.data?.success === false) {
-      throw new Error(result.data?.error || "Insufficient credits");
-    }
-
-    console.log(`[Credits] Deducted ${cost} for ${action} from user ${userId}`);
-    return { ok: true, cost, data: result.data };
-  } catch (err) {
-    console.error("[Credits] assertAndConsumeCredits failed:", err?.message);
-    throw err;
+  if (!cost) {
+    console.warn(`[Credits] Unknown action: ${action}, defaulting to 10`);
   }
+  const creditCost = cost || 10;
+
+  // 1. Get current credits
+  const { data: profile, error: fetchError } = await supabaseAdmin
+    .from("user_profiles")
+    .select("credits")
+    .eq("id", userId)
+    .single();
+
+  if (fetchError) {
+    console.error("[Credits] Failed to fetch user profile:", fetchError.message);
+    throw new Error("Failed to check credits");
+  }
+
+  const currentCredits = profile?.credits || 0;
+
+  // 2. Check if enough credits
+  if (currentCredits < creditCost) {
+    console.warn(`[Credits] Insufficient: user ${userId} has ${currentCredits}, needs ${creditCost}`);
+    throw new Error(`Insufficient credits. You have ${currentCredits}, need ${creditCost}.`);
+  }
+
+  // 3. Deduct credits
+  const newCredits = currentCredits - creditCost;
+  const { error: updateError } = await supabaseAdmin
+    .from("user_profiles")
+    .update({ credits: newCredits })
+    .eq("id", userId);
+
+  if (updateError) {
+    console.error("[Credits] Failed to deduct credits:", updateError.message);
+    throw new Error("Failed to deduct credits");
+  }
+
+  console.log(`[Credits] Deducted ${creditCost} from user ${userId}. Remaining: ${newCredits}`);
+
+  return {
+    ok: true,
+    cost: creditCost,
+    before: currentCredits,
+    after: newCredits
+  };
 }
