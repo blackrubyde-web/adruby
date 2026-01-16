@@ -1,29 +1,58 @@
 /**
- * AI Ad Builder - Main Page Component
+ * AI Ad Builder - Main Page Component (Enhanced V2)
+ * Premium design with product upload, beautiful mode switcher
  */
 
-import { useState } from 'react';
-import { Wand2, Download, Save, Globe } from 'lucide-react';
+import { useState, useCallback } from 'react';
+import {
+    Wand2, Download, Save, Globe, Upload, FileText, MessageSquare,
+    Sparkles, Image, Loader2, RefreshCw, Zap, ChevronRight,
+    CheckCircle2, AlertCircle
+} from 'lucide-react';
 import { generateAd } from '../lib/api/aibuilder';
 import { t } from '../lib/aibuilder/translations';
 import { toast } from 'sonner';
 import { FormInputMode } from './aibuilder/FormInputMode';
 import { FreeTextInputMode } from './aibuilder/FreeTextInputMode';
 import { PreviewArea } from './aibuilder/PreviewArea';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
 import { Button } from './ui/button';
+import { cn } from '../lib/utils';
 import type { Language, InputMode, AdGenerationResult, FormInputData, FreeTextInputData } from '../types/aibuilder';
+
+type Step = 'input' | 'generating' | 'result';
 
 export function AIAdBuilderPage() {
     const [language, setLanguage] = useState<Language>('de');
     const [mode, setMode] = useState<InputMode>('form');
+    const [step, setStep] = useState<Step>('input');
     const [loading, setLoading] = useState(false);
     const [result, setResult] = useState<AdGenerationResult | null>(null);
     const [error, setError] = useState<string | null>(null);
+    const [productImage, setProductImage] = useState<File | null>(null);
+    const [productImagePreview, setProductImagePreview] = useState<string | null>(null);
+
+    const handleImageUpload = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (file) {
+            setProductImage(file);
+            const reader = new FileReader();
+            reader.onloadend = () => {
+                setProductImagePreview(reader.result as string);
+            };
+            reader.readAsDataURL(file);
+            toast.success(language === 'de' ? 'Bild hochgeladen' : 'Image uploaded');
+        }
+    }, [language]);
+
+    const removeImage = useCallback(() => {
+        setProductImage(null);
+        setProductImagePreview(null);
+    }, []);
 
     const handleGenerate = async (inputData: FormInputData | FreeTextInputData) => {
         setLoading(true);
         setError(null);
+        setStep('generating');
 
         try {
             const response = await generateAd({
@@ -34,6 +63,7 @@ export function AIAdBuilderPage() {
 
             if (response.success) {
                 setResult(response.data);
+                setStep('result');
                 toast.success(t('successMessage', language));
             } else {
                 throw new Error('Generation failed');
@@ -42,6 +72,7 @@ export function AIAdBuilderPage() {
             console.error('Generation error:', err);
             const errorMessage = err instanceof Error ? err.message : 'Unknown error';
             setError(errorMessage);
+            setStep('input');
             toast.error(t('errorMessage', language) + ': ' + errorMessage);
         } finally {
             setLoading(false);
@@ -51,18 +82,16 @@ export function AIAdBuilderPage() {
     const handleReset = () => {
         setResult(null);
         setError(null);
+        setStep('input');
     };
 
     const handleSaveToLibrary = async () => {
         if (!result) return;
-
-        // TODO: Integration mit Creative Library
         toast.success(t('savedToLibrary', language));
     };
 
     const handleDownload = () => {
         if (!result?.imageUrl) return;
-
         const link = document.createElement('a');
         link.href = result.imageUrl;
         link.download = `ai-ad-${Date.now()}.png`;
@@ -72,97 +101,254 @@ export function AIAdBuilderPage() {
     };
 
     return (
-        <div className="min-h-screen bg-background">
-            {/* Header */}
-            <div className="border-b border-border/40 bg-card/50 backdrop-blur supports-[backdrop-filter]:bg-card/30">
-                <div className="container mx-auto px-4 py-6">
+        <div className="min-h-screen bg-gradient-to-br from-background via-background to-primary/5">
+            {/* Premium Header */}
+            <div className="sticky top-0 z-10 border-b border-border/40 bg-background/80 backdrop-blur-xl">
+                <div className="container mx-auto px-4 py-4">
                     <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-3">
-                            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-primary to-red-600 flex items-center justify-center">
-                                <Wand2 className="w-6 h-6 text-white" />
+                        <div className="flex items-center gap-4">
+                            {/* Logo */}
+                            <div className="relative group">
+                                <div className="absolute -inset-1 bg-gradient-to-r from-primary via-red-500 to-orange-500 rounded-xl blur opacity-30 group-hover:opacity-50 transition"></div>
+                                <div className="relative w-12 h-12 rounded-xl bg-gradient-to-br from-primary to-red-600 flex items-center justify-center shadow-lg">
+                                    <Wand2 className="w-6 h-6 text-white" />
+                                </div>
                             </div>
                             <div>
-                                <h1 className="text-2xl font-bold tracking-tight">{t('pageTitle', language)}</h1>
-                                <p className="text-sm text-muted-foreground">{t('pageSubtitle', language)}</p>
+                                <h1 className="text-xl font-bold tracking-tight">{t('pageTitle', language)}</h1>
+                                <p className="text-xs text-muted-foreground">{t('pageSubtitle', language)}</p>
                             </div>
                         </div>
 
-                        {/* Language Switcher */}
-                        <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => setLanguage(language === 'de' ? 'en' : 'de')}
-                            className="gap-2"
-                        >
-                            <Globe className="w-4 h-4" />
-                            {language === 'de' ? 'DE' : 'EN'}
-                        </Button>
+                        <div className="flex items-center gap-3">
+                            {/* Credits Badge */}
+                            <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 bg-primary/10 rounded-full text-sm">
+                                <Zap className="w-4 h-4 text-primary" />
+                                <span className="font-medium">10 Credits</span>
+                            </div>
+
+                            {/* Language Toggle */}
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => setLanguage(language === 'de' ? 'en' : 'de')}
+                                className="gap-2 rounded-full"
+                            >
+                                <Globe className="w-4 h-4" />
+                                {language.toUpperCase()}
+                            </Button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {/* Progress Steps */}
+            <div className="container mx-auto px-4 py-6">
+                <div className="flex items-center justify-center gap-2 text-sm">
+                    <div className={cn(
+                        "flex items-center gap-2 px-4 py-2 rounded-full transition-all",
+                        step === 'input' ? "bg-primary text-white" : "bg-muted text-muted-foreground"
+                    )}>
+                        <span className="w-5 h-5 rounded-full bg-white/20 flex items-center justify-center text-xs">1</span>
+                        <span className="hidden sm:inline">{language === 'de' ? 'Eingabe' : 'Input'}</span>
+                    </div>
+                    <ChevronRight className="w-4 h-4 text-muted-foreground" />
+                    <div className={cn(
+                        "flex items-center gap-2 px-4 py-2 rounded-full transition-all",
+                        step === 'generating' ? "bg-primary text-white" : "bg-muted text-muted-foreground"
+                    )}>
+                        <span className="w-5 h-5 rounded-full bg-white/20 flex items-center justify-center text-xs">2</span>
+                        <span className="hidden sm:inline">{language === 'de' ? 'Generierung' : 'Generating'}</span>
+                    </div>
+                    <ChevronRight className="w-4 h-4 text-muted-foreground" />
+                    <div className={cn(
+                        "flex items-center gap-2 px-4 py-2 rounded-full transition-all",
+                        step === 'result' ? "bg-primary text-white" : "bg-muted text-muted-foreground"
+                    )}>
+                        <span className="w-5 h-5 rounded-full bg-white/20 flex items-center justify-center text-xs">3</span>
+                        <span className="hidden sm:inline">{language === 'de' ? 'Ergebnis' : 'Result'}</span>
                     </div>
                 </div>
             </div>
 
             {/* Main Content */}
-            <div className="container mx-auto px-4 py-8">
+            <div className="container mx-auto px-4 pb-12">
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                    {/* Input Area */}
+
+                    {/* Left Column - Input */}
                     <div className="space-y-6">
-                        <Tabs value={mode} onValueChange={(value) => setMode(value as InputMode)} className="w-full">
-                            <TabsList className="grid w-full grid-cols-2">
-                                <TabsTrigger value="form">
-                                    {t('modeFormLabel', language)}
-                                    <span className="ml-2 text-xs text-muted-foreground">
-                                        {t('modeFormDesc', language)}
-                                    </span>
-                                </TabsTrigger>
-                                <TabsTrigger value="free">
-                                    {t('modeFreeLabel', language)}
-                                    <span className="ml-2 text-xs text-muted-foreground">
-                                        {t('modeFreeDesc', language)}
-                                    </span>
-                                </TabsTrigger>
-                            </TabsList>
 
-                            <TabsContent value="form" className="mt-6">
-                                <FormInputMode
-                                    language={language}
-                                    onGenerate={handleGenerate}
-                                    loading={loading}
-                                />
-                            </TabsContent>
+                        {/* Premium Mode Switcher */}
+                        <div className="rounded-2xl border border-border/40 bg-card/50 backdrop-blur-sm p-2">
+                            <div className="grid grid-cols-2 gap-2">
+                                <button
+                                    onClick={() => setMode('form')}
+                                    className={cn(
+                                        "relative flex flex-col items-center gap-2 p-4 rounded-xl transition-all duration-300",
+                                        mode === 'form'
+                                            ? "bg-gradient-to-br from-primary to-red-600 text-white shadow-lg shadow-primary/25"
+                                            : "hover:bg-muted/50"
+                                    )}
+                                >
+                                    <div className={cn(
+                                        "w-10 h-10 rounded-lg flex items-center justify-center transition-colors",
+                                        mode === 'form' ? "bg-white/20" : "bg-muted"
+                                    )}>
+                                        <FileText className="w-5 h-5" />
+                                    </div>
+                                    <div className="text-center">
+                                        <div className="font-semibold text-sm">{t('modeFormLabel', language)}</div>
+                                        <div className={cn(
+                                            "text-xs mt-0.5",
+                                            mode === 'form' ? "text-white/70" : "text-muted-foreground"
+                                        )}>
+                                            {t('modeFormDesc', language)}
+                                        </div>
+                                    </div>
+                                    {mode === 'form' && (
+                                        <CheckCircle2 className="absolute top-2 right-2 w-4 h-4" />
+                                    )}
+                                </button>
 
-                            <TabsContent value="free" className="mt-6">
-                                <FreeTextInputMode
-                                    language={language}
-                                    onGenerate={handleGenerate}
-                                    loading={loading}
-                                />
-                            </TabsContent>
-                        </Tabs>
+                                <button
+                                    onClick={() => setMode('free')}
+                                    className={cn(
+                                        "relative flex flex-col items-center gap-2 p-4 rounded-xl transition-all duration-300",
+                                        mode === 'free'
+                                            ? "bg-gradient-to-br from-primary to-red-600 text-white shadow-lg shadow-primary/25"
+                                            : "hover:bg-muted/50"
+                                    )}
+                                >
+                                    <div className={cn(
+                                        "w-10 h-10 rounded-lg flex items-center justify-center transition-colors",
+                                        mode === 'free' ? "bg-white/20" : "bg-muted"
+                                    )}>
+                                        <MessageSquare className="w-5 h-5" />
+                                    </div>
+                                    <div className="text-center">
+                                        <div className="font-semibold text-sm">{t('modeFreeLabel', language)}</div>
+                                        <div className={cn(
+                                            "text-xs mt-0.5",
+                                            mode === 'free' ? "text-white/70" : "text-muted-foreground"
+                                        )}>
+                                            {t('modeFreeDesc', language)}
+                                        </div>
+                                    </div>
+                                    {mode === 'free' && (
+                                        <CheckCircle2 className="absolute top-2 right-2 w-4 h-4" />
+                                    )}
+                                </button>
+                            </div>
+                        </div>
+
+                        {/* Product Image Upload */}
+                        <div className="rounded-2xl border border-border/40 bg-card/50 backdrop-blur-sm p-6">
+                            <div className="flex items-center gap-2 mb-4">
+                                <Image className="w-5 h-5 text-primary" />
+                                <h3 className="font-semibold">
+                                    {language === 'de' ? 'Produktbild (Optional)' : 'Product Image (Optional)'}
+                                </h3>
+                            </div>
+
+                            {productImagePreview ? (
+                                <div className="relative group">
+                                    <img
+                                        src={productImagePreview}
+                                        alt="Product"
+                                        className="w-full h-40 object-contain rounded-lg bg-muted/50"
+                                    />
+                                    <button
+                                        onClick={removeImage}
+                                        className="absolute top-2 right-2 p-1.5 bg-destructive text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                                    >
+                                        <AlertCircle className="w-4 h-4" />
+                                    </button>
+                                </div>
+                            ) : (
+                                <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-border/60 rounded-xl cursor-pointer hover:border-primary/60 hover:bg-primary/5 transition-all">
+                                    <Upload className="w-8 h-8 text-muted-foreground mb-2" />
+                                    <span className="text-sm text-muted-foreground">
+                                        {language === 'de' ? 'Bild hierher ziehen oder klicken' : 'Drag image here or click'}
+                                    </span>
+                                    <span className="text-xs text-muted-foreground/60 mt-1">PNG, JPG bis 5MB</span>
+                                    <input
+                                        type="file"
+                                        className="hidden"
+                                        accept="image/*"
+                                        onChange={handleImageUpload}
+                                    />
+                                </label>
+                            )}
+                        </div>
+
+                        {/* Form Content */}
+                        {mode === 'form' ? (
+                            <FormInputMode
+                                language={language}
+                                onGenerate={handleGenerate}
+                                loading={loading}
+                            />
+                        ) : (
+                            <FreeTextInputMode
+                                language={language}
+                                onGenerate={handleGenerate}
+                                loading={loading}
+                            />
+                        )}
                     </div>
 
-                    {/* Preview Area */}
+                    {/* Right Column - Preview */}
                     <div className="space-y-6">
-                        <PreviewArea
-                            language={language}
-                            result={result}
-                            loading={loading}
-                            error={error}
-                        />
+                        {step === 'generating' ? (
+                            <div className="rounded-2xl border border-border/40 bg-card/50 backdrop-blur-sm p-8">
+                                <div className="flex flex-col items-center justify-center space-y-6 text-center min-h-[400px]">
+                                    <div className="relative">
+                                        <div className="absolute inset-0 bg-primary/20 rounded-full blur-xl animate-pulse"></div>
+                                        <div className="relative w-20 h-20 bg-gradient-to-br from-primary to-red-600 rounded-full flex items-center justify-center">
+                                            <Loader2 className="w-10 h-10 text-white animate-spin" />
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <h3 className="font-bold text-xl">{t('generating', language)}</h3>
+                                        <p className="text-sm text-muted-foreground mt-2">
+                                            {language === 'de'
+                                                ? 'KI erstellt Ihre professionelle Werbeanzeige...'
+                                                : 'AI is creating your professional ad...'}
+                                        </p>
+                                    </div>
+                                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                                        <Sparkles className="w-4 h-4" />
+                                        {language === 'de' ? 'Dauert ca. 10-15 Sekunden' : 'Takes about 10-15 seconds'}
+                                    </div>
+                                </div>
+                            </div>
+                        ) : (
+                            <PreviewArea
+                                language={language}
+                                result={result}
+                                loading={loading}
+                                error={error}
+                            />
+                        )}
 
                         {/* Action Buttons */}
-                        {result && !loading && (
+                        {result && !loading && step === 'result' && (
                             <div className="flex flex-wrap gap-3">
-                                <Button onClick={handleDownload} className="gap-2">
+                                <Button
+                                    onClick={handleDownload}
+                                    className="flex-1 gap-2 bg-gradient-to-r from-primary to-red-600 hover:from-primary/90 hover:to-red-600/90"
+                                >
                                     <Download className="w-4 h-4" />
                                     {t('downloadButton', language)}
                                 </Button>
 
-                                <Button onClick={handleSaveToLibrary} variant="outline" className="gap-2">
+                                <Button onClick={handleSaveToLibrary} variant="outline" className="flex-1 gap-2">
                                     <Save className="w-4 h-4" />
                                     {t('saveToLibraryButton', language)}
                                 </Button>
 
-                                <Button onClick={handleReset} variant="ghost">
+                                <Button onClick={handleReset} variant="ghost" className="gap-2">
+                                    <RefreshCw className="w-4 h-4" />
                                     {t('resetButton', language)}
                                 </Button>
                             </div>

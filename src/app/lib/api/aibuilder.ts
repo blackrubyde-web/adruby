@@ -24,7 +24,7 @@ export async function generateAd(params: AdGenerationParams): Promise<AdGenerati
 
     const token = await getAuthToken();
 
-    const response = await fetch(`${API_BASE}/ai-ad-generate`, {
+    const response = await fetch(`${API_BASE}/ai-ad-generate-light`, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
