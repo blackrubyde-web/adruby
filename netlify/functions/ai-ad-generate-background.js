@@ -1,7 +1,7 @@
 /**
  * AI Ad Builder - Background Function
- * Uses Netlify's 15-minute background function timeout
- * Returns immediately with job ID, processes in background
+ * Netlify automatically handles this as background due to -background suffix
+ * The entire handler runs with 15min timeout, returns 202 on completion
  */
 
 import { getOpenAiClient, getOpenAiModel, generateHeroImage } from './_shared/openai.js';
@@ -12,10 +12,9 @@ import { supabaseAdmin } from './_shared/clients.js';
 import { withRetry } from './_shared/aiAd/retry.js';
 import { scoreAdQuality, validateAdContent, predictEngagement } from './_shared/aiAd/quality-scorer.js';
 
-const QUALITY_THRESHOLD = 7;
 const MAX_QUALITY_RETRIES = 2;
 
-export const handler = async (event, context) => {
+export const handler = async (event) => {
     const startTime = Date.now();
 
     const headers = {
@@ -56,7 +55,6 @@ export const handler = async (event, context) => {
         console.log('[AI Ad Generate] User:', user.id, 'Mode:', mode);
 
         // Deduct credits
-        const creditCost = CREDIT_COSTS.ai_ad_generate || 10;
         try {
             await assertAndConsumeCredits(user.id, 'ai_ad_generate');
         } catch (creditError) {
@@ -67,7 +65,7 @@ export const handler = async (event, context) => {
             };
         }
 
-        // Create job record immediately
+        // Create job record
         const jobId = crypto.randomUUID();
         await supabaseAdmin.from('generated_creatives').insert({
             id: jobId,
@@ -78,36 +76,8 @@ export const handler = async (event, context) => {
             metrics: { status: 'processing', started_at: new Date().toISOString() }
         });
 
-        // Start background processing (don't await)
-        processInBackground(jobId, user, body, mode, language, startTime);
+        console.log('[AI Ad Generate] Job created:', jobId);
 
-        // Return immediately with job ID
-        return {
-            statusCode: 202,
-            headers,
-            body: JSON.stringify({
-                success: true,
-                jobId,
-                status: 'processing',
-                message: 'Ad generation started. Poll /ai-ad-status?id=' + jobId
-            }),
-        };
-
-    } catch (error) {
-        console.error('[AI Ad Generate] Error:', error);
-        return {
-            statusCode: 500,
-            headers,
-            body: JSON.stringify({ error: 'Failed to start generation', message: error.message }),
-        };
-    }
-};
-
-/**
- * Background processing function
- */
-async function processInBackground(jobId, user, body, mode, language, startTime) {
-    try {
         // Build prompts
         let promptData;
         if (mode === 'form') {
@@ -119,7 +89,7 @@ async function processInBackground(jobId, user, body, mode, language, startTime)
         const openai = getOpenAiClient();
         const model = getOpenAiModel();
 
-        // Quality loop
+        // Quality loop for copy generation
         let adCopy;
         let qualityScore;
         let attempt = 0;
@@ -225,18 +195,47 @@ async function processInBackground(jobId, user, body, mode, language, startTime)
             }
         }).eq('id', jobId);
 
-        console.log('[AI Ad Generate] Job complete:', jobId);
+        const generationTime = Date.now() - startTime;
+        console.log('[AI Ad Generate] SUCCESS in', generationTime, 'ms');
+
+        // Background functions return 202 automatically
+        // But we still return the result for the status endpoint
+        return {
+            statusCode: 200,
+            headers,
+            body: JSON.stringify({
+                success: true,
+                jobId,
+                status: 'complete',
+                data: {
+                    id: jobId,
+                    headline: adCopy.headline,
+                    slogan: adCopy.slogan,
+                    description: adCopy.description,
+                    cta: adCopy.cta,
+                    imageUrl,
+                    qualityScore,
+                    engagementScore: engagement.score,
+                },
+                metadata: {
+                    model,
+                    timestamp,
+                    generationTime,
+                    savedToLibrary: true,
+                }
+            }),
+        };
 
     } catch (error) {
-        console.error('[AI Ad Generate] Background error:', error);
+        console.error('[AI Ad Generate] Error:', error);
 
-        // Update job with error
-        await supabaseAdmin.from('generated_creatives').update({
-            metrics: {
-                status: 'error',
-                error: error.message,
-                failed_at: new Date().toISOString()
-            }
-        }).eq('id', jobId);
+        return {
+            statusCode: 500,
+            headers,
+            body: JSON.stringify({
+                error: 'Ad generation failed',
+                message: error.message
+            }),
+        };
     }
-}
+};

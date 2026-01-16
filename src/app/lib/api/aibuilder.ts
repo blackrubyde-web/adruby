@@ -69,8 +69,8 @@ export async function generateAd(params: AdGenerationParams): Promise<AdGenerati
 
     const token = await getAuthToken();
 
-    // Start generation (returns immediately with job ID)
-    const response = await fetch(`${API_BASE}/ai-ad-generate`, {
+    // Start generation (background function returns immediately with job ID)
+    const response = await fetch(`${API_BASE}/ai-ad-generate-background`, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',

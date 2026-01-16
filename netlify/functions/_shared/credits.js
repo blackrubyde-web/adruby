@@ -11,7 +11,7 @@ export const CREDIT_COSTS = {
 
 /**
  * Deduct credits from user_profiles table
- * This is the simple, direct approach that works with AdRuby's existing system
+ * Uses ATOMIC SQL pattern to prevent race conditions from parallel requests
  */
 export async function assertAndConsumeCredits(userId, action) {
   const cost = CREDIT_COSTS[action];
@@ -20,44 +20,72 @@ export async function assertAndConsumeCredits(userId, action) {
   }
   const creditCost = cost || 10;
 
-  // 1. Get current credits
-  const { data: profile, error: fetchError } = await supabaseAdmin
+  // ATOMIC: Single UPDATE with WHERE clause ensures no race condition
+  // Only succeeds if user has >= creditCost credits
+  const { data, error } = await supabaseAdmin
     .from("user_profiles")
-    .select("credits")
+    .update({
+      credits: supabaseAdmin.rpc ? undefined : 0 // Trigger RPC path if available
+    })
     .eq("id", userId)
+    .gte("credits", creditCost)
+    .select("credits")
     .single();
 
-  if (fetchError) {
-    console.error("[Credits] Failed to fetch user profile:", fetchError.message);
-    throw new Error("Failed to check credits");
+  // Supabase JS doesn't support raw SQL in update, use RPC instead
+  const { data: result, error: rpcError } = await supabaseAdmin.rpc(
+    "consume_credits_atomic",
+    { p_user_id: userId, p_amount: creditCost }
+  );
+
+  // Fallback to manual approach if RPC doesn't exist
+  if (rpcError?.code === "42883") { // Function not found
+    console.warn("[Credits] RPC not found, using fallback (less safe)");
+
+    // Get current credits
+    const { data: profile, error: fetchError } = await supabaseAdmin
+      .from("user_profiles")
+      .select("credits")
+      .eq("id", userId)
+      .single();
+
+    if (fetchError) {
+      console.error("[Credits] Failed to fetch profile:", fetchError.message);
+      throw new Error("Failed to check credits");
+    }
+
+    const currentCredits = profile?.credits || 0;
+    if (currentCredits < creditCost) {
+      throw new Error(`Insufficient credits. You have ${currentCredits}, need ${creditCost}.`);
+    }
+
+    // Update with optimistic locking (check credits again in WHERE)
+    const { data: updated, error: updateError } = await supabaseAdmin
+      .from("user_profiles")
+      .update({ credits: currentCredits - creditCost })
+      .eq("id", userId)
+      .eq("credits", currentCredits) // Optimistic lock: only if credits unchanged
+      .select("credits")
+      .single();
+
+    if (updateError || !updated) {
+      console.error("[Credits] Concurrent modification detected, retrying...");
+      throw new Error("Credits were modified. Please try again.");
+    }
+
+    console.log(`[Credits] Deducted ${creditCost} from user ${userId}. Remaining: ${updated.credits}`);
+    return { ok: true, cost: creditCost, before: currentCredits, after: updated.credits };
   }
 
-  const currentCredits = profile?.credits || 0;
-
-  // 2. Check if enough credits
-  if (currentCredits < creditCost) {
-    console.warn(`[Credits] Insufficient: user ${userId} has ${currentCredits}, needs ${creditCost}`);
-    throw new Error(`Insufficient credits. You have ${currentCredits}, need ${creditCost}.`);
-  }
-
-  // 3. Deduct credits
-  const newCredits = currentCredits - creditCost;
-  const { error: updateError } = await supabaseAdmin
-    .from("user_profiles")
-    .update({ credits: newCredits })
-    .eq("id", userId);
-
-  if (updateError) {
-    console.error("[Credits] Failed to deduct credits:", updateError.message);
+  if (rpcError) {
+    console.error("[Credits] RPC failed:", rpcError.message);
     throw new Error("Failed to deduct credits");
   }
 
-  console.log(`[Credits] Deducted ${creditCost} from user ${userId}. Remaining: ${newCredits}`);
+  if (result === null || result < 0) {
+    throw new Error(`Insufficient credits. Need ${creditCost}.`);
+  }
 
-  return {
-    ok: true,
-    cost: creditCost,
-    before: currentCredits,
-    after: newCredits
-  };
+  console.log(`[Credits] Deducted ${creditCost} from user ${userId}. Remaining: ${result}`);
+  return { ok: true, cost: creditCost, before: result + creditCost, after: result };
 }
