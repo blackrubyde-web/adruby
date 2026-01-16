@@ -20,7 +20,8 @@ export function getOpenAiModel() {
 }
 
 export function getOpenAiImageModel() {
-  return process.env.CREATIVE_IMAGE_MODEL || "dall-e-3";
+  // gpt-image-1 has superior text rendering capabilities
+  return process.env.CREATIVE_IMAGE_MODEL || "gpt-image-1";
 }
 
 async function fetchImageAsBase64(url) {

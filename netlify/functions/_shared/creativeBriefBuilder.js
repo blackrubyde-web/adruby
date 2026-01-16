@@ -5,6 +5,7 @@
  */
 
 import { getAdStyle, recommendAdStyles, buildImagePromptFromStyle } from './adStyleLibrary.js';
+import { buildTextOverlayPrompt, shouldAttemptTextInImage, generateTextOverlaySpec } from './textInImageSystem.js';
 
 /**
  * Master Prompt System - 10,000+ Ads Experience
@@ -86,10 +87,16 @@ Dein Output ist IMMER valides JSON:
     "confidenceScore": 1-10,
     "styleUsed": "style_id",
     "headline": "...",
-    "slogan": "...",
+    "slogan": "...", 
     "description": "...",
     "cta": "...",
     "imagePrompt": "...",
+    "textInImage": {
+        "enabled": true/false,
+        "headline": "SHORT PUNCHY TEXT (max 5 words)",
+        "badge": "BADGE TEXT (max 3 words)",
+        "ctaText": "CTA IN IMAGE (max 4 words)"
+    },
     "qualityChecks": {
         "headlineScore": 1-10,
         "descriptionScore": 1-10,
@@ -99,6 +106,17 @@ Dein Output ist IMMER valides JSON:
     },
     "reasoning": "Kurze Begründung für deine kreativen Entscheidungen"
 }
+
+## 🎨 TEXT-IN-IMAGE REGELN
+
+Wenn Text im Bild gewünscht ist:
+1. Nutze NUR kurze, punchy Texte (max 5 Wörter pro Element)
+2. Texte müssen PERFEKT LESBAR sein
+3. Nur moderne Sans-Serif Fonts
+4. Hoher Kontrast zwischen Text und Hintergrund
+5. Platziere Text NICHT über dem Produkt
+6. Badge: Top-Right Corner (rot/orange)
+7. Headline: Center oder Bottom mit Gradient
 
 ## 🚨 QUALITÄTSSCHWELLE
 
@@ -217,14 +235,18 @@ export function buildPromptFromBrief(brief) {
     // Build the styled image prompt
     const styledImagePrompt = buildImagePromptFromStyle(style, imageVars);
 
+    // Determine if text-in-image should be attempted
+    const attemptTextInImage = shouldAttemptTextInImage(style, { headline: brief.product.name });
+
     // Build user prompt
-    const userPrompt = buildUserPrompt(brief, styledImagePrompt);
+    const userPrompt = buildUserPrompt(brief, styledImagePrompt, attemptTextInImage);
 
     return {
         system: MASTER_SYSTEM_PROMPT,
         user: userPrompt,
         style: style,
         brief: brief,
+        attemptTextInImage: attemptTextInImage,
     };
 }
 
