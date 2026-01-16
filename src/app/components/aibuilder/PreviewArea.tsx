@@ -3,7 +3,7 @@
  */
 
 import { t } from '../../lib/aibuilder/translations';
-import { Loader2, AlertCircle } from 'lucide-react';
+import { Loader2, AlertCircle, Globe, MoreHorizontal, ThumbsUp, MessageCircle, Share2 } from 'lucide-react';
 import type { PreviewAreaProps } from '../../types/aibuilder';
 
 export function PreviewArea({ language, result, loading, error }: PreviewAreaProps) {
@@ -58,64 +58,93 @@ export function PreviewArea({ language, result, loading, error }: PreviewAreaPro
     }
 
     return (
-        <div className="space-y-4">
-            {/* Image Preview */}
-            {result.imageUrl && (
-                <div className="rounded-xl border border-border/40 bg-card/50 backdrop-blur overflow-hidden">
-                    <img
-                        src={result.imageUrl}
-                        alt="Generated Ad"
-                        className="w-full h-auto"
-                    />
-                </div>
-            )}
+        <div className="space-y-6">
+            <h3 className="font-bold text-lg px-2">{t('previewTitle', language)}</h3>
 
-            {/* Text Content */}
-            <div className="rounded-xl border border-border/40 bg-card/50 backdrop-blur p-6 space-y-4">
-                <h3 className="font-bold text-lg">{t('previewTitle', language)}</h3>
-
-                {/* Headline */}
-                {result.headline && (
-                    <div className="space-y-1">
-                        <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
-                            {t('headlineLabel', language)}
-                        </label>
-                        <p className="text-xl font-bold">{result.headline}</p>
-                    </div>
-                )}
-
-                {/* Slogan */}
-                {result.slogan && (
-                    <div className="space-y-1">
-                        <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
-                            {t('sloganLabel', language)}
-                        </label>
-                        <p className="text-lg font-semibold text-primary">{result.slogan}</p>
-                    </div>
-                )}
-
-                {/* Description */}
-                {result.description && (
-                    <div className="space-y-1">
-                        <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
-                            {t('descriptionLabel', language)}
-                        </label>
-                        <p className="text-sm">{result.description}</p>
-                    </div>
-                )}
-
-                {/* CTA */}
-                {result.cta && (
-                    <div className="space-y-1">
-                        <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
-                            {t('ctaLabel', language)}
-                        </label>
-                        <div className="inline-flex px-6 py-3 bg-gradient-to-r from-primary to-red-600 text-white font-semibold rounded-lg">
-                            {result.cta}
+            {/* Meta Ad Mockup */}
+            <div className="max-w-md mx-auto bg-[#242526] rounded-xl overflow-hidden shadow-lg border border-border/20">
+                {/* Header */}
+                <div className="p-4 flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary to-orange-500 flex items-center justify-center text-white font-bold">
+                            AR
+                        </div>
+                        <div>
+                            <div className="font-semibold text-sm text-white">AdRuby AI</div>
+                            <div className="text-xs text-gray-400 flex items-center gap-1">
+                                {language === 'de' ? 'Gesponsert' : 'Sponsored'} · <Globe className="w-3 h-3" />
+                            </div>
                         </div>
                     </div>
+                    <button className="text-gray-400 hover:text-white">
+                        <MoreHorizontal className="w-5 h-5" />
+                    </button>
+                </div>
+
+                {/* Primary Text (Description) */}
+                <div className="px-4 pb-3">
+                    <p className="text-sm text-white whitespace-pre-wrap leading-relaxed">{result.description}</p>
+                </div>
+
+                {/* Image */}
+                {result.imageUrl && (
+                    <div className="relative aspect-square w-full bg-black/50">
+                        <img
+                            src={result.imageUrl}
+                            alt="Ad Creative"
+                            className="w-full h-full object-cover"
+                        />
+                    </div>
                 )}
+
+                {/* Footer (Headline + CTA) */}
+                <div className="bg-[#323436] p-4 flex items-center justify-between gap-4">
+                    <div className="flex-1 min-w-0">
+                        <p className="text-xs text-gray-400 uppercase tracking-wide truncate">
+                            {result.slogan}
+                        </p>
+                        <h4 className="font-bold text-white text-base truncate leading-tight mt-0.5">
+                            {result.headline}
+                        </h4>
+                    </div>
+                    <button className="shrink-0 bg-white/10 hover:bg-white/20 text-white font-semibold py-2 px-4 rounded-md text-sm transition-colors border border-white/10 whitespace-nowrap">
+                        {result.cta}
+                    </button>
+                </div>
+
+                {/* Engagement Mockup */}
+                <div className="px-4 py-3 border-t border-white/5 flex items-center justify-between text-gray-400 text-sm">
+                    <div className="flex items-center gap-4">
+                        <button className="flex items-center gap-1.5 hover:text-white transition">
+                            <ThumbsUp className="w-4 h-4" /> <span>Like</span>
+                        </button>
+                        <button className="flex items-center gap-1.5 hover:text-white transition">
+                            <MessageCircle className="w-4 h-4" /> <span>Comment</span>
+                        </button>
+                        <button className="flex items-center gap-1.5 hover:text-white transition">
+                            <Share2 className="w-4 h-4" /> <span>Share</span>
+                        </button>
+                    </div>
+                </div>
             </div>
+
+            {/* Scores (moved below ad) */}
+            {(result.qualityScore || result.engagementScore) && (
+                <div className="grid grid-cols-2 gap-4 max-w-md mx-auto">
+                    {result.qualityScore && (
+                        <div className="bg-card/30 p-4 rounded-xl border border-border/40 text-center">
+                            <div className="text-xs text-muted-foreground uppercase">{language === 'de' ? 'Qualität' : 'Quality'}</div>
+                            <div className="text-2xl font-bold text-primary mt-1">{result.qualityScore}/10</div>
+                        </div>
+                    )}
+                    {result.engagementScore && (
+                        <div className="bg-card/30 p-4 rounded-xl border border-border/40 text-center">
+                            <div className="text-xs text-muted-foreground uppercase">{language === 'de' ? 'Engagement' : 'Engagement'}</div>
+                            <div className="text-2xl font-bold text-green-500 mt-1">{result.engagementScore}%</div>
+                        </div>
+                    )}
+                </div>
+            )}
         </div>
     );
 }

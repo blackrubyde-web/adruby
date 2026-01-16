@@ -33,6 +33,8 @@ export interface AdGenerationParams {
     template?: string;
     // Free mode fields
     text?: string;
+    // Optional product image
+    productImageUrl?: string;
 }
 
 export interface AdGenerationResult {

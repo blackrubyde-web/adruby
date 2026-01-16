@@ -78,12 +78,59 @@ export const handler = async (event) => {
 
         console.log('[AI Ad Generate] Job created:', jobId);
 
-        // Build prompts
+        // Vision Analysis for Product Preservation
+        let visionDescription = '';
+        if (body.productImageUrl) {
+            console.log('[AI Ad Generate] Analyzing product image:', body.productImageUrl);
+            try {
+                const visionResponse = await getOpenAiClient().chat.completions.create({
+                    model: 'gpt-4o',
+                    messages: [
+                        {
+                            role: 'system',
+                            content: 'You are an expert product photographer. Analyze the product in this image in EXTREME detail for a DALL-E 3 prompt. Focus ONLY on the product (shape, materials, colors, logos, textures). Ignore the background. Output a dense, comma-separated visual description.'
+                        },
+                        {
+                            role: 'user',
+                            content: [
+                                { type: 'text', text: 'Describe the main product:' },
+                                { type: 'image_url', image_url: { url: body.productImageUrl } }
+                            ]
+                        }
+                    ],
+                    max_tokens: 300
+                });
+                visionDescription = visionResponse.choices[0].message.content;
+                console.log('[AI Ad Generate] Vision description:', visionDescription.substring(0, 50) + '...');
+            } catch (err) {
+                console.error('[AI Ad Generate] Vision analysis failed:', err);
+                // Continue without vision
+            }
+        }
+
+        // Build prompts (incorporating vision data)
         let promptData;
+        const enrichedBody = { ...body };
+
+        // Inject vision description into product inputs
+        if (visionDescription) {
+            if (mode === 'form') {
+                enrichedBody.productName = `${body.productName || 'Product'} (${visionDescription})`;
+            } else {
+                enrichedBody.text = `${body.text}. Visual Product Description: ${visionDescription}`;
+            }
+        }
+
         if (mode === 'form') {
-            promptData = buildPromptFromForm(body);
+            promptData = buildPromptFromForm(enrichedBody);
         } else {
-            promptData = buildPromptFromFreeText(body.text, body.template, language);
+            promptData = buildPromptFromFreeText(enrichedBody.text, enrichedBody.template, language);
+        }
+
+        // Override user prompt in promptData if vision description exists to enforce product look
+        if (visionDescription) {
+            // We ensure the image prompt strictly uses the vision description
+            promptData.user += `\n\nCRITICAL VISUAL REQUIREMENT: The product in the image MUST look exactly like this: ${visionDescription}`;
         }
 
         const openai = getOpenAiClient();

@@ -34,7 +34,7 @@ export function AIAdBuilderPage() {
     const [loading, setLoading] = useState(false);
     const [result, setResult] = useState<AdGenerationResult | null>(null);
     const [error, setError] = useState<string | null>(null);
-    const [_productImage, setProductImage] = useState<File | null>(null);
+    const [productImage, setProductImage] = useState<File | null>(null);
     const [productImagePreview, setProductImagePreview] = useState<string | null>(null);
 
     const handleImageUpload = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
@@ -61,9 +61,26 @@ export function AIAdBuilderPage() {
         setStep('generating');
 
         try {
+            let productImageUrl = undefined;
+            if (productImage) {
+                // Upload product image to Supabase
+                const filename = `temp/product-${profile?.id}-${Date.now()}.png`;
+                const { data, error: uploadError } = await supabase.storage
+                    .from('creative-images')
+                    .upload(filename, productImage);
+
+                if (uploadError) throw new Error('Product image upload failed: ' + uploadError.message);
+
+                const { data: urlData } = supabase.storage
+                    .from('creative-images')
+                    .getPublicUrl(filename);
+                productImageUrl = urlData.publicUrl;
+            }
+
             const response = await generateAd({
                 mode,
                 language,
+                productImageUrl,
                 ...inputData,
             });
 
