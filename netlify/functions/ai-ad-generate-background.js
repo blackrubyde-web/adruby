@@ -9,6 +9,8 @@ import { enhanceImagePrompt } from './_shared/aiAdPromptBuilder.js';
 import { buildCreativeBrief, buildPromptFromBrief, qualityGate } from './_shared/creativeBriefBuilder.js';
 import { autoComposeAdPrompt, getLayoutOptions } from './_shared/compositionEngine.js';
 import { masterCreativeEngine, getAllLayouts } from './_shared/masterCreativeEngine.js';
+// Phase 8: Ultimate Master Engine with 30+ vertical modules
+import { ultimateMasterEngine, AVAILABLE_VERTICALS, SYSTEM_STATS } from './_shared/verticals/index.js';
 import { getUserProfile } from './_shared/auth.js';
 import { assertAndConsumeCredits, CREDIT_COSTS } from './_shared/credits.js';
 import { supabaseAdmin } from './_shared/clients.js';
@@ -133,8 +135,74 @@ export const handler = async (event) => {
         console.log('[AI Ad Generate] Using style:', promptData.style?.name);
 
         // ========================================
-        // MASTER CREATIVE ENGINE v2 (Intelligent System)
-        // Handles: Industry detection, Color harmony, Layout selection, Typography, Variations
+        // ULTIMATE MASTER ENGINE (Enterprise Phase 8)
+        // Complete 30+ module system with vertical intelligence
+        // ========================================
+        let ultimateOutput = null;
+        try {
+            ultimateOutput = ultimateMasterEngine({
+                // Product info
+                productName: body.productName || 'Product',
+                productDescription: body.text || body.usp,
+                productImageUrl: body.productImageUrl,
+                visionDescription: visionDescription,
+
+                // Business context
+                industry: body.industry,
+                vertical: body.vertical, // e-commerce, saas, coaching, course, dropshipping, agency, etc.
+                businessModel: body.businessModel, // freemium, free_trial, signature_course, etc.
+
+                // Target audience
+                targetAudience: body.targetAudience,
+                persona: body.persona, // busy_professional, health_conscious, gen_z_trendy, etc.
+
+                // Goals
+                goal: body.goal || 'conversion',
+                objective: body.objective || 'purchase',
+
+                // Preferences
+                tone: body.tone || 'professional',
+                language: language,
+                platform: body.platform || 'instagram_feed',
+
+                // Content
+                headline: body.headline,
+                subheadline: body.subheadline,
+                features: body.features || [],
+                cta: body.cta,
+                badge: body.badge,
+                testimonial: body.testimonial,
+                price: body.price,
+                originalPrice: body.originalPrice,
+
+                // Special modes
+                isRetargeting: body.isRetargeting || false,
+                retargetingSegment: body.retargetingSegment, // cart_abandon, product_view, etc.
+                isSeasonalCampaign: body.isSeasonalCampaign || false,
+
+                // Overrides
+                layoutId: body.layoutId,
+                colorOverride: body.brandColor,
+                fontPairingId: body.fontPairingId,
+                conversionFramework: body.conversionFramework,
+                archetypeId: body.archetypeId,
+                visualPattern: body.visualPattern,
+            });
+
+            console.log('[AI Ad Generate] Ultimate Engine output:', {
+                vertical: ultimateOutput.metadata?.vertical,
+                industry: ultimateOutput.metadata?.industry,
+                persona: ultimateOutput.metadata?.persona,
+                layout: ultimateOutput.metadata?.layout,
+                performanceScore: ultimateOutput.performance?.overallScore,
+                performanceGrade: ultimateOutput.performance?.grade,
+            });
+        } catch (ultimateErr) {
+            console.warn('[AI Ad Generate] Ultimate Engine failed, falling back:', ultimateErr.message);
+        }
+
+        // ========================================
+        // MASTER CREATIVE ENGINE v2 (Fallback)
         // ========================================
         const masterOutput = masterCreativeEngine({
             // Product info
@@ -240,11 +308,16 @@ export const handler = async (event) => {
         }
 
         // Generate image with intelligent prompt selection
-        // Priority: 1) Master Engine (full intelligence), 2) Layout composition, 3) Enhanced AI prompt
+        // Priority: 1) Ultimate Engine (full verticals), 2) Master Engine, 3) Layout composition, 4) Enhanced AI prompt
         let imagePrompt;
         let promptSource;
 
-        if (masterOutput?.imagePrompt) {
+        if (ultimateOutput?.imagePrompt) {
+            // Use Ultimate Master Engine output (full vertical intelligence)
+            imagePrompt = ultimateOutput.imagePrompt;
+            promptSource = 'ultimate-engine';
+            console.log('[AI Ad Generate] Using Ultimate Engine prompt (vertical:', ultimateOutput.metadata?.vertical, ', score:', ultimateOutput.performance?.overallScore, ')');
+        } else if (masterOutput?.imagePrompt) {
             // Use Master Creative Engine output (full intelligence: industry, color, typography)
             imagePrompt = masterOutput.imagePrompt;
             promptSource = 'master-engine';
