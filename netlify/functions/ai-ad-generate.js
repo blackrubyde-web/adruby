@@ -1,6 +1,7 @@
 /**
- * AI Ad Builder - Full Generation (Text + Image)
- * Uses existing AdRuby credit system, generates complete Meta-ready creatives
+ * AI Ad Builder - Background Function
+ * Uses Netlify's 15-minute background function timeout
+ * Returns immediately with job ID, processes in background
  */
 
 import { getOpenAiClient, getOpenAiModel, generateHeroImage } from './_shared/openai.js';
@@ -14,7 +15,7 @@ import { scoreAdQuality, validateAdContent, predictEngagement } from './_shared/
 const QUALITY_THRESHOLD = 7;
 const MAX_QUALITY_RETRIES = 2;
 
-export const handler = async (event) => {
+export const handler = async (event, context) => {
     const startTime = Date.now();
 
     const headers = {
@@ -33,11 +34,10 @@ export const handler = async (event) => {
     }
 
     try {
-        // 1. Parse body
         const body = JSON.parse(event.body || '{}');
         const { mode, language = 'de' } = body;
 
-        // 2. Authenticate
+        // Authenticate
         const authHeader = event.headers.authorization || event.headers.Authorization;
         const user = await getUserProfile(authHeader);
 
@@ -45,17 +45,17 @@ export const handler = async (event) => {
             return { statusCode: 401, headers, body: JSON.stringify({ error: 'Unauthorized' }) };
         }
 
-        // 3. Validate input
+        // Validate
         if (mode !== 'form' && mode !== 'free') {
-            return { statusCode: 400, headers, body: JSON.stringify({ error: 'Invalid mode (form or free)' }) };
+            return { statusCode: 400, headers, body: JSON.stringify({ error: 'Invalid mode' }) };
         }
         if (mode === 'free' && !body.text) {
-            return { statusCode: 400, headers, body: JSON.stringify({ error: 'Missing text for free mode' }) };
+            return { statusCode: 400, headers, body: JSON.stringify({ error: 'Missing text' }) };
         }
 
         console.log('[AI Ad Generate] User:', user.id, 'Mode:', mode);
 
-        // 4. Deduct credits FIRST using existing system
+        // Deduct credits
         const creditCost = CREDIT_COSTS.ai_ad_generate || 10;
         try {
             await assertAndConsumeCredits(user.id, 'ai_ad_generate');
@@ -63,15 +63,52 @@ export const handler = async (event) => {
             return {
                 statusCode: 402,
                 headers,
-                body: JSON.stringify({
-                    error: 'Insufficient credits',
-                    message: creditError.message,
-                    required: creditCost
-                }),
+                body: JSON.stringify({ error: 'Insufficient credits', message: creditError.message }),
             };
         }
 
-        // 5. Build prompts
+        // Create job record immediately
+        const jobId = crypto.randomUUID();
+        await supabaseAdmin.from('generated_creatives').insert({
+            id: jobId,
+            user_id: user.id,
+            saved: false,
+            inputs: { mode, language, ...body },
+            outputs: null,
+            metrics: { status: 'processing', started_at: new Date().toISOString() }
+        });
+
+        // Start background processing (don't await)
+        processInBackground(jobId, user, body, mode, language, startTime);
+
+        // Return immediately with job ID
+        return {
+            statusCode: 202,
+            headers,
+            body: JSON.stringify({
+                success: true,
+                jobId,
+                status: 'processing',
+                message: 'Ad generation started. Poll /ai-ad-status?id=' + jobId
+            }),
+        };
+
+    } catch (error) {
+        console.error('[AI Ad Generate] Error:', error);
+        return {
+            statusCode: 500,
+            headers,
+            body: JSON.stringify({ error: 'Failed to start generation', message: error.message }),
+        };
+    }
+};
+
+/**
+ * Background processing function
+ */
+async function processInBackground(jobId, user, body, mode, language, startTime) {
+    try {
+        // Build prompts
         let promptData;
         if (mode === 'form') {
             promptData = buildPromptFromForm(body);
@@ -82,7 +119,7 @@ export const handler = async (event) => {
         const openai = getOpenAiClient();
         const model = getOpenAiModel();
 
-        // 6. Generate ad copy with quality loop
+        // Quality loop
         let adCopy;
         let qualityScore;
         let attempt = 0;
@@ -110,7 +147,6 @@ export const handler = async (event) => {
             try {
                 validateAdContent(adCopy);
             } catch (err) {
-                console.warn('[AI Ad Generate] Invalid structure:', err.message);
                 if (attempt === MAX_QUALITY_RETRIES) throw err;
                 continue;
             }
@@ -122,7 +158,7 @@ export const handler = async (event) => {
             if (quality.passed || attempt === MAX_QUALITY_RETRIES) break;
         }
 
-        // 7. Generate image with DALL-E 3
+        // Generate image
         const imagePrompt = enhanceImagePrompt(
             adCopy.imagePrompt || promptData.user,
             promptData.template
@@ -139,7 +175,7 @@ export const handler = async (event) => {
             { maxRetries: 2, initialDelay: 2000 }
         );
 
-        // 8. Upload to Supabase Storage
+        // Upload to Storage
         const timestamp = Date.now();
         const filename = `ai-ad-${user.id}-${timestamp}.png`;
         const storagePath = `ai-ads/${filename}`;
@@ -152,8 +188,7 @@ export const handler = async (event) => {
             });
 
         if (uploadError) {
-            console.error('[AI Ad Generate] Upload failed:', uploadError.message);
-            throw new Error('Image upload failed');
+            throw new Error('Image upload failed: ' + uploadError.message);
         }
 
         const { data: urlData } = supabaseAdmin.storage
@@ -163,12 +198,11 @@ export const handler = async (event) => {
         const imageUrl = urlData?.publicUrl;
         console.log('[AI Ad Generate] Image uploaded:', imageUrl);
 
-        // 9. Calculate engagement
+        // Engagement prediction
         const engagement = predictEngagement(adCopy, body.targetAudience);
 
-        // 10. Save to Creative Library (generated_creatives table)
-        const creativePayload = {
-            user_id: user.id,
+        // Update job with results
+        await supabaseAdmin.from('generated_creatives').update({
             thumbnail: imageUrl,
             outputs: {
                 headline: adCopy.headline,
@@ -181,81 +215,28 @@ export const handler = async (event) => {
                 engagementScore: engagement.score,
                 source: 'ai_ad_builder'
             },
-            inputs: {
-                mode,
-                language,
-                template: body.template || promptData.template.id,
-                ...body
-            },
-            saved: true, // Auto-save to library
+            saved: true,
             metrics: {
+                status: 'complete',
                 qualityScore,
                 engagementScore: engagement.score,
-                generationTime: Date.now() - startTime
-            }
-        };
-
-        const { data: savedCreative, error: saveError } = await supabaseAdmin
-            .from('generated_creatives')
-            .insert(creativePayload)
-            .select('id')
-            .single();
-
-        if (saveError) {
-            console.error('[AI Ad Generate] Library save failed:', saveError.message);
-        } else {
-            console.log('[AI Ad Generate] Saved to Creative Library:', savedCreative?.id);
-        }
-
-        // 11. Build response
-        const result = {
-            success: true,
-            data: {
-                id: savedCreative?.id,
-                headline: adCopy.headline,
-                slogan: adCopy.slogan,
-                description: adCopy.description,
-                cta: adCopy.cta,
-                imageUrl,
-                imagePrompt: adCopy.imagePrompt,
-                template: promptData.template.id,
-                creditsUsed: creditCost,
-                qualityScore,
-                engagementScore: engagement.score,
-            },
-            metadata: {
-                model,
-                timestamp,
                 generationTime: Date.now() - startTime,
-                savedToLibrary: !saveError,
-            },
-        };
+                completed_at: new Date().toISOString()
+            }
+        }).eq('id', jobId);
 
-        console.log('[AI Ad Generate] SUCCESS in', result.metadata.generationTime, 'ms');
-
-        return { statusCode: 200, headers, body: JSON.stringify(result) };
+        console.log('[AI Ad Generate] Job complete:', jobId);
 
     } catch (error) {
-        console.error('[AI Ad Generate] Error:', error);
+        console.error('[AI Ad Generate] Background error:', error);
 
-        let errorMessage = 'Ad generation failed';
-        let statusCode = 500;
-
-        if (error.message?.includes('rate_limit')) {
-            errorMessage = 'Service busy. Try again.';
-            statusCode = 429;
-        } else if (error.message?.includes('content_policy')) {
-            errorMessage = 'Content violates policy.';
-            statusCode = 400;
-        } else if (error.message?.includes('timeout')) {
-            errorMessage = 'Generation timeout. Try again.';
-            statusCode = 504;
-        }
-
-        return {
-            statusCode,
-            headers,
-            body: JSON.stringify({ error: errorMessage, message: error.message }),
-        };
+        // Update job with error
+        await supabaseAdmin.from('generated_creatives').update({
+            metrics: {
+                status: 'error',
+                error: error.message,
+                failed_at: new Date().toISOString()
+            }
+        }).eq('id', jobId);
     }
-};
+}
