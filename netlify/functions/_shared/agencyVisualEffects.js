@@ -423,11 +423,10 @@ export function generateAgencyOverlay(config) {
         isGaming = false,
     } = config;
 
-    // Calculate product zone center for exclusion
+    // Calculate product zone center for effects positioning
     const hasProductZone = productZone && productZone.width && productZone.height;
     const prodCenterX = hasProductZone ? (productZone.x + productZone.width / 2) : canvasSize / 2;
     const prodCenterY = hasProductZone ? (productZone.y + productZone.height / 2) : canvasSize / 2;
-    const prodRadius = hasProductZone ? Math.max(productZone.width, productZone.height) * 0.6 : canvasSize * 0.3;
 
     let svg = `<svg width="${canvasSize}" height="${canvasSize}" xmlns="http://www.w3.org/2000/svg">
 <defs>
@@ -435,64 +434,76 @@ export function generateAgencyOverlay(config) {
     ${TYPOGRAPHY_EFFECTS.textGlow()}
     ${isGaming ? TYPOGRAPHY_EFFECTS.neonText() : ''}
     
-    <!-- REDUCED Film grain - very subtle to not affect product colors -->
-    <filter id="lightNoise" x="0%" y="0%" width="100%" height="100%">
-        <feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="2" result="noise"/>
-        <feColorMatrix in="noise" type="matrix" values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 0.01 0"/>
+    <!-- Premium film grain for texture -->
+    <filter id="premiumNoise" x="0%" y="0%" width="100%" height="100%">
+        <feTurbulence type="fractalNoise" baseFrequency="0.8" numOctaves="4" result="noise"/>
+        <feColorMatrix in="noise" type="matrix" values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 0.03 0"/>
     </filter>
     
-    <!-- Vignette with PRODUCT ZONE EXCLUSION -->
-    <radialGradient id="vignetteWithHole" cx="${prodCenterX / canvasSize * 100}%" cy="${prodCenterY / canvasSize * 100}%" r="85%">
+    <!-- Vignette centered on product - product stays bright, edges get darker -->
+    <radialGradient id="vignetteProductCentered" cx="${prodCenterX / canvasSize * 100}%" cy="${prodCenterY / canvasSize * 100}%" r="80%">
         <stop offset="0%" style="stop-color:rgba(0,0,0,0)"/>
-        <stop offset="60%" style="stop-color:rgba(0,0,0,0)"/>
-        <stop offset="100%" style="stop-color:rgba(0,0,0,0.25)"/>
+        <stop offset="50%" style="stop-color:rgba(0,0,0,0)"/>
+        <stop offset="80%" style="stop-color:rgba(0,0,0,0.15)"/>
+        <stop offset="100%" style="stop-color:rgba(0,0,0,0.35)"/>
     </radialGradient>
+    
+    <!-- Large shadow for depth -->
+    <filter id="shadow-lg" x="-50%" y="-50%" width="200%" height="200%">
+        <feDropShadow dx="0" dy="8" stdDeviation="15" flood-color="rgba(0,0,0,0.35)"/>
+    </filter>
     
     ${COLOR_GRADING.cinematic}
 </defs>
 `;
 
-    // Light effects (subtle, in corners only)
+    // Light effects - creates atmosphere
     if (includeLightEffects) {
         if (isGaming) {
-            svg += LIGHT_EFFECTS.lensFlare.anamorphicStreak(canvasSize / 2, canvasSize * 0.3, canvasSize * 0.8, '#00FFFF', 0.04);
-            svg += LIGHT_EFFECTS.lightLeak.topRight(0.04);
-            svg += LIGHT_EFFECTS.lightLeak.bottomLeft(0.03);
+            // Neon aesthetic for gaming
+            svg += LIGHT_EFFECTS.lensFlare.anamorphicStreak(canvasSize / 2, canvasSize * 0.25, canvasSize * 0.9, '#00FFFF', 0.08);
+            svg += LIGHT_EFFECTS.lightLeak.topRight(0.08);
+            svg += LIGHT_EFFECTS.lightLeak.bottomLeft(0.06);
         } else {
-            // Very subtle glow in corner only
-            svg += LIGHT_EFFECTS.lensFlare.softGlow(canvasSize * 0.85, canvasSize * 0.15, 120, '#FFFFFF', 0.05);
+            // Subtle professional glow
+            svg += LIGHT_EFFECTS.lensFlare.softGlow(canvasSize * 0.8, canvasSize * 0.2, 180, '#FFFFFF', 0.10);
+            svg += LIGHT_EFFECTS.lensFlare.softGlow(canvasSize * 0.15, canvasSize * 0.85, 100, '#FFFFFF', 0.05);
         }
     }
 
-    // Product aura (behind product, so actually helpful)
+    // Product glow/aura - makes product pop
     if (hasProductZone) {
         const centerX = productZone.x + productZone.width / 2;
         const centerY = productZone.y + productZone.height / 2;
         if (isGaming) {
-            svg += PRODUCT_EFFECTS.aura.neon(centerX, centerY, productZone.width, productZone.height, '#00FFFF', 0.08);
+            // Strong neon glow for gaming
+            svg += PRODUCT_EFFECTS.aura.neon(centerX, centerY, productZone.width, productZone.height, '#00FFFF', 0.15);
         } else {
-            // Very subtle white glow behind product
-            svg += PRODUCT_EFFECTS.aura.standard(centerX, centerY, productZone.width, productZone.height, '#FFFFFF', 0.05);
+            // Elegant white glow for premium
+            svg += PRODUCT_EFFECTS.aura.standard(centerX, centerY, productZone.width, productZone.height, '#FFFFFF', 0.12);
         }
+        // Add subtle shadow under product
+        svg += PRODUCT_EFFECTS.shadow.soft(centerX, productZone.y + productZone.height, productZone.width);
     }
 
-    // Geometric accents (corners only - away from product)
+    // Geometric accents for premium feel
     if (includeGeometricAccents) {
-        svg += GEOMETRIC_ACCENTS.cornerLines.topLeft(50, 'rgba(255,255,255,0.04)', 1);
-        svg += GEOMETRIC_ACCENTS.cornerLines.bottomRight(canvasSize, 50, 'rgba(255,255,255,0.04)', 1);
+        svg += GEOMETRIC_ACCENTS.cornerLines.topLeft(70, 'rgba(255,255,255,0.08)', 1);
+        svg += GEOMETRIC_ACCENTS.cornerLines.bottomRight(canvasSize, 70, 'rgba(255,255,255,0.08)', 1);
         if (isGaming) {
-            svg += GEOMETRIC_ACCENTS.hexGrid(0.015);
+            svg += GEOMETRIC_ACCENTS.hexGrid(0.025);
+            svg += GEOMETRIC_ACCENTS.particles(4, canvasSize);
         }
     }
 
-    // IMPROVED Vignette - centered on product so it doesn't darken product
+    // Premium vignette - product center stays bright
     if (includeVignette) {
-        svg += `<rect width="${canvasSize}" height="${canvasSize}" fill="url(#vignetteWithHole)"/>`;
+        svg += `<rect width="${canvasSize}" height="${canvasSize}" fill="url(#vignetteProductCentered)"/>`;
     }
 
-    // DRAMATICALLY REDUCED Film grain - almost invisible
+    // Film grain for premium texture (subtle but visible)
     if (includeGrain) {
-        svg += `<rect width="100%" height="100%" filter="url(#lightNoise)" opacity="0.15"/>`;
+        svg += `<rect width="100%" height="100%" filter="url(#premiumNoise)" opacity="0.35"/>`;
     }
 
     svg += `</svg>`;
