@@ -22,6 +22,13 @@ import {
     fetchImageAsBuffer,
     addTextOverlay
 } from './_shared/imageCompositingEngine.js';
+// Layout-Aware Compositing (integrated design with zones)
+import {
+    createLayoutAwareAd,
+    buildLayoutBackgroundPrompt,
+    detectBestLayout,
+    AD_LAYOUTS_2025
+} from './_shared/layoutAwareCompositing.js';
 import { getUserProfile } from './_shared/auth.js';
 import { assertAndConsumeCredits, CREDIT_COSTS } from './_shared/credits.js';
 import { supabaseAdmin } from './_shared/clients.js';
@@ -443,22 +450,31 @@ Beginne mit: "PRÄZISE PRODUKTBESCHREIBUNG:"`
         const storagePath = `ai-ads/${filename}`;
 
         if (body.productImageUrl) {
-            // ===== REAL COMPOSITING MODE =====
-            // Generate background ONLY, then overlay the EXACT original product
-            console.log('[AI Ad Generate] 🎨 COMPOSITING MODE: Preserving exact product image');
+            // ===== LAYOUT-AWARE COMPOSITING MODE =====
+            // Generates background with zones, places product at correct position,
+            // adds integrated design elements (arrows, callouts, CTAs)
+            console.log('[AI Ad Generate] 🎨 LAYOUT-AWARE COMPOSITING: Creating integrated ad design');
 
-            // Step 1: Generate 2025-level background (NO PRODUCT)
-            const backgroundPrompt = build2025BackgroundPrompt({
+            // Step 1: Detect best layout for this content
+            const selectedLayout = detectBestLayout({
+                features: dynamicText.features,
+                industry: body.industry,
+                hasTestimonial: !!body.testimonial,
+                isSale: body.goal === 'sale',
+                isMinimal: body.template === 'minimalist_elegant',
+            });
+            console.log('[AI Ad Generate] Selected layout:', selectedLayout.id);
+
+            // Step 2: Generate background using layout-specific prompt
+            const layoutBackgroundPrompt = buildLayoutBackgroundPrompt(selectedLayout.id, {
                 primaryColor: body.brandColor || '#1A1A2E',
-                accentColor: '#FF4444',
-                style: body.industry === 'gaming' ? 'neon-gaming' : 'modern-gradient',
-                industry: body.industry || 'retail',
+                industry: body.industry,
             });
 
-            console.log('[AI Ad Generate] Generating background only...');
+            console.log('[AI Ad Generate] Generating layout-aware background...');
             const backgroundResult = await withRetry(
                 async () => generateHeroImage({
-                    prompt: backgroundPrompt,
+                    prompt: layoutBackgroundPrompt,
                     size: '1024x1024',
                     quality: 'hd',
                 }),
@@ -466,24 +482,25 @@ Beginne mit: "PRÄZISE PRODUKTBESCHREIBUNG:"`
             );
 
             const backgroundBuffer = Buffer.from(backgroundResult.b64, 'base64');
-            console.log('[AI Ad Generate] ✓ Background generated');
+            console.log('[AI Ad Generate] ✓ Layout background generated');
 
-            // Step 2: Create composited ad with EXACT product image
-            const compositedAd = await createCompositedAd({
+            // Step 3: Create layout-aware ad with EXACT product + integrated elements
+            const layoutAwareAd = await createLayoutAwareAd({
                 backgroundBuffer: backgroundBuffer,
                 productImageUrl: body.productImageUrl,
+                layoutId: selectedLayout.id,
                 headline: dynamicText.headline,
                 subheadline: dynamicText.subheadline,
-                cta: dynamicText.cta,
-                badge: dynamicText.badge || 'BESTSELLER',
                 features: dynamicText.features.slice(0, 4),
-                productPosition: 'center',
-                productScale: 0.50, // Product takes 50% of frame
-                style: 'modern-dark',
+                cta: dynamicText.cta,
+                badge: dynamicText.badge || 'LIMITIERT',
+                industry: body.industry,
+                canvasSize: 1024,
             });
 
-            finalImageBuffer = compositedAd.buffer;
-            console.log('[AI Ad Generate] ✅ COMPOSITING COMPLETE - Product preserved 1:1');
+            finalImageBuffer = layoutAwareAd.buffer;
+            console.log('[AI Ad Generate] ✅ LAYOUT-AWARE COMPOSITING COMPLETE');
+            console.log('[AI Ad Generate] Product position:', layoutAwareAd.metadata.productPosition);
 
         } else {
             // ===== LEGACY MODE (no product image) =====
