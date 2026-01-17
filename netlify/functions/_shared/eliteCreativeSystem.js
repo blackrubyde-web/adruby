@@ -32,6 +32,18 @@ import {
     COLOR_GRADING,
     generateAgencyOverlay
 } from './agencyVisualEffects.js';
+// Import E-Commerce Conversion Elements
+import {
+    PRICE_ELEMENTS,
+    DISCOUNT_ELEMENTS,
+    TRUST_BADGES,
+    RATINGS,
+    URGENCY,
+    BUNDLE_ELEMENTS,
+    SHIPPING_INFO,
+    SOCIAL_PROOF,
+    generateEcommerceOverlay
+} from './ecommerceElements.js';
 
 // ============================================================
 // DESIGN CONSTANTS - GOLDEN RATIOS & PRECISE MEASUREMENTS
@@ -701,31 +713,67 @@ export async function createEliteAd(options) {
 
     console.log('[EliteCreative] Agency effects: Vignette ✓ | Grain ✓ | Light ✓ | Glow ✓');
 
-    // Step 5: Composite everything in correct order
+    // Step 5: Generate E-Commerce Overlay (price, trust badges, ratings, urgency)
+    const ecommerceOverlay = generateEcommerceOverlay({
+        canvasSize,
+        showPrice: options.price ? true : false,
+        price: options.price,
+        originalPrice: options.originalPrice,
+        currency: options.currency || '€',
+        showDiscount: options.discountPercent ? true : false,
+        discountPercent: options.discountPercent,
+        showTrustBadges: options.showTrustBadges !== false,
+        trustBadges: options.trustBadges || ['shipping', 'guarantee'],
+        showRating: options.rating ? true : false,
+        rating: options.rating || 5,
+        reviewCount: options.reviewCount,
+        showUrgency: options.showUrgency || false,
+        urgencyType: options.urgencyType || 'lowStock',
+        urgencyValue: options.urgencyValue || 3,
+    });
+
+    const hasEcommerceElements = options.price || options.discountPercent || options.rating;
+    if (hasEcommerceElements) {
+        console.log('[EliteCreative] E-Commerce: Price ✓ | Trust ✓ | Ratings ✓');
+    }
+
+    // Step 6: Composite everything in correct order
+    const composeLayers = [
+        // Layer 1: Product with shadow
+        {
+            input: resizedProduct,
+            left: prodLeft,
+            top: prodTop,
+            blend: 'over',
+        },
+        // Layer 2: Typography and UI overlay
+        {
+            input: Buffer.from(overlaySVG),
+            left: 0,
+            top: 0,
+        },
+        // Layer 3: Agency effects (vignette, glow, light effects)
+        {
+            input: Buffer.from(agencyEffectsOverlay),
+            left: 0,
+            top: 0,
+            blend: 'over',
+        },
+    ];
+
+    // Layer 4: E-Commerce elements (if enabled)
+    if (hasEcommerceElements) {
+        composeLayers.push({
+            input: Buffer.from(ecommerceOverlay),
+            left: 0,
+            top: 0,
+            blend: 'over',
+        });
+    }
+
     const finalImage = await sharp(backgroundBuffer)
         .resize(canvasSize, canvasSize)
-        .composite([
-            // Layer 1: Product with shadow
-            {
-                input: resizedProduct,
-                left: prodLeft,
-                top: prodTop,
-                blend: 'over',
-            },
-            // Layer 2: Typography and UI overlay
-            {
-                input: Buffer.from(overlaySVG),
-                left: 0,
-                top: 0,
-            },
-            // Layer 3: Agency effects (vignette, glow, light effects) - FINAL POLISH
-            {
-                input: Buffer.from(agencyEffectsOverlay),
-                left: 0,
-                top: 0,
-                blend: 'over',
-            },
-        ])
+        .composite(composeLayers)
         .png({ quality: 100 })
         .toBuffer();
 
@@ -739,6 +787,7 @@ export async function createEliteAd(options) {
             productPosition: { x: prodLeft, y: prodTop, w: finalW, h: finalH },
             canvasSize,
             agencyEffects: ['vignette', 'grain', 'lightEffects', 'productGlow', 'geometricAccents'],
+            ecommerceElements: hasEcommerceElements ? ['price', 'trustBadges', 'ratings', 'urgency'] : [],
         },
     };
 }
