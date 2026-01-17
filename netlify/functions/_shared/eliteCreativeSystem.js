@@ -44,6 +44,14 @@ import {
     SOCIAL_PROOF,
     generateEcommerceOverlay
 } from './ecommerceElements.js';
+// Import Intelligent Creative Decision Engine
+import {
+    makeCreativeDecisions,
+    getVisualStyle,
+    DECISION_RULES,
+    VISUAL_STYLES,
+    LAYOUT_MATRIX
+} from './creativeDecisionEngine.js';
 
 // ============================================================
 // DESIGN CONSTANTS - GOLDEN RATIOS & PRECISE MEASUREMENTS
@@ -824,6 +832,127 @@ export function detectOptimalConfig(options) {
 }
 
 // ============================================================
+// SMART AD CREATION - FULL AUTO-PILOT
+// Uses Decision Engine to make all visual choices automatically
+// ============================================================
+
+export async function createSmartAd(options) {
+    const {
+        // Required
+        backgroundBuffer,
+        productImageUrl,
+
+        // Product info
+        productName = '',
+        productType = 'retail',
+        industry = 'ecommerce',
+
+        // Content
+        headline,
+        subheadline,
+        features = [],
+        cta,
+
+        // Price (optional)
+        price = null,
+        originalPrice = null,
+        currency = '€',
+
+        // Ratings (optional)
+        rating = null,
+        reviewCount = null,
+
+        // Campaign info
+        campaignGoal = 'conversion',
+        campaignType = 'evergreen',
+
+        // Urgency (optional)
+        stockLevel = null,
+        endDate = null,
+
+        // Brand info
+        isNewBrand = false,
+        pricePoint = 'medium',
+    } = options;
+
+    console.log('[SmartAd] 🧠 Starting intelligent ad creation...');
+    console.log('[SmartAd] Product:', productName, '| Industry:', industry);
+
+    // ===== STEP 1: Make intelligent decisions =====
+    const decisions = makeCreativeDecisions({
+        productName,
+        productType,
+        industry,
+        price,
+        originalPrice,
+        campaignGoal,
+        campaignType,
+        features,
+        headline,
+        rating,
+        reviewCount,
+        stockLevel,
+        endDate,
+        isNewBrand,
+        pricePoint,
+    });
+
+    console.log('[SmartAd] 📊 Decisions made:');
+    decisions.reasoning.forEach(r => console.log(`   → ${r}`));
+
+    // ===== STEP 2: Get visual style =====
+    const visualStyle = getVisualStyle(decisions.visualStyle);
+    console.log('[SmartAd] 🎨 Visual style:', decisions.visualStyle);
+
+    // ===== STEP 3: Call createEliteAd with all decisions applied =====
+    const result = await createEliteAd({
+        backgroundBuffer,
+        productImageUrl,
+        palette: decisions.visualStyle === 'high_energy' ? 'premium' :
+            decisions.visualStyle === 'clean_minimal' ? 'minimal' :
+                decisions.visualStyle === 'playful_vibrant' ? 'vibrant' : 'premium',
+        layout: decisions.layout === 'hero_split' ? 'hero_features_right' :
+            decisions.layout === 'feature_callouts' ? 'feature_callouts' :
+                decisions.layout === 'centered_hero' ? 'centered_minimal' : 'hero_features_right',
+        headline,
+        subheadline,
+        features,
+        cta,
+        badge: decisions.elements.badgeText,
+
+        // E-commerce elements (now auto-determined!)
+        price: decisions.elements.showPrice ? price : null,
+        originalPrice: decisions.elements.showOriginalPrice ? originalPrice : null,
+        discountPercent: decisions.elements.showDiscountBadge ? decisions.elements.discountPercent : null,
+        currency,
+        showTrustBadges: decisions.elements.showTrustBadges,
+        trustBadges: decisions.elements.trustBadgesToShow,
+        rating: decisions.elements.showRating ? rating : null,
+        reviewCount: decisions.elements.showReviewCount ? reviewCount : null,
+        showUrgency: decisions.elements.showUrgency,
+        urgencyType: decisions.elements.urgencyType,
+        urgencyValue: decisions.elements.urgencyValue,
+    });
+
+    console.log('[SmartAd] ✅ Smart ad created with', decisions.reasoning.length, 'intelligent decisions');
+
+    return {
+        ...result,
+        metadata: {
+            ...result.metadata,
+            decisions: {
+                visualStyle: decisions.visualStyle,
+                layout: decisions.layout,
+                elementsShown: Object.entries(decisions.elements)
+                    .filter(([_, v]) => v === true || (Array.isArray(v) && v.length > 0))
+                    .map(([k, _]) => k),
+                reasoning: decisions.reasoning,
+            },
+        },
+    };
+}
+
+// ============================================================
 // EXPORTS
 // ============================================================
 
@@ -840,12 +969,19 @@ export {
     TYPOGRAPHY_2026,
     SPACING_2026,
     SHADOWS_2026,
+    // Decision engine
+    makeCreativeDecisions,
+    getVisualStyle,
+    DECISION_RULES,
+    VISUAL_STYLES,
 };
 
 export default {
     createEliteAd,
+    createSmartAd, // NEW: Intelligent auto-pilot mode
     detectOptimalConfig,
     generateEliteBackgroundPrompt,
+    makeCreativeDecisions,
     PALETTES,
     LAYOUTS,
     CANVAS,
