@@ -762,31 +762,34 @@ export async function createEliteAd(options) {
         console.log('[EliteCreative] E-Commerce: Price ✓ | Trust ✓ | Ratings ✓');
     }
 
-    // Step 6: Composite everything in correct order
+    // Step 6: Composite everything in CORRECT order (product LAST = on top)
+    // CRITICAL: Product must be the TOPMOST layer to ensure 1:1 preservation
     const composeLayers = [
-        // Layer 1: Product with shadow
-        {
-            input: resizedProduct,
-            left: prodLeft,
-            top: prodTop,
-            blend: 'over',
-        },
-        // Layer 2: Typography and UI overlay
-        {
-            input: Buffer.from(overlaySVG),
-            left: 0,
-            top: 0,
-        },
-        // Layer 3: Agency effects (vignette, glow, light effects)
+        // Layer 1: Agency effects FIRST (behind everything)
+        // This includes vignette, grain, light effects
         {
             input: Buffer.from(agencyEffectsOverlay),
             left: 0,
             top: 0,
             blend: 'over',
         },
+        // Layer 2: Product ON TOP of agency effects
+        // This ensures product is NEVER altered by vignette/grain
+        {
+            input: resizedProduct,
+            left: prodLeft,
+            top: prodTop,
+            blend: 'over',
+        },
+        // Layer 3: Typography and UI overlay (can be on top of product at edges)
+        {
+            input: Buffer.from(overlaySVG),
+            left: 0,
+            top: 0,
+        },
     ];
 
-    // Layer 4: E-Commerce elements (if enabled)
+    // Layer 4: E-Commerce elements (on very top)
     if (hasEcommerceElements) {
         composeLayers.push({
             input: Buffer.from(ecommerceOverlay),

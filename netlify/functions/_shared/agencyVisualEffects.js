@@ -423,55 +423,76 @@ export function generateAgencyOverlay(config) {
         isGaming = false,
     } = config;
 
+    // Calculate product zone center for exclusion
+    const hasProductZone = productZone && productZone.width && productZone.height;
+    const prodCenterX = hasProductZone ? (productZone.x + productZone.width / 2) : canvasSize / 2;
+    const prodCenterY = hasProductZone ? (productZone.y + productZone.height / 2) : canvasSize / 2;
+    const prodRadius = hasProductZone ? Math.max(productZone.width, productZone.height) * 0.6 : canvasSize * 0.3;
+
     let svg = `<svg width="${canvasSize}" height="${canvasSize}" xmlns="http://www.w3.org/2000/svg">
 <defs>
     ${TYPOGRAPHY_EFFECTS.premiumTextShadow}
     ${TYPOGRAPHY_EFFECTS.textGlow()}
     ${isGaming ? TYPOGRAPHY_EFFECTS.neonText() : ''}
-    ${TEXTURES.noiseTexture(0.015)}
+    
+    <!-- REDUCED Film grain - very subtle to not affect product colors -->
+    <filter id="lightNoise" x="0%" y="0%" width="100%" height="100%">
+        <feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="2" result="noise"/>
+        <feColorMatrix in="noise" type="matrix" values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 0.01 0"/>
+    </filter>
+    
+    <!-- Vignette with PRODUCT ZONE EXCLUSION -->
+    <radialGradient id="vignetteWithHole" cx="${prodCenterX / canvasSize * 100}%" cy="${prodCenterY / canvasSize * 100}%" r="85%">
+        <stop offset="0%" style="stop-color:rgba(0,0,0,0)"/>
+        <stop offset="60%" style="stop-color:rgba(0,0,0,0)"/>
+        <stop offset="100%" style="stop-color:rgba(0,0,0,0.25)"/>
+    </radialGradient>
+    
     ${COLOR_GRADING.cinematic}
 </defs>
 `;
 
-    // Light effects
+    // Light effects (subtle, in corners only)
     if (includeLightEffects) {
         if (isGaming) {
-            svg += LIGHT_EFFECTS.lensFlare.anamorphicStreak(canvasSize / 2, canvasSize * 0.3, canvasSize * 0.8, '#00FFFF', 0.06);
-            svg += LIGHT_EFFECTS.lightLeak.topRight(0.06);
-            svg += LIGHT_EFFECTS.lightLeak.bottomLeft(0.05);
+            svg += LIGHT_EFFECTS.lensFlare.anamorphicStreak(canvasSize / 2, canvasSize * 0.3, canvasSize * 0.8, '#00FFFF', 0.04);
+            svg += LIGHT_EFFECTS.lightLeak.topRight(0.04);
+            svg += LIGHT_EFFECTS.lightLeak.bottomLeft(0.03);
         } else {
-            svg += LIGHT_EFFECTS.lensFlare.softGlow(canvasSize * 0.7, canvasSize * 0.2, 150, '#FFFFFF', 0.08);
+            // Very subtle glow in corner only
+            svg += LIGHT_EFFECTS.lensFlare.softGlow(canvasSize * 0.85, canvasSize * 0.15, 120, '#FFFFFF', 0.05);
         }
     }
 
-    // Product aura
-    if (productZone) {
+    // Product aura (behind product, so actually helpful)
+    if (hasProductZone) {
         const centerX = productZone.x + productZone.width / 2;
         const centerY = productZone.y + productZone.height / 2;
         if (isGaming) {
-            svg += PRODUCT_EFFECTS.aura.neon(centerX, centerY, productZone.width, productZone.height, '#00FFFF', 0.12);
+            svg += PRODUCT_EFFECTS.aura.neon(centerX, centerY, productZone.width, productZone.height, '#00FFFF', 0.08);
         } else {
-            svg += PRODUCT_EFFECTS.aura.standard(centerX, centerY, productZone.width, productZone.height, '#FFFFFF', 0.08);
+            // Very subtle white glow behind product
+            svg += PRODUCT_EFFECTS.aura.standard(centerX, centerY, productZone.width, productZone.height, '#FFFFFF', 0.05);
         }
     }
 
-    // Geometric accents
+    // Geometric accents (corners only - away from product)
     if (includeGeometricAccents) {
-        svg += GEOMETRIC_ACCENTS.cornerLines.topLeft(60, 'rgba(255,255,255,0.06)', 1);
-        svg += GEOMETRIC_ACCENTS.cornerLines.bottomRight(canvasSize, 60, 'rgba(255,255,255,0.06)', 1);
+        svg += GEOMETRIC_ACCENTS.cornerLines.topLeft(50, 'rgba(255,255,255,0.04)', 1);
+        svg += GEOMETRIC_ACCENTS.cornerLines.bottomRight(canvasSize, 50, 'rgba(255,255,255,0.04)', 1);
         if (isGaming) {
-            svg += GEOMETRIC_ACCENTS.hexGrid(0.02);
+            svg += GEOMETRIC_ACCENTS.hexGrid(0.015);
         }
     }
 
-    // Vignette
+    // IMPROVED Vignette - centered on product so it doesn't darken product
     if (includeVignette) {
-        svg += VIGNETTE.subtle(canvasSize);
+        svg += `<rect width="${canvasSize}" height="${canvasSize}" fill="url(#vignetteWithHole)"/>`;
     }
 
-    // Film grain
+    // DRAMATICALLY REDUCED Film grain - almost invisible
     if (includeGrain) {
-        svg += `<rect width="100%" height="100%" filter="url(#noise)" opacity="0.5"/>`;
+        svg += `<rect width="100%" height="100%" filter="url(#lightNoise)" opacity="0.15"/>`;
     }
 
     svg += `</svg>`;
