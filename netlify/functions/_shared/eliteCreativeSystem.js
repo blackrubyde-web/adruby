@@ -52,6 +52,16 @@ import {
     VISUAL_STYLES,
     LAYOUT_MATRIX
 } from './creativeDecisionEngine.js';
+// Import High-Converting Ad Pattern Templates
+import {
+    COMPARISON_TABLE_PATTERN,
+    US_VS_THEM_SPLIT_PATTERN,
+    FEATURE_CALLOUTS_DOTTED_PATTERN,
+    CHECKMARK_COMPARISON_PATTERN,
+    FEATURE_ARROWS_PATTERN,
+    AD_PATTERNS,
+    selectBestPattern
+} from './adPatternTemplates.js';
 
 // ============================================================
 // DESIGN CONSTANTS - GOLDEN RATIOS & PRECISE MEASUREMENTS
