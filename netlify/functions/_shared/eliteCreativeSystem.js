@@ -9,6 +9,15 @@
  */
 
 import sharp from 'sharp';
+// Import 15 Professional Templates
+import {
+    ELITE_TEMPLATES_2026,
+    selectOptimalTemplate,
+    getTemplateById,
+    TYPOGRAPHY_2026,
+    SPACING_2026,
+    SHADOWS_2026
+} from './eliteTemplates2026.js';
 
 // ============================================================
 // DESIGN CONSTANTS - GOLDEN RATIOS & PRECISE MEASUREMENTS
@@ -733,6 +742,13 @@ export {
     LAYOUTS,
     generateEliteBackgroundPrompt,
     generateEliteOverlaySVG,
+    // Template exports
+    ELITE_TEMPLATES_2026,
+    selectOptimalTemplate,
+    getTemplateById,
+    TYPOGRAPHY_2026,
+    SPACING_2026,
+    SHADOWS_2026,
 };
 
 export default {
@@ -742,4 +758,8 @@ export default {
     PALETTES,
     LAYOUTS,
     CANVAS,
+    // Templates
+    ELITE_TEMPLATES_2026,
+    selectOptimalTemplate,
+    getTemplateById,
 };
