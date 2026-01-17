@@ -111,28 +111,41 @@ function detectIndustry(input) {
         input.industry,
         input.category,
         input.headline,
+        input.description,
+        input.tagline,
         ...(input.features || []),
     ].join(' ').toLowerCase();
 
-    // Industry detection rules
+    // Priority-ordered industry detection (more specific first)
     const industryKeywords = {
-        saas: ['saas', 'software', 'app', 'platform', 'tool', 'crm', 'erp', 'automation', 'ai', 'dashboard'],
-        coaching: ['coach', 'coaching', 'mentor', 'consultant', 'beratung', 'training', 'kurs', 'course'],
-        real_estate: ['immobilie', 'haus', 'wohnung', 'apartment', 'villa', 'grundstück', 'miete', 'property'],
-        fitness: ['fitness', 'gym', 'workout', 'abnehmen', 'muskel', 'training', 'sport'],
-        beauty: ['beauty', 'skincare', 'kosmetik', 'makeup', 'pflege', 'anti-aging', 'serum'],
-        fashion: ['fashion', 'mode', 'kleidung', 'outfit', 'style', 'designer'],
-        food: ['food', 'essen', 'ernährung', 'vegan', 'bio', 'organic', 'supplement'],
-        tech: ['tech', 'elektronik', 'gadget', 'computer', 'phone', 'smart'],
-        home: ['home', 'wohnen', 'möbel', 'deko', 'interior', 'küche'],
-        toys: ['spielzeug', 'toys', 'kinder', 'kids', 'game', 'spiel'],
+        saas: ['saas', 'software', 'app', 'platform', 'tool', 'crm', 'erp', 'automation', 'ai', 'dashboard', 'analytics', 'api', 'cloud', 'subscription', 'trial', 'enterprise'],
+        coaching: ['coach', 'coaching', 'mentor', 'mentoring', 'consultant', 'consulting', 'beratung', 'berater', 'training', 'kurs', 'course', 'workshop', 'webinar', 'masterclass', 'personal brand', 'experte', 'expert'],
+        real_estate: ['immobilie', 'immobilien', 'haus', 'wohnung', 'apartment', 'villa', 'grundstück', 'miete', 'property', 'real estate', 'makler', 'zimmer', 'quadratmeter', 'm²', 'kaufen', 'vermieten'],
+        fitness: ['fitness', 'gym', 'workout', 'abnehmen', 'muskel', 'training', 'sport', 'protein', 'weight loss', 'body', 'shape', 'cardio', 'strength', 'muscle', 'lean', 'bulk'],
+        beauty: ['beauty', 'skincare', 'kosmetik', 'makeup', 'pflege', 'anti-aging', 'serum', 'creme', 'cream', 'glow', 'skin', 'face', 'hair', 'haare', 'nail', 'spa', 'wellness'],
+        fashion: ['fashion', 'mode', 'kleidung', 'outfit', 'style', 'designer', 'wear', 'dress', 'shirt', 'jeans', 'accessoire', 'schmuck', 'jewelry', 'tasche', 'bag', 'shoes', 'schuhe'],
+        food: ['food', 'essen', 'ernährung', 'vegan', 'bio', 'organic', 'supplement', 'vitamin', 'protein', 'snack', 'bar', 'drink', 'getränk', 'meal', 'mahlzeit', 'healthy', 'gesund', 'zucker', 'sugar'],
+        tech: ['tech', 'elektronik', 'gadget', 'computer', 'phone', 'smartphone', 'tablet', 'laptop', 'smart', 'bluetooth', 'wifi', 'usb', 'display', 'audio', 'speaker', 'headphone', 'gaming'],
+        home: ['home', 'wohnen', 'möbel', 'furniture', 'deko', 'dekoration', 'interior', 'küche', 'kitchen', 'living', 'schlafzimmer', 'bedroom', 'lampe', 'lamp', 'cushion', 'kissen'],
+        toys: ['spielzeug', 'toys', 'kinder', 'kids', 'game', 'spiel', 'lego', 'plush', 'plüsch', 'puppe', 'doll', 'puzzle', 'educational', 'lernspiel'],
+        automotive: ['auto', 'car', 'fahrzeug', 'vehicle', 'motor', 'reifen', 'tire', 'tuning', 'zubehör', 'accessories'],
+        pets: ['haustier', 'pet', 'hund', 'dog', 'katze', 'cat', 'futter', 'pet food', 'tier', 'animal'],
+        finance: ['finanz', 'finance', 'geld', 'money', 'investieren', 'invest', 'trading', 'aktie', 'stock', 'krypto', 'crypto', 'sparen', 'savings'],
+        education: ['bildung', 'education', 'lernen', 'learn', 'schule', 'school', 'universität', 'university', 'studium', 'study', 'sprache', 'language'],
     };
 
+    // Score each industry by keyword matches
+    const scores = {};
     for (const [industry, keywords] of Object.entries(industryKeywords)) {
-        if (keywords.some(k => text.includes(k))) {
-            return industry;
-        }
+        scores[industry] = keywords.filter(k => text.includes(k)).length;
     }
+
+    // Find industry with highest score
+    const topIndustry = Object.entries(scores)
+        .filter(([_, score]) => score > 0)
+        .sort((a, b) => b[1] - a[1])[0];
+
+    if (topIndustry) return topIndustry[0];
 
     // Check explicit industry setting
     if (input.industry) return input.industry.toLowerCase();
@@ -274,60 +287,150 @@ function selectVisualStyle(analysis, input) {
         return {
             style: 'high_energy',
             bgColor: '#1A0A0A',
+            bgGradient: 'linear-gradient(135deg, #1A0A0A 0%, #2D1515 100%)',
             accentColor: '#EF4444',
+            secondaryAccent: '#FBBF24',
             textColor: '#FFFFFF',
+            mutedColor: 'rgba(255,255,255,0.7)',
         };
     }
 
-    // Industry-based styles
+    // Premium industry-based styles with gradients
     const styleMap = {
         saas: {
             style: 'professional',
             bgColor: '#0F172A',
+            bgGradient: 'linear-gradient(135deg, #0F172A 0%, #1E293B 100%)',
             accentColor: '#3B82F6',
+            secondaryAccent: '#06B6D4',
             textColor: '#FFFFFF',
+            mutedColor: 'rgba(255,255,255,0.6)',
         },
         coaching: {
             style: 'authority',
             bgColor: '#1A1A1A',
+            bgGradient: 'linear-gradient(180deg, #1A1A1A 0%, #0A0A0A 100%)',
             accentColor: '#F59E0B',
+            secondaryAccent: '#D97706',
             textColor: '#FFFFFF',
+            mutedColor: 'rgba(255,255,255,0.7)',
         },
         real_estate: {
             style: 'luxury',
-            bgColor: 'transparent', // Photo background
+            bgColor: 'transparent',
+            bgGradient: 'linear-gradient(180deg, rgba(0,0,0,0.1) 0%, rgba(0,0,0,0.7) 100%)',
             accentColor: '#FFFFFF',
+            secondaryAccent: '#D4AF37',
             textColor: '#FFFFFF',
+            mutedColor: 'rgba(255,255,255,0.8)',
         },
         beauty: {
             style: 'elegant',
             bgColor: '#FDF2F8',
+            bgGradient: 'linear-gradient(135deg, #FDF2F8 0%, #FCE7F3 100%)',
             accentColor: '#EC4899',
+            secondaryAccent: '#DB2777',
             textColor: '#1F2937',
+            mutedColor: 'rgba(31,41,55,0.6)',
         },
         fitness: {
             style: 'energy',
             bgColor: '#18181B',
+            bgGradient: 'linear-gradient(135deg, #18181B 0%, #1F2937 100%)',
             accentColor: '#10B981',
+            secondaryAccent: '#059669',
             textColor: '#FFFFFF',
+            mutedColor: 'rgba(255,255,255,0.7)',
         },
         food: {
             style: 'warm',
             bgColor: '#FFFBEB',
+            bgGradient: 'linear-gradient(135deg, #FFFBEB 0%, #FEF3C7 100%)',
             accentColor: '#F59E0B',
+            secondaryAccent: '#D97706',
             textColor: '#1F2937',
+            mutedColor: 'rgba(31,41,55,0.6)',
         },
         tech: {
             style: 'modern',
             bgColor: '#111827',
+            bgGradient: 'linear-gradient(135deg, #111827 0%, #1F2937 100%)',
             accentColor: '#6366F1',
+            secondaryAccent: '#8B5CF6',
             textColor: '#FFFFFF',
+            mutedColor: 'rgba(255,255,255,0.6)',
+        },
+        home: {
+            style: 'cozy',
+            bgColor: '#FEFCE8',
+            bgGradient: 'linear-gradient(135deg, #FEFCE8 0%, #FEF9C3 100%)',
+            accentColor: '#84CC16',
+            secondaryAccent: '#65A30D',
+            textColor: '#1F2937',
+            mutedColor: 'rgba(31,41,55,0.6)',
+        },
+        toys: {
+            style: 'playful',
+            bgColor: '#F5F3FF',
+            bgGradient: 'linear-gradient(135deg, #F5F3FF 0%, #EDE9FE 100%)',
+            accentColor: '#8B5CF6',
+            secondaryAccent: '#EC4899',
+            textColor: '#1F2937',
+            mutedColor: 'rgba(31,41,55,0.6)',
+        },
+        fashion: {
+            style: 'chic',
+            bgColor: '#FAFAFA',
+            bgGradient: 'linear-gradient(180deg, #FAFAFA 0%, #F5F5F5 100%)',
+            accentColor: '#1A1A1A',
+            secondaryAccent: '#525252',
+            textColor: '#1A1A1A',
+            mutedColor: 'rgba(26,26,26,0.6)',
+        },
+        automotive: {
+            style: 'bold',
+            bgColor: '#0C0C0C',
+            bgGradient: 'linear-gradient(135deg, #0C0C0C 0%, #1F1F1F 100%)',
+            accentColor: '#DC2626',
+            secondaryAccent: '#EA580C',
+            textColor: '#FFFFFF',
+            mutedColor: 'rgba(255,255,255,0.7)',
+        },
+        pets: {
+            style: 'friendly',
+            bgColor: '#ECFDF5',
+            bgGradient: 'linear-gradient(135deg, #ECFDF5 0%, #D1FAE5 100%)',
+            accentColor: '#059669',
+            secondaryAccent: '#10B981',
+            textColor: '#1F2937',
+            mutedColor: 'rgba(31,41,55,0.6)',
+        },
+        finance: {
+            style: 'trust',
+            bgColor: '#0F172A',
+            bgGradient: 'linear-gradient(135deg, #0F172A 0%, #1E3A5F 100%)',
+            accentColor: '#0EA5E9',
+            secondaryAccent: '#22D3EE',
+            textColor: '#FFFFFF',
+            mutedColor: 'rgba(255,255,255,0.7)',
+        },
+        education: {
+            style: 'academic',
+            bgColor: '#1E3A5F',
+            bgGradient: 'linear-gradient(135deg, #1E3A5F 0%, #0F172A 100%)',
+            accentColor: '#FBBF24',
+            secondaryAccent: '#F59E0B',
+            textColor: '#FFFFFF',
+            mutedColor: 'rgba(255,255,255,0.7)',
         },
         ecommerce: {
             style: 'clean',
             bgColor: '#FFFFFF',
+            bgGradient: 'linear-gradient(180deg, #FFFFFF 0%, #F9FAFB 100%)',
             accentColor: '#1A1A1A',
+            secondaryAccent: '#4B5563',
             textColor: '#1A1A1A',
+            mutedColor: 'rgba(26,26,26,0.5)',
         },
     };
 
