@@ -85,6 +85,7 @@
     "react-slick": "0.31.0",
     "react-window": "1.8.10",
     "recharts": "2.15.2",
+    "sharp": "^0.34.5",
     "sonner": "2.0.3",
     "stripe": "^19.3.0",
     "tailwind-merge": "3.2.0",

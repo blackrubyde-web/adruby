@@ -14,6 +14,14 @@ import { ultimateMasterEngine, AVAILABLE_VERTICALS, SYSTEM_STATS } from './_shar
 // Product Preservation & Dynamic Text
 import { buildHardenedProductPrompt, buildBackgroundOnlyPrompt } from './_shared/productPreservationEngine.js';
 import { generateProductCopy, generateFallbackHeadline } from './_shared/dynamicProductTextGenerator.js';
+// Real Image Compositing (guarantees 1:1 product preservation)
+import {
+    createCompositedAd,
+    build2025BackgroundPrompt,
+    compositeProductOnBackground,
+    fetchImageAsBuffer,
+    addTextOverlay
+} from './_shared/imageCompositingEngine.js';
 import { getUserProfile } from './_shared/auth.js';
 import { assertAndConsumeCredits, CREDIT_COSTS } from './_shared/credits.js';
 import { supabaseAdmin } from './_shared/clients.js';
@@ -424,25 +432,79 @@ Beginne mit: "PRÄZISE PRODUKTBESCHREIBUNG:"`
             console.log('[AI Ad Generate] 🔒 Hardened product preservation appended to prompt');
         }
 
-        console.log('[AI Ad Generate] Generating image...');
-
-        const imageResult = await withRetry(
-            async () => generateHeroImage({
-                prompt: imagePrompt,
-                size: '1024x1024',
-                quality: 'hd',
-            }),
-            { maxRetries: 2, initialDelay: 2000 }
-        );
-
-        // Upload to Storage
+        // ========================================
+        // IMAGE GENERATION WITH REAL COMPOSITING
+        // If product image exists: Generate background only, composite exact product
+        // ========================================
+        let finalImageBuffer;
+        let imageUrl;
         const timestamp = Date.now();
         const filename = `ai-ad-${user.id}-${timestamp}.png`;
         const storagePath = `ai-ads/${filename}`;
 
+        if (body.productImageUrl) {
+            // ===== REAL COMPOSITING MODE =====
+            // Generate background ONLY, then overlay the EXACT original product
+            console.log('[AI Ad Generate] 🎨 COMPOSITING MODE: Preserving exact product image');
+
+            // Step 1: Generate 2025-level background (NO PRODUCT)
+            const backgroundPrompt = build2025BackgroundPrompt({
+                primaryColor: body.brandColor || '#1A1A2E',
+                accentColor: '#FF4444',
+                style: body.industry === 'gaming' ? 'neon-gaming' : 'modern-gradient',
+                industry: body.industry || 'retail',
+            });
+
+            console.log('[AI Ad Generate] Generating background only...');
+            const backgroundResult = await withRetry(
+                async () => generateHeroImage({
+                    prompt: backgroundPrompt,
+                    size: '1024x1024',
+                    quality: 'hd',
+                }),
+                { maxRetries: 2, initialDelay: 2000 }
+            );
+
+            const backgroundBuffer = Buffer.from(backgroundResult.b64, 'base64');
+            console.log('[AI Ad Generate] ✓ Background generated');
+
+            // Step 2: Create composited ad with EXACT product image
+            const compositedAd = await createCompositedAd({
+                backgroundBuffer: backgroundBuffer,
+                productImageUrl: body.productImageUrl,
+                headline: dynamicText.headline,
+                subheadline: dynamicText.subheadline,
+                cta: dynamicText.cta,
+                badge: dynamicText.badge || 'BESTSELLER',
+                features: dynamicText.features.slice(0, 4),
+                productPosition: 'center',
+                productScale: 0.50, // Product takes 50% of frame
+                style: 'modern-dark',
+            });
+
+            finalImageBuffer = compositedAd.buffer;
+            console.log('[AI Ad Generate] ✅ COMPOSITING COMPLETE - Product preserved 1:1');
+
+        } else {
+            // ===== LEGACY MODE (no product image) =====
+            console.log('[AI Ad Generate] 📷 LEGACY MODE: Generating full image');
+
+            const imageResult = await withRetry(
+                async () => generateHeroImage({
+                    prompt: imagePrompt,
+                    size: '1024x1024',
+                    quality: 'hd',
+                }),
+                { maxRetries: 2, initialDelay: 2000 }
+            );
+
+            finalImageBuffer = Buffer.from(imageResult.b64, 'base64');
+        }
+
+        // Upload to Storage
         const { error: uploadError } = await supabaseAdmin.storage
             .from('creative-images')
-            .upload(storagePath, Buffer.from(imageResult.b64, 'base64'), {
+            .upload(storagePath, finalImageBuffer, {
                 contentType: 'image/png',
                 upsert: false,
             });
@@ -455,7 +517,7 @@ Beginne mit: "PRÄZISE PRODUKTBESCHREIBUNG:"`
             .from('creative-images')
             .getPublicUrl(storagePath);
 
-        const imageUrl = urlData?.publicUrl;
+        imageUrl = urlData?.publicUrl;
         console.log('[AI Ad Generate] Image uploaded:', imageUrl);
 
         // Engagement prediction
