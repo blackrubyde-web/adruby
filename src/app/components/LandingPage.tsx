@@ -397,6 +397,66 @@ export function LandingPage({ onGetStarted, onLogin }: LandingPageProps) {
 
         </div>
 
+        {/* 🔥 3D FLOATING AD PREVIEW MOCKUP */}
+        <div className="hidden lg:block absolute right-8 xl:right-16 top-1/2 -translate-y-1/2 z-20">
+          <div className="float-3d-card relative w-80 xl:w-96 bg-gradient-to-br from-zinc-900 via-zinc-800 to-zinc-900 rounded-3xl border border-white/10 overflow-hidden">
+            {/* Shimmer overlay */}
+            <div className="shimmer-effect absolute inset-0 pointer-events-none z-10" />
+
+            {/* Ad Header */}
+            <div className="flex items-center gap-3 p-4 border-b border-white/10">
+              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#FF1F1F] to-rose-600 flex items-center justify-center">
+                <Sparkles className="w-5 h-5 text-white" />
+              </div>
+              <div>
+                <p className="text-white font-semibold text-sm">AdRuby AI</p>
+                <p className="text-white/40 text-xs">Sponsored · ✨ KI generiert</p>
+              </div>
+            </div>
+
+            {/* Ad Image */}
+            <div className="relative aspect-square bg-gradient-to-br from-zinc-800 to-zinc-900 overflow-hidden">
+              <div className="absolute inset-0 flex items-center justify-center">
+                <div className="w-32 h-32 bg-gradient-to-br from-[#FF1F1F]/20 to-rose-600/20 rounded-full blur-3xl animate-pulse-slow" />
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <div className="text-center">
+                    <div className="w-20 h-20 mx-auto mb-4 rounded-2xl bg-gradient-to-br from-[#FF1F1F] to-rose-600 flex items-center justify-center shadow-2xl glow-pulse">
+                      <Sparkles className="w-10 h-10 text-white" />
+                    </div>
+                    <p className="text-white/60 text-sm font-medium">Dein Produkt hier</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* AI Badge */}
+              <div className="absolute top-3 right-3 px-3 py-1.5 bg-gradient-to-r from-[#FF1F1F] to-rose-600 rounded-full text-xs font-bold text-white shadow-lg">
+                🚀 8.2x ROAS
+              </div>
+            </div>
+
+            {/* Ad CTA */}
+            <div className="p-4">
+              <p className="text-white/80 text-sm mb-3">Erstelle hochkonvertierende Ads in Sekunden – powered by AI.</p>
+              <button className="w-full py-3 bg-gradient-to-r from-[#FF1F1F] to-rose-600 text-white rounded-xl font-bold text-sm hover:shadow-xl transition-all">
+                Jetzt testen →
+              </button>
+            </div>
+
+            {/* Performance indicator */}
+            <div className="px-4 pb-4">
+              <div className="flex items-center gap-2 text-green-400 text-xs font-medium">
+                <div className="w-2 h-2 rounded-full bg-green-400 animate-pulse" />
+                94% Konfidenz · Top Performer
+              </div>
+            </div>
+          </div>
+
+          {/* Decorative floating elements */}
+          <div className="absolute -top-8 -left-8 w-16 h-16 bg-gradient-to-br from-blue-500/20 to-cyan-500/20 rounded-2xl blur-sm animate-float" style={{ animationDelay: '0s' }} />
+          <div className="absolute -bottom-4 -right-4 w-12 h-12 bg-gradient-to-br from-purple-500/20 to-pink-500/20 rounded-xl blur-sm animate-float" style={{ animationDelay: '2s' }} />
+          <div className="absolute top-1/2 -left-12 w-8 h-8 bg-gradient-to-br from-green-500/20 to-emerald-500/20 rounded-lg blur-sm animate-float" style={{ animationDelay: '4s' }} />
+        </div>
+
         {/* 3D Visual Element (Bottom Anchor) */}
         <div className="absolute bottom-[-15%] sm:bottom-[-20%] left-1/2 -translate-x-1/2 w-[120%] sm:w-[80%] opacity-80 pointer-events-none z-0">
           <div className="relative w-full aspect-video bg-gradient-to-t from-[#FF1F1F]/20 to-transparent blur-[80px]" />
