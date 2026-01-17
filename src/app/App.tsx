@@ -7,6 +7,13 @@ const LandingPage = lazy(() => import('./components/LandingPage').then((mod) => 
 const FeaturesPage = lazy(() => import('./components/FeaturesPage').then((mod) => ({ default: mod.FeaturesPage })));
 const PricingPage = lazy(() => import('./components/PricingPage').then((mod) => ({ default: mod.PricingPage })));
 
+// Feature sub-pages
+const FeatureAIGenerator = lazy(() => import('./components/features/FeatureAIGenerator').then((mod) => ({ default: mod.FeatureAIGenerator })));
+const FeatureCreativeLibrary = lazy(() => import('./components/features/FeatureCreativeLibrary').then((mod) => ({ default: mod.FeatureCreativeLibrary })));
+const FeatureCampaignBuilder = lazy(() => import('./components/features/FeatureCampaignBuilder').then((mod) => ({ default: mod.FeatureCampaignBuilder })));
+const FeatureAnalytics = lazy(() => import('./components/features/FeatureAnalytics').then((mod) => ({ default: mod.FeatureAnalytics })));
+const FeatureAIAnalysis = lazy(() => import('./components/features/FeatureAIAnalysis').then((mod) => ({ default: mod.FeatureAIAnalysis })));
+
 const CampaignsPage = lazy(() => import('./components/CampaignsPage').then((mod) => ({ default: mod.CampaignsPage })));
 const CampaignBuilderPage = lazy(() =>
   import('./components/CampaignBuilderPage').then((mod) => ({ default: mod.CampaignBuilderPage }))
@@ -68,10 +75,15 @@ function allowRedirect(pathname: string) {
   return true;
 }
 
-// Page type - Extended with auth pages
+// Page type - Extended with auth pages and feature pages
 export type PageType =
   | 'landing'
   | 'features'
+  | 'feature-ai-generator'
+  | 'feature-creative-library'
+  | 'feature-campaign-builder'
+  | 'feature-analytics'
+  | 'feature-ai-analysis'
   | 'pricing'
   | 'login'
   | 'register'
@@ -82,7 +94,6 @@ export type PageType =
   | 'dashboard'
   | 'analytics'
   | 'library'
-
   | 'campaigns'
   | 'campaign-builder'
   | 'aianalysis'
@@ -91,13 +102,18 @@ export type PageType =
   | 'profile'
   | 'help'
   | 'studio'
-  | 'aibuilder'  // AI Ad Builder
+  | 'aibuilder'
   | 'admin'
   | 'campaign-canvas';
 
 const PAGE_PATHS: Record<PageType, string> = {
   landing: '/',
   features: '/features',
+  'feature-ai-generator': '/features/ai-generator',
+  'feature-creative-library': '/features/creative-library',
+  'feature-campaign-builder': '/features/campaign-builder',
+  'feature-analytics': '/features/analytics',
+  'feature-ai-analysis': '/features/ai-analysis',
   pricing: '/pricing',
   login: '/login',
   register: '/register',
@@ -125,6 +141,11 @@ const PAGE_PATHS: Record<PageType, string> = {
 const PUBLIC_PAGES = new Set<PageType>([
   'landing',
   'features',
+  'feature-ai-generator',
+  'feature-creative-library',
+  'feature-campaign-builder',
+  'feature-analytics',
+  'feature-ai-analysis',
   'pricing',
   'login',
   'register',
@@ -603,6 +624,11 @@ function AppContent() {
       {/* Auth Pages - Full Screen, No Sidebar/Header */}
       {(currentPage === 'landing' ||
         currentPage === 'features' ||
+        currentPage === 'feature-ai-generator' ||
+        currentPage === 'feature-creative-library' ||
+        currentPage === 'feature-campaign-builder' ||
+        currentPage === 'feature-analytics' ||
+        currentPage === 'feature-ai-analysis' ||
         currentPage === 'pricing' ||
         currentPage === 'login' ||
         currentPage === 'register' ||
@@ -622,6 +648,46 @@ function AppContent() {
 
               {currentPage === 'features' && (
                 <FeaturesPage
+                  onNavigate={(page) => go(page as PageType)}
+                  onSignIn={() => go('login')}
+                  onGetStarted={() => go('register')}
+                />
+              )}
+
+              {currentPage === 'feature-ai-generator' && (
+                <FeatureAIGenerator
+                  onNavigate={(page) => go(page as PageType)}
+                  onSignIn={() => go('login')}
+                  onGetStarted={() => go('register')}
+                />
+              )}
+
+              {currentPage === 'feature-creative-library' && (
+                <FeatureCreativeLibrary
+                  onNavigate={(page) => go(page as PageType)}
+                  onSignIn={() => go('login')}
+                  onGetStarted={() => go('register')}
+                />
+              )}
+
+              {currentPage === 'feature-campaign-builder' && (
+                <FeatureCampaignBuilder
+                  onNavigate={(page) => go(page as PageType)}
+                  onSignIn={() => go('login')}
+                  onGetStarted={() => go('register')}
+                />
+              )}
+
+              {currentPage === 'feature-analytics' && (
+                <FeatureAnalytics
+                  onNavigate={(page) => go(page as PageType)}
+                  onSignIn={() => go('login')}
+                  onGetStarted={() => go('register')}
+                />
+              )}
+
+              {currentPage === 'feature-ai-analysis' && (
+                <FeatureAIAnalysis
                   onNavigate={(page) => go(page as PageType)}
                   onSignIn={() => go('login')}
                   onGetStarted={() => go('register')}
