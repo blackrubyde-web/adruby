@@ -11,6 +11,9 @@ import { autoComposeAdPrompt, getLayoutOptions } from './_shared/compositionEngi
 import { masterCreativeEngine, getAllLayouts } from './_shared/masterCreativeEngine.js';
 // Phase 8: Ultimate Master Engine with 30+ vertical modules
 import { ultimateMasterEngine, AVAILABLE_VERTICALS, SYSTEM_STATS } from './_shared/verticals/index.js';
+// Product Preservation & Dynamic Text
+import { buildHardenedProductPrompt, buildBackgroundOnlyPrompt } from './_shared/productPreservationEngine.js';
+import { generateProductCopy, generateFallbackHeadline } from './_shared/dynamicProductTextGenerator.js';
 import { getUserProfile } from './_shared/auth.js';
 import { assertAndConsumeCredits, CREDIT_COSTS } from './_shared/credits.js';
 import { supabaseAdmin } from './_shared/clients.js';
@@ -83,35 +86,110 @@ export const handler = async (event) => {
 
         console.log('[AI Ad Generate] Job created:', jobId);
 
-        // Vision Analysis for Product Preservation
+        const openai = getOpenAiClient();
+
+        // ========================================
+        // STEP 1: VISION ANALYSIS - Product Preservation (CRITICAL)
+        // Analyzes the EXACT product to ensure 1:1 preservation
+        // ========================================
         let visionDescription = '';
         if (body.productImageUrl) {
-            console.log('[AI Ad Generate] Analyzing product image:', body.productImageUrl);
+            console.log('[AI Ad Generate] 🔍 Analyzing product image for EXACT preservation...');
             try {
-                const visionResponse = await getOpenAiClient().chat.completions.create({
+                const visionResponse = await openai.chat.completions.create({
                     model: 'gpt-4o',
                     messages: [
                         {
                             role: 'system',
-                            content: 'You are an expert product photographer and technical inspector. Analyze the product in this image. Describe its EXACT geometry, colors (hex codes if possible), material textures, and logos. Be extremely precise about what defines this specific object. Ignore the background completely. Start with "A photo-realistic..."'
+                            content: `Du bist ein forensischer Produktanalyst. Deine Aufgabe ist es, das Produkt im Bild mit 100% Genauigkeit zu beschreiben.
+
+EXTREM WICHTIG: Die Beschreibung muss so präzise sein, dass das Produkt EXAKT rekonstruiert werden kann.
+
+Beschreibe in dieser Reihenfolge:
+1. FORM: Exakte geometrische Form, Proportionen, Dimensionen
+2. FARBEN: Exakte Farben mit HEX-Codes wenn möglich
+3. MATERIAL: Oberfläche (matt/glänzend), Textur, Material-Look
+4. DETAILS: Alle sichtbaren Details - Augen, Ohren, Muster, Logos, Text
+5. STIL: Design-Stil (z.B. "Minecraft-Pixel-Style", "Cartoon", "Realistisch")
+6. BESONDERHEITEN: Was macht dieses Produkt einzigartig?
+
+Beginne mit: "PRÄZISE PRODUKTBESCHREIBUNG:"`
                         },
                         {
                             role: 'user',
                             content: [
-                                { type: 'text', text: 'Describe the main product:' },
-                                { type: 'image_url', image_url: { url: body.productImageUrl } }
+                                { type: 'text', text: 'Analysiere dieses Produkt mit forensischer Präzision. Jedes Detail zählt für die exakte Reproduktion.' },
+                                { type: 'image_url', image_url: { url: body.productImageUrl, detail: 'high' } }
                             ]
                         }
                     ],
-                    max_tokens: 300
+                    max_tokens: 500
                 });
                 visionDescription = visionResponse.choices[0].message.content;
-                console.log('[AI Ad Generate] Vision description:', visionDescription.substring(0, 50) + '...');
+                console.log('[AI Ad Generate] ✓ Vision description:', visionDescription.substring(0, 100) + '...');
             } catch (err) {
-                console.error('[AI Ad Generate] Vision analysis failed:', err);
-                // Continue without vision
+                console.error('[AI Ad Generate] ✗ Vision analysis failed:', err);
             }
         }
+
+        // ========================================
+        // STEP 2: DYNAMIC TEXT GENERATION
+        // Generate product-specific headlines, CTAs, features
+        // ========================================
+        let dynamicText = {
+            headline: body.headline,
+            subheadline: body.subheadline,
+            cta: body.cta || 'Jetzt entdecken',
+            badge: body.badge,
+            features: body.features || [],
+        };
+
+        // Only generate if not provided by user
+        if (!body.headline || !body.cta || (body.features || []).length === 0) {
+            console.log('[AI Ad Generate] 📝 Generating product-specific ad copy...');
+            try {
+                const generatedCopy = await generateProductCopy(openai, {
+                    productName: body.productName,
+                    productDescription: body.text || body.usp,
+                    visionDescription: visionDescription,
+                    targetAudience: body.targetAudience,
+                    tone: body.tone || 'professional',
+                    language: language,
+                    goal: body.goal || 'conversion',
+                    industry: body.industry,
+                });
+
+                // Merge generated with user-provided (user-provided takes priority)
+                dynamicText = {
+                    headline: body.headline || generatedCopy.headline,
+                    subheadline: body.subheadline || generatedCopy.subheadline,
+                    cta: body.cta || generatedCopy.cta,
+                    badge: body.badge || generatedCopy.badge,
+                    features: (body.features && body.features.length > 0) ? body.features : generatedCopy.features,
+                    hook: generatedCopy.hook,
+                };
+
+                console.log('[AI Ad Generate] ✓ Generated dynamic text:', {
+                    headline: dynamicText.headline,
+                    cta: dynamicText.cta,
+                    featureCount: dynamicText.features.length,
+                });
+            } catch (err) {
+                console.error('[AI Ad Generate] ✗ Dynamic text generation failed:', err);
+                // Fallback
+                dynamicText.headline = dynamicText.headline || generateFallbackHeadline(body.productName, body.text, language);
+            }
+        }
+
+        // ========================================
+        // STEP 3: BUILD HARDENED PRODUCT PROMPT
+        // Ensures product is NEVER modified
+        // ========================================
+        const hardenedProductPrompt = visionDescription
+            ? buildHardenedProductPrompt(visionDescription, body.productName)
+            : '';
+
+        console.log('[AI Ad Generate] 🔒 Product preservation:', visionDescription ? 'ACTIVE' : 'No image provided');
 
         // Build Creative Brief (Enterprise Creative Engine v2)
         console.log('[AI Ad Generate] Building Creative Brief...');
@@ -165,11 +243,11 @@ export const handler = async (event) => {
                 language: language,
                 platform: body.platform || 'instagram_feed',
 
-                // Content
-                headline: body.headline,
-                subheadline: body.subheadline,
-                features: body.features || [],
-                cta: body.cta,
+                // Content - USE DYNAMICALLY GENERATED TEXT
+                headline: dynamicText.headline,
+                subheadline: dynamicText.subheadline,
+                features: dynamicText.features,
+                cta: dynamicText.cta,
                 badge: body.badge,
                 testimonial: body.testimonial,
                 price: body.price,
@@ -265,7 +343,7 @@ export const handler = async (event) => {
 
         console.log('[AI Ad Generate] Using layout:', masterOutput.metadata?.layoutName || layoutComposition.metadata?.layoutName || 'auto-selected');
 
-        const openai = getOpenAiClient();
+        // openai already declared at top of function (line 89)
         const model = getOpenAiModel();
 
         // Quality loop for copy generation
@@ -335,6 +413,15 @@ export const handler = async (event) => {
             );
             promptSource = 'enhanced-ai';
             console.log('[AI Ad Generate] Using enhanced AI prompt');
+        }
+
+        // ========================================
+        // CRITICAL: APPEND HARDENED PRODUCT PRESERVATION
+        // This ensures the product is NEVER altered by AI
+        // ========================================
+        if (hardenedProductPrompt) {
+            imagePrompt = imagePrompt + '\n\n' + hardenedProductPrompt;
+            console.log('[AI Ad Generate] 🔒 Hardened product preservation appended to prompt');
         }
 
         console.log('[AI Ad Generate] Generating image...');
