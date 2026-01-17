@@ -9,6 +9,8 @@
  */
 
 import sharp from 'sharp';
+// Import premium SVG overlay creator
+import { createPremiumOverlaySVG } from './premiumDesignSystem.js';
 
 /**
  * Ad Layout Templates with precise zones
@@ -366,6 +368,7 @@ export async function createLayoutAwareAd(options) {
         cta,
         badge,
         industry,
+        colorScheme = 'dark', // 'dark', 'gaming', 'vibrant', 'light'
         canvasSize = 1024,
     } = options;
 
@@ -413,15 +416,21 @@ export async function createLayoutAwareAd(options) {
 
     console.log(`[LayoutAware] Product zone: ${productZone.x},${productZone.y} → placed at ${centeredLeft},${centeredTop} (${finalWidth}x${finalHeight})`);
 
-    // Step 3: Create design overlay SVG
-    const designSVG = createDesignOverlaySVG(layout, {
+    // Step 3: Create PREMIUM design overlay SVG (10/10 agency-level)
+    // Use the premium overlay creator for glassmorphism, neon glow, professional shadows
+    const designSVG = createPremiumOverlaySVG({
+        width: canvasSize,
+        height: canvasSize,
         headline,
         subheadline,
         features,
         cta,
         badge,
-        style: 'dark',
-    }, canvasSize);
+        layout: layout.id,
+        colorScheme: colorScheme, // 'dark', 'gaming', 'vibrant', 'light'
+    });
+
+    console.log('[LayoutAware] Using PREMIUM overlay with colorScheme:', colorScheme);
 
     // Step 4: Composite everything together
     const finalImage = await sharp(backgroundBuffer)
