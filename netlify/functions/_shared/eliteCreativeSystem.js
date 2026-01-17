@@ -223,38 +223,38 @@ const PALETTES = {
 // ============================================================
 
 const LAYOUTS = {
-    // Hero Center with stacked features on right
+    // Hero Center with stacked features on right - FIXED POSITIONING
     hero_features_right: {
         id: 'hero_features_right',
         product: {
-            x: MARGIN,
-            y: 150,
-            width: CANVAS * 0.52,
+            x: MARGIN,          // Left side
+            y: 140,             // Below headline
+            width: CANVAS * 0.48,  // Half width for product
             height: CANVAS * 0.55,
         },
         headline: {
             x: MARGIN,
-            y: MARGIN + 20,
+            y: MARGIN + 10,
             width: CANVAS - (MARGIN * 2),
             align: 'left',
         },
         features: {
-            x: CANVAS * 0.56,
-            y: 180,
-            width: CANVAS * 0.40,
-            spacing: 80,
+            x: CANVAS * 0.54,   // Right side, clear of product
+            y: 160,             // Start near top
+            width: CANVAS * 0.42, // Fixed width
+            spacing: 85,        // Space between features
         },
         cta: {
-            x: CANVAS * 0.56,
-            y: CANVAS - 140,
-            width: CANVAS * 0.38,
-            height: 60,
+            x: CANVAS * 0.54,   // Aligned with features
+            y: CANVAS - 130,
+            width: CANVAS * 0.42,
+            height: 56,
         },
         badge: {
-            x: CANVAS - MARGIN - 140,
+            x: CANVAS - MARGIN - 130,
             y: MARGIN,
-            width: 140,
-            height: 36,
+            width: 130,
+            height: 34,
         },
     },
 
@@ -404,11 +404,18 @@ PREMIUM DARK AESTHETIC:
 
     prompt += `
 CRITICAL TECHNICAL REQUIREMENTS:
-1. The PRODUCT ZONE (${prodX}%-${prodX + prodW}% horizontal, ${prodY}%-${prodY + prodH}% vertical) MUST BE EMPTY
+1. The PRODUCT ZONE (${prodX}%-${prodX + prodW}% horizontal, ${prodY}%-${prodY + prodH}% vertical) MUST BE COMPLETELY EMPTY
 2. Create subtle ambient glow/highlight in the product zone to make product pop
-3. NO product, NO text, NO logos in the generated image
-4. Resolution: ${CANVAS}x${CANVAS}px
-5. Style: Photorealistic lighting with designed elements
+3. ABSOLUTE PROHIBITION: DO NOT draw ANY product, object, item, or thing in this image
+4. ABSOLUTE PROHIBITION: DO NOT draw ANY text, logos, letters, words, or typography
+5. This image is ONLY a background - the product will be composited separately
+6. Resolution: ${CANVAS}x${CANVAS}px
+7. Style: Photorealistic lighting with abstract/gradient designed elements
+
+EMPTY CENTER ZONE IS MANDATORY. The product zone must contain ONLY:
+- Empty space
+- Subtle gradient or ambient light
+- NO objects, NO shapes, NO products, NO items
 
 This background will have a product composited on top, so the product zone lighting is crucial.
 `;

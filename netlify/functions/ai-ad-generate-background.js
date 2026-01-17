@@ -458,9 +458,10 @@ Beginne mit: "PRÄZISE PRODUKTBESCHREIBUNG:"`
             console.log('[AI Ad Generate] Elite Config → Palette:', palette, '| Layout:', layout);
 
             // Step 2: Generate hyper-specific background prompt
+            // CRITICAL: Do NOT pass productDescription - it causes AI to draw the product!
             const eliteBackgroundPrompt = generateEliteBackgroundPrompt(palette, layout, {
                 industry: body.industry,
-                productDescription: visionDescription,
+                // NO productDescription here - background must be EMPTY for product overlay
             });
 
             console.log('[AI Ad Generate] Generating ELITE background (1080x1080)...');
