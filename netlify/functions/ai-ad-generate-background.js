@@ -14,29 +14,15 @@ import { ultimateMasterEngine, AVAILABLE_VERTICALS, SYSTEM_STATS } from './_shar
 // Product Preservation & Dynamic Text
 import { buildHardenedProductPrompt, buildBackgroundOnlyPrompt } from './_shared/productPreservationEngine.js';
 import { generateProductCopy, generateFallbackHeadline } from './_shared/dynamicProductTextGenerator.js';
-// Real Image Compositing (guarantees 1:1 product preservation)
+// 2026 Elite Creative System (100% Professional)
 import {
-    createCompositedAd,
-    build2025BackgroundPrompt,
-    compositeProductOnBackground,
-    fetchImageAsBuffer,
-    addTextOverlay
-} from './_shared/imageCompositingEngine.js';
-// Layout-Aware Compositing (integrated design with zones)
-import {
-    createLayoutAwareAd,
-    buildLayoutBackgroundPrompt,
-    detectBestLayout,
-    AD_LAYOUTS_2025
-} from './_shared/layoutAwareCompositing.js';
-// Premium Design System (10/10 agency-level visuals)
-import {
-    PREMIUM_BACKGROUNDS,
-    createPremiumOverlaySVG,
-    getPremiumBackgroundPrompt,
-    detectBestBackgroundStyle,
-    getColorSchemeForBackground
-} from './_shared/premiumDesignSystem.js';
+    createEliteAd,
+    detectOptimalConfig,
+    generateEliteBackgroundPrompt,
+    PALETTES,
+    LAYOUTS,
+    CANVAS,
+} from './_shared/eliteCreativeSystem.js';
 import { getUserProfile } from './_shared/auth.js';
 import { assertAndConsumeCredits, CREDIT_COSTS } from './_shared/credits.js';
 import { supabaseAdmin } from './_shared/clients.js';
@@ -458,71 +444,54 @@ Beginne mit: "PRÄZISE PRODUKTBESCHREIBUNG:"`
         const storagePath = `ai-ads/${filename}`;
 
         if (body.productImageUrl) {
-            // ===== PREMIUM LAYOUT-AWARE COMPOSITING MODE =====
-            // 10/10 Agency-level visuals with premium backgrounds and SVG effects
-            console.log('[AI Ad Generate] 🎨 PREMIUM COMPOSITING: Creating 10/10 agency-level ad');
+            // ===== 2026 ELITE CREATIVE SYSTEM =====
+            // 100% Professional Meta Ad - Creative Director Level
+            console.log('[AI Ad Generate] 🏆 ELITE CREATIVE: Creating 2026-level professional ad');
 
-            // Step 1: Detect best layout for this content
-            const selectedLayout = detectBestLayout({
-                features: dynamicText.features,
-                industry: body.industry,
-                hasTestimonial: !!body.testimonial,
-                isSale: body.goal === 'sale',
-                isMinimal: body.template === 'minimalist_elegant',
-            });
-            console.log('[AI Ad Generate] Selected layout:', selectedLayout.id);
-
-            // Step 2: Detect best PREMIUM background style
-            const backgroundStyle = detectBestBackgroundStyle({
+            // Step 1: Auto-detect optimal configuration
+            const { palette, layout } = detectOptimalConfig({
                 industry: body.industry,
                 tone: body.tone,
-                isGaming: body.industry === 'gaming' || body.industry === 'tech',
-                isNatural: body.industry === 'organic' || body.industry === 'eco',
+                features: dynamicText.features,
                 isMinimal: body.template === 'minimalist_elegant',
-                isVibrant: body.tone === 'playful',
             });
-            console.log('[AI Ad Generate] PREMIUM background style:', backgroundStyle);
+            console.log('[AI Ad Generate] Elite Config → Palette:', palette, '| Layout:', layout);
 
-            // Step 3: Generate PREMIUM background
-            const premiumBackgroundPrompt = getPremiumBackgroundPrompt(backgroundStyle, {
-                productZone: selectedLayout.zones?.product,
+            // Step 2: Generate hyper-specific background prompt
+            const eliteBackgroundPrompt = generateEliteBackgroundPrompt(palette, layout, {
+                industry: body.industry,
+                productDescription: visionDescription,
             });
 
-            console.log('[AI Ad Generate] Generating PREMIUM background...');
+            console.log('[AI Ad Generate] Generating ELITE background (1080x1080)...');
             const backgroundResult = await withRetry(
                 async () => generateHeroImage({
-                    prompt: premiumBackgroundPrompt,
-                    size: '1024x1024',
+                    prompt: eliteBackgroundPrompt,
+                    size: '1024x1024', // Will be resized to 1080
                     quality: 'hd',
                 }),
                 { maxRetries: 2, initialDelay: 2000 }
             );
 
             const backgroundBuffer = Buffer.from(backgroundResult.b64, 'base64');
-            console.log('[AI Ad Generate] ✓ Premium background generated');
+            console.log('[AI Ad Generate] ✓ Elite background generated');
 
-            // Step 4: Get matching color scheme for overlay
-            const colorScheme = getColorSchemeForBackground(backgroundStyle);
-            console.log('[AI Ad Generate] Using color scheme:', colorScheme);
-
-            // Step 5: Create layout-aware ad with EXACT product + PREMIUM design elements
-            const layoutAwareAd = await createLayoutAwareAd({
+            // Step 3: Create Elite Ad with EXACT product + professional overlays
+            const eliteAd = await createEliteAd({
                 backgroundBuffer: backgroundBuffer,
                 productImageUrl: body.productImageUrl,
-                layoutId: selectedLayout.id,
+                palette: palette,
+                layout: layout,
                 headline: dynamicText.headline,
                 subheadline: dynamicText.subheadline,
                 features: dynamicText.features.slice(0, 4),
                 cta: dynamicText.cta,
                 badge: dynamicText.badge || 'LIMITIERT',
-                industry: body.industry,
-                colorScheme: colorScheme,
-                canvasSize: 1024,
             });
 
-            finalImageBuffer = layoutAwareAd.buffer;
-            console.log('[AI Ad Generate] ✅ PREMIUM COMPOSITING COMPLETE');
-            console.log('[AI Ad Generate] Layout:', selectedLayout.id, '| Background:', backgroundStyle, '| Colors:', colorScheme);
+            finalImageBuffer = eliteAd.buffer;
+            console.log('[AI Ad Generate] ✅ 2026 ELITE AD COMPLETE');
+            console.log('[AI Ad Generate] Metadata:', JSON.stringify(eliteAd.metadata));
 
         } else {
             // ===== LEGACY MODE (no product image) =====
