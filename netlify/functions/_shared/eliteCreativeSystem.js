@@ -18,6 +18,20 @@ import {
     SPACING_2026,
     SHADOWS_2026
 } from './eliteTemplates2026.js';
+// Import Agency-Level Visual Effects
+import {
+    LIGHT_EFFECTS,
+    PRODUCT_EFFECTS,
+    GEOMETRIC_ACCENTS,
+    TEXTURES,
+    TYPOGRAPHY_EFFECTS,
+    GLASSMORPHISM,
+    CTA_EFFECTS,
+    BADGE_EFFECTS,
+    VIGNETTE,
+    COLOR_GRADING,
+    generateAgencyOverlay
+} from './agencyVisualEffects.js';
 
 // ============================================================
 // DESIGN CONSTANTS - GOLDEN RATIOS & PRECISE MEASUREMENTS
@@ -656,7 +670,7 @@ export async function createEliteAd(options) {
 
     console.log('[EliteCreative] Product: ${finalW}x${finalH} at (${prodLeft}, ${prodTop})');
 
-    // Step 3: Generate elite overlay SVG
+    // Step 3: Generate elite overlay SVG (text, CTAs, badges)
     const overlaySVG = generateEliteOverlaySVG({
         palette,
         layout,
@@ -667,28 +681,55 @@ export async function createEliteAd(options) {
         badge,
     });
 
-    // Step 4: Composite everything
+    // Step 4: Generate Agency-Level Effects Overlay (lens flares, product glow, vignette)
+    const isGaming = palette === 'gaming';
+    const agencyEffectsOverlay = generateAgencyOverlay({
+        canvasSize,
+        palette,
+        includeVignette: true,
+        includeGrain: true,
+        includeLightEffects: true,
+        includeGeometricAccents: true,
+        productZone: {
+            x: prodLeft,
+            y: prodTop,
+            width: finalW,
+            height: finalH,
+        },
+        isGaming,
+    });
+
+    console.log('[EliteCreative] Agency effects: Vignette ✓ | Grain ✓ | Light ✓ | Glow ✓');
+
+    // Step 5: Composite everything in correct order
     const finalImage = await sharp(backgroundBuffer)
         .resize(canvasSize, canvasSize)
         .composite([
-            // Product layer with shadow
+            // Layer 1: Product with shadow
             {
                 input: resizedProduct,
                 left: prodLeft,
                 top: prodTop,
                 blend: 'over',
             },
-            // Typography and UI overlay
+            // Layer 2: Typography and UI overlay
             {
                 input: Buffer.from(overlaySVG),
                 left: 0,
                 top: 0,
             },
+            // Layer 3: Agency effects (vignette, glow, light effects) - FINAL POLISH
+            {
+                input: Buffer.from(agencyEffectsOverlay),
+                left: 0,
+                top: 0,
+                blend: 'over',
+            },
         ])
         .png({ quality: 100 })
         .toBuffer();
 
-    console.log('[EliteCreative] ✅ 2026-level ad created');
+    console.log('[EliteCreative] ✅ AGENCY-LEVEL AD CREATED');
 
     return {
         buffer: finalImage,
@@ -697,6 +738,7 @@ export async function createEliteAd(options) {
             layout,
             productPosition: { x: prodLeft, y: prodTop, w: finalW, h: finalH },
             canvasSize,
+            agencyEffects: ['vignette', 'grain', 'lightEffects', 'productGlow', 'geometricAccents'],
         },
     };
 }
