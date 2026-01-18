@@ -418,18 +418,18 @@ export function SettingsPage() {
   };
 
   const tabs: { id: SettingsTab; label: string; icon: React.ReactNode }[] = [
-    { id: 'account', label: 'Account', icon: <User className="w-4 h-4" /> },
-    { id: 'integrations', label: 'Integrations', icon: <Link2 className="w-4 h-4" /> },
-    { id: 'notifications', label: 'Notifications', icon: <Bell className="w-4 h-4" /> },
-    { id: 'appearance', label: 'Appearance', icon: <Palette className="w-4 h-4" /> },
-    { id: 'billing', label: 'Billing', icon: <CreditCard className="w-4 h-4" /> },
-    { id: 'security', label: 'Security', icon: <Shield className="w-4 h-4" /> },
+    { id: 'account', label: 'Konto', icon: <User className="w-4 h-4" /> },
+    { id: 'integrations', label: 'Integrationen', icon: <Link2 className="w-4 h-4" /> },
+    { id: 'notifications', label: 'Benachrichtigungen', icon: <Bell className="w-4 h-4" /> },
+    { id: 'appearance', label: 'Darstellung', icon: <Palette className="w-4 h-4" /> },
+    { id: 'billing', label: 'Abrechnung', icon: <CreditCard className="w-4 h-4" /> },
+    { id: 'security', label: 'Sicherheit', icon: <Shield className="w-4 h-4" /> },
   ];
 
   return (
     <DashboardShell
-      title="Settings"
-      subtitle="Manage your account settings and integrations"
+      title="Einstellungen"
+      subtitle="Verwalte dein Konto und Integrationen"
     >
 
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
@@ -442,8 +442,8 @@ export function SettingsPage() {
                   key={tab.id}
                   onClick={() => setActiveTab(tab.id)}
                   className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold transition-all ${activeTab === tab.id
-                      ? 'bg-primary text-primary-foreground shadow-lg shadow-primary/20'
-                      : 'text-foreground/80 sm:text-muted-foreground hover:bg-muted/50 hover:text-foreground'
+                    ? 'bg-primary text-primary-foreground shadow-lg shadow-primary/20'
+                    : 'text-foreground/80 sm:text-muted-foreground hover:bg-muted/50 hover:text-foreground'
                     }`}
                 >
                   {tab.icon}
@@ -461,14 +461,14 @@ export function SettingsPage() {
             {activeTab === 'account' && (
               <div className="space-y-6">
                 <div className="mb-4">
-                  <h2 className="text-xl font-bold text-foreground">Account Settings</h2>
-                  <p className="text-sm text-muted-foreground">Manage your personal information</p>
+                  <h2 className="text-xl font-bold text-foreground">Kontoeinstellungen</h2>
+                  <p className="text-sm text-muted-foreground">Verwalte deine persönlichen Daten</p>
                 </div>
 
                 <div className="space-y-6">
                   {/* Profile Picture */}
                   <div>
-                    <label className="block text-sm font-semibold text-foreground mb-3">Profile Picture</label>
+                    <label className="block text-sm font-semibold text-foreground mb-3">Profilbild</label>
                     <div className="flex items-center gap-4">
                       <div className="w-20 h-20 rounded-full bg-primary/20 flex items-center justify-center text-primary text-2xl font-bold overflow-hidden border-2 border-primary/10">
                         {avatarUrl ? (
@@ -483,9 +483,9 @@ export function SettingsPage() {
                           onClick={handleAvatarClick}
                           disabled={isUploadingAvatar}
                         >
-                          {isUploadingAvatar ? 'Uploading…' : 'Upload New'}
+                          {isUploadingAvatar ? 'Wird hochgeladen…' : 'Bild hochladen'}
                         </Button>
-                        <p className="text-xs text-muted-foreground mt-2">JPG, PNG or GIF. Max 2MB.</p>
+                        <p className="text-xs text-muted-foreground mt-2">JPG, PNG oder GIF. Max 2MB.</p>
                         <input
                           ref={fileInputRef}
                           type="file"
@@ -499,7 +499,7 @@ export function SettingsPage() {
 
                   {/* Name */}
                   <div>
-                    <label className="block text-sm font-semibold text-foreground mb-2">Full Name</label>
+                    <label className="block text-sm font-semibold text-foreground mb-2">Vollständiger Name</label>
                     <input
                       type="text"
                       value={accountData.name}
@@ -510,7 +510,7 @@ export function SettingsPage() {
 
                   {/* Email */}
                   <div>
-                    <label className="block text-sm font-semibold text-foreground mb-2">Email Address</label>
+                    <label className="block text-sm font-semibold text-foreground mb-2">E-Mail-Adresse</label>
                     <input
                       type="email"
                       value={accountData.email}
@@ -521,7 +521,7 @@ export function SettingsPage() {
 
                   {/* Company */}
                   <div>
-                    <label className="block text-sm font-semibold text-foreground mb-2">Company Name</label>
+                    <label className="block text-sm font-semibold text-foreground mb-2">Firmenname</label>
                     <input
                       type="text"
                       value={accountData.company}
@@ -532,7 +532,7 @@ export function SettingsPage() {
 
                   {/* Timezone */}
                   <div>
-                    <label className="block text-sm font-semibold text-foreground mb-2">Timezone</label>
+                    <label className="block text-sm font-semibold text-foreground mb-2">Zeitzone</label>
                     <SelectField
                       value={accountData.timezone}
                       onChange={(e) => setAccountData({ ...accountData, timezone: e.target.value })}
@@ -552,11 +552,11 @@ export function SettingsPage() {
                     className="w-full md:w-auto"
                   >
                     {isSaving ? (
-                      'Saving...'
+                      'Speichern...'
                     ) : (
                       <>
                         <Save className="w-4 h-4 mr-2" />
-                        Save Changes
+                        Änderungen speichern
                       </>
                     )}
                   </Button>
@@ -568,8 +568,8 @@ export function SettingsPage() {
             {activeTab === 'integrations' && (
               <div className="space-y-6">
                 <div className="mb-4">
-                  <h2 className="text-xl font-bold text-foreground">Integrations</h2>
-                  <p className="text-sm text-muted-foreground">Connect your advertising accounts and platforms</p>
+                  <h2 className="text-xl font-bold text-foreground">Integrationen</h2>
+                  <p className="text-sm text-muted-foreground">Verbinde deine Werbekonten und Plattformen</p>
                 </div>
 
                 <div className="space-y-6">
@@ -590,12 +590,12 @@ export function SettingsPage() {
                             {facebookConnected && (
                               <Badge variant="secondary" className="bg-green-500/10 text-green-600 border-green-500/20 gap-1 pl-2">
                                 <CheckCircle2 className="w-3 h-3" />
-                                Connected
+                                Verbunden
                               </Badge>
                             )}
                           </h3>
                           <p className="text-sm text-muted-foreground">
-                            Connect your Facebook Ad Account to import campaigns and metrics
+                            Verbinde dein Facebook Ads Konto um Kampagnen und Metriken zu importieren
                           </p>
                         </div>
                       </div>
@@ -606,7 +606,7 @@ export function SettingsPage() {
                         {/* Connected Account Info */}
                         <div className="p-4 bg-background/50 rounded-xl space-y-3 border border-border/50">
                           <div className="flex items-center justify-between">
-                            <span className="text-sm text-muted-foreground">Account Name</span>
+                            <span className="text-sm text-muted-foreground">Kontoname</span>
                             <span className="text-sm font-semibold text-foreground">{selectedAdAccountName}</span>
                           </div>
                           <div className="flex items-center justify-between">
@@ -616,7 +616,7 @@ export function SettingsPage() {
                             </span>
                           </div>
                           <div className="flex items-center justify-between">
-                            <span className="text-sm text-muted-foreground">Connected Since</span>
+                            <span className="text-sm text-muted-foreground">Verbunden seit</span>
                             <span className="text-sm font-semibold text-foreground">
                               {formatDate(facebookAccount?.connected_at)}
                             </span>
@@ -625,7 +625,7 @@ export function SettingsPage() {
                             <span className="text-sm text-muted-foreground">Status</span>
                             <span className="flex items-center gap-1 text-sm font-semibold text-green-500">
                               <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
-                              Active
+                              Aktiv
                             </span>
                           </div>
                         </div>
@@ -646,7 +646,7 @@ export function SettingsPage() {
                             className="flex-1 gap-2"
                           >
                             <Zap className="w-4 h-4" />
-                            {isSyncing ? 'Syncing…' : 'Sync Now'}
+                            {isSyncing ? 'Synchronisieren…' : 'Jetzt synchronisieren'}
                           </Button>
                           <Button
                             variant="destructive"
@@ -654,7 +654,7 @@ export function SettingsPage() {
                             className="flex-1 gap-2 bg-red-500/10 text-red-500 hover:bg-red-500/20 border-red-500/20"
                           >
                             <X className="w-4 h-4" />
-                            Disconnect
+                            Trennen
                           </Button>
                         </div>
                       </div>
@@ -662,9 +662,9 @@ export function SettingsPage() {
                       <div className="space-y-4 relative z-10">
                         <ul className="space-y-2 mb-4">
                           {[
-                            'Automatic campaign data sync',
-                            'Real-time performance metrics',
-                            'AI-powered optimization insights',
+                            'Automatische Kampagnen-Synchronisation',
+                            'Echtzeit Performance-Metriken',
+                            'KI-gestützte Optimierungsvorschläge',
                           ].map((feature, i) => (
                             <li key={i} className="flex items-center gap-2 text-sm text-muted-foreground">
                               <Check className="w-4 h-4 text-primary" />
@@ -678,7 +678,7 @@ export function SettingsPage() {
                           className="w-full bg-[#1877F2] hover:bg-[#1877F2]/90 text-white gap-2 shadow-md"
                         >
                           <Facebook className="w-4 h-4" />
-                          Connect Facebook Account
+                          Facebook-Konto verbinden
                         </Button>
 
                         {metaError && (
@@ -688,7 +688,7 @@ export function SettingsPage() {
                         )}
 
                         <p className="text-[10px] text-center text-muted-foreground/60 w-full">
-                          Read-only access to campaign data.
+                          Nur Lesezugriff auf Kampagnendaten.
                         </p>
                       </div>
                     )}
@@ -704,9 +704,9 @@ export function SettingsPage() {
                         <div>
                           <h3 className="text-lg font-bold text-foreground flex items-center gap-2">
                             Google Ads
-                            <Badge variant="outline" className="text-[10px] h-5">Coming Soon</Badge>
+                            <Badge variant="outline" className="text-[10px] h-5">Bald verfügbar</Badge>
                           </h3>
-                          <p className="text-sm text-muted-foreground">Google Ads integration will be available soon</p>
+                          <p className="text-sm text-muted-foreground">Google Ads Integration wird bald verfügbar sein</p>
                         </div>
                       </div>
                     </div>
@@ -719,20 +719,20 @@ export function SettingsPage() {
             {activeTab === 'notifications' && (
               <div className="space-y-6">
                 <div className="mb-4">
-                  <h2 className="text-xl font-bold text-foreground">Notifications</h2>
-                  <p className="text-sm text-muted-foreground">Manage how you receive notifications</p>
+                  <h2 className="text-xl font-bold text-foreground">Benachrichtigungen</h2>
+                  <p className="text-sm text-muted-foreground">Verwalte wie du benachrichtigt wirst</p>
                 </div>
 
                 <div className="space-y-6">
                   <div>
-                    <h3 className="text-sm font-semibold text-foreground mb-4 uppercase tracking-wider opacity-70">Email Notifications</h3>
+                    <h3 className="text-sm font-semibold text-foreground mb-4 uppercase tracking-wider opacity-70">E-Mail-Benachrichtigungen</h3>
                     <div className="space-y-4">
                       {[
-                        { id: 'emailAlerts', label: 'Email Alerts', description: 'Receive important alerts via email' },
-                        { id: 'budgetAlerts', label: 'Budget Alerts', description: 'Get notified when budget limits are reached' },
-                        { id: 'performanceAlerts', label: 'Performance Alerts', description: 'Alerts for significant performance changes' },
-                        { id: 'weeklyReport', label: 'Weekly Report', description: 'Weekly summary of your campaigns' },
-                        { id: 'campaignUpdates', label: 'Campaign Updates', description: 'Updates when campaigns start or end' },
+                        { id: 'emailAlerts', label: 'E-Mail Benachrichtigungen', description: 'Wichtige Benachrichtigungen per E-Mail erhalten' },
+                        { id: 'budgetAlerts', label: 'Budget-Warnungen', description: 'Benachrichtigung bei Erreichen von Budgetlimits' },
+                        { id: 'performanceAlerts', label: 'Performance-Warnungen', description: 'Warnungen bei signifikanten Performance-Änderungen' },
+                        { id: 'weeklyReport', label: 'Wöchentlicher Bericht', description: 'Wöchentliche Zusammenfassung deiner Kampagnen' },
+                        { id: 'campaignUpdates', label: 'Kampagnen-Updates', description: 'Updates wenn Kampagnen starten oder enden' },
                       ].map((item) => (
                         <div key={item.id} className="flex items-center justify-between p-4 bg-muted/20 rounded-xl border border-border/40 hover:bg-muted/30 transition-colors">
                           <div>
@@ -760,7 +760,7 @@ export function SettingsPage() {
                     disabled={isSaving}
                   >
                     <Save className="w-4 h-4 mr-2" />
-                    Save Preferences
+                    Einstellungen speichern
                   </Button>
                 </div>
               </div>
@@ -770,25 +770,25 @@ export function SettingsPage() {
             {activeTab === 'appearance' && (
               <div className="space-y-6">
                 <div className="mb-4">
-                  <h2 className="text-xl font-bold text-foreground">Appearance</h2>
-                  <p className="text-sm text-muted-foreground">Customize how the platform looks</p>
+                  <h2 className="text-xl font-bold text-foreground">Darstellung</h2>
+                  <p className="text-sm text-muted-foreground">Passe das Aussehen der Plattform an</p>
                 </div>
 
                 <div className="space-y-6">
                   {/* Theme */}
                   <div>
-                    <label className="block text-sm font-semibold text-foreground mb-3">Theme</label>
+                    <label className="block text-sm font-semibold text-foreground mb-3">Farbschema</label>
                     <div className="grid grid-cols-2 gap-4">
                       {[
-                        { id: 'light', label: 'Light', icon: '☀️' },
-                        { id: 'dark', label: 'Dark', icon: '🌙' },
+                        { id: 'light', label: 'Hell', icon: '☀️' },
+                        { id: 'dark', label: 'Dunkel', icon: '🌙' },
                       ].map((option) => (
                         <button
                           key={option.id}
                           onClick={() => setAppearance({ ...appearance, theme: option.id as AppearanceSettings['theme'] })}
                           className={`p-4 rounded-xl border-2 transition-all flex flex-col items-center justify-center gap-2 h-28 ${appearance.theme === option.id
-                              ? 'border-primary bg-primary/5'
-                              : 'border-border/30 bg-muted/20 hover:bg-muted/40'
+                            ? 'border-primary bg-primary/5'
+                            : 'border-border/30 bg-muted/20 hover:bg-muted/40'
                             }`}
                         >
                           <div className="text-2xl">{option.icon}</div>
@@ -800,7 +800,7 @@ export function SettingsPage() {
 
                   {/* Language */}
                   <div>
-                    <label className="block text-sm font-semibold text-foreground mb-2">Language</label>
+                    <label className="block text-sm font-semibold text-foreground mb-2">Sprache</label>
                     <SelectField
                       value={appearance.language}
                       onChange={(e) => setAppearance({ ...appearance, language: e.target.value })}
@@ -818,7 +818,7 @@ export function SettingsPage() {
                     disabled={isSaving}
                   >
                     <Save className="w-4 h-4 mr-2" />
-                    Save Preferences
+                    Einstellungen speichern
                   </Button>
                 </div>
               </div>
@@ -835,32 +835,32 @@ export function SettingsPage() {
             {activeTab === 'security' && (
               <div className="space-y-6">
                 <div className="mb-4">
-                  <h2 className="text-xl font-bold text-foreground">Security</h2>
-                  <p className="text-sm text-muted-foreground">Manage your account security settings</p>
+                  <h2 className="text-xl font-bold text-foreground">Sicherheit</h2>
+                  <p className="text-sm text-muted-foreground">Verwalte deine Sicherheitseinstellungen</p>
                 </div>
 
                 <div className="space-y-6">
                   {/* Change Password */}
                   <div>
-                    <h3 className="text-sm font-semibold text-foreground mb-4 uppercase tracking-wider opacity-70">Change Password</h3>
+                    <h3 className="text-sm font-semibold text-foreground mb-4 uppercase tracking-wider opacity-70">Passwort ändern</h3>
                     <div className="space-y-4">
                       <input
                         type="password"
-                        placeholder="Current Password"
+                        placeholder="Aktuelles Passwort"
                         value={passwordData.current}
                         onChange={(e) => setPasswordData({ ...passwordData, current: e.target.value })}
                         className="w-full px-4 py-3 bg-muted/50 border border-border/50 rounded-xl text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
                       />
                       <input
                         type="password"
-                        placeholder="New Password"
+                        placeholder="Neues Passwort"
                         value={passwordData.next}
                         onChange={(e) => setPasswordData({ ...passwordData, next: e.target.value })}
                         className="w-full px-4 py-3 bg-muted/50 border border-border/50 rounded-xl text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
                       />
                       <input
                         type="password"
-                        placeholder="Confirm New Password"
+                        placeholder="Neues Passwort bestätigen"
                         value={passwordData.confirm}
                         onChange={(e) => setPasswordData({ ...passwordData, confirm: e.target.value })}
                         className="w-full px-4 py-3 bg-muted/50 border border-border/50 rounded-xl text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
@@ -869,7 +869,7 @@ export function SettingsPage() {
                         onClick={handlePasswordUpdate}
                         disabled={isSaving}
                       >
-                        Update Password
+                        Passwort aktualisieren
                       </Button>
                     </div>
                   </div>
@@ -881,9 +881,9 @@ export function SettingsPage() {
                         <AlertCircle className="w-5 h-5 text-red-500" />
                       </div>
                       <div>
-                        <h3 className="text-base font-semibold text-foreground mb-1">Danger Zone</h3>
+                        <h3 className="text-base font-semibold text-foreground mb-1">Gefahrenzone</h3>
                         <p className="text-sm text-muted-foreground mb-4 leading-relaxed">
-                          Once you delete your account, there is no going back. Please be certain.
+                          Sobald du dein Konto löschst, gibt es kein Zurück. Bitte sei dir sicher.
                         </p>
                         <Button
                           variant="destructive"
@@ -891,7 +891,7 @@ export function SettingsPage() {
                           className="opacity-70"
                         >
                           <Trash2 className="w-4 h-4 mr-2" />
-                          Delete Account
+                          Konto löschen
                         </Button>
                       </div>
                     </div>
