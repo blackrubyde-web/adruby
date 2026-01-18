@@ -44,6 +44,7 @@ import { InsightSummaryCards } from './ai-analysis/InsightSummaryCards';
 import { QuickActionsBar } from './ai-analysis/QuickActionsBar';
 import { PerformanceTrendChart } from './ai-analysis/PerformanceTrendChart';
 import { CreativeIntelligencePanel } from './ai-analysis/CreativeIntelligencePanel';
+import { AlertsConfigPanel } from './ai-analysis/AlertsConfigPanel';
 
 type AIRecommendation = 'kill' | 'duplicate' | 'increase' | 'decrease';
 
@@ -1012,6 +1013,11 @@ export function AIAnalysisPage() {
           />
         </div>
       )}
+
+      {/* SMART ALERTS CONFIG - Agency Pro */}
+      <div className="mb-6">
+        <AlertsConfigPanel />
+      </div>
 
       {/* QUICK ACTIONS BAR */}
       <QuickActionsBar

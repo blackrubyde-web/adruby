@@ -18,3 +18,5 @@ export { CampaignMetricsRow } from './CampaignMetricsRow';
 
 // Agency Pro Components
 export { CreativeIntelligencePanel } from './CreativeIntelligencePanel';
+export { AlertsConfigPanel, type AlertRule } from './AlertsConfigPanel';
+export { AlertNotificationBadge, type AlertNotification } from './AlertNotificationBadge';
