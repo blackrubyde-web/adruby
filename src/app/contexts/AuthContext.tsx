@@ -197,8 +197,28 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
               setAuthError('OAuth callback failed. Please try again.');
             } else {
               activeSession = data.session ?? null;
+
+              // After successful OAuth, redirect to appropriate destination
+              if (activeSession) {
+                let desiredRedirect = '/dashboard';
+                try {
+                  const stored = sessionStorage.getItem('adruby_oauth_redirect');
+                  if (stored && stored.startsWith('/')) {
+                    desiredRedirect = stored;
+                  }
+                  sessionStorage.removeItem('adruby_oauth_redirect');
+                } catch {
+                  // ignore storage errors
+                }
+
+                // Clean up URL and navigate
+                const cleanUrl = new URL(desiredRedirect, window.location.origin);
+                window.history.replaceState({}, document.title, cleanUrl.pathname + cleanUrl.search);
+              }
             }
-          } finally {
+          } catch (err) {
+            console.error('[Auth] OAuth code exchange error', err);
+            // Clean up code from URL anyway
             params.delete('code');
             const nextQuery = params.toString();
             const nextUrl = `${window.location.pathname}${nextQuery ? `?${nextQuery}` : ''}`;
@@ -388,15 +408,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const billing = useMemo(() => {
     const trialEndsAt = profile?.trial_expires_at || profile?.trial_ends_at || null;
-    const trialOk = profile?.trial_status === 'active' && isTrialActive(trialEndsAt);
     const paid = Boolean(profile?.payment_verified);
-    const onboardingComplete = Boolean(profile?.onboarding_completed);
-    const isSubscribed = paid || onboardingComplete || trialOk;
+
+    // Trial is only valid if:
+    // 1. User has verified payment method (entered credit card in Stripe)
+    // 2. Trial status is active
+    // 3. Trial hasn't expired yet
+    const trialOk = paid && profile?.trial_status === 'active' && isTrialActive(trialEndsAt);
+
+    // User is subscribed if they have paid OR if they have a valid trial (which requires payment verification)
+    const isSubscribed = paid || trialOk;
 
     let statusLabel = 'Setup required';
-    if (paid) statusLabel = 'Active';
+    if (profile?.subscription_status === 'active') statusLabel = 'Active';
+    else if (paid && !trialOk && profile?.trial_status === 'active') statusLabel = 'Trial expired';
     else if (trialOk) statusLabel = 'Trial';
-    else if (profile?.trial_status === 'active') statusLabel = 'Trial expired';
+    else if (paid) statusLabel = 'Active';
 
     return { isSubscribed, statusLabel, trialEndsAt };
   }, [profile]);
