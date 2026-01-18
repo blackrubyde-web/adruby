@@ -892,10 +892,22 @@ export function AIAnalysisPage() {
           <Badge variant="outline" className="text-xs">{totalRoas.toFixed(2)}x ROAS</Badge>
           <Badge variant="outline" className="text-xs">{allRecommendations.length} AI Insights</Badge>
           {aiPowered && <Badge variant="secondary" className="gap-1"><Brain className="w-3 h-3" /> GPT-4o Powered</Badge>}
-          <Badge variant={autopilotEnabled ? "default" : "secondary"} className={`gap-1 ${autopilotEnabled ? 'bg-violet-500/10 text-violet-400 border-violet-500/20' : ''}`}>
-            <ShieldCheck className="w-3 h-3" />
-            {autopilotEnabled ? 'AUTOPILOT ON' : 'AUTOPILOT OFF'}
-          </Badge>
+          {/* COMPACT AUTOPILOT TOGGLE */}
+          <button
+            onClick={toggleAutopilot}
+            disabled={!hasAutopilotData}
+            className={`flex items-center gap-2 px-3 py-1.5 rounded-full border text-xs font-medium transition-all ${autopilotEnabled
+                ? 'bg-violet-500/20 text-violet-400 border-violet-500/30 hover:bg-violet-500/30'
+                : 'bg-white/5 text-white/60 border-white/10 hover:bg-white/10'
+              } ${!hasAutopilotData ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
+          >
+            <ShieldCheck className="w-3.5 h-3.5" />
+            <span className="hidden sm:inline">{autopilotEnabled ? 'Autopilot ON' : 'Autopilot OFF'}</span>
+            <div className={`w-8 h-4 rounded-full relative ${autopilotEnabled ? 'bg-violet-500/30' : 'bg-white/10'}`}>
+              <div className={`absolute top-0.5 w-3 h-3 rounded-full transition-all duration-200 ${autopilotEnabled ? 'left-4 bg-violet-400' : 'left-0.5 bg-white/40'
+                }`} />
+            </div>
+          </button>
           {/* AGENCY SETTINGS MENU - Compact dropdown for all settings */}
           <AgencySettingsMenu campaigns={campaigns} />
         </div>
@@ -1047,96 +1059,7 @@ export function AIAnalysisPage() {
         }}
       />
 
-      {/* AUTOPILOT CONTROL CENTER */}
-      <div className="mb-8 p-1 relative overflow-hidden rounded-[32px] bg-gradient-to-b from-white/5 to-transparent border border-white/5">
-        <div className="absolute inset-0 bg-gradient-to-r from-violet-500/10 via-fuchsia-500/5 to-transparent opacity-50" />
-
-        <div className="relative bg-black/40 backdrop-blur-xl rounded-[30px] p-6 md:p-8 flex flex-col md:flex-row items-center justify-between gap-8">
-          {/* Score & Status */}
-          <div className="flex items-center gap-6 w-full md:w-auto">
-            <div className="relative flex-none">
-              <svg className="w-24 h-24 transform -rotate-90 drop-shadow-[0_0_15px_rgba(139,92,246,0.3)]">
-                <circle cx="48" cy="48" r="40" stroke="currentColor" strokeWidth="6" fill="transparent" className="text-white/5" />
-                <circle
-                  cx="48"
-                  cy="48"
-                  r="40"
-                  stroke="currentColor"
-                  strokeWidth="6"
-                  fill="transparent"
-                  strokeDasharray={251.2}
-                  strokeDashoffset={251.2 * (1 - (optimizationScore ?? 0) / 100)}
-                  className="text-violet-500"
-                />
-              </svg>
-              <div className="absolute inset-0 flex flex-col items-center justify-center">
-                <span className="text-3xl font-black text-white">{optimizationScore ?? '—'}</span>
-                <span className="text-[10px] uppercase tracking-wider text-white/50 font-bold">Health</span>
-              </div>
-            </div>
-
-            <div className="flex-1">
-              <div className="flex items-center gap-2 mb-2">
-                <h3 className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-white to-white/60">
-                  AdRuby Autopilot
-                </h3>
-                {autopilotEnabled && (
-                  <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/20 tracking-wider">
-                    ACTIVE
-                  </span>
-                )}
-              </div>
-              <div className="space-y-1">
-                {autopilotSummary.map((action, i) => (
-                  <div key={i} className="flex items-start gap-2 text-sm text-muted-foreground">
-                    <Zap className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
-                    {action}
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-
-          {/* Actions */}
-          <div className="flex flex-col sm:flex-row sm:items-center gap-3 w-full md:w-auto">
-            <button
-              className="h-10 w-full sm:w-auto rounded-full px-4 border border-white/10 hover:bg-white/5 hover:text-white hover:border-violet-500/50 transition-all group disabled:opacity-50 text-sm font-semibold flex items-center justify-center"
-              onClick={handleScaleWinners}
-              disabled={!autopilotEnabled || !hasAutopilotData}
-            >
-              <Rocket className="w-4 h-4 mr-2 text-violet-400 group-hover:text-violet-300 transition-colors" />
-              Scale Winners (+20%)
-            </button>
-
-            <div className="h-12 w-[1px] bg-white/10 mx-2 hidden sm:block" />
-
-            <div className="flex flex-col items-center gap-2">
-              <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
-                {autopilotEnabled ? 'DISABLE' : 'ENABLE'}
-              </span>
-              <button
-                onClick={toggleAutopilot}
-                className={`
-                            relative w-16 h-8 rounded-full transition-all duration-300 border
-                            ${autopilotEnabled
-                    ? 'bg-violet-600/20 border-violet-500/50 shadow-[0_0_20px_rgba(139,92,246,0.2)]'
-                    : 'bg-white/5 border-white/10'
-                  }
-                        `}
-                disabled={!hasAutopilotData}
-              >
-                <div className={`
-                            absolute top-1 left-1 w-6 h-6 rounded-full transition-all duration-300 shadow-sm
-                            ${autopilotEnabled
-                    ? 'translate-x-8 bg-violet-400'
-                    : 'translate-x-0 bg-white/20'
-                  }
-                        `} />
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
+      {/* AUTOPILOT CONTROL CENTER - Moved to compact header toggle */}
 
       {/* PREDICTIVE INSIGHTS SECTION */}
       {campaigns.length > 0 && (
