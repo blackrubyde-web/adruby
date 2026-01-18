@@ -17,13 +17,15 @@ import {
     AlertCircle,
     Loader2,
     Shield,
-    Copy
+    Copy,
+    Mail
 } from 'lucide-react';
 import { useAdmin } from '../contexts/AdminContext';
 import { toast } from 'sonner';
 import { PartnerApplicationsTab } from './admin/PartnerApplicationsTab';
+import { AdminEmailComposer } from './admin/AdminEmailComposer';
 
-type AdminTab = 'overview' | 'users' | 'affiliates' | 'payouts' | 'partners';
+type AdminTab = 'overview' | 'users' | 'affiliates' | 'payouts' | 'partners' | 'email';
 
 export function AdminDashboardPage() {
     const {
@@ -108,6 +110,7 @@ export function AdminDashboardPage() {
         { id: 'affiliates', label: 'Affiliates', icon: Gift },
         { id: 'payouts', label: 'Payouts', icon: DollarSign },
         { id: 'partners', label: 'Partners', icon: UserPlus },
+        { id: 'email', label: 'Email', icon: Mail },
     ];
 
     // Pending payouts count
@@ -604,6 +607,9 @@ export function AdminDashboardPage() {
 
             {/* Partners Tab */}
             {activeTab === 'partners' && <PartnerApplicationsTab />}
+
+            {/* Email Tab */}
+            {activeTab === 'email' && <AdminEmailComposer />}
 
             {/* Credit Edit Modal */}
             {creditModalUser && (
