@@ -2,6 +2,7 @@ import { lazy, Suspense, memo, useCallback, useEffect, useMemo, useState } from 
 import { Sidebar } from './components/Sidebar';
 import { Header } from './components/Header';
 import { TrialBanner } from './components/TrialBanner';
+import { TrialExpiredPaywall } from './components/TrialExpiredPaywall';
 import { Footer } from './components/Footer';
 // Lazy-load most full pages to reduce initial bundle size
 const LandingPage = lazy(() => import('./components/LandingPage').then((mod) => ({ default: mod.LandingPage })));
@@ -837,6 +838,29 @@ function AppContent() {
         currentPage !== 'payment-cancelled' &&
         (currentPage !== 'affiliate' || !!user) && (
           <div className="flex min-h-screen" style={{ background: 'var(--background-gradient)' }}>
+
+            {/* Trial Expired Paywall - Blocks Dashboard Access */}
+            {billing.statusLabel === 'Trial expired' && !profile?.payment_verified && (
+              <TrialExpiredPaywall
+                userEmail={user?.email}
+                onUpgrade={async () => {
+                  if (!user?.id || !user?.email) {
+                    toast.error('Bitte melde dich an, um fortzufahren');
+                    return;
+                  }
+                  try {
+                    const { startStripeCheckout } = await import('./lib/stripeService');
+                    const { url } = await startStripeCheckout(user.id, user.email);
+                    window.location.href = url;
+                  } catch (err) {
+                    toast.error('Upgrade fehlgeschlagen. Bitte versuche es erneut.');
+                    console.error('[Upgrade] startStripeCheckout failed', err);
+                  }
+                }}
+                onBackToLanding={() => go('landing', { replace: true })}
+              />
+            )}
+
             {/* Sidebar */}
             <Sidebar
               isCollapsed={isSidebarCollapsed}
