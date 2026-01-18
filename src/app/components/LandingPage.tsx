@@ -40,9 +40,10 @@ import { ObjectionHandlingSection } from './landing/ObjectionHandlingSection';
 interface LandingPageProps {
   onGetStarted: () => void;
   onLogin: () => void;
+  onNavigate?: (page: string) => void;
 }
 
-export function LandingPage({ onGetStarted, onLogin }: LandingPageProps) {
+export function LandingPage({ onGetStarted, onLogin, onNavigate }: LandingPageProps) {
   const heroRef = useRef<HTMLElement>(null);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
@@ -256,7 +257,7 @@ export function LandingPage({ onGetStarted, onLogin }: LandingPageProps) {
           ============================================ */}
       <GlobalNav
         currentPage="home"
-        onNavigate={() => { }}
+        onNavigate={(page) => onNavigate?.(page)}
         onSignIn={onLogin}
         onGetStarted={onGetStarted}
         onMobileMenuChange={setIsMobileMenuOpen}

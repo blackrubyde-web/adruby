@@ -646,6 +646,7 @@ function AppContent() {
                 <LandingPage
                   onGetStarted={() => go('register')}
                   onLogin={() => go('login')}
+                  onNavigate={(page) => go(page as PageType)}
                 />
               )}
 
