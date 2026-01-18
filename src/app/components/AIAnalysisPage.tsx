@@ -44,10 +44,7 @@ import { InsightSummaryCards } from './ai-analysis/InsightSummaryCards';
 import { QuickActionsBar } from './ai-analysis/QuickActionsBar';
 import { PerformanceTrendChart } from './ai-analysis/PerformanceTrendChart';
 import { CreativeIntelligencePanel } from './ai-analysis/CreativeIntelligencePanel';
-import { AlertsConfigPanel } from './ai-analysis/AlertsConfigPanel';
-import { AutomatedRulesPanel } from './ai-analysis/AutomatedRulesPanel';
-import { WeeklySummaryCard } from './ai-analysis/WeeklySummaryCard';
-import { AdaptiveDecisionPanel } from './ai-analysis/AdaptiveDecisionPanel';
+import { AgencySettingsMenu } from './ai-analysis/AgencySettingsMenu';
 
 type AIRecommendation = 'kill' | 'duplicate' | 'increase' | 'decrease';
 
@@ -899,6 +896,8 @@ export function AIAnalysisPage() {
             <ShieldCheck className="w-3 h-3" />
             {autopilotEnabled ? 'AUTOPILOT ON' : 'AUTOPILOT OFF'}
           </Badge>
+          {/* AGENCY SETTINGS MENU - Compact dropdown for all settings */}
+          <AgencySettingsMenu campaigns={campaigns} />
         </div>
       }
       headerActions={
@@ -1030,32 +1029,7 @@ export function AIAnalysisPage() {
         </div>
       )}
 
-      {/* SMART ALERTS CONFIG - Agency Pro */}
-      <div className="mb-6">
-        <AlertsConfigPanel />
-      </div>
-
-      {/* AUTOMATED RULES ENGINE - Agency Pro */}
-      <div className="mb-6">
-        <AutomatedRulesPanel />
-      </div>
-
-      {/* WEEKLY AI SUMMARY - Agency Pro */}
-      {campaigns.length > 0 && (
-        <div className="mb-6">
-          <WeeklySummaryCard
-            campaigns={campaigns.map(c => ({
-              id: c.id,
-              name: c.name,
-              roas: c.roas,
-              spend: c.spend,
-              revenue: c.revenue,
-              ctr: c.ctr,
-              conversions: c.conversions,
-            }))}
-          />
-        </div>
-      )}
+      {/* Agency Pro Tools moved to AgencySettingsMenu dropdown in header */}
 
       {/* QUICK ACTIONS BAR */}
       <QuickActionsBar
