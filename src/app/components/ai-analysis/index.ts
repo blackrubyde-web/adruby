@@ -15,3 +15,6 @@ export { QuickActionsBar } from './QuickActionsBar';
 // Phase 3 Components
 export { PerformanceTrendChart } from './PerformanceTrendChart';
 export { CampaignMetricsRow } from './CampaignMetricsRow';
+
+// Agency Pro Components
+export { CreativeIntelligencePanel } from './CreativeIntelligencePanel';
