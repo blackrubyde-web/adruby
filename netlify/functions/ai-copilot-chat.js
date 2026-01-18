@@ -1,24 +1,32 @@
 // netlify/functions/ai-copilot-chat.js
 // AI Copilot Chat API - Natural language questions about campaign performance
-// Uses GPT-4o with campaign context for intelligent responses
+// Uses GPT-4o with campaign context AND strategy knowledge for intelligent responses
 
 import OpenAI from 'openai';
 import { requireUserId } from './_shared/auth.js';
 import { badRequest, methodNotAllowed, ok, serverError, withCors } from './utils/response.js';
+import { generateAIContext, getStrategyContext, evaluatePerformance } from './_shared/strategyKnowledgeBase.js';
 
 const openai = new OpenAI({
     apiKey: process.env.OPENAI_API_KEY,
 });
 
 const SYSTEM_PROMPT = `Du bist der AdRuby AI Copilot - ein Elite Performance Marketing Experte und Media Buyer.
-Du analysierst Meta Ads Kampagnen und gibst actionable Empfehlungen.
+Du analysierst Meta Ads Kampagnen und gibst actionable Empfehlungen BASIEREND AUF BRANCHENSPEZIFISCHEM WISSEN.
 
 DEINE AUFGABEN:
 1. Beantworte Fragen zu Kampagnen-Performance verständlich
 2. Erkläre warum bestimmte Ads gut/schlecht performen
-3. Gib konkrete Optimierungsvorschläge
+3. Gib konkrete Optimierungsvorschläge BASIEREND AUF DER BRANCHE
 4. Identifiziere Muster und Trends
 5. Schlage Budget-Allokationen vor
+6. Empfehle Messaging-Angles und Creative-Strategien basierend auf Buyer Personas
+
+WICHTIG - BRANCHENSPEZIFISCHES WISSEN:
+- Du kennst die genauen BENCHMARKS für jede Branche (E-COM D2C, SaaS, Coaching, etc.)
+- Du kennst die BUYER PERSONAS und ihre psychologischen Trigger
+- Du kennst die besten MESSAGING ANGLES für jede Zielgruppe
+- Du kannst REGELN empfehlen die zur Branche passen
 
 STIL:
 - Antworte auf Deutsch
@@ -26,11 +34,13 @@ STIL:
 - Nutze Emojis sparsam für Übersichtlichkeit
 - Gib konkrete Zahlen wenn möglich
 - Maximal 3-4 kurze Absätze
+- Bei Creative-Tipps: Nenne die Buyer Persona und den Trigger
 
 VERFÜGBARE DATEN:
 - Kampagnen-Metriken (ROAS, CTR, Spend, Conversions)
 - AI-Empfehlungen (kill, duplicate, increase, decrease)
 - Performance-Scores
+- Branchenspezifische Benchmarks und Strategien
 
 Wenn du keine Daten hast, frage nach einem Sync oder sage dass du mehr Kontext brauchst.`;
 
@@ -40,6 +50,8 @@ const SUGGESTED_QUESTIONS = [
     "Welche Ads soll ich pausieren?",
     "Wie kann ich meinen ROAS verbessern?",
     "Was ist mein Budget-Tipp für morgen?",
+    "Welche Creative-Strategie passt zu meiner Branche?",
+    "Welche Buyer Persona sollte ich ansprechen?",
 ];
 
 export async function handler(event) {
@@ -62,7 +74,7 @@ export async function handler(event) {
             return badRequest('Invalid JSON body');
         }
 
-        const { message, campaignContext, conversationHistory = [] } = body;
+        const { message, campaignContext, conversationHistory = [], industryType = 'ecom_d2c' } = body;
 
         if (!message) {
             return badRequest('Missing message');
@@ -80,10 +92,18 @@ export async function handler(event) {
 
         // Build context from campaign data
         let contextPrompt = '';
+
+        // Add INDUSTRY-SPECIFIC STRATEGY CONTEXT
+        const strategyContext = generateAIContext(industryType);
+        if (strategyContext) {
+            contextPrompt += `\n\n${strategyContext}`;
+        }
+
+        // Add campaign data context
         if (campaignContext) {
             const { campaigns, summary, recommendations } = campaignContext;
 
-            contextPrompt = `\n\nAKTUELLE KAMPAGNEN-DATEN:
+            contextPrompt += `\n\nAKTUELLE KAMPAGNEN-DATEN:
 Gesamt-Spend: €${summary?.spend?.toFixed(2) || 'N/A'}
 Gesamt-Revenue: €${summary?.revenue?.toFixed(2) || 'N/A'}
 Durchschnittlicher ROAS: ${summary?.roas?.toFixed(2) || 'N/A'}x
@@ -94,6 +114,20 @@ EMPFEHLUNGEN:
 - Zu skalieren (Duplicate): ${recommendations?.duplicate || 0}
 - Budget erhöhen: ${recommendations?.increase || 0}
 - Budget reduzieren: ${recommendations?.decrease || 0}`;
+
+            // Evaluate performance against industry benchmarks
+            if (summary?.roas && summary?.ctr) {
+                const evaluation = evaluatePerformance(industryType, {
+                    roas: summary.roas,
+                    ctr: summary.ctr,
+                });
+                if (evaluation) {
+                    contextPrompt += `\n\nPERFORMANCE vs. BRANCHENBENCHMARKS:`;
+                    for (const [metric, data] of Object.entries(evaluation)) {
+                        contextPrompt += `\n- ${metric.toUpperCase()}: ${data.value.toFixed(2)} (${data.rating.toUpperCase()})`;
+                    }
+                }
+            }
 
             // Add top campaigns if available
             if (campaigns && campaigns.length > 0) {
