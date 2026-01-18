@@ -42,6 +42,7 @@ import { TrendMiniChart } from './ai-analysis/TrendMiniChart';
 import { AICopilotChat } from './ai-analysis/AICopilotChat';
 import { InsightSummaryCards } from './ai-analysis/InsightSummaryCards';
 import { QuickActionsBar } from './ai-analysis/QuickActionsBar';
+import { PerformanceTrendChart } from './ai-analysis/PerformanceTrendChart';
 
 type AIRecommendation = 'kill' | 'duplicate' | 'increase' | 'decrease';
 
@@ -959,6 +960,35 @@ export function AIAnalysisPage() {
         totalRevenue={totalRevenue}
         totalRoas={totalRoas}
       />
+
+      {/* PERFORMANCE TREND CHART */}
+      {campaigns.length > 0 && (
+        <div className="mb-6">
+          <PerformanceTrendChart
+            data={(() => {
+              // Generate mock trend data based on current metrics
+              const days = 30;
+              const baseRoas = totalRoas || 2;
+              const baseCtr = campaigns.reduce((sum, c) => sum + c.ctr, 0) / (campaigns.length || 1);
+              const baseSpend = totalSpend / days;
+
+              return Array.from({ length: days }, (_, i) => {
+                const date = new Date();
+                date.setDate(date.getDate() - (days - 1 - i));
+                const variance = 0.85 + Math.random() * 0.3;
+                return {
+                  date: date.toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit' }),
+                  roas: Math.max(0.5, baseRoas * variance),
+                  ctr: Math.max(0.5, baseCtr * variance),
+                  spend: baseSpend * variance,
+                  revenue: baseSpend * variance * baseRoas * variance,
+                };
+              });
+            })()}
+            title="Performance Trend"
+          />
+        </div>
+      )}
 
       {/* QUICK ACTIONS BAR */}
       <QuickActionsBar

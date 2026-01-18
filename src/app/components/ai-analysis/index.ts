@@ -11,3 +11,7 @@ export { TrendMiniChart, TrendChartRow } from './TrendMiniChart';
 export { AICopilotChat } from './AICopilotChat';
 export { InsightSummaryCards } from './InsightSummaryCards';
 export { QuickActionsBar } from './QuickActionsBar';
+
+// Phase 3 Components
+export { PerformanceTrendChart } from './PerformanceTrendChart';
+export { CampaignMetricsRow } from './CampaignMetricsRow';
