@@ -86,7 +86,7 @@ export const Header = memo(function Header({
             className="group px-4 py-2 bg-gradient-to-r from-[#FF1F1F] via-rose-500 to-red-600 text-white rounded-xl font-bold text-sm flex items-center gap-2 hover:shadow-[0_0_20px_rgba(255,31,31,0.4)] transition-all hover:scale-105 active:scale-95"
           >
             <Crown className="w-4 h-4" />
-            <span className="hidden sm:inline">Upgrade</span>
+            <span className="hidden sm:inline">Upgraden</span>
           </button>
         )}
 
@@ -94,7 +94,7 @@ export const Header = memo(function Header({
         <button
           onClick={toggleTheme}
           className="w-10 h-10 rounded-lg border border-border bg-card text-foreground hover:bg-muted flex items-center justify-center transition-colors cursor-pointer"
-          title={theme === 'dark' ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
+          title={theme === 'dark' ? 'Zu Hell wechseln' : 'Zu Dunkel wechseln'}
         >
           {theme === 'dark' ? (
             <Sun className="w-5 h-5 text-foreground stroke-[2.25]" />

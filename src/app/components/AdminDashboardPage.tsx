@@ -97,23 +97,23 @@ export function AdminDashboardPage() {
 
     // Stats cards
     const statsCards = [
-        { label: 'Total Users', value: stats?.total_users ?? 0, icon: Users, color: 'from-blue-500 to-blue-600' },
-        { label: 'Paying Users', value: stats?.paying_users ?? 0, icon: CreditCard, color: 'from-green-500 to-green-600' },
-        { label: 'Trial Users', value: stats?.trial_users ?? 0, icon: Clock, color: 'from-yellow-500 to-yellow-600' },
-        { label: 'Total Affiliates', value: stats?.total_affiliates ?? 0, icon: Gift, color: 'from-purple-500 to-purple-600' },
-        { label: 'Pending Payouts', value: `€${(stats?.pending_payouts_amount ?? 0).toFixed(2)}`, icon: DollarSign, color: 'from-orange-500 to-orange-600' },
-        { label: 'Total Earnings (Paid)', value: `€${(stats?.completed_payouts_amount ?? 0).toFixed(2)}`, icon: TrendingUp, color: 'from-emerald-500 to-emerald-600' },
+        { label: 'Nutzer gesamt', value: stats?.total_users ?? 0, icon: Users, color: 'from-blue-500 to-blue-600' },
+        { label: 'Zahlende Nutzer', value: stats?.paying_users ?? 0, icon: CreditCard, color: 'from-green-500 to-green-600' },
+        { label: 'Trial Nutzer', value: stats?.trial_users ?? 0, icon: Clock, color: 'from-yellow-500 to-yellow-600' },
+        { label: 'Affiliates gesamt', value: stats?.total_affiliates ?? 0, icon: Gift, color: 'from-purple-500 to-purple-600' },
+        { label: 'Ausstehende Auszahlungen', value: `€${(stats?.pending_payouts_amount ?? 0).toFixed(2)}`, icon: DollarSign, color: 'from-orange-500 to-orange-600' },
+        { label: 'Ausgezahlt (gesamt)', value: `€${(stats?.completed_payouts_amount ?? 0).toFixed(2)}`, icon: TrendingUp, color: 'from-emerald-500 to-emerald-600' },
     ];
 
     // Tab buttons
     const tabs: { id: AdminTab; label: string; icon: typeof Users }[] = [
-        { id: 'overview', label: 'Overview', icon: TrendingUp },
-        { id: 'users', label: 'Users', icon: Users },
+        { id: 'overview', label: 'Übersicht', icon: TrendingUp },
+        { id: 'users', label: 'Nutzer', icon: Users },
         { id: 'affiliates', label: 'Affiliates', icon: Gift },
-        { id: 'payouts', label: 'Payouts', icon: DollarSign },
-        { id: 'partners', label: 'Partners', icon: UserPlus },
+        { id: 'payouts', label: 'Auszahlungen', icon: DollarSign },
+        { id: 'partners', label: 'Partner', icon: UserPlus },
         { id: 'messages', label: 'Nachrichten', icon: MessageSquare },
-        { id: 'email', label: 'Email', icon: Mail },
+        { id: 'email', label: 'E-Mail', icon: Mail },
     ];
 
     // Pending payouts count
@@ -135,12 +135,12 @@ export function AdminDashboardPage() {
         );
         setProcessing(false);
         if (result.success) {
-            toast.success('Credits updated successfully');
+            toast.success('Credits erfolgreich aktualisiert');
             setCreditModalUser(null);
             setNewCredits('');
             setCreditReason('');
         } else {
-            toast.error(result.error || 'Failed to update credits');
+            toast.error(result.error || 'Credits konnten nicht aktualisiert werden');
         }
     };
 
@@ -155,12 +155,12 @@ export function AdminDashboardPage() {
         );
         setProcessing(false);
         if (result.success) {
-            toast.success(`Affiliate created with code: ${result.affiliate_code}`);
+            toast.success(`Affiliate erstellt mit Code: ${result.affiliate_code}`);
             setAffiliateModalUser(null);
             setNewAffiliateCode('');
             setNewPayoutEmail('');
         } else {
-            toast.error(result.error || 'Failed to create affiliate');
+            toast.error(result.error || 'Affiliate konnte nicht erstellt werden');
         }
     };
 
@@ -171,18 +171,18 @@ export function AdminDashboardPage() {
         const result = await handleProcessPayout(payoutModal.id, status, payoutReference || undefined);
         setProcessing(false);
         if (result.success) {
-            toast.success(status === 'completed' ? 'Payout marked as completed' : 'Payout marked as failed');
+            toast.success(status === 'completed' ? 'Auszahlung als erledigt markiert' : 'Auszahlung als fehlgeschlagen markiert');
             setPayoutModal(null);
             setPayoutReference('');
         } else {
-            toast.error(result.error || 'Failed to process payout');
+            toast.error(result.error || 'Auszahlung konnte nicht verarbeitet werden');
         }
     };
 
     // Copy to clipboard
     const copyToClipboard = (text: string, label: string) => {
         navigator.clipboard.writeText(text);
-        toast.success(`${label} copied!`);
+        toast.success(`${label} kopiert!`);
     };
 
     return (
@@ -196,7 +196,7 @@ export function AdminDashboardPage() {
                         </div>
                         Admin Dashboard
                     </h1>
-                    <p className="text-muted-foreground mt-1">Manage users, affiliates, and payouts</p>
+                    <p className="text-muted-foreground mt-1">Nutzer, Affiliates und Auszahlungen verwalten</p>
                 </div>
                 <button
                     onClick={() => refreshAll()}

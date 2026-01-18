@@ -25,9 +25,9 @@ const CORE_WORKFLOW: NavItem[] = [
   { icon: BarChart3, label: 'Dashboard', page: 'dashboard' },
   { icon: BarChart2, label: 'Analytics', page: 'analytics' },
   { icon: Palette, label: 'Creative Studio', page: 'studio' },
-  { icon: Wand2, label: 'AI Ad Builder', page: 'aibuilder', badge: 'New' },
-  { icon: Layers, label: 'Campaigns', page: 'campaigns' },
-  { icon: Brain, label: 'AI Analysis', page: 'aianalysis' },
+  { icon: Wand2, label: 'AI Ad Builder', page: 'aibuilder', badge: 'Neu' },
+  { icon: Layers, label: 'Kampagnen', page: 'campaigns' },
+  { icon: Brain, label: 'AI Analyse', page: 'aianalysis' },
   { icon: BookOpen, label: 'Creative Library', page: 'library' },
 ];
 

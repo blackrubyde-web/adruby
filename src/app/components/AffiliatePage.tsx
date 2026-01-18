@@ -74,7 +74,7 @@ export function AffiliatePage({ onNavigate = () => { }, onSignIn = () => { }, on
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-background gap-4">
         <Loader2 className="w-8 h-8 animate-spin text-rose-500" />
-        <p className="text-muted-foreground">Checking access...</p>
+        <p className="text-muted-foreground">Zugriff wird geprüft...</p>
       </div>
     );
   }
@@ -304,10 +304,10 @@ function AffiliateDashboard({
     try {
       await navigator.clipboard.writeText(text);
       setCopiedItem(label);
-      toast.success(`${label} copied to clipboard`);
+      toast.success(`${label} in Zwischenablage kopiert`);
       setTimeout(() => setCopiedItem(null), 2000);
     } catch (err) {
-      toast.error('Failed to copy to clipboard');
+      toast.error('Kopieren fehlgeschlagen');
     }
   };
 
@@ -319,7 +319,7 @@ function AffiliateDashboard({
             <div className="p-2 bg-emerald-500/10 rounded-lg">
               <DollarSign className="w-5 h-5 text-emerald-500" />
             </div>
-            <span className="text-sm font-medium text-muted-foreground">Total Earnings</span>
+            <span className="text-sm font-medium text-muted-foreground">Verdienst gesamt</span>
           </div>
           <div className="text-2xl font-bold">€{affiliateStats.totalEarnings}</div>
         </Card>
@@ -328,7 +328,7 @@ function AffiliateDashboard({
             <div className="p-2 bg-blue-500/10 rounded-lg">
               <TrendingUp className="w-5 h-5 text-blue-500" />
             </div>
-            <span className="text-sm font-medium text-muted-foreground">This Month</span>
+            <span className="text-sm font-medium text-muted-foreground">Diesen Monat</span>
           </div>
           <div className="text-2xl font-bold">€{affiliateStats.thisMonth}</div>
         </Card>
@@ -337,7 +337,7 @@ function AffiliateDashboard({
             <div className="p-2 bg-purple-500/10 rounded-lg">
               <Users className="w-5 h-5 text-purple-500" />
             </div>
-            <span className="text-sm font-medium text-muted-foreground">Active Referrals</span>
+            <span className="text-sm font-medium text-muted-foreground">Aktive Empfehlungen</span>
           </div>
           <div className="text-2xl font-bold">{affiliateStats.activeReferrals}</div>
         </Card>
@@ -346,7 +346,7 @@ function AffiliateDashboard({
             <div className="p-2 bg-orange-500/10 rounded-lg">
               <Wallet className="w-5 h-5 text-orange-500" />
             </div>
-            <span className="text-sm font-medium text-muted-foreground">Pending Payout</span>
+            <span className="text-sm font-medium text-muted-foreground">Ausstehende Auszahlung</span>
           </div>
           <div className="text-2xl font-bold">€{affiliateStats.pendingEarnings}</div>
         </Card>
@@ -355,8 +355,8 @@ function AffiliateDashboard({
       <Card className="p-6">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
           <div>
-            <h3 className="text-lg font-semibold">Earnings Overview</h3>
-            <p className="text-sm text-muted-foreground">Track your affiliate performance over time</p>
+            <h3 className="text-lg font-semibold">Verdienst-Übersicht</h3>
+            <p className="text-sm text-muted-foreground">Verfolge deine Affiliate-Performance über die Zeit</p>
           </div>
           <div className="flex flex-wrap gap-2">
             {(['7d', '30d', 'all'] as const).map((range) => (
@@ -368,7 +368,7 @@ function AffiliateDashboard({
                   : 'bg-muted hover:bg-muted/80 text-muted-foreground'
                   }`}
               >
-                {range === 'all' ? 'All Time' : range.toUpperCase()}
+                {range === 'all' ? 'Gesamt' : range.toUpperCase()}
               </button>
             ))}
           </div>
@@ -416,7 +416,7 @@ function AffiliateDashboard({
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-background gap-4">
         <Loader2 className="w-8 h-8 animate-spin text-rose-500" />
-        <p className="text-muted-foreground">Loading dashboard...</p>
+        <p className="text-muted-foreground">Dashboard wird geladen...</p>
       </div>
     );
   }
@@ -424,7 +424,7 @@ function AffiliateDashboard({
   if (!isAffiliate && !applicationStatus) {
     return (
       <PageShell>
-        <HeroHeader title="Join Partner Program" subtitle="Apply to become an AdRuby affiliate" />
+        <HeroHeader title="Partner-Programm beitreten" subtitle="Werde AdRuby Affiliate Partner" />
         <PartnerApplicationForm />
       </PageShell>
     )
@@ -433,15 +433,15 @@ function AffiliateDashboard({
   if (applicationStatus && applicationStatus !== 'approved') {
     return (
       <PageShell>
-        <HeroHeader title="Application Status" subtitle="We are reviewing your application" />
+        <HeroHeader title="Bewerbungsstatus" subtitle="Wir prüfen deine Bewerbung" />
         <div className="max-w-xl mx-auto mt-20 text-center">
           <div className="w-16 h-16 bg-yellow-500/10 rounded-full flex items-center justify-center mx-auto mb-6">
             <Lock className="w-8 h-8 text-yellow-500" />
           </div>
-          <h2 className="text-2xl font-bold mb-4">Application Under Review</h2>
+          <h2 className="text-2xl font-bold mb-4">Bewerbung wird geprüft</h2>
           <p className="text-muted-foreground">
-            Your partner application is currently being reviewed by our team.
-            We typically process applications within 24-48 hours.
+            Deine Partner-Bewerbung wird gerade von unserem Team geprüft.
+            Die Bearbeitung dauert in der Regel 24-48 Stunden.
           </p>
         </div>
       </PageShell>
