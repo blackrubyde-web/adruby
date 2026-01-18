@@ -19,7 +19,7 @@ export function FeatureCampaignBuilder({ onNavigate, onSignIn, onGetStarted }: F
     ];
 
     return (
-        <div className="min-h-screen bg-background">
+        <div className="landing-theme-root min-h-screen bg-black text-white">
             <GlobalNav currentPage="feature-campaign-builder" onNavigate={onNavigate} onSignIn={onSignIn} onGetStarted={onGetStarted} />
 
             <section className="pt-32 pb-20 px-4">
@@ -34,7 +34,7 @@ export function FeatureCampaignBuilder({ onNavigate, onSignIn, onGetStarted }: F
                         <span className="block bg-gradient-to-r from-orange-500 to-amber-500 bg-clip-text text-transparent">war nie einfacher</span>
                     </h1>
 
-                    <p className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto mb-10">
+                    <p className="text-lg md:text-xl text-white/60 max-w-2xl mx-auto mb-10">
                         Unser Schritt-für-Schritt Builder führt dich durch den gesamten Prozess.
                         Von der Zielauswahl bis zum Launch.
                     </p>
@@ -45,19 +45,19 @@ export function FeatureCampaignBuilder({ onNavigate, onSignIn, onGetStarted }: F
                 </div>
             </section>
 
-            <section className="py-20 px-4 bg-muted/30">
+            <section className="py-20 px-4 bg-zinc-900">
                 <div className="max-w-6xl mx-auto">
                     <h2 className="text-3xl md:text-4xl font-black text-center mb-12">Der intelligente Weg zu erfolgreichen Kampagnen</h2>
                     <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
                         {features.map((f, i) => {
                             const Icon = f.icon;
                             return (
-                                <div key={i} className="p-6 bg-card rounded-2xl border border-border/50 hover:border-orange-500/50 transition-all group">
+                                <div key={i} className="p-6 bg-white/5 rounded-2xl border border-white/10 hover:border-orange-500/50 transition-all group">
                                     <div className="w-12 h-12 rounded-xl bg-orange-500/10 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
                                         <Icon className="w-6 h-6 text-orange-500" />
                                     </div>
                                     <h3 className="text-lg font-bold mb-2">{f.title}</h3>
-                                    <p className="text-muted-foreground text-sm">{f.desc}</p>
+                                    <p className="text-white/60 text-sm">{f.desc}</p>
                                 </div>
                             );
                         })}
@@ -71,7 +71,7 @@ export function FeatureCampaignBuilder({ onNavigate, onSignIn, onGetStarted }: F
                     <button onClick={onGetStarted} className="px-10 py-5 bg-gradient-to-r from-orange-500 to-amber-500 text-white rounded-xl font-bold text-lg hover:shadow-2xl transition-all">
                         Kostenlos starten
                     </button>
-                    <div className="flex flex-wrap justify-center gap-6 mt-8 text-sm text-muted-foreground">
+                    <div className="flex flex-wrap justify-center gap-6 mt-8 text-sm text-white/60">
                         {['Geführter Wizard', 'Best Practices integriert', 'Vorlagen inklusive'].map((item) => (
                             <div key={item} className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-green-500" />{item}</div>
                         ))}

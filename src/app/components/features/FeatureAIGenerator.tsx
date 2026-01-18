@@ -43,7 +43,7 @@ export function FeatureAIGenerator({ onNavigate, onSignIn, onGetStarted }: Featu
     ];
 
     return (
-        <div className="min-h-screen bg-background">
+        <div className="landing-theme-root min-h-screen bg-black text-white">
             <GlobalNav
                 currentPage="feature-ai-generator"
                 onNavigate={onNavigate}
@@ -84,10 +84,10 @@ export function FeatureAIGenerator({ onNavigate, onSignIn, onGetStarted }: Featu
             </section>
 
             {/* Capabilities Grid */}
-            <section className="py-20 px-4 bg-muted/30">
+            <section className="py-20 px-4 bg-zinc-900">
                 <div className="max-w-6xl mx-auto">
                     <h2 className="text-3xl md:text-4xl font-black text-center mb-4">Was unser AI Generator kann</h2>
-                    <p className="text-muted-foreground text-center mb-12 max-w-xl mx-auto">
+                    <p className="text-white/60 text-center mb-12 max-w-xl mx-auto">
                         Modernste KI-Technologie trifft auf Marketing-Expertise
                     </p>
 
@@ -95,12 +95,12 @@ export function FeatureAIGenerator({ onNavigate, onSignIn, onGetStarted }: Featu
                         {capabilities.map((cap, i) => {
                             const Icon = cap.icon;
                             return (
-                                <div key={i} className="p-6 bg-card rounded-2xl border border-border/50 hover:border-purple-500/50 transition-all group">
+                                <div key={i} className="p-6 bg-white/5 rounded-2xl border border-white/10 hover:border-purple-500/50 transition-all group">
                                     <div className="w-12 h-12 rounded-xl bg-purple-500/10 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
                                         <Icon className="w-6 h-6 text-purple-500" />
                                     </div>
                                     <h3 className="text-lg font-bold mb-2">{cap.title}</h3>
-                                    <p className="text-muted-foreground text-sm">{cap.description}</p>
+                                    <p className="text-white/60 text-sm">{cap.description}</p>
                                 </div>
                             );
                         })}
@@ -126,7 +126,7 @@ export function FeatureAIGenerator({ onNavigate, onSignIn, onGetStarted }: Featu
                                 </div>
                                 <div>
                                     <h3 className="text-xl font-bold mb-1">{item.title}</h3>
-                                    <p className="text-muted-foreground">{item.desc}</p>
+                                    <p className="text-white/60">{item.desc}</p>
                                 </div>
                             </div>
                         ))}
@@ -140,7 +140,7 @@ export function FeatureAIGenerator({ onNavigate, onSignIn, onGetStarted }: Featu
                     <h2 className="text-3xl md:text-4xl font-black mb-6">
                         Bereit, deine Ads auf das nächste Level zu bringen?
                     </h2>
-                    <p className="text-muted-foreground text-lg mb-8">
+                    <p className="text-white/60 text-lg mb-8">
                         Starte jetzt mit 7 Tagen kostenlosem Zugang zu allen Features.
                     </p>
                     <button
@@ -150,7 +150,7 @@ export function FeatureAIGenerator({ onNavigate, onSignIn, onGetStarted }: Featu
                         Kostenlos starten
                     </button>
 
-                    <div className="flex flex-wrap justify-center gap-6 mt-8 text-sm text-muted-foreground">
+                    <div className="flex flex-wrap justify-center gap-6 mt-8 text-sm text-white/60">
                         {['Keine Kreditkarte nötig', 'Jederzeit kündbar', '100+ Vorlagen'].map((item) => (
                             <div key={item} className="flex items-center gap-2">
                                 <CheckCircle className="w-4 h-4 text-green-500" />
