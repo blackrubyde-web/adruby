@@ -39,6 +39,9 @@ import { useAnalyticsData } from '../hooks/useAnalyticsData';
 import { applyMetaAction } from '../lib/api/meta';
 import { PredictiveInsightCard, type PredictiveInsight } from './ai-analysis/PredictiveInsightCard';
 import { TrendMiniChart } from './ai-analysis/TrendMiniChart';
+import { AICopilotChat } from './ai-analysis/AICopilotChat';
+import { InsightSummaryCards } from './ai-analysis/InsightSummaryCards';
+import { QuickActionsBar } from './ai-analysis/QuickActionsBar';
 
 type AIRecommendation = 'kill' | 'duplicate' | 'increase' | 'decrease';
 
@@ -940,6 +943,49 @@ export function AIAnalysisPage() {
         </div>
       }
     >
+
+      {/* INSIGHT SUMMARY CARDS */}
+      <InsightSummaryCards
+        campaigns={campaigns.map(c => ({
+          id: c.id,
+          name: c.name,
+          roas: c.roas,
+          spend: c.spend,
+          ctr: c.ctr,
+          conversions: c.conversions,
+          performanceScore: c.performanceScore,
+        }))}
+        totalSpend={totalSpend}
+        totalRevenue={totalRevenue}
+        totalRoas={totalRoas}
+      />
+
+      {/* QUICK ACTIONS BAR */}
+      <QuickActionsBar
+        killCount={killAds.length}
+        duplicateCount={duplicateAds.length}
+        fatigueCount={decreaseAds.length}
+        onScaleWinners={async () => {
+          toast.promise(
+            new Promise(resolve => setTimeout(resolve, 2000)),
+            {
+              loading: 'Analysiere Top Performer für Skalierung...',
+              success: `${duplicateAds.length} Kampagnen markiert für +20% Budget!`,
+              error: 'Skalierung fehlgeschlagen'
+            }
+          );
+        }}
+        onPauseLosers={async () => {
+          toast.promise(
+            new Promise(resolve => setTimeout(resolve, 2000)),
+            {
+              loading: 'Pausiere unprofitable Ads...',
+              success: `${killAds.length} Ads wurden pausiert!`,
+              error: 'Pausierung fehlgeschlagen'
+            }
+          );
+        }}
+      />
 
       {/* AUTOPILOT CONTROL CENTER */}
       <div className="mb-8 p-1 relative overflow-hidden rounded-[32px] bg-gradient-to-b from-white/5 to-transparent border border-white/5">
@@ -1892,6 +1938,30 @@ export function AIAnalysisPage() {
           </>
         )}
       </div>
+
+      {/* AI COPILOT CHAT - Floating */}
+      <AICopilotChat
+        campaignContext={{
+          campaigns: campaigns.map(c => ({
+            id: c.id,
+            name: c.name,
+            roas: c.roas,
+            spend: c.spend,
+            ctr: c.ctr,
+          })),
+          summary: {
+            spend: totalSpend,
+            revenue: totalRevenue,
+            roas: totalRoas,
+          },
+          recommendations: {
+            kill: killAds.length,
+            duplicate: duplicateAds.length,
+            increase: increaseAds.length,
+            decrease: decreaseAds.length,
+          },
+        }}
+      />
     </DashboardShell>
   );
 }
