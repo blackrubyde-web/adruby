@@ -1,57 +1,81 @@
 // netlify/functions/ai-copilot-chat.js
 // AI Copilot Chat API - Natural language questions about campaign performance
-// Uses GPT-4o with campaign context AND strategy knowledge for intelligent responses
+// Uses GPT-4o with campaign context, strategy knowledge, AND persistent memory
 
 import OpenAI from 'openai';
+import { createClient } from '@supabase/supabase-js';
 import { requireUserId } from './_shared/auth.js';
 import { badRequest, methodNotAllowed, ok, serverError, withCors } from './utils/response.js';
 import { generateAIContext, getStrategyContext, evaluatePerformance } from './_shared/strategyKnowledgeBase.js';
+
+// Initialize Supabase for persistent memory
+const supabase = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL || '',
+    process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ''
+);
 
 const openai = new OpenAI({
     apiKey: process.env.OPENAI_API_KEY,
 });
 
-const SYSTEM_PROMPT = `Du bist der AdRuby AI Copilot - ein Elite Performance Marketing Experte und Media Buyer.
-Du analysierst Meta Ads Kampagnen und gibst actionable Empfehlungen BASIEREND AUF BRANCHENSPEZIFISCHEM WISSEN.
+const SYSTEM_PROMPT = `Du bist der AdRuby AI Copilot - ein Elite Performance Marketing Experte mit Agency-Level Expertise.
+Du analysierst Meta Ads Kampagnen wie ein erfahrener Media Buyer mit 10+ Jahren Erfahrung.
 
-DEINE AUFGABEN:
-1. Beantworte Fragen zu Kampagnen-Performance verständlich
-2. Erkläre warum bestimmte Ads gut/schlecht performen
-3. Gib konkrete Optimierungsvorschläge BASIEREND AUF DER BRANCHE
-4. Identifiziere Muster und Trends
-5. Schlage Budget-Allokationen vor
-6. Empfehle Messaging-Angles und Creative-Strategien basierend auf Buyer Personas
+## DEINE SUPERKRÄFTE
 
-WICHTIG - BRANCHENSPEZIFISCHES WISSEN:
-- Du kennst die genauen BENCHMARKS für jede Branche (E-COM D2C, SaaS, Coaching, etc.)
-- Du kennst die BUYER PERSONAS und ihre psychologischen Trigger
-- Du kennst die besten MESSAGING ANGLES für jede Zielgruppe
-- Du kannst REGELN empfehlen die zur Branche passen
+### 1. TIEFGEHENDE ANALYSE
+- Erkläre WARUM Ads performen oder nicht (Frequency, Audience Fatigue, Creative Burnout)
+- Berechne konkrete Zahlen: "Bei €X mehr Budget = ~Y mehr Conversions"
+- Identifiziere versteckte Muster: "Deine Weekend-Performance ist 23% besser"
 
-STIL:
-- Antworte auf Deutsch
-- Sei präzise und actionable
-- Nutze Emojis sparsam für Übersichtlichkeit
-- Gib konkrete Zahlen wenn möglich
-- Maximal 3-4 kurze Absätze
-- Bei Creative-Tipps: Nenne die Buyer Persona und den Trigger
+### 2. BRANCHENSPEZIFISCHE EXPERTISE
+Du kennst die exakten Benchmarks und Strategien für:
+- **E-COM D2C**: ROAS >3x, AOV-Optimierung, Flash Sales, Social Proof
+- **SaaS/B2B**: CAC-LTV Ratio, Free Trial Funnels, Demo Bookings
+- **Coaching/Service**: High-Ticket Closer, Webinar Funnels, DM Sequences
+- **Lead Gen**: CPL Targets, Qualifier Fragen, Follow-Up Automations
 
-VERFÜGBARE DATEN:
-- Kampagnen-Metriken (ROAS, CTR, Spend, Conversions)
-- AI-Empfehlungen (kill, duplicate, increase, decrease)
-- Performance-Scores
-- Branchenspezifische Benchmarks und Strategien
+### 3. ACTIONABLE EMPFEHLUNGEN
+Jede Antwort enthält:
+- **DIAGNOSE**: Was genau ist das Problem/Opportunity?
+- **AKTION**: Exakt was der User tun soll (Schritt-für-Schritt)
+- **ERWARTETES ERGEBNIS**: "Erwarte ~X% Verbesserung in Y Tagen"
 
-Wenn du keine Daten hast, frage nach einem Sync oder sage dass du mehr Kontext brauchst.`;
+### 4. MEMORY & KONTEXT
+- Du erinnerst dich an vorherige Gespräche mit diesem User
+- Du weißt welche Empfehlungen bereits gegeben wurden
+- Du trackst ob Empfehlungen umgesetzt wurden
+
+## ANTWORT-STIL
+- Deutsch, professionell aber freundlich
+- Konkrete Zahlen und Prozente wo möglich
+- Emoji nur zur Strukturierung (📊 💡 ⚠️ ✅)
+- 4-6 Absätze mit klarer Struktur
+- Bei Creative-Tipps: Nenne die exakte Buyer Persona und psychologischen Trigger
+
+## BEISPIEL TEMPLATE
+"""
+📊 **Analyse**: [1-2 Sätze zur Diagnose]
+
+💡 **Empfehlung**: [Was genau tun]
+- Schritt 1: ...
+- Schritt 2: ...
+
+📈 **Erwartetes Ergebnis**: [Konkrete Prognose]
+
+⚡ **Quick Win**: [Sofort umsetzbar]
+"""
+
+Wenn du keine Daten hast, erkläre genau was du brauchst und welche Insights du dann liefern könntest.`;
 
 const SUGGESTED_QUESTIONS = [
-    "Welche Ad soll ich als erstes skalieren?",
-    "Warum performt meine beste Ad so gut?",
-    "Welche Ads soll ich pausieren?",
-    "Wie kann ich meinen ROAS verbessern?",
-    "Was ist mein Budget-Tipp für morgen?",
+    "Welche Ad soll ich als erstes skalieren und um wieviel?",
+    "Gib mir eine detaillierte Analyse meiner Top Performer",
     "Welche Creative-Strategie passt zu meiner Branche?",
-    "Welche Buyer Persona sollte ich ansprechen?",
+    "Analysiere meine Conversion-Rate und gib Optimierungstipps",
+    "Welche Ads zeigen Fatigue-Signale?",
+    "Erstelle mir einen 7-Tage Optimierungsplan",
+    "Wie kann ich mein Budget effizienter verteilen?",
 ];
 
 export async function handler(event) {
@@ -78,6 +102,29 @@ export async function handler(event) {
 
         if (!message) {
             return badRequest('Missing message');
+        }
+
+        // Load persistent memory from Supabase (last 10 messages from previous sessions)
+        let persistentMemory = [];
+        let userProfile = null;
+        try {
+            const { data: memoryData } = await supabase.rpc('get_chat_memory', {
+                p_user_id: auth.userId,
+                p_limit: 10
+            });
+            if (memoryData) {
+                persistentMemory = memoryData.reverse(); // Oldest first
+            }
+
+            // Load user AI profile for personalization
+            const { data: profileData } = await supabase
+                .from('ai_user_profile')
+                .select('*')
+                .eq('user_id', auth.userId)
+                .single();
+            userProfile = profileData;
+        } catch (memError) {
+            console.log('[ai-copilot-chat] Memory load skipped:', memError.message);
         }
 
         // If no OpenAI key, return fallback response
@@ -145,21 +192,51 @@ EMPFEHLUNGEN:
             }
         }
 
-        // Build messages array with history
-        const messages = [
-            { role: 'system', content: SYSTEM_PROMPT + contextPrompt },
-            ...conversationHistory.slice(-6).map(msg => ({
+        // Add user profile context if available
+        if (userProfile) {
+            contextPrompt += `\n\nUSER LEARNING PROFIL:
+- Durchschnittlicher ROAS: ${userProfile.avg_roas?.toFixed(2) || 'N/A'}x
+- Durchschnittliche CTR: ${userProfile.avg_ctr?.toFixed(2) || 'N/A'}%
+- Branche: ${userProfile.primary_industry || 'ecom_d2c'}
+- Erfolgreiche Entscheidungen: ${userProfile.success_rate ? (userProfile.success_rate * 100).toFixed(0) + '%' : 'N/A'}
+- Bisherige Kampagnen analysiert: ${userProfile.campaigns_analyzed || 0}`;
+        }
+
+        // Add persistent memory context if available
+        if (persistentMemory.length > 0) {
+            contextPrompt += `\n\nLETZTE GESPRÄCHE (für Kontext):`;
+            persistentMemory.slice(-4).forEach((msg, i) => {
+                const role = msg.role === 'user' ? 'User' : 'Du';
+                const preview = msg.content.substring(0, 100);
+                contextPrompt += `\n${i + 1}. ${role}: ${preview}${msg.content.length > 100 ? '...' : ''}`;
+            });
+        }
+
+        // Build messages array with session history + persistent memory
+        const allHistory = [
+            // Persistent memory from previous sessions (last 4)
+            ...persistentMemory.slice(-4).map(msg => ({
                 role: msg.role,
                 content: msg.content
             })),
+            // Current session history (last 6)
+            ...conversationHistory.slice(-6).map(msg => ({
+                role: msg.role,
+                content: msg.content
+            }))
+        ];
+
+        const messages = [
+            { role: 'system', content: SYSTEM_PROMPT + contextPrompt },
+            ...allHistory.slice(-10), // Keep last 10 total for context window
             { role: 'user', content: message }
         ];
 
         const response = await openai.chat.completions.create({
             model: 'gpt-4o',
             messages,
-            max_tokens: 500,
-            temperature: 0.7,
+            max_tokens: 800,  // Increased for more detailed responses
+            temperature: 0.6, // Slightly lower for more consistent quality
         });
 
         const aiResponse = response.choices[0]?.message?.content;

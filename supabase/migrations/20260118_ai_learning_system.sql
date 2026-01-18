@@ -278,3 +278,62 @@ CREATE POLICY "Users can insert own profile" ON ai_user_profile
 CREATE POLICY "Users can update own profile" ON ai_user_profile
     FOR UPDATE USING (auth.uid() = user_id) WITH CHECK (auth.uid() = user_id);
 
+-- ============================================
+-- AI CHAT MEMORY
+-- Stores conversation history for persistent memory across sessions
+-- ============================================
+CREATE TABLE IF NOT EXISTS ai_chat_memory (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+    
+    -- Message Info
+    role TEXT NOT NULL, -- 'user' or 'assistant'
+    content TEXT NOT NULL,
+    
+    -- Context at time of message
+    campaign_context JSONB DEFAULT '{}',
+    
+    -- Metadata
+    tokens_used INTEGER DEFAULT 0,
+    model_used TEXT DEFAULT 'gpt-4o',
+    
+    -- Learning flags
+    was_helpful BOOLEAN, -- User feedback
+    recommendation_given BOOLEAN DEFAULT FALSE,
+    recommendation_followed BOOLEAN,
+    
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Index for fast user lookups
+CREATE INDEX IF NOT EXISTS idx_ai_chat_memory_user_id ON ai_chat_memory(user_id);
+CREATE INDEX IF NOT EXISTS idx_ai_chat_memory_created_at ON ai_chat_memory(created_at DESC);
+
+-- RLS for ai_chat_memory
+ALTER TABLE ai_chat_memory ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Users can view own chat history" ON ai_chat_memory
+    FOR SELECT USING (auth.uid() = user_id);
+
+CREATE POLICY "Users can insert own messages" ON ai_chat_memory
+    FOR INSERT WITH CHECK (auth.uid() = user_id);
+
+-- Get recent chat history for context
+CREATE OR REPLACE FUNCTION get_chat_memory(p_user_id UUID, p_limit INTEGER DEFAULT 20)
+RETURNS TABLE (
+    role TEXT,
+    content TEXT,
+    created_at TIMESTAMPTZ
+) AS $$
+BEGIN
+    RETURN QUERY
+    SELECT 
+        m.role,
+        m.content,
+        m.created_at
+    FROM ai_chat_memory m
+    WHERE m.user_id = p_user_id
+    ORDER BY m.created_at DESC
+    LIMIT p_limit;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
