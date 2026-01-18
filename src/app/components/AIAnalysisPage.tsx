@@ -994,18 +994,7 @@ export function AIAnalysisPage() {
         </div>
       )}
 
-      {/* ADAPTIVE AI DECISIONS - Agency AI */}
-      {campaigns.length > 0 && (
-        <div className="mb-6">
-          <AdaptiveDecisionPanel
-            campaigns={campaigns}
-            industryType="ecom_d2c"
-            onExecuteAction={async (campaignId, action, value) => {
-              toast.info(`Executing: ${action} ${value ? `(${value}%)` : ''} on ${campaignId}`);
-            }}
-          />
-        </div>
-      )}
+      {/* Adaptive AI Decisions moved to AgencySettingsMenu dropdown */}
 
       {/* CREATIVE INTELLIGENCE PANEL - Agency Pro */}
       {campaigns.length > 0 && (
@@ -1238,7 +1227,7 @@ export function AIAnalysisPage() {
                       unit: 'x ROAS'
                     }
                   }}
-                  onAction={(action, adId) => {
+                  onAction={(_action, _adId) => {
                     const style = getRecommendationStyle('duplicate');
                     handleAIAction(style, ad);
                   }}

@@ -1,6 +1,6 @@
 import { memo, useMemo } from 'react';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
-import { Sun, Moon, User, Settings, HelpCircle, Coins, Menu, Sparkles, Crown } from 'lucide-react';
+import { Sun, Moon, User, Settings, HelpCircle, Coins, Menu, Crown } from 'lucide-react';
 import { useTheme } from './ThemeProvider';
 import type { PageType } from '../App';
 import {

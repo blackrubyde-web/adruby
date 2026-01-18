@@ -1,4 +1,4 @@
-import { memo, useMemo } from 'react';
+import { memo } from 'react';
 import { Clock, Sparkles, X } from 'lucide-react';
 import { useState } from 'react';
 
@@ -43,10 +43,10 @@ export const TrialBanner = memo(function TrialBanner({
     return (
         <div
             className={`w-full py-2.5 px-4 flex items-center justify-center gap-4 text-sm font-medium transition-all ${isExpired
-                    ? 'bg-gradient-to-r from-red-600 via-rose-600 to-red-600 text-white'
-                    : isUrgent
-                        ? 'bg-gradient-to-r from-amber-500 via-orange-500 to-amber-500 text-white'
-                        : 'bg-gradient-to-r from-[#FF1F1F] via-rose-500 to-[#FF1F1F] text-white'
+                ? 'bg-gradient-to-r from-red-600 via-rose-600 to-red-600 text-white'
+                : isUrgent
+                    ? 'bg-gradient-to-r from-amber-500 via-orange-500 to-amber-500 text-white'
+                    : 'bg-gradient-to-r from-[#FF1F1F] via-rose-500 to-[#FF1F1F] text-white'
                 }`}
         >
             <div className="flex items-center gap-2">
@@ -66,8 +66,8 @@ export const TrialBanner = memo(function TrialBanner({
             <button
                 onClick={onUpgrade}
                 className={`px-4 py-1.5 rounded-full font-bold text-sm flex items-center gap-1.5 transition-all hover:scale-105 active:scale-95 ${isExpired
-                        ? 'bg-white text-red-600 hover:bg-white/90'
-                        : 'bg-white/20 hover:bg-white/30 backdrop-blur-sm border border-white/30'
+                    ? 'bg-white text-red-600 hover:bg-white/90'
+                    : 'bg-white/20 hover:bg-white/30 backdrop-blur-sm border border-white/30'
                     }`}
             >
                 <Sparkles className="w-3.5 h-3.5" />

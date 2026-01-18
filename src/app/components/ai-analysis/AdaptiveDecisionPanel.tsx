@@ -1,7 +1,6 @@
-import { memo, useState, useCallback, useEffect } from 'react';
+import { memo, useState, useCallback } from 'react';
 import {
     Brain,
-    Zap,
     TrendingUp,
     TrendingDown,
     Pause,
@@ -12,7 +11,6 @@ import {
     ChevronUp,
     Sparkles,
     Target,
-    BarChart3,
     Clock,
     CheckCircle2,
     XCircle,
@@ -22,7 +20,6 @@ import {
 import { Card } from '../ui/card';
 import { Button } from '../ui/button';
 import { Badge } from '../ui/badge';
-import { Progress } from '../ui/progress';
 import { toast } from 'sonner';
 
 interface Campaign {
@@ -266,7 +263,7 @@ function DecisionCard({
 
 export const AdaptiveDecisionPanel = memo(function AdaptiveDecisionPanel({
     campaigns,
-    industryType = 'ecom_d2c',
+    industryType: _industryType = 'ecom_d2c',
     onExecuteAction,
 }: AdaptiveDecisionPanelProps) {
     const [decisions, setDecisions] = useState<DecisionResult[]>([]);

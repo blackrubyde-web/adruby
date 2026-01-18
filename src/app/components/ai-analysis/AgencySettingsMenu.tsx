@@ -30,7 +30,7 @@ import { WeeklySummaryCard } from './WeeklySummaryCard';
 import { AdaptiveDecisionPanel } from './AdaptiveDecisionPanel';
 
 interface AgencySettingsMenuProps {
-    campaigns?: any[];
+    campaigns?: Array<{ id: string; name: string; roas: number; ctr: number; spend: number; revenue: number; conversions: number }>;
 }
 
 type SettingsView = 'alerts' | 'rules' | 'summary' | 'decisions' | null;
@@ -122,8 +122,8 @@ export const AgencySettingsMenu = memo(function AgencySettingsMenu({
                                         {item.badge && (
                                             <Badge
                                                 className={`text-[9px] px-1 py-0 ${item.badge === 'PRO'
-                                                        ? 'bg-fuchsia-500/20 text-fuchsia-400 border-fuchsia-500/30'
-                                                        : 'bg-white/10 text-white/60 border-white/10'
+                                                    ? 'bg-fuchsia-500/20 text-fuchsia-400 border-fuchsia-500/30'
+                                                    : 'bg-white/10 text-white/60 border-white/10'
                                                     }`}
                                             >
                                                 {item.badge}
@@ -169,7 +169,7 @@ export const AgencySettingsMenu = memo(function AgencySettingsMenu({
                     <div className="p-6">
                         {activeView === 'alerts' && <AlertsConfigPanel />}
                         {activeView === 'rules' && <AutomatedRulesPanel />}
-                        {activeView === 'summary' && <WeeklySummaryCard />}
+                        {activeView === 'summary' && <WeeklySummaryCard campaigns={campaigns} />}
                         {activeView === 'decisions' && (
                             <AdaptiveDecisionPanel campaigns={campaigns} />
                         )}
