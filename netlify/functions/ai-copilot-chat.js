@@ -9,10 +9,12 @@ import { badRequest, methodNotAllowed, ok, serverError, withCors } from './utils
 import { generateAIContext, getStrategyContext, evaluatePerformance } from './_shared/strategyKnowledgeBase.js';
 
 // Initialize Supabase for persistent memory
-const supabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL || '',
-    process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ''
-);
+const supabaseUrl = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.VITE_SUPABASE_URL;
+const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_ANON_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+
+const supabase = supabaseUrl && supabaseKey
+    ? createClient(supabaseUrl, supabaseKey)
+    : null;
 
 const openai = new OpenAI({
     apiKey: process.env.OPENAI_API_KEY,
@@ -107,24 +109,26 @@ export async function handler(event) {
         // Load persistent memory from Supabase (last 10 messages from previous sessions)
         let persistentMemory = [];
         let userProfile = null;
-        try {
-            const { data: memoryData } = await supabase.rpc('get_chat_memory', {
-                p_user_id: auth.userId,
-                p_limit: 10
-            });
-            if (memoryData) {
-                persistentMemory = memoryData.reverse(); // Oldest first
-            }
+        if (supabase) {
+            try {
+                const { data: memoryData } = await supabase.rpc('get_chat_memory', {
+                    p_user_id: auth.userId,
+                    p_limit: 10
+                });
+                if (memoryData) {
+                    persistentMemory = memoryData.reverse(); // Oldest first
+                }
 
-            // Load user AI profile for personalization
-            const { data: profileData } = await supabase
-                .from('ai_user_profile')
-                .select('*')
-                .eq('user_id', auth.userId)
-                .single();
-            userProfile = profileData;
-        } catch (memError) {
-            console.log('[ai-copilot-chat] Memory load skipped:', memError.message);
+                // Load user AI profile for personalization
+                const { data: profileData } = await supabase
+                    .from('ai_user_profile')
+                    .select('*')
+                    .eq('user_id', auth.userId)
+                    .single();
+                userProfile = profileData;
+            } catch (memError) {
+                console.log('[ai-copilot-chat] Memory load skipped:', memError.message);
+            }
         }
 
         // If no OpenAI key, return fallback response
@@ -258,16 +262,15 @@ EMPFEHLUNGEN:
     } catch (error) {
         console.error('[ai-copilot-chat] Error:', error);
 
-        if (error.status === 429) {
-            return ok({
-                success: true,
-                source: 'fallback',
-                response: 'Ich bin gerade etwas überlastet. Versuche es in einer Minute erneut! 🔄',
-                suggestedQuestions: SUGGESTED_QUESTIONS.slice(0, 3)
-            });
-        }
-
-        return serverError(error.message || 'Chat failed');
+        // Return fallback response for ANY error to prevent 502/500
+        const body = JSON.parse(event.body || '{}');
+        return ok({
+            success: true,
+            source: 'fallback',
+            response: getFallbackResponse(body.message || '', body.campaignContext),
+            suggestedQuestions: SUGGESTED_QUESTIONS.slice(0, 3),
+            error: process.env.NODE_ENV === 'development' ? error.message : undefined
+        });
     }
 }
 

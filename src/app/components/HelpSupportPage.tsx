@@ -375,7 +375,8 @@ export function HelpSupportPage() {
                 <p className="text-sm text-muted-foreground mb-3">Mo-Fr, 9-18 Uhr MEZ</p>
                 <button
                   onClick={() => {
-                    window.location.href = 'mailto:support@adruby.ai';
+                    toast.info('Live Chat kommt bald! Nutze bis dahin unser Kontaktformular.', { duration: 4000 });
+                    setActiveSection('contact');
                   }}
                   className="text-sm text-primary hover:underline flex items-center gap-1"
                 >

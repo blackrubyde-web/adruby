@@ -16,12 +16,27 @@ async function handleRequest(event) {
     const { userId } = auth;
 
     try {
-        // Check admin role
-        const { data: isAdmin, error: roleError } = await supabaseAdmin.rpc('admin_check_role', {
-            p_user_id: userId
-        });
+        // Check admin role (gracefully handle missing RPC)
+        let isAdmin = false;
+        try {
+            const { data, error: roleError } = await supabaseAdmin.rpc('admin_check_role', {
+                p_user_id: userId
+            });
+            if (!roleError && data) {
+                isAdmin = true;
+            }
+        } catch (rpcErr) {
+            console.log('[Admin] admin_check_role RPC not found, checking profile.is_admin');
+            // Fallback: check is_admin in user profile
+            const { data: profile } = await supabaseAdmin
+                .from('user_profiles')
+                .select('is_admin')
+                .eq('id', userId)
+                .single();
+            isAdmin = profile?.is_admin === true;
+        }
 
-        if (roleError || !isAdmin) {
+        if (!isAdmin) {
             return forbidden('Admin access required');
         }
 
