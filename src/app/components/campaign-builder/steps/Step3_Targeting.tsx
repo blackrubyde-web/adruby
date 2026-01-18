@@ -3,9 +3,9 @@ import { Card } from '../../ui/card';
 import { Badge } from '../../ui/badge';
 import { Input } from '../../ui/input';
 import { Slider } from '../../ui/slider';
-import { MapPin, Users, Heart, Target, Globe, X, Plus, Sparkles, Info } from 'lucide-react';
+import { MapPin, Users, Heart, Target, Globe, X, Plus, Sparkles } from 'lucide-react';
 import { cn } from '../../../lib/utils';
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 
 // Common interest categories for Meta Ads
 const INTEREST_SUGGESTIONS = [
@@ -33,9 +33,53 @@ const PLACEMENTS = [
 ] as const;
 
 export const Step3_Targeting = () => {
-    const { targeting, setTargeting, audiences, refreshAudiences } = useCampaignBuilder();
+    const { targeting, setTargeting, audiences } = useCampaignBuilder();
     const [interestInput, setInterestInput] = useState('');
     const [showInterestSuggestions, setShowInterestSuggestions] = useState(false);
+
+    // Estimated Reach calculation (simulated - in production would use Meta's Reach API)
+    const estimatedReach = useMemo(() => {
+        let base = 0;
+
+        // Location-based population estimates (millions)
+        const locationPop: Record<string, number> = {
+            'DE': 83, 'AT': 9, 'CH': 8.7, 'FR': 67, 'IT': 60,
+            'ES': 47, 'NL': 17, 'BE': 11.5, 'PL': 38, 'US': 330
+        };
+
+        targeting.locations.forEach(loc => {
+            base += (locationPop[loc] || 10) * 1_000_000;
+        });
+
+        if (base === 0) base = 50_000_000; // Default
+
+        // Age filter (rough percentage)
+        const ageRange = targeting.ageMax - targeting.ageMin;
+        const ageFactor = Math.min(ageRange / 52, 1); // 13-65 = 52 years
+        base *= ageFactor;
+
+        // Gender filter
+        if (targeting.gender !== 'all') base *= 0.5;
+
+        // Interests narrow audience
+        if (targeting.interests.length > 0) {
+            base *= Math.max(0.1, 1 - (targeting.interests.length * 0.15));
+        }
+
+        // Advantage+ expands audience
+        if (targeting.advantagePlus) base *= 1.4;
+
+        return {
+            min: Math.round(base * 0.7),
+            max: Math.round(base * 1.3),
+        };
+    }, [targeting]);
+
+    const formatReach = (num: number) => {
+        if (num >= 1_000_000) return `${(num / 1_000_000).toFixed(1)}M`;
+        if (num >= 1_000) return `${(num / 1_000).toFixed(0)}K`;
+        return num.toString();
+    };
 
     const updateField = <K extends keyof typeof targeting>(key: K, value: typeof targeting[K]) => {
         setTargeting(prev => ({ ...prev, [key]: value }));
@@ -80,14 +124,38 @@ export const Step3_Targeting = () => {
     };
 
     return (
-        <div className="space-y-8">
-            {/* Header */}
-            <div>
-                <h2 className="text-2xl font-bold flex items-center gap-2">
-                    <Target className="w-6 h-6 text-primary" />
-                    Targeting & Zielgruppe
-                </h2>
-                <p className="text-muted-foreground">Definiere, wer deine Ads sehen soll.</p>
+        <div className="space-y-6">
+            {/* Header with Estimated Reach */}
+            <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+                <div>
+                    <h2 className="text-2xl font-bold flex items-center gap-2">
+                        <Target className="w-6 h-6 text-primary" />
+                        Targeting & Zielgruppe
+                    </h2>
+                    <p className="text-muted-foreground">Definiere, wer deine Ads sehen soll.</p>
+                </div>
+
+                {/* Estimated Reach Card */}
+                <Card className="p-4 bg-gradient-to-r from-blue-500/10 to-cyan-500/10 border-blue-500/20">
+                    <div className="flex items-center gap-4">
+                        <div className="p-3 bg-blue-500/20 rounded-xl">
+                            <Users className="w-6 h-6 text-blue-500" />
+                        </div>
+                        <div>
+                            <p className="text-xs text-muted-foreground font-medium">Geschätzte Reichweite</p>
+                            <p className="text-xl font-bold text-blue-500">
+                                {formatReach(estimatedReach.min)} - {formatReach(estimatedReach.max)}
+                            </p>
+                            <p className="text-[10px] text-muted-foreground">Personen pro Tag</p>
+                        </div>
+                        {targeting.advantagePlus && (
+                            <Badge className="bg-blue-500/20 text-blue-500 border-0 text-[10px]">
+                                <Sparkles className="w-3 h-3 mr-1" />
+                                +40% Advantage+
+                            </Badge>
+                        )}
+                    </div>
+                </Card>
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -400,6 +468,6 @@ export const Step3_Targeting = () => {
                     </Card>
                 </div>
             </div>
-        </div>
+        </div >
     );
 };

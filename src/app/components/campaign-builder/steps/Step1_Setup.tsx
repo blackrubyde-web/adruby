@@ -261,6 +261,38 @@ export const Step1_Setup = () => {
                     ))}
                 </div>
             </Card>
+
+            {/* A/B Test Toggle */}
+            <Card className={cn(
+                "p-6 cursor-pointer transition-all border-2",
+                campaignSetup.publishMode === 'draft'
+                    ? "border-amber-500 bg-amber-500/5"
+                    : "border-border hover:border-amber-500/50"
+            )} onClick={() => updateField('publishMode', campaignSetup.publishMode === 'publish' ? 'draft' : 'publish')}>
+                <div className="flex items-center gap-4">
+                    <div className="p-3 bg-gradient-to-br from-amber-500 to-orange-600 rounded-xl">
+                        <Target className="w-6 h-6 text-white" />
+                    </div>
+                    <div className="flex-1">
+                        <div className="flex items-center gap-2">
+                            <h3 className="font-bold">A/B Test Modus</h3>
+                            <Badge className="bg-amber-500/10 text-amber-600 border-0 text-[10px]">DRAFT</Badge>
+                        </div>
+                        <p className="text-xs text-muted-foreground mt-1">
+                            Kampagne als Draft speichern für Creative-Testing vor dem Launch
+                        </p>
+                    </div>
+                    <div className={cn(
+                        "w-12 h-6 rounded-full transition-all relative",
+                        campaignSetup.publishMode === 'draft' ? "bg-amber-500" : "bg-muted"
+                    )}>
+                        <div className={cn(
+                            "absolute top-1 w-4 h-4 rounded-full bg-white shadow-sm transition-all",
+                            campaignSetup.publishMode === 'draft' ? "left-7" : "left-1"
+                        )} />
+                    </div>
+                </div>
+            </Card>
         </div>
     );
 };
