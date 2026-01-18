@@ -245,7 +245,7 @@ ALTER TABLE ai_decision_history ENABLE ROW LEVEL SECURITY;
 ALTER TABLE ai_patterns ENABLE ROW LEVEL SECURITY;
 ALTER TABLE ai_user_profile ENABLE ROW LEVEL SECURITY;
 
--- RLS Policies
+-- RLS Policies for ai_decision_history
 CREATE POLICY "Users can view own decision history" ON ai_decision_history
     FOR SELECT USING (auth.uid() = user_id);
 
@@ -253,16 +253,28 @@ CREATE POLICY "Users can insert own decisions" ON ai_decision_history
     FOR INSERT WITH CHECK (auth.uid() = user_id);
 
 CREATE POLICY "Users can update own decisions" ON ai_decision_history
-    FOR UPDATE USING (auth.uid() = user_id);
+    FOR UPDATE USING (auth.uid() = user_id) WITH CHECK (auth.uid() = user_id);
 
+-- RLS Policies for ai_patterns
 CREATE POLICY "Users can view own patterns" ON ai_patterns
     FOR SELECT USING (auth.uid() = user_id);
 
-CREATE POLICY "Users can manage own patterns" ON ai_patterns
-    FOR ALL USING (auth.uid() = user_id);
+CREATE POLICY "Users can insert own patterns" ON ai_patterns
+    FOR INSERT WITH CHECK (auth.uid() = user_id);
 
+CREATE POLICY "Users can update own patterns" ON ai_patterns
+    FOR UPDATE USING (auth.uid() = user_id) WITH CHECK (auth.uid() = user_id);
+
+CREATE POLICY "Users can delete own patterns" ON ai_patterns
+    FOR DELETE USING (auth.uid() = user_id);
+
+-- RLS Policies for ai_user_profile
 CREATE POLICY "Users can view own profile" ON ai_user_profile
     FOR SELECT USING (auth.uid() = user_id);
 
-CREATE POLICY "Users can manage own profile" ON ai_user_profile
-    FOR ALL USING (auth.uid() = user_id);
+CREATE POLICY "Users can insert own profile" ON ai_user_profile
+    FOR INSERT WITH CHECK (auth.uid() = user_id);
+
+CREATE POLICY "Users can update own profile" ON ai_user_profile
+    FOR UPDATE USING (auth.uid() = user_id) WITH CHECK (auth.uid() = user_id);
+
