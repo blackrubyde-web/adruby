@@ -1,6 +1,7 @@
 import { lazy, Suspense, memo, useCallback, useEffect, useMemo, useState } from 'react';
 import { Sidebar } from './components/Sidebar';
 import { Header } from './components/Header';
+import { TrialBanner } from './components/TrialBanner';
 import { Footer } from './components/Footer';
 // Lazy-load most full pages to reduce initial bundle size
 const LandingPage = lazy(() => import('./components/LandingPage').then((mod) => ({ default: mod.LandingPage })));
@@ -855,6 +856,27 @@ function AppContent() {
               className={`flex-1 transition-[margin-left] duration-300 md:ml-0 w-full max-w-full overflow-x-hidden ${isMobileSidebarOpen ? 'pointer-events-none' : ''}`}
               style={{ marginLeft: isDesktop ? `${sidebarWidth}px` : '0' }}
             >
+              {/* Trial Banner - shows only for trial users */}
+              <TrialBanner
+                trialEndsAt={billing.trialEndsAt}
+                statusLabel={billing.statusLabel}
+                isPaid={Boolean(profile?.payment_verified)}
+                onUpgrade={async () => {
+                  if (!user?.id || !user?.email) {
+                    toast.error('Bitte melde dich an, um fortzufahren');
+                    return;
+                  }
+                  try {
+                    const { startStripeCheckout } = await import('./lib/stripeService');
+                    const { url } = await startStripeCheckout(user.id, user.email);
+                    window.location.href = url;
+                  } catch (err) {
+                    toast.error('Upgrade fehlgeschlagen. Bitte versuche es erneut.');
+                    console.error('[Upgrade] startStripeCheckout failed', err);
+                  }
+                }}
+              />
+
               {/* Header */}
               <Header
                 sidebarWidth={isDesktop ? sidebarWidth : 0}
@@ -864,6 +886,21 @@ function AppContent() {
                 avatarUrl={profile?.avatar_url ?? null}
                 displayName={profile?.full_name ?? null}
                 email={profile?.email ?? user?.email ?? null}
+                isTrialUser={billing.statusLabel === 'Trial' || billing.statusLabel === 'Trial expired'}
+                onUpgrade={async () => {
+                  if (!user?.id || !user?.email) {
+                    toast.error('Bitte melde dich an, um fortzufahren');
+                    return;
+                  }
+                  try {
+                    const { startStripeCheckout } = await import('./lib/stripeService');
+                    const { url } = await startStripeCheckout(user.id, user.email);
+                    window.location.href = url;
+                  } catch (err) {
+                    toast.error('Upgrade fehlgeschlagen. Bitte versuche es erneut.');
+                    console.error('[Upgrade] startStripeCheckout failed', err);
+                  }
+                }}
               />
 
               <DashboardPageContent

@@ -1,6 +1,6 @@
 import { memo, useMemo } from 'react';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
-import { Sun, Moon, User, Settings, HelpCircle, Coins, Menu } from 'lucide-react';
+import { Sun, Moon, User, Settings, HelpCircle, Coins, Menu, Sparkles, Crown } from 'lucide-react';
 import { useTheme } from './ThemeProvider';
 import type { PageType } from '../App';
 import {
@@ -22,6 +22,9 @@ interface HeaderProps {
   avatarUrl?: string | null;
   displayName?: string | null;
   email?: string | null;
+  // Trial props
+  isTrialUser?: boolean;
+  onUpgrade?: () => void;
 }
 
 export const Header = memo(function Header({
@@ -33,6 +36,8 @@ export const Header = memo(function Header({
   avatarUrl,
   displayName,
   email,
+  isTrialUser = false,
+  onUpgrade,
 }: HeaderProps) {
   const { theme, toggleTheme } = useTheme();
   const credits = currentCredits ?? 2450;
@@ -74,6 +79,17 @@ export const Header = memo(function Header({
 
       {/* Right Side */}
       <div className="flex items-center gap-3 md:gap-4">
+        {/* Upgrade Button - Only for Trial Users */}
+        {isTrialUser && onUpgrade && (
+          <button
+            onClick={onUpgrade}
+            className="group px-4 py-2 bg-gradient-to-r from-[#FF1F1F] via-rose-500 to-red-600 text-white rounded-xl font-bold text-sm flex items-center gap-2 hover:shadow-[0_0_20px_rgba(255,31,31,0.4)] transition-all hover:scale-105 active:scale-95"
+          >
+            <Crown className="w-4 h-4" />
+            <span className="hidden sm:inline">Upgrade</span>
+          </button>
+        )}
+
         {/* Theme Toggle */}
         <button
           onClick={toggleTheme}
@@ -100,13 +116,28 @@ export const Header = memo(function Header({
           <DropdownMenuContent align="end" className="w-56">
             <DropdownMenuLabel>Mein Account</DropdownMenuLabel>
             <DropdownMenuSeparator />
+
+            {/* Upgrade Option in Dropdown for Trial Users */}
+            {isTrialUser && onUpgrade && (
+              <>
+                <DropdownMenuItem
+                  className="cursor-pointer text-[#FF1F1F] focus:text-[#FF1F1F] focus:bg-[#FF1F1F]/10"
+                  onClick={onUpgrade}
+                >
+                  <Crown className="mr-2 h-4 w-4" />
+                  <span className="font-semibold">Auf Pro upgraden</span>
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+              </>
+            )}
+
             <DropdownMenuItem className="cursor-pointer" onClick={() => onNavigate?.('profile')}>
               <User className="mr-2 h-4 w-4" />
               <span>Profil</span>
             </DropdownMenuItem>
             <DropdownMenuItem className="cursor-pointer" onClick={() => onNavigate?.('settings')}>
               <Settings className="mr-2 h-4 w-4" />
-              <span>Settings</span>
+              <span>Einstellungen</span>
             </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem className="cursor-pointer" onClick={() => onNavigate?.('help')}>
