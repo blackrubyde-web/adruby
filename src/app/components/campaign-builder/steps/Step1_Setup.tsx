@@ -182,7 +182,7 @@ export const Step1_Setup = () => {
                                 <div>
                                     <div className="font-semibold text-sm flex items-center gap-2">
                                         {strategy.label}
-                                        {strategy.recommended && (
+                                        {'recommended' in strategy && strategy.recommended && (
                                             <Badge variant="secondary" className="text-[10px]">Empfohlen</Badge>
                                         )}
                                     </div>

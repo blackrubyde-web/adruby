@@ -4,9 +4,7 @@ import {
     BellRing,
     Plus,
     Trash2,
-    Edit3,
     Check,
-    X,
     AlertTriangle,
     TrendingDown,
     DollarSign,
@@ -14,7 +12,6 @@ import {
     Slack,
     Mail,
     Smartphone,
-    Settings,
     ChevronDown,
     Loader2,
 } from 'lucide-react';

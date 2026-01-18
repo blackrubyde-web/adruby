@@ -326,7 +326,7 @@ export const Step3_Targeting = () => {
                             </div>
 
                             <div className="space-y-2 max-h-40 overflow-y-auto">
-                                {audiences.filter(a => a.type !== 'lookalike').map(audience => (
+                                {audiences.map(audience => (
                                     <button
                                         key={audience.id}
                                         onClick={() => {

@@ -15,7 +15,6 @@ import {
   Activity,
   Users,
   ShieldCheck,
-  Zap,
   AlertTriangle,
   Rocket,
   Sliders,
@@ -203,7 +202,7 @@ export function AIAnalysisPage() {
     });
   };
 
-  const handleScaleWinners = () => {
+  const _handleScaleWinners = () => {
     toast.promise(
       new Promise(resolve => setTimeout(resolve, 2000)),
       {
@@ -859,7 +858,7 @@ export function AIAnalysisPage() {
   const increaseAds = allRecommendations.filter(r => r.ad.aiAnalysis.recommendation === 'increase');
   const decreaseAds = allRecommendations.filter(r => r.ad.aiAnalysis.recommendation === 'decrease');
   const hasAutopilotData = campaigns.length > 0;
-  const optimizationScore = hasAutopilotData
+  const _optimizationScore = hasAutopilotData
     ? Math.round(campaigns.reduce((acc, c) => acc + c.performanceScore, 0) / campaigns.length)
     : null;
   const autopilotActions = hasAutopilotData
@@ -875,7 +874,7 @@ export function AIAnalysisPage() {
         : null,
     ].filter((item): item is string => Boolean(item))
     : [];
-  const autopilotSummary = hasAutopilotData && autopilotActions.length
+  const _autopilotSummary = hasAutopilotData && autopilotActions.length
     ? autopilotActions
     : hasAutopilotData
       ? ['Keine kritischen Aktionen. Autopilot überwacht weiter.']

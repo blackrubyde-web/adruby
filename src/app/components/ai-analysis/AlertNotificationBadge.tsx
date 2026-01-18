@@ -2,16 +2,13 @@ import { memo, useState, useCallback, useEffect } from 'react';
 import {
     Bell,
     BellRing,
-    X,
     AlertTriangle,
     TrendingDown,
     DollarSign,
     Clock,
-    Check,
     ChevronRight,
 } from 'lucide-react';
 import { Badge } from '../ui/badge';
-import { Button } from '../ui/button';
 
 export interface AlertNotification {
     id: string;
@@ -152,10 +149,10 @@ export const AlertNotificationBadge = memo(function AlertNotificationBadge({
             <button
                 onClick={() => setIsOpen(!isOpen)}
                 className={`relative p-2 rounded-lg transition-all ${isOpen
-                        ? 'bg-white/10'
-                        : hasUnread
-                            ? 'bg-amber-500/10 hover:bg-amber-500/20'
-                            : 'hover:bg-white/5'
+                    ? 'bg-white/10'
+                    : hasUnread
+                        ? 'bg-amber-500/10 hover:bg-amber-500/20'
+                        : 'hover:bg-white/5'
                     }`}
             >
                 {hasUnread ? (
