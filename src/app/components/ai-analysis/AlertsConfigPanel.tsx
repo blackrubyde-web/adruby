@@ -174,200 +174,193 @@ export const AlertsConfigPanel = memo(function AlertsConfigPanel({
     const totalTriggers = useMemo(() => alerts.reduce((sum, a) => sum + a.triggerCount, 0), [alerts]);
 
     return (
-        <Card className="relative overflow-hidden bg-gradient-to-br from-zinc-900/95 via-zinc-900/90 to-zinc-950 border-white/5">
-            {/* Background Effects */}
-            <div className="absolute inset-0 pointer-events-none overflow-hidden">
-                <div className="absolute -top-20 -left-20 w-[300px] h-[300px] bg-[radial-gradient(circle_at_center,rgba(251,146,60,0.08),transparent_60%)] blur-[60px]" />
-            </div>
-
-            <div className="relative p-6">
-                {/* Header */}
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
-                    <div className="flex items-center gap-4">
-                        <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-amber-500 to-orange-500 flex items-center justify-center shadow-lg shadow-amber-500/25">
-                            <BellRing className="w-6 h-6 text-white" />
-                        </div>
-                        <div>
-                            <h3 className="text-xl font-bold text-white flex items-center gap-2">
-                                Smart Alerts
-                                <Badge className="bg-amber-500/20 text-amber-400 border-amber-500/30 text-[10px]">
-                                    AGENCY PRO
-                                </Badge>
-                            </h3>
-                            <p className="text-sm text-white/50">{enabledCount} aktiv · {totalTriggers} ausgelöst</p>
-                        </div>
+        <div className="relative">
+            {/* Header */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
+                <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-amber-500 to-orange-500 flex items-center justify-center shadow-lg shadow-amber-500/25">
+                        <BellRing className="w-5 h-5 text-white" />
                     </div>
-
-                    <div className="flex gap-2">
-                        <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => setShowSlackConfig(!showSlackConfig)}
-                            className="gap-2"
-                        >
-                            <Slack className="w-4 h-4" />
-                            Slack
-                        </Button>
-                        <Button
-                            size="sm"
-                            onClick={() => setShowTemplates(!showTemplates)}
-                            className="gap-2 bg-gradient-to-r from-amber-600 to-orange-600 hover:opacity-90 text-white"
-                        >
-                            <Plus className="w-4 h-4" />
-                            Alert hinzufügen
-                        </Button>
+                    <div>
+                        <h3 className="text-lg font-bold text-white flex items-center gap-2">
+                            Smart Alerts
+                            <Badge className="bg-amber-500/20 text-amber-400 border-amber-500/30 text-[10px]">
+                                AGENCY PRO
+                            </Badge>
+                        </h3>
+                        <p className="text-xs text-white/50">{enabledCount} aktiv · {totalTriggers} ausgelöst</p>
                     </div>
                 </div>
 
-                {/* Slack Config */}
-                {showSlackConfig && (
-                    <div className="mb-6 p-4 rounded-xl bg-violet-500/10 border border-violet-500/20">
-                        <div className="flex items-center gap-2 mb-3">
-                            <Slack className="w-5 h-5 text-violet-400" />
-                            <h4 className="font-semibold text-white">Slack Integration</h4>
-                        </div>
-                        <div className="flex gap-2">
-                            <input
-                                type="url"
-                                value={slackUrl}
-                                onChange={(e) => setSlackUrl(e.target.value)}
-                                placeholder="https://hooks.slack.com/services/..."
-                                className="flex-1 px-4 py-2 bg-white/5 border border-white/10 rounded-lg text-white placeholder:text-white/30 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500/50"
-                            />
-                            <Button
-                                onClick={handleSaveSlack}
-                                disabled={isLoading}
-                                className="gap-2 bg-violet-600 hover:bg-violet-700"
+                <div className="flex gap-2">
+                    <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setShowSlackConfig(!showSlackConfig)}
+                        className="gap-1 h-8 text-xs"
+                    >
+                        <Slack className="w-3 h-3" />
+                        Slack
+                    </Button>
+                    <Button
+                        size="sm"
+                        onClick={() => setShowTemplates(!showTemplates)}
+                        className="gap-1 h-8 text-xs bg-gradient-to-r from-amber-600 to-orange-600 hover:opacity-90 text-white"
+                    >
+                        <Plus className="w-3 h-3" />
+                        Alert
+                    </Button>
+                </div>
+            </div>
+
+            {/* Slack Config */}
+            {showSlackConfig && (
+                <div className="mb-6 p-4 rounded-xl bg-violet-500/10 border border-violet-500/20">
+                    <div className="flex items-center gap-2 mb-3">
+                        <Slack className="w-5 h-5 text-violet-400" />
+                        <h4 className="font-semibold text-white">Slack Integration</h4>
+                    </div>
+                    <div className="flex gap-2">
+                        <input
+                            type="url"
+                            value={slackUrl}
+                            onChange={(e) => setSlackUrl(e.target.value)}
+                            placeholder="https://hooks.slack.com/services/..."
+                            className="flex-1 px-4 py-2 bg-white/5 border border-white/10 rounded-lg text-white placeholder:text-white/30 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500/50"
+                        />
+                        <Button
+                            onClick={handleSaveSlack}
+                            disabled={isLoading}
+                            className="gap-2 bg-violet-600 hover:bg-violet-700"
+                        >
+                            {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
+                            Speichern
+                        </Button>
+                    </div>
+                </div>
+            )}
+
+            {/* Templates */}
+            {showTemplates && (
+                <div className="mb-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                    {ALERT_TEMPLATES.map((template, i) => {
+                        const colors = getTypeColor(template.type || 'custom');
+                        const Icon = getTypeIcon(template.type || 'custom');
+                        const alreadyAdded = alerts.some(a => a.name === template.name);
+
+                        return (
+                            <button
+                                key={i}
+                                onClick={() => !alreadyAdded && handleAddTemplate(template)}
+                                disabled={alreadyAdded}
+                                className={`p-4 rounded-xl border text-left transition-all ${alreadyAdded
+                                    ? 'bg-white/5 border-white/10 opacity-50 cursor-not-allowed'
+                                    : `${colors.bg} ${colors.border} hover:scale-[1.02]`
+                                    }`}
                             >
-                                {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
-                                Speichern
-                            </Button>
-                        </div>
+                                <div className="flex items-center gap-3 mb-2">
+                                    <Icon className={`w-5 h-5 ${colors.text}`} />
+                                    <span className="font-medium text-white">{template.name}</span>
+                                </div>
+                                <p className="text-xs text-white/50">
+                                    {template.condition?.metric} {template.condition?.operator} {template.condition?.value}
+                                    {template.condition?.operator === 'change' && '%'}
+                                </p>
+                                {alreadyAdded && (
+                                    <Badge className="mt-2 bg-white/10 text-white/50">Bereits hinzugefügt</Badge>
+                                )}
+                            </button>
+                        );
+                    })}
+                </div>
+            )}
+
+            {/* Alert List */}
+            <div className="space-y-3">
+                {alerts.length === 0 ? (
+                    <div className="text-center py-8">
+                        <Bell className="w-12 h-12 text-white/20 mx-auto mb-3" />
+                        <p className="text-white/50">Keine Alerts konfiguriert</p>
                     </div>
-                )}
+                ) : (
+                    alerts.map((alert) => {
+                        const colors = getTypeColor(alert.type);
+                        const Icon = getTypeIcon(alert.type);
 
-                {/* Templates */}
-                {showTemplates && (
-                    <div className="mb-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                        {ALERT_TEMPLATES.map((template, i) => {
-                            const colors = getTypeColor(template.type || 'custom');
-                            const Icon = getTypeIcon(template.type || 'custom');
-                            const alreadyAdded = alerts.some(a => a.name === template.name);
-
-                            return (
-                                <button
-                                    key={i}
-                                    onClick={() => !alreadyAdded && handleAddTemplate(template)}
-                                    disabled={alreadyAdded}
-                                    className={`p-4 rounded-xl border text-left transition-all ${alreadyAdded
-                                            ? 'bg-white/5 border-white/10 opacity-50 cursor-not-allowed'
-                                            : `${colors.bg} ${colors.border} hover:scale-[1.02]`
-                                        }`}
-                                >
-                                    <div className="flex items-center gap-3 mb-2">
-                                        <Icon className={`w-5 h-5 ${colors.text}`} />
-                                        <span className="font-medium text-white">{template.name}</span>
+                        return (
+                            <div
+                                key={alert.id}
+                                className={`p-4 rounded-xl border transition-all ${alert.enabled
+                                    ? `${colors.bg} ${colors.border}`
+                                    : 'bg-white/5 border-white/10 opacity-60'
+                                    }`}
+                            >
+                                <div className="flex items-center justify-between gap-4">
+                                    <div className="flex items-center gap-3 min-w-0">
+                                        <div className={`w-10 h-10 rounded-xl ${colors.bg} ${colors.border} border flex items-center justify-center shrink-0`}>
+                                            <Icon className={`w-5 h-5 ${colors.text}`} />
+                                        </div>
+                                        <div className="min-w-0">
+                                            <h4 className="font-semibold text-white truncate">{alert.name}</h4>
+                                            <div className="flex items-center gap-2 text-xs text-white/50">
+                                                <span>
+                                                    {alert.condition.metric} {alert.condition.operator} {alert.condition.value}
+                                                    {alert.condition.operator === 'change' && '%'}
+                                                </span>
+                                                {alert.condition.timeframe && (
+                                                    <span className="text-white/30">({alert.condition.timeframe})</span>
+                                                )}
+                                            </div>
+                                        </div>
                                     </div>
-                                    <p className="text-xs text-white/50">
-                                        {template.condition?.metric} {template.condition?.operator} {template.condition?.value}
-                                        {template.condition?.operator === 'change' && '%'}
-                                    </p>
-                                    {alreadyAdded && (
-                                        <Badge className="mt-2 bg-white/10 text-white/50">Bereits hinzugefügt</Badge>
-                                    )}
-                                </button>
-                            );
-                        })}
-                    </div>
-                )}
 
-                {/* Alert List */}
-                <div className="space-y-3">
-                    {alerts.length === 0 ? (
-                        <div className="text-center py-8">
-                            <Bell className="w-12 h-12 text-white/20 mx-auto mb-3" />
-                            <p className="text-white/50">Keine Alerts konfiguriert</p>
-                        </div>
-                    ) : (
-                        alerts.map((alert) => {
-                            const colors = getTypeColor(alert.type);
-                            const Icon = getTypeIcon(alert.type);
-
-                            return (
-                                <div
-                                    key={alert.id}
-                                    className={`p-4 rounded-xl border transition-all ${alert.enabled
-                                            ? `${colors.bg} ${colors.border}`
-                                            : 'bg-white/5 border-white/10 opacity-60'
-                                        }`}
-                                >
-                                    <div className="flex items-center justify-between gap-4">
-                                        <div className="flex items-center gap-3 min-w-0">
-                                            <div className={`w-10 h-10 rounded-xl ${colors.bg} ${colors.border} border flex items-center justify-center shrink-0`}>
-                                                <Icon className={`w-5 h-5 ${colors.text}`} />
-                                            </div>
-                                            <div className="min-w-0">
-                                                <h4 className="font-semibold text-white truncate">{alert.name}</h4>
-                                                <div className="flex items-center gap-2 text-xs text-white/50">
-                                                    <span>
-                                                        {alert.condition.metric} {alert.condition.operator} {alert.condition.value}
-                                                        {alert.condition.operator === 'change' && '%'}
-                                                    </span>
-                                                    {alert.condition.timeframe && (
-                                                        <span className="text-white/30">({alert.condition.timeframe})</span>
-                                                    )}
+                                    <div className="flex items-center gap-3 shrink-0">
+                                        {/* Channels */}
+                                        <div className="hidden sm:flex items-center gap-1">
+                                            {alert.channels.includes('app') && (
+                                                <div className="w-6 h-6 rounded bg-white/5 flex items-center justify-center" title="In-App">
+                                                    <Smartphone className="w-3 h-3 text-white/50" />
                                                 </div>
-                                            </div>
-                                        </div>
-
-                                        <div className="flex items-center gap-3 shrink-0">
-                                            {/* Channels */}
-                                            <div className="hidden sm:flex items-center gap-1">
-                                                {alert.channels.includes('app') && (
-                                                    <div className="w-6 h-6 rounded bg-white/5 flex items-center justify-center" title="In-App">
-                                                        <Smartphone className="w-3 h-3 text-white/50" />
-                                                    </div>
-                                                )}
-                                                {alert.channels.includes('email') && (
-                                                    <div className="w-6 h-6 rounded bg-white/5 flex items-center justify-center" title="Email">
-                                                        <Mail className="w-3 h-3 text-white/50" />
-                                                    </div>
-                                                )}
-                                                {alert.channels.includes('slack') && (
-                                                    <div className="w-6 h-6 rounded bg-violet-500/20 flex items-center justify-center" title="Slack">
-                                                        <Slack className="w-3 h-3 text-violet-400" />
-                                                    </div>
-                                                )}
-                                            </div>
-
-                                            {/* Trigger Count */}
-                                            {alert.triggerCount > 0 && (
-                                                <Badge variant="outline" className="text-xs hidden md:block">
-                                                    {alert.triggerCount}x ausgelöst
-                                                </Badge>
                                             )}
-
-                                            {/* Toggle */}
-                                            <Switch
-                                                checked={alert.enabled}
-                                                onCheckedChange={(checked) => handleToggle(alert.id, checked)}
-                                            />
-
-                                            {/* Delete */}
-                                            <button
-                                                onClick={() => handleDelete(alert.id)}
-                                                className="p-2 rounded-lg hover:bg-red-500/20 text-white/40 hover:text-red-400 transition-colors"
-                                            >
-                                                <Trash2 className="w-4 h-4" />
-                                            </button>
+                                            {alert.channels.includes('email') && (
+                                                <div className="w-6 h-6 rounded bg-white/5 flex items-center justify-center" title="Email">
+                                                    <Mail className="w-3 h-3 text-white/50" />
+                                                </div>
+                                            )}
+                                            {alert.channels.includes('slack') && (
+                                                <div className="w-6 h-6 rounded bg-violet-500/20 flex items-center justify-center" title="Slack">
+                                                    <Slack className="w-3 h-3 text-violet-400" />
+                                                </div>
+                                            )}
                                         </div>
+
+                                        {/* Trigger Count */}
+                                        {alert.triggerCount > 0 && (
+                                            <Badge variant="outline" className="text-xs hidden md:block">
+                                                {alert.triggerCount}x ausgelöst
+                                            </Badge>
+                                        )}
+
+                                        {/* Toggle */}
+                                        <Switch
+                                            checked={alert.enabled}
+                                            onCheckedChange={(checked) => handleToggle(alert.id, checked)}
+                                        />
+
+                                        {/* Delete */}
+                                        <button
+                                            onClick={() => handleDelete(alert.id)}
+                                            className="p-2 rounded-lg hover:bg-red-500/20 text-white/40 hover:text-red-400 transition-colors"
+                                        >
+                                            <Trash2 className="w-4 h-4" />
+                                        </button>
                                     </div>
                                 </div>
-                            );
-                        })
-                    )}
-                </div>
+                            </div>
+                        );
+                    })
+                )}
             </div>
-        </Card>
+        </div>
     );
 });

@@ -142,16 +142,16 @@ export const AgencySettingsMenu = memo(function AgencySettingsMenu({
 
             {/* Modal for each settings view */}
             <Dialog open={activeView !== null} onOpenChange={handleOpenChange}>
-                <DialogContent className="max-w-4xl max-h-[85vh] overflow-y-auto bg-zinc-900/95 backdrop-blur-xl border-white/10 p-0">
-                    <DialogHeader className="sticky top-0 z-10 bg-zinc-900/95 backdrop-blur-xl border-b border-white/10 px-6 py-4">
+                <DialogContent className="max-w-2xl max-h-[70vh] overflow-y-auto bg-zinc-900/95 backdrop-blur-xl border-white/10 p-0">
+                    <DialogHeader className="sticky top-0 z-10 bg-zinc-900/95 backdrop-blur-xl border-b border-white/10 px-4 py-3">
                         <div className="flex items-center justify-between">
-                            <DialogTitle className="text-lg font-semibold text-white flex items-center gap-3">
+                            <DialogTitle className="text-base font-semibold text-white flex items-center gap-2">
                                 {activeView && (
                                     <>
-                                        {activeView === 'alerts' && <Bell className="w-5 h-5 text-orange-400" />}
-                                        {activeView === 'rules' && <Zap className="w-5 h-5 text-violet-400" />}
-                                        {activeView === 'summary' && <BarChart3 className="w-5 h-5 text-emerald-400" />}
-                                        {activeView === 'decisions' && <Brain className="w-5 h-5 text-fuchsia-400" />}
+                                        {activeView === 'alerts' && <Bell className="w-4 h-4 text-orange-400" />}
+                                        {activeView === 'rules' && <Zap className="w-4 h-4 text-violet-400" />}
+                                        {activeView === 'summary' && <BarChart3 className="w-4 h-4 text-emerald-400" />}
+                                        {activeView === 'decisions' && <Brain className="w-4 h-4 text-fuchsia-400" />}
                                         {MENU_ITEMS.find(m => m.id === activeView)?.label}
                                     </>
                                 )}
@@ -160,14 +160,14 @@ export const AgencySettingsMenu = memo(function AgencySettingsMenu({
                                 variant="ghost"
                                 size="icon"
                                 onClick={() => setActiveView(null)}
-                                className="w-8 h-8 text-white/40 hover:text-white hover:bg-white/10"
+                                className="w-7 h-7 text-white/40 hover:text-white hover:bg-white/10"
                             >
                                 <X className="w-4 h-4" />
                             </Button>
                         </div>
                     </DialogHeader>
 
-                    <div className="p-6">
+                    <div className="p-4">
                         {activeView === 'alerts' && <AlertsConfigPanel />}
                         {activeView === 'rules' && <AutomatedRulesPanel />}
                         {activeView === 'summary' && <WeeklySummaryCard campaigns={campaigns} />}
