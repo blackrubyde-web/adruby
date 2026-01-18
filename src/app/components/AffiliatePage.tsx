@@ -28,6 +28,9 @@ import { AffiliateSuccessStories } from './affiliate/AffiliateSuccessStories';
 import { PayoutRequestModal } from './affiliate/PayoutRequestModal';
 import { TierProgress } from './affiliate/TierProgress';
 import { MarketingHub } from './affiliate/MarketingHub';
+import { TeamPanel } from './affiliate/TeamPanel';
+import { PayoutHistory } from './affiliate/PayoutHistory';
+import { AffiliateLeaderboard } from './affiliate/Leaderboard';
 import { User } from '@supabase/supabase-js';
 
 // --- Imports for Marketing View ---
@@ -52,7 +55,7 @@ export function AffiliatePage({ onNavigate = () => { }, onSignIn = () => { }, on
   // Marketing View States
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const heroRef = useRef<HTMLElement>(null);
-  const [activeTab, setActiveTab] = useState<'overview' | 'team' | 'marketing' | 'achievements'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'team' | 'payouts' | 'rankings' | 'marketing' | 'achievements'>('overview');
 
   // Dashboard States
   const [timeRange, setTimeRange] = useState<'7d' | '30d' | 'all'>('30d');
@@ -243,8 +246,8 @@ function AffiliateMarketingView({ onNavigate, onSignIn, onGetStarted, heroRef, i
 
 interface AffiliateDashboardProps {
   user: User;
-  activeTab: 'overview' | 'team' | 'marketing' | 'achievements';
-  setActiveTab: (tab: 'overview' | 'team' | 'marketing' | 'achievements') => void;
+  activeTab: 'overview' | 'team' | 'payouts' | 'rankings' | 'marketing' | 'achievements';
+  setActiveTab: (tab: 'overview' | 'team' | 'payouts' | 'rankings' | 'marketing' | 'achievements') => void;
   timeRange: '7d' | '30d' | 'all';
   setTimeRange: (range: '7d' | '30d' | 'all') => void;
   chartData: EarningsData[];
@@ -503,7 +506,9 @@ function AffiliateDashboard({
         {[
           { id: 'overview', label: 'Übersicht', icon: BarChart3 },
           { id: 'team', label: 'Mein Team', icon: Users },
-          { id: 'marketing', label: 'Marketing Hub', icon: Download },
+          { id: 'payouts', label: 'Auszahlungen', icon: Wallet },
+          { id: 'rankings', label: 'Rankings', icon: TrendingUp },
+          { id: 'marketing', label: 'Marketing', icon: Download },
           { id: 'achievements', label: 'Achievements', icon: Sparkles },
         ].map((tab) => (
           <button
@@ -522,13 +527,9 @@ function AffiliateDashboard({
 
       {/* Tab Content */}
       {activeTab === 'overview' && overviewContent}
-      {activeTab === 'team' && (
-        <Card className="p-8 text-center">
-          <Users className="w-12 h-12 mx-auto mb-4 text-muted-foreground opacity-50" />
-          <h3 className="text-lg font-bold mb-2">Team Management kommt bald!</h3>
-          <p className="text-muted-foreground">Hier siehst du bald alle deine Referrals mit Details, Status und individuellen Earnings.</p>
-        </Card>
-      )}
+      {activeTab === 'team' && <TeamPanel />}
+      {activeTab === 'payouts' && <PayoutHistory />}
+      {activeTab === 'rankings' && <AffiliateLeaderboard />}
       {activeTab === 'marketing' && (
         <MarketingHub affiliateCode={affiliateCode || 'PARTNER'} affiliateLink={affiliateLink || ''} />
       )}
