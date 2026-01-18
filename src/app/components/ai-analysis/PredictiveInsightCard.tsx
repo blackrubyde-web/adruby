@@ -94,7 +94,7 @@ export const PredictiveInsightCard = memo(function PredictiveInsightCard({
         },
     };
 
-    const colors = colorClasses[config.color];
+    const colors = colorClasses[config.color as keyof typeof colorClasses];
 
     if (compact) {
         return (
@@ -119,7 +119,7 @@ export const PredictiveInsightCard = memo(function PredictiveInsightCard({
         <Card className={`relative overflow-hidden ${colors.bg} border ${colors.border} p-5`}>
             {/* Severity Indicator */}
             <div className={`absolute top-0 left-0 w-1 h-full ${insight.severity === 'high' ? 'bg-red-500' :
-                    insight.severity === 'medium' ? 'bg-amber-500' : 'bg-blue-500'
+                insight.severity === 'medium' ? 'bg-amber-500' : 'bg-blue-500'
                 }`} />
 
             <div className="flex items-start gap-4">
@@ -170,10 +170,10 @@ export const PredictiveInsightCard = memo(function PredictiveInsightCard({
                             size="sm"
                             onClick={() => onAction(insight.recommendedAction, insight.adId)}
                             className={`gap-2 ${insight.severity === 'high'
-                                    ? 'bg-red-600 hover:bg-red-700 text-white'
-                                    : insight.type === 'opportunity'
-                                        ? 'bg-emerald-600 hover:bg-emerald-700 text-white'
-                                        : ''
+                                ? 'bg-red-600 hover:bg-red-700 text-white'
+                                : insight.type === 'opportunity'
+                                    ? 'bg-emerald-600 hover:bg-emerald-700 text-white'
+                                    : ''
                                 }`}
                         >
                             <ActionIcon className="w-4 h-4" />

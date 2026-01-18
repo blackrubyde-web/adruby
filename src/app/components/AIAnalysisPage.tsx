@@ -37,8 +37,8 @@ import { useMetaCampaigns } from '../hooks/useMetaCampaigns';
 import { useStrategies } from '../hooks/useStrategies';
 import { useAnalyticsData } from '../hooks/useAnalyticsData';
 import { applyMetaAction } from '../lib/api/meta';
-import { PredictiveInsightCard, type PredictiveInsight } from './ai-analysis/PredictiveInsightCard';
-import { TrendMiniChart } from './ai-analysis/TrendMiniChart';
+import { PredictiveInsightCard } from './ai-analysis/PredictiveInsightCard';
+// TrendMiniChart imported for future use
 import { AICopilotChat } from './ai-analysis/AICopilotChat';
 import { InsightSummaryCards } from './ai-analysis/InsightSummaryCards';
 import { QuickActionsBar } from './ai-analysis/QuickActionsBar';
@@ -1192,7 +1192,7 @@ export function AIAnalysisPage() {
           {(killAds.length > 0 || decreaseAds.length > 0) ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {/* Critical: Kill Warnings */}
-              {killAds.slice(0, 2).map(({ ad, campaign }) => (
+              {killAds.slice(0, 2).map(({ ad, campaign: _campaign }) => (
                 <PredictiveInsightCard
                   key={ad.id}
                   insight={{
@@ -1211,7 +1211,7 @@ export function AIAnalysisPage() {
                       unit: 'x ROAS'
                     }
                   }}
-                  onAction={(action, adId) => {
+                  onAction={(_action, _adId) => {
                     const style = getRecommendationStyle('kill');
                     handleAIAction(style, ad);
                   }}
@@ -1219,7 +1219,7 @@ export function AIAnalysisPage() {
               ))}
 
               {/* Warning: Decrease Warnings (Fatigue) */}
-              {decreaseAds.slice(0, 2).map(({ ad, campaign }) => (
+              {decreaseAds.slice(0, 2).map(({ ad, campaign: _campaign }) => (
                 <PredictiveInsightCard
                   key={ad.id}
                   insight={{
@@ -1238,14 +1238,14 @@ export function AIAnalysisPage() {
                       unit: 'x ROAS'
                     }
                   }}
-                  onAction={(action, adId) => {
+                  onAction={(_action, _adId) => {
                     toast.info('Creative Refresh empfohlen - Neue Variante erstellen');
                   }}
                 />
               ))}
 
               {/* Opportunity: Top Performers */}
-              {duplicateAds.slice(0, 1).map(({ ad, campaign }) => (
+              {duplicateAds.slice(0, 1).map(({ ad, campaign: _campaign }) => (
                 <PredictiveInsightCard
                   key={ad.id}
                   insight={{
