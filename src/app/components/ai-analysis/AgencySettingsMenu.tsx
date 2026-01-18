@@ -83,25 +83,24 @@ export const AgencySettingsMenu = memo(function AgencySettingsMenu({
 
     return (
         <>
-            <DropdownMenu>
+            <DropdownMenu modal={false}>
                 <DropdownMenuTrigger asChild>
-                    <Button
-                        variant="outline"
-                        size="sm"
-                        className="gap-2 border-white/10 bg-white/5 hover:bg-white/10 cursor-pointer relative z-10"
-                        onClick={(e) => e.stopPropagation()}
+                    <button
+                        type="button"
+                        className="inline-flex items-center gap-2 px-3 py-1.5 text-sm font-medium rounded-md border border-white/10 bg-white/5 hover:bg-white/10 cursor-pointer transition-colors"
                     >
                         <Settings2 className="w-4 h-4" />
                         <span className="hidden sm:inline">Agency Tools</span>
                         <Badge className="bg-violet-500/20 text-violet-400 border-violet-500/30 text-[10px] px-1.5">
                             PRO
                         </Badge>
-                    </Button>
+                    </button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent
                     align="end"
-                    className="w-72 bg-zinc-900/95 backdrop-blur-xl border-white/10 z-[100]"
+                    className="w-72 bg-zinc-900/95 backdrop-blur-xl border-white/10"
                     sideOffset={8}
+                    style={{ zIndex: 9999 }}
                 >
                     <DropdownMenuLabel className="text-white/60 font-normal">
                         Agency Pro Features
