@@ -8,15 +8,19 @@
 
 [functions]
   directory = "netlify/functions-build"
-  node_bundler = "zisi"
-  external_node_modules = ["sharp"]
+  node_bundler = "esbuild"
+  external_node_modules = ["sharp", "@img/sharp-linux-x64", "@img/sharp-darwin-arm64", "@img/sharp-darwin-x64", "@img/sharp-libvips-linux-x64", "@img/sharp-libvips-darwin-arm64", "@img/sharp-libvips-darwin-x64"]
+  included_files = ["node_modules/sharp/**/*", "node_modules/@img/**/*"]
 
-# Extend timeout for AI functions (default is 10s)
+# Background function for ad generation
+[functions."ai-ad-generate-background"]
+  external_node_modules = ["sharp", "@img/sharp-linux-x64", "@img/sharp-libvips-linux-x64"]
+
+# Extend timeout for AI functions
 [functions."ai-ad-generate"]
-  external_node_modules = ["sharp"]
-  
+  external_node_modules = ["sharp", "@img/sharp-linux-x64", "@img/sharp-libvips-linux-x64"]
+
 # Note: Function timeout requires Netlify Pro plan for > 10s
-# If on free plan, the function may still timeout
 
 [[redirects]]
   from = "/api/creative/analyze"
