@@ -22,3 +22,4 @@ export { AlertsConfigPanel, type AlertRule } from './AlertsConfigPanel';
 export { AlertNotificationBadge, type AlertNotification } from './AlertNotificationBadge';
 export { AutomatedRulesPanel, type AutomationRule } from './AutomatedRulesPanel';
 export { WeeklySummaryCard } from './WeeklySummaryCard';
+export { AdaptiveDecisionPanel } from './AdaptiveDecisionPanel';

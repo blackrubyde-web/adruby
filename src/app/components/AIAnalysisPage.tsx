@@ -47,6 +47,7 @@ import { CreativeIntelligencePanel } from './ai-analysis/CreativeIntelligencePan
 import { AlertsConfigPanel } from './ai-analysis/AlertsConfigPanel';
 import { AutomatedRulesPanel } from './ai-analysis/AutomatedRulesPanel';
 import { WeeklySummaryCard } from './ai-analysis/WeeklySummaryCard';
+import { AdaptiveDecisionPanel } from './ai-analysis/AdaptiveDecisionPanel';
 
 type AIRecommendation = 'kill' | 'duplicate' | 'increase' | 'decrease';
 
@@ -990,6 +991,19 @@ export function AIAnalysisPage() {
               });
             })()}
             title="Performance Trend"
+          />
+        </div>
+      )}
+
+      {/* ADAPTIVE AI DECISIONS - Agency AI */}
+      {campaigns.length > 0 && (
+        <div className="mb-6">
+          <AdaptiveDecisionPanel
+            campaigns={campaigns}
+            industryType="ecom_d2c"
+            onExecuteAction={async (campaignId, action, value) => {
+              toast.info(`Executing: ${action} ${value ? `(${value}%)` : ''} on ${campaignId}`);
+            }}
           />
         </div>
       )}
