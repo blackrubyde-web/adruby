@@ -613,7 +613,7 @@ export function LandingPage({ onGetStarted, onLogin }: LandingPageProps) {
                   className="absolute inset-0 w-full h-full object-cover"
                 />
                 <div className="absolute top-2 right-2 px-2 py-1 bg-black/80 text-white rounded text-[10px] font-bold">
-                  AI Generated
+                  KI Generiert
                 </div>
               </div>
 
@@ -629,17 +629,17 @@ export function LandingPage({ onGetStarted, onLogin }: LandingPageProps) {
               <div className="p-3 bg-gradient-to-br from-green-500/10 to-emerald-500/10 border-t border-green-500/20">
                 <div className="flex items-center justify-between mb-2">
                   <span className="text-[10px] font-bold text-green-600 uppercase tracking-wide">
-                    AI Prediction
+                    KI-Vorhersage
                   </span>
-                  <span className="text-[10px] font-semibold text-green-600">{currentAd.confidence}% confidence</span>
+                  <span className="text-[10px] font-semibold text-green-600">{currentAd.confidence}% Konfidenz</span>
                 </div>
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <p className="text-[10px] text-muted-foreground mb-0.5">Expected CTR</p>
+                    <p className="text-[10px] text-muted-foreground mb-0.5">Erwartete CTR</p>
                     <p className="text-lg font-bold text-green-600">{currentAd.ctr}</p>
                   </div>
                   <div>
-                    <p className="text-[10px] text-muted-foreground mb-0.5">Expected ROAS</p>
+                    <p className="text-[10px] text-muted-foreground mb-0.5">Erwarteter ROAS</p>
                     <p className="text-lg font-bold text-green-600">{currentAd.roas}</p>
                   </div>
                 </div>

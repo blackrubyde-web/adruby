@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
-import { Send, Eye, Code, Users, Mail, Loader2, CheckCircle2, AlertCircle, RefreshCw, ChevronDown } from 'lucide-react';
+import { Send, Eye, Code, Users, Mail, Loader2, CheckCircle2, RefreshCw } from 'lucide-react';
 import { Card } from '../ui/card';
 import { Button } from '../ui/button';
 import { Badge } from '../ui/badge';
@@ -57,7 +57,6 @@ const DEFAULT_TEMPLATE = `<!DOCTYPE html>
 export function AdminEmailComposer() {
     const [subject, setSubject] = useState('');
     const [htmlContent, setHtmlContent] = useState(DEFAULT_TEMPLATE);
-    const [showPreview, setShowPreview] = useState(true);
     const [userFilter, setUserFilter] = useState<UserFilter>('test');
     const [users, setUsers] = useState<User[]>([]);
     const [isLoadingUsers, setIsLoadingUsers] = useState(false);
@@ -110,6 +109,7 @@ export function AdminEmailComposer() {
         }
     };
 
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     useEffect(() => {
         if (userFilter !== 'test') {
             loadUsers();

@@ -13,6 +13,6 @@ describe('Smoke', () => {
         </AuthProvider>
       </ThemeProvider>
     )
-    expect(screen.getByRole('heading', { name: 'Settings' })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'Einstellungen' })).toBeInTheDocument()
   })
 })

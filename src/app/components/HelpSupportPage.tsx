@@ -23,7 +23,6 @@ import { supabase } from '../lib/supabaseClient';
 import { DashboardShell } from './layout/DashboardShell';
 import { Card, CardContent } from './ui/card';
 import { Button } from './ui/button';
-import { Badge } from './ui/badge';
 
 export function HelpSupportPage() {
   const [activeSection, setActiveSection] = useState<'faq' | 'contact' | 'resources'>('faq');
@@ -249,8 +248,8 @@ export function HelpSupportPage() {
         <button
           onClick={() => setActiveSection('faq')}
           className={`p-6 rounded-2xl border-2 transition-all text-left ${activeSection === 'faq'
-              ? 'border-primary/50 bg-primary/10'
-              : 'border-border/30 bg-card hover:scale-[1.02] hover:border-primary/30'
+            ? 'border-primary/50 bg-primary/10'
+            : 'border-border/30 bg-card hover:scale-[1.02] hover:border-primary/30'
             }`}
         >
           <div className="p-3 bg-blue-500/20 rounded-xl w-fit mb-4">
@@ -263,8 +262,8 @@ export function HelpSupportPage() {
         <button
           onClick={() => setActiveSection('contact')}
           className={`p-6 rounded-2xl border-2 transition-all text-left ${activeSection === 'contact'
-              ? 'border-primary/50 bg-primary/10'
-              : 'border-border/30 bg-card hover:scale-[1.02] hover:border-primary/30'
+            ? 'border-primary/50 bg-primary/10'
+            : 'border-border/30 bg-card hover:scale-[1.02] hover:border-primary/30'
             }`}
         >
           <div className="p-3 bg-green-500/20 rounded-xl w-fit mb-4">
@@ -277,8 +276,8 @@ export function HelpSupportPage() {
         <button
           onClick={() => setActiveSection('resources')}
           className={`p-6 rounded-2xl border-2 transition-all text-left ${activeSection === 'resources'
-              ? 'border-primary/50 bg-primary/10'
-              : 'border-border/30 bg-card hover:scale-[1.02] hover:border-primary/30'
+            ? 'border-primary/50 bg-primary/10'
+            : 'border-border/30 bg-card hover:scale-[1.02] hover:border-primary/30'
             }`}
         >
           <div className="p-3 bg-purple-500/20 rounded-xl w-fit mb-4">

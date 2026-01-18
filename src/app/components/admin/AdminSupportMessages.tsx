@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { MessageSquare, Check, Clock, AlertCircle, RefreshCw, Loader2, Mail, User, Calendar, ChevronDown, ChevronUp, Reply, X } from 'lucide-react';
+import { MessageSquare, Check, Clock, RefreshCw, Loader2, Mail, User, Calendar, ChevronDown, ChevronUp, Reply, X } from 'lucide-react';
 import { supabase } from '../../lib/supabaseClient';
 import { toast } from 'sonner';
 import { cn } from '../../lib/utils';

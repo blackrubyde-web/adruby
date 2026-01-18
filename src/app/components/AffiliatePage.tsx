@@ -18,8 +18,6 @@ import {
 import { toast } from 'sonner';
 import { PageShell, HeroHeader } from './layout';
 import { Card } from './ui/card';
-import { Button } from './ui/button';
-import { Badge } from './ui/badge';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { useAffiliate } from '../contexts/AffiliateContext';
 import { supabase } from '../lib/supabaseClient';
