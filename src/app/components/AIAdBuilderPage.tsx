@@ -65,7 +65,7 @@ export function AIAdBuilderPage() {
             if (productImage) {
                 // Upload product image to Supabase
                 const filename = `temp/product-${profile?.id}-${Date.now()}.png`;
-                const { data, error: uploadError } = await supabase.storage
+                const { data: _uploadData, error: uploadError } = await supabase.storage
                     .from('creative-images')
                     .upload(filename, productImage);
 
