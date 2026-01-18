@@ -897,8 +897,8 @@ export function AIAnalysisPage() {
             onClick={toggleAutopilot}
             disabled={!hasAutopilotData}
             className={`flex items-center gap-2 px-3 py-1.5 rounded-full border text-xs font-medium transition-all ${autopilotEnabled
-                ? 'bg-violet-500/20 text-violet-400 border-violet-500/30 hover:bg-violet-500/30'
-                : 'bg-white/5 text-white/60 border-white/10 hover:bg-white/10'
+              ? 'bg-violet-500/20 text-violet-400 border-violet-500/30 hover:bg-violet-500/30'
+              : 'bg-white/5 text-white/60 border-white/10 hover:bg-white/10'
               } ${!hasAutopilotData ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
           >
             <ShieldCheck className="w-3.5 h-3.5" />
@@ -1194,44 +1194,42 @@ export function AIAnalysisPage() {
       <div className="flex flex-col lg:flex-row gap-4 lg:gap-6 w-full max-w-[100vw] overflow-x-hidden">
         {/* Main Content Area */}
         <div className="flex-1 min-w-0">
-          {/* FIX 2: Filters - Mobile Wrap + Full Width Controls */}
-          <Card className="p-4 mb-6">
-            <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 min-w-0">
-              <div className="flex-1 relative min-w-0">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
-                <input
-                  type="text"
-                  placeholder="Search campaigns, ad sets, or ads..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full max-w-full pl-10 pr-4 py-2 bg-muted/50 border border-border/50 rounded-lg text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 text-sm"
-                />
-              </div>
-
-              <SelectField
-                value={filterStatus}
-                onChange={(e) => setFilterStatus(e.target.value as typeof filterStatus)}
-                wrapperClassName="w-full sm:w-auto"
-                className="bg-muted/50 text-sm py-2 px-3.5 rounded-lg"
-              >
-                <option value="all">All Status</option>
-                <option value="active">Active</option>
-                <option value="paused">Paused</option>
-                <option value="learning">Learning</option>
-              </SelectField>
-
-              <button
-                onClick={() => setShowAIPanel(!showAIPanel)}
-                className={`w-full sm:w-auto px-3.5 py-2 rounded-lg font-semibold text-sm transition-all flex items-center justify-center gap-2 ${showAIPanel
-                  ? 'bg-primary text-primary-foreground shadow-lg shadow-primary/30'
-                  : 'bg-muted hover:bg-muted/80'
-                  }`}
-              >
-                <Brain className="w-5 h-5" />
-                AI Panel
-              </button>
+          {/* FIX 2: Filters - Clean Open Layout */}
+          <div className="flex flex-col sm:flex-row sm:items-center gap-3 mb-6 min-w-0">
+            <div className="flex-1 relative min-w-0">
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-white/40" />
+              <input
+                type="text"
+                placeholder="Search campaigns, ad sets, or ads..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full pl-11 pr-4 py-2.5 bg-white/5 border border-white/10 rounded-xl text-white placeholder:text-white/40 focus:outline-none focus:ring-2 focus:ring-violet-500/50 focus:border-violet-500/50 text-sm transition-all"
+              />
             </div>
-          </Card>
+
+            <SelectField
+              value={filterStatus}
+              onChange={(e) => setFilterStatus(e.target.value as typeof filterStatus)}
+              wrapperClassName="w-full sm:w-auto"
+              className="bg-white/5 border-white/10 text-sm py-2.5 px-4 rounded-xl"
+            >
+              <option value="all">All Status</option>
+              <option value="active">Active</option>
+              <option value="paused">Paused</option>
+              <option value="learning">Learning</option>
+            </SelectField>
+
+            <button
+              onClick={() => setShowAIPanel(!showAIPanel)}
+              className={`w-full sm:w-auto px-4 py-2.5 rounded-xl font-semibold text-sm transition-all flex items-center justify-center gap-2 ${showAIPanel
+                ? 'bg-gradient-to-r from-violet-600 to-fuchsia-600 text-white shadow-lg shadow-violet-500/30'
+                : 'bg-white/5 border border-white/10 hover:bg-white/10 text-white/70'
+                }`}
+            >
+              <Brain className="w-4 h-4" />
+              AI Panel
+            </button>
+          </div>
 
           {/* FIX 4A: Desktop Table - Hidden on Mobile */}
           <Dialog open={showStrategyParams} onOpenChange={setShowStrategyParams}>
@@ -1774,57 +1772,54 @@ export function AIAnalysisPage() {
               </Card>
             </div>
 
-            {/* Desktop: Sidebar (unchanged) */}
-            <div className="hidden lg:block w-[380px] flex-shrink-0 space-y-4 sticky top-24 h-fit max-h-[calc(100vh-8rem)] overflow-y-auto">
-              {/* Panel Header */}
-              <Card className="bg-gradient-to-br from-primary/10 to-card border-primary/30 p-6">
-                <div className="flex items-center gap-3 mb-3">
-                  <div className="p-3 bg-primary/20 rounded-xl">
-                    <Brain className="w-6 h-6 text-primary" />
+            {/* Desktop: Sidebar */}
+            <div className="hidden lg:block w-[320px] flex-shrink-0 space-y-3 sticky top-24 h-fit max-h-[calc(100vh-8rem)] overflow-y-auto">
+              {/* Panel Header - Compact */}
+              <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center gap-2">
+                  <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-violet-600 to-fuchsia-600 flex items-center justify-center">
+                    <Brain className="w-4 h-4 text-white" />
                   </div>
                   <div>
-                    <h3 className="font-bold text-foreground">AI Recommendations</h3>
-                    <p className="text-xs text-muted-foreground">Real-time analysis</p>
+                    <h3 className="font-semibold text-white text-sm">AI Insights</h3>
+                    <p className="text-[10px] text-white/40">Real-time</p>
                   </div>
                 </div>
-                <div className="flex items-center gap-2 text-xs">
-                  <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
-                  <span className="text-muted-foreground">Updated 30 seconds ago</span>
+                <div className="flex items-center gap-1.5 text-[10px] text-white/40">
+                  <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                  Live
                 </div>
-              </Card>
+              </div>
 
-              {/* Summary Cards */}
-              <div className="grid grid-cols-2 gap-3">
-                <div className="backdrop-blur-xl bg-red-500/10 rounded-xl border border-red-500/30 p-4">
-                  <div className="flex items-center justify-between mb-2">
-                    <Trash2 className="w-5 h-5 text-red-500" />
-                    <span className="text-2xl font-bold text-red-500">{killAds.length}</span>
+              {/* Compact Stats Row */}
+              <div className="flex gap-2">
+                <div className="flex-1 p-3 rounded-lg bg-red-500/10 border border-red-500/20">
+                  <div className="flex items-center justify-between">
+                    <Trash2 className="w-4 h-4 text-red-400" />
+                    <span className="text-lg font-bold text-red-400">{killAds.length}</span>
                   </div>
-                  <div className="text-xs font-semibold text-red-500">Kill Ads</div>
+                  <div className="text-[10px] text-red-400/70 mt-1">Kill</div>
                 </div>
-
-                <div className="backdrop-blur-xl bg-green-500/10 rounded-xl border border-green-500/30 p-4">
-                  <div className="flex items-center justify-between mb-2">
-                    <Copy className="w-5 h-5 text-green-500" />
-                    <span className="text-2xl font-bold text-green-500">{duplicateAds.length}</span>
+                <div className="flex-1 p-3 rounded-lg bg-emerald-500/10 border border-emerald-500/20">
+                  <div className="flex items-center justify-between">
+                    <Copy className="w-4 h-4 text-emerald-400" />
+                    <span className="text-lg font-bold text-emerald-400">{duplicateAds.length}</span>
                   </div>
-                  <div className="text-xs font-semibold text-green-500">Duplicate</div>
+                  <div className="text-[10px] text-emerald-400/70 mt-1">Scale</div>
                 </div>
-
-                <div className="backdrop-blur-xl bg-blue-500/10 rounded-xl border border-blue-500/30 p-4">
-                  <div className="flex items-center justify-between mb-2">
-                    <TrendingUp className="w-5 h-5 text-blue-500" />
-                    <span className="text-2xl font-bold text-blue-500">{increaseAds.length}</span>
+                <div className="flex-1 p-3 rounded-lg bg-blue-500/10 border border-blue-500/20">
+                  <div className="flex items-center justify-between">
+                    <TrendingUp className="w-4 h-4 text-blue-400" />
+                    <span className="text-lg font-bold text-blue-400">{increaseAds.length}</span>
                   </div>
-                  <div className="text-xs font-semibold text-blue-500">Increase</div>
+                  <div className="text-[10px] text-blue-400/70 mt-1">Boost</div>
                 </div>
-
-                <div className="backdrop-blur-xl bg-orange-500/10 rounded-xl border border-orange-500/30 p-4">
-                  <div className="flex items-center justify-between mb-2">
-                    <TrendingDown className="w-5 h-5 text-orange-500" />
-                    <span className="text-2xl font-bold text-orange-500">{decreaseAds.length}</span>
+                <div className="flex-1 p-3 rounded-lg bg-amber-500/10 border border-amber-500/20">
+                  <div className="flex items-center justify-between">
+                    <TrendingDown className="w-4 h-4 text-amber-400" />
+                    <span className="text-lg font-bold text-amber-400">{decreaseAds.length}</span>
                   </div>
-                  <div className="text-xs font-semibold text-orange-500">Decrease</div>
+                  <div className="text-[10px] text-amber-400/70 mt-1">Cut</div>
                 </div>
               </div>
 
@@ -1945,6 +1940,6 @@ export function AIAnalysisPage() {
           },
         }}
       />
-    </DashboardShell>
+    </DashboardShell >
   );
 }
