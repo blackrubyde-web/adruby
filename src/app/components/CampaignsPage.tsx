@@ -86,6 +86,14 @@ export function CampaignsPage() {
     <DashboardShell
       title="Campaigns"
       subtitle="Manage and optimize your Meta Ads campaigns."
+      headerChips={
+        <div className="flex flex-wrap gap-2 items-center">
+          <Badge variant="outline" className="text-xs">{stats.total} Campaigns</Badge>
+          <Badge variant="outline" className="text-xs text-green-600 border-green-600/30">{stats.active} Active</Badge>
+          <Badge variant="outline" className="text-xs text-orange-600 border-orange-600/30">{stats.paused} Paused</Badge>
+          <Badge variant="outline" className="text-xs">{formatCurrency(stats.totalSpend)} Spend</Badge>
+        </div>
+      }
       headerActions={
         <Button onClick={handleCreateCampaign} className="gap-2">
           <Plus className="w-4 h-4" />
@@ -94,58 +102,36 @@ export function CampaignsPage() {
       }
     >
 
-      {/* Stats Overview */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-        <Card variant="glass" padding="default">
-          <div className="text-2xl text-foreground font-bold mb-1 tracking-tight">{stats.total}</div>
-          <div className="text-sm text-muted-foreground font-medium">Total Campaigns</div>
-        </Card>
-        <Card variant="glass" padding="default">
-          <div className="text-2xl text-green-600 font-bold mb-1 tracking-tight">{stats.active}</div>
-          <div className="text-sm text-muted-foreground font-medium">Active</div>
-        </Card>
-        <Card variant="glass" padding="default">
-          <div className="text-2xl text-orange-500 font-bold mb-1 tracking-tight">{stats.paused}</div>
-          <div className="text-sm text-muted-foreground font-medium">Paused</div>
-        </Card>
-        <Card variant="glass" padding="default">
-          <div className="text-2xl text-foreground font-bold mb-1 tracking-tight">{formatCurrency(stats.totalSpend)}</div>
-          <div className="text-sm text-muted-foreground font-medium">Total Spend</div>
-        </Card>
-      </div>
-
-      {/* Filters and Search */}
-      <Card variant="glass" className="mb-8" padding="default">
-        <div className="flex flex-col md:flex-row items-center justify-between gap-4">
-          {/* Search */}
-          <div className="flex-1 relative w-full">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-            <input
-              type="text"
-              placeholder="Search campaigns..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 bg-background/50 border border-border rounded-lg text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all placeholder:text-muted-foreground"
-            />
-          </div>
-
-          {/* Status Filter Tabs */}
-          <div className="flex flex-wrap items-center gap-1 bg-muted/50 p-1 rounded-lg w-full md:w-auto">
-            {(['all', 'active', 'paused', 'completed'] as const).map((status) => (
-              <button
-                key={status}
-                onClick={() => setStatusFilter(status)}
-                className={`flex-1 md:flex-none px-3 py-1.5 rounded-md text-xs font-medium transition-all ${statusFilter === status
-                  ? 'bg-background text-foreground shadow-sm'
-                  : 'text-muted-foreground hover:text-foreground hover:bg-background/50'
-                  }`}
-              >
-                {status === 'all' ? 'All' : status.charAt(0).toUpperCase() + status.slice(1)}
-              </button>
-            ))}
-          </div>
+      {/* Filters and Search - Open Layout */}
+      <div className="flex flex-col md:flex-row items-center justify-between gap-3 mb-6">
+        {/* Search */}
+        <div className="flex-1 relative w-full">
+          <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+          <input
+            type="text"
+            placeholder="Search campaigns..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="w-full pl-11 pr-4 py-2.5 bg-muted/30 border border-border/50 rounded-xl text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 transition-all placeholder:text-muted-foreground"
+          />
         </div>
-      </Card>
+
+        {/* Status Filter Tabs */}
+        <div className="flex flex-wrap items-center gap-1 bg-muted/50 p-1 rounded-lg w-full md:w-auto">
+          {(['all', 'active', 'paused', 'completed'] as const).map((status) => (
+            <button
+              key={status}
+              onClick={() => setStatusFilter(status)}
+              className={`flex-1 md:flex-none px-3 py-1.5 rounded-md text-xs font-medium transition-all ${statusFilter === status
+                ? 'bg-background text-foreground shadow-sm'
+                : 'text-muted-foreground hover:text-foreground hover:bg-background/50'
+                }`}
+            >
+              {status === 'all' ? 'All' : status.charAt(0).toUpperCase() + status.slice(1)}
+            </button>
+          ))}
+        </div>
+      </div>
 
       {error && (
         <Card className="p-4 border border-red-500/30 bg-red-500/5 text-red-500 mb-8" variant="flat">

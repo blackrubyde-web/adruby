@@ -898,13 +898,13 @@ export function AIAnalysisPage() {
             disabled={!hasAutopilotData}
             className={`flex items-center gap-2 px-3 py-1.5 rounded-full border text-xs font-medium transition-all ${autopilotEnabled
               ? 'bg-violet-500/20 text-violet-400 border-violet-500/30 hover:bg-violet-500/30'
-              : 'bg-white/5 text-white/60 border-white/10 hover:bg-white/10'
+              : 'bg-muted/30 text-muted-foreground border-border/50 hover:bg-muted/50'
               } ${!hasAutopilotData ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
           >
             <ShieldCheck className="w-3.5 h-3.5" />
             <span className="hidden sm:inline">{autopilotEnabled ? 'Autopilot ON' : 'Autopilot OFF'}</span>
-            <div className={`w-8 h-4 rounded-full relative ${autopilotEnabled ? 'bg-violet-500/30' : 'bg-white/10'}`}>
-              <div className={`absolute top-0.5 w-3 h-3 rounded-full transition-all duration-200 ${autopilotEnabled ? 'left-4 bg-violet-400' : 'left-0.5 bg-white/40'
+            <div className={`w-8 h-4 rounded-full relative ${autopilotEnabled ? 'bg-violet-500/30' : 'bg-muted/50'}`}>
+              <div className={`absolute top-0.5 w-3 h-3 rounded-full transition-all duration-200 ${autopilotEnabled ? 'left-4 bg-violet-400' : 'left-0.5 bg-muted-foreground'
                 }`} />
             </div>
           </button>
@@ -1065,7 +1065,7 @@ export function AIAnalysisPage() {
       {campaigns.length > 0 && (
         <div className="mb-8">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-bold text-white flex items-center gap-2">
+            <h3 className="text-lg font-bold text-foreground flex items-center gap-2">
               <AlertTriangle className="w-5 h-5 text-amber-400" />
               Predictive Insights
             </h3>
@@ -1197,13 +1197,13 @@ export function AIAnalysisPage() {
           {/* FIX 2: Filters - Clean Open Layout */}
           <div className="flex flex-col sm:flex-row sm:items-center gap-3 mb-6 min-w-0">
             <div className="flex-1 relative min-w-0">
-              <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-white/40" />
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
               <input
                 type="text"
                 placeholder="Search campaigns, ad sets, or ads..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-11 pr-4 py-2.5 bg-white/5 border border-white/10 rounded-xl text-white placeholder:text-white/40 focus:outline-none focus:ring-2 focus:ring-violet-500/50 focus:border-violet-500/50 text-sm transition-all"
+                className="w-full pl-11 pr-4 py-2.5 bg-muted/30 border border-border/50 rounded-xl text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-violet-500/50 focus:border-violet-500/50 text-sm transition-all"
               />
             </div>
 
@@ -1211,7 +1211,7 @@ export function AIAnalysisPage() {
               value={filterStatus}
               onChange={(e) => setFilterStatus(e.target.value as typeof filterStatus)}
               wrapperClassName="w-full sm:w-auto"
-              className="bg-white/5 border-white/10 text-sm py-2.5 px-4 rounded-xl"
+              className="bg-muted/30 border-border/50 text-sm py-2.5 px-4 rounded-xl"
             >
               <option value="all">All Status</option>
               <option value="active">Active</option>
@@ -1223,7 +1223,7 @@ export function AIAnalysisPage() {
               onClick={() => setShowAIPanel(!showAIPanel)}
               className={`w-full sm:w-auto px-4 py-2.5 rounded-xl font-semibold text-sm transition-all flex items-center justify-center gap-2 ${showAIPanel
                 ? 'bg-gradient-to-r from-violet-600 to-fuchsia-600 text-white shadow-lg shadow-violet-500/30'
-                : 'bg-white/5 border border-white/10 hover:bg-white/10 text-white/70'
+                : 'bg-muted/30 border border-border/50 hover:bg-muted/50 text-foreground'
                 }`}
             >
               <Brain className="w-4 h-4" />
@@ -1781,11 +1781,11 @@ export function AIAnalysisPage() {
                     <Brain className="w-4 h-4 text-white" />
                   </div>
                   <div>
-                    <h3 className="font-semibold text-white text-sm">AI Insights</h3>
-                    <p className="text-[10px] text-white/40">Real-time</p>
+                    <h3 className="font-semibold text-foreground text-sm">AI Insights</h3>
+                    <p className="text-[10px] text-muted-foreground">Real-time</p>
                   </div>
                 </div>
-                <div className="flex items-center gap-1.5 text-[10px] text-white/40">
+                <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground">
                   <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
                   Live
                 </div>
