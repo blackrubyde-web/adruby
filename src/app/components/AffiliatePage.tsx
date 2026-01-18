@@ -11,16 +11,23 @@ import {
   Loader2,
   Lock,
   Wallet,
-  Rocket
+  Rocket,
+  Download,
+  BarChart3
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { PageShell, HeroHeader } from './layout';
 import { Card } from './ui/card';
+import { Button } from './ui/button';
+import { Badge } from './ui/badge';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { useAffiliate } from '../contexts/AffiliateContext';
 import { supabase } from '../lib/supabaseClient';
 import { AchievementsPanel } from './affiliate/AchievementsPanel';
 import { AffiliateSuccessStories } from './affiliate/AffiliateSuccessStories';
+import { PayoutRequestModal } from './affiliate/PayoutRequestModal';
+import { TierProgress } from './affiliate/TierProgress';
+import { MarketingHub } from './affiliate/MarketingHub';
 import { User } from '@supabase/supabase-js';
 
 // --- Imports for Marketing View ---
@@ -45,7 +52,7 @@ export function AffiliatePage({ onNavigate = () => { }, onSignIn = () => { }, on
   // Marketing View States
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const heroRef = useRef<HTMLElement>(null);
-  const [activeTab, setActiveTab] = useState<'overview' | 'services' | 'achievements' | 'analytics'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'team' | 'marketing' | 'achievements'>('overview');
 
   // Dashboard States
   const [timeRange, setTimeRange] = useState<'7d' | '30d' | 'all'>('30d');
@@ -236,8 +243,8 @@ function AffiliateMarketingView({ onNavigate, onSignIn, onGetStarted, heroRef, i
 
 interface AffiliateDashboardProps {
   user: User;
-  activeTab: 'overview' | 'services' | 'achievements' | 'analytics';
-  setActiveTab: (tab: 'overview' | 'services' | 'achievements' | 'analytics') => void;
+  activeTab: 'overview' | 'team' | 'marketing' | 'achievements';
+  setActiveTab: (tab: 'overview' | 'team' | 'marketing' | 'achievements') => void;
   timeRange: '7d' | '30d' | 'all';
   setTimeRange: (range: '7d' | '30d' | 'all') => void;
   chartData: EarningsData[];
@@ -288,6 +295,7 @@ function AffiliateDashboard({
   }), [stats]);
 
   const promoCode = (affiliateCode || 'PARTNER') + '10';
+  const [showPayoutModal, setShowPayoutModal] = useState(false);
 
   const copyToClipboard = async (text: string, label: string) => {
     try {
@@ -439,40 +447,91 @@ function AffiliateDashboard({
 
   return (
     <PageShell>
-      <HeroHeader title="Affiliate Dashboard" subtitle="Manage your referrals and earnings" />
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
+      <HeroHeader
+        title="Partner Dashboard"
+        subtitle="Dein Affiliate Command Center - Verwalte Referrals, Earnings & Marketing"
+      />
+
+      {/* Payout Request Modal */}
+      <PayoutRequestModal
+        isOpen={showPayoutModal}
+        onClose={() => setShowPayoutModal(false)}
+      />
+
+      {/* Tier Progress - Hero Section */}
+      <TierProgress
+        activeReferrals={affiliateStats.activeReferrals}
+        totalEarnings={affiliateStats.totalEarnings}
+      />
+
+      {/* Quick Actions Row */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 my-6">
         <Card className="p-4 flex items-center justify-between">
           <div>
-            <div className="text-sm text-muted-foreground mb-1">Your Promo Code</div>
+            <div className="text-sm text-muted-foreground mb-1">Dein Promo Code</div>
             <div className="font-mono font-bold text-lg">{promoCode}</div>
           </div>
-          <button onClick={() => copyToClipboard(promoCode, 'code')} className="p-2 hover:bg-muted rounded-lg">
+          <button onClick={() => copyToClipboard(promoCode, 'code')} className="p-2 hover:bg-muted rounded-lg transition-colors">
             {copiedItem === 'code' ? <Check className="w-4 h-4 text-green-500" /> : <Copy className="w-4 h-4" />}
           </button>
         </Card>
         <Card className="p-4 flex items-center justify-between">
           <div>
             <div className="text-sm text-muted-foreground mb-1">Referral Link</div>
-            <div className="font-mono font-bold text-lg truncate max-w-[200px]">{affiliateLink}</div>
+            <div className="font-mono font-bold text-sm truncate max-w-[180px]">{affiliateLink}</div>
           </div>
-          <button onClick={() => copyToClipboard(affiliateLink || '', 'link')} className="p-2 hover:bg-muted rounded-lg">
+          <button onClick={() => copyToClipboard(affiliateLink || '', 'link')} className="p-2 hover:bg-muted rounded-lg transition-colors">
             {copiedItem === 'link' ? <Check className="w-4 h-4 text-green-500" /> : <Link2 className="w-4 h-4" />}
           </button>
         </Card>
+        <Card
+          className="p-4 flex items-center justify-between cursor-pointer bg-gradient-to-r from-emerald-500/10 to-teal-500/10 border-emerald-500/20 hover:border-emerald-500/40 transition-all"
+          onClick={() => setShowPayoutModal(true)}
+        >
+          <div>
+            <div className="text-sm text-muted-foreground mb-1">Auszahlung beantragen</div>
+            <div className="font-bold text-lg text-emerald-500">€{affiliateStats.pendingEarnings} verfügbar</div>
+          </div>
+          <div className="p-2 bg-emerald-500/20 rounded-lg">
+            <Wallet className="w-5 h-5 text-emerald-500" />
+          </div>
+        </Card>
       </div>
 
-      <div className="flex gap-2 mb-6 border-b border-border/50">
-        <button
-          onClick={() => setActiveTab('overview')}
-          className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${activeTab === 'overview' ? 'border-primary text-primary' : 'border-transparent text-muted-foreground hover:text-foreground'}`}
-        >Overview</button>
-        <button
-          onClick={() => setActiveTab('achievements')}
-          className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${activeTab === 'achievements' ? 'border-primary text-primary' : 'border-transparent text-muted-foreground hover:text-foreground'}`}
-        >Achievements</button>
+      {/* Tab Navigation */}
+      <div className="flex gap-1 mb-6 border-b border-border/50 overflow-x-auto">
+        {[
+          { id: 'overview', label: 'Übersicht', icon: BarChart3 },
+          { id: 'team', label: 'Mein Team', icon: Users },
+          { id: 'marketing', label: 'Marketing Hub', icon: Download },
+          { id: 'achievements', label: 'Achievements', icon: Sparkles },
+        ].map((tab) => (
+          <button
+            key={tab.id}
+            onClick={() => setActiveTab(tab.id as typeof activeTab)}
+            className={`px-4 py-3 text-sm font-medium border-b-2 transition-colors flex items-center gap-2 whitespace-nowrap ${activeTab === tab.id
+              ? 'border-primary text-primary'
+              : 'border-transparent text-muted-foreground hover:text-foreground'
+              }`}
+          >
+            <tab.icon className="w-4 h-4" />
+            {tab.label}
+          </button>
+        ))}
       </div>
 
+      {/* Tab Content */}
       {activeTab === 'overview' && overviewContent}
+      {activeTab === 'team' && (
+        <Card className="p-8 text-center">
+          <Users className="w-12 h-12 mx-auto mb-4 text-muted-foreground opacity-50" />
+          <h3 className="text-lg font-bold mb-2">Team Management kommt bald!</h3>
+          <p className="text-muted-foreground">Hier siehst du bald alle deine Referrals mit Details, Status und individuellen Earnings.</p>
+        </Card>
+      )}
+      {activeTab === 'marketing' && (
+        <MarketingHub affiliateCode={affiliateCode || 'PARTNER'} affiliateLink={affiliateLink || ''} />
+      )}
       {activeTab === 'achievements' && <AchievementsPanel />}
     </PageShell>
   );
