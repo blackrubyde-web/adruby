@@ -45,6 +45,8 @@ import { QuickActionsBar } from './ai-analysis/QuickActionsBar';
 import { PerformanceTrendChart } from './ai-analysis/PerformanceTrendChart';
 import { CreativeIntelligencePanel } from './ai-analysis/CreativeIntelligencePanel';
 import { AlertsConfigPanel } from './ai-analysis/AlertsConfigPanel';
+import { AutomatedRulesPanel } from './ai-analysis/AutomatedRulesPanel';
+import { WeeklySummaryCard } from './ai-analysis/WeeklySummaryCard';
 
 type AIRecommendation = 'kill' | 'duplicate' | 'increase' | 'decrease';
 
@@ -1018,6 +1020,28 @@ export function AIAnalysisPage() {
       <div className="mb-6">
         <AlertsConfigPanel />
       </div>
+
+      {/* AUTOMATED RULES ENGINE - Agency Pro */}
+      <div className="mb-6">
+        <AutomatedRulesPanel />
+      </div>
+
+      {/* WEEKLY AI SUMMARY - Agency Pro */}
+      {campaigns.length > 0 && (
+        <div className="mb-6">
+          <WeeklySummaryCard
+            campaigns={campaigns.map(c => ({
+              id: c.id,
+              name: c.name,
+              roas: c.roas,
+              spend: c.spend,
+              revenue: c.revenue,
+              ctr: c.ctr,
+              conversions: c.conversions,
+            }))}
+          />
+        </div>
+      )}
 
       {/* QUICK ACTIONS BAR */}
       <QuickActionsBar
