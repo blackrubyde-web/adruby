@@ -222,15 +222,37 @@ const mapCreativeRow = (row: CreativeRow): SavedAd | null => {
 };
 
 export function CampaignBuilderProvider({ children }: { children: ReactNode }) {
-    // State
-    const [campaignSetup, setCampaignSetup] = useState<CampaignSetup>(defaultSetup);
-    const [targeting, setTargeting] = useState<TargetingConfig>(defaultTargeting);
-    const [strategyConfig, setStrategyConfig] = useState<StrategyConfig>(defaultStrategy);
-    const [selectedCreativeIds, setSelectedCreativeIds] = useState<string[]>([]);
+    // LocalStorage key for progress
+    const STORAGE_KEY = 'campaign-builder-progress';
+
+    // Load saved progress from localStorage
+    const loadSavedProgress = () => {
+        try {
+            const saved = localStorage.getItem(STORAGE_KEY);
+            if (saved) {
+                const data = JSON.parse(saved);
+                // Only restore if less than 24 hours old
+                if (data.timestamp && Date.now() - data.timestamp < 24 * 60 * 60 * 1000) {
+                    return data;
+                }
+            }
+        } catch (e) {
+            console.error('Failed to load saved progress:', e);
+        }
+        return null;
+    };
+
+    const savedProgress = loadSavedProgress();
+
+    // State with saved progress fallback
+    const [campaignSetup, setCampaignSetup] = useState<CampaignSetup>(savedProgress?.campaignSetup || defaultSetup);
+    const [targeting, setTargeting] = useState<TargetingConfig>(savedProgress?.targeting || defaultTargeting);
+    const [strategyConfig, setStrategyConfig] = useState<StrategyConfig>(savedProgress?.strategyConfig || defaultStrategy);
+    const [selectedCreativeIds, setSelectedCreativeIds] = useState<string[]>(savedProgress?.selectedCreativeIds || []);
     const [creatives, setCreatives] = useState<SavedAd[]>([]);
     const [audiences, setAudiences] = useState<MetaAudience[]>([]);
 
-    const [currentStep, setCurrentStep] = useState(1);
+    const [currentStep, setCurrentStep] = useState(savedProgress?.currentStep || 1);
     const [isLoading, setIsLoading] = useState(true);
     const [isSaving, setIsSaving] = useState(false);
     const [isPublishing, setIsPublishing] = useState(false);
@@ -238,6 +260,28 @@ export function CampaignBuilderProvider({ children }: { children: ReactNode }) {
 
     const totalSteps = 5;
     const { strategies } = useStrategies();
+
+    // Save progress to localStorage on changes
+    useEffect(() => {
+        const saveProgress = () => {
+            try {
+                localStorage.setItem(STORAGE_KEY, JSON.stringify({
+                    campaignSetup,
+                    targeting,
+                    strategyConfig,
+                    selectedCreativeIds,
+                    currentStep,
+                    timestamp: Date.now(),
+                }));
+            } catch (e) {
+                console.error('Failed to save progress:', e);
+            }
+        };
+
+        // Debounce save
+        const timeout = setTimeout(saveProgress, 500);
+        return () => clearTimeout(timeout);
+    }, [campaignSetup, targeting, strategyConfig, selectedCreativeIds, currentStep]);
 
     // Load Creatives from Creative Library
     useEffect(() => {
@@ -317,13 +361,13 @@ export function CampaignBuilderProvider({ children }: { children: ReactNode }) {
     // Navigation
     const handleNext = useCallback(() => {
         if (currentStep < totalSteps && canContinue) {
-            setCurrentStep(c => c + 1);
+            setCurrentStep((c: number) => c + 1);
         }
     }, [currentStep, totalSteps, canContinue]);
 
     const handleBack = useCallback(() => {
         if (currentStep > 1) {
-            setCurrentStep(c => c - 1);
+            setCurrentStep((c: number) => c - 1);
         }
     }, [currentStep]);
 
@@ -400,6 +444,12 @@ export function CampaignBuilderProvider({ children }: { children: ReactNode }) {
             });
 
             if (result?.success) {
+                // Clear saved progress on success
+                try {
+                    localStorage.removeItem(STORAGE_KEY);
+                } catch (e) {
+                    console.error('Failed to clear progress:', e);
+                }
                 toast.success('🚀 Kampagne erfolgreich zu Meta gepusht!');
                 return { success: true, campaignId: result.campaignId };
             } else {
