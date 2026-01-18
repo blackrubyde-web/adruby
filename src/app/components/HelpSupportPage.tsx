@@ -220,7 +220,7 @@ export function HelpSupportPage() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="p-6 max-w-7xl mx-auto space-y-6">
       {/* Hero Card - EXACT Dashboard Pattern */}
       <div className="backdrop-blur-xl bg-card/60 rounded-2xl border border-border/50 shadow-xl p-8 mb-6 animate-in fade-in slide-in-from-bottom-4 duration-700">
         <div className="flex items-start justify-between mb-6">
@@ -271,11 +271,10 @@ export function HelpSupportPage() {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
         <button
           onClick={() => setActiveSection('faq')}
-          className={`p-6 rounded-2xl border-2 transition-all text-left ${
-            activeSection === 'faq' 
-              ? 'border-primary/50 bg-primary/10' 
+          className={`p-6 rounded-2xl border-2 transition-all text-left ${activeSection === 'faq'
+              ? 'border-primary/50 bg-primary/10'
               : 'border-border/30 bg-gradient-to-br from-blue-500/10 to-transparent hover:scale-105'
-          }`}
+            }`}
         >
           <div className="p-3 bg-blue-500/20 rounded-xl w-fit mb-4">
             <HelpCircle className="w-6 h-6 text-blue-500" />
@@ -286,11 +285,10 @@ export function HelpSupportPage() {
 
         <button
           onClick={() => setActiveSection('contact')}
-          className={`p-6 rounded-2xl border-2 transition-all text-left ${
-            activeSection === 'contact'
+          className={`p-6 rounded-2xl border-2 transition-all text-left ${activeSection === 'contact'
               ? 'border-primary/50 bg-primary/10'
               : 'border-border/30 bg-gradient-to-br from-green-500/10 to-transparent hover:scale-105'
-          }`}
+            }`}
         >
           <div className="p-3 bg-green-500/20 rounded-xl w-fit mb-4">
             <MessageCircle className="w-6 h-6 text-green-500" />
@@ -301,11 +299,10 @@ export function HelpSupportPage() {
 
         <button
           onClick={() => setActiveSection('resources')}
-          className={`p-6 rounded-2xl border-2 transition-all text-left ${
-            activeSection === 'resources'
+          className={`p-6 rounded-2xl border-2 transition-all text-left ${activeSection === 'resources'
               ? 'border-primary/50 bg-primary/10'
               : 'border-border/30 bg-gradient-to-br from-purple-500/10 to-transparent hover:scale-105'
-          }`}
+            }`}
         >
           <div className="p-3 bg-purple-500/20 rounded-xl w-fit mb-4">
             <BookOpen className="w-6 h-6 text-purple-500" />
@@ -348,9 +345,8 @@ export function HelpSupportPage() {
                           >
                             <span className="font-semibold text-foreground pr-4">{faq.q}</span>
                             <ChevronDown
-                              className={`w-5 h-5 text-muted-foreground flex-shrink-0 transition-transform ${
-                                isExpanded ? 'rotate-180' : ''
-                              }`}
+                              className={`w-5 h-5 text-muted-foreground flex-shrink-0 transition-transform ${isExpanded ? 'rotate-180' : ''
+                                }`}
                             />
                           </button>
                           {isExpanded && (

@@ -52,7 +52,7 @@ import { toast } from 'sonner';
 import { Toaster } from './components/ui/sonner';
 import { AuthProvider, useAuthActions, useAuthState } from './contexts/AuthContext';
 import { AffiliateProvider } from './contexts/AffiliateContext';
-import { AdminProvider } from './contexts/AdminContext';
+import { AdminProvider, useAdmin } from './contexts/AdminContext';
 
 const REDIRECT_GUARD_KEY = 'adruby_last_redirect';
 const AUTH_HOLD_KEY = 'adruby_hold_auth_redirect';
@@ -424,6 +424,7 @@ function AppContent() {
     signOut,
     refreshProfile,
   } = useAuthActions();
+  const { isAdmin } = useAdmin();
 
   const [currentPage, setCurrentPage] = useState<PageType>(() =>
     pageFromPathname(window.location.pathname)
@@ -910,7 +911,7 @@ function AppContent() {
                 avatarUrl={profile?.avatar_url ?? null}
                 displayName={profile?.full_name ?? null}
                 email={profile?.email ?? user?.email ?? null}
-                isTrialUser={billing.statusLabel === 'Trial' || billing.statusLabel === 'Trial expired'}
+                isTrialUser={!isAdmin && (billing.statusLabel === 'Trial' || billing.statusLabel === 'Trial expired')}
                 onUpgrade={async () => {
                   if (!user?.id || !user?.email) {
                     toast.error('Bitte melde dich an, um fortzufahren');

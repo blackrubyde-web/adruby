@@ -32,7 +32,6 @@ const CORE_WORKFLOW: NavItem[] = [
 ];
 
 const ACCOUNT_ITEMS: NavItem[] = [
-  { icon: Settings, label: 'Settings', page: 'settings' },
   { icon: Gift, label: 'Affiliate', page: 'affiliate' },
 ];
 

@@ -18,14 +18,16 @@ import {
     Loader2,
     Shield,
     Copy,
-    Mail
+    Mail,
+    MessageSquare
 } from 'lucide-react';
 import { useAdmin } from '../contexts/AdminContext';
 import { toast } from 'sonner';
 import { PartnerApplicationsTab } from './admin/PartnerApplicationsTab';
 import { AdminEmailComposer } from './admin/AdminEmailComposer';
+import { AdminSupportMessages } from './admin/AdminSupportMessages';
 
-type AdminTab = 'overview' | 'users' | 'affiliates' | 'payouts' | 'partners' | 'email';
+type AdminTab = 'overview' | 'users' | 'affiliates' | 'payouts' | 'partners' | 'messages' | 'email';
 
 export function AdminDashboardPage() {
     const {
@@ -110,6 +112,7 @@ export function AdminDashboardPage() {
         { id: 'affiliates', label: 'Affiliates', icon: Gift },
         { id: 'payouts', label: 'Payouts', icon: DollarSign },
         { id: 'partners', label: 'Partners', icon: UserPlus },
+        { id: 'messages', label: 'Nachrichten', icon: MessageSquare },
         { id: 'email', label: 'Email', icon: Mail },
     ];
 
@@ -610,6 +613,9 @@ export function AdminDashboardPage() {
 
             {/* Email Tab */}
             {activeTab === 'email' && <AdminEmailComposer />}
+
+            {/* Messages Tab */}
+            {activeTab === 'messages' && <AdminSupportMessages />}
 
             {/* Credit Edit Modal */}
             {creditModalUser && (
