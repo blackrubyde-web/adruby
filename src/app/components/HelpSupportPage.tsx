@@ -20,6 +20,10 @@ import {
 import { toast } from 'sonner';
 import { useAuthState } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabaseClient';
+import { DashboardShell } from './layout/DashboardShell';
+import { Card, CardContent } from './ui/card';
+import { Button } from './ui/button';
+import { Badge } from './ui/badge';
 
 export function HelpSupportPage() {
   const [activeSection, setActiveSection] = useState<'faq' | 'contact' | 'resources'>('faq');
@@ -35,43 +39,43 @@ export function HelpSupportPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
 
-  // FAQ Categories
+  // FAQ Kategorien
   const faqCategories = [
     {
       id: 'getting-started',
-      title: 'Getting Started',
+      title: 'Erste Schritte',
       icon: <Zap className="w-5 h-5" />,
       questions: [
         {
-          q: 'How do I create my first campaign?',
-          a: 'Click on "Create Campaign" in the top right corner, follow the step-by-step wizard to set up your campaign details, target audience, budget, and ad creative. Once complete, click "Launch Campaign" to start running your ads.',
+          q: 'Wie erstelle ich meine erste Kampagne?',
+          a: 'Klicke auf "Kampagne erstellen" oben rechts. Folge dem Schritt-für-Schritt-Wizard, um deine Kampagnendetails, Zielgruppe, Budget und Creatives einzurichten. Danach klicke auf "Kampagne starten".',
         },
         {
-          q: 'How do I connect my Facebook Ad Account?',
-          a: 'Go to Settings > Integrations, click "Connect Facebook Account", and follow the OAuth flow to authorize our platform to access your Facebook Ads data. Make sure you have admin access to your Facebook Ad Account.',
+          q: 'Wie verbinde ich mein Meta Ads Konto?',
+          a: 'Gehe zu Einstellungen > Integrationen, klicke auf "Meta verbinden" und folge dem OAuth-Flow. Stelle sicher, dass du Admin-Zugriff auf dein Facebook Ads Konto hast.',
         },
         {
-          q: 'What are the minimum requirements to start?',
-          a: 'You need a verified Facebook Ad Account, a connected payment method, and at least €50 minimum ad spend budget to launch your first campaign.',
+          q: 'Was sind die Mindestanforderungen zum Starten?',
+          a: 'Du brauchst ein verifiziertes Facebook Ads Konto, eine verbundene Zahlungsmethode und mindestens €50 Mindestbudget für deine erste Kampagne.',
         },
       ],
     },
     {
       id: 'campaigns',
-      title: 'Campaign Management',
+      title: 'Kampagnen-Management',
       icon: <Target className="w-5 h-5" />,
       questions: [
         {
-          q: 'How do I pause or stop a campaign?',
-          a: 'Go to your Campaigns page, find the campaign you want to pause, click the three-dot menu, and select "Pause Campaign". To stop permanently, select "End Campaign".',
+          q: 'Wie pausiere oder stoppe ich eine Kampagne?',
+          a: 'Gehe zu deiner Kampagnen-Übersicht, finde die gewünschte Kampagne, klicke auf das Drei-Punkte-Menü und wähle "Kampagne pausieren". Zum endgültigen Beenden wähle "Kampagne beenden".',
         },
         {
-          q: 'Can I edit a running campaign?',
-          a: 'Yes, you can edit most campaign settings while it\'s running. However, changing budget or targeting may require ad review. Major changes might restart the learning phase.',
+          q: 'Kann ich eine laufende Kampagne bearbeiten?',
+          a: 'Ja, du kannst die meisten Einstellungen bearbeiten während sie läuft. Budget- oder Targeting-Änderungen können jedoch eine Ad-Review auslösen. Größere Änderungen starten möglicherweise die Lernphase neu.',
         },
         {
-          q: 'How long does it take for a campaign to be approved?',
-          a: 'Facebook typically reviews ads within 24 hours. Most ads are approved within a few hours. You\'ll receive a notification once your campaign is approved and running.',
+          q: 'Wie lange dauert die Kampagnen-Freigabe?',
+          a: 'Facebook prüft Ads normalerweise innerhalb von 24 Stunden. Die meisten Ads werden innerhalb weniger Stunden freigegeben. Du erhältst eine Benachrichtigung sobald deine Kampagne läuft.',
         },
       ],
     },
@@ -81,97 +85,97 @@ export function HelpSupportPage() {
       icon: <BarChart3 className="w-5 h-5" />,
       questions: [
         {
-          q: 'How often is data updated?',
-          a: 'Campaign data is synced from Facebook every 15 minutes. Real-time metrics like impressions and clicks may have a slight delay. For the most accurate data, wait 24-48 hours after campaign launch.',
+          q: 'Wie oft werden die Daten aktualisiert?',
+          a: 'Kampagnen-Daten werden alle 15 Minuten von Meta synchronisiert. Echtzeit-Metriken wie Impressionen und Klicks können leicht verzögert sein. Für akkurate Daten warte 24-48 Stunden nach Kampagnenstart.',
         },
         {
-          q: 'What does ROAS mean?',
-          a: 'ROAS (Return on Ad Spend) measures how much revenue you earn for every dollar spent on advertising. For example, a 5x ROAS means you earn €5 for every €1 spent on ads.',
+          q: 'Was bedeutet ROAS?',
+          a: 'ROAS (Return on Ad Spend) misst, wie viel Umsatz du pro ausgegebenem Euro verdienst. Ein 5x ROAS bedeutet z.B., dass du €5 für jeden investierten Euro zurückbekommst.',
         },
         {
-          q: 'Can I export my campaign data?',
-          a: 'Yes! Go to the Campaigns page, select the campaigns you want to export, click "Export", and choose your preferred format (CSV, Excel, or PDF).',
+          q: 'Kann ich meine Kampagnen-Daten exportieren?',
+          a: 'Ja! Gehe zur Kampagnen-Seite, wähle die gewünschten Kampagnen aus, klicke auf "Exportieren" und wähle dein bevorzugtes Format (CSV, Excel oder PDF).',
         },
       ],
     },
     {
       id: 'billing',
-      title: 'Billing & Pricing',
+      title: 'Abrechnung & Preise',
       icon: <CreditCard className="w-5 h-5" />,
       questions: [
         {
-          q: 'What payment methods do you accept?',
-          a: 'We accept all major credit cards (Visa, Mastercard, American Express), PayPal, and SEPA direct debit for European customers.',
+          q: 'Welche Zahlungsmethoden akzeptiert ihr?',
+          a: 'Wir akzeptieren alle gängigen Kreditkarten (Visa, Mastercard, American Express), PayPal und SEPA-Lastschrift für europäische Kunden.',
         },
         {
-          q: 'When will I be charged?',
-          a: 'Your subscription is billed monthly on the date you signed up. Ad spend is charged separately through your Facebook Ad Account as per Facebook\'s billing terms.',
+          q: 'Wann wird abgerechnet?',
+          a: 'Dein Abo wird monatlich am Anmeldedatum abgerechnet. Ad Spend wird separat über dein Facebook Ads Konto nach Facebooks Abrechnungsbedingungen eingezogen.',
         },
         {
-          q: 'Can I change or cancel my plan?',
-          a: 'Yes, you can upgrade, downgrade, or cancel your plan at any time from Settings > Billing. Changes take effect at the start of your next billing cycle.',
+          q: 'Kann ich meinen Plan ändern oder kündigen?',
+          a: 'Ja, du kannst jederzeit upgraden, downgraden oder kündigen unter Einstellungen > Abrechnung. Änderungen werden zum nächsten Abrechnungszyklus wirksam.',
         },
       ],
     },
     {
       id: 'account',
-      title: 'Account & Security',
+      title: 'Konto & Sicherheit',
       icon: <Shield className="w-5 h-5" />,
       questions: [
         {
-          q: 'How do I enable two-factor authentication?',
-          a: 'Go to Settings > Security, click "Enable 2FA", scan the QR code with your authenticator app (Google Authenticator, Authy), and enter the verification code.',
+          q: 'Wie aktiviere ich die Zwei-Faktor-Authentifizierung?',
+          a: 'Gehe zu Einstellungen > Sicherheit, klicke auf "2FA aktivieren", scanne den QR-Code mit deiner Authenticator-App (Google Authenticator, Authy) und gib den Code ein.',
         },
         {
-          q: 'I forgot my password, what should I do?',
-          a: 'Click "Forgot Password" on the login page, enter your email address, and we\'ll send you a password reset link. The link expires after 24 hours.',
+          q: 'Passwort vergessen - was tun?',
+          a: 'Klicke auf "Passwort vergessen" auf der Login-Seite, gib deine E-Mail-Adresse ein, und wir senden dir einen Reset-Link. Der Link ist 24 Stunden gültig.',
         },
         {
-          q: 'How do I delete my account?',
-          a: 'Go to Settings > Security > Danger Zone, click "Delete Account", and confirm. Note: This action is permanent and cannot be undone. All your data will be deleted within 30 days.',
+          q: 'Wie lösche ich mein Konto?',
+          a: 'Gehe zu Einstellungen > Sicherheit > Gefahrenzone, klicke auf "Konto löschen" und bestätige. Achtung: Diese Aktion ist unwiderruflich. Alle Daten werden innerhalb von 30 Tagen gelöscht.',
         },
       ],
     },
   ];
 
-  // Resources
+  // Ressourcen
   const resources = [
     {
-      title: 'Video Tutorials',
-      description: 'Step-by-step video guides',
+      title: 'Video-Tutorials',
+      description: 'Schritt-für-Schritt Video-Anleitungen',
       icon: <Video className="w-6 h-6" />,
       color: 'from-red-500/20',
       iconColor: 'text-red-500',
       items: [
-        'Getting Started with Facebook Ads',
-        'Creating Your First Campaign',
-        'Understanding Analytics Dashboard',
-        'Advanced Targeting Strategies',
+        'Erste Schritte mit Meta Ads',
+        'Deine erste Kampagne erstellen',
+        'Analytics Dashboard verstehen',
+        'Fortgeschrittene Targeting-Strategien',
       ],
     },
     {
-      title: 'Documentation',
-      description: 'Detailed technical docs',
+      title: 'Dokumentation',
+      description: 'Ausführliche technische Docs',
       icon: <BookOpen className="w-6 h-6" />,
       color: 'from-blue-500/20',
       iconColor: 'text-blue-500',
       items: [
-        'API Reference',
-        'Integration Guide',
+        'API-Referenz',
+        'Integrations-Guide',
         'Best Practices',
-        'Troubleshooting',
+        'Fehlerbehebung',
       ],
     },
     {
-      title: 'Knowledge Base',
-      description: 'Articles and guides',
+      title: 'Wissensdatenbank',
+      description: 'Artikel und Guides',
       icon: <FileText className="w-6 h-6" />,
       color: 'from-green-500/20',
       iconColor: 'text-green-500',
       items: [
-        'Facebook Ads 101',
-        'Optimization Tips',
-        'Budget Management',
+        'Facebook Ads Grundlagen',
+        'Optimierungs-Tipps',
+        'Budget-Management',
         'A/B Testing Guide',
       ],
     },
@@ -203,7 +207,7 @@ export function HelpSupportPage() {
       const { error } = await supabase.from('support_requests').insert(payload);
       if (error) throw error;
       setContactForm({ name: '', email: payload.email, subject: '', message: '' });
-      toast.success('Support-Anfrage gesendet');
+      toast.success('Anfrage erfolgreich gesendet');
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : 'Senden fehlgeschlagen';
       setSubmitError(message);
@@ -220,106 +224,79 @@ export function HelpSupportPage() {
   };
 
   return (
-    <div className="p-6 max-w-7xl mx-auto space-y-6">
-      {/* Hero Card - EXACT Dashboard Pattern */}
-      <div className="backdrop-blur-xl bg-card/60 rounded-2xl border border-border/50 shadow-xl p-8 mb-6 animate-in fade-in slide-in-from-bottom-4 duration-700">
-        <div className="flex items-start justify-between mb-6">
-          <div>
-            <h1 className="text-foreground mb-2 bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">
-              Help & Support
-            </h1>
-            <p className="text-muted-foreground">
-              Get help with your questions and issues
-            </p>
+    <DashboardShell
+      title="Hilfe & Support"
+      subtitle="Finde Antworten auf deine Fragen"
+    >
+      {/* Search Bar */}
+      <Card variant="glass">
+        <CardContent className="p-6">
+          <div className="relative">
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+            <input
+              type="text"
+              placeholder="Suche nach Hilfeartikeln, Tutorials oder FAQs..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full pl-12 pr-4 py-4 bg-muted/50 border border-border/50 rounded-xl text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
+            />
           </div>
-        </div>
-
-        {/* Search Bar */}
-        <div className="relative mb-6">
-          <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
-          <input
-            type="text"
-            placeholder="Search for help articles, tutorials, or FAQs..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-12 pr-4 py-4 bg-muted/50 border border-border/50 rounded-xl text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
-          />
-        </div>
-
-        {/* Stats Overview */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <div className="p-4 rounded-xl bg-gradient-to-br from-primary/10 to-transparent border border-border/30">
-            <div className="text-2xl text-foreground font-bold mb-1">245</div>
-            <div className="text-sm text-muted-foreground">Help Articles</div>
-          </div>
-          <div className="p-4 rounded-xl bg-gradient-to-br from-green-500/10 to-transparent border border-border/30">
-            <div className="text-2xl text-foreground font-bold mb-1">&lt;2h</div>
-            <div className="text-sm text-muted-foreground">Response Time</div>
-          </div>
-          <div className="p-4 rounded-xl bg-gradient-to-br from-blue-500/10 to-transparent border border-border/30">
-            <div className="text-2xl text-foreground font-bold mb-1">98%</div>
-            <div className="text-sm text-muted-foreground">Satisfaction Rate</div>
-          </div>
-          <div className="p-4 rounded-xl bg-gradient-to-br from-purple-500/10 to-transparent border border-border/30">
-            <div className="text-2xl text-foreground font-bold mb-1">24/7</div>
-            <div className="text-sm text-muted-foreground">Support Available</div>
-          </div>
-        </div>
-      </div>
+        </CardContent>
+      </Card>
 
       {/* Quick Access Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <button
           onClick={() => setActiveSection('faq')}
           className={`p-6 rounded-2xl border-2 transition-all text-left ${activeSection === 'faq'
               ? 'border-primary/50 bg-primary/10'
-              : 'border-border/30 bg-gradient-to-br from-blue-500/10 to-transparent hover:scale-105'
+              : 'border-border/30 bg-card hover:scale-[1.02] hover:border-primary/30'
             }`}
         >
           <div className="p-3 bg-blue-500/20 rounded-xl w-fit mb-4">
             <HelpCircle className="w-6 h-6 text-blue-500" />
           </div>
           <h3 className="text-lg font-bold text-foreground mb-2">FAQs</h3>
-          <p className="text-sm text-muted-foreground">Find answers to common questions</p>
+          <p className="text-sm text-muted-foreground">Häufig gestellte Fragen</p>
         </button>
 
         <button
           onClick={() => setActiveSection('contact')}
           className={`p-6 rounded-2xl border-2 transition-all text-left ${activeSection === 'contact'
               ? 'border-primary/50 bg-primary/10'
-              : 'border-border/30 bg-gradient-to-br from-green-500/10 to-transparent hover:scale-105'
+              : 'border-border/30 bg-card hover:scale-[1.02] hover:border-primary/30'
             }`}
         >
           <div className="p-3 bg-green-500/20 rounded-xl w-fit mb-4">
             <MessageCircle className="w-6 h-6 text-green-500" />
           </div>
-          <h3 className="text-lg font-bold text-foreground mb-2">Contact Support</h3>
-          <p className="text-sm text-muted-foreground">Get help from our support team</p>
+          <h3 className="text-lg font-bold text-foreground mb-2">Support kontaktieren</h3>
+          <p className="text-sm text-muted-foreground">Hilfe vom Support-Team</p>
         </button>
 
         <button
           onClick={() => setActiveSection('resources')}
           className={`p-6 rounded-2xl border-2 transition-all text-left ${activeSection === 'resources'
               ? 'border-primary/50 bg-primary/10'
-              : 'border-border/30 bg-gradient-to-br from-purple-500/10 to-transparent hover:scale-105'
+              : 'border-border/30 bg-card hover:scale-[1.02] hover:border-primary/30'
             }`}
         >
           <div className="p-3 bg-purple-500/20 rounded-xl w-fit mb-4">
             <BookOpen className="w-6 h-6 text-purple-500" />
           </div>
-          <h3 className="text-lg font-bold text-foreground mb-2">Resources</h3>
-          <p className="text-sm text-muted-foreground">Tutorials, guides, and documentation</p>
+          <h3 className="text-lg font-bold text-foreground mb-2">Ressourcen</h3>
+          <p className="text-sm text-muted-foreground">Tutorials, Guides und Docs</p>
         </button>
       </div>
 
       {/* Content Area */}
-      <div className="backdrop-blur-xl bg-card/60 rounded-3xl border border-border/50 shadow-xl">
+      <Card variant="glass">
         {/* FAQ Section */}
         {activeSection === 'faq' && (
-          <div className="p-8">
+          <CardContent className="p-6 sm:p-8">
             <div className="mb-6">
-              <h2 className="text-2xl font-bold text-foreground mb-2">Frequently Asked Questions</h2>
-              <p className="text-sm text-muted-foreground">Browse common questions by category</p>
+              <h2 className="text-2xl font-bold text-foreground mb-2">Häufig gestellte Fragen</h2>
+              <p className="text-sm text-muted-foreground">Durchsuche Fragen nach Kategorie</p>
             </div>
 
             <div className="space-y-6">
@@ -361,16 +338,16 @@ export function HelpSupportPage() {
                 </div>
               ))}
             </div>
-          </div>
+          </CardContent>
         )}
 
         {/* Contact Support Section */}
         {activeSection === 'contact' && (
-          <div className="p-8">
+          <CardContent className="p-6 sm:p-8">
             <div className="mb-6">
-              <h2 className="text-2xl font-bold text-foreground mb-2">Contact Support</h2>
+              <h2 className="text-2xl font-bold text-foreground mb-2">Support kontaktieren</h2>
               <p className="text-sm text-muted-foreground">
-                Can't find what you're looking for? Send us a message and we'll get back to you within 24 hours.
+                Nicht gefunden was du suchst? Schreib uns und wir melden uns innerhalb von 24 Stunden.
               </p>
             </div>
 
@@ -380,8 +357,8 @@ export function HelpSupportPage() {
                 <div className="p-3 bg-blue-500/20 rounded-xl w-fit mb-4">
                   <Mail className="w-6 h-6 text-blue-500" />
                 </div>
-                <h3 className="font-bold text-foreground mb-2">Email Support</h3>
-                <p className="text-sm text-muted-foreground mb-3">We typically respond within 24 hours</p>
+                <h3 className="font-bold text-foreground mb-2">E-Mail Support</h3>
+                <p className="text-sm text-muted-foreground mb-3">Antwort innerhalb von 24 Stunden</p>
                 <a
                   href="mailto:support@adruby.ai"
                   className="text-sm text-primary hover:underline flex items-center gap-1"
@@ -396,14 +373,14 @@ export function HelpSupportPage() {
                   <MessageCircle className="w-6 h-6 text-green-500" />
                 </div>
                 <h3 className="font-bold text-foreground mb-2">Live Chat</h3>
-                <p className="text-sm text-muted-foreground mb-3">Available Mon-Fri, 9am-6pm CET</p>
+                <p className="text-sm text-muted-foreground mb-3">Mo-Fr, 9-18 Uhr MEZ</p>
                 <button
                   onClick={() => {
                     window.location.href = 'mailto:support@adruby.ai';
                   }}
                   className="text-sm text-primary hover:underline flex items-center gap-1"
                 >
-                  Start a conversation
+                  Gespräch starten
                   <ChevronRight className="w-3 h-3" />
                 </button>
               </div>
@@ -413,24 +390,24 @@ export function HelpSupportPage() {
             <form onSubmit={handleContactSubmit} className="space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
-                  <label className="block text-sm font-semibold text-foreground mb-2">Your Name</label>
+                  <label className="block text-sm font-semibold text-foreground mb-2">Dein Name</label>
                   <input
                     type="text"
                     value={contactForm.name}
                     onChange={(e) => setContactForm({ ...contactForm, name: e.target.value })}
-                    placeholder="Enter your name"
+                    placeholder="Dein Name"
                     className="w-full px-4 py-3 bg-muted/50 border border-border/50 rounded-xl text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
                     required
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-semibold text-foreground mb-2">Email Address</label>
+                  <label className="block text-sm font-semibold text-foreground mb-2">E-Mail-Adresse</label>
                   <input
                     type="email"
                     value={contactForm.email}
                     onChange={(e) => setContactForm({ ...contactForm, email: e.target.value })}
-                    placeholder="your@email.com"
+                    placeholder="deine@email.de"
                     className="w-full px-4 py-3 bg-muted/50 border border-border/50 rounded-xl text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
                     required
                   />
@@ -438,23 +415,23 @@ export function HelpSupportPage() {
               </div>
 
               <div>
-                <label className="block text-sm font-semibold text-foreground mb-2">Subject</label>
+                <label className="block text-sm font-semibold text-foreground mb-2">Betreff</label>
                 <input
                   type="text"
                   value={contactForm.subject}
                   onChange={(e) => setContactForm({ ...contactForm, subject: e.target.value })}
-                  placeholder="What can we help you with?"
+                  placeholder="Wie können wir dir helfen?"
                   className="w-full px-4 py-3 bg-muted/50 border border-border/50 rounded-xl text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
                   required
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-semibold text-foreground mb-2">Message</label>
+                <label className="block text-sm font-semibold text-foreground mb-2">Nachricht</label>
                 <textarea
                   value={contactForm.message}
                   onChange={(e) => setContactForm({ ...contactForm, message: e.target.value })}
-                  placeholder="Describe your issue or question in detail..."
+                  placeholder="Beschreibe dein Anliegen oder deine Frage im Detail..."
                   rows={6}
                   className="w-full px-4 py-3 bg-muted/50 border border-border/50 rounded-xl text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 resize-none"
                   required
@@ -465,25 +442,26 @@ export function HelpSupportPage() {
                 <div className="text-sm text-red-500">{submitError}</div>
               )}
 
-              <button
+              <Button
                 type="submit"
                 disabled={isSubmitting}
-                className="w-full md:w-auto px-8 py-3 bg-primary text-primary-foreground rounded-xl font-semibold hover:scale-105 transition-all shadow-lg shadow-primary/30 flex items-center justify-center gap-2 disabled:opacity-60"
+                className="w-full md:w-auto gap-2"
+                size="lg"
               >
                 <Send className="w-5 h-5" />
-                {isSubmitting ? 'Sending…' : 'Send Message'}
-              </button>
+                {isSubmitting ? 'Wird gesendet…' : 'Nachricht senden'}
+              </Button>
             </form>
-          </div>
+          </CardContent>
         )}
 
         {/* Resources Section */}
         {activeSection === 'resources' && (
-          <div className="p-8">
+          <CardContent className="p-6 sm:p-8">
             <div className="mb-6">
-              <h2 className="text-2xl font-bold text-foreground mb-2">Learning Resources</h2>
+              <h2 className="text-2xl font-bold text-foreground mb-2">Lernressourcen</h2>
               <p className="text-sm text-muted-foreground">
-                Explore our comprehensive guides, tutorials, and documentation
+                Entdecke unsere Guides, Tutorials und Dokumentation
               </p>
             </div>
 
@@ -491,7 +469,7 @@ export function HelpSupportPage() {
               {resources.map((resource, i) => (
                 <div
                   key={i}
-                  className={`p-6 bg-gradient-to-br ${resource.color} to-transparent border border-border/30 rounded-2xl hover:scale-105 transition-all`}
+                  className={`p-6 bg-gradient-to-br ${resource.color} to-transparent border border-border/30 rounded-2xl hover:scale-[1.02] transition-all`}
                 >
                   <div className={`p-4 bg-background/50 rounded-2xl w-fit mb-4 ${resource.iconColor}`}>
                     {resource.icon}
@@ -517,13 +495,13 @@ export function HelpSupportPage() {
 
             {/* Popular Articles */}
             <div>
-              <h3 className="text-xl font-bold text-foreground mb-4">Popular Articles</h3>
+              <h3 className="text-xl font-bold text-foreground mb-4">Beliebte Artikel</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {[
-                  { title: 'How to optimize your ad campaigns', views: '2.4K', time: '5 min read' },
-                  { title: 'Understanding Facebook Ads targeting', views: '1.8K', time: '8 min read' },
-                  { title: 'Budget allocation best practices', views: '1.5K', time: '6 min read' },
-                  { title: 'Analyzing campaign performance metrics', views: '1.2K', time: '7 min read' },
+                  { title: 'Wie du deine Kampagnen optimierst', views: '2.4K', time: '5 Min Lesezeit' },
+                  { title: 'Facebook Ads Targeting verstehen', views: '1.8K', time: '8 Min Lesezeit' },
+                  { title: 'Budget-Zuweisung Best Practices', views: '1.5K', time: '6 Min Lesezeit' },
+                  { title: 'Kampagnen-Performance analysieren', views: '1.2K', time: '7 Min Lesezeit' },
                 ].map((article, i) => (
                   <button
                     key={i}
@@ -536,7 +514,7 @@ export function HelpSupportPage() {
                       <ChevronRight className="w-5 h-5 text-muted-foreground group-hover:translate-x-1 transition-transform flex-shrink-0" />
                     </div>
                     <div className="flex items-center gap-3 text-xs text-muted-foreground">
-                      <span>{article.views} views</span>
+                      <span>{article.views} Aufrufe</span>
                       <span>•</span>
                       <span>{article.time}</span>
                     </div>
@@ -544,9 +522,9 @@ export function HelpSupportPage() {
                 ))}
               </div>
             </div>
-          </div>
+          </CardContent>
         )}
-      </div>
-    </div>
+      </Card>
+    </DashboardShell>
   );
 }

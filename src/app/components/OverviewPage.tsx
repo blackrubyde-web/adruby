@@ -70,40 +70,40 @@ export function OverviewPage({ onNavigate }: OverviewPageProps) {
   const [checklistSteps, setChecklistSteps] = useState<ChecklistStep[]>([
     {
       id: 'connect-meta',
-      title: 'Connect Meta Ads account',
-      description: 'Link your Facebook Business account to import campaigns',
+      title: 'Meta Ads Konto verbinden',
+      description: 'Verknüpfe dein Facebook Business Konto um Kampagnen zu importieren',
       completed: false,
-      actionLabel: 'Connect',
+      actionLabel: 'Verbinden',
       onAction: () => {
         onNavigate('settings', { tab: 'integrations' });
       },
     },
     {
       id: 'create-campaign',
-      title: 'Create your first campaign',
-      description: 'Launch a campaign to start getting results',
+      title: 'Erste Kampagne erstellen',
+      description: 'Starte eine Kampagne um Ergebnisse zu erzielen',
       completed: false,
-      actionLabel: 'Create',
+      actionLabel: 'Erstellen',
       onAction: () => {
         onNavigate('studio');
       },
     },
     {
       id: 'generate-creatives',
-      title: 'Generate AI ad creatives',
-      description: 'Use AI to create high-performing ad variations',
+      title: 'KI Ad Creatives generieren',
+      description: 'Nutze KI für hochperformante Ad-Varianten',
       completed: false,
-      actionLabel: 'Generate',
+      actionLabel: 'Generieren',
       onAction: () => {
         onNavigate('studio');
       },
     },
     {
       id: 'enable-optimization',
-      title: 'Enable AI optimization rules',
-      description: 'Let AI automatically optimize your campaigns',
+      title: 'KI-Optimierung aktivieren',
+      description: 'Lass KI deine Kampagnen automatisch optimieren',
       completed: false,
-      actionLabel: 'Enable',
+      actionLabel: 'Aktivieren',
       onAction: () => {
         onNavigate('aianalysis');
       },
@@ -172,48 +172,48 @@ export function OverviewPage({ onNavigate }: OverviewPageProps) {
   // KPI Data
   const kpis = [
     {
-      label: 'Total Spend',
+      label: 'Ausgaben gesamt',
       value: formatCurrency(data?.kpis.spend ?? 0),
       change: formatDelta(data?.kpis.spendChangePct),
       isPositive: (data?.kpis.spendChangePct ?? 0) <= 0,
-      comparison: `vs last ${dateFilter}`,
+      comparison: `vs. letzte ${dateFilter === 'today' ? 'Tag' : dateFilter}`,
       icon: <DollarSign className="w-5 h-5 text-primary" />,
     },
     {
-      label: 'Total Revenue',
+      label: 'Umsatz gesamt',
       value: formatCurrency(data?.kpis.revenue ?? 0),
       change: formatDelta(data?.kpis.revenueChangePct),
       isPositive: (data?.kpis.revenueChangePct ?? 0) >= 0,
-      comparison: `vs last ${dateFilter}`,
+      comparison: `vs. letzte ${dateFilter === 'today' ? 'Tag' : dateFilter}`,
       icon: <TrendingUp className="w-5 h-5 text-primary" />,
     },
     {
-      label: 'Average ROAS',
+      label: 'Ø ROAS',
       value: `${(data?.kpis.roas ?? 0).toFixed(2)}x`,
       change: formatDelta(data?.kpis.roasChangePct, '%'),
       isPositive: (data?.kpis.roasChangePct ?? 0) >= 0,
-      comparison: `vs last ${dateFilter}`,
+      comparison: `vs. letzte ${dateFilter === 'today' ? 'Tag' : dateFilter}`,
       icon: <Target className="w-5 h-5 text-primary" />,
     },
     {
-      label: 'Active Campaigns',
+      label: 'Aktive Kampagnen',
       value: formatCompact(data?.kpis.activeCampaigns ?? 0),
       change: data?.kpis.activeCampaigns ? `+${data.kpis.activeCampaigns}` : '—',
       isPositive: true,
-      comparison: `vs last ${dateFilter}`,
+      comparison: `vs. letzte ${dateFilter === 'today' ? 'Tag' : dateFilter}`,
       icon: <Zap className="w-5 h-5 text-primary" />,
     },
   ];
 
   const topCampaign = data?.topCampaign ?? {
-    name: 'No campaigns yet',
+    name: 'Noch keine Kampagnen',
     roas: 0,
     spend: 0,
     revenue: 0,
   };
 
   const bestCreative = data?.bestCreative ?? {
-    name: 'Connect Meta to generate creatives',
+    name: 'Verbinde Meta um Creatives zu generieren',
     aiScore: 0,
     ctr: 0,
     conversions: 0,
@@ -250,12 +250,12 @@ export function OverviewPage({ onNavigate }: OverviewPageProps) {
   const actions = [
     {
       id: 'meta-connect',
-      title: metaConnected ? 'Meta connected' : 'Connect Meta Ads',
+      title: metaConnected ? 'Meta verbunden' : 'Meta Ads verbinden',
       description: metaConnected
-        ? 'Your account is linked. Sync fresh performance data now.'
-        : 'Unlock live campaign metrics and ROAS tracking in minutes.',
+        ? 'Dein Konto ist verknüpft. Synchronisiere jetzt aktuelle Performance-Daten.'
+        : 'Schalte Live-Kampagnenmetriken und ROAS-Tracking in Minuten frei.',
       priority: metaConnected ? 'low' : 'high',
-      cta: metaConnected ? 'Sync now' : 'Connect',
+      cta: metaConnected ? 'Jetzt synchronisieren' : 'Verbinden',
       icon: <Zap className="w-5 h-5 text-primary" />,
       onClick: () =>
         metaConnected
@@ -264,19 +264,19 @@ export function OverviewPage({ onNavigate }: OverviewPageProps) {
     },
     {
       id: 'creative-run',
-      title: 'Generate new creatives',
-      description: 'Launch 3 fresh ad variations to fight creative fatigue.',
+      title: 'Neue Creatives generieren',
+      description: 'Starte 3 frische Ad-Varianten gegen Creative Fatigue.',
       priority: 'medium',
-      cta: 'Open builder',
+      cta: 'Builder öffnen',
       icon: <Wand2 className="w-5 h-5 text-primary" />,
       onClick: () => onNavigate('studio'),
     },
     {
       id: 'campaign-review',
-      title: 'Review top campaigns',
-      description: 'Spot winners and scale budgets with confidence.',
+      title: 'Top Kampagnen prüfen',
+      description: 'Finde Gewinner und skaliere Budgets mit Vertrauen.',
       priority: 'medium',
-      cta: 'View campaigns',
+      cta: 'Kampagnen ansehen',
       icon: <Target className="w-5 h-5 text-primary" />,
       onClick: () => onNavigate('campaigns'),
     },
@@ -339,15 +339,15 @@ export function OverviewPage({ onNavigate }: OverviewPageProps) {
 
   return (
     <DashboardShell
-      title="Overview"
-      subtitle="Here's what's happening with your campaigns today"
+      title="Übersicht"
+      subtitle="Das passiert gerade mit deinen Kampagnen"
       headerChips={
         <div className="flex flex-wrap gap-2">
           <Badge variant={metaConnected ? "secondary" : "default"} className="px-3 py-1">
-            {metaConnected ? 'Meta connected' : 'Meta not connected'}
+            {metaConnected ? 'Meta verbunden' : 'Meta nicht verbunden'}
           </Badge>
-          <Badge variant="outline" className="px-3 py-1">Range: {dateFilter}</Badge>
-          <Badge variant="outline" className="px-3 py-1">Channel: {channelFilter}</Badge>
+          <Badge variant="outline" className="px-3 py-1">Zeitraum: {dateFilter}</Badge>
+          <Badge variant="outline" className="px-3 py-1">Kanal: {channelFilter}</Badge>
         </div>
       }
     >
@@ -360,9 +360,9 @@ export function OverviewPage({ onNavigate }: OverviewPageProps) {
           className="text-sm py-2 px-3 rounded-lg"
           wrapperClassName="min-w-[140px]"
         >
-          <option value="today">Today</option>
-          <option value="7d">Last 7 days</option>
-          <option value="30d">Last 30 days</option>
+          <option value="today">Heute</option>
+          <option value="7d">Letzte 7 Tage</option>
+          <option value="30d">Letzte 30 Tage</option>
         </SelectField>
 
         {/* Channel Filter */}
@@ -439,10 +439,10 @@ export function OverviewPage({ onNavigate }: OverviewPageProps) {
               <div className="flex items-center justify-between gap-4 mb-6">
                 <div>
                   <h2 className="text-h5 text-foreground mb-1">
-                    Getting Started
+                    Erste Schritte
                   </h2>
                   <p className="text-body-sm text-muted-foreground">
-                    Unlock the full power in 5 minutes
+                    Schalte die volle Power in 5 Minuten frei
                   </p>
                 </div>
                 <Badge variant="secondary" className="text-sm px-3 py-1">
@@ -527,7 +527,7 @@ export function OverviewPage({ onNavigate }: OverviewPageProps) {
               <div className="flex items-center justify-between">
                 <div>
                   <CardTitle className="text-base">Action Center</CardTitle>
-                  <CardDescription>Focused next steps</CardDescription>
+                  <CardDescription>Deine nächsten Schritte</CardDescription>
                 </div>
                 <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center">
                   <ListChecks className="w-4 h-4 text-primary" />
@@ -575,8 +575,8 @@ export function OverviewPage({ onNavigate }: OverviewPageProps) {
             <CardHeader className="pb-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <CardTitle className="text-base">Goals</CardTitle>
-                  <CardDescription>Budget & ROAS targets</CardDescription>
+                  <CardTitle className="text-base">Ziele</CardTitle>
+                  <CardDescription>Budget & ROAS-Ziele</CardDescription>
                 </div>
                 <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center">
                   <ShieldCheck className="w-4 h-4 text-primary" />
@@ -618,7 +618,7 @@ export function OverviewPage({ onNavigate }: OverviewPageProps) {
               </div>
 
               <Button variant="outline" size="sm" className="w-full text-xs" onClick={handleOpenGoals}>
-                Edit Goals
+                Ziele bearbeiten
               </Button>
             </CardContent>
           </Card>
@@ -632,8 +632,8 @@ export function OverviewPage({ onNavigate }: OverviewPageProps) {
           <CardContent className="p-6">
             <div className="flex items-start justify-between mb-4">
               <div>
-                <h3 className="text-h5 text-foreground">Top Campaign</h3>
-                <p className="text-body-sm text-muted-foreground">Highest ROAS (24h)</p>
+                <h3 className="text-h5 text-foreground">Top Kampagne</h3>
+                <p className="text-body-sm text-muted-foreground">Höchster ROAS (24h)</p>
               </div>
               <Badge variant="default" className="bg-green-500/10 text-green-600 border-green-500/20 hover:bg-green-500/20">
                 Top Performer
@@ -661,7 +661,7 @@ export function OverviewPage({ onNavigate }: OverviewPageProps) {
                 className="w-full justify-between text-primary hover:text-primary hover:bg-primary/5 group"
                 onClick={() => onNavigate('campaigns')}
               >
-                View Campaign <ArrowRight className="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" />
+                Kampagne ansehen <ArrowRight className="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" />
               </Button>
             </div>
           </CardContent>
@@ -672,8 +672,8 @@ export function OverviewPage({ onNavigate }: OverviewPageProps) {
           <CardContent className="p-6">
             <div className="flex items-start justify-between mb-4">
               <div>
-                <h3 className="text-h5 text-foreground">Best Creative</h3>
-                <p className="text-body-sm text-muted-foreground">Highest AI Score</p>
+                <h3 className="text-h5 text-foreground">Bestes Creative</h3>
+                <p className="text-body-sm text-muted-foreground">Höchster AI Score</p>
               </div>
               <Badge variant="default" className="bg-primary/10 text-primary border-primary/20 hover:bg-primary/20">
                 AI Insight
@@ -709,7 +709,7 @@ export function OverviewPage({ onNavigate }: OverviewPageProps) {
                 className="w-full justify-between text-primary hover:text-primary hover:bg-primary/5 group"
                 onClick={() => onNavigate('analytics')}
               >
-                View Analytics <ArrowRight className="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" />
+                Analytics ansehen <ArrowRight className="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" />
               </Button>
             </div>
           </CardContent>
@@ -722,8 +722,8 @@ export function OverviewPage({ onNavigate }: OverviewPageProps) {
             <CardHeader>
               <div className="flex items-start justify-between">
                 <div>
-                  <CardTitle>Edit goals</CardTitle>
-                  <CardDescription>Update your targets for this workspace</CardDescription>
+                  <CardTitle>Ziele bearbeiten</CardTitle>
+                  <CardDescription>Aktualisiere deine Ziele für diesen Workspace</CardDescription>
                 </div>
                 <Button variant="ghost" size="icon" onClick={() => setIsEditingGoals(false)}>
                   <X className="w-4 h-4" />
@@ -759,9 +759,9 @@ export function OverviewPage({ onNavigate }: OverviewPageProps) {
                 />
               </div>
               <div className="flex justify-end gap-3 pt-4">
-                <Button variant="outline" onClick={() => setIsEditingGoals(false)}>Cancel</Button>
+                <Button variant="outline" onClick={() => setIsEditingGoals(false)}>Abbrechen</Button>
                 <Button onClick={handleSaveGoals} disabled={isSavingGoals}>
-                  {isSavingGoals ? 'Saving...' : 'Save Goals'}
+                  {isSavingGoals ? 'Speichern...' : 'Speichern'}
                 </Button>
               </div>
             </CardContent>
