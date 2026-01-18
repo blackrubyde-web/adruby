@@ -87,53 +87,53 @@ export const AgencySettingsMenu = memo(function AgencySettingsMenu({
                 <DropdownMenuTrigger asChild>
                     <button
                         type="button"
-                        className="inline-flex items-center gap-2 px-3 py-1.5 text-sm font-medium rounded-md border border-white/10 bg-white/5 hover:bg-white/10 cursor-pointer transition-colors"
+                        className="inline-flex items-center gap-2 px-3 py-1.5 text-sm font-medium rounded-md border border-border bg-muted/50 hover:bg-muted cursor-pointer transition-colors"
                     >
                         <Settings2 className="w-4 h-4" />
                         <span className="hidden sm:inline">Agency Tools</span>
-                        <Badge className="bg-violet-500/20 text-violet-400 border-violet-500/30 text-[10px] px-1.5">
+                        <Badge className="bg-violet-500/20 text-violet-500 border-violet-500/30 text-[10px] px-1.5">
                             PRO
                         </Badge>
                     </button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent
                     align="end"
-                    className="w-72 bg-zinc-900/95 backdrop-blur-xl border-white/10"
+                    className="w-72 bg-card/95 backdrop-blur-xl border-border"
                     sideOffset={8}
                     style={{ zIndex: 9999 }}
                 >
-                    <DropdownMenuLabel className="text-white/60 font-normal">
+                    <DropdownMenuLabel className="text-muted-foreground font-normal">
                         Agency Pro Features
                     </DropdownMenuLabel>
-                    <DropdownMenuSeparator className="bg-white/10" />
+                    <DropdownMenuSeparator className="bg-border" />
 
                     {MENU_ITEMS.map((item) => (
                         <DropdownMenuItem
                             key={item.id}
                             onClick={() => setActiveView(item.id)}
-                            className="cursor-pointer p-3 focus:bg-white/5"
+                            className="cursor-pointer p-3 focus:bg-muted"
                         >
                             <div className="flex items-center gap-3 w-full">
-                                <div className={`w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center ${item.color}`}>
+                                <div className={`w-8 h-8 rounded-lg bg-muted flex items-center justify-center ${item.color}`}>
                                     <item.icon className="w-4 h-4" />
                                 </div>
                                 <div className="flex-1 min-w-0">
                                     <div className="flex items-center gap-2">
-                                        <span className="text-sm font-medium text-white">{item.label}</span>
+                                        <span className="text-sm font-medium text-foreground">{item.label}</span>
                                         {item.badge && (
                                             <Badge
                                                 className={`text-[9px] px-1 py-0 ${item.badge === 'PRO'
-                                                    ? 'bg-fuchsia-500/20 text-fuchsia-400 border-fuchsia-500/30'
-                                                    : 'bg-white/10 text-white/60 border-white/10'
+                                                    ? 'bg-fuchsia-500/20 text-fuchsia-500 border-fuchsia-500/30'
+                                                    : 'bg-muted text-muted-foreground border-border'
                                                     }`}
                                             >
                                                 {item.badge}
                                             </Badge>
                                         )}
                                     </div>
-                                    <p className="text-[11px] text-white/40 truncate">{item.description}</p>
+                                    <p className="text-[11px] text-muted-foreground truncate">{item.description}</p>
                                 </div>
-                                <ChevronRight className="w-4 h-4 text-white/30" />
+                                <ChevronRight className="w-4 h-4 text-muted-foreground" />
                             </div>
                         </DropdownMenuItem>
                     ))}
@@ -142,10 +142,10 @@ export const AgencySettingsMenu = memo(function AgencySettingsMenu({
 
             {/* Modal for each settings view */}
             <Dialog open={activeView !== null} onOpenChange={handleOpenChange}>
-                <DialogContent className="max-w-2xl max-h-[70vh] overflow-y-auto bg-zinc-900/95 backdrop-blur-xl border-white/10 p-0">
-                    <DialogHeader className="sticky top-0 z-10 bg-zinc-900/95 backdrop-blur-xl border-b border-white/10 px-4 py-3">
+                <DialogContent className="max-w-2xl max-h-[70vh] overflow-y-auto bg-card/95 backdrop-blur-xl border-border p-0">
+                    <DialogHeader className="sticky top-0 z-10 bg-card/95 backdrop-blur-xl border-b border-border px-4 py-3">
                         <div className="flex items-center justify-between">
-                            <DialogTitle className="text-base font-semibold text-white flex items-center gap-2">
+                            <DialogTitle className="text-base font-semibold text-foreground flex items-center gap-2">
                                 {activeView && (
                                     <>
                                         {activeView === 'alerts' && <Bell className="w-4 h-4 text-orange-400" />}
@@ -160,7 +160,7 @@ export const AgencySettingsMenu = memo(function AgencySettingsMenu({
                                 variant="ghost"
                                 size="icon"
                                 onClick={() => setActiveView(null)}
-                                className="w-7 h-7 text-white/40 hover:text-white hover:bg-white/10"
+                                className="w-7 h-7 text-muted-foreground hover:text-foreground hover:bg-muted"
                             >
                                 <X className="w-4 h-4" />
                             </Button>

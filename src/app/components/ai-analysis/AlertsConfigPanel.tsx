@@ -92,12 +92,12 @@ const getTypeIcon = (type: string) => {
 
 const getTypeColor = (type: string) => {
     switch (type) {
-        case 'budget': return { bg: 'bg-amber-500/10', text: 'text-amber-400', border: 'border-amber-500/20' };
-        case 'roas': return { bg: 'bg-red-500/10', text: 'text-red-400', border: 'border-red-500/20' };
-        case 'ctr': return { bg: 'bg-orange-500/10', text: 'text-orange-400', border: 'border-orange-500/20' };
-        case 'fatigue': return { bg: 'bg-violet-500/10', text: 'text-violet-400', border: 'border-violet-500/20' };
-        case 'spend_spike': return { bg: 'bg-pink-500/10', text: 'text-pink-400', border: 'border-pink-500/20' };
-        default: return { bg: 'bg-white/5', text: 'text-white/50', border: 'border-white/10' };
+        case 'budget': return { bg: 'bg-amber-500/10', text: 'text-amber-500', border: 'border-amber-500/20' };
+        case 'roas': return { bg: 'bg-red-500/10', text: 'text-red-500', border: 'border-red-500/20' };
+        case 'ctr': return { bg: 'bg-orange-500/10', text: 'text-orange-500', border: 'border-orange-500/20' };
+        case 'fatigue': return { bg: 'bg-violet-500/10', text: 'text-violet-500', border: 'border-violet-500/20' };
+        case 'spend_spike': return { bg: 'bg-pink-500/10', text: 'text-pink-500', border: 'border-pink-500/20' };
+        default: return { bg: 'bg-muted', text: 'text-muted-foreground', border: 'border-border' };
     }
 };
 
@@ -179,13 +179,13 @@ export const AlertsConfigPanel = memo(function AlertsConfigPanel({
                         <BellRing className="w-5 h-5 text-white" />
                     </div>
                     <div>
-                        <h3 className="text-lg font-bold text-white flex items-center gap-2">
+                        <h3 className="text-lg font-bold text-foreground flex items-center gap-2">
                             Smart Alerts
-                            <Badge className="bg-amber-500/20 text-amber-400 border-amber-500/30 text-[10px]">
+                            <Badge className="bg-amber-500/20 text-amber-500 border-amber-500/30 text-[10px]">
                                 AGENCY PRO
                             </Badge>
                         </h3>
-                        <p className="text-xs text-white/50">{enabledCount} aktiv · {totalTriggers} ausgelöst</p>
+                        <p className="text-xs text-muted-foreground">{enabledCount} aktiv · {totalTriggers} ausgelöst</p>
                     </div>
                 </div>
 
@@ -215,7 +215,7 @@ export const AlertsConfigPanel = memo(function AlertsConfigPanel({
                 <div className="mb-6 p-4 rounded-xl bg-violet-500/10 border border-violet-500/20">
                     <div className="flex items-center gap-2 mb-3">
                         <Slack className="w-5 h-5 text-violet-400" />
-                        <h4 className="font-semibold text-white">Slack Integration</h4>
+                        <h4 className="font-semibold text-foreground">Slack Integration</h4>
                     </div>
                     <div className="flex gap-2">
                         <input
@@ -223,7 +223,7 @@ export const AlertsConfigPanel = memo(function AlertsConfigPanel({
                             value={slackUrl}
                             onChange={(e) => setSlackUrl(e.target.value)}
                             placeholder="https://hooks.slack.com/services/..."
-                            className="flex-1 px-4 py-2 bg-white/5 border border-white/10 rounded-lg text-white placeholder:text-white/30 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500/50"
+                            className="flex-1 px-4 py-2 bg-muted border border-border rounded-lg text-foreground placeholder:text-muted-foreground text-sm focus:outline-none focus:ring-2 focus:ring-violet-500/50"
                         />
                         <Button
                             onClick={handleSaveSlack}
@@ -251,20 +251,20 @@ export const AlertsConfigPanel = memo(function AlertsConfigPanel({
                                 onClick={() => !alreadyAdded && handleAddTemplate(template)}
                                 disabled={alreadyAdded}
                                 className={`p-4 rounded-xl border text-left transition-all ${alreadyAdded
-                                    ? 'bg-white/5 border-white/10 opacity-50 cursor-not-allowed'
+                                    ? 'bg-muted border-border opacity-50 cursor-not-allowed'
                                     : `${colors.bg} ${colors.border} hover:scale-[1.02]`
                                     }`}
                             >
                                 <div className="flex items-center gap-3 mb-2">
                                     <Icon className={`w-5 h-5 ${colors.text}`} />
-                                    <span className="font-medium text-white">{template.name}</span>
+                                    <span className="font-medium text-foreground">{template.name}</span>
                                 </div>
-                                <p className="text-xs text-white/50">
+                                <p className="text-xs text-muted-foreground">
                                     {template.condition?.metric} {template.condition?.operator} {template.condition?.value}
                                     {template.condition?.operator === 'change' && '%'}
                                 </p>
                                 {alreadyAdded && (
-                                    <Badge className="mt-2 bg-white/10 text-white/50">Bereits hinzugefügt</Badge>
+                                    <Badge className="mt-2 bg-muted text-muted-foreground">Bereits hinzugefügt</Badge>
                                 )}
                             </button>
                         );
@@ -276,8 +276,8 @@ export const AlertsConfigPanel = memo(function AlertsConfigPanel({
             <div className="space-y-3">
                 {alerts.length === 0 ? (
                     <div className="text-center py-8">
-                        <Bell className="w-12 h-12 text-white/20 mx-auto mb-3" />
-                        <p className="text-white/50">Keine Alerts konfiguriert</p>
+                        <Bell className="w-12 h-12 text-muted-foreground mx-auto mb-3" />
+                        <p className="text-muted-foreground">Keine Alerts konfiguriert</p>
                     </div>
                 ) : (
                     alerts.map((alert) => {
@@ -289,7 +289,7 @@ export const AlertsConfigPanel = memo(function AlertsConfigPanel({
                                 key={alert.id}
                                 className={`p-4 rounded-xl border transition-all ${alert.enabled
                                     ? `${colors.bg} ${colors.border}`
-                                    : 'bg-white/5 border-white/10 opacity-60'
+                                    : 'bg-muted border-border opacity-60'
                                     }`}
                             >
                                 <div className="flex items-center justify-between gap-4">
@@ -298,14 +298,14 @@ export const AlertsConfigPanel = memo(function AlertsConfigPanel({
                                             <Icon className={`w-5 h-5 ${colors.text}`} />
                                         </div>
                                         <div className="min-w-0">
-                                            <h4 className="font-semibold text-white truncate">{alert.name}</h4>
-                                            <div className="flex items-center gap-2 text-xs text-white/50">
+                                            <h4 className="font-semibold text-foreground truncate">{alert.name}</h4>
+                                            <div className="flex items-center gap-2 text-xs text-muted-foreground">
                                                 <span>
                                                     {alert.condition.metric} {alert.condition.operator} {alert.condition.value}
                                                     {alert.condition.operator === 'change' && '%'}
                                                 </span>
                                                 {alert.condition.timeframe && (
-                                                    <span className="text-white/30">({alert.condition.timeframe})</span>
+                                                    <span className="text-muted-foreground">({alert.condition.timeframe})</span>
                                                 )}
                                             </div>
                                         </div>
@@ -315,13 +315,13 @@ export const AlertsConfigPanel = memo(function AlertsConfigPanel({
                                         {/* Channels */}
                                         <div className="hidden sm:flex items-center gap-1">
                                             {alert.channels.includes('app') && (
-                                                <div className="w-6 h-6 rounded bg-white/5 flex items-center justify-center" title="In-App">
-                                                    <Smartphone className="w-3 h-3 text-white/50" />
+                                                <div className="w-6 h-6 rounded bg-muted flex items-center justify-center" title="In-App">
+                                                    <Smartphone className="w-3 h-3 text-muted-foreground" />
                                                 </div>
                                             )}
                                             {alert.channels.includes('email') && (
-                                                <div className="w-6 h-6 rounded bg-white/5 flex items-center justify-center" title="Email">
-                                                    <Mail className="w-3 h-3 text-white/50" />
+                                                <div className="w-6 h-6 rounded bg-muted flex items-center justify-center" title="Email">
+                                                    <Mail className="w-3 h-3 text-muted-foreground" />
                                                 </div>
                                             )}
                                             {alert.channels.includes('slack') && (
@@ -347,7 +347,7 @@ export const AlertsConfigPanel = memo(function AlertsConfigPanel({
                                         {/* Delete */}
                                         <button
                                             onClick={() => handleDelete(alert.id)}
-                                            className="p-2 rounded-lg hover:bg-red-500/20 text-white/40 hover:text-red-400 transition-colors"
+                                            className="p-2 rounded-lg hover:bg-red-500/20 text-muted-foreground hover:text-red-500 transition-colors"
                                         >
                                             <Trash2 className="w-4 h-4" />
                                         </button>
