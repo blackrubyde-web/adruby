@@ -170,7 +170,7 @@ export const AutomatedRulesPanel = memo(function AutomatedRulesPanel({
     const totalTriggers = rules.reduce((sum, r) => sum + r.triggerCount, 0);
 
     return (
-        <Card className="relative overflow-hidden bg-gradient-to-br from-zinc-900/95 via-zinc-900/90 to-zinc-950 border-white/5">
+        <Card className="relative overflow-hidden bg-card border-border">
             {/* Background */}
             <div className="absolute inset-0 pointer-events-none overflow-hidden">
                 <div className="absolute -top-20 -right-20 w-[300px] h-[300px] bg-[radial-gradient(circle_at_center,rgba(59,130,246,0.08),transparent_60%)] blur-[60px]" />
@@ -184,13 +184,13 @@ export const AutomatedRulesPanel = memo(function AutomatedRulesPanel({
                             <Workflow className="w-6 h-6 text-white" />
                         </div>
                         <div>
-                            <h3 className="text-xl font-bold text-white flex items-center gap-2">
+                            <h3 className="text-xl font-bold text-foreground flex items-center gap-2">
                                 Automation Rules
-                                <Badge className="bg-blue-500/20 text-blue-400 border-blue-500/30 text-[10px]">
+                                <Badge className="bg-blue-500/20 text-blue-500 border-blue-500/30 text-[10px]">
                                     AGENCY PRO
                                 </Badge>
                             </h3>
-                            <p className="text-sm text-white/50">{enabledCount} aktiv · {totalTriggers} ausgelöst</p>
+                            <p className="text-sm text-muted-foreground">{enabledCount} aktiv · {totalTriggers} ausgelöst</p>
                         </div>
                     </div>
 
@@ -207,26 +207,26 @@ export const AutomatedRulesPanel = memo(function AutomatedRulesPanel({
                 {/* Create Rule Form */}
                 {isCreating && (
                     <div className="mb-6 p-5 rounded-2xl bg-blue-500/5 border border-blue-500/20">
-                        <h4 className="font-semibold text-white mb-4 flex items-center gap-2">
-                            <Settings className="w-4 h-4 text-blue-400" />
+                        <h4 className="font-semibold text-foreground mb-4 flex items-center gap-2">
+                            <Settings className="w-4 h-4 text-blue-500" />
                             Neue Automatisierungsregel
                         </h4>
 
                         {/* Rule Name */}
                         <div className="mb-4">
-                            <label className="text-xs text-white/50 mb-1 block">Regelname</label>
+                            <label className="text-xs text-muted-foreground mb-1 block">Regelname</label>
                             <input
                                 type="text"
                                 value={newRule.name}
                                 onChange={(e) => setNewRule(prev => ({ ...prev, name: e.target.value }))}
                                 placeholder="z.B. Auto-Pause unprofitable Ads"
-                                className="w-full px-4 py-2 bg-white/5 border border-white/10 rounded-lg text-white placeholder:text-white/30 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/50"
+                                className="w-full px-4 py-2 bg-muted border border-border rounded-lg text-foreground placeholder:text-muted-foreground text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/50"
                             />
                         </div>
 
                         {/* IF Condition */}
                         <div className="mb-4">
-                            <label className="text-xs text-white/50 mb-2 block">IF (Bedingung)</label>
+                            <label className="text-xs text-muted-foreground mb-2 block">IF (Bedingung)</label>
                             <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                                 <select
                                     value={newRule.condition?.metric}
@@ -234,7 +234,7 @@ export const AutomatedRulesPanel = memo(function AutomatedRulesPanel({
                                         ...prev,
                                         condition: { ...prev.condition!, metric: e.target.value }
                                     }))}
-                                    className="px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-white text-sm"
+                                    className="px-3 py-2 bg-muted border border-border rounded-lg text-foreground text-sm"
                                 >
                                     {METRICS.map(m => <option key={m.value} value={m.value}>{m.label}</option>)}
                                 </select>
@@ -244,7 +244,7 @@ export const AutomatedRulesPanel = memo(function AutomatedRulesPanel({
                                         ...prev,
                                         condition: { ...prev.condition!, operator: e.target.value as any }
                                     }))}
-                                    className="px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-white text-sm"
+                                    className="px-3 py-2 bg-muted border border-border rounded-lg text-foreground text-sm"
                                 >
                                     {OPERATORS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
                                 </select>
@@ -255,7 +255,7 @@ export const AutomatedRulesPanel = memo(function AutomatedRulesPanel({
                                         ...prev,
                                         condition: { ...prev.condition!, value: parseFloat(e.target.value) }
                                     }))}
-                                    className="px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-white text-sm"
+                                    className="px-3 py-2 bg-muted border border-border rounded-lg text-foreground text-sm"
                                     step="0.1"
                                 />
                                 <select
@@ -264,7 +264,7 @@ export const AutomatedRulesPanel = memo(function AutomatedRulesPanel({
                                         ...prev,
                                         condition: { ...prev.condition!, timeframe: e.target.value }
                                     }))}
-                                    className="px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-white text-sm"
+                                    className="px-3 py-2 bg-muted border border-border rounded-lg text-foreground text-sm"
                                 >
                                     {TIMEFRAMES.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
                                 </select>
@@ -273,7 +273,7 @@ export const AutomatedRulesPanel = memo(function AutomatedRulesPanel({
 
                         {/* THEN Action */}
                         <div className="mb-4">
-                            <label className="text-xs text-white/50 mb-2 block">THEN (Aktion)</label>
+                            <label className="text-xs text-muted-foreground mb-2 block">THEN (Aktion)</label>
                             <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                                 {ACTIONS.map(action => {
                                     const Icon = action.icon;
@@ -286,13 +286,13 @@ export const AutomatedRulesPanel = memo(function AutomatedRulesPanel({
                                                 action: { type: action.value as any, value: action.value.includes('budget') ? 20 : undefined }
                                             }))}
                                             className={`p-3 rounded-lg border text-left transition-all ${isSelected
-                                                    ? 'bg-blue-500/20 border-blue-500/40'
-                                                    : 'bg-white/5 border-white/10 hover:border-white/20'
+                                                ? 'bg-blue-500/20 border-blue-500/40'
+                                                : 'bg-muted border-border hover:border-primary/30'
                                                 }`}
                                         >
                                             <div className="flex items-center gap-2">
                                                 <Icon className={`w-4 h-4 ${action.color}`} />
-                                                <span className="text-sm text-white">{action.label}</span>
+                                                <span className="text-sm text-foreground">{action.label}</span>
                                             </div>
                                         </button>
                                     );
@@ -302,7 +302,7 @@ export const AutomatedRulesPanel = memo(function AutomatedRulesPanel({
                             {/* Budget Value Input */}
                             {(newRule.action?.type === 'increase_budget' || newRule.action?.type === 'decrease_budget') && (
                                 <div className="mt-3 flex items-center gap-2">
-                                    <span className="text-sm text-white/50">um</span>
+                                    <span className="text-sm text-muted-foreground">um</span>
                                     <input
                                         type="number"
                                         value={newRule.action?.value || 20}
@@ -310,9 +310,9 @@ export const AutomatedRulesPanel = memo(function AutomatedRulesPanel({
                                             ...prev,
                                             action: { ...prev.action!, value: parseInt(e.target.value) }
                                         }))}
-                                        className="w-20 px-3 py-1 bg-white/5 border border-white/10 rounded-lg text-white text-sm"
+                                        className="w-20 px-3 py-1 bg-muted border border-border rounded-lg text-foreground text-sm"
                                     />
-                                    <span className="text-sm text-white/50">%</span>
+                                    <span className="text-sm text-muted-foreground">%</span>
                                 </div>
                             )}
                         </div>
@@ -341,8 +341,8 @@ export const AutomatedRulesPanel = memo(function AutomatedRulesPanel({
                 <div className="space-y-3">
                     {rules.length === 0 ? (
                         <div className="text-center py-8">
-                            <Workflow className="w-12 h-12 text-white/20 mx-auto mb-3" />
-                            <p className="text-white/50">Keine Regeln konfiguriert</p>
+                            <Workflow className="w-12 h-12 text-muted-foreground mx-auto mb-3" />
+                            <p className="text-muted-foreground">Keine Regeln konfiguriert</p>
                         </div>
                     ) : (
                         rules.map((rule) => {
@@ -353,18 +353,18 @@ export const AutomatedRulesPanel = memo(function AutomatedRulesPanel({
                                 <div
                                     key={rule.id}
                                     className={`p-4 rounded-xl border transition-all ${rule.enabled
-                                            ? 'bg-blue-500/5 border-blue-500/20'
-                                            : 'bg-white/5 border-white/10 opacity-60'
+                                        ? 'bg-blue-500/5 border-blue-500/20'
+                                        : 'bg-muted border-border opacity-60'
                                         }`}
                                 >
                                     <div className="flex items-center justify-between gap-4">
                                         <div className="flex items-center gap-3 min-w-0">
-                                            <div className={`w-10 h-10 rounded-xl ${rule.enabled ? 'bg-blue-500/20 border-blue-500/30' : 'bg-white/5 border-white/10'} border flex items-center justify-center shrink-0`}>
-                                                <ActionIcon className={`w-5 h-5 ${rule.enabled ? actionConfig?.color : 'text-white/30'}`} />
+                                            <div className={`w-10 h-10 rounded-xl ${rule.enabled ? 'bg-blue-500/20 border-blue-500/30' : 'bg-muted border-border'} border flex items-center justify-center shrink-0`}>
+                                                <ActionIcon className={`w-5 h-5 ${rule.enabled ? actionConfig?.color : 'text-muted-foreground'}`} />
                                             </div>
                                             <div className="min-w-0">
-                                                <h4 className="font-semibold text-white truncate">{rule.name}</h4>
-                                                <p className="text-xs text-white/50">
+                                                <h4 className="font-semibold text-foreground truncate">{rule.name}</h4>
+                                                <p className="text-xs text-muted-foreground">
                                                     IF {rule.condition.metric} {rule.condition.operator} {rule.condition.value} ({rule.condition.timeframe})
                                                     → {actionConfig?.label}
                                                     {rule.action.value && ` ${rule.action.value}%`}
@@ -384,7 +384,7 @@ export const AutomatedRulesPanel = memo(function AutomatedRulesPanel({
                                             />
                                             <button
                                                 onClick={() => handleDelete(rule.id)}
-                                                className="p-2 rounded-lg hover:bg-red-500/20 text-white/40 hover:text-red-400 transition-colors"
+                                                className="p-2 rounded-lg hover:bg-red-500/20 text-muted-foreground hover:text-red-500 transition-colors"
                                             >
                                                 <Trash2 className="w-4 h-4" />
                                             </button>
@@ -396,6 +396,6 @@ export const AutomatedRulesPanel = memo(function AutomatedRulesPanel({
                     )}
                 </div>
             </div>
-        </Card>
+        </Card >
     );
 });
