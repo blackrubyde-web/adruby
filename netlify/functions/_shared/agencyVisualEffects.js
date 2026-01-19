@@ -461,13 +461,13 @@ export function generateAgencyOverlay(config) {
     if (includeLightEffects) {
         if (isGaming) {
             // Neon aesthetic for gaming
-            svg += LIGHT_EFFECTS.lensFlare.anamorphicStreak(canvasSize / 2, canvasSize * 0.25, canvasSize * 0.9, '#00FFFF', 0.08);
+            svg += LIGHT_EFFECTS.lensFlare.anamorphicStreak.svg(canvasSize / 2, canvasSize * 0.25, canvasSize * 0.9, '#00FFFF', 0.08);
             svg += LIGHT_EFFECTS.lightLeak.topRight(0.08);
             svg += LIGHT_EFFECTS.lightLeak.bottomLeft(0.06);
         } else {
             // Subtle professional glow
-            svg += LIGHT_EFFECTS.lensFlare.softGlow(canvasSize * 0.8, canvasSize * 0.2, 180, '#FFFFFF', 0.10);
-            svg += LIGHT_EFFECTS.lensFlare.softGlow(canvasSize * 0.15, canvasSize * 0.85, 100, '#FFFFFF', 0.05);
+            svg += LIGHT_EFFECTS.lensFlare.softGlow.svg(canvasSize * 0.8, canvasSize * 0.2, 180, '#FFFFFF', 0.10);
+            svg += LIGHT_EFFECTS.lensFlare.softGlow.svg(canvasSize * 0.15, canvasSize * 0.85, 100, '#FFFFFF', 0.05);
         }
     }
 
