@@ -202,34 +202,42 @@ CRITICAL:
 OUTPUT: ${CANVAS}x${CANVAS}px
 `;
     } else {
-        // Generate integrated scene with product context
+        // Generate integrated scene with product context (ALL INDUSTRIES)
         prompt = `
 PROFESSIONAL ADVERTISEMENT - INTEGRATED PRODUCT SCENE
 
-Create a ${CANVAS}x${CANVAS}px advertisement featuring this product context:
+Create a ${CANVAS}x${CANVAS}px premium advertisement image.
+
+PRODUCT CONTEXT:
 - Product type: ${productAnalysis.productType}
 - Product description: ${productAnalysis.description}
+- A central transparent/empty area will be left for the actual product to be composited
 
 USER'S CREATIVE VISION:
 ${userPrompt}
 
-INTEGRATION STYLE:
-- Generate a scene where this type of product would naturally appear
-- Leave a central area for the actual product to be composited
+SCENE REQUIREMENTS:
+- Generate a premium scene/background for this product type
+- Leave the CENTER 50-60% of the image with subtle/dark area for product placement
 - Match the mood: ${productAnalysis.mood}
-${wantsChristmas ? '- Include festive Christmas elements (hat on product position, decorations)' : ''}
+${wantsChristmas ? `- Include festive Christmas atmosphere (decorations, warm lighting, snow particles)
+- Add a Santa hat floating above the product area position` : ''}
 ${wantsGlow ? '- Add glow/light effects emanating from center where product will be' : ''}
 
 SCENE STYLE:
-${styleElements.join(', ') || 'Premium aesthetic'}
+${styleElements.join(', ') || 'Premium aesthetic, cinematic lighting'}
 
-TEXT ZONES:
-${textZoneInstruction}
+TEXT IN IMAGE (CRITICAL - MUST BE RENDERED):
+${headline ? `- Large bold headline text at BOTTOM of image: "${headline}"` : ''}
+- Text should be white, bold, and highly readable
+- Use clean sans-serif typography (similar to Apple ads)
+- Add subtle shadow behind text for readability on any background
 
 CRITICAL:
-- Central product area should have subtle lighting/glow for integration
-- NO text or typography
-- Premium quality
+- Central product area should be relatively empty/dark for compositing
+- Text MUST be rendered clearly and legibly at the bottom
+- Premium $10,000 creative director quality
+- NO logos or watermarks
 
 OUTPUT: ${CANVAS}x${CANVAS}px
 `;
