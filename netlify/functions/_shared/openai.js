@@ -59,66 +59,62 @@ export async function generateHeroImage({
     throw new Error("Missing prompt or size for image generation");
   }
 
-  // DALL-E 3 supports "standard" or "hd" quality.
-  // We map our internal quality settings to DALL-E 3 compatible ones.
-  let safeQuality = "standard";
-  if (model === "dall-e-3") {
-    if (quality === "high" || quality === "hd") {
-      safeQuality = "hd";
-    } else {
-      safeQuality = "standard";
-    }
-  } else {
-    // Legacy models (dall-e-2)
-    const allowedQuality = new Set(["low", "medium", "high", "auto"]);
-    const normalizedQuality = quality === "standard" ? "medium" : quality;
-    safeQuality = allowedQuality.has(normalizedQuality) ? normalizedQuality : "auto";
-  }
-
+  // Build params based on model
   const params = {
     model,
     prompt,
-    size,
-    quality: safeQuality,
+    n: 1,
   };
 
-  // Only DALL-E 3 supports vivid style
-  if (model === "dall-e-3") {
+  // gpt-image-1 supports different sizes: 1024x1024, 1536x1024, 1024x1536, auto
+  // dall-e-3 supports: 1024x1024, 1024x1792, 1792x1024
+  if (model === "gpt-image-1" || model === "gpt-image-1.5") {
+    // gpt-image-1 quality options: low, medium, high, auto
+    const qualityMap = { hd: "high", standard: "medium" };
+    params.quality = qualityMap[quality] || quality || "high";
+
+    // Map size for gpt-image-1
+    const sizeMap = {
+      "1024x1024": "1024x1024",
+      "1024x1792": "1024x1536",  // Portrait
+      "1792x1024": "1536x1024",  // Landscape
+    };
+    params.size = sizeMap[size] || "1024x1024";
+
+    // Request base64 output directly
+    params.output_format = "png";
+  } else if (model === "dall-e-3") {
+    params.quality = quality === "hd" || quality === "high" ? "hd" : "standard";
+    params.size = size;
     params.style = "vivid";
+  } else {
+    // Legacy models
+    params.quality = "auto";
+    params.size = "1024x1024";
   }
 
-  // DALL-E 3 does not strictly support 'seed' for deterministic generation in the same way 
-  // as some other endpoints, but the API accepts it. Not strictly enforced.
-  if (typeof seed === "number") {
-    // params.seed = seed; // Uncomment if you want to pass it anyway
-  }
-
-  // DALL-E 3 requests often take longer, bump timeout default
+  // Timeout configuration
   const timeoutMs = Number(process.env.OPENAI_IMAGE_TIMEOUT_MS || 120000);
 
   let result;
   try {
+    console.log(`[OpenAI] Generating image with model: ${model}, size: ${params.size}, quality: ${params.quality}`);
     result = await withTimeout(
       openai.images.generate(params),
       timeoutMs,
       "openai_image_generate_timeout",
     );
   } catch (err) {
-    // FALLBACK LOGIC
     console.warn(`[OpenAI] Image generation with model '${model}' failed: ${err.message}. Retrying with fallback 'dall-e-3'...`);
 
-    // If the primary model was already dall-e-3, re-throw to avoid infinite loop or useless retry
     if (model === "dall-e-3") throw err;
 
-    // Retry with DALL-E 3
+    // Retry with DALL-E 3 as fallback
     params.model = "dall-e-3";
-    // DALL-E 3 requires standard or hd quality
     params.quality = "standard";
-    // DALL-E 3 sizes are strictly 1024x1024, 1024x1792, 1792x1024. 
-    // If original size was invalid for D3 (e.g. 512x512), force 1024x1024.
-    if (params.size !== "1024x1024" && params.size !== "1024x1792" && params.size !== "1792x1024") {
-      params.size = "1024x1024";
-    }
+    params.size = "1024x1024";
+    params.style = "vivid";
+    delete params.output_format;
 
     result = await withTimeout(
       openai.images.generate(params),
