@@ -7,7 +7,7 @@ import { useState, useCallback } from 'react';
 import {
     Wand2, Download, Save, Globe, Upload, FileText, MessageSquare,
     Sparkles, Image, Loader2, RefreshCw, Zap, ChevronRight,
-    CheckCircle2, AlertCircle
+    CheckCircle2, AlertCircle, Store
 } from 'lucide-react';
 import { generateAd } from '../lib/api/aibuilder';
 import { t } from '../lib/aibuilder/translations';
@@ -15,6 +15,8 @@ import { toast } from 'sonner';
 import { FormInputMode } from './aibuilder/FormInputMode';
 import { FreeTextInputMode } from './aibuilder/FreeTextInputMode';
 import { PreviewArea } from './aibuilder/PreviewArea';
+import { StoreImporter, CarouselBuilder } from './store-importer';
+import type { ScrapedProduct, ProductCopy } from './store-importer/types';
 import { Button } from './ui/button';
 import { cn } from '../lib/utils';
 import { useAuthState, useAuthActions } from '../contexts/AuthContext';
@@ -29,13 +31,18 @@ export function AIAdBuilderPage() {
     const credits = profile?.credits ?? 0;
 
     const [language, setLanguage] = useState<Language>('de');
-    const [mode, setMode] = useState<InputMode>('form');
+    const [mode, setMode] = useState<InputMode | 'store'>('form');
     const [step, setStep] = useState<Step>('input');
     const [loading, setLoading] = useState(false);
     const [result, setResult] = useState<AdGenerationResult | null>(null);
     const [error, setError] = useState<string | null>(null);
     const [productImage, setProductImage] = useState<File | null>(null);
     const [productImagePreview, setProductImagePreview] = useState<string | null>(null);
+
+    // Store import state
+    const [importedProducts, setImportedProducts] = useState<ScrapedProduct[]>([]);
+    const [importedCopies, setImportedCopies] = useState<ProductCopy[]>([]);
+    const [showCarouselBuilder, setShowCarouselBuilder] = useState(false);
 
     const handleImageUpload = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
@@ -216,7 +223,7 @@ export function AIAdBuilderPage() {
 
                         {/* Premium Mode Switcher */}
                         <div className="rounded-2xl border border-border/40 bg-card/50 backdrop-blur-sm p-2">
-                            <div className="grid grid-cols-2 gap-2">
+                            <div className="grid grid-cols-3 gap-2">
                                 <button
                                     onClick={() => setMode('form')}
                                     className={cn(
@@ -235,7 +242,7 @@ export function AIAdBuilderPage() {
                                     <div className="text-center">
                                         <div className="font-semibold text-sm">{t('modeFormLabel', language)}</div>
                                         <div className={cn(
-                                            "text-xs mt-0.5",
+                                            "text-xs mt-0.5 hidden sm:block",
                                             mode === 'form' ? "text-white/70" : "text-muted-foreground"
                                         )}>
                                             {t('modeFormDesc', language)}
@@ -264,7 +271,7 @@ export function AIAdBuilderPage() {
                                     <div className="text-center">
                                         <div className="font-semibold text-sm">{t('modeFreeLabel', language)}</div>
                                         <div className={cn(
-                                            "text-xs mt-0.5",
+                                            "text-xs mt-0.5 hidden sm:block",
                                             mode === 'free' ? "text-white/70" : "text-muted-foreground"
                                         )}>
                                             {t('modeFreeDesc', language)}
@@ -274,63 +281,139 @@ export function AIAdBuilderPage() {
                                         <CheckCircle2 className="absolute top-2 right-2 w-4 h-4" />
                                     )}
                                 </button>
+
+                                <button
+                                    onClick={() => setMode('store')}
+                                    className={cn(
+                                        "relative flex flex-col items-center gap-2 p-4 rounded-xl transition-all duration-300",
+                                        mode === 'store'
+                                            ? "bg-gradient-to-br from-emerald-500 to-teal-600 text-white shadow-lg shadow-emerald-500/25"
+                                            : "hover:bg-muted/50"
+                                    )}
+                                >
+                                    <div className={cn(
+                                        "w-10 h-10 rounded-lg flex items-center justify-center transition-colors",
+                                        mode === 'store' ? "bg-white/20" : "bg-muted"
+                                    )}>
+                                        <Store className="w-5 h-5" />
+                                    </div>
+                                    <div className="text-center">
+                                        <div className="font-semibold text-sm">
+                                            {language === 'de' ? 'Store Import' : 'Store Import'}
+                                        </div>
+                                        <div className={cn(
+                                            "text-xs mt-0.5 hidden sm:block",
+                                            mode === 'store' ? "text-white/70" : "text-muted-foreground"
+                                        )}>
+                                            {language === 'de' ? 'Shopify scrapen' : 'Scrape Shopify'}
+                                        </div>
+                                    </div>
+                                    {mode === 'store' && (
+                                        <CheckCircle2 className="absolute top-2 right-2 w-4 h-4" />
+                                    )}
+                                </button>
                             </div>
                         </div>
 
-                        {/* Product Image Upload */}
-                        <div className="rounded-2xl border border-border/40 bg-card/50 backdrop-blur-sm p-6">
-                            <div className="flex items-center gap-2 mb-4">
-                                <Image className="w-5 h-5 text-primary" />
-                                <h3 className="font-semibold">
-                                    {language === 'de' ? 'Produktbild (Optional)' : 'Product Image (Optional)'}
-                                </h3>
-                            </div>
-
-                            {productImagePreview ? (
-                                <div className="relative group">
-                                    <img
-                                        src={productImagePreview}
-                                        alt="Product"
-                                        className="w-full h-40 object-contain rounded-lg bg-muted/50"
-                                    />
-                                    <button
-                                        onClick={removeImage}
-                                        className="absolute top-2 right-2 p-1.5 bg-destructive text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
-                                    >
-                                        <AlertCircle className="w-4 h-4" />
-                                    </button>
+                        {/* Product Image Upload - only for form/free modes */}
+                        {mode !== 'store' && (
+                            <div className="rounded-2xl border border-border/40 bg-card/50 backdrop-blur-sm p-6">
+                                <div className="flex items-center gap-2 mb-4">
+                                    <Image className="w-5 h-5 text-primary" />
+                                    <h3 className="font-semibold">
+                                        {language === 'de' ? 'Produktbild (Optional)' : 'Product Image (Optional)'}
+                                    </h3>
                                 </div>
-                            ) : (
-                                <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-border/60 rounded-xl cursor-pointer hover:border-primary/60 hover:bg-primary/5 transition-all">
-                                    <Upload className="w-8 h-8 text-muted-foreground mb-2" />
-                                    <span className="text-sm text-muted-foreground">
-                                        {language === 'de' ? 'Bild hierher ziehen oder klicken' : 'Drag image here or click'}
-                                    </span>
-                                    <span className="text-xs text-muted-foreground/60 mt-1">PNG, JPG bis 5MB</span>
-                                    <input
-                                        type="file"
-                                        className="hidden"
-                                        accept="image/*"
-                                        onChange={handleImageUpload}
-                                    />
-                                </label>
-                            )}
-                        </div>
 
-                        {/* Form Content */}
+                                {productImagePreview ? (
+                                    <div className="relative group">
+                                        <img
+                                            src={productImagePreview}
+                                            alt="Product"
+                                            className="w-full h-40 object-contain rounded-lg bg-muted/50"
+                                        />
+                                        <button
+                                            onClick={removeImage}
+                                            className="absolute top-2 right-2 p-1.5 bg-destructive text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                                        >
+                                            <AlertCircle className="w-4 h-4" />
+                                        </button>
+                                    </div>
+                                ) : (
+                                    <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-border/60 rounded-xl cursor-pointer hover:border-primary/60 hover:bg-primary/5 transition-all">
+                                        <Upload className="w-8 h-8 text-muted-foreground mb-2" />
+                                        <span className="text-sm text-muted-foreground">
+                                            {language === 'de' ? 'Bild hierher ziehen oder klicken' : 'Drag image here or click'}
+                                        </span>
+                                        <span className="text-xs text-muted-foreground/60 mt-1">PNG, JPG bis 5MB</span>
+                                        <input
+                                            type="file"
+                                            className="hidden"
+                                            accept="image/*"
+                                            onChange={handleImageUpload}
+                                        />
+                                    </label>
+                                )}
+                            </div>
+                        )}
+
+                        {/* Form/Free/Store Content */}
                         {mode === 'form' ? (
                             <FormInputMode
                                 language={language}
                                 onGenerate={handleGenerate}
                                 loading={loading}
                             />
-                        ) : (
+                        ) : mode === 'free' ? (
                             <FreeTextInputMode
                                 language={language}
                                 onGenerate={handleGenerate}
                                 loading={loading}
                             />
-                        )}
+                        ) : mode === 'store' && !showCarouselBuilder ? (
+                            <div className="rounded-2xl border border-border/40 bg-card/50 backdrop-blur-sm p-6">
+                                <StoreImporter
+                                    onProductsSelected={(products, copies) => {
+                                        setImportedProducts(products);
+                                        setImportedCopies(copies);
+                                    }}
+                                    onCreateSingleAds={(products, copies) => {
+                                        // TODO: Integrate with existing ad generation
+                                        toast.success(`${products.length} Ads werden generiert...`);
+                                    }}
+                                    onCreateCarousel={(products, copies) => {
+                                        setImportedProducts(products);
+                                        setImportedCopies(copies);
+                                        setShowCarouselBuilder(true);
+                                    }}
+                                />
+                            </div>
+                        ) : mode === 'store' && showCarouselBuilder ? (
+                            <div className="rounded-2xl border border-border/40 bg-card/50 backdrop-blur-sm p-6">
+                                <div className="mb-4 flex items-center justify-between">
+                                    <h3 className="font-semibold text-foreground">Carousel Builder</h3>
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={() => setShowCarouselBuilder(false)}
+                                    >
+                                        ← Zurück
+                                    </Button>
+                                </div>
+                                <CarouselBuilder
+                                    products={importedProducts}
+                                    copies={importedCopies}
+                                    onSave={(carousel) => {
+                                        toast.success('Carousel gespeichert!');
+                                        console.log('Carousel saved:', carousel);
+                                    }}
+                                    onExport={(carousel) => {
+                                        toast.success('Carousel exportiert!');
+                                        console.log('Carousel exported:', carousel);
+                                    }}
+                                />
+                            </div>
+                        ) : null}
                     </div>
 
                     {/* Right Column - Preview */}
@@ -392,6 +475,6 @@ export function AIAdBuilderPage() {
                     </div>
                 </div>
             </div>
-        </div>
+        </div >
     );
 }
