@@ -27,7 +27,6 @@ import { TierProgress } from './affiliate/TierProgress';
 
 import { TeamPanel } from './affiliate/TeamPanel';
 import { PayoutHistory } from './affiliate/PayoutHistory';
-import { AffiliateLeaderboard } from './affiliate/Leaderboard';
 import { User } from '@supabase/supabase-js';
 
 // --- Imports for Marketing View ---
@@ -52,7 +51,7 @@ export function AffiliatePage({ onNavigate = () => { }, onSignIn = () => { }, on
   // Marketing View States
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const heroRef = useRef<HTMLElement>(null);
-  const [activeTab, setActiveTab] = useState<'overview' | 'team' | 'payouts' | 'rankings' | 'achievements'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'team' | 'payouts' | 'achievements'>('overview');
 
   // Dashboard States
   const [timeRange, setTimeRange] = useState<'7d' | '30d' | 'all'>('30d');
@@ -243,8 +242,8 @@ function AffiliateMarketingView({ onNavigate, onSignIn, onGetStarted, heroRef, i
 
 interface AffiliateDashboardProps {
   user: User;
-  activeTab: 'overview' | 'team' | 'payouts' | 'rankings' | 'achievements';
-  setActiveTab: (tab: 'overview' | 'team' | 'payouts' | 'rankings' | 'achievements') => void;
+  activeTab: 'overview' | 'team' | 'payouts' | 'achievements';
+  setActiveTab: (tab: 'overview' | 'team' | 'payouts' | 'achievements') => void;
   timeRange: '7d' | '30d' | 'all';
   setTimeRange: (range: '7d' | '30d' | 'all') => void;
   chartData: EarningsData[];
@@ -504,7 +503,6 @@ function AffiliateDashboard({
           { id: 'overview', label: 'Übersicht', icon: BarChart3 },
           { id: 'team', label: 'Mein Team', icon: Users },
           { id: 'payouts', label: 'Auszahlungen', icon: Wallet },
-          { id: 'rankings', label: 'Rankings', icon: TrendingUp },
           { id: 'achievements', label: 'Achievements', icon: Sparkles },
         ].map((tab) => (
           <button
@@ -525,7 +523,6 @@ function AffiliateDashboard({
       {activeTab === 'overview' && overviewContent}
       {activeTab === 'team' && <TeamPanel />}
       {activeTab === 'payouts' && <PayoutHistory />}
-      {activeTab === 'rankings' && <AffiliateLeaderboard />}
       {activeTab === 'achievements' && <AchievementsPanel />}
     </PageShell>
   );

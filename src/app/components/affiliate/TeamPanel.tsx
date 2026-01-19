@@ -32,66 +32,33 @@ export function TeamPanel() {
     const [statusFilter, setStatusFilter] = useState<string | null>(null);
     const [isLoading, setIsLoading] = useState(true);
 
-    // Mock data for demo - in production this comes from API
+    // Use real data from context
     const [referrals, setReferrals] = useState<Referral[]>([]);
 
     useEffect(() => {
-        // Simulate loading from API
+        // Use real data from context instead of mock data
         const timer = setTimeout(() => {
-            // Generate demo data based on stats
-            const demoReferrals: Referral[] = [
-                {
-                    id: '1',
-                    userName: 'Max Mustermann',
-                    userEmail: 'm***@gmail.com',
-                    status: 'paid',
-                    registeredAt: '2026-01-05',
-                    firstPaymentAt: '2026-01-10',
-                    monthsPaid: 2,
-                    totalCommission: 29.70,
-                    planType: 'pro',
-                    lastActivity: '2026-01-18',
-                },
-                {
-                    id: '2',
-                    userName: 'Lisa Schmidt',
-                    userEmail: 'l***@company.de',
-                    status: 'active',
-                    registeredAt: '2026-01-12',
-                    firstPaymentAt: '2026-01-15',
-                    monthsPaid: 1,
-                    totalCommission: 14.85,
-                    planType: 'starter',
-                    lastActivity: '2026-01-17',
-                },
-                {
-                    id: '3',
-                    userName: 'Jonas Weber',
-                    userEmail: 'j***@agentur.de',
-                    status: 'trial',
-                    registeredAt: '2026-01-16',
-                    firstPaymentAt: null,
-                    monthsPaid: 0,
-                    totalCommission: 0,
-                    planType: null,
-                    lastActivity: '2026-01-18',
-                },
-                {
-                    id: '4',
-                    userName: 'Sarah Müller',
-                    userEmail: 's***@ecomm.de',
-                    status: 'paid',
-                    registeredAt: '2025-12-20',
-                    firstPaymentAt: '2025-12-25',
-                    monthsPaid: 3,
-                    totalCommission: 89.10,
-                    planType: 'agency',
-                    lastActivity: '2026-01-18',
-                },
-            ];
-            setReferrals(demoReferrals);
+            // Map context referrals to our interface if available
+            if (contextReferrals && contextReferrals.length > 0) {
+                const mappedReferrals: Referral[] = contextReferrals.map((ref, index) => ({
+                    id: ref.id || String(index),
+                    userName: ref.user_name || 'Anonymer Nutzer',
+                    userEmail: ref.user_email || '***@***.de',
+                    status: ref.status || 'registered',
+                    registeredAt: ref.registered_at || new Date().toISOString().split('T')[0],
+                    firstPaymentAt: ref.first_payment_at || null,
+                    monthsPaid: ref.months_paid || 0,
+                    totalCommission: ref.total_commission_earned || 0,
+                    planType: ref.plan_type || null,
+                    lastActivity: ref.registered_at || new Date().toISOString().split('T')[0],
+                }));
+                setReferrals(mappedReferrals);
+            } else {
+                // No referrals yet - show empty state
+                setReferrals([]);
+            }
             setIsLoading(false);
-        }, 500);
+        }, 300);
         return () => clearTimeout(timer);
     }, [contextReferrals]);
 

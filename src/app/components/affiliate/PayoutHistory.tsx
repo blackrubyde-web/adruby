@@ -29,40 +29,25 @@ export function PayoutHistory() {
     const [payouts, setPayouts] = useState<Payout[]>([]);
 
     useEffect(() => {
-        // Simulate loading from API  
+        // Use real data from context instead of mock data
         const timer = setTimeout(() => {
-            const demoPayouts: Payout[] = [
-                {
-                    id: '1',
-                    amount: 250.00,
-                    status: 'completed',
-                    payoutMethod: 'paypal',
-                    requestedAt: '2026-01-10T10:00:00Z',
-                    processedAt: '2026-01-12T14:30:00Z',
-                    reference: 'PAY-2026-001',
-                },
-                {
-                    id: '2',
-                    amount: 175.50,
-                    status: 'processing',
-                    payoutMethod: 'bank_transfer',
-                    requestedAt: '2026-01-16T09:00:00Z',
-                    processedAt: null,
-                    reference: null,
-                },
-                {
-                    id: '3',
-                    amount: 89.00,
-                    status: 'completed',
-                    payoutMethod: 'paypal',
-                    requestedAt: '2025-12-20T11:00:00Z',
-                    processedAt: '2025-12-22T10:00:00Z',
-                    reference: 'PAY-2025-012',
-                },
-            ];
-            setPayouts(demoPayouts);
+            if (contextPayouts && contextPayouts.length > 0) {
+                const mappedPayouts: Payout[] = contextPayouts.map((p, index) => ({
+                    id: p.id || String(index),
+                    amount: p.amount || 0,
+                    status: p.status || 'pending',
+                    payoutMethod: p.payout_method || 'bank_transfer',
+                    requestedAt: p.requested_at || new Date().toISOString(),
+                    processedAt: p.processed_at || null,
+                    reference: p.payout_reference || null,
+                }));
+                setPayouts(mappedPayouts);
+            } else {
+                // No payouts yet - show empty state
+                setPayouts([]);
+            }
             setIsLoading(false);
-        }, 400);
+        }, 300);
         return () => clearTimeout(timer);
     }, [contextPayouts]);
 
