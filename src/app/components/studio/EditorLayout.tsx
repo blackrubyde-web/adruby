@@ -32,7 +32,6 @@ import { EditorRightPanel } from './EditorRightPanel';
 import { EditorModals } from './EditorModals';
 import { FloatingToolbar } from './FloatingToolbar';
 import { QuickAddMenu } from './QuickAddMenu';
-import { EmptyCanvasState } from './EmptyCanvasState';
 import { FormatPresetsBar } from './FormatPresetsBar';
 
 // Default empty canvas document
@@ -884,41 +883,7 @@ export const EditorLayout: React.FC<EditorLayoutProps> = ({ onClose, initialDoc,
                     onViewChange={(pos) => setViewPos(pos)}
                     viewPos={viewPos}
                     canvasRef={canvasRef}
-                    onZoom={handleZoom}
                 />
-
-                {/* Empty Canvas State - Show when no layers */}
-                {doc.layers.length === 0 && !isMultiverseOpen && !isMockupView && (
-                    <EmptyCanvasState
-                        onStartWithTemplate={() => {
-                            // Switch to assets tab in sidebar
-                            toast.info('Wähle ein Template aus der Sidebar!');
-                        }}
-                        onAddText={() => {
-                            handleAddLayer({
-                                type: 'text',
-                                text: 'Headline hier',
-                                fontSize: 64,
-                                fontWeight: 700,
-                                fontFamily: 'Inter',
-                                color: '#FFFFFF',
-                                fill: '#FFFFFF',
-                                width: 600,
-                                height: 100,
-                                x: (doc.width - 600) / 2,
-                                y: (doc.height - 100) / 2,
-                                align: 'center'
-                            });
-                        }}
-                        onAddImage={() => {
-                            toast.info('Upload-Funktion wird geöffnet');
-                        }}
-                        onAIGenerate={() => setShowTextToAdModal(true)}
-                        onUpload={() => {
-                            toast.info('Upload-Funktion wird geöffnet');
-                        }}
-                    />
-                )}
 
                 {/* Format Presets Bar - Quick canvas size switching */}
                 {!isMultiverseOpen && !isMockupView && doc.layers.length > 0 && (
