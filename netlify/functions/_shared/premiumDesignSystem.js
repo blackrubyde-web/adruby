@@ -376,7 +376,7 @@ export function createPremiumOverlaySVG(config) {
     <rect x="${badgeX}" y="${badgeY}" width="${badgeW}" height="${badgeH / 2}" rx="18" 
           fill="rgba(255,255,255,0.1)"/>
     <text x="${badgeX + badgeW / 2}" y="${badgeY + 24}" 
-          font-family="Inter, -apple-system, Arial, sans-serif" font-size="13" font-weight="700" 
+          font-family="Arial, Helvetica, sans-serif" font-size="13" font-weight="700" 
           fill="${s.badgeText}" text-anchor="middle" letter-spacing="1.5">${escapeXml(badge.toUpperCase())}</text>`;
     }
 
@@ -387,10 +387,10 @@ export function createPremiumOverlaySVG(config) {
         svg += `
     <!-- Premium Headline with Glow -->
     <text x="${width / 2}" y="${headlineY}" 
-          font-family="Inter, -apple-system, Arial, sans-serif" font-size="${fontSize}" font-weight="800" 
+          font-family="Arial, Helvetica, sans-serif" font-size="${fontSize}" font-weight="800" 
           fill="${s.headlineGlow}" text-anchor="middle" filter="url(#text-glow)">${escapeXml(headline)}</text>
     <text x="${width / 2}" y="${headlineY}" 
-          font-family="Inter, -apple-system, Arial, sans-serif" font-size="${fontSize}" font-weight="800" 
+          font-family="Arial, Helvetica, sans-serif" font-size="${fontSize}" font-weight="800" 
           fill="${s.headline}" text-anchor="middle">${escapeXml(headline)}</text>`;
     }
 
@@ -398,7 +398,7 @@ export function createPremiumOverlaySVG(config) {
     if (subheadline) {
         svg += `
     <text x="${width / 2}" y="125" 
-          font-family="Inter, -apple-system, Arial, sans-serif" font-size="18" font-weight="400" 
+          font-family="Arial, Helvetica, sans-serif" font-size="18" font-weight="400" 
           fill="${s.subtext}" text-anchor="middle">${escapeXml(subheadline)}</text>`;
     }
 
@@ -422,11 +422,11 @@ export function createPremiumOverlaySVG(config) {
     <!-- Checkmark with glow -->
     <circle cx="${featureX + 32}" cy="${y + featureH / 2}" r="14" fill="${s.checkmark}" opacity="0.15"/>
     <text x="${featureX + 32}" y="${y + featureH / 2 + 6}" 
-          font-family="Inter, Arial, sans-serif" font-size="18" fill="${s.checkmark}" 
+          font-family="Arial, Helvetica, sans-serif" font-size="18" fill="${s.checkmark}" 
           text-anchor="middle" filter="url(#neon-glow)">✓</text>
     <!-- Feature text -->
     <text x="${featureX + 60}" y="${y + featureH / 2 + 6}" 
-          font-family="Inter, -apple-system, Arial, sans-serif" font-size="16" font-weight="500" 
+          font-family="Arial, Helvetica, sans-serif" font-size="16" font-weight="500" 
           fill="${s.featureText}">${escapeXml(feature)}</text>`;
         });
     }
@@ -447,7 +447,7 @@ export function createPremiumOverlaySVG(config) {
              fill="rgba(255,255,255,0.2)"/>
     <!-- CTA Text -->
     <text x="${ctaX + ctaW / 2}" y="${ctaY + ctaH / 2 + 7}" 
-          font-family="Inter, -apple-system, Arial, sans-serif" font-size="18" font-weight="700" 
+          font-family="Arial, Helvetica, sans-serif" font-size="18" font-weight="700" 
           fill="${s.ctaText}" text-anchor="middle" letter-spacing="0.5">${escapeXml(cta)}</text>`;
     }
 

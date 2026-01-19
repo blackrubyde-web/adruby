@@ -21,7 +21,7 @@
 export const PRICE_ELEMENTS = {
     // Standard price display
     priceTag: (x, y, price, currency = '€', fontSize = 48, color = '#FFFFFF') => `
-<text x="${x}" y="${y}" font-family="Inter, -apple-system, sans-serif" 
+<text x="${x}" y="${y}" font-family="Arial, Helvetica, sans-serif" 
       font-size="${fontSize}" font-weight="800" fill="${color}"
       filter="url(#premiumTextShadow)">${price}${currency}</text>`,
 
@@ -29,11 +29,11 @@ export const PRICE_ELEMENTS = {
     salePrice: (x, y, originalPrice, salePrice, currency = '€') => `
 <g>
     <!-- Original price (strikethrough) -->
-    <text x="${x}" y="${y}" font-family="Inter, sans-serif" 
+    <text x="${x}" y="${y}" font-family="Arial, Helvetica, sans-serif" 
           font-size="24" font-weight="400" fill="rgba(255,255,255,0.5)"
           text-decoration="line-through">${originalPrice}${currency}</text>
     <!-- Sale price -->
-    <text x="${x}" y="${y + 50}" font-family="Inter, sans-serif" 
+    <text x="${x}" y="${y + 50}" font-family="Arial, Helvetica, sans-serif" 
           font-size="52" font-weight="800" fill="#FF4444"
           filter="url(#premiumTextShadow)">${salePrice}${currency}</text>
 </g>`,
@@ -41,9 +41,9 @@ export const PRICE_ELEMENTS = {
     // Price with "ab" prefix
     startingAtPrice: (x, y, price, currency = '€') => `
 <g>
-    <text x="${x}" y="${y}" font-family="Inter, sans-serif" 
+    <text x="${x}" y="${y}" font-family="Arial, Helvetica, sans-serif" 
           font-size="18" font-weight="400" fill="rgba(255,255,255,0.7)">ab</text>
-    <text x="${x + 30}" y="${y}" font-family="Inter, sans-serif" 
+    <text x="${x + 30}" y="${y}" font-family="Arial, Helvetica, sans-serif" 
           font-size="48" font-weight="800" fill="#FFFFFF">${price}${currency}</text>
 </g>`,
 
@@ -52,7 +52,7 @@ export const PRICE_ELEMENTS = {
 <g>
     <rect x="${x}" y="${y}" width="140" height="36" rx="18" fill="#00C853"/>
     <rect x="${x}" y="${y}" width="140" height="18" rx="18" fill="rgba(255,255,255,0.15)"/>
-    <text x="${x + 70}" y="${y + 24}" font-family="Inter, sans-serif" 
+    <text x="${x + 70}" y="${y + 24}" font-family="Arial, Helvetica, sans-serif" 
           font-size="14" font-weight="700" fill="#FFFFFF" text-anchor="middle">
         SPARE ${amount}${currency}</text>
 </g>`,
@@ -67,7 +67,7 @@ export const PRICE_ELEMENTS = {
 <g>
     <circle cx="${x + w / 2}" cy="${y + h / 2}" r="${w / 2}" fill="#FF4444"/>
     <circle cx="${x + w / 2}" cy="${y + h / 2 - 5}" r="${w / 2 - 5}" fill="rgba(255,255,255,0.1)"/>
-    <text x="${x + w / 2}" y="${y + h / 2 + 5}" font-family="Inter, sans-serif" 
+    <text x="${x + w / 2}" y="${y + h / 2 + 5}" font-family="Arial, Helvetica, sans-serif" 
           font-size="${fontSize}" font-weight="800" fill="#FFFFFF" text-anchor="middle">-${percent}%</text>
 </g>`;
     },
@@ -82,7 +82,7 @@ export const DISCOUNT_ELEMENTS = {
     cornerRibbon: (text = 'SALE', bgColor = '#FF4444', textColor = '#FFFFFF') => `
 <g>
     <polygon points="0,0 120,0 0,120" fill="${bgColor}"/>
-    <text x="30" y="40" font-family="Inter, sans-serif" 
+    <text x="30" y="40" font-family="Arial, Helvetica, sans-serif" 
           font-size="16" font-weight="800" fill="${textColor}"
           transform="rotate(-45, 30, 40)">${text}</text>
 </g>`,
@@ -98,7 +98,7 @@ export const DISCOUNT_ELEMENTS = {
         return `
 <g>
     <polygon points="${points.join(' ')}" fill="${bgColor}"/>
-    <text x="${x + size}" y="${y + size + 6}" font-family="Inter, sans-serif" 
+    <text x="${x + size}" y="${y + size + 6}" font-family="Arial, Helvetica, sans-serif" 
           font-size="16" font-weight="800" fill="#FFFFFF" text-anchor="middle">${text}</text>
 </g>`;
     },
@@ -108,7 +108,7 @@ export const DISCOUNT_ELEMENTS = {
 <g>
     <rect x="${x}" y="${y}" width="${width}" height="40" fill="${bgColor}"/>
     <rect x="${x}" y="${y}" width="${width}" height="20" fill="rgba(255,255,255,0.1)"/>
-    <text x="${x + width / 2}" y="${y + 27}" font-family="Inter, sans-serif" 
+    <text x="${x + width / 2}" y="${y + 27}" font-family="Arial, Helvetica, sans-serif" 
           font-size="14" font-weight="700" fill="#FFFFFF" text-anchor="middle" 
           letter-spacing="2">${text}</text>
 </g>`,
@@ -118,7 +118,7 @@ export const DISCOUNT_ELEMENTS = {
 <g>
     <rect x="${x}" y="${y}" width="60" height="28" rx="14" fill="#00B8D4"/>
     <rect x="${x}" y="${y}" width="60" height="14" rx="14" fill="rgba(255,255,255,0.2)"/>
-    <text x="${x + 30}" y="${y + 19}" font-family="Inter, sans-serif" 
+    <text x="${x + 30}" y="${y + 19}" font-family="Arial, Helvetica, sans-serif" 
           font-size="12" font-weight="700" fill="#FFFFFF" text-anchor="middle">NEU</text>
 </g>`,
 
@@ -127,7 +127,7 @@ export const DISCOUNT_ELEMENTS = {
 <g>
     <rect x="${x}" y="${y}" width="110" height="28" rx="14" fill="#FFB300"/>
     <rect x="${x}" y="${y}" width="110" height="14" rx="14" fill="rgba(255,255,255,0.2)"/>
-    <text x="${x + 55}" y="${y + 19}" font-family="Inter, sans-serif" 
+    <text x="${x + 55}" y="${y + 19}" font-family="Arial, Helvetica, sans-serif" 
           font-size="11" font-weight="700" fill="#1A1A1A" text-anchor="middle">⭐ BESTSELLER</text>
 </g>`,
 };
@@ -142,9 +142,9 @@ export const TRUST_BADGES = {
 <g>
     <rect x="${x}" y="${y}" width="160" height="36" rx="8" 
           fill="rgba(255,255,255,0.08)" stroke="rgba(255,255,255,0.15)" stroke-width="1"/>
-    <text x="${x + 12}" y="${y + 24}" font-family="Inter, sans-serif" 
+    <text x="${x + 12}" y="${y + 24}" font-family="Arial, Helvetica, sans-serif" 
           font-size="16">🚚</text>
-    <text x="${x + 38}" y="${y + 24}" font-family="Inter, sans-serif" 
+    <text x="${x + 38}" y="${y + 24}" font-family="Arial, Helvetica, sans-serif" 
           font-size="13" font-weight="500" fill="rgba(255,255,255,0.9)">Gratis Versand</text>
 </g>`,
 
@@ -153,9 +153,9 @@ export const TRUST_BADGES = {
 <g>
     <rect x="${x}" y="${y}" width="180" height="36" rx="8" 
           fill="rgba(255,255,255,0.08)" stroke="rgba(255,255,255,0.15)" stroke-width="1"/>
-    <text x="${x + 12}" y="${y + 24}" font-family="Inter, sans-serif" 
+    <text x="${x + 12}" y="${y + 24}" font-family="Arial, Helvetica, sans-serif" 
           font-size="16">💰</text>
-    <text x="${x + 38}" y="${y + 24}" font-family="Inter, sans-serif" 
+    <text x="${x + 38}" y="${y + 24}" font-family="Arial, Helvetica, sans-serif" 
           font-size="13" font-weight="500" fill="rgba(255,255,255,0.9)">${days} Tage Geld-zurück</text>
 </g>`,
 
@@ -164,9 +164,9 @@ export const TRUST_BADGES = {
 <g>
     <rect x="${x}" y="${y}" width="150" height="36" rx="8" 
           fill="rgba(255,255,255,0.08)" stroke="rgba(255,255,255,0.15)" stroke-width="1"/>
-    <text x="${x + 12}" y="${y + 24}" font-family="Inter, sans-serif" 
+    <text x="${x + 12}" y="${y + 24}" font-family="Arial, Helvetica, sans-serif" 
           font-size="16">🔒</text>
-    <text x="${x + 38}" y="${y + 24}" font-family="Inter, sans-serif" 
+    <text x="${x + 38}" y="${y + 24}" font-family="Arial, Helvetica, sans-serif" 
           font-size="13" font-weight="500" fill="rgba(255,255,255,0.9)">Sicher bezahlen</text>
 </g>`,
 
@@ -175,9 +175,9 @@ export const TRUST_BADGES = {
 <g>
     <rect x="${x}" y="${y}" width="170" height="36" rx="8" 
           fill="rgba(255,255,255,0.08)" stroke="rgba(255,255,255,0.15)" stroke-width="1"/>
-    <text x="${x + 12}" y="${y + 24}" font-family="Inter, sans-serif" 
+    <text x="${x + 12}" y="${y + 24}" font-family="Arial, Helvetica, sans-serif" 
           font-size="16">⚡</text>
-    <text x="${x + 38}" y="${y + 24}" font-family="Inter, sans-serif" 
+    <text x="${x + 38}" y="${y + 24}" font-family="Arial, Helvetica, sans-serif" 
           font-size="13" font-weight="500" fill="rgba(255,255,255,0.9)">Lieferung in ${days} Tagen</text>
 </g>`,
 
@@ -224,7 +224,7 @@ export const RATINGS = {
         let reviewText = '';
         if (reviewCount !== null) {
             const textX = x + 5 * (starSize + gap) + 8;
-            reviewText = `<text x="${textX}" y="${y + starSize - 2}" font-family="Inter, sans-serif" 
+            reviewText = `<text x="${textX}" y="${y + starSize - 2}" font-family="Arial, Helvetica, sans-serif" 
                   font-size="${starSize * 0.7}" fill="rgba(255,255,255,0.6)">(${reviewCount})</text>`;
         }
 
@@ -235,7 +235,7 @@ export const RATINGS = {
     ratingWithLabel: (x, y, rating, totalReviews) => `
 <g>
     ${RATINGS.starRating(x, y, rating)}
-    <text x="${x}" y="${y + 40}" font-family="Inter, sans-serif" 
+    <text x="${x}" y="${y + 40}" font-family="Arial, Helvetica, sans-serif" 
           font-size="14" fill="rgba(255,255,255,0.7)">${rating}/5 (${totalReviews} Bewertungen)</text>
 </g>`,
 };
@@ -250,7 +250,7 @@ export const URGENCY = {
 <g>
     <rect x="${x}" y="${y}" width="180" height="32" rx="6" fill="rgba(255,68,68,0.15)" 
           stroke="rgba(255,68,68,0.4)" stroke-width="1"/>
-    <text x="${x + 12}" y="${y + 22}" font-family="Inter, sans-serif" 
+    <text x="${x + 12}" y="${y + 22}" font-family="Arial, Helvetica, sans-serif" 
           font-size="13" font-weight="600" fill="#FF6B6B">🔥 Nur noch ${quantity} auf Lager!</text>
 </g>`,
 
@@ -259,7 +259,7 @@ export const URGENCY = {
 <g>
     <rect x="${x}" y="${y}" width="160" height="32" rx="6" fill="rgba(255,152,0,0.15)" 
           stroke="rgba(255,152,0,0.4)" stroke-width="1"/>
-    <text x="${x + 12}" y="${y + 22}" font-family="Inter, sans-serif" 
+    <text x="${x + 12}" y="${y + 22}" font-family="Arial, Helvetica, sans-serif" 
           font-size="13" font-weight="600" fill="#FFB74D">⚡ Schnell ausverkauft!</text>
 </g>`,
 
@@ -268,7 +268,7 @@ export const URGENCY = {
 <g>
     <rect x="${x}" y="${y}" width="200" height="32" rx="6" fill="rgba(156,39,176,0.15)" 
           stroke="rgba(156,39,176,0.4)" stroke-width="1"/>
-    <text x="${x + 12}" y="${y + 22}" font-family="Inter, sans-serif" 
+    <text x="${x + 12}" y="${y + 22}" font-family="Arial, Helvetica, sans-serif" 
           font-size="13" font-weight="600" fill="#CE93D8">⏰ Nur noch ${hoursLeft}h gültig!</text>
 </g>`,
 
@@ -277,9 +277,9 @@ export const URGENCY = {
 <g>
     <rect x="${x}" y="${y}" width="180" height="50" rx="12" fill="rgba(0,0,0,0.4)" 
           stroke="rgba(255,255,255,0.1)" stroke-width="1"/>
-    <text x="${x + 90}" y="${y + 16}" font-family="Inter, sans-serif" 
+    <text x="${x + 90}" y="${y + 16}" font-family="Arial, Helvetica, sans-serif" 
           font-size="10" font-weight="500" fill="rgba(255,255,255,0.6)" text-anchor="middle">ENDET IN</text>
-    <text x="${x + 90}" y="${y + 40}" font-family="Inter, sans-serif" 
+    <text x="${x + 90}" y="${y + 40}" font-family="Arial, Helvetica, sans-serif" 
           font-size="24" font-weight="700" fill="#FF4444" text-anchor="middle"
           letter-spacing="2">${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}</text>
 </g>`,
@@ -289,7 +289,7 @@ export const URGENCY = {
 <g>
     <rect x="${x}" y="${y}" width="170" height="32" rx="6" fill="rgba(76,175,80,0.15)" 
           stroke="rgba(76,175,80,0.4)" stroke-width="1"/>
-    <text x="${x + 12}" y="${y + 22}" font-family="Inter, sans-serif" 
+    <text x="${x + 12}" y="${y + 22}" font-family="Arial, Helvetica, sans-serif" 
           font-size="13" font-weight="600" fill="#81C784">👀 ${count} schauen gerade</text>
 </g>`,
 };
@@ -304,7 +304,7 @@ export const BUNDLE_ELEMENTS = {
 <g>
     <rect x="${x}" y="${y}" width="120" height="36" rx="18" fill="#7C4DFF"/>
     <rect x="${x}" y="${y}" width="120" height="18" rx="18" fill="rgba(255,255,255,0.15)"/>
-    <text x="${x + 60}" y="${y + 24}" font-family="Inter, sans-serif" 
+    <text x="${x + 60}" y="${y + 24}" font-family="Arial, Helvetica, sans-serif" 
           font-size="13" font-weight="700" fill="#FFFFFF" text-anchor="middle">📦 ${itemCount}er Set</text>
 </g>`,
 
@@ -313,7 +313,7 @@ export const BUNDLE_ELEMENTS = {
         let svg = '<g>';
         items.forEach((item, i) => {
             svg += `
-<text x="${x}" y="${y + i * 28}" font-family="Inter, sans-serif" 
+<text x="${x}" y="${y + i * 28}" font-family="Arial, Helvetica, sans-serif" 
       font-size="14" fill="rgba(255,255,255,0.8)">✓ ${item}</text>`;
         });
         svg += '</g>';
@@ -323,11 +323,11 @@ export const BUNDLE_ELEMENTS = {
     // Value proposition
     valueProp: (x, y, totalValue, bundlePrice, currency = '€') => `
 <g>
-    <text x="${x}" y="${y}" font-family="Inter, sans-serif" 
+    <text x="${x}" y="${y}" font-family="Arial, Helvetica, sans-serif" 
           font-size="14" fill="rgba(255,255,255,0.6)">Gesamtwert: ${totalValue}${currency}</text>
-    <text x="${x}" y="${y + 30}" font-family="Inter, sans-serif" 
+    <text x="${x}" y="${y + 30}" font-family="Arial, Helvetica, sans-serif" 
           font-size="14" fill="rgba(255,255,255,0.6)">Dein Preis:</text>
-    <text x="${x + 90}" y="${y + 30}" font-family="Inter, sans-serif" 
+    <text x="${x + 90}" y="${y + 30}" font-family="Arial, Helvetica, sans-serif" 
           font-size="28" font-weight="800" fill="#00E676">${bundlePrice}${currency}</text>
 </g>`,
 };
@@ -342,9 +342,9 @@ export const SHIPPING_INFO = {
 <g>
     <rect x="${x}" y="${y}" width="240" height="44" rx="10" 
           fill="rgba(255,255,255,0.06)" stroke="rgba(255,255,255,0.1)" stroke-width="1"/>
-    <text x="${x + 14}" y="${y + 18}" font-family="Inter, sans-serif" 
+    <text x="${x + 14}" y="${y + 18}" font-family="Arial, Helvetica, sans-serif" 
           font-size="11" fill="rgba(255,255,255,0.5)">Lieferung</text>
-    <text x="${x + 14}" y="${y + 34}" font-family="Inter, sans-serif" 
+    <text x="${x + 14}" y="${y + 34}" font-family="Arial, Helvetica, sans-serif" 
           font-size="14" font-weight="600" fill="rgba(255,255,255,0.9)">${dateRange}</text>
 </g>`,
 
@@ -353,9 +353,9 @@ export const SHIPPING_INFO = {
 <g>
     <rect x="${x}" y="${y}" width="180" height="44" rx="10" 
           fill="rgba(0,200,83,0.1)" stroke="rgba(0,200,83,0.3)" stroke-width="1"/>
-    <text x="${x + 14}" y="${y + 18}" font-family="Inter, sans-serif" 
+    <text x="${x + 14}" y="${y + 18}" font-family="Arial, Helvetica, sans-serif" 
           font-size="11" fill="rgba(0,200,83,0.8)">EXPRESS</text>
-    <text x="${x + 14}" y="${y + 34}" font-family="Inter, sans-serif" 
+    <text x="${x + 14}" y="${y + 34}" font-family="Arial, Helvetica, sans-serif" 
           font-size="14" font-weight="600" fill="#00C853">Morgen bei dir!</text>
 </g>`,
 };
@@ -368,11 +368,11 @@ export const SOCIAL_PROOF = {
     // Customer count
     customerCount: (x, y, count = '10.000+') => `
 <g>
-    <text x="${x}" y="${y}" font-family="Inter, sans-serif" 
+    <text x="${x}" y="${y}" font-family="Arial, Helvetica, sans-serif" 
           font-size="14" fill="rgba(255,255,255,0.7)">Bereits</text>
-    <text x="${x + 50}" y="${y}" font-family="Inter, sans-serif" 
+    <text x="${x + 50}" y="${y}" font-family="Arial, Helvetica, sans-serif" 
           font-size="14" font-weight="700" fill="#FFFFFF">${count}</text>
-    <text x="${x + 120}" y="${y}" font-family="Inter, sans-serif" 
+    <text x="${x + 120}" y="${y}" font-family="Arial, Helvetica, sans-serif" 
           font-size="14" fill="rgba(255,255,255,0.7)">zufriedene Kunden</text>
 </g>`,
 
@@ -389,11 +389,11 @@ export const SOCIAL_PROOF = {
 <g>
     <rect x="${x}" y="${y}" width="280" height="80" rx="12" 
           fill="rgba(255,255,255,0.05)" stroke="rgba(255,255,255,0.1)" stroke-width="1"/>
-    <text x="${x + 16}" y="${y + 22}" font-family="Inter, sans-serif" 
+    <text x="${x + 16}" y="${y + 22}" font-family="Arial, Helvetica, sans-serif" 
           font-size="12" fill="#FFB300">${'★'.repeat(rating)}</text>
-    <text x="${x + 16}" y="${y + 46}" font-family="Inter, sans-serif" 
+    <text x="${x + 16}" y="${y + 46}" font-family="Arial, Helvetica, sans-serif" 
           font-size="13" fill="rgba(255,255,255,0.85)">"${text}"</text>
-    <text x="${x + 16}" y="${y + 68}" font-family="Inter, sans-serif" 
+    <text x="${x + 16}" y="${y + 68}" font-family="Arial, Helvetica, sans-serif" 
           font-size="11" fill="rgba(255,255,255,0.5)">– ${author}</text>
 </g>`,
 };

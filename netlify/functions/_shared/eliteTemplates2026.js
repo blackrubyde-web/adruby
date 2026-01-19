@@ -37,7 +37,7 @@ export const TYPOGRAPHY_2026 = {
 
     // Accent Text - CTAs, Badges
     accent: {
-        family: 'Inter, -apple-system, BlinkMacSystemFont, sans-serif',
+        family: 'Arial, Helvetica, sans-serif',
         weights: {
             bold: 700,
             semibold: 600,

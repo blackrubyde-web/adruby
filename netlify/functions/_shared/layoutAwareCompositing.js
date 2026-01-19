@@ -248,7 +248,7 @@ function createDesignOverlaySVG(layout, content, canvasSize = 1024) {
         const by = b.y * sz + 20;
         svg += `
     <rect x="${b.x * sz}" y="${b.y * sz}" width="${b.width * sz}" height="${b.height * sz}" rx="20" fill="${s.badge}"/>
-    <text x="${bx}" y="${by}" font-family="Inter, Arial, sans-serif" font-size="13" font-weight="700" fill="#FFFFFF" text-anchor="middle" letter-spacing="1">${escapeXml(badge.toUpperCase())}</text>`;
+    <text x="${bx}" y="${by}" font-family="Arial, Helvetica, sans-serif" font-size="13" font-weight="700" fill="#FFFFFF" text-anchor="middle" letter-spacing="1">${escapeXml(badge.toUpperCase())}</text>`;
     }
 
     // HEADLINE
@@ -259,7 +259,7 @@ function createDesignOverlaySVG(layout, content, canvasSize = 1024) {
         // Calculate font size based on headline length
         const fontSize = headline.length > 25 ? 36 : headline.length > 18 ? 42 : 48;
         svg += `
-    <text x="${hx}" y="${hy}" font-family="Inter, Arial, sans-serif" font-size="${fontSize}" font-weight="800" fill="${s.headline}" text-anchor="middle" filter="url(#shadow)">${escapeXml(headline)}</text>`;
+    <text x="${hx}" y="${hy}" font-family="Arial, Helvetica, sans-serif" font-size="${fontSize}" font-weight="800" fill="${s.headline}" text-anchor="middle" filter="url(#shadow)">${escapeXml(headline)}</text>`;
     }
 
     // SUBHEADLINE
@@ -268,7 +268,7 @@ function createDesignOverlaySVG(layout, content, canvasSize = 1024) {
         const shx = sh.x * sz + (sh.width * sz) / 2;
         const shy = sh.y * sz + (sh.height * sz) * 0.6;
         svg += `
-    <text x="${shx}" y="${shy}" font-family="Inter, Arial, sans-serif" font-size="18" font-weight="400" fill="${s.text}" text-anchor="middle" opacity="0.9">${escapeXml(subheadline)}</text>`;
+    <text x="${shx}" y="${shy}" font-family="Arial, Helvetica, sans-serif" font-size="18" font-weight="400" fill="${s.text}" text-anchor="middle" opacity="0.9">${escapeXml(subheadline)}</text>`;
     }
 
     // FEATURES (with checkmarks)
@@ -286,8 +286,8 @@ function createDesignOverlaySVG(layout, content, canvasSize = 1024) {
         // Feature box
         svg += `
     <rect x="${fx}" y="${fy}" width="${fw}" height="${fh}" rx="12" fill="${s.featureBg}" stroke="rgba(255,255,255,0.1)" stroke-width="1"/>
-    <text x="${fx + 30}" y="${fy + fh / 2 + 5}" font-family="Inter, Arial, sans-serif" font-size="20" fill="${s.checkmark}">✓</text>
-    <text x="${fx + 55}" y="${fy + fh / 2 + 5}" font-family="Inter, Arial, sans-serif" font-size="15" font-weight="500" fill="${s.text}">${escapeXml(feature)}</text>`;
+    <text x="${fx + 30}" y="${fy + fh / 2 + 5}" font-family="Arial, Helvetica, sans-serif" font-size="20" fill="${s.checkmark}">✓</text>
+    <text x="${fx + 55}" y="${fy + fh / 2 + 5}" font-family="Arial, Helvetica, sans-serif" font-size="15" font-weight="500" fill="${s.text}">${escapeXml(feature)}</text>`;
     });
 
     // CTA BUTTON
@@ -300,7 +300,7 @@ function createDesignOverlaySVG(layout, content, canvasSize = 1024) {
 
         svg += `
     <rect x="${cx}" y="${cy}" width="${cw}" height="${ch}" rx="${ch / 2}" fill="url(#ctaGrad)" filter="url(#shadow)"/>
-    <text x="${cx + cw / 2}" y="${cy + ch / 2 + 6}" font-family="Inter, Arial, sans-serif" font-size="18" font-weight="700" fill="${s.ctaText}" text-anchor="middle">${escapeXml(cta)}</text>`;
+    <text x="${cx + cw / 2}" y="${cy + ch / 2 + 6}" font-family="Arial, Helvetica, sans-serif" font-size="18" font-weight="700" fill="${s.ctaText}" text-anchor="middle">${escapeXml(cta)}</text>`;
     }
 
     // ARROWS (curved, pointing to product zone)

@@ -67,7 +67,7 @@ export const SIMPLE_PRODUCT_PATTERN = {
             svg += `
 <!-- Badge -->
 <rect x="${w - 150}" y="30" width="120" height="44" rx="22" fill="${badgeBg}"/>
-<text x="${w - 90}" y="58" font-family="Inter, sans-serif" 
+<text x="${w - 90}" y="58" font-family="Arial, Helvetica, sans-serif" 
       font-size="18" font-weight="700" fill="#FFFFFF" text-anchor="middle">${badge}</text>
 `;
         }
@@ -76,7 +76,7 @@ export const SIMPLE_PRODUCT_PATTERN = {
         if (productName) {
             svg += `
 <!-- Product Name -->
-<text x="50" y="70" font-family="Inter, -apple-system, sans-serif" 
+<text x="50" y="70" font-family="Arial, Helvetica, sans-serif" 
       font-size="28" font-weight="600" fill="${textColor}">${productName}</text>
 `;
         }
@@ -85,7 +85,7 @@ export const SIMPLE_PRODUCT_PATTERN = {
         if (tagline) {
             svg += `
 <!-- Tagline -->
-<text x="50" y="105" font-family="Inter, sans-serif" 
+<text x="50" y="105" font-family="Arial, Helvetica, sans-serif" 
       font-size="18" fill="${mutedColor}">${tagline}</text>
 `;
         }
@@ -95,8 +95,8 @@ export const SIMPLE_PRODUCT_PATTERN = {
             const stars = '★'.repeat(Math.floor(rating)) + (rating % 1 >= 0.5 ? '½' : '');
             svg += `
 <!-- Rating -->
-<text x="50" y="${h - 150}" font-family="Inter, sans-serif" font-size="20" fill="#FBBF24">${stars}</text>
-<text x="${55 + rating * 24}" y="${h - 150}" font-family="Inter, sans-serif" 
+<text x="50" y="${h - 150}" font-family="Arial, Helvetica, sans-serif" font-size="20" fill="#FBBF24">${stars}</text>
+<text x="${55 + rating * 24}" y="${h - 150}" font-family="Arial, Helvetica, sans-serif" 
       font-size="16" fill="${mutedColor}">(${reviewCount})</text>
 `;
         }
@@ -107,13 +107,13 @@ export const SIMPLE_PRODUCT_PATTERN = {
             if (originalPrice) {
                 svg += `
 <!-- Original Price (strikethrough) -->
-<text x="50" y="${priceY - 30}" font-family="Inter, sans-serif" 
+<text x="50" y="${priceY - 30}" font-family="Arial, Helvetica, sans-serif" 
       font-size="22" fill="${mutedColor}" text-decoration="line-through">${originalPrice}</text>
 `;
             }
             svg += `
 <!-- Sale Price -->
-<text x="50" y="${priceY}" font-family="Inter, sans-serif" 
+<text x="50" y="${priceY}" font-family="Arial, Helvetica, sans-serif" 
       font-size="42" font-weight="800" fill="${originalPrice ? '#EF4444' : textColor}">${price}</text>
 `;
         }
@@ -124,7 +124,7 @@ export const SIMPLE_PRODUCT_PATTERN = {
             svg += `
 <!-- CTA Button -->
 <rect x="${w - ctaWidth - 40}" y="${h - 110}" width="${ctaWidth}" height="50" rx="25" fill="${accentColor}"/>
-<text x="${w - ctaWidth / 2 - 40}" y="${h - 78}" font-family="Inter, sans-serif" 
+<text x="${w - ctaWidth / 2 - 40}" y="${h - 78}" font-family="Arial, Helvetica, sans-serif" 
       font-size="18" font-weight="600" fill="${isDark ? '#1A1A1A' : '#FFFFFF'}" text-anchor="middle">${ctaText}</text>
 `;
         }
@@ -178,11 +178,11 @@ export const SAAS_FEATURES_PATTERN = {
 <rect width="100%" height="100%" fill="url(#glowGradient)"/>
 
 <!-- Headline -->
-<text x="${w / 2}" y="100" font-family="Inter, -apple-system, sans-serif" 
+<text x="${w / 2}" y="100" font-family="Arial, Helvetica, sans-serif" 
       font-size="48" font-weight="800" fill="#FFFFFF" text-anchor="middle">${headline}</text>
 
 <!-- Subheadline -->
-<text x="${w / 2}" y="150" font-family="Inter, sans-serif" 
+<text x="${w / 2}" y="150" font-family="Arial, Helvetica, sans-serif" 
       font-size="22" fill="rgba(255,255,255,0.7)" text-anchor="middle">${subheadline}</text>
 `;
 
@@ -203,9 +203,9 @@ export const SAAS_FEATURES_PATTERN = {
 <rect x="${cardX}" y="${cardY}" width="${cardWidth}" height="${cardHeight}" rx="16" 
       fill="rgba(255,255,255,0.05)" stroke="rgba(255,255,255,0.1)" stroke-width="1"/>
 <text x="${cardX + 25}" y="${cardY + 45}" font-size="32">${feature.icon || '✨'}</text>
-<text x="${cardX + 70}" y="${cardY + 45}" font-family="Inter, sans-serif" 
+<text x="${cardX + 70}" y="${cardY + 45}" font-family="Arial, Helvetica, sans-serif" 
       font-size="20" font-weight="600" fill="#FFFFFF">${feature.title || ''}</text>
-<text x="${cardX + 25}" y="${cardY + 80}" font-family="Inter, sans-serif" 
+<text x="${cardX + 25}" y="${cardY + 80}" font-family="Arial, Helvetica, sans-serif" 
       font-size="16" fill="rgba(255,255,255,0.6)">${feature.description || ''}</text>
 `;
         });
@@ -214,7 +214,7 @@ export const SAAS_FEATURES_PATTERN = {
         if (showPricing && price) {
             svg += `
 <!-- Pricing -->
-<text x="${w / 2}" y="${h - 180}" font-family="Inter, sans-serif" text-anchor="middle">
+<text x="${w / 2}" y="${h - 180}" font-family="Arial, Helvetica, sans-serif" text-anchor="middle">
     <tspan font-size="48" font-weight="800" fill="#FFFFFF">${price}</tspan>
     <tspan font-size="20" fill="rgba(255,255,255,0.6)">${pricePeriod}</tspan>
 </text>
@@ -227,7 +227,7 @@ export const SAAS_FEATURES_PATTERN = {
             svg += `
 <!-- CTA Button -->
 <rect x="${(w - ctaWidth) / 2}" y="${h - 120}" width="${ctaWidth}" height="56" rx="28" fill="${accentColor}"/>
-<text x="${w / 2}" y="${h - 84}" font-family="Inter, sans-serif" 
+<text x="${w / 2}" y="${h - 84}" font-family="Arial, Helvetica, sans-serif" 
       font-size="18" font-weight="600" fill="#FFFFFF" text-anchor="middle">${ctaText}</text>
 `;
         }
@@ -275,9 +275,9 @@ export const COACH_AUTHORITY_PATTERN = {
 <rect x="50" y="40" width="80" height="4" fill="${accentColor}"/>
 
 <!-- Coach name & title -->
-<text x="50" y="90" font-family="Inter, -apple-system, sans-serif" 
+<text x="50" y="90" font-family="Arial, Helvetica, sans-serif" 
       font-size="16" fill="${accentColor}" letter-spacing="3">${title.toUpperCase()}</text>
-<text x="50" y="140" font-family="Inter, sans-serif" 
+<text x="50" y="140" font-family="Arial, Helvetica, sans-serif" 
       font-size="42" font-weight="700" fill="#FFFFFF">${coachName}</text>
 `;
 
@@ -298,7 +298,7 @@ export const COACH_AUTHORITY_PATTERN = {
             credentials.forEach((cred, i) => {
                 svg += `
 <rect x="50" y="${credY + i * 50}" width="10" height="10" fill="${accentColor}"/>
-<text x="75" y="${credY + i * 50 + 10}" font-family="Inter, sans-serif" 
+<text x="75" y="${credY + i * 50 + 10}" font-family="Arial, Helvetica, sans-serif" 
       font-size="18" fill="rgba(255,255,255,0.8)">${cred}</text>
 `;
             });
@@ -308,11 +308,11 @@ export const COACH_AUTHORITY_PATTERN = {
         if (testimonialQuote) {
             svg += `
 <!-- Testimonial -->
-<text x="50" y="${h - 200}" font-family="Inter, sans-serif" 
+<text x="50" y="${h - 200}" font-family="Arial, Helvetica, sans-serif" 
       font-size="42" fill="${accentColor}">"</text>
 <text x="50" y="${h - 150}" font-family="Georgia, serif" 
       font-size="18" fill="rgba(255,255,255,0.9)" font-style="italic">${testimonialQuote}</text>
-<text x="50" y="${h - 115}" font-family="Inter, sans-serif" 
+<text x="50" y="${h - 115}" font-family="Arial, Helvetica, sans-serif" 
       font-size="14" fill="rgba(255,255,255,0.6)">– ${testimonialAuthor}</text>
 `;
         }
@@ -322,7 +322,7 @@ export const COACH_AUTHORITY_PATTERN = {
             svg += `
 <!-- CTA Button -->
 <rect x="50" y="${h - 80}" width="320" height="56" rx="4" fill="${accentColor}"/>
-<text x="210" y="${h - 44}" font-family="Inter, sans-serif" 
+<text x="210" y="${h - 44}" font-family="Arial, Helvetica, sans-serif" 
       font-size="16" font-weight="600" fill="#1A1A1A" text-anchor="middle">${ctaText}</text>
 `;
         }
@@ -376,14 +376,14 @@ export const REAL_ESTATE_PATTERN = {
 
 <!-- Property type badge -->
 <rect x="40" y="40" width="${propertyType.length * 14 + 40}" height="40" rx="4" fill="rgba(255,255,255,0.9)"/>
-<text x="60" y="67" font-family="Inter, sans-serif" 
+<text x="60" y="67" font-family="Arial, Helvetica, sans-serif" 
       font-size="16" font-weight="600" fill="#1A1A1A">${propertyType}</text>
 `;
 
         // Location
         if (location) {
             svg += `
-<text x="50" y="${h - 280}" font-family="Inter, sans-serif" 
+<text x="50" y="${h - 280}" font-family="Arial, Helvetica, sans-serif" 
       font-size="20" fill="rgba(255,255,255,0.8)">📍 ${location}</text>
 `;
         }
@@ -391,9 +391,9 @@ export const REAL_ESTATE_PATTERN = {
         // Price
         if (price) {
             svg += `
-<text x="50" y="${h - 220}" font-family="Inter, -apple-system, sans-serif" 
+<text x="50" y="${h - 220}" font-family="Arial, Helvetica, sans-serif" 
       font-size="48" font-weight="800" fill="#FFFFFF">${price}</text>
-<text x="50" y="${h - 185}" font-family="Inter, sans-serif" 
+<text x="50" y="${h - 185}" font-family="Arial, Helvetica, sans-serif" 
       font-size="16" fill="rgba(255,255,255,0.6)">${priceType}</text>
 `;
         }
@@ -406,7 +406,7 @@ export const REAL_ESTATE_PATTERN = {
                 const specX = 50 + (i * specWidth);
                 svg += `
 <text x="${specX}" y="${specY}" font-size="24">${spec.icon}</text>
-<text x="${specX + 35}" y="${specY}" font-family="Inter, sans-serif">
+<text x="${specX + 35}" y="${specY}" font-family="Arial, Helvetica, sans-serif">
     <tspan font-size="22" font-weight="700" fill="#FFFFFF">${spec.value}</tspan>
     <tspan font-size="14" fill="rgba(255,255,255,0.7)"> ${spec.label}</tspan>
 </text>
@@ -419,7 +419,7 @@ export const REAL_ESTATE_PATTERN = {
             svg += `
 <!-- CTA Button -->
 <rect x="${w - 320}" y="${h - 80}" width="280" height="50" rx="4" fill="${accentColor}"/>
-<text x="${w - 180}" y="${h - 48}" font-family="Inter, sans-serif" 
+<text x="${w - 180}" y="${h - 48}" font-family="Arial, Helvetica, sans-serif" 
       font-size="16" font-weight="600" fill="#1A1A1A" text-anchor="middle">${ctaText}</text>
 `;
         }
@@ -466,19 +466,19 @@ export const BEFORE_AFTER_PATTERN = {
 
 <!-- Before label -->
 <rect x="${w * 0.25 - 50}" y="80" width="100" height="32" rx="4" fill="rgba(239,68,68,0.2)"/>
-<text x="${w * 0.25}" y="102" font-family="Inter, sans-serif" 
+<text x="${w * 0.25}" y="102" font-family="Arial, Helvetica, sans-serif" 
       font-size="14" font-weight="700" fill="#EF4444" text-anchor="middle">${beforeLabel}</text>
 
 <!-- After label -->
 <rect x="${w * 0.75 - 50}" y="80" width="100" height="32" rx="4" fill="rgba(16,185,129,0.2)"/>
-<text x="${w * 0.75}" y="102" font-family="Inter, sans-serif" 
+<text x="${w * 0.75}" y="102" font-family="Arial, Helvetica, sans-serif" 
       font-size="14" font-weight="700" fill="${accentColor}" text-anchor="middle">${afterLabel}</text>
 `;
 
         // Headline
         if (headline) {
             svg += `
-<text x="${w / 2}" y="50" font-family="Inter, -apple-system, sans-serif" 
+<text x="${w / 2}" y="50" font-family="Arial, Helvetica, sans-serif" 
       font-size="32" font-weight="700" fill="#FFFFFF" text-anchor="middle">${headline}</text>
 `;
         }
@@ -487,7 +487,7 @@ export const BEFORE_AFTER_PATTERN = {
         if (timeframe) {
             svg += `
 <rect x="${w / 2 - 80}" y="${h - 200}" width="160" height="40" rx="20" fill="${accentColor}"/>
-<text x="${w / 2}" y="${h - 173}" font-family="Inter, sans-serif" 
+<text x="${w / 2}" y="${h - 173}" font-family="Arial, Helvetica, sans-serif" 
       font-size="16" font-weight="600" fill="#FFFFFF" text-anchor="middle">${timeframe}</text>
 `;
         }
@@ -496,7 +496,7 @@ export const BEFORE_AFTER_PATTERN = {
         if (ctaText) {
             svg += `
 <rect x="${(w - 240) / 2}" y="${h - 100}" width="240" height="54" rx="27" fill="${accentColor}"/>
-<text x="${w / 2}" y="${h - 66}" font-family="Inter, sans-serif" 
+<text x="${w / 2}" y="${h - 66}" font-family="Arial, Helvetica, sans-serif" 
       font-size="18" font-weight="600" fill="#FFFFFF" text-anchor="middle">${ctaText}</text>
 `;
         }
@@ -538,7 +538,7 @@ export const STATS_IMPACT_PATTERN = {
 <rect width="100%" height="100%" fill="${bgColor}"/>
 
 <!-- Headline -->
-<text x="${w / 2}" y="100" font-family="Inter, -apple-system, sans-serif" 
+<text x="${w / 2}" y="100" font-family="Arial, Helvetica, sans-serif" 
       font-size="36" font-weight="600" fill="#FFFFFF" text-anchor="middle">${headline}</text>
 `;
 
@@ -550,10 +550,10 @@ export const STATS_IMPACT_PATTERN = {
             const statY = statStartY + (i * statSpacing);
             svg += `
 <!-- Stat ${i + 1} -->
-<text x="${w / 2}" y="${statY}" font-family="Inter, -apple-system, sans-serif" text-anchor="middle">
+<text x="${w / 2}" y="${statY}" font-family="Arial, Helvetica, sans-serif" text-anchor="middle">
     <tspan font-size="96" font-weight="800" fill="${accentColor}">${stat.prefix || ''}${stat.value}</tspan>
 </text>
-<text x="${w / 2}" y="${statY + 50}" font-family="Inter, sans-serif" 
+<text x="${w / 2}" y="${statY + 50}" font-family="Arial, Helvetica, sans-serif" 
       font-size="24" fill="rgba(255,255,255,0.7)" text-anchor="middle">${stat.label}</text>
 `;
         });
@@ -562,7 +562,7 @@ export const STATS_IMPACT_PATTERN = {
         if (ctaText) {
             svg += `
 <rect x="${(w - 280) / 2}" y="${h - 120}" width="280" height="56" rx="28" fill="${accentColor}"/>
-<text x="${w / 2}" y="${h - 84}" font-family="Inter, sans-serif" 
+<text x="${w / 2}" y="${h - 84}" font-family="Arial, Helvetica, sans-serif" 
       font-size="18" font-weight="600" fill="#FFFFFF" text-anchor="middle">${ctaText}</text>
 `;
         }
@@ -570,7 +570,7 @@ export const STATS_IMPACT_PATTERN = {
         // Logo
         if (logoText) {
             svg += `
-<text x="${w / 2}" y="${h - 40}" font-family="Inter, sans-serif" 
+<text x="${w / 2}" y="${h - 40}" font-family="Arial, Helvetica, sans-serif" 
       font-size="20" font-weight="600" fill="rgba(255,255,255,0.5)" text-anchor="middle">${logoText}</text>
 `;
         }
@@ -622,7 +622,7 @@ export const LIFESTYLE_CONTEXT_PATTERN = {
         // Brand name (top)
         if (brandName) {
             svg += `
-<text x="50" y="60" font-family="Inter, sans-serif" 
+<text x="50" y="60" font-family="Arial, Helvetica, sans-serif" 
       font-size="20" font-weight="600" fill="#FFFFFF" letter-spacing="2">${brandName.toUpperCase()}</text>
 `;
         }
@@ -638,7 +638,7 @@ export const LIFESTYLE_CONTEXT_PATTERN = {
         // Subheadline
         if (subheadline) {
             svg += `
-<text x="50" y="${h - 100}" font-family="Inter, sans-serif" 
+<text x="50" y="${h - 100}" font-family="Arial, Helvetica, sans-serif" 
       font-size="20" fill="rgba(255,255,255,0.8)">${subheadline}</text>
 `;
         }
@@ -647,14 +647,14 @@ export const LIFESTYLE_CONTEXT_PATTERN = {
         if (price || ctaText) {
             if (price) {
                 svg += `
-<text x="50" y="${h - 50}" font-family="Inter, sans-serif" 
+<text x="50" y="${h - 50}" font-family="Arial, Helvetica, sans-serif" 
       font-size="28" font-weight="700" fill="#FFFFFF">${price}</text>
 `;
             }
             if (ctaText) {
                 svg += `
 <rect x="${w - 220}" y="${h - 80}" width="180" height="48" rx="24" fill="#FFFFFF"/>
-<text x="${w - 130}" y="${h - 49}" font-family="Inter, sans-serif" 
+<text x="${w - 130}" y="${h - 49}" font-family="Arial, Helvetica, sans-serif" 
       font-size="16" font-weight="600" fill="#1A1A1A" text-anchor="middle">${ctaText}</text>
 `;
             }

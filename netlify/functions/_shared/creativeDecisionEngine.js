@@ -457,8 +457,8 @@ function determineBadge(campaignType, stockLevel, productType) {
         return { show: true, text: 'BESTSELLER' };
     }
 
-    // Default badge
-    return { show: true, text: 'LIMITIERT' };
+    // NO default badge - only show when explicitly needed
+    return { show: false, text: null };
 }
 
 function calculateOptimalPositions(layout, elements) {

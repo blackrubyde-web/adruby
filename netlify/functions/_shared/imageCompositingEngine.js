@@ -208,19 +208,19 @@ function createTextOverlaySVG(config) {
     if (badge) {
         svg += `
     <rect x="${width - 140}" y="30" width="120" height="36" rx="18" fill="${s.badgeBg}"/>
-    <text x="${width - 80}" y="54" font-family="Inter, Arial, sans-serif" font-size="14" font-weight="700" fill="#FFFFFF" text-anchor="middle" letter-spacing="1">${badge.toUpperCase()}</text>`;
+    <text x="${width - 80}" y="54" font-family="Arial, Helvetica, sans-serif" font-size="14" font-weight="700" fill="#FFFFFF" text-anchor="middle" letter-spacing="1">${badge.toUpperCase()}</text>`;
     }
 
     // Headline (top area)
     if (headline) {
         svg += `
-    <text x="${width / 2}" y="90" font-family="Inter, Arial, sans-serif" font-size="42" font-weight="800" fill="${s.headlineColor}" text-anchor="middle" filter="url(#shadow)">${escapeXml(headline)}</text>`;
+    <text x="${width / 2}" y="90" font-family="Arial, Helvetica, sans-serif" font-size="42" font-weight="800" fill="${s.headlineColor}" text-anchor="middle" filter="url(#shadow)">${escapeXml(headline)}</text>`;
     }
 
     // Subheadline
     if (subheadline) {
         svg += `
-    <text x="${width / 2}" y="130" font-family="Inter, Arial, sans-serif" font-size="18" font-weight="400" fill="${s.textColor}" text-anchor="middle" opacity="0.9">${escapeXml(subheadline)}</text>`;
+    <text x="${width / 2}" y="130" font-family="Arial, Helvetica, sans-serif" font-size="18" font-weight="400" fill="${s.textColor}" text-anchor="middle" opacity="0.9">${escapeXml(subheadline)}</text>`;
     }
 
     // Features (right side checklist)
@@ -232,8 +232,8 @@ function createTextOverlaySVG(config) {
             const y = startY + (i * featureSpacing);
             svg += `
     <rect x="${width - 280}" y="${y - 15}" width="260" height="40" rx="20" fill="rgba(255,255,255,0.1)"/>
-    <text x="${width - 250}" y="${y + 8}" font-family="Inter, Arial, sans-serif" font-size="14" fill="#00CC88">✓</text>
-    <text x="${width - 225}" y="${y + 8}" font-family="Inter, Arial, sans-serif" font-size="15" font-weight="500" fill="${s.headlineColor}">${escapeXml(feature)}</text>`;
+    <text x="${width - 250}" y="${y + 8}" font-family="Arial, Helvetica, sans-serif" font-size="14" fill="#00CC88">✓</text>
+    <text x="${width - 225}" y="${y + 8}" font-family="Arial, Helvetica, sans-serif" font-size="15" font-weight="500" fill="${s.headlineColor}">${escapeXml(feature)}</text>`;
         });
     }
 
@@ -243,7 +243,7 @@ function createTextOverlaySVG(config) {
         const ctaX = (width - ctaWidth) / 2;
         svg += `
     <rect x="${ctaX}" y="${height - 100}" width="${ctaWidth}" height="50" rx="25" fill="${s.accentColor}"/>
-    <text x="${width / 2}" y="${height - 68}" font-family="Inter, Arial, sans-serif" font-size="16" font-weight="700" fill="#FFFFFF" text-anchor="middle">${escapeXml(cta)}</text>`;
+    <text x="${width / 2}" y="${height - 68}" font-family="Arial, Helvetica, sans-serif" font-size="16" font-weight="700" fill="#FFFFFF" text-anchor="middle">${escapeXml(cta)}</text>`;
     }
 
     svg += `</svg>`;

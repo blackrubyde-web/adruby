@@ -588,7 +588,7 @@ function generateEliteOverlaySVG(config) {
 <rect x="${b.x}" y="${b.y}" width="${b.width}" height="${b.height / 2}" rx="${badgeRadius}" 
       fill="rgba(255,255,255,0.15)"/>
 <text x="${b.x + b.width / 2}" y="${b.y + b.height / 2 + 5}" 
-      font-family="Inter, -apple-system, BlinkMacSystemFont, sans-serif" 
+      font-family="Arial, Helvetica, sans-serif" 
       font-size="${TYPE_SCALE.badge}" font-weight="700" 
       fill="${p.badge.text}" text-anchor="middle" letter-spacing="1.5">${escapeXml(badge.toUpperCase())}</text>
 `;
@@ -608,7 +608,7 @@ function generateEliteOverlaySVG(config) {
         svg += `
 <!-- Headline -->
 <text x="${x}" y="${h.y + fontSize}" 
-      font-family="Inter, -apple-system, BlinkMacSystemFont, sans-serif" 
+      font-family="Arial, Helvetica, sans-serif" 
       font-size="${fontSize}" font-weight="800" 
       fill="${p.text.primary}" text-anchor="${textAnchor}" 
       filter="url(#shadow-md)">${escapeXml(headline)}</text>
@@ -624,7 +624,7 @@ function generateEliteOverlaySVG(config) {
         svg += `
 <!-- Subheadline -->
 <text x="${x}" y="${sh.y + TYPE_SCALE.subtitle}" 
-      font-family="Inter, -apple-system, BlinkMacSystemFont, sans-serif" 
+      font-family="Arial, Helvetica, sans-serif" 
       font-size="${TYPE_SCALE.subtitle}" font-weight="400" 
       fill="${p.text.secondary}" text-anchor="${textAnchor}">${escapeXml(subheadline)}</text>
 `;
@@ -649,10 +649,10 @@ function generateEliteOverlaySVG(config) {
       fill="rgba(255,255,255,0.06)" stroke="rgba(255,255,255,0.1)" stroke-width="1"/>
 <circle cx="${fx + 28}" cy="${fy + fh / 2}" r="12" fill="${p.checkmark}" opacity="0.15"/>
 <text x="${fx + 28}" y="${fy + fh / 2 + 6}" 
-      font-family="Inter, sans-serif" font-size="18" 
+      font-family="Arial, Helvetica, sans-serif" font-size="18" 
       fill="${p.checkmark}" text-anchor="middle" filter="url(#glow-check)">✓</text>
 <text x="${fx + 52}" y="${fy + fh / 2 + 6}" 
-      font-family="Inter, -apple-system, sans-serif" font-size="${TYPE_SCALE.body}" font-weight="500" 
+      font-family="Arial, Helvetica, sans-serif" font-size="${TYPE_SCALE.body}" font-weight="500" 
       fill="${p.text.secondary}">${escapeXml(feature)}</text>
 `;
             });
@@ -671,10 +671,10 @@ function generateEliteOverlaySVG(config) {
 <rect x="${fx}" y="${fy}" width="${fw}" height="${fh / 2}" rx="14" fill="rgba(255,255,255,0.02)"/>
 <circle cx="${fx + 26}" cy="${fy + fh / 2}" r="11" fill="${p.checkmark}" opacity="0.15"/>
 <text x="${fx + 26}" y="${fy + fh / 2 + 5}" 
-      font-family="Inter, sans-serif" font-size="16" 
+      font-family="Arial, Helvetica, sans-serif" font-size="16" 
       fill="${p.checkmark}" text-anchor="middle" filter="url(#glow-check)">✓</text>
 <text x="${fx + 48}" y="${fy + fh / 2 + 6}" 
-      font-family="Inter, -apple-system, sans-serif" font-size="${TYPE_SCALE.body - 2}" font-weight="500" 
+      font-family="Arial, Helvetica, sans-serif" font-size="${TYPE_SCALE.body - 2}" font-weight="500" 
       fill="${p.text.secondary}">${escapeXml(feature)}</text>
 `;
             });
@@ -695,7 +695,7 @@ function generateEliteOverlaySVG(config) {
          fill="rgba(255,255,255,0.2)"/>
 <!-- CTA Text -->
 <text x="${c.x + c.width / 2}" y="${c.y + c.height / 2 + 7}" 
-      font-family="Inter, -apple-system, BlinkMacSystemFont, sans-serif" 
+      font-family="Arial, Helvetica, sans-serif" 
       font-size="${TYPE_SCALE.body}" font-weight="700" 
       fill="${p.cta.text}" text-anchor="middle" letter-spacing="0.5">${escapeXml(cta)}</text>
 `;

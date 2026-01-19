@@ -100,22 +100,22 @@ export const COMPARISON_TABLE_PATTERN = {
 <rect width="100%" height="100%" fill="#1A1A1A"/>
 
 <!-- Headline -->
-<text x="${w / 2}" y="60" font-family="Inter, -apple-system, sans-serif" 
+<text x="${w / 2}" y="60" font-family="Arial, Helvetica, sans-serif" 
       font-size="52" font-weight="800" fill="#FFFFFF" text-anchor="middle">${headline[0] || ''}</text>
-<text x="${w / 2}" y="120" font-family="Inter, -apple-system, sans-serif" 
+<text x="${w / 2}" y="120" font-family="Arial, Helvetica, sans-serif" 
       font-size="52" font-weight="800" fill="#FFFFFF" text-anchor="middle">${headline[1] || ''}</text>
 
 <!-- VS Badge -->
-<text x="${w / 2}" y="330" font-family="Inter, sans-serif" 
+<text x="${w / 2}" y="330" font-family="Arial, Helvetica, sans-serif" 
       font-size="28" font-weight="700" fill="#FFFFFF" text-anchor="middle">VS</text>
 
 <!-- Product Labels -->
 <rect x="${w * 0.08}" y="400" width="${leftProduct.name.length * 12 + 30}" height="36" fill="#FFFFFF"/>
-<text x="${w * 0.08 + 15}" y="425" font-family="Inter, sans-serif" 
+<text x="${w * 0.08 + 15}" y="425" font-family="Arial, Helvetica, sans-serif" 
       font-size="16" font-weight="600" fill="#1A1A1A">${leftProduct.name}</text>
 
 <rect x="${w * 0.58}" y="400" width="${rightProduct.name.length * 12 + 30}" height="36" fill="#FFFFFF"/>
-<text x="${w * 0.58 + 15}" y="425" font-family="Inter, sans-serif" 
+<text x="${w * 0.58 + 15}" y="425" font-family="Arial, Helvetica, sans-serif" 
       font-size="16" font-weight="600" fill="#1A1A1A">${rightProduct.name}</text>
 `;
 
@@ -132,16 +132,16 @@ export const COMPARISON_TABLE_PATTERN = {
 <!-- Row ${i + 1} -->
 <rect x="${w * 0.05}" y="${rowY}" width="${w * 0.28}" height="${rowHeight - 5}" rx="4" fill="#2A2A2A"/>
 <rect x="${w * 0.05}" y="${rowY}" width="4" height="${rowHeight - 5}" rx="2" fill="${leftColor}"/>
-<text x="${w * 0.19}" y="${rowY + 35}" font-family="Inter, sans-serif" 
+<text x="${w * 0.19}" y="${rowY + 35}" font-family="Arial, Helvetica, sans-serif" 
       font-size="18" fill="#FFFFFF" text-anchor="middle">${row.leftValue}</text>
 
 <rect x="${w * 0.35}" y="${rowY}" width="${w * 0.30}" height="${rowHeight - 5}" rx="4" fill="#3A3A3A"/>
-<text x="${w * 0.50}" y="${rowY + 35}" font-family="Inter, sans-serif" 
+<text x="${w * 0.50}" y="${rowY + 35}" font-family="Arial, Helvetica, sans-serif" 
       font-size="18" font-weight="600" fill="#FFFFFF" text-anchor="middle">${row.label}</text>
 
 <rect x="${w * 0.67}" y="${rowY}" width="${w * 0.28}" height="${rowHeight - 5}" rx="4" fill="#2A2A2A"/>
 <rect x="${w * 0.67}" y="${rowY}" width="4" height="${rowHeight - 5}" rx="2" fill="${rightColor}"/>
-<text x="${w * 0.81}" y="${rowY + 35}" font-family="Inter, sans-serif" 
+<text x="${w * 0.81}" y="${rowY + 35}" font-family="Arial, Helvetica, sans-serif" 
       font-size="18" fill="#FFFFFF" text-anchor="middle">${row.rightValue}</text>
 `;
         });
@@ -151,7 +151,7 @@ export const COMPARISON_TABLE_PATTERN = {
             svg += `
 <!-- Price Statement -->
 <rect x="${w * 0.15}" y="${h - 130}" width="${w * 0.70}" height="45" rx="4" fill="#FFFFFF"/>
-<text x="${w / 2}" y="${h - 100}" font-family="Inter, sans-serif" 
+<text x="${w / 2}" y="${h - 100}" font-family="Arial, Helvetica, sans-serif" 
       font-size="18" font-weight="600" fill="#1A1A1A" text-anchor="middle">${priceStatement}</text>
 `;
         }
@@ -160,7 +160,7 @@ export const COMPARISON_TABLE_PATTERN = {
         if (logoText) {
             svg += `
 <!-- Logo -->
-<text x="${w - 50}" y="${h - 40}" font-family="Inter, sans-serif" 
+<text x="${w - 50}" y="${h - 40}" font-family="Arial, Helvetica, sans-serif" 
       font-size="32" font-weight="700" fill="#FFFFFF" text-anchor="end">${logoText}</text>
 `;
         }
@@ -204,14 +204,14 @@ export const US_VS_THEM_SPLIT_PATTERN = {
 <rect x="${w / 2}" y="0" width="${w / 2}" height="${h}" fill="${rightColor}"/>
 
 <!-- Titles -->
-<text x="${w * 0.25}" y="80" font-family="Inter, -apple-system, sans-serif" 
+<text x="${w * 0.25}" y="80" font-family="Arial, Helvetica, sans-serif" 
       font-size="64" font-weight="800" fill="#1A1A1A" text-anchor="middle">${leftTitle}</text>
 
 <circle cx="${w / 2}" cy="65" r="35" fill="#FFFFFF"/>
-<text x="${w / 2}" y="75" font-family="Inter, sans-serif" 
+<text x="${w / 2}" y="75" font-family="Arial, Helvetica, sans-serif" 
       font-size="24" font-weight="700" fill="#1A1A1A" text-anchor="middle">VS.</text>
 
-<text x="${w * 0.75}" y="80" font-family="Inter, -apple-system, sans-serif" 
+<text x="${w * 0.75}" y="80" font-family="Arial, Helvetica, sans-serif" 
       font-size="64" font-weight="800" fill="#1A1A1A" text-anchor="middle">${rightTitle}</text>
 `;
 
@@ -222,7 +222,7 @@ export const US_VS_THEM_SPLIT_PATTERN = {
         leftStats.forEach((stat, i) => {
             const y = statsStartY + (i * statSpacing);
             svg += `
-<text x="${w * 0.25}" y="${y}" font-family="Inter, sans-serif" text-anchor="middle">
+<text x="${w * 0.25}" y="${y}" font-family="Arial, Helvetica, sans-serif" text-anchor="middle">
     <tspan font-size="36" font-weight="800" fill="#1A1A1A">${stat.prefix || ''}${stat.value}</tspan>
     <tspan font-size="24" font-weight="600" fill="#1A1A1A"> ${stat.label}</tspan>
 </text>`;
@@ -232,7 +232,7 @@ export const US_VS_THEM_SPLIT_PATTERN = {
         rightStats.forEach((stat, i) => {
             const y = statsStartY + (i * statSpacing);
             svg += `
-<text x="${w * 0.75}" y="${y}" font-family="Inter, sans-serif" text-anchor="middle">
+<text x="${w * 0.75}" y="${y}" font-family="Arial, Helvetica, sans-serif" text-anchor="middle">
     <tspan font-size="36" font-weight="400" fill="#4B5563">${stat.prefix || ''}${stat.value}</tspan>
     <tspan font-size="24" font-weight="400" fill="#4B5563"> ${stat.label}</tspan>
 </text>`;
@@ -243,7 +243,7 @@ export const US_VS_THEM_SPLIT_PATTERN = {
             svg += `
 <!-- Logo -->
 <rect x="0" y="${h - 80}" width="150" height="80" fill="${logoBgColor}"/>
-<text x="75" y="${h - 30}" font-family="Inter, sans-serif" 
+<text x="75" y="${h - 30}" font-family="Arial, Helvetica, sans-serif" 
       font-size="28" font-weight="700" fill="#FFFFFF" text-anchor="middle">${logoText}</text>
 `;
         }
@@ -290,17 +290,17 @@ export const FEATURE_CALLOUTS_DOTTED_PATTERN = {
 <rect width="100%" height="100%" fill="${bgColor}"/>
 
 <!-- Logo -->
-<text x="${w / 2}" y="50" font-family="Inter, sans-serif" text-anchor="middle">
+<text x="${w / 2}" y="50" font-family="Arial, Helvetica, sans-serif" text-anchor="middle">
     <tspan font-size="28">${logoIcon}</tspan>
     <tspan font-size="28" font-weight="600" fill="#1A1A1A"> ${logoText}</tspan>
 </text>
 
 <!-- Headline -->
-<text x="${w / 2}" y="100" font-family="Inter, -apple-system, sans-serif" 
+<text x="${w / 2}" y="100" font-family="Arial, Helvetica, sans-serif" 
       font-size="36" font-weight="800" fill="#1A1A1A" text-anchor="middle" letter-spacing="2">${headline}</text>
 
 <!-- Subheadline -->
-<text x="${w / 2}" y="145" font-family="Inter, sans-serif" 
+<text x="${w / 2}" y="145" font-family="Arial, Helvetica, sans-serif" 
       font-size="22" font-weight="400" fill="#374151" text-anchor="middle" font-style="italic">${subheadline}</text>
 `;
 
@@ -321,7 +321,7 @@ export const FEATURE_CALLOUTS_DOTTED_PATTERN = {
 <circle cx="${markerX}" cy="${markerY}" r="8" fill="none" stroke="#1A1A1A" stroke-width="2"/>
 <line x1="${markerX}" y1="${markerY}" x2="${fx}" y2="${fy}" 
       stroke="#1A1A1A" stroke-width="1.5" stroke-dasharray="6,4"/>
-<text x="${textX}" y="${fy + 5}" font-family="Inter, sans-serif" 
+<text x="${textX}" y="${fy + 5}" font-family="Arial, Helvetica, sans-serif" 
       font-size="18" font-weight="500" fill="#1A1A1A" text-anchor="${textAnchor}">${feature.text}</text>
 `;
         });
@@ -330,7 +330,7 @@ export const FEATURE_CALLOUTS_DOTTED_PATTERN = {
         if (footnote) {
             svg += `
 <!-- Footnote -->
-<text x="${w / 2}" y="${h - 40}" font-family="Inter, sans-serif" 
+<text x="${w / 2}" y="${h - 40}" font-family="Arial, Helvetica, sans-serif" 
       font-size="18" fill="#4B5563" text-anchor="middle" font-style="italic">${footnote}</text>
 `;
         }
@@ -400,15 +400,15 @@ export const CHECKMARK_COMPARISON_PATTERN = {
             // Checkmark on left
             svg += `
 <!-- Benefit: ${benefit.text} -->
-<text x="${w * 0.38}" y="${y}" font-family="Inter, sans-serif" 
+<text x="${w * 0.38}" y="${y}" font-family="Arial, Helvetica, sans-serif" 
       font-size="36" fill="${checkColor}">✓</text>
-<text x="${w * 0.42}" y="${y}" font-family="Inter, sans-serif" 
+<text x="${w * 0.42}" y="${y}" font-family="Arial, Helvetica, sans-serif" 
       font-size="16" font-weight="600" fill="#1A1A1A">${benefit.text.split(' ').slice(0, 2).join(' ')}</text>
-<text x="${w * 0.42}" y="${y + 22}" font-family="Inter, sans-serif" 
+<text x="${w * 0.42}" y="${y + 22}" font-family="Arial, Helvetica, sans-serif" 
       font-size="16" font-weight="600" fill="#1A1A1A">${benefit.text.split(' ').slice(2).join(' ')}</text>
 
 <!-- X mark on right -->
-<text x="${w * 0.72}" y="${y}" font-family="Inter, sans-serif" 
+<text x="${w * 0.72}" y="${y}" font-family="Arial, Helvetica, sans-serif" 
       font-size="36" fill="${xColor}">✗</text>
 `;
         });
@@ -471,9 +471,9 @@ export const FEATURE_ARROWS_PATTERN = {
 
             svg += `
 <!-- Feature: ${feature.text} -->
-<text x="${fx}" y="${fy}" font-family="Inter, sans-serif" 
+<text x="${fx}" y="${fy}" font-family="Arial, Helvetica, sans-serif" 
       font-size="18" font-weight="500" fill="${textColor}">${feature.text.split('.')[0]}.</text>
-${feature.text.split('.')[1] ? `<text x="${fx}" y="${fy + 24}" font-family="Inter, sans-serif" 
+${feature.text.split('.')[1] ? `<text x="${fx}" y="${fy + 24}" font-family="Arial, Helvetica, sans-serif" 
       font-size="18" font-weight="500" fill="${textColor}">${feature.text.split('.')[1]}.</text>` : ''}
 
 <!-- Arrow -->
@@ -496,7 +496,7 @@ ${feature.text.split('.')[1] ? `<text x="${fx}" y="${fy + 24}" font-family="Inte
             svg += `
 <!-- CTA -->
 <circle cx="${w - 80}" cy="${h - 80}" r="100" fill="${ctaBgColor}"/>
-<text x="${w - 80}" y="${h - 70}" font-family="Inter, sans-serif" 
+<text x="${w - 80}" y="${h - 70}" font-family="Arial, Helvetica, sans-serif" 
       font-size="22" font-weight="600" fill="${textColor}" text-anchor="middle">${ctaText}</text>
 `;
         }
