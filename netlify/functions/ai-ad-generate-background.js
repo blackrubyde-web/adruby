@@ -30,6 +30,12 @@ import { assertAndConsumeCredits, CREDIT_COSTS } from './_shared/credits.js';
 import { supabaseAdmin } from './_shared/clients.js';
 import { withRetry } from './_shared/aiAd/retry.js';
 import { scoreAdQuality, validateAdContent, predictEngagement } from './_shared/aiAd/quality-scorer.js';
+// Full Creative Engine for complete ad generation from detailed prompts
+import {
+    buildFullCreativePrompt,
+    createFullCreativeAd,
+    detectTextPosition,
+} from './_shared/fullCreativeEngine.js';
 
 const MAX_QUALITY_RETRIES = 2;
 
@@ -550,19 +556,67 @@ Beginne mit: "PRÄZISE PRODUKTBESCHREIBUNG:"`
             console.log('[AI Ad Generate] Metadata:', JSON.stringify(eliteAd.metadata));
 
         } else {
-            // ===== LEGACY MODE (no product image) =====
-            console.log('[AI Ad Generate] 📷 LEGACY MODE: Generating full image');
+            // ===== FULL CREATIVE MODE (no product image → generate COMPLETE ad) =====
+            // User's detailed prompt creates the ENTIRE scene including products/mockups
+            const userCreativeText = body.text || '';
+            const isDetailedPrompt = isDetailedCreativePrompt(userCreativeText);
 
-            const imageResult = await withRetry(
-                async () => generateHeroImage({
-                    prompt: imagePrompt,
-                    size: '1024x1024',
-                    quality: 'hd',
-                }),
-                { maxRetries: 2, initialDelay: 2000 }
-            );
+            if (isDetailedPrompt) {
+                console.log('[AI Ad Generate] 🎨 FULL CREATIVE MODE: Generating complete ad from user vision');
 
-            finalImageBuffer = Buffer.from(imageResult.b64, 'base64');
+                // Detect where to position text
+                const textPosition = detectTextPosition(userCreativeText);
+
+                // Build optimized prompt from user's vision
+                const fullCreativePrompt = buildFullCreativePrompt(userCreativeText, {
+                    headline: dynamicText.headline,
+                    subheadline: dynamicText.subheadline,
+                    cta: dynamicText.cta,
+                    textPosition,
+                });
+
+                console.log('[AI Ad Generate] Full Creative Prompt length:', fullCreativePrompt.length);
+
+                // Generate complete ad image with DALL-E
+                const imageResult = await withRetry(
+                    async () => generateHeroImage({
+                        prompt: fullCreativePrompt,
+                        size: '1024x1024',
+                        quality: 'hd',
+                    }),
+                    { maxRetries: 2, initialDelay: 2000 }
+                );
+
+                const rawImageBuffer = Buffer.from(imageResult.b64, 'base64');
+                console.log('[AI Ad Generate] ✓ Full creative image generated');
+
+                // Apply text overlay (headline, subheadline, CTA)
+                const fullCreativeAd = await createFullCreativeAd({
+                    imageBuffer: rawImageBuffer,
+                    headline: dynamicText.headline,
+                    subheadline: dynamicText.subheadline,
+                    cta: dynamicText.cta,
+                    textPosition,
+                });
+
+                finalImageBuffer = fullCreativeAd.buffer;
+                console.log('[AI Ad Generate] ✅ FULL CREATIVE AD COMPLETE');
+
+            } else {
+                // Simple mode - basic prompt, use standard generation
+                console.log('[AI Ad Generate] 📷 SIMPLE MODE: Generating from basic prompt');
+
+                const imageResult = await withRetry(
+                    async () => generateHeroImage({
+                        prompt: imagePrompt,
+                        size: '1024x1024',
+                        quality: 'hd',
+                    }),
+                    { maxRetries: 2, initialDelay: 2000 }
+                );
+
+                finalImageBuffer = Buffer.from(imageResult.b64, 'base64');
+            }
         }
 
         // Upload to Storage
