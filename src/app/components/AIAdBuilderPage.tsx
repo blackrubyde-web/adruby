@@ -231,22 +231,22 @@ export function AIAdBuilderPage() {
                                 <button
                                     onClick={() => setMode('form')}
                                     className={cn(
-                                        "relative flex flex-col items-center gap-2 p-4 rounded-xl transition-all duration-300",
+                                        "relative flex items-center gap-3 p-3 rounded-xl transition-all duration-300",
                                         mode === 'form'
                                             ? "bg-gradient-to-br from-primary to-red-600 text-white shadow-lg shadow-primary/25"
                                             : "hover:bg-muted/50"
                                     )}
                                 >
                                     <div className={cn(
-                                        "w-10 h-10 rounded-lg flex items-center justify-center transition-colors",
+                                        "w-9 h-9 rounded-lg flex items-center justify-center shrink-0 transition-colors",
                                         mode === 'form' ? "bg-white/20" : "bg-muted"
                                     )}>
-                                        <FileText className="w-5 h-5" />
+                                        <FileText className="w-4 h-4" />
                                     </div>
-                                    <div className="text-center">
+                                    <div className="text-left">
                                         <div className="font-semibold text-sm">{t('modeFormLabel', language)}</div>
                                         <div className={cn(
-                                            "text-xs mt-0.5 hidden sm:block",
+                                            "text-xs hidden sm:block",
                                             mode === 'form' ? "text-white/70" : "text-muted-foreground"
                                         )}>
                                             {t('modeFormDesc', language)}
@@ -260,22 +260,22 @@ export function AIAdBuilderPage() {
                                 <button
                                     onClick={() => setMode('free')}
                                     className={cn(
-                                        "relative flex flex-col items-center gap-2 p-4 rounded-xl transition-all duration-300",
+                                        "relative flex items-center gap-3 p-3 rounded-xl transition-all duration-300",
                                         mode === 'free'
                                             ? "bg-gradient-to-br from-primary to-red-600 text-white shadow-lg shadow-primary/25"
                                             : "hover:bg-muted/50"
                                     )}
                                 >
                                     <div className={cn(
-                                        "w-10 h-10 rounded-lg flex items-center justify-center transition-colors",
+                                        "w-9 h-9 rounded-lg flex items-center justify-center shrink-0 transition-colors",
                                         mode === 'free' ? "bg-white/20" : "bg-muted"
                                     )}>
-                                        <MessageSquare className="w-5 h-5" />
+                                        <MessageSquare className="w-4 h-4" />
                                     </div>
-                                    <div className="text-center">
+                                    <div className="text-left">
                                         <div className="font-semibold text-sm">{t('modeFreeLabel', language)}</div>
                                         <div className={cn(
-                                            "text-xs mt-0.5 hidden sm:block",
+                                            "text-xs hidden sm:block",
                                             mode === 'free' ? "text-white/70" : "text-muted-foreground"
                                         )}>
                                             {t('modeFreeDesc', language)}
@@ -289,24 +289,24 @@ export function AIAdBuilderPage() {
                                 <button
                                     onClick={() => setMode('store')}
                                     className={cn(
-                                        "relative flex flex-col items-center gap-2 p-4 rounded-xl transition-all duration-300",
+                                        "relative flex items-center gap-3 p-3 rounded-xl transition-all duration-300",
                                         mode === 'store'
                                             ? "bg-gradient-to-br from-emerald-500 to-teal-600 text-white shadow-lg shadow-emerald-500/25"
                                             : "hover:bg-muted/50"
                                     )}
                                 >
                                     <div className={cn(
-                                        "w-10 h-10 rounded-lg flex items-center justify-center transition-colors",
+                                        "w-9 h-9 rounded-lg flex items-center justify-center shrink-0 transition-colors",
                                         mode === 'store' ? "bg-white/20" : "bg-muted"
                                     )}>
-                                        <Store className="w-5 h-5" />
+                                        <Store className="w-4 h-4" />
                                     </div>
-                                    <div className="text-center">
+                                    <div className="text-left">
                                         <div className="font-semibold text-sm">
                                             {language === 'de' ? 'Store Import' : 'Store Import'}
                                         </div>
                                         <div className={cn(
-                                            "text-xs mt-0.5 hidden sm:block",
+                                            "text-xs hidden sm:block",
                                             mode === 'store' ? "text-white/70" : "text-muted-foreground"
                                         )}>
                                             {language === 'de' ? 'Shopify scrapen' : 'Scrape Shopify'}
