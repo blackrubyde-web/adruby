@@ -835,32 +835,52 @@ export const EditorLayout: React.FC<EditorLayoutProps> = ({ onClose, initialDoc,
                     onDuplicateLayer={handleDuplicateLayer}
                     onGenerate={handleGenerate}
                     onApplyTemplate={(tpl) => {
+                        console.log('[Studio] Applying template:', tpl);
+
+                        // Deep copy the template layers to avoid reference issues
+                        const templateLayers = (tpl.layers || []).map((l, i) => ({
+                            ...l,
+                            id: l.id || `layer_${Date.now()}_${i}`,
+                            visible: l.visible !== false,
+                            locked: l.locked || false,
+                            zIndex: l.zIndex ?? i,
+                        })) as StudioLayer[];
+
+                        console.log('[Studio] Template layers:', templateLayers);
+
                         // Check if we have existing content worth saving
                         const existingProduct = doc.layers.find(l => l.type === 'product' && 'src' in l && l.src && l.src.length > 100) as ImageLayer | undefined;
                         const existingTexts = doc.layers.filter(l => l.type === 'text') as StudioLayer[];
 
                         let shouldMerge = false;
-                        if (existingProduct || existingTexts.length > 0) {
-                            shouldMerge = window.confirm("Möchtest du das aktuelle Design (Bilder & Text) auf das neue Template übernehmen?");
+                        if ((existingProduct || existingTexts.length > 0) && templateLayers.length > 0) {
+                            shouldMerge = window.confirm("Möchtest du das aktuelle Produkt-Bild auf das neue Template übernehmen?");
                         }
 
-                        const newDoc = { ...doc, ...tpl };
+                        // Build new document with template
+                        const newDoc: AdDocument = {
+                            ...doc,
+                            backgroundColor: tpl.backgroundColor || doc.backgroundColor,
+                            layers: templateLayers,
+                            format: tpl.format || doc.format,
+                            width: tpl.width || doc.width,
+                            height: tpl.height || doc.height,
+                        };
 
-                        if (shouldMerge) {
-                            // Smart Merge: Preserve user's uploaded product image if it exists
-                            if (existingProduct) {
-                                const newProductIndex = newDoc.layers.findIndex(l => l.type === 'product');
-                                if (newProductIndex !== -1) {
-                                    newDoc.layers[newProductIndex] = {
-                                        ...newDoc.layers[newProductIndex],
-                                        src: existingProduct.src
-                                    } as ImageLayer;
-                                }
+                        if (shouldMerge && existingProduct) {
+                            // Smart Merge: Preserve user's uploaded product image
+                            const newProductIndex = newDoc.layers.findIndex(l => l.type === 'product');
+                            if (newProductIndex !== -1) {
+                                newDoc.layers[newProductIndex] = {
+                                    ...newDoc.layers[newProductIndex],
+                                    src: existingProduct.src
+                                } as ImageLayer;
                             }
                         }
 
+                        console.log('[Studio] Setting new doc:', newDoc);
                         setDoc(newDoc);
-                        toast.success('Template applied successfully!');
+                        toast.success('✅ Template angewendet!');
                     }}
                     onApplyTheme={(_theme) => toast.info('Theme applied')}
                     onShuffleColors={() => toast.info('Colors shuffled')}
