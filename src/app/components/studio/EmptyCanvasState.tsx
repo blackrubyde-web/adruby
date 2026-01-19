@@ -57,8 +57,8 @@ export const EmptyCanvasState: React.FC<EmptyCanvasStateProps> = ({
     ];
 
     return (
-        <div className="absolute inset-0 flex items-center justify-center p-8 z-20 pointer-events-none">
-            <div className="max-w-2xl w-full pointer-events-auto">
+        <div className="fixed inset-0 flex items-center justify-center p-8 z-50 bg-background/80 backdrop-blur-sm">
+            <div className="max-w-2xl w-full bg-card/50 backdrop-blur-xl rounded-3xl p-8 border border-border shadow-2xl">
                 {/* Hero Section */}
                 <div className="text-center mb-10">
                     <div className="inline-flex items-center gap-2 px-4 py-2 bg-primary/10 border border-primary/20 rounded-full text-primary text-sm font-semibold mb-6">

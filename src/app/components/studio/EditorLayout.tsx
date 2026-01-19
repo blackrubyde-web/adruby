@@ -344,16 +344,56 @@ export const EditorLayout: React.FC<EditorLayoutProps> = ({ onClose, initialDoc,
         toast.success(`Applied brand: ${brand.name}`);
     };
 
-    const handleSave = () => {
+    const handleSave = async () => {
         setIsSaving(true);
-        // Simulate save delay
-        setTimeout(() => {
+
+        try {
+            // Build creative output format for the API
+            const creativeOutput = {
+                variants: [{
+                    id: doc.id,
+                    name: doc.name,
+                    format: doc.format || '1:1',
+                    width: doc.width,
+                    height: doc.height,
+                    backgroundColor: doc.backgroundColor,
+                    layers: doc.layers,
+                    quality: {
+                        total: 85, // Default score
+                        composition: 80,
+                        contrast: 85,
+                        clarity: 90
+                    }
+                }],
+                brief: {
+                    productName: doc.name,
+                    format: doc.format || '1:1'
+                }
+            };
+
+            // Call the creative-save API
+            const response = await apiClient.post<{ ok: boolean; creativeId?: string }>('/api/creative-save', {
+                output: creativeOutput
+            });
+
+            if (response.ok && response.creativeId) {
+                // Update local doc with the saved ID
+                setDoc(prev => ({ ...prev, id: response.creativeId! }));
+                toast.success('✅ Creative in Bibliothek gespeichert!');
+            } else {
+                toast.success('💾 Ad gespeichert!');
+            }
+
+            // Also call the parent callback if provided
             if (onSave) {
                 onSave(doc);
             }
+        } catch (error) {
+            console.error('Save failed:', error);
+            toast.error('Speichern fehlgeschlagen');
+        } finally {
             setIsSaving(false);
-            toast.success('Ad saved to library!');
-        }, 800);
+        }
     };
 
 
