@@ -41,7 +41,7 @@ const DEFAULT_DOC: AdDocument = {
     width: 1080,
     height: 1080,
     layers: [],
-    backgroundColor: '#1a1a1a'
+    backgroundColor: '#FFFFFF'
 };
 
 // Recursive Helpers
