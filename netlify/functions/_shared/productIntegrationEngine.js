@@ -334,7 +334,13 @@ export async function applyGlowEffect(imageBuffer, color = '#FF4444', intensity 
     <ellipse cx="${CANVAS / 2}" cy="${CANVAS / 2}" rx="${CANVAS * 0.4}" ry="${CANVAS * 0.35}" fill="url(#glow)"/>
 </svg>`;
 
-    const result = await sharp(imageBuffer)
+    // First resize to CANVAS dimensions, then apply overlay
+    const resizedImage = await sharp(imageBuffer)
+        .resize(CANVAS, CANVAS, { fit: 'cover' })
+        .png()
+        .toBuffer();
+
+    const result = await sharp(resizedImage)
         .composite([
             { input: Buffer.from(glowSvg), blend: 'screen' }
         ])
@@ -444,7 +450,13 @@ export function generateTextOverlay(config) {
 export async function applyTextOverlay(imageBuffer, config) {
     const overlaySvg = generateTextOverlay(config);
 
-    const result = await sharp(imageBuffer)
+    // First resize to CANVAS dimensions, then apply overlay
+    const resizedImage = await sharp(imageBuffer)
+        .resize(CANVAS, CANVAS, { fit: 'cover' })
+        .png()
+        .toBuffer();
+
+    const result = await sharp(resizedImage)
         .composite([
             { input: Buffer.from(overlaySvg), top: 0, left: 0 }
         ])
