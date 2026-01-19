@@ -424,6 +424,97 @@ This background will have a product composited on top, so the product zone light
 }
 
 // ============================================================
+// CUSTOM BACKGROUND FROM USER PROMPT
+// When user provides detailed creative vision, use it directly!
+// ============================================================
+
+function generateCustomBackgroundPrompt(userPrompt, options = {}) {
+    const { layout = 'hero_features_right', hasProductImage = true } = options;
+    const l = LAYOUTS[layout] || LAYOUTS.hero_features_right;
+
+    // Calculate product zone for empty space
+    const prodX = Math.round((l.product.x / CANVAS) * 100);
+    const prodY = Math.round((l.product.y / CANVAS) * 100);
+    const prodW = Math.round((l.product.width / CANVAS) * 100);
+    const prodH = Math.round((l.product.height / CANVAS) * 100);
+
+    // Extract scene keywords from user prompt
+    const lowerPrompt = userPrompt.toLowerCase();
+    const hasSceneDescription =
+        lowerPrompt.includes('szene') ||
+        lowerPrompt.includes('scene') ||
+        lowerPrompt.includes('hintergrund') ||
+        lowerPrompt.includes('background') ||
+        lowerPrompt.includes('macbook') ||
+        lowerPrompt.includes('laptop') ||
+        lowerPrompt.includes('dashboard') ||
+        lowerPrompt.includes('dark mode') ||
+        lowerPrompt.includes('neon') ||
+        lowerPrompt.includes('futuristisch') ||
+        lowerPrompt.includes('glassmorphism');
+
+    let prompt = `
+PREMIUM ADVERTISEMENT BACKGROUND - CUSTOM CREATIVE
+
+Create a ${CANVAS}x${CANVAS} pixel PROFESSIONAL advertisement background based on this creative brief:
+
+=== USER'S CREATIVE VISION ===
+${userPrompt}
+=== END CREATIVE VISION ===
+
+CRITICAL INSTRUCTIONS:
+1. Follow the user's creative vision EXACTLY
+2. This is a 2026-level, $10,000 ad creative - ultra premium quality
+3. Cinematic lighting, professional composition
+4. Ultra-sharp, photorealistic where appropriate
+5. Premium SaaS/Tech aesthetic if not specified otherwise
+`;
+
+    // If product image will be overlaid, keep center empty
+    if (hasProductImage) {
+        prompt += `
+PRODUCT ZONE (MUST BE EMPTY):
+- The area from ${prodX}% to ${prodX + prodW}% horizontally
+- And from ${prodY}% to ${prodY + prodH}% vertically
+- Must be relatively empty or have subtle ambient lighting
+- The product will be composited here separately
+
+DO NOT draw ANY product, device, or object in the product zone.
+`;
+    }
+
+    prompt += `
+STYLE REQUIREMENTS:
+- Ultra-modern 2026 design aesthetic
+- Premium dark mode if appropriate
+- Subtle neon/glow effects for tech products
+- Professional studio-quality lighting
+- Apple/Tesla-level premium feel
+- Glassmorphism and soft shadows where relevant
+
+ABSOLUTE PROHIBITION:
+- DO NOT add ANY text, logos, or typography
+- The text will be added as an overlay layer
+
+OUTPUT: ${CANVAS}x${CANVAS}px, photorealistic with designed elements
+`;
+
+    return prompt;
+}
+
+// Check if user prompt is detailed enough for custom generation
+function isDetailedCreativePrompt(text) {
+    if (!text) return false;
+
+    const wordCount = text.split(/\s+/).length;
+    const hasSceneKeywords = /szene|scene|hintergrund|background|macbook|laptop|dashboard|screen|bildschirm|neon|glow|futuristisch|futuristic|glassmorphism|dark mode|premium|cinematic/i.test(text);
+    const hasUIKeywords = /headline|subheadline|cta|button|badge|features|ui-stil|ui style/i.test(text);
+
+    // Detailed if: 50+ words OR has scene keywords OR has UI structure keywords
+    return wordCount >= 50 || (hasSceneKeywords && wordCount >= 20) || (hasUIKeywords && wordCount >= 30);
+}
+
+// ============================================================
 // SVG GENERATION - PIXEL-PERFECT TYPOGRAPHY
 // ============================================================
 
@@ -981,6 +1072,8 @@ export {
     PALETTES,
     LAYOUTS,
     generateEliteBackgroundPrompt,
+    generateCustomBackgroundPrompt,
+    isDetailedCreativePrompt,
     generateEliteOverlaySVG,
     // Template exports
     ELITE_TEMPLATES_2026,

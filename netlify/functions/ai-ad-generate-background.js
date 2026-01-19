@@ -19,6 +19,8 @@ import {
     createEliteAd,
     detectOptimalConfig,
     generateEliteBackgroundPrompt,
+    generateCustomBackgroundPrompt,
+    isDetailedCreativePrompt,
     PALETTES,
     LAYOUTS,
     CANVAS,
@@ -494,17 +496,30 @@ Beginne mit: "PRÄZISE PRODUKTBESCHREIBUNG:"`
             });
             console.log('[AI Ad Generate] Elite Config → Palette:', palette, '| Layout:', layout);
 
-            // Step 2: Generate hyper-specific background prompt
-            // CRITICAL: Do NOT pass productDescription - it causes AI to draw the product!
-            const eliteBackgroundPrompt = generateEliteBackgroundPrompt(palette, layout, {
-                industry: body.industry,
-                // NO productDescription here - background must be EMPTY for product overlay
-            });
+            // Step 2: Determine if user has detailed creative vision
+            const userCreativeText = body.text || body.productDescription || '';
+            const useCustomGeneration = isDetailedCreativePrompt(userCreativeText);
 
-            console.log('[AI Ad Generate] Generating ELITE background (1080x1080)...');
+            let backgroundPrompt;
+            if (useCustomGeneration) {
+                // USER HAS DETAILED VISION - use it directly!
+                console.log('[AI Ad Generate] 🎨 CUSTOM MODE: Using user\'s detailed creative vision');
+                backgroundPrompt = generateCustomBackgroundPrompt(userCreativeText, {
+                    layout,
+                    hasProductImage: true,
+                });
+            } else {
+                // Standard mode - use palette-based templates
+                console.log('[AI Ad Generate] 📐 TEMPLATE MODE: Using palette/layout configuration');
+                backgroundPrompt = generateEliteBackgroundPrompt(palette, layout, {
+                    industry: body.industry,
+                });
+            }
+
+            console.log('[AI Ad Generate] Generating background (1080x1080)...');
             const backgroundResult = await withRetry(
                 async () => generateHeroImage({
-                    prompt: eliteBackgroundPrompt,
+                    prompt: backgroundPrompt,
                     size: '1024x1024', // Will be resized to 1080
                     quality: 'hd',
                 }),
@@ -512,7 +527,7 @@ Beginne mit: "PRÄZISE PRODUKTBESCHREIBUNG:"`
             );
 
             const backgroundBuffer = Buffer.from(backgroundResult.b64, 'base64');
-            console.log('[AI Ad Generate] ✓ Elite background generated');
+            console.log('[AI Ad Generate] ✓ Background generated');
 
             // Step 3: Create Elite Ad with EXACT product + professional overlays
             // Badge is OPTIONAL - only show if user explicitly provides one with content
