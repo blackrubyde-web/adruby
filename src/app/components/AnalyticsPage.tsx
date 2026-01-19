@@ -511,14 +511,21 @@ export function AnalyticsPage() {
       title="Analytics"
       subtitle="Performance insights, trends, and campaign reporting."
       headerChips={
-        <div className="flex flex-wrap gap-2">
-          <Badge variant="outline" className="gap-1">
-            {useGridLayout ? <LayoutGrid className="w-3 h-3" /> : <BarChart3 className="w-3 h-3" />}
+        <div className="flex flex-wrap items-center gap-2">
+          <Button
+            onClick={handleToggleGridLayout}
+            variant={useGridLayout ? 'default' : 'outline'}
+            size="sm"
+            className={useGridLayout ? 'bg-primary text-primary-foreground' : ''}
+          >
+            <LayoutGrid className="w-4 h-4 mr-1" />
             {useGridLayout ? 'Grid' : 'List'}
-          </Badge>
-          <Badge variant="outline">
-            {timeRange === '7d' ? '7 Days' : timeRange === '30d' ? '30 Days' : '90 Days'}
-          </Badge>
+          </Button>
+          <DashboardCustomizer
+            sections={dashboardSections}
+            onToggleSection={handleToggleSection}
+            onResetToDefaults={handleResetToDefaults}
+          />
         </div>
       }
     >
@@ -554,37 +561,13 @@ export function AnalyticsPage() {
         </div>
       </Card>
 
-      {/* DESKTOP CONTROL PANEL */}
-      <Card className="hidden md:block mb-6" variant="glass">
-        <CardContent className="p-6">
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
-            <div>
-              <h3 className="text-lg font-bold text-foreground mb-1">Customize Your Workspace</h3>
-              <p className="text-sm text-muted-foreground">Add widgets, change layout, and configure data views</p>
-            </div>
-            <div className="flex items-center gap-3">
-              <Button
-                onClick={handleToggleGridLayout}
-                variant={useGridLayout ? 'default' : 'outline'}
-                className={useGridLayout ? 'bg-primary text-primary-foreground' : ''}
-              >
-                <LayoutGrid className="w-4 h-4 mr-2" />
-                Grid Layout
-              </Button>
-              <DashboardCustomizer
-                sections={dashboardSections}
-                onToggleSection={handleToggleSection}
-                onResetToDefaults={handleResetToDefaults}
-              />
-            </div>
-          </div>
-
-          <TimeRangeFilter
-            onRangeChange={setTimeRange}
-            onCompareToggle={setIsComparing}
-          />
-        </CardContent>
-      </Card>
+      {/* DESKTOP TIME RANGE - Compact inline */}
+      <div className="hidden md:block mb-6">
+        <TimeRangeFilter
+          onRangeChange={setTimeRange}
+          onCompareToggle={setIsComparing}
+        />
+      </div>
 
       {/* ═══════════════════════════════════════════════════════════
           WIDGET STACK - MOBILE OPTIMIZED
