@@ -438,65 +438,64 @@ function generateCustomBackgroundPrompt(userPrompt, options = {}) {
     const prodW = Math.round((l.product.width / CANVAS) * 100);
     const prodH = Math.round((l.product.height / CANVAS) * 100);
 
-    // Extract scene keywords from user prompt
-    const lowerPrompt = userPrompt.toLowerCase();
-    const hasSceneDescription =
-        lowerPrompt.includes('szene') ||
-        lowerPrompt.includes('scene') ||
-        lowerPrompt.includes('hintergrund') ||
-        lowerPrompt.includes('background') ||
-        lowerPrompt.includes('macbook') ||
-        lowerPrompt.includes('laptop') ||
-        lowerPrompt.includes('dashboard') ||
-        lowerPrompt.includes('dark mode') ||
-        lowerPrompt.includes('neon') ||
-        lowerPrompt.includes('futuristisch') ||
-        lowerPrompt.includes('glassmorphism');
-
-    let prompt = `
-PREMIUM ADVERTISEMENT BACKGROUND - CUSTOM CREATIVE
-
-Create a ${CANVAS}x${CANVAS} pixel PROFESSIONAL advertisement background based on this creative brief:
-
-=== USER'S CREATIVE VISION ===
-${userPrompt}
-=== END CREATIVE VISION ===
-
-CRITICAL INSTRUCTIONS:
-1. Follow the user's creative vision EXACTLY
-2. This is a 2026-level, $10,000 ad creative - ultra premium quality
-3. Cinematic lighting, professional composition
-4. Ultra-sharp, photorealistic where appropriate
-5. Premium SaaS/Tech aesthetic if not specified otherwise
-`;
-
-    // If product image will be overlaid, keep center empty
+    // If product image will be overlaid, strip product/device mentions from prompt
+    // to prevent AI from trying to draw them
+    let cleanedPrompt = userPrompt;
     if (hasProductImage) {
-        prompt += `
-PRODUCT ZONE (MUST BE EMPTY):
-- The area from ${prodX}% to ${prodX + prodW}% horizontally
-- And from ${prodY}% to ${prodY + prodH}% vertically
-- Must be relatively empty or have subtle ambient lighting
-- The product will be composited here separately
+        // Remove mentions of devices/products that will be overlaid separately
+        cleanedPrompt = userPrompt
+            .replace(/macbook[\s\w]*/gi, '')
+            .replace(/laptop[\s\w]*/gi, '')
+            .replace(/iphone[\s\w]*/gi, '')
+            .replace(/bildschirm[\s\w]*/gi, '')
+            .replace(/screen[\s\w]*/gi, '')
+            .replace(/dashboard[\s\w]*/gi, '')
+            .replace(/auf dem bildschirm[\s\w]*/gi, '')
+            .replace(/on the screen[\s\w]*/gi, '')
+            .trim();
 
-DO NOT draw ANY product, device, or object in the product zone.
-`;
+        // If too much was stripped, use a generic premium background instruction
+        if (cleanedPrompt.length < 50) {
+            cleanedPrompt = 'Premium tech advertisement background with futuristic dark aesthetic, subtle neon glow accents, and cinematic lighting.';
+        }
     }
 
-    prompt += `
+    let prompt = `
+PREMIUM ADVERTISEMENT BACKGROUND ONLY
+
+Create a ${CANVAS}x${CANVAS} pixel BACKGROUND ONLY for a high-converting advertisement.
+
+=== STYLE VISION ===
+${cleanedPrompt}
+=== END VISION ===
+
+CRITICAL INSTRUCTIONS:
+1. This is a BACKGROUND ONLY - the main product will be added separately
+2. Premium 2026-level, $10,000 creative director quality
+3. Cinematic lighting, professional composition
+4. Premium SaaS/Tech aesthetic
+
+PRODUCT ZONE (MUST BE COMPLETELY EMPTY):
+- The center-right area (${prodX}%-${prodX + prodW}% horizontal, ${prodY}%-${prodY + prodH}% vertical)
+- Must contain ONLY: subtle gradient, ambient glow, or empty dark space
+- NO UI elements, NO shapes, NO rectangles, NO placeholders
+- The actual product image will be composited here later
+
+ABSOLUTE PROHIBITIONS:
+- DO NOT draw ANY devices (MacBooks, phones, laptops, screens)
+- DO NOT draw ANY UI elements, rectangles, or placeholder shapes
+- DO NOT draw ANY text, logos, or typography
+- DO NOT draw ANY products or objects
+- This is PURELY a stylized background/atmosphere
+
 STYLE REQUIREMENTS:
-- Ultra-modern 2026 design aesthetic
-- Premium dark mode if appropriate
-- Subtle neon/glow effects for tech products
-- Professional studio-quality lighting
-- Apple/Tesla-level premium feel
-- Glassmorphism and soft shadows where relevant
+- Dark, moody premium atmosphere
+- Subtle neon/glow accents if appropriate
+- Professional studio-quality lighting feel
+- Abstract/gradient design elements OK
+- Glassmorphism accents at edges OK
 
-ABSOLUTE PROHIBITION:
-- DO NOT add ANY text, logos, or typography
-- The text will be added as an overlay layer
-
-OUTPUT: ${CANVAS}x${CANVAS}px, photorealistic with designed elements
+OUTPUT: ${CANVAS}x${CANVAS}px, abstract/atmospheric background only
 `;
 
     return prompt;
