@@ -378,7 +378,42 @@ Beginne mit: "PRÄZISE PRODUKTBESCHREIBUNG:"`
                 { maxRetries: 3, initialDelay: 1000 }
             );
 
-            adCopy = JSON.parse(copyResponse.choices[0].message.content);
+            // Safely parse JSON response (OpenAI sometimes returns truncated JSON)
+            const rawContent = copyResponse.choices[0].message.content;
+            try {
+                adCopy = JSON.parse(rawContent);
+            } catch (parseErr) {
+                console.error('[AI Ad Generate] JSON parse failed, attempting recovery:', parseErr.message);
+                console.error('[AI Ad Generate] Raw content length:', rawContent?.length);
+
+                // Try to extract usable JSON by finding complete object
+                const jsonMatch = rawContent?.match(/\{[\s\S]*\}/);
+                if (jsonMatch) {
+                    try {
+                        adCopy = JSON.parse(jsonMatch[0]);
+                        console.log('[AI Ad Generate] ✓ Recovered JSON from partial response');
+                    } catch (retryErr) {
+                        // Complete fallback with dynamic text
+                        console.log('[AI Ad Generate] Using fallback copy from dynamic text');
+                        adCopy = {
+                            headline: dynamicText.headline || body.productName || 'Entdecke jetzt',
+                            slogan: dynamicText.subheadline || body.text?.substring(0, 100) || '',
+                            description: body.text || dynamicText.hook || '',
+                            cta: dynamicText.cta || 'Jetzt entdecken',
+                            variants: [],
+                        };
+                    }
+                } else {
+                    // Complete fallback
+                    adCopy = {
+                        headline: dynamicText.headline || body.productName || 'Entdecke jetzt',
+                        slogan: dynamicText.subheadline || '',
+                        description: body.text || '',
+                        cta: dynamicText.cta || 'Jetzt entdecken',
+                        variants: [],
+                    };
+                }
+            }
 
             try {
                 validateAdContent(adCopy);
