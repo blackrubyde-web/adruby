@@ -373,7 +373,7 @@ Beginne mit: "PRÄZISE PRODUKTBESCHREIBUNG:"`
                     ],
                     response_format: { type: 'json_object' },
                     temperature: 0.7 + (attempt * 0.1),
-                    max_tokens: 1000,
+                    max_tokens: 2500, // Increased from 1000 to prevent truncated JSON
                 }),
                 { maxRetries: 3, initialDelay: 1000 }
             );
