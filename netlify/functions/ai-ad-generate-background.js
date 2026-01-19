@@ -45,6 +45,8 @@ import {
     applyGlowEffect,
     applyTextOverlay as applyIntegratedTextOverlay,
 } from './_shared/productIntegrationEngine.js';
+// AI Creative Director - Chain-of-Thought reasoning for ANY product
+import { createAdWithCreativeDirector } from './_shared/aiCreativeDirector.js';
 
 const MAX_QUALITY_RETRIES = 2;
 
@@ -500,73 +502,54 @@ Beginne mit: "PRÄZISE PRODUKTBESCHREIBUNG:"`
         if (body.productImageUrl) {
             // ===== PRODUCT INTEGRATION MODE =====
             // Analyzes product with GPT-4V and integrates INTO AI-generated scenes
-            console.log('[AI Ad Generate] 🔮 PRODUCT INTEGRATION MODE: Analyzing and integrating product');
+            console.log('[AI Ad Generate] 🧠 AI CREATIVE DIRECTOR MODE: Intelligent ad creation');
 
             const userCreativeText = body.text || body.productDescription || '';
             const isDetailedPrompt = isDetailedCreativePrompt(userCreativeText);
 
             if (isDetailedPrompt) {
-                // === NEW PRODUCT INTEGRATION FLOW ===
-                console.log('[AI Ad Generate] 🎨 Starting Product Integration with GPT-4V...');
+                // === AI CREATIVE DIRECTOR - Chain-of-Thought Reasoning ===
+                console.log('[AI Ad Generate] 🎯 Starting AI Creative Director with Chain-of-Thought...');
 
-                // Step 1: Analyze product image with GPT-4 Vision
-                const productAnalysis = await analyzeProductImage(openai, body.productImageUrl);
-                console.log('[AI Ad Generate] Product Analysis:', productAnalysis.productType, productAnalysis.suggestedContext);
+                try {
+                    const creativeResult = await createAdWithCreativeDirector(openai, {
+                        productImageUrl: body.productImageUrl,
+                        userPrompt: userCreativeText,
+                        headline: dynamicText.headline,
+                        subheadline: dynamicText.subheadline,
+                        cta: dynamicText.cta,
+                        generateHeroImage: (params) => withRetry(
+                            async () => generateHeroImage(params),
+                            { maxRetries: 2, initialDelay: 2000 }
+                        )
+                    });
 
-                // Step 2: Build integrated prompt based on analysis + user intent
-                const textPosition = detectTextPosition(userCreativeText);
-                const { prompt: integrationPrompt, deviceFrame, effects } = buildIntegratedPrompt(
-                    productAnalysis,
-                    userCreativeText,
-                    { headline: dynamicText.headline, textPosition }
-                );
+                    finalImageBuffer = creativeResult.buffer;
 
-                console.log('[AI Ad Generate] Integration Mode:', deviceFrame ? `Device: ${deviceFrame}` : 'Scene integration');
-                console.log('[AI Ad Generate] Generating integrated scene...');
+                    // Log strategy reasoning for debugging
+                    if (creativeResult.strategy?.reasoning) {
+                        console.log('[AI Ad Generate] Creative Strategy Reasoning:',
+                            creativeResult.strategy.reasoning.substring(0, 300) + '...');
+                    }
 
-                // Step 3: Generate scene with DALL-E
-                const sceneResult = await withRetry(
-                    async () => generateHeroImage({
-                        prompt: integrationPrompt,
-                        size: '1024x1024',
-                        quality: 'hd',
-                    }),
-                    { maxRetries: 2, initialDelay: 2000 }
-                );
+                    console.log('[AI Ad Generate] ✅ AI CREATIVE DIRECTOR COMPLETE');
+                } catch (error) {
+                    console.error('[AI Ad Generate] Creative Director failed, using fallback:', error.message);
 
-                let sceneBuffer = Buffer.from(sceneResult.b64, 'base64');
-                console.log('[AI Ad Generate] ✓ Scene generated');
+                    // Fallback to simpler generation
+                    const backgroundResult = await withRetry(
+                        async () => generateHeroImage({
+                            prompt: `Premium advertisement image. Dark sophisticated background. Product showcase with ${dynamicText.headline ? `text "${dynamicText.headline}" at bottom` : 'elegant composition'}. Ultra-premium quality.`,
+                            size: '1024x1024',
+                            quality: 'high',
+                        }),
+                        { maxRetries: 2, initialDelay: 2000 }
+                    );
 
-                // Step 4: Download product image for composition
-                const productResponse = await fetch(body.productImageUrl);
-                const productBuffer = Buffer.from(await productResponse.arrayBuffer());
-
-                // Step 5: Composite product INTO scene
-                let integratedBuffer;
-                if (deviceFrame) {
-                    // Composite into device screen
-                    integratedBuffer = await compositeIntoDevice(sceneBuffer, productBuffer, deviceFrame);
-                    console.log('[AI Ad Generate] ✓ Product composited into', deviceFrame);
-                } else {
-                    // Composite into center of scene
-                    integratedBuffer = await compositeIntoScene(sceneBuffer, productBuffer, { scale: 0.55 });
-                    console.log('[AI Ad Generate] ✓ Product composited into scene');
+                    finalImageBuffer = Buffer.from(backgroundResult.b64, 'base64');
                 }
 
-                // Step 6: Apply glow effects if requested
-                if (effects.includes('glow')) {
-                    integratedBuffer = await applyGlowEffect(integratedBuffer, '#FF4444', 0.2);
-                    console.log('[AI Ad Generate] ✓ Glow effect applied');
-                }
-
-                // Step 7: Resize to final dimensions (text is already in AI-generated image)
-                const sharp = (await import('sharp')).default;
-                finalImageBuffer = await sharp(integratedBuffer)
-                    .resize(1080, 1080, { fit: 'cover' })
-                    .png()
-                    .toBuffer();
-
-                console.log('[AI Ad Generate] ✅ PRODUCT INTEGRATION COMPLETE');
+                console.log('[AI Ad Generate] ✅ CREATIVE DIRECTOR MODE COMPLETE');
 
             } else {
                 // === FALLBACK: Simple overlay mode for basic prompts ===
