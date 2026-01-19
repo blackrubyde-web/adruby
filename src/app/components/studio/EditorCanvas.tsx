@@ -1,6 +1,6 @@
 import React from 'react';
 import { CanvasStage, type CanvasStageHandle } from './CanvasStage';
-import type { AdDocument, StudioLayer } from '../../types/studio';
+import type { AdDocument, StudioLayer } from '../../types/studio'
 import {
     ContextMenu,
     ContextMenuContent,
@@ -60,38 +60,65 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
 
     return (
         <main
-            className={`flex-1 relative overflow-hidden flex items-center justify-center transition-colors duration-500 ${isPreviewMode ? 'bg-white' : 'bg-zinc-100/50 dark:bg-zinc-950'}`}
+            className={`flex-1 relative overflow-hidden flex items-center justify-center transition-all duration-500 ${isPreviewMode
+                ? 'bg-gradient-to-br from-zinc-50 to-zinc-100 dark:from-zinc-900 dark:to-zinc-950'
+                : 'bg-gradient-to-br from-zinc-100 via-zinc-50 to-zinc-100 dark:from-zinc-950 dark:via-zinc-900 dark:to-zinc-950'
+                }`}
             onWheel={handleWheel}
+            style={{
+                backgroundImage: !isPreviewMode ? `
+                    radial-gradient(circle at 25% 25%, rgba(99, 102, 241, 0.03) 0%, transparent 40%),
+                    radial-gradient(circle at 75% 75%, rgba(168, 85, 247, 0.03) 0%, transparent 40%),
+                    linear-gradient(rgba(0,0,0,0.02) 1px, transparent 1px),
+                    linear-gradient(90deg, rgba(0,0,0,0.02) 1px, transparent 1px)
+                ` : undefined,
+                backgroundSize: !isPreviewMode ? '100% 100%, 100% 100%, 20px 20px, 20px 20px' : undefined,
+            }}
         >
+            {/* Subtle ambient glow effects */}
+            <div className="absolute inset-0 pointer-events-none overflow-hidden">
+                <div className="absolute -top-1/4 -left-1/4 w-1/2 h-1/2 bg-gradient-radial from-primary/5 to-transparent rounded-full blur-3xl" />
+                <div className="absolute -bottom-1/4 -right-1/4 w-1/2 h-1/2 bg-gradient-radial from-purple-500/5 to-transparent rounded-full blur-3xl" />
+            </div>
 
             {!isMultiverseMode && !isPreviewMode && (
                 <ContextMenu>
-                    <ContextMenuTrigger className="flex-1 flex items-center justify-center p-8 h-full w-full">
-                        <div className="shadow-2xl shadow-black/5 dark:shadow-[0_0_100px_-20px_rgba(0,0,0,0.5)] border border-zinc-200 dark:border-white/5 rounded-sm overflow-hidden animate-in fade-in zoom-in-95 duration-500">
-                            <CanvasStage
-                                ref={canvasRef}
-                                doc={doc}
-                                scale={scale}
-                                selectedLayerIds={selectedLayerIds}
-                                onLayerSelect={onLayerSelect}
-                                onLayerUpdate={onLayerUpdate}
-                                isHandMode={activeTool === 'hand'}
-                                viewPos={viewPos}
-                                onViewChange={onViewChange}
-                                onMultiLayerSelect={onMultiLayerSelect}
-                            />
+                    <ContextMenuTrigger className="flex-1 flex items-center justify-center p-8 h-full w-full relative z-10">
+                        {/* Canvas container with premium shadow */}
+                        <div className="relative group">
+                            {/* Multi-layer shadow for depth */}
+                            <div className="absolute -inset-1 bg-gradient-to-br from-primary/20 via-purple-500/10 to-pink-500/20 rounded-lg blur-xl opacity-0 group-hover:opacity-40 transition-opacity duration-700" />
+                            <div
+                                className="relative shadow-2xl shadow-black/20 dark:shadow-black/50 border border-zinc-200/50 dark:border-white/10 rounded-lg overflow-hidden animate-in fade-in zoom-in-95 duration-500"
+                                style={{
+                                    boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25), 0 12px 24px -8px rgba(0, 0, 0, 0.15), inset 0 1px 0 rgba(255,255,255,0.1)'
+                                }}
+                            >
+                                <CanvasStage
+                                    ref={canvasRef}
+                                    doc={doc}
+                                    scale={scale}
+                                    selectedLayerIds={selectedLayerIds}
+                                    onLayerSelect={onLayerSelect}
+                                    onLayerUpdate={onLayerUpdate}
+                                    isHandMode={activeTool === 'hand'}
+                                    viewPos={viewPos}
+                                    onViewChange={onViewChange}
+                                    onMultiLayerSelect={onMultiLayerSelect}
+                                />
+                            </div>
                         </div>
                     </ContextMenuTrigger>
-                    <ContextMenuContent className="w-64">
-                        <ContextMenuItem inset onSelect={onCopy} disabled={selectedLayerIds.length === 0}>
+                    <ContextMenuContent className="w-64 bg-card/95 backdrop-blur-xl border-border/50 shadow-2xl">
+                        <ContextMenuItem inset onSelect={onCopy} disabled={selectedLayerIds.length === 0} className="gap-3">
                             Copy
                             <ContextMenuShortcut>⌘C</ContextMenuShortcut>
                         </ContextMenuItem>
-                        <ContextMenuItem inset onSelect={onPaste}>
+                        <ContextMenuItem inset onSelect={onPaste} className="gap-3">
                             Paste
                             <ContextMenuShortcut>⌘V</ContextMenuShortcut>
                         </ContextMenuItem>
-                        <ContextMenuItem inset onSelect={onDuplicate} disabled={selectedLayerIds.length === 0}>
+                        <ContextMenuItem inset onSelect={onDuplicate} disabled={selectedLayerIds.length === 0} className="gap-3">
                             Duplicate
                             <ContextMenuShortcut>⌘D</ContextMenuShortcut>
                         </ContextMenuItem>
@@ -260,11 +287,37 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
                 </div>
             )}
 
-            {/* Controls Footer */}
-            <div className="absolute bottom-10 left-1/2 -translate-x-1/2 bg-black/60 backdrop-blur-xl border border-white/10 px-6 py-3 rounded-full shadow-2xl flex items-center gap-6 text-[11px] font-bold text-white/80 tracking-widest uppercase pointer-events-none">
-                <span className="flex items-center gap-2">Format: <span className="text-primary">{doc.format}</span></span>
-                <div className="w-px h-4 bg-white/10" />
-                <span className="flex items-center gap-2">Zoom: <span className="text-primary">{(scale * 100).toFixed(0)}%</span></span>
+            {/* Premium Controls Footer */}
+            <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex items-center gap-2">
+                {/* Main Info Bar */}
+                <div className="bg-black/70 backdrop-blur-2xl border border-white/10 px-5 py-2.5 rounded-2xl shadow-2xl flex items-center gap-4 text-[11px] font-semibold text-white/80">
+                    <span className="flex items-center gap-2">
+                        <span className="text-white/50">Format</span>
+                        <span className="text-primary font-bold">{doc.format || '1:1'}</span>
+                    </span>
+                    <div className="w-px h-4 bg-white/10" />
+                    <span className="flex items-center gap-2">
+                        <span className="text-white/50">Zoom</span>
+                        <span className="text-primary font-bold">{(scale * 100).toFixed(0)}%</span>
+                    </span>
+                    <div className="w-px h-4 bg-white/10" />
+                    <span className="flex items-center gap-2">
+                        <span className="text-white/50">Layers</span>
+                        <span className="text-white font-bold">{doc.layers.length}</span>
+                    </span>
+                </div>
+
+                {/* Keyboard Shortcuts Hint */}
+                <div className="hidden xl:flex bg-black/50 backdrop-blur-xl border border-white/5 px-4 py-2.5 rounded-2xl items-center gap-3 text-[10px] text-white/40">
+                    <span className="flex items-center gap-1.5">
+                        <kbd className="px-1.5 py-0.5 bg-white/10 rounded text-white/60 font-mono">⌘</kbd>
+                        <span>+scroll = zoom</span>
+                    </span>
+                    <span className="flex items-center gap-1.5">
+                        <kbd className="px-1.5 py-0.5 bg-white/10 rounded text-white/60 font-mono">V</kbd>
+                        <span>= select</span>
+                    </span>
+                </div>
             </div>
         </main>
     );

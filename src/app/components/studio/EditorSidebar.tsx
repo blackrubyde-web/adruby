@@ -44,29 +44,60 @@ export const EditorSidebar: React.FC<EditorSidebarProps> = ({
 
     return (
         <div className="flex z-20 shrink-0 h-full">
-            {/* Navigation Rail */}
-            <div className="w-16 border-r border-border bg-card flex flex-col items-center py-6 gap-6 shrink-0 z-20">
+            {/* Premium Navigation Rail */}
+            <div className="w-16 border-r border-border/50 bg-gradient-to-b from-card via-card to-card/95 flex flex-col items-center py-6 gap-3 shrink-0 z-20">
+                {/* Tab Buttons with improved styling */}
                 <button
                     onClick={() => setActiveTab('layers')}
-                    className={`p-3 rounded-2xl transition-all duration-200 ${activeTab === 'layers' ? 'bg-primary text-primary-foreground shadow-lg' : 'text-muted-foreground hover:bg-muted'}`}
+                    className={`relative p-3 rounded-xl transition-all duration-300 group ${activeTab === 'layers'
+                            ? 'bg-primary text-primary-foreground shadow-lg shadow-primary/25'
+                            : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+                        }`}
                     title="Layers"
                 >
-                    <Layers className="w-6 h-6" />
+                    <Layers className="w-5 h-5" />
+                    {activeTab === 'layers' && (
+                        <div className="absolute -right-px top-1/2 -translate-y-1/2 w-0.5 h-6 bg-primary rounded-l-full" />
+                    )}
                 </button>
+
                 <button
                     onClick={() => setActiveTab('assets')}
-                    className={`p-3 rounded-2xl transition-all duration-200 ${activeTab === 'assets' ? 'bg-primary text-primary-foreground shadow-lg' : 'text-muted-foreground hover:bg-muted'}`}
-                    title="Assets"
+                    className={`relative p-3 rounded-xl transition-all duration-300 group ${activeTab === 'assets'
+                            ? 'bg-primary text-primary-foreground shadow-lg shadow-primary/25'
+                            : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+                        }`}
+                    title="Assets & Templates"
                 >
-                    <Cuboid className="w-6 h-6" />
+                    <Cuboid className="w-5 h-5" />
+                    {activeTab === 'assets' && (
+                        <div className="absolute -right-px top-1/2 -translate-y-1/2 w-0.5 h-6 bg-primary rounded-l-full" />
+                    )}
                 </button>
+
                 <button
                     onClick={() => setActiveTab('remix')}
-                    className={`p-3 rounded-2xl transition-all duration-200 ${activeTab === 'remix' ? 'bg-purple-600 text-white shadow-lg shadow-purple-500/20' : 'text-muted-foreground hover:bg-muted'}`}
+                    className={`relative p-3 rounded-xl transition-all duration-300 group ${activeTab === 'remix'
+                            ? 'bg-gradient-to-br from-purple-500 to-pink-600 text-white shadow-lg shadow-purple-500/30'
+                            : 'text-muted-foreground hover:bg-purple-500/10 hover:text-purple-400'
+                        }`}
                     title="AI Remix"
                 >
-                    <Wand2 className="w-6 h-6" />
+                    <Wand2 className="w-5 h-5" />
+                    {activeTab === 'remix' && (
+                        <div className="absolute -right-px top-1/2 -translate-y-1/2 w-0.5 h-6 bg-purple-500 rounded-l-full" />
+                    )}
                 </button>
+
+                {/* Visual separator */}
+                <div className="w-8 h-px bg-border/50 my-2" />
+
+                {/* Tab label indicator */}
+                <div className="text-[9px] font-bold uppercase tracking-widest text-muted-foreground/60 rotate-180 [writing-mode:vertical-lr] mt-auto">
+                    {activeTab === 'layers' && 'Layers'}
+                    {activeTab === 'assets' && 'Assets'}
+                    {activeTab === 'remix' && 'AI Magic'}
+                </div>
             </div>
 
             {/* Drawer Content */}
