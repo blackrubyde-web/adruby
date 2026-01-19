@@ -400,6 +400,7 @@ Beginne mit: "PRÄZISE PRODUKTBESCHREIBUNG:"`
                             slogan: dynamicText.subheadline || body.text?.substring(0, 100) || '',
                             description: body.text || dynamicText.hook || '',
                             cta: dynamicText.cta || 'Jetzt entdecken',
+                            imagePrompt: `Premium product ad for ${body.productName || 'product'}, professional studio lighting, clean background`,
                             variants: [],
                         };
                     }
@@ -410,6 +411,7 @@ Beginne mit: "PRÄZISE PRODUKTBESCHREIBUNG:"`
                         slogan: dynamicText.subheadline || '',
                         description: body.text || '',
                         cta: dynamicText.cta || 'Jetzt entdecken',
+                        imagePrompt: `Premium product ad for ${body.productName || 'product'}, professional studio lighting, clean background`,
                         variants: [],
                     };
                 }
