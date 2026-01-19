@@ -515,6 +515,9 @@ Beginne mit: "PRÄZISE PRODUKTBESCHREIBUNG:"`
             console.log('[AI Ad Generate] ✓ Elite background generated');
 
             // Step 3: Create Elite Ad with EXACT product + professional overlays
+            // Badge is OPTIONAL - only show if user explicitly provides one with content
+            const badgeText = (dynamicText.badge || body.badge || '').trim();
+
             const eliteAd = await createEliteAd({
                 backgroundBuffer: backgroundBuffer,
                 productImageUrl: body.productImageUrl,
@@ -524,7 +527,7 @@ Beginne mit: "PRÄZISE PRODUKTBESCHREIBUNG:"`
                 subheadline: dynamicText.subheadline,
                 features: dynamicText.features.slice(0, 4),
                 cta: dynamicText.cta,
-                badge: dynamicText.badge || 'LIMITIERT',
+                badge: badgeText.length > 0 ? badgeText : null, // Only include if has content
             });
 
             finalImageBuffer = eliteAd.buffer;

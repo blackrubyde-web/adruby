@@ -44,11 +44,14 @@ ${visionDescription ? `VISUELLE ANALYSE:\n${visionDescription}` : ''}
 BRANCHE: ${industry || 'Allgemein'}
 ZIEL: ${goal}
 
+WICHTIG: Wenn die Beschreibung bereits detaillierte Textelemente enthält (Headline, Subheadline, Features, CTA), 
+übernimm diese EXAKT oder verbessere sie minimal. Der Benutzer hat sich Gedanken gemacht!
+
 Generiere:
-1. headline: Kurze, scroll-stoppende Headline (max 6 Wörter)
-2. subheadline: Unterstützende Zeile (max 10 Wörter)
-3. cta: Call-to-Action (max 4 Wörter)
-4. badge: Trust-Badge Text (z.B. "Bestseller", "Limitiert")
+1. headline: Kurze, scroll-stoppende Headline (max 6 Wörter) - falls im Text vorhanden, diese übernehmen
+2. subheadline: Unterstützende Zeile (max 10 Wörter) - falls im Text vorhanden, diese übernehmen  
+3. cta: Call-to-Action (max 4 Wörter) - falls im Text vorhanden, diese übernehmen
+4. badge: OPTIONAL Trust-Badge (NUR wenn passend, sonst leerer String "")
 5. features: Array von 3-4 kurzen Feature-Texten (je max 4 Wörter)
 6. hook: Scroll-stopping Hook für den Ad-Text
 
@@ -57,7 +60,7 @@ Antwort als JSON:
   "headline": "...",
   "subheadline": "...",
   "cta": "...",
-  "badge": "...",
+  "badge": "",
   "features": ["...", "...", "..."],
   "hook": "..."
 }`;
