@@ -1,8 +1,7 @@
 import { useState, useEffect } from 'react';
-import { Users, TrendingUp, Clock, CheckCircle2, AlertCircle, XCircle, Search, Filter, ChevronRight, Loader2 } from 'lucide-react';
+import { Users, TrendingUp, Clock, CheckCircle2, AlertCircle, XCircle, Search, ChevronRight, Loader2 } from 'lucide-react';
 import { Card } from '../ui/card';
 import { Badge } from '../ui/badge';
-import { Button } from '../ui/button';
 import { cn } from '../../lib/utils';
 import { useAffiliate } from '../../contexts/AffiliateContext';
 
@@ -28,7 +27,7 @@ const STATUS_CONFIG = {
 };
 
 export function TeamPanel() {
-    const { referrals: contextReferrals, stats } = useAffiliate();
+    const { referrals: contextReferrals, stats: _stats } = useAffiliate();
     const [searchQuery, setSearchQuery] = useState('');
     const [statusFilter, setStatusFilter] = useState<string | null>(null);
     const [isLoading, setIsLoading] = useState(true);

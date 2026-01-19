@@ -85,7 +85,7 @@ export function AIAdBuilderPage() {
             }
 
             const response = await generateAd({
-                mode,
+                mode: mode as InputMode,
                 language,
                 productImageUrl,
                 ...inputData,
@@ -377,7 +377,7 @@ export function AIAdBuilderPage() {
                                         setImportedProducts(products);
                                         setImportedCopies(copies);
                                     }}
-                                    onCreateSingleAds={(products, copies) => {
+                                    onCreateSingleAds={(products, _copies) => {
                                         // TODO: Integrate with existing ad generation
                                         toast.success(`${products.length} Ads werden generiert...`);
                                     }}
@@ -403,13 +403,11 @@ export function AIAdBuilderPage() {
                                 <CarouselBuilder
                                     products={importedProducts}
                                     copies={importedCopies}
-                                    onSave={(carousel) => {
+                                    onSave={(_carousel) => {
                                         toast.success('Carousel gespeichert!');
-                                        console.log('Carousel saved:', carousel);
                                     }}
-                                    onExport={(carousel) => {
+                                    onExport={(_carousel) => {
                                         toast.success('Carousel exportiert!');
-                                        console.log('Carousel exported:', carousel);
                                     }}
                                 />
                             </div>

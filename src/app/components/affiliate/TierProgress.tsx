@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { Trophy, Star, Crown, Sparkles, ChevronRight, TrendingUp } from 'lucide-react';
+import { Trophy, Star, Crown, Sparkles, TrendingUp } from 'lucide-react';
 import { Card } from '../ui/card';
 import { Badge } from '../ui/badge';
 import { cn } from '../../lib/utils';

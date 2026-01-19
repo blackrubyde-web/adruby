@@ -3,7 +3,6 @@ import { X, Wallet, Loader2, CheckCircle2, AlertTriangle, CreditCard, Building2 
 import { useAffiliate } from '../../contexts/AffiliateContext';
 import { Card } from '../ui/card';
 import { Button } from '../ui/button';
-import { Badge } from '../ui/badge';
 import { cn } from '../../lib/utils';
 
 interface PayoutRequestModalProps {
