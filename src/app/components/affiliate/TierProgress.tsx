@@ -15,33 +15,33 @@ const TIERS = [
         name: 'Starter',
         icon: Star,
         minReferrals: 0,
-        commission: 30,
+        commission: 15,
         color: 'from-slate-400 to-slate-500',
         bgColor: 'bg-slate-500/10',
         textColor: 'text-slate-400',
-        benefits: ['30% Lifetime Commission', 'Marketing Materials', 'Dashboard Access']
+        benefits: ['15% Lifetime Commission', 'Marketing Materials', 'Dashboard Access']
     },
     {
         id: 'pro',
         name: 'Pro Partner',
         icon: Trophy,
-        minReferrals: 5,
-        commission: 35,
+        minReferrals: 10,
+        commission: 20,
         color: 'from-violet-500 to-purple-600',
         bgColor: 'bg-violet-500/10',
         textColor: 'text-violet-400',
-        benefits: ['35% Lifetime Commission', 'Priority Support', 'Custom Promo Code', 'Quarterly Bonus']
+        benefits: ['20% Lifetime Commission', 'Priority Support', 'Custom Promo Code', 'Quarterly Bonus']
     },
     {
         id: 'elite',
         name: 'Elite Partner',
         icon: Crown,
-        minReferrals: 20,
-        commission: 40,
+        minReferrals: 30,
+        commission: 30,
         color: 'from-amber-400 to-yellow-500',
         bgColor: 'bg-amber-500/10',
         textColor: 'text-amber-400',
-        benefits: ['40% Lifetime Commission', 'Dedicated Account Manager', 'Co-Branded Landing Page', 'Monthly Bonus', 'Early Feature Access']
+        benefits: ['30% Lifetime Commission', 'Dedicated Account Manager', 'Co-Branded Landing Page', 'Monthly Bonus', 'Early Feature Access']
     },
 ];
 

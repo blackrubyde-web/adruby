@@ -15,7 +15,7 @@ export function AffiliateSuccessStories() {
             role: "Performance Marketing Agentur",
             image: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=faces",
             earnings: "€12.800+",
-            quote: "Ich empfehle AdRuby jedem meiner Kunden. Es spart ihnen Geld und mir Zeit. Die 30% Lifetime-Commission sind ein echtes passives Einkommen.",
+            quote: "Ich empfehle AdRuby jedem meiner Kunden. Es spart ihnen Geld und mir Zeit. Die bis zu 30% Lifetime-Commission sind ein echtes passives Einkommen.",
             stats: { label: "Ref. Kunden", value: "45+" }
         },
         {
