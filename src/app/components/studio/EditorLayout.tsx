@@ -348,7 +348,11 @@ export const EditorLayout: React.FC<EditorLayoutProps> = ({ onClose, initialDoc,
         setIsSaving(true);
 
         try {
-            // Build creative output format for the API
+            // Get thumbnail from first image layer
+            const imageLayer = doc.layers.find(l => ['product', 'background', 'image'].includes(l.type));
+            const thumbnail = imageLayer && 'src' in imageLayer ? imageLayer.src : undefined;
+
+            // Build creative output format for the API - include doc_snapshot for Studio reload
             const creativeOutput = {
                 variants: [{
                     id: doc.id,
@@ -359,7 +363,7 @@ export const EditorLayout: React.FC<EditorLayoutProps> = ({ onClose, initialDoc,
                     backgroundColor: doc.backgroundColor,
                     layers: doc.layers,
                     quality: {
-                        total: 85, // Default score
+                        total: 85,
                         composition: 80,
                         contrast: 85,
                         clarity: 90
@@ -368,18 +372,22 @@ export const EditorLayout: React.FC<EditorLayoutProps> = ({ onClose, initialDoc,
                 brief: {
                     productName: doc.name,
                     format: doc.format || '1:1'
-                }
+                },
+                // Critical: Include doc_snapshot for Studio to reload the creative
+                doc_snapshot: doc,
+                thumbnail
             };
 
             // Call the creative-save API
             const response = await apiClient.post<{ ok: boolean; creativeId?: string }>('/api/creative-save', {
-                output: creativeOutput
+                output: creativeOutput,
+                creativeId: doc.id !== 'new_doc' ? doc.id : undefined
             });
 
             if (response.ok && response.creativeId) {
                 // Update local doc with the saved ID
                 setDoc(prev => ({ ...prev, id: response.creativeId! }));
-                toast.success('✅ Creative in Bibliothek gespeichert!');
+                toast.success('✅ Creative in Bibliothek gespeichert! Du kannst es jetzt bearbeiten.');
             } else {
                 toast.success('💾 Ad gespeichert!');
             }
