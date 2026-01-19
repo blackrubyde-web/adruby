@@ -684,9 +684,9 @@ export async function createEliteAd(options) {
     const productMeta = await sharp(productBuffer).metadata();
     const enhancedProduct = await enhanceProduct(productBuffer, palette);
 
-    // Step 2: Calculate precise product placement
-    const targetW = l.product.width;
-    const targetH = l.product.height;
+    // Step 2: Calculate precise product placement (Sharp requires integers)
+    const targetW = Math.round(l.product.width);
+    const targetH = Math.round(l.product.height);
     const aspectRatio = (productMeta.height || 1) / (productMeta.width || 1);
 
     let finalW = targetW;
@@ -701,9 +701,9 @@ export async function createEliteAd(options) {
         .png()
         .toBuffer();
 
-    // Center product in its zone
-    const prodLeft = l.product.x + Math.round((targetW - finalW) / 2);
-    const prodTop = l.product.y + Math.round((targetH - finalH) / 2);
+    // Center product in its zone (all values must be integers for Sharp)
+    const prodLeft = Math.round(l.product.x + (targetW - finalW) / 2);
+    const prodTop = Math.round(l.product.y + (targetH - finalH) / 2);
 
     console.log('[EliteCreative] Product: ${finalW}x${finalH} at (${prodLeft}, ${prodTop})');
 
