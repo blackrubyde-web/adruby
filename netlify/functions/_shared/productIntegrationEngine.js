@@ -40,17 +40,19 @@ const MOCKUP_TEMPLATES = {
 };
 
 // Device frame specifications for perspective mapping
+// These are tuned for AI-generated device images where the device fills most of the canvas
 const DEVICE_FRAMES = {
     macbook: {
-        screenArea: { x: 0.12, y: 0.08, width: 0.76, height: 0.62 },
+        // MacBook typically fills ~80% of canvas, screen starts ~5% from edges
+        screenArea: { x: 0.05, y: 0.06, width: 0.90, height: 0.58 },
         perspective: { topShrink: 0.02, bottomExpand: 0.02 },
     },
     ipad: {
-        screenArea: { x: 0.08, y: 0.06, width: 0.84, height: 0.88 },
+        screenArea: { x: 0.08, y: 0.08, width: 0.84, height: 0.84 },
         perspective: { topShrink: 0.01, bottomExpand: 0.01 },
     },
     iphone: {
-        screenArea: { x: 0.06, y: 0.04, width: 0.88, height: 0.92 },
+        screenArea: { x: 0.10, y: 0.08, width: 0.80, height: 0.84 },
         perspective: { topShrink: 0.01, bottomExpand: 0.01 },
     },
 };
@@ -167,17 +169,17 @@ export function buildIntegratedPrompt(productAnalysis, userPrompt, options = {})
     let prompt;
 
     if (deviceFrame) {
-        // Generate scene WITH device frame
+        // Generate scene WITH device frame AND text
         prompt = `
 PROFESSIONAL ADVERTISEMENT WITH DEVICE MOCKUP
 
 Create a ${CANVAS}x${CANVAS}px advertisement image featuring a ${deviceFrame === 'macbook' ? 'MacBook Pro Space Black' : deviceFrame === 'ipad' ? 'iPad Pro' : 'iPhone 15 Pro'}.
 
 DEVICE PLACEMENT:
-- Position the ${deviceFrame} in the CENTER of the image
+- Position the ${deviceFrame} taking up 85-90% of the image width
 - Device should be angled slightly (3D perspective) for premium feel
 - THE SCREEN MUST BE COMPLETELY BLACK/EMPTY - the actual content will be composited later
-- Device takes up approximately 60-70% of the image width
+- Device is centered horizontally
 
 SCENE & ATMOSPHERE:
 ${userPrompt}
@@ -185,12 +187,15 @@ ${userPrompt}
 STYLE:
 ${styleElements.join(', ') || 'Premium dark aesthetic, cinematic lighting'}
 
-TEXT ZONES:
-${textZoneInstruction}
+TEXT IN IMAGE (CRITICAL - MUST BE RENDERED):
+${headline ? `- Large bold headline text at BOTTOM of image: "${headline}"` : ''}
+- Text should be white, bold, and highly readable
+- Use clean sans-serif typography
+- Add subtle shadow behind text for readability
 
 CRITICAL:
 - Device screen MUST be solid black (content added later)
-- NO text, logos, or typography
+- Text MUST be rendered clearly and legibly at the bottom
 - Photorealistic device with designed background
 - Premium $10,000 ad creative quality
 

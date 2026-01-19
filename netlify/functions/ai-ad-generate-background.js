@@ -559,13 +559,12 @@ Beginne mit: "PRÄZISE PRODUKTBESCHREIBUNG:"`
                     console.log('[AI Ad Generate] ✓ Glow effect applied');
                 }
 
-                // Step 7: Apply text overlay
-                finalImageBuffer = await applyIntegratedTextOverlay(integratedBuffer, {
-                    headline: dynamicText.headline,
-                    subheadline: dynamicText.subheadline,
-                    cta: dynamicText.cta,
-                    textPosition,
-                });
+                // Step 7: Resize to final dimensions (text is already in AI-generated image)
+                const sharp = (await import('sharp')).default;
+                finalImageBuffer = await sharp(integratedBuffer)
+                    .resize(1080, 1080, { fit: 'cover' })
+                    .png()
+                    .toBuffer();
 
                 console.log('[AI Ad Generate] ✅ PRODUCT INTEGRATION COMPLETE');
 
