@@ -239,37 +239,107 @@ export const AssetsPanel = ({ onAddLayer, onApplyTemplate }: AssetsPanelProps) =
                         );
                     })
                 ) : (
-                    <div className="space-y-8">
+                    <div className="space-y-6">
+                        {/* Featured Templates Section */}
+                        <div className="space-y-3">
+                            <label className="text-[10px] font-black uppercase tracking-widest text-primary flex items-center gap-2">
+                                <Sparkles className="w-3.5 h-3.5" /> FEATURED
+                            </label>
+                            <div className="grid grid-cols-1 gap-4">
+                                {AD_TEMPLATES.slice(0, 3).map(tpl => {
+                                    const bgLayer = tpl.document.layers?.find((l: { type: string }) => l.type === 'background' || l.type === 'overlay');
+                                    const bgImage = bgLayer && 'src' in bgLayer ? (bgLayer as { src?: string }).src : null;
+                                    const bgColor = tpl.document.backgroundColor || '#1a1a1a';
+
+                                    return (
+                                        <button
+                                            key={tpl.id}
+                                            onClick={() => onApplyTemplate(tpl.document)}
+                                            className="group relative aspect-[4/3] rounded-2xl overflow-hidden border-2 border-border hover:border-primary transition-all shadow-lg hover:shadow-xl hover:scale-[1.02] duration-300"
+                                        >
+                                            {/* Template Preview */}
+                                            <div
+                                                className="absolute inset-0 flex items-center justify-center"
+                                                style={{ backgroundColor: bgColor }}
+                                            >
+                                                {bgImage && (
+                                                    <img
+                                                        src={bgImage}
+                                                        alt={tpl.name}
+                                                        className="w-full h-full object-cover opacity-80 group-hover:opacity-100 group-hover:scale-105 transition-all duration-500"
+                                                    />
+                                                )}
+                                            </div>
+
+                                            {/* Gradient Overlay */}
+                                            <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/30 to-transparent opacity-90" />
+
+                                            {/* Category Badge */}
+                                            <div className="absolute top-3 left-3">
+                                                <span className="px-2 py-1 text-[8px] font-black uppercase tracking-widest bg-white/10 backdrop-blur-sm text-white rounded-full">
+                                                    {tpl.niche}
+                                                </span>
+                                            </div>
+
+                                            {/* Template Info */}
+                                            <div className="absolute bottom-4 left-4 right-4">
+                                                <p className="text-sm font-bold text-white truncate">{tpl.name}</p>
+                                                <p className="text-[10px] text-primary font-semibold mt-0.5">Click to apply</p>
+                                            </div>
+                                        </button>
+                                    );
+                                })}
+                            </div>
+                        </div>
+
+                        {/* All Templates by Category */}
                         {categories.map(cat => {
                             const items = AD_TEMPLATES.filter(t => t.niche === cat.id);
                             if (items.length === 0) return null;
                             const Icon = cat.icon;
 
                             return (
-                                <div key={cat.id} className="space-y-4">
+                                <div key={cat.id} className="space-y-3">
                                     <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground flex items-center gap-2">
-                                        <Icon className="w-3.5 h-3.5" /> {cat.label}
+                                        <Icon className="w-3.5 h-3.5" /> {cat.label} ({items.length})
                                     </label>
                                     <div className="grid grid-cols-2 gap-3">
-                                        {items.map(tpl => (
-                                            <button
-                                                key={tpl.id}
-                                                onClick={() => onApplyTemplate(tpl.document)}
-                                                className="group relative aspect-square rounded-2xl border border-border overflow-hidden hover:border-primary transition-all text-left"
-                                            >
-                                                <div className="absolute inset-0 bg-zinc-900 flex items-center justify-center p-4">
-                                                    {/* If we have a preview image, eventually use it here. For now abstract layout. */}
-                                                    <div className="w-full h-full bg-zinc-800 rounded shadow-2xl overflow-hidden flex items-center justify-center text-[8px] font-black text-white/20 uppercase tracking-[5px]">
-                                                        {tpl.niche}
+                                        {items.map(tpl => {
+                                            const bgLayer = tpl.document.layers?.find((l: { type: string }) => l.type === 'background' || l.type === 'overlay');
+                                            const bgImage = bgLayer && 'src' in bgLayer ? (bgLayer as { src?: string }).src : null;
+                                            const bgColor = tpl.document.backgroundColor || '#1a1a1a';
+
+                                            return (
+                                                <button
+                                                    key={tpl.id}
+                                                    onClick={() => onApplyTemplate(tpl.document)}
+                                                    className="group relative aspect-square rounded-xl overflow-hidden border border-border hover:border-primary/50 transition-all hover:scale-[1.03] duration-200"
+                                                >
+                                                    {/* Template Preview with actual background */}
+                                                    <div
+                                                        className="absolute inset-0"
+                                                        style={{ backgroundColor: bgColor }}
+                                                    >
+                                                        {bgImage && (
+                                                            <img
+                                                                src={bgImage}
+                                                                alt={tpl.name}
+                                                                className="w-full h-full object-cover opacity-70 group-hover:opacity-90 transition-opacity duration-300"
+                                                            />
+                                                        )}
                                                     </div>
-                                                </div>
-                                                <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent opacity-100 transition-all" />
-                                                <div className="absolute bottom-3 left-3 right-3 text-white">
-                                                    <p className="text-[10px] font-black uppercase tracking-tighter leading-tight">{tpl.name}</p>
-                                                    <p className="text-[8px] opacity-60 uppercase mt-0.5 font-bold text-primary">Template</p>
-                                                </div>
-                                            </button>
-                                        ))}
+
+                                                    {/* Gradient overlay */}
+                                                    <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent" />
+
+                                                    {/* Template name */}
+                                                    <div className="absolute bottom-2 left-2 right-2">
+                                                        <p className="text-[10px] font-bold text-white leading-tight truncate">{tpl.name}</p>
+                                                        <p className="text-[8px] text-primary/80 font-semibold">Template</p>
+                                                    </div>
+                                                </button>
+                                            );
+                                        })}
                                     </div>
                                 </div>
                             );
