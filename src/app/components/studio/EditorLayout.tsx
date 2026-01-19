@@ -7,7 +7,7 @@ import { v4 as uuidv4 } from 'uuid';
 // (Most icons moved to sub-components, checking if any needed here)
 
 // Types
-import type { AdDocument, StudioLayer, ImageLayer, BrandKit, GroupLayer } from '../../types/studio';
+import type { AdDocument, StudioLayer, ImageLayer, BrandKit, GroupLayer, AdFormat } from '../../types/studio';
 import type { AuditResult } from './PerformanceAudit';
 import { performAudit } from './PerformanceAudit';
 
@@ -883,7 +883,7 @@ export const EditorLayout: React.FC<EditorLayoutProps> = ({ onClose, initialDoc,
                                 ...prev,
                                 width,
                                 height,
-                                format
+                                format: format as AdFormat
                             }));
                             toast.success(`Canvas auf ${format} geändert (${width}×${height})`);
                         }}
