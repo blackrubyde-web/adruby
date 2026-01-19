@@ -176,15 +176,15 @@ export const AutomatedRulesPanel = memo(function AutomatedRulesPanel({
                 <div className="absolute -top-20 -right-20 w-[300px] h-[300px] bg-[radial-gradient(circle_at_center,rgba(59,130,246,0.08),transparent_60%)] blur-[60px]" />
             </div>
 
-            <div className="relative p-6">
+            <div className="relative p-4">
                 {/* Header */}
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
-                    <div className="flex items-center gap-4">
-                        <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-blue-500 to-cyan-500 flex items-center justify-center shadow-lg shadow-blue-500/25">
-                            <Workflow className="w-6 h-6 text-white" />
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
+                    <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 to-cyan-500 flex items-center justify-center shadow-lg shadow-blue-500/25">
+                            <Workflow className="w-5 h-5 text-white" />
                         </div>
                         <div>
-                            <h3 className="text-xl font-bold text-foreground flex items-center gap-2">
+                            <h3 className="text-base font-bold text-foreground flex items-center gap-2">
                                 Automation Rules
                                 <Badge className="bg-blue-500/20 text-blue-500 border-blue-500/30 text-[10px]">
                                     AGENCY PRO
@@ -206,8 +206,8 @@ export const AutomatedRulesPanel = memo(function AutomatedRulesPanel({
 
                 {/* Create Rule Form */}
                 {isCreating && (
-                    <div className="mb-6 p-5 rounded-2xl bg-blue-500/5 border border-blue-500/20">
-                        <h4 className="font-semibold text-foreground mb-4 flex items-center gap-2">
+                    <div className="mb-4 p-4 rounded-xl bg-blue-500/5 border border-blue-500/20">
+                        <h4 className="font-semibold text-foreground mb-3 flex items-center gap-2 text-sm">
                             <Settings className="w-4 h-4 text-blue-500" />
                             Neue Automatisierungsregel
                         </h4>

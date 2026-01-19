@@ -370,25 +370,25 @@ export const AdaptiveDecisionPanel = memo(function AdaptiveDecisionPanel({
                 <div className="absolute -bottom-10 -left-10 w-[200px] h-[200px] bg-[radial-gradient(circle_at_center,rgba(59,130,246,0.08),transparent_60%)] blur-[40px]" />
             </div>
 
-            <div className="relative p-6">
+            <div className="relative p-4">
                 {/* Header */}
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
-                    <div className="flex items-center gap-4">
-                        <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-violet-600 to-fuchsia-600 flex items-center justify-center shadow-lg shadow-violet-500/30">
-                            <Brain className="w-7 h-7 text-white" />
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
+                    <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-violet-600 to-fuchsia-600 flex items-center justify-center shadow-lg shadow-violet-500/30">
+                            <Brain className="w-5 h-5 text-white" />
                         </div>
                         <div>
-                            <h3 className="text-xl font-bold text-white flex items-center gap-2">
-                                Adaptive AI Decisions
+                            <h3 className="text-base font-bold text-white flex items-center gap-2">
+                                AI Decisions
                                 <Badge className="bg-violet-500/20 text-violet-400 border-violet-500/30 text-[10px]">
-                                    AGENCY AI
+                                    AI
                                 </Badge>
                             </h3>
-                            <p className="text-sm text-white/50">
+                            <p className="text-xs text-white/50">
                                 {decisions.length > 0 ? (
-                                    <>Ø {avgConfidence}% Confidence · {highConfidenceCount} High-Confidence</>
+                                    <>Ø {avgConfidence}% Confidence · {highConfidenceCount} High</>
                                 ) : (
-                                    <>Individuelle Entscheidungen basierend auf deinen Daten</>
+                                    <>Individuelle, datenbasierte Empfehlungen</>
                                 )}
                             </p>
                         </div>

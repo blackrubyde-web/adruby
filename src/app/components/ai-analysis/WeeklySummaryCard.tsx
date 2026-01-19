@@ -166,21 +166,21 @@ export const WeeklySummaryCard = memo(function WeeklySummaryCard({
                 <div className="absolute -bottom-20 -right-20 w-[200px] h-[200px] bg-[radial-gradient(circle_at_center,rgba(139,92,246,0.06),transparent_60%)] blur-[40px]" />
             </div>
 
-            <div className="relative p-6">
+            <div className="relative p-4">
                 {/* Header */}
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
-                    <div className="flex items-center gap-4">
-                        <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-500 flex items-center justify-center shadow-lg shadow-emerald-500/25">
-                            <Calendar className="w-6 h-6 text-white" />
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
+                    <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-500 flex items-center justify-center shadow-lg shadow-emerald-500/25">
+                            <Calendar className="w-5 h-5 text-white" />
                         </div>
                         <div>
-                            <h3 className="text-xl font-bold text-white flex items-center gap-2">
+                            <h3 className="text-base font-bold text-white flex items-center gap-2">
                                 Weekly AI Summary
                                 <Badge className="bg-emerald-500/20 text-emerald-400 border-emerald-500/30 text-[10px]">
-                                    AUTO-GENERATED
+                                    AUTO
                                 </Badge>
                             </h3>
-                            <p className="text-sm text-white/50 flex items-center gap-2">
+                            <p className="text-xs text-white/50 flex items-center gap-2">
                                 <span>{formatWeekRange()}</span>
                                 <span className="text-white/30">·</span>
                                 <span>{summary.campaignCount} Kampagnen</span>
@@ -190,7 +190,7 @@ export const WeeklySummaryCard = memo(function WeeklySummaryCard({
                 </div>
 
                 {/* Key Metrics */}
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
                     <div className="p-4 rounded-xl bg-white/5 border border-white/5">
                         <div className="flex items-center justify-between mb-2">
                             <DollarSign className="w-4 h-4 text-white/40" />
@@ -235,12 +235,12 @@ export const WeeklySummaryCard = memo(function WeeklySummaryCard({
                 </div>
 
                 {/* AI Insights */}
-                <div className="mb-6">
-                    <h4 className="text-sm font-semibold text-white mb-3 flex items-center gap-2">
-                        <Sparkles className="w-4 h-4 text-violet-400" />
-                        KI-Insights dieser Woche
+                <div className="mb-4">
+                    <h4 className="text-xs font-semibold text-white mb-2 flex items-center gap-2">
+                        <Sparkles className="w-3 h-3 text-violet-400" />
+                        KI-Insights
                     </h4>
-                    <div className="grid md:grid-cols-2 gap-3">
+                    <div className="grid md:grid-cols-2 gap-2">
                         {insights.map((insight, i) => {
                             const colors = getInsightColor(insight.type);
                             const Icon = insight.icon;
@@ -274,8 +274,8 @@ export const WeeklySummaryCard = memo(function WeeklySummaryCard({
                         {summary.topPerformers.map((campaign, i) => (
                             <div key={campaign.id} className="flex items-center gap-3 p-3 rounded-lg bg-white/5">
                                 <span className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${i === 0 ? 'bg-amber-500/20 text-amber-400' :
-                                        i === 1 ? 'bg-zinc-400/20 text-zinc-400' :
-                                            'bg-orange-700/20 text-orange-400'
+                                    i === 1 ? 'bg-zinc-400/20 text-zinc-400' :
+                                        'bg-orange-700/20 text-orange-400'
                                     }`}>
                                     {i + 1}
                                 </span>
