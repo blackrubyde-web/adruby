@@ -362,28 +362,60 @@ export const EditorLayout: React.FC<EditorLayoutProps> = ({ onClose, initialDoc,
 
     const handleGenerateScene = useCallback(async (_id: string, prompt: string, _style: string) => {
         // Use DALL-E 3 via OpenAI Proxy
-        toast.loading("Generating Scene...");
-        const { data, error } = await invokeOpenAIProxy<{ data: Array<{ url?: string }> }>({
-            endpoint: 'images/generations',
-            model: 'dall-e-3',
-            prompt: `Generate a high-quality advertising background scene: ${prompt}, style: ${_style}. No text, photorealistic.`,
-            size: "1024x1024",
-            quality: "standard",
-            n: 1
-        });
+        const toastId = toast.loading("🎨 Generiere Hintergrund mit AI...");
 
-        if (error || !data?.data?.[0]?.url) {
-            toast.dismiss();
-            toast.error("Scene generation failed");
-            return;
+        try {
+            const { data, error } = await invokeOpenAIProxy<{ data: Array<{ url?: string; revised_prompt?: string }> }>({
+                endpoint: 'images/generations',
+                model: 'dall-e-3',
+                prompt: `Generate a high-quality advertising background scene: ${prompt}, style: ${_style}. No text, photorealistic, professional lighting, 4K quality.`,
+                size: "1024x1024",
+                quality: "hd",
+                n: 1
+            });
+
+            if (error || !data?.data?.[0]?.url) {
+                toast.dismiss(toastId);
+                toast.error("Hintergrund-Generierung fehlgeschlagen. Bitte versuche es erneut.");
+                console.error('DALL-E error:', error);
+                return;
+            }
+
+            const generatedImageUrl = data.data[0].url;
+
+            // Create new background layer with the generated image
+            const newBackgroundLayer = {
+                id: uuidv4(),
+                type: 'background' as const,
+                name: `AI: ${prompt.slice(0, 30)}...`,
+                x: 0,
+                y: 0,
+                width: doc.width,
+                height: doc.height,
+                visible: true,
+                locked: false,
+                zIndex: -1, // Put behind other layers
+                src: generatedImageUrl,
+                opacity: 1,
+                rotation: 0,
+                fit: 'cover' as const
+            };
+
+            // Add the new layer to the document
+            setDoc(prev => ({
+                ...prev,
+                layers: [newBackgroundLayer, ...prev.layers]
+            }));
+
+            toast.dismiss(toastId);
+            toast.success("✨ Hintergrund erfolgreich generiert!");
+
+        } catch (e) {
+            toast.dismiss(toastId);
+            toast.error("Fehler bei der Hintergrund-Generierung");
+            console.error('Scene generation error:', e);
         }
-
-        // In a real app, we would upload this URL to storage and add as a layer
-        // For now, we mock adding it or just show success
-        toast.dismiss();
-        toast.success("Scene Generated! (Link copied to log)");
-
-    }, []);
+    }, [doc.width, doc.height, setDoc]);
 
     const handleReplaceBackground = useCallback(async (id: string, prompt: string) => {
         const layer = doc.layers.find(l => l.id === id);
