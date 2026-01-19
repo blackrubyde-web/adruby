@@ -30,6 +30,10 @@ import { EditorCanvas } from './EditorCanvas';
 import { EditorToolbar } from './EditorToolbar';
 import { EditorRightPanel } from './EditorRightPanel';
 import { EditorModals } from './EditorModals';
+import { FloatingToolbar } from './FloatingToolbar';
+import { QuickAddMenu } from './QuickAddMenu';
+import { EmptyCanvasState } from './EmptyCanvasState';
+import { FormatPresetsBar } from './FormatPresetsBar';
 
 // Default empty canvas document
 const DEFAULT_DOC: AdDocument = {
@@ -834,6 +838,113 @@ export const EditorLayout: React.FC<EditorLayoutProps> = ({ onClose, initialDoc,
                     canvasRef={canvasRef}
                     onZoom={handleZoom}
                 />
+
+                {/* Empty Canvas State - Show when no layers */}
+                {doc.layers.length === 0 && !isMultiverseOpen && !isMockupView && (
+                    <EmptyCanvasState
+                        onStartWithTemplate={() => {
+                            // Switch to assets tab in sidebar
+                            toast.info('Wähle ein Template aus der Sidebar!');
+                        }}
+                        onAddText={() => {
+                            handleAddLayer({
+                                type: 'text',
+                                text: 'Headline hier',
+                                fontSize: 64,
+                                fontWeight: 700,
+                                fontFamily: 'Inter',
+                                color: '#FFFFFF',
+                                fill: '#FFFFFF',
+                                width: 600,
+                                height: 100,
+                                x: (doc.width - 600) / 2,
+                                y: (doc.height - 100) / 2,
+                                align: 'center'
+                            });
+                        }}
+                        onAddImage={() => {
+                            toast.info('Upload-Funktion wird geöffnet');
+                        }}
+                        onAIGenerate={() => setShowTextToAdModal(true)}
+                        onUpload={() => {
+                            toast.info('Upload-Funktion wird geöffnet');
+                        }}
+                    />
+                )}
+
+                {/* Format Presets Bar - Quick canvas size switching */}
+                {!isMultiverseOpen && !isMockupView && doc.layers.length > 0 && (
+                    <FormatPresetsBar
+                        currentFormat={doc.format || '1:1'}
+                        currentWidth={doc.width}
+                        currentHeight={doc.height}
+                        onResize={(width, height, format) => {
+                            setDoc(prev => ({
+                                ...prev,
+                                width,
+                                height,
+                                format
+                            }));
+                            toast.success(`Canvas auf ${format} geändert (${width}×${height})`);
+                        }}
+                    />
+                )}
+
+                {/* Quick Add FAB Menu */}
+                {!isMultiverseOpen && !isMockupView && (
+                    <QuickAddMenu
+                        onAddText={() => {
+                            handleAddLayer({
+                                type: 'text',
+                                text: 'Text hier',
+                                fontSize: 48,
+                                fontWeight: 600,
+                                fontFamily: 'Inter',
+                                color: '#FFFFFF',
+                                fill: '#FFFFFF',
+                                width: 400,
+                                height: 80,
+                                x: (doc.width - 400) / 2,
+                                y: (doc.height - 80) / 2,
+                                align: 'center'
+                            });
+                            toast.success('Text hinzugefügt');
+                        }}
+                        onAddShape={(shape) => {
+                            if (shape === 'rect') {
+                                handleAddLayer({
+                                    type: 'cta',
+                                    text: '',
+                                    width: 200,
+                                    height: 200,
+                                    x: (doc.width - 200) / 2,
+                                    y: (doc.height - 200) / 2,
+                                    bgColor: '#3b82f6',
+                                    radius: 16
+                                });
+                            } else {
+                                handleAddLayer({
+                                    type: 'cta',
+                                    text: '',
+                                    width: 200,
+                                    height: 200,
+                                    x: (doc.width - 200) / 2,
+                                    y: (doc.height - 200) / 2,
+                                    bgColor: '#8b5cf6',
+                                    radius: 100
+                                });
+                            }
+                            toast.success('Form hinzugefügt');
+                        }}
+                        onAddImage={() => {
+                            toast.info('Ziehe ein Bild auf den Canvas oder nutze Assets → Upload');
+                        }}
+                        onAIGenerate={() => setShowTextToAdModal(true)}
+                        onUpload={() => {
+                            toast.info('Nutze Assets → Upload im Seitenmenü');
+                        }}
+                    />
+                )}
 
                 <EditorRightPanel
                     selectedLayer={selectedLayer}
