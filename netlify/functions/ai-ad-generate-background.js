@@ -532,6 +532,21 @@ Beginne mit: "PRÄZISE PRODUKTBESCHREIBUNG:"`
         // Engagement prediction
         const engagement = predictEngagement(adCopy, body.targetAudience);
 
+        // Build variants array with shared imageUrl
+        const variants = (adCopy.variants || []).map((v, i) => ({
+            id: v.id || `variant_${i + 1}`,
+            hook: v.hook || '',
+            headline: v.headline || adCopy.headline,
+            slogan: v.slogan || adCopy.slogan,
+            description: v.description || adCopy.description,
+            cta: v.cta || adCopy.cta,
+            imageUrl: imageUrl, // All variants share the same image
+            imagePrompt: adCopy.imagePrompt,
+            template: adCopy.styleUsed || 'default',
+            qualityScore: qualityScore,
+            engagementScore: engagement.score,
+        }));
+
         // Update job with results
         await supabaseAdmin.from('generated_creatives').update({
             thumbnail: imageUrl,
@@ -544,6 +559,7 @@ Beginne mit: "PRÄZISE PRODUKTBESCHREIBUNG:"`
                 imagePrompt: adCopy.imagePrompt,
                 qualityScore,
                 engagementScore: engagement.score,
+                variants: variants,
                 source: 'ai_ad_builder'
             },
             saved: true,
@@ -575,8 +591,12 @@ Beginne mit: "PRÄZISE PRODUKTBESCHREIBUNG:"`
                     description: adCopy.description,
                     cta: adCopy.cta,
                     imageUrl,
+                    imagePrompt: adCopy.imagePrompt,
+                    template: adCopy.styleUsed || 'default',
+                    creditsUsed: 1,
                     qualityScore,
                     engagementScore: engagement.score,
+                    variants: variants.length > 0 ? variants : undefined,
                 },
                 metadata: {
                     model,

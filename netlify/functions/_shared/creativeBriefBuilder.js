@@ -82,6 +82,12 @@ Wähle den Stil basierend auf:
 
 ## 📝 OUTPUT REQUIREMENTS
 
+Du generierst IMMER **3 VARIANTEN** jeder Ad, damit der User wählen kann.
+Jede Variante hat unterschiedliche:
+- Hooks (anderer Einstieg/Aufmerksamkeits-Grab)
+- Headlines (andere Formulierung)
+- CTAs (andere Dringlichkeit)
+
 Dein Output ist IMMER valides JSON:
 {
     "confidenceScore": 1-10,
@@ -97,6 +103,32 @@ Dein Output ist IMMER valides JSON:
         "badge": "BADGE TEXT (max 3 words)",
         "ctaText": "CTA IN IMAGE (max 4 words)"
     },
+    "variants": [
+        {
+            "id": "variant_1",
+            "hook": "Erster Hook - Frage/Provokation/Pain Point",
+            "headline": "Headline Variante 1",
+            "slogan": "Slogan Variante 1",
+            "description": "Description mit Hook, Benefit, CTA...",
+            "cta": "CTA Variante 1"
+        },
+        {
+            "id": "variant_2", 
+            "hook": "Zweiter Hook - Social Proof/Statistik",
+            "headline": "Headline Variante 2",
+            "slogan": "Slogan Variante 2",
+            "description": "Andere Description...",
+            "cta": "CTA Variante 2"
+        },
+        {
+            "id": "variant_3",
+            "hook": "Dritter Hook - Transformation/Vorher-Nachher",
+            "headline": "Headline Variante 3",
+            "slogan": "Slogan Variante 3",
+            "description": "Dritte Description...",
+            "cta": "CTA Variante 3"
+        }
+    ],
     "qualityChecks": {
         "headlineScore": 1-10,
         "descriptionScore": 1-10,

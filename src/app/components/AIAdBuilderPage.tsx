@@ -44,6 +44,9 @@ export function AIAdBuilderPage() {
     const [importedCopies, setImportedCopies] = useState<ProductCopy[]>([]);
     const [showCarouselBuilder, setShowCarouselBuilder] = useState(false);
 
+    // Multi-variant selection
+    const [selectedVariantIndex, setSelectedVariantIndex] = useState(0);
+
     const handleImageUpload = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (file) {
@@ -66,6 +69,7 @@ export function AIAdBuilderPage() {
         setLoading(true);
         setError(null);
         setStep('generating');
+        setSelectedVariantIndex(0); // Reset variant selection
 
         try {
             let productImageUrl = undefined;
@@ -445,6 +449,8 @@ export function AIAdBuilderPage() {
                                 result={result}
                                 loading={loading}
                                 error={error}
+                                selectedVariantIndex={selectedVariantIndex}
+                                onSelectVariant={setSelectedVariantIndex}
                             />
                         )}
 

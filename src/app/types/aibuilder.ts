@@ -35,6 +35,23 @@ export interface AdGenerationParams {
     text?: string;
     // Optional product image
     productImageUrl?: string;
+    // Multi-variant generation
+    variantCount?: number;
+}
+
+// Single ad variant
+export interface AdVariant {
+    id: string;
+    headline: string;
+    slogan: string;
+    description: string;
+    cta: string;
+    hook: string;
+    imageUrl: string;
+    imagePrompt: string;
+    template: string;
+    qualityScore?: number;
+    engagementScore?: number;
 }
 
 export interface AdGenerationResult {
@@ -49,6 +66,8 @@ export interface AdGenerationResult {
     creditsUsed: number;
     qualityScore?: number;
     engagementScore?: number;
+    // Multi-variant support
+    variants?: AdVariant[];
 }
 
 export interface AdGenerationResponse {
@@ -82,4 +101,7 @@ export interface PreviewAreaProps {
     result: AdGenerationResult | null;
     loading: boolean;
     error: string | null;
+    selectedVariantIndex?: number;
+    onSelectVariant?: (index: number) => void;
 }
+
