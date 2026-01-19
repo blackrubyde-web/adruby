@@ -36,6 +36,15 @@ import {
     createFullCreativeAd,
     detectTextPosition,
 } from './_shared/fullCreativeEngine.js';
+// Product Integration Engine - integrates products INTO AI scenes
+import {
+    analyzeProductImage,
+    buildIntegratedPrompt,
+    compositeIntoDevice,
+    compositeIntoScene,
+    applyGlowEffect,
+    applyTextOverlay as applyIntegratedTextOverlay,
+} from './_shared/productIntegrationEngine.js';
 
 const MAX_QUALITY_RETRIES = 2;
 
@@ -489,71 +498,119 @@ Beginne mit: "PRÄZISE PRODUKTBESCHREIBUNG:"`
         const storagePath = `ai-ads/${filename}`;
 
         if (body.productImageUrl) {
-            // ===== 2026 ELITE CREATIVE SYSTEM =====
-            // 100% Professional Meta Ad - Creative Director Level
-            console.log('[AI Ad Generate] 🏆 ELITE CREATIVE: Creating 2026-level professional ad');
+            // ===== PRODUCT INTEGRATION MODE =====
+            // Analyzes product with GPT-4V and integrates INTO AI-generated scenes
+            console.log('[AI Ad Generate] 🔮 PRODUCT INTEGRATION MODE: Analyzing and integrating product');
 
-            // Step 1: Auto-detect optimal configuration
-            const { palette, layout } = detectOptimalConfig({
-                industry: body.industry,
-                tone: body.tone,
-                features: dynamicText.features,
-                isMinimal: body.template === 'minimalist_elegant',
-            });
-            console.log('[AI Ad Generate] Elite Config → Palette:', palette, '| Layout:', layout);
-
-            // Step 2: Determine if user has detailed creative vision
             const userCreativeText = body.text || body.productDescription || '';
-            const useCustomGeneration = isDetailedCreativePrompt(userCreativeText);
+            const isDetailedPrompt = isDetailedCreativePrompt(userCreativeText);
 
-            let backgroundPrompt;
-            if (useCustomGeneration) {
-                // USER HAS DETAILED VISION - use it directly!
-                console.log('[AI Ad Generate] 🎨 CUSTOM MODE: Using user\'s detailed creative vision');
-                backgroundPrompt = generateCustomBackgroundPrompt(userCreativeText, {
-                    layout,
-                    hasProductImage: true,
+            if (isDetailedPrompt) {
+                // === NEW PRODUCT INTEGRATION FLOW ===
+                console.log('[AI Ad Generate] 🎨 Starting Product Integration with GPT-4V...');
+
+                // Step 1: Analyze product image with GPT-4 Vision
+                const productAnalysis = await analyzeProductImage(openai, body.productImageUrl);
+                console.log('[AI Ad Generate] Product Analysis:', productAnalysis.productType, productAnalysis.suggestedContext);
+
+                // Step 2: Build integrated prompt based on analysis + user intent
+                const textPosition = detectTextPosition(userCreativeText);
+                const { prompt: integrationPrompt, deviceFrame, effects } = buildIntegratedPrompt(
+                    productAnalysis,
+                    userCreativeText,
+                    { headline: dynamicText.headline, textPosition }
+                );
+
+                console.log('[AI Ad Generate] Integration Mode:', deviceFrame ? `Device: ${deviceFrame}` : 'Scene integration');
+                console.log('[AI Ad Generate] Generating integrated scene...');
+
+                // Step 3: Generate scene with DALL-E
+                const sceneResult = await withRetry(
+                    async () => generateHeroImage({
+                        prompt: integrationPrompt,
+                        size: '1024x1024',
+                        quality: 'hd',
+                    }),
+                    { maxRetries: 2, initialDelay: 2000 }
+                );
+
+                let sceneBuffer = Buffer.from(sceneResult.b64, 'base64');
+                console.log('[AI Ad Generate] ✓ Scene generated');
+
+                // Step 4: Download product image for composition
+                const productResponse = await fetch(body.productImageUrl);
+                const productBuffer = Buffer.from(await productResponse.arrayBuffer());
+
+                // Step 5: Composite product INTO scene
+                let integratedBuffer;
+                if (deviceFrame) {
+                    // Composite into device screen
+                    integratedBuffer = await compositeIntoDevice(sceneBuffer, productBuffer, deviceFrame);
+                    console.log('[AI Ad Generate] ✓ Product composited into', deviceFrame);
+                } else {
+                    // Composite into center of scene
+                    integratedBuffer = await compositeIntoScene(sceneBuffer, productBuffer, { scale: 0.55 });
+                    console.log('[AI Ad Generate] ✓ Product composited into scene');
+                }
+
+                // Step 6: Apply glow effects if requested
+                if (effects.includes('glow')) {
+                    integratedBuffer = await applyGlowEffect(integratedBuffer, '#FF4444', 0.2);
+                    console.log('[AI Ad Generate] ✓ Glow effect applied');
+                }
+
+                // Step 7: Apply text overlay
+                finalImageBuffer = await applyIntegratedTextOverlay(integratedBuffer, {
+                    headline: dynamicText.headline,
+                    subheadline: dynamicText.subheadline,
+                    cta: dynamicText.cta,
+                    textPosition,
                 });
+
+                console.log('[AI Ad Generate] ✅ PRODUCT INTEGRATION COMPLETE');
+
             } else {
-                // Standard mode - use palette-based templates
-                console.log('[AI Ad Generate] 📐 TEMPLATE MODE: Using palette/layout configuration');
-                backgroundPrompt = generateEliteBackgroundPrompt(palette, layout, {
+                // === FALLBACK: Simple overlay mode for basic prompts ===
+                console.log('[AI Ad Generate] 📐 SIMPLE MODE: Basic product overlay');
+
+                const { palette, layout } = detectOptimalConfig({
+                    industry: body.industry,
+                    tone: body.tone,
+                    features: dynamicText.features,
+                    isMinimal: body.template === 'minimalist_elegant',
+                });
+
+                const backgroundPrompt = generateEliteBackgroundPrompt(palette, layout, {
                     industry: body.industry,
                 });
+
+                const backgroundResult = await withRetry(
+                    async () => generateHeroImage({
+                        prompt: backgroundPrompt,
+                        size: '1024x1024',
+                        quality: 'hd',
+                    }),
+                    { maxRetries: 2, initialDelay: 2000 }
+                );
+
+                const backgroundBuffer = Buffer.from(backgroundResult.b64, 'base64');
+                const badgeText = (dynamicText.badge || body.badge || '').trim();
+
+                const eliteAd = await createEliteAd({
+                    backgroundBuffer: backgroundBuffer,
+                    productImageUrl: body.productImageUrl,
+                    palette: palette,
+                    layout: layout,
+                    headline: dynamicText.headline,
+                    subheadline: dynamicText.subheadline,
+                    features: dynamicText.features.slice(0, 4),
+                    cta: dynamicText.cta,
+                    badge: badgeText.length > 0 ? badgeText : null,
+                });
+
+                finalImageBuffer = eliteAd.buffer;
+                console.log('[AI Ad Generate] ✅ Simple overlay ad complete');
             }
-
-            console.log('[AI Ad Generate] Generating background (1080x1080)...');
-            const backgroundResult = await withRetry(
-                async () => generateHeroImage({
-                    prompt: backgroundPrompt,
-                    size: '1024x1024', // Will be resized to 1080
-                    quality: 'hd',
-                }),
-                { maxRetries: 2, initialDelay: 2000 }
-            );
-
-            const backgroundBuffer = Buffer.from(backgroundResult.b64, 'base64');
-            console.log('[AI Ad Generate] ✓ Background generated');
-
-            // Step 3: Create Elite Ad with EXACT product + professional overlays
-            // Badge is OPTIONAL - only show if user explicitly provides one with content
-            const badgeText = (dynamicText.badge || body.badge || '').trim();
-
-            const eliteAd = await createEliteAd({
-                backgroundBuffer: backgroundBuffer,
-                productImageUrl: body.productImageUrl,
-                palette: palette,
-                layout: layout,
-                headline: dynamicText.headline,
-                subheadline: dynamicText.subheadline,
-                features: dynamicText.features.slice(0, 4),
-                cta: dynamicText.cta,
-                badge: badgeText.length > 0 ? badgeText : null, // Only include if has content
-            });
-
-            finalImageBuffer = eliteAd.buffer;
-            console.log('[AI Ad Generate] ✅ 2026 ELITE AD COMPLETE');
-            console.log('[AI Ad Generate] Metadata:', JSON.stringify(eliteAd.metadata));
 
         } else {
             // ===== FULL CREATIVE MODE (no product image → generate COMPLETE ad) =====
