@@ -31,88 +31,15 @@ import { EditorToolbar } from './EditorToolbar';
 import { EditorRightPanel } from './EditorRightPanel';
 import { EditorModals } from './EditorModals';
 
-// Mock Data
-const MOCK_DOC: AdDocument = {
-    id: 'doc_1',
-    name: 'Untitled Ad',
+// Default empty canvas document
+const DEFAULT_DOC: AdDocument = {
+    id: 'new_doc',
+    name: 'Neues Design',
     width: 1080,
-    height: 1080, // Changed from 1350 to match generator output
-    layers: [
-        {
-            id: 'bg-1',
-            type: 'overlay',
-            name: 'Product Shot',
-            x: 0,
-            y: 0,
-            width: 1080,
-            height: 1350,
-            rotation: 0,
-            opacity: 1,
-            locked: true,
-            visible: true,
-            src: 'https://images.unsplash.com/photo-1542291026-7eec264c27ff?q=80&w=1000'
-        },
-        {
-            id: 'text-1',
-            type: 'text',
-            name: 'Headline',
-            x: 100,
-            y: 200,
-            rotation: 0,
-            opacity: 1,
-            text: 'JUST DO IT.',
-            fontSize: 120,
-            fontFamily: 'Inter',
-            fill: '#ffffff',
-            fontWeight: '900',
-            textAlign: 'center',
-            width: 880,
-            height: 200,
-            locked: false,
-            visible: true,
-            shadowColor: 'rgba(0,0,0,0.5)',
-            shadowBlur: 20
-        },
-        {
-            id: 'shape-1',
-            type: 'shape',
-            name: 'CTA Button',
-            x: 340,
-            y: 1100,
-            width: 400,
-            height: 120,
-            rotation: 0,
-            opacity: 1,
-            fill: '#ff0000',
-            cornerRadius: 60,
-            locked: false,
-            visible: true
-        },
-        {
-            id: 'text-2',
-            type: 'text',
-            name: 'CTA Text',
-            x: 340,
-            y: 1135,
-            width: 400,
-            text: 'SHOP NOW',
-            fontSize: 48,
-            fontFamily: 'Inter',
-            fill: '#ffffff',
-            fontWeight: '800',
-            textAlign: 'center',
-            locked: false,
-            rotation: 0,
-            opacity: 1,
-            height: 100,
-            visible: true
-        }
-    ],
-    backgroundColor: '#000000'
+    height: 1080,
+    layers: [],
+    backgroundColor: '#1a1a1a'
 };
-
-// Helper to ensure mock layers have required props
-MOCK_DOC.layers = MOCK_DOC.layers.map(l => ({ ...l, locked: l.locked || false, opacity: l.opacity ?? 1, visible: l.visible ?? true, rotation: l.rotation ?? 0 }));
 
 // Recursive Helpers
 const updateLayerRecursive = (layers: StudioLayer[], id: string, updates: Partial<StudioLayer>): StudioLayer[] => {
@@ -144,29 +71,8 @@ const deleteLayerRecursive = (layers: StudioLayer[], id: string): StudioLayer[] 
         });
 };
 
-const BRAND_KITS: BrandKit[] = [
-    {
-        id: 'bk_1',
-        name: 'Nike Sport',
-        colors: { primary: '#000000', secondary: '#FFFFFF', accent: '#E10600' },
-        fonts: { heading: 'Inter', body: 'Roboto' },
-        logo: 'https://upload.wikimedia.org/wikipedia/commons/a/a6/Logo_NIKE.svg'
-    },
-    {
-        id: 'bk_2',
-        name: 'Tech Modern',
-        colors: { primary: '#1a1a1a', secondary: '#f0f0f0', accent: '#0070f3' },
-        fonts: { heading: 'Outfit', body: 'Inter' },
-        logo: ''
-    },
-    {
-        id: 'bk_3',
-        name: 'Nature Organic',
-        colors: { primary: '#2f3e46', secondary: '#cad2c5', accent: '#52796f' },
-        fonts: { heading: 'Playfair Display', body: 'Lato' },
-        logo: ''
-    }
-];
+// Brand kits - loaded from user settings in production
+const BRAND_KITS: BrandKit[] = [];
 
 interface EditorLayoutProps {
     onClose?: () => void;
@@ -176,10 +82,10 @@ interface EditorLayoutProps {
 
 export const EditorLayout: React.FC<EditorLayoutProps> = ({ onClose, initialDoc, onSave }) => {
     // --- State ---
-    const [doc, setDoc] = useState<AdDocument>(initialDoc || MOCK_DOC);
+    const [doc, setDoc] = useState<AdDocument>(initialDoc || DEFAULT_DOC);
     const [selectedLayerIds, setSelectedLayerIds] = useState<string[]>([]);
     const [_activeTab, _setActiveTab] = useState<'layers' | 'assets' | 'remix'>('layers');
-    const [history, setHistory] = useState<AdDocument[]>([initialDoc || MOCK_DOC]);
+    const [history, setHistory] = useState<AdDocument[]>([initialDoc || DEFAULT_DOC]);
     const [historyIndex, setHistoryIndex] = useState(0);
 
     // Tools & Modes
@@ -363,7 +269,7 @@ export const EditorLayout: React.FC<EditorLayoutProps> = ({ onClose, initialDoc,
         try {
             await new Promise(r => setTimeout(r, 2000)); // Sim delay
             // Mock result
-            const newDoc = { ...MOCK_DOC, name: 'AI Gen: ' + textToAdInput.slice(0, 10), id: uuidv4() };
+            const newDoc = { ...DEFAULT_DOC, name: 'AI Gen: ' + textToAdInput.slice(0, 10), id: uuidv4() };
             setDoc(newDoc);
             toast.success('Ad generated successfully!');
             setShowTextToAdModal(false);

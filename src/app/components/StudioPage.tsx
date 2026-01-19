@@ -9,7 +9,8 @@ const EditorLayout = lazy(() => import('./studio/EditorLayout').then(mod => ({ d
 const AdWizard = lazy(() => import('./studio/AdWizard').then(mod => ({ default: mod.AdWizard })));
 
 export const StudioPage = memo(function StudioPage() {
-    const [currentView, setCurrentView] = useState<'wizard' | 'editor'>('wizard');
+    // Default to editor (canvas) - skip wizard
+    const [currentView, setCurrentView] = useState<'wizard' | 'editor'>('editor');
     const [currentDocument, setCurrentDocument] = useState<AdDocument | undefined>(undefined);
     const [isBooting, setIsBooting] = useState(true);
 
@@ -78,12 +79,15 @@ export const StudioPage = memo(function StudioPage() {
         const params = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null;
         const creativeId = params?.get('id');
 
+        // No creativeId = go directly to blank canvas editor
         if (!creativeId) {
-            setCurrentView('wizard');
+            setCurrentView('editor');
+            setCurrentDocument(undefined);
             setIsBooting(false);
             return;
         }
 
+        // Load existing creative
         (async () => {
             try {
                 const { data, error } = await supabase
@@ -98,11 +102,12 @@ export const StudioPage = memo(function StudioPage() {
                     setCurrentDocument(doc);
                     setCurrentView('editor');
                 } else if (mounted) {
-                    setCurrentView('wizard');
+                    // No doc found, go to blank editor
+                    setCurrentView('editor');
                 }
             } catch (err) {
                 console.error('[StudioPage] Failed to load creative:', err);
-                if (mounted) setCurrentView('wizard');
+                if (mounted) setCurrentView('editor');
             } finally {
                 if (mounted) setIsBooting(false);
             }
