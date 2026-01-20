@@ -542,99 +542,109 @@ Beginne mit: "PRÄZISE PRODUKTBESCHREIBUNG:"`
         const storagePath = `ai-ads/${filename}`;
 
         if (body.productImageUrl) {
-            // ===== PRODUCT INTEGRATION MODE =====
-            // Analyzes product with GPT-4V and integrates INTO AI-generated scenes
+            // ===== AI CREATIVE DIRECTOR MODE =====
+            // ALWAYS use intelligent product integration when product image is provided
+            // This ensures products are properly composited INTO AI-generated backgrounds
             console.log('[AI Ad Generate] 🧠 AI CREATIVE DIRECTOR MODE: Intelligent ad creation');
 
             const userCreativeText = body.text || body.productDescription || '';
-            const isDetailedPrompt = isDetailedCreativePrompt(userCreativeText);
+            await updateProgress('creative_director', 50, { mode: 'ai_creative_director' });
 
-            if (isDetailedPrompt) {
-                // === AI CREATIVE DIRECTOR - Chain-of-Thought Reasoning ===
+            try {
+                // Always use the AI Creative Director for best results
                 console.log('[AI Ad Generate] 🎯 Starting AI Creative Director with Chain-of-Thought...');
 
+                const creativeResult = await createAdWithCreativeDirector(openai, {
+                    productImageUrl: body.productImageUrl,
+                    userPrompt: userCreativeText || `Premium advertisement for ${body.productName || 'this product'}. Professional quality, Meta 2026 level.`,
+                    headline: dynamicText.headline,
+                    subheadline: dynamicText.subheadline,
+                    cta: dynamicText.cta,
+                    generateHeroImage: (params) => withRetry(
+                        async () => generateHeroImage(params),
+                        { maxRetries: 2, initialDelay: 2000 }
+                    )
+                });
+
+                finalImageBuffer = creativeResult.buffer;
+
+                // Log strategy reasoning for debugging
+                if (creativeResult.strategy?.reasoning) {
+                    console.log('[AI Ad Generate] Creative Strategy Reasoning:',
+                        creativeResult.strategy.reasoning.substring(0, 300) + '...');
+                }
+                if (creativeResult.strategy?.productBounds) {
+                    console.log('[AI Ad Generate] Product Bounds:', creativeResult.strategy.productBounds);
+                }
+
+                console.log('[AI Ad Generate] ✅ AI CREATIVE DIRECTOR COMPLETE');
+                await updateProgress('creative_director_done', 75, {
+                    mode: 'ai_creative_director',
+                    hasProductBounds: !!creativeResult.strategy?.productBounds
+                });
+
+            } catch (error) {
+                console.error('[AI Ad Generate] Creative Director failed, using elite fallback:', error.message);
+                await updateProgress('creative_director_fallback', 60, { error: error.message });
+
+                // Fallback to Elite Creative System (still better than simple overlay)
                 try {
-                    const creativeResult = await createAdWithCreativeDirector(openai, {
-                        productImageUrl: body.productImageUrl,
-                        userPrompt: userCreativeText,
-                        headline: dynamicText.headline,
-                        subheadline: dynamicText.subheadline,
-                        cta: dynamicText.cta,
-                        generateHeroImage: (params) => withRetry(
-                            async () => generateHeroImage(params),
-                            { maxRetries: 2, initialDelay: 2000 }
-                        )
+                    const { palette, layout } = detectOptimalConfig({
+                        industry: body.industry,
+                        tone: body.tone,
+                        features: dynamicText.features,
+                        isMinimal: body.template === 'minimalist_elegant' || body.template === 'ai_automatic',
                     });
 
-                    finalImageBuffer = creativeResult.buffer;
+                    const backgroundPrompt = generateEliteBackgroundPrompt(palette, layout, {
+                        industry: body.industry,
+                    });
 
-                    // Log strategy reasoning for debugging
-                    if (creativeResult.strategy?.reasoning) {
-                        console.log('[AI Ad Generate] Creative Strategy Reasoning:',
-                            creativeResult.strategy.reasoning.substring(0, 300) + '...');
-                    }
-
-                    console.log('[AI Ad Generate] ✅ AI CREATIVE DIRECTOR COMPLETE');
-                } catch (error) {
-                    console.error('[AI Ad Generate] Creative Director failed, using fallback:', error.message);
-
-                    // Fallback to simpler generation
                     const backgroundResult = await withRetry(
                         async () => generateHeroImage({
-                            prompt: `Premium advertisement image. Dark sophisticated background. Product showcase with ${dynamicText.headline ? `text "${dynamicText.headline}" at bottom` : 'elegant composition'}. Ultra-premium quality.`,
+                            prompt: backgroundPrompt,
+                            size: '1024x1024',
+                            quality: 'hd',
+                        }),
+                        { maxRetries: 2, initialDelay: 2000 }
+                    );
+
+                    const backgroundBuffer = Buffer.from(backgroundResult.b64, 'base64');
+                    const badgeText = (dynamicText.badge || body.badge || '').trim();
+
+                    const eliteAd = await createEliteAd({
+                        backgroundBuffer: backgroundBuffer,
+                        productImageUrl: body.productImageUrl,
+                        palette: palette,
+                        layout: layout,
+                        headline: dynamicText.headline,
+                        subheadline: dynamicText.subheadline,
+                        features: dynamicText.features.slice(0, 4),
+                        cta: dynamicText.cta,
+                        badge: badgeText.length > 0 ? badgeText : null,
+                    });
+
+                    finalImageBuffer = eliteAd.buffer;
+                    console.log('[AI Ad Generate] ✅ Elite fallback ad complete');
+
+                } catch (fallbackError) {
+                    console.error('[AI Ad Generate] Elite fallback also failed:', fallbackError.message);
+
+                    // Ultimate fallback - generate basic background with product overlay text
+                    const basicResult = await withRetry(
+                        async () => generateHeroImage({
+                            prompt: `Premium advertisement image. Dark sophisticated background. Product showcase with ${dynamicText.headline ? `text \"${dynamicText.headline}\" at bottom` : 'elegant composition'}. Ultra-premium quality.`,
                             size: '1024x1024',
                             quality: 'high',
                         }),
                         { maxRetries: 2, initialDelay: 2000 }
                     );
 
-                    finalImageBuffer = Buffer.from(backgroundResult.b64, 'base64');
+                    finalImageBuffer = Buffer.from(basicResult.b64, 'base64');
                 }
-
-                console.log('[AI Ad Generate] ✅ CREATIVE DIRECTOR MODE COMPLETE');
-
-            } else {
-                // === FALLBACK: Simple overlay mode for basic prompts ===
-                console.log('[AI Ad Generate] 📐 SIMPLE MODE: Basic product overlay');
-
-                const { palette, layout } = detectOptimalConfig({
-                    industry: body.industry,
-                    tone: body.tone,
-                    features: dynamicText.features,
-                    isMinimal: body.template === 'minimalist_elegant',
-                });
-
-                const backgroundPrompt = generateEliteBackgroundPrompt(palette, layout, {
-                    industry: body.industry,
-                });
-
-                const backgroundResult = await withRetry(
-                    async () => generateHeroImage({
-                        prompt: backgroundPrompt,
-                        size: '1024x1024',
-                        quality: 'hd',
-                    }),
-                    { maxRetries: 2, initialDelay: 2000 }
-                );
-
-                const backgroundBuffer = Buffer.from(backgroundResult.b64, 'base64');
-                const badgeText = (dynamicText.badge || body.badge || '').trim();
-
-                const eliteAd = await createEliteAd({
-                    backgroundBuffer: backgroundBuffer,
-                    productImageUrl: body.productImageUrl,
-                    palette: palette,
-                    layout: layout,
-                    headline: dynamicText.headline,
-                    subheadline: dynamicText.subheadline,
-                    features: dynamicText.features.slice(0, 4),
-                    cta: dynamicText.cta,
-                    badge: badgeText.length > 0 ? badgeText : null,
-                });
-
-                finalImageBuffer = eliteAd.buffer;
-                console.log('[AI Ad Generate] ✅ Simple overlay ad complete');
             }
+
+            console.log('[AI Ad Generate] ✅ PRODUCT INTEGRATION COMPLETE');
 
         } else {
             // ===== FULL CREATIVE MODE (no product image → generate COMPLETE ad) =====
