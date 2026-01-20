@@ -47,6 +47,9 @@ import {
 } from './_shared/productIntegrationEngine.js';
 // AI Creative Director - Chain-of-Thought reasoning for ANY product
 import { createAdWithCreativeDirector } from './_shared/aiCreativeDirector.js';
+// Rate Limiting & Error Handling
+import { checkRateLimit } from './_shared/rateLimiter.js';
+import { categorizeError, getUserMessage } from './_shared/errorCategorizer.js';
 
 const MAX_QUALITY_RETRIES = 2;
 
@@ -90,6 +93,25 @@ export const handler = async (event) => {
 
         console.log('[AI Ad Generate] User:', user.id, 'Mode:', mode);
 
+        // Rate Limiting Check
+        const rateLimitResult = await checkRateLimit(user.id, 'ai_ad_generate');
+        if (!rateLimitResult.allowed) {
+            console.log('[AI Ad Generate] Rate limit exceeded for user:', user.id);
+            return {
+                statusCode: 429,
+                headers: {
+                    ...headers,
+                    'X-RateLimit-Remaining': '0',
+                    'X-RateLimit-Reset': rateLimitResult.resetAt.toISOString()
+                },
+                body: JSON.stringify({
+                    error: 'Rate limit exceeded',
+                    message: 'Zu viele Anfragen. Bitte warte einen Moment.',
+                    resetAt: rateLimitResult.resetAt.toISOString()
+                }),
+            };
+        }
+
         // Deduct credits
         try {
             await assertAndConsumeCredits(user.id, 'ai_ad_generate');
@@ -113,6 +135,23 @@ export const handler = async (event) => {
         });
 
         console.log('[AI Ad Generate] Job created:', jobId);
+
+        // Progress Update Helper
+        const updateProgress = async (step, progress, details = {}) => {
+            try {
+                await supabaseAdmin.from('generated_creatives').update({
+                    metrics: {
+                        status: 'processing',
+                        step,
+                        progress,
+                        ...details,
+                        last_update: new Date().toISOString()
+                    }
+                }).eq('id', jobId);
+            } catch (err) {
+                console.warn('[AI Ad Generate] Progress update failed:', err.message);
+            }
+        };
 
         const openai = getOpenAiClient();
 
@@ -155,8 +194,10 @@ Beginne mit: "PRÄZISE PRODUKTBESCHREIBUNG:"`
                 });
                 visionDescription = visionResponse.choices[0].message.content;
                 console.log('[AI Ad Generate] ✓ Vision description:', visionDescription.substring(0, 100) + '...');
+                await updateProgress('vision_analysis', 20, { visionComplete: true });
             } catch (err) {
                 console.error('[AI Ad Generate] ✗ Vision analysis failed:', err);
+                await updateProgress('vision_analysis', 20, { visionComplete: false, visionError: err.message });
             }
         }
 
@@ -207,6 +248,7 @@ Beginne mit: "PRÄZISE PRODUKTBESCHREIBUNG:"`
                 // Fallback
                 dynamicText.headline = dynamicText.headline || generateFallbackHeadline(body.productName, body.text, language);
             }
+            await updateProgress('copy_generation', 35, { copyComplete: true });
         }
 
         // ========================================
@@ -758,12 +800,36 @@ Beginne mit: "PRÄZISE PRODUKTBESCHREIBUNG:"`
     } catch (error) {
         console.error('[AI Ad Generate] Error:', error);
 
+        // Categorize the error for better user messaging
+        const categorized = categorizeError(error);
+        console.error('[AI Ad Generate] Error category:', categorized.code);
+
+        // Update job status in database if jobId exists
+        try {
+            const body = JSON.parse(event.body || '{}');
+            const jobId = body.jobId;
+            if (jobId) {
+                await supabaseAdmin.from('generated_creatives').update({
+                    metrics: {
+                        status: 'error',
+                        errorCode: categorized.code,
+                        errorMessage: categorized.originalMessage,
+                        failed_at: new Date().toISOString()
+                    }
+                }).eq('id', jobId);
+            }
+        } catch (dbErr) {
+            console.error('[AI Ad Generate] Failed to update error status in DB:', dbErr.message);
+        }
+
         return {
             statusCode: 500,
             headers,
             body: JSON.stringify({
                 error: 'Ad generation failed',
-                message: error.message
+                code: categorized.code,
+                message: categorized.userMessage,
+                recoverable: categorized.recoverable
             }),
         };
     }

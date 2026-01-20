@@ -3,10 +3,15 @@
  * 
  * Generates product-specific headlines, CTAs, and features using GPT-4
  * Ensures all text content is relevant to the ACTUAL product
+ * 
+ * Enhanced with Viral Copy Engine 2.0 for 2026-level conversion
  */
+
+import { generateViralHeadline, generateViralCTA, generateViralCopyPackage } from './viralCopyEngine.js';
 
 /**
  * Generate product-specific ad copy from description
+ * Now uses Viral Copy Engine for enhanced headlines
  */
 export async function generateProductCopy(openai, options) {
     const {
@@ -94,16 +99,37 @@ Antwort als JSON:
     } catch (error) {
         console.error('[DynamicTextGen] Failed to generate copy:', error);
 
-        // Fallback to product name
-        return {
-            success: false,
-            headline: productName || 'Entdecke jetzt',
-            subheadline: '',
-            cta: 'Jetzt ansehen',
-            badge: '',
-            features: [],
-            hook: '',
-        };
+        // Use Viral Copy Engine as fallback for power-word enhanced copy
+        console.log('[DynamicTextGen] Falling back to Viral Copy Engine');
+        try {
+            const viralCopy = generateViralCopyPackage({
+                productName,
+                industry,
+                goal,
+                language
+            });
+            return {
+                success: true,
+                headline: viralCopy.headline,
+                subheadline: viralCopy.subheadline,
+                cta: viralCopy.cta,
+                badge: viralCopy.badge || '',
+                features: [],
+                hook: '',
+                source: 'viral_copy_engine'
+            };
+        } catch (viralError) {
+            // Ultimate fallback to product name
+            return {
+                success: false,
+                headline: productName || 'Entdecke jetzt',
+                subheadline: '',
+                cta: 'Jetzt ansehen',
+                badge: '',
+                features: [],
+                hook: '',
+            };
+        }
     }
 }
 

@@ -53,20 +53,21 @@ export const Header = memo(function Header({
 
   return (
     <div
-      className="bg-card/90 border-b border-border/50 flex items-center justify-between px-4 md:px-8 sticky top-0 z-10 transition-[left] duration-200 shadow-sm md:fixed md:top-0 md:right-0"
+      className="bg-card/90 border-b border-border/50 flex items-center justify-between px-3 sm:px-4 md:px-8 sticky top-0 z-40 transition-[left] duration-200 shadow-sm md:fixed md:top-0 md:right-0"
       style={{
         height: 'var(--header-height)',
         left: sidebarWidth > 0 ? `${sidebarWidth}px` : '0'
       }}
     >
       {/* Left Side */}
-      <div className="flex items-center gap-3">
-        {/* Mobile Burger Menu */}
+      <div className="flex items-center gap-2 sm:gap-3">
+        {/* Mobile Burger Menu - Always visible on mobile */}
         <button
           onClick={onToggleMobileSidebar}
-          className="md:hidden w-10 h-10 rounded-xl border border-border/60 bg-muted/50 hover:bg-muted flex items-center justify-center transition-all cursor-pointer z-50 shadow-sm"
+          className="md:hidden w-10 h-10 rounded-xl border border-border/60 bg-muted/50 hover:bg-muted flex items-center justify-center transition-all cursor-pointer shadow-sm shrink-0"
+          aria-label="Menü öffnen"
         >
-          <Menu className="w-5 h-5 text-foreground" />
+          <Menu className="w-5 h-5 text-foreground" style={{ width: 20, height: 20, minWidth: 20, minHeight: 20 }} />
         </button>
 
         {/* Credits Display - Hidden on Mobile */}
@@ -78,28 +79,29 @@ export const Header = memo(function Header({
       </div>
 
       {/* Right Side */}
-      <div className="flex items-center gap-3 md:gap-4">
+      <div className="flex items-center gap-2 sm:gap-3 md:gap-4">
         {/* Upgrade Button - Only for Trial Users */}
         {isTrialUser && onUpgrade && (
           <button
             onClick={onUpgrade}
-            className="group px-4 py-2 bg-gradient-to-r from-[#FF1F1F] via-rose-500 to-red-600 text-white rounded-xl font-bold text-sm flex items-center gap-2 hover:shadow-[0_0_20px_rgba(255,31,31,0.4)] transition-all hover:scale-105 active:scale-95"
+            className="group px-3 sm:px-4 py-2 bg-gradient-to-r from-[#FF1F1F] via-rose-500 to-red-600 text-white rounded-xl font-bold text-sm flex items-center gap-2 hover:shadow-[0_0_20px_rgba(255,31,31,0.4)] transition-all hover:scale-105 active:scale-95 shrink-0"
           >
             <Crown className="w-4 h-4" />
             <span className="hidden sm:inline">Upgraden</span>
           </button>
         )}
 
-        {/* Theme Toggle */}
+        {/* Theme Toggle - Always visible */}
         <button
           onClick={toggleTheme}
-          className="w-10 h-10 rounded-xl border border-border/60 bg-muted/50 hover:bg-muted flex items-center justify-center transition-all cursor-pointer shadow-sm"
+          className="w-10 h-10 rounded-xl border border-border/60 bg-muted/50 hover:bg-muted flex items-center justify-center transition-all cursor-pointer shadow-sm shrink-0"
           title={theme === 'dark' ? 'Zu Hell wechseln' : 'Zu Dunkel wechseln'}
+          aria-label={theme === 'dark' ? 'Zu Hell wechseln' : 'Zu Dunkel wechseln'}
         >
           {theme === 'dark' ? (
-            <Sun className="w-5 h-5 text-yellow-500" />
+            <Sun className="w-5 h-5 text-yellow-500" style={{ width: 20, height: 20, minWidth: 20, minHeight: 20 }} />
           ) : (
-            <Moon className="w-5 h-5 text-slate-700 dark:text-slate-300" />
+            <Moon className="w-5 h-5 text-slate-700 dark:text-slate-300" style={{ width: 20, height: 20, minWidth: 20, minHeight: 20 }} />
           )}
         </button>
 
