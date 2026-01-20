@@ -52,6 +52,7 @@ export function AdminSupportMessages() {
         }
     };
 
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     useEffect(() => {
         fetchRequests();
     }, [filter]);

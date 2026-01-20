@@ -3,12 +3,9 @@ import {
     Workflow,
     Plus,
     Trash2,
-    Play,
     Pause,
-    ChevronDown,
     Settings,
     Zap,
-    Clock,
     Check,
     X,
     Loader2,
@@ -242,7 +239,7 @@ export const AutomatedRulesPanel = memo(function AutomatedRulesPanel({
                                     value={newRule.condition?.operator}
                                     onChange={(e) => setNewRule(prev => ({
                                         ...prev,
-                                        condition: { ...prev.condition!, operator: e.target.value as any }
+                                        condition: { ...prev.condition!, operator: e.target.value as '>' | '<' | '>=' | '<=' | '==' | 'change_up' | 'change_down' }
                                     }))}
                                     className="px-3 py-2 bg-muted border border-border rounded-lg text-foreground text-sm"
                                 >
@@ -283,7 +280,7 @@ export const AutomatedRulesPanel = memo(function AutomatedRulesPanel({
                                             key={action.value}
                                             onClick={() => setNewRule(prev => ({
                                                 ...prev,
-                                                action: { type: action.value as any, value: action.value.includes('budget') ? 20 : undefined }
+                                                action: { type: action.value as 'pause' | 'increase_budget' | 'decrease_budget' | 'duplicate' | 'alert', value: action.value.includes('budget') ? 20 : undefined }
                                             }))}
                                             className={`p-3 rounded-lg border text-left transition-all ${isSelected
                                                 ? 'bg-blue-500/20 border-blue-500/40'

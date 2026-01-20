@@ -2,7 +2,7 @@ import { lazy, Suspense, useEffect, useRef, useState } from 'react';
 import { DashboardCustomizer, DashboardSection } from './DashboardCustomizer';
 import { ReorderableWidget } from './ReorderableWidget';
 import { TimeRangeFilter } from './TimeRangeFilter';
-import { Eye, MousePointerClick, DollarSign, TrendingUp, LayoutGrid, BarChart3 } from 'lucide-react';
+import { Eye, MousePointerClick, DollarSign, TrendingUp, LayoutGrid } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from './ui/button';
 import { Badge } from './ui/badge';
