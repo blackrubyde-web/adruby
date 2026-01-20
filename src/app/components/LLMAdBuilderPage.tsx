@@ -97,6 +97,7 @@ const TONE_OPTIONS = [
 export const LLMAdBuilderPage = memo(function LLMAdBuilderPage() {
     const [prompt, setPrompt] = useState('');
     const [uploadedImages, setUploadedImages] = useState<File[]>([]);
+    const [imagePreviews, setImagePreviews] = useState<string[]>([]);
     const [selectedComposition, setSelectedComposition] = useState<string>('product_focus');
     const [selectedIndustry, setSelectedIndustry] = useState<string>('ecommerce');
     const [selectedTone, setSelectedTone] = useState<string>('modern');
@@ -114,11 +115,29 @@ export const LLMAdBuilderPage = memo(function LLMAdBuilderPage() {
         canvasHeight: number;
     } | null>(null);
     const [layoutWarnings, setLayoutWarnings] = useState<string[]>([]);
+    const [pipelineStep, setPipelineStep] = useState<'idle' | 'creative' | 'layout' | 'render' | 'done'>('idle');
 
     const handleImageUpload = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.files) {
-            setUploadedImages(Array.from(e.target.files));
+            const files = Array.from(e.target.files);
+            setUploadedImages(files);
+
+            // Create preview URLs
+            const previews = files.map(file => URL.createObjectURL(file));
+            setImagePreviews(prev => {
+                // Revoke old URLs to prevent memory leaks
+                prev.forEach(url => URL.revokeObjectURL(url));
+                return previews;
+            });
         }
+    }, []);
+
+    const removeImage = useCallback((index: number) => {
+        setUploadedImages(prev => prev.filter((_, i) => i !== index));
+        setImagePreviews(prev => {
+            URL.revokeObjectURL(prev[index]);
+            return prev.filter((_, i) => i !== index);
+        });
     }, []);
 
     // Solve layout constraints
@@ -316,11 +335,24 @@ export const LLMAdBuilderPage = memo(function LLMAdBuilderPage() {
                                     Produkt-Bilder, Screenshots, etc.
                                 </span>
                             </label>
-                            {uploadedImages.length > 0 && (
-                                <div className="mt-4 flex gap-2 flex-wrap">
-                                    {uploadedImages.map((file, i) => (
-                                        <div key={i} className="px-3 py-1.5 bg-muted rounded-lg text-sm">
-                                            {file.name}
+                            {imagePreviews.length > 0 && (
+                                <div className="mt-4 grid grid-cols-3 gap-3">
+                                    {imagePreviews.map((preview, i) => (
+                                        <div key={i} className="relative group aspect-square rounded-lg overflow-hidden border border-border">
+                                            <img
+                                                src={preview}
+                                                alt={uploadedImages[i]?.name || 'Preview'}
+                                                className="w-full h-full object-cover"
+                                            />
+                                            <button
+                                                onClick={() => removeImage(i)}
+                                                className="absolute top-1 right-1 w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity text-xs"
+                                            >
+                                                ×
+                                            </button>
+                                            <div className="absolute bottom-0 left-0 right-0 bg-black/60 text-white text-xs p-1 truncate">
+                                                {uploadedImages[i]?.name}
+                                            </div>
                                         </div>
                                     ))}
                                 </div>
