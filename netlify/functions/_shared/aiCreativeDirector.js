@@ -243,10 +243,16 @@ Reasoning:
     "productIntegration": {
         "method": "device_mockup|centered|lifestyle|floating",
         "device": "macbook|ipad|iphone|none",
-        "position": "center|left|right",
-        "scale": 0.5-0.8,
         "effects": ["glow", "sparkles", "snow_particles", "reflection", "bokeh", "light_rays"],
         "modifications": ["christmas_hat", "spotlight", "floating_elements"]
+    },
+    "productBounds": {
+        "description": "INDIVIDUELL für DIESE spezifische Szene - WO genau soll das Produkt platziert werden?",
+        "x": 0.0-1.0,
+        "y": 0.0-1.0,
+        "width": 0.0-1.0,
+        "height": 0.0-1.0,
+        "reasoning": "Warum genau DIESE Position? Z.B. 'Das Produkt muss links platziert werden weil rechts der Text steht' oder 'Zentral weil es das Hero-Element ist'"
     },
     "textConfig": {
         "headline": {
@@ -267,7 +273,7 @@ Reasoning:
             "position": "bottom"
         }
     },
-    "imagePrompt": "SEHR DETAILLIERTER Prompt für gpt-image-1 (min. 200 Wörter). Beschreibe EXAKT: 1) Die komplette Szene/Atmosphäre 2) Wo das Produkt platziert wird (als leere/dunkle Zone) 3) Die Headline am unteren Rand: '[HEADLINE TEXT]' in großer weißer Schrift 4) Die Subheadline darunter 5) Den CTA-Button. Der Text MUSS im Bild gerendert werden!",
+    "imagePrompt": "SEHR DETAILLIERTER Prompt für gpt-image-1 (min. 200 Wörter). Beschreibe EXAKT: 1) Die komplette Szene/Atmosphäre 2) Wo das Produkt platziert wird (als leere/dunkle Zone - MUSS zu productBounds passen!) 3) Die Headline am unteren Rand: '[HEADLINE TEXT]' in großer weißer Schrift 4) Die Subheadline darunter 5) Den CTA-Button. Der Text MUSS im Bild gerendert werden!",
     "colorScheme": {
         "background": "#hex",
         "accent": "#hex",
@@ -379,14 +385,15 @@ async function executeCreativeStrategy(openai, strategy, productImageUrl, genera
         const productResponse = await fetch(productImageUrl);
         const productBuffer = Buffer.from(await productResponse.arrayBuffer());
 
-        // Step 3: Integrate product based on strategy
+        // Step 3: Integrate product based on strategy with AI-determined bounds
         let integratedBuffer;
         const integration = strategy.productIntegration || {};
+        const productBounds = strategy.productBounds; // AI-determined placement!
 
         if (integration.method === 'device_mockup' && integration.device) {
-            integratedBuffer = await compositeIntoDevice(sceneBuffer, productBuffer, integration);
+            integratedBuffer = await compositeIntoDevice(sceneBuffer, productBuffer, integration, productBounds);
         } else {
-            integratedBuffer = await compositeProduct(sceneBuffer, productBuffer, integration);
+            integratedBuffer = await compositeProduct(sceneBuffer, productBuffer, integration, productBounds);
         }
 
         console.log('[CreativeDirector] ✓ Product integrated');
@@ -444,21 +451,34 @@ async function executeCreativeStrategy(openai, strategy, productImageUrl, genera
 
 /**
  * Composite product into device (MacBook, iPad, iPhone)
+ * NOW USES AI-determined productBounds for individualized placement
  */
-async function compositeIntoDevice(sceneBuffer, productBuffer, integration) {
-    const deviceFrames = {
-        macbook: { x: 0.05, y: 0.08, width: 0.90, height: 0.55 },
-        ipad: { x: 0.15, y: 0.10, width: 0.70, height: 0.70 },
-        iphone: { x: 0.30, y: 0.08, width: 0.40, height: 0.75 }
-    };
-
-    const frame = deviceFrames[integration.device] || deviceFrames.macbook;
+async function compositeIntoDevice(sceneBuffer, productBuffer, integration, productBounds) {
     const meta = await sharp(sceneBuffer).metadata();
 
-    const screenX = Math.round(meta.width * frame.x);
-    const screenY = Math.round(meta.height * frame.y);
-    const screenW = Math.round(meta.width * frame.width);
-    const screenH = Math.round(meta.height * frame.height);
+    // Use AI-determined bounds if provided, otherwise fallback to device defaults
+    let screenX, screenY, screenW, screenH;
+
+    if (productBounds && productBounds.x !== undefined) {
+        // AI-determined placement - INDIVIDUALIZED per ad!
+        console.log(`[CreativeDirector] Using AI-determined device bounds: ${productBounds.reasoning || 'custom'}`);
+        screenX = Math.round(meta.width * productBounds.x);
+        screenY = Math.round(meta.height * productBounds.y);
+        screenW = Math.round(meta.width * productBounds.width);
+        screenH = Math.round(meta.height * productBounds.height);
+    } else {
+        // Fallback to device defaults (legacy behavior)
+        const deviceFrames = {
+            macbook: { x: 0.05, y: 0.08, width: 0.90, height: 0.55 },
+            ipad: { x: 0.15, y: 0.10, width: 0.70, height: 0.70 },
+            iphone: { x: 0.30, y: 0.08, width: 0.40, height: 0.75 }
+        };
+        const frame = deviceFrames[integration.device] || deviceFrames.macbook;
+        screenX = Math.round(meta.width * frame.x);
+        screenY = Math.round(meta.height * frame.y);
+        screenW = Math.round(meta.width * frame.width);
+        screenH = Math.round(meta.height * frame.height);
+    }
 
     const resizedProduct = await sharp(productBuffer)
         .resize(screenW, screenH, { fit: 'cover' })
@@ -473,27 +493,27 @@ async function compositeIntoDevice(sceneBuffer, productBuffer, integration) {
 
 /**
  * Composite product into scene (centered, lifestyle, etc.)
+ * NOW USES AI-determined productBounds for individualized placement
  */
-async function compositeProduct(sceneBuffer, productBuffer, integration) {
+async function compositeProduct(sceneBuffer, productBuffer, integration, productBounds) {
     const meta = await sharp(sceneBuffer).metadata();
-    const scale = integration.scale || 0.6;
 
-    const productW = Math.round(meta.width * scale);
-    const productH = Math.round(meta.height * scale);
+    let productX, productY, productW, productH;
 
-    let productX, productY;
-    switch (integration.position) {
-        case 'left':
-            productX = Math.round(meta.width * 0.05);
-            productY = Math.round((meta.height - productH) / 2);
-            break;
-        case 'right':
-            productX = Math.round(meta.width * 0.95 - productW);
-            productY = Math.round((meta.height - productH) / 2);
-            break;
-        default: // center
-            productX = Math.round((meta.width - productW) / 2);
-            productY = Math.round((meta.height - productH) / 2) - 50; // Slightly up for text space
+    if (productBounds && productBounds.x !== undefined) {
+        // AI-determined placement - INDIVIDUALIZED per ad!
+        console.log(`[CreativeDirector] Using AI-determined product bounds: ${productBounds.reasoning || 'custom'}`);
+        productX = Math.round(meta.width * productBounds.x);
+        productY = Math.round(meta.height * productBounds.y);
+        productW = Math.round(meta.width * productBounds.width);
+        productH = Math.round(meta.height * productBounds.height);
+    } else {
+        // Fallback to default centered placement (legacy behavior)
+        const scale = 0.6;
+        productW = Math.round(meta.width * scale);
+        productH = Math.round(meta.height * scale);
+        productX = Math.round((meta.width - productW) / 2);
+        productY = Math.round((meta.height - productH) / 2) - 50;
     }
 
     const resizedProduct = await sharp(productBuffer)
