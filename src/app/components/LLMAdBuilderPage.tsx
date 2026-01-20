@@ -101,18 +101,65 @@ export const LLMAdBuilderPage = memo(function LLMAdBuilderPage() {
     const [selectedIndustry, setSelectedIndustry] = useState<string>('ecommerce');
     const [selectedTone, setSelectedTone] = useState<string>('modern');
     const [isGenerating, setIsGenerating] = useState(false);
+    const [isSolvingLayout, setIsSolvingLayout] = useState(false);
     const [creativePlan, setCreativePlan] = useState<CreativePlan | null>(null);
     const [allPlans, setAllPlans] = useState<CreativePlan[]>([]);
     const [generatedAd, setGeneratedAd] = useState<string | null>(null);
     const [variantCount, setVariantCount] = useState(1);
     const [apiUsage, setApiUsage] = useState<{ input_tokens: number; output_tokens: number; model: string } | null>(null);
     const [error, setError] = useState<string | null>(null);
+    const [solvedLayout, setSolvedLayout] = useState<{
+        elements: Record<string, { x: number; y: number; width: number; height: number; type: string; role: string }>;
+        canvasWidth: number;
+        canvasHeight: number;
+    } | null>(null);
+    const [layoutWarnings, setLayoutWarnings] = useState<string[]>([]);
 
     const handleImageUpload = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.files) {
             setUploadedImages(Array.from(e.target.files));
         }
     }, []);
+
+    // Solve layout constraints
+    const handleSolveLayout = useCallback(async () => {
+        if (!creativePlan) return;
+
+        setIsSolvingLayout(true);
+        setLayoutWarnings([]);
+
+        try {
+            const response = await fetch('/.netlify/functions/llm-solve-layout', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    sceneGraph: creativePlan,
+                    canvasWidth: 1080,
+                    canvasHeight: 1080
+                })
+            });
+
+            const data = await response.json();
+
+            if (!response.ok || !data.success) {
+                throw new Error(data.error || 'Failed to solve layout');
+            }
+
+            setSolvedLayout(data.layout);
+            setLayoutWarnings(data.warnings || []);
+
+            toast.success('Layout gelöst!', {
+                description: `${Object.keys(data.layout.elements).length} Elemente positioniert`,
+                icon: <CheckCircle2 className="w-4 h-4" />
+            });
+
+        } catch (err) {
+            const message = err instanceof Error ? err.message : 'Layout-Fehler';
+            toast.error('Layout-Fehler', { description: message });
+        } finally {
+            setIsSolvingLayout(false);
+        }
+    }, [creativePlan]);
 
     const handleGenerate = useCallback(async () => {
         if (!prompt && uploadedImages.length === 0) return;
@@ -463,6 +510,98 @@ export const LLMAdBuilderPage = memo(function LLMAdBuilderPage() {
                                     </summary>
                                     <pre className="mt-2 p-4 bg-muted/50 rounded-xl text-xs overflow-auto max-h-60 font-mono">
                                         {JSON.stringify(creativePlan, null, 2)}
+                                    </pre>
+                                </details>
+
+                                {/* Solve Layout Button */}
+                                <Button
+                                    className="w-full mt-4 gap-2 bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700"
+                                    onClick={handleSolveLayout}
+                                    disabled={isSolvingLayout}
+                                >
+                                    {isSolvingLayout ? (
+                                        <>
+                                            <RefreshCw className="w-4 h-4 animate-spin" />
+                                            Constraints lösen...
+                                        </>
+                                    ) : (
+                                        <>
+                                            <Layers className="w-4 h-4" />
+                                            Layout berechnen (kiwi.js)
+                                        </>
+                                    )}
+                                </Button>
+                            </CardContent>
+                        </Card>
+                    )}
+
+                    {/* Solved Layout Preview */}
+                    {solvedLayout && (
+                        <Card variant="glass" className="overflow-hidden border-blue-500/30">
+                            <CardContent className="p-6">
+                                <h3 className="font-bold text-lg mb-4 flex items-center gap-2">
+                                    <Layers className="w-5 h-5 text-blue-500" />
+                                    Layout gelöst ({solvedLayout.canvasWidth}×{solvedLayout.canvasHeight})
+                                </h3>
+
+                                {/* Warnings */}
+                                {layoutWarnings.length > 0 && (
+                                    <div className="mb-4 p-3 bg-amber-500/10 border border-amber-500/20 rounded-lg text-sm">
+                                        <div className="font-semibold text-amber-500 mb-1">Warnungen:</div>
+                                        {layoutWarnings.map((w, i) => (
+                                            <div key={i} className="text-xs text-muted-foreground">• {w}</div>
+                                        ))}
+                                    </div>
+                                )}
+
+                                {/* Visual Layout Preview */}
+                                <div
+                                    className="relative bg-muted/50 rounded-xl overflow-hidden mb-4"
+                                    style={{
+                                        aspectRatio: `${solvedLayout.canvasWidth}/${solvedLayout.canvasHeight}`,
+                                        maxHeight: '400px'
+                                    }}
+                                >
+                                    {Object.entries(solvedLayout.elements).map(([id, el]) => {
+                                        const scaleX = 100 / solvedLayout.canvasWidth;
+                                        const scaleY = 100 / solvedLayout.canvasHeight;
+
+                                        const colors: Record<string, string> = {
+                                            image: 'bg-emerald-500/30 border-emerald-500',
+                                            text: 'bg-violet-500/30 border-violet-500',
+                                            cta: 'bg-red-500/30 border-red-500',
+                                            arrow: 'bg-amber-500/30 border-amber-500',
+                                            badge: 'bg-pink-500/30 border-pink-500',
+                                            shape: 'bg-blue-500/30 border-blue-500',
+                                            table: 'bg-cyan-500/30 border-cyan-500'
+                                        };
+                                        const colorClass = colors[el.type] || 'bg-gray-500/30 border-gray-500';
+
+                                        return (
+                                            <div
+                                                key={id}
+                                                className={`absolute border-2 rounded flex items-center justify-center text-xs font-mono ${colorClass}`}
+                                                style={{
+                                                    left: `${el.x * scaleX}%`,
+                                                    top: `${el.y * scaleY}%`,
+                                                    width: `${el.width * scaleX}%`,
+                                                    height: `${el.height * scaleY}%`
+                                                }}
+                                                title={`${id}: ${el.type} (${el.x}, ${el.y}) ${el.width}×${el.height}`}
+                                            >
+                                                <span className="truncate px-1">{id}</span>
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+
+                                {/* Layout Data */}
+                                <details className="group">
+                                    <summary className="text-xs text-muted-foreground cursor-pointer hover:text-foreground">
+                                        Layout JSON anzeigen
+                                    </summary>
+                                    <pre className="mt-2 p-4 bg-muted/50 rounded-xl text-xs overflow-auto max-h-60 font-mono">
+                                        {JSON.stringify(solvedLayout, null, 2)}
                                     </pre>
                                 </details>
                             </CardContent>
