@@ -1,18 +1,18 @@
 /**
- * LLM Creative Director - Claude-powered Scene Graph Generator
+ * LLM Creative Director - OpenAI GPT-4 powered Scene Graph Generator
  * 
- * This function uses Claude to analyze user prompts and uploaded images,
+ * This function uses GPT-4 to analyze user prompts and uploaded images,
  * then generates a structured Scene Graph JSON that can be rendered
  * deterministically using a constraint solver and canvas renderer.
  * 
  * Architecture:
- * 1. User Input (prompt + images) → Claude API
- * 2. Claude → Scene Graph JSON (composition, elements, relations, copy, style)
+ * 1. User Input (prompt + images) → OpenAI API
+ * 2. GPT-4 → Scene Graph JSON (composition, elements, relations, copy, style)
  * 3. Scene Graph → Constraint Solver (kiwi.js) → Layout coordinates
  * 4. Layout → Canvas Renderer → Final image
  */
 
-import Anthropic from '@anthropic-ai/sdk';
+import OpenAI from 'openai';
 
 // ============================================================
 // SCENE GRAPH SCHEMA
@@ -46,7 +46,7 @@ import Anthropic from '@anthropic-ai/sdk';
  */
 
 // ============================================================
-// SYSTEM PROMPT - Claude as Creative Director
+// SYSTEM PROMPT - GPT-4 as Creative Director
 // ============================================================
 
 const CREATIVE_DIRECTOR_SYSTEM_PROMPT = `You are an expert advertising creative director AI.
@@ -166,20 +166,20 @@ export async function handler(event) {
         }
 
         // Check for API key
-        const apiKey = process.env.ANTHROPIC_API_KEY;
+        const apiKey = process.env.OPENAI_API_KEY;
         if (!apiKey) {
             return {
                 statusCode: 500,
                 headers,
                 body: JSON.stringify({
-                    error: 'ANTHROPIC_API_KEY not configured',
-                    hint: 'Add ANTHROPIC_API_KEY to your Netlify environment variables'
+                    error: 'OPENAI_API_KEY not configured',
+                    hint: 'Add OPENAI_API_KEY to your Netlify environment variables'
                 })
             };
         }
 
-        // Initialize Claude client
-        const client = new Anthropic({ apiKey });
+        // Initialize OpenAI client
+        const client = new OpenAI({ apiKey });
 
         // Build user message
         let userMessage = '';
@@ -208,42 +208,35 @@ export async function handler(event) {
             });
         }
 
-        userMessage += `\nGenerate a Scene Graph JSON for this ad.`;
+        userMessage += `\nGenerate a Scene Graph JSON for this ad. Return ONLY the JSON, no explanation.`;
 
-        console.log('[LLM-CreativeDirector] Calling Claude with prompt:', userMessage.substring(0, 200));
+        console.log('[LLM-CreativeDirector] Calling GPT-4 with prompt:', userMessage.substring(0, 200));
 
-        // Call Claude API
-        const response = await client.messages.create({
-            model: 'claude-sonnet-4-20250514',
+        // Call OpenAI API with JSON mode
+        const response = await client.chat.completions.create({
+            model: 'gpt-4-turbo-preview',
+            response_format: { type: 'json_object' },
             max_tokens: 2000,
-            system: CREATIVE_DIRECTOR_SYSTEM_PROMPT,
+            temperature: 0.7,
             messages: [
+                { role: 'system', content: CREATIVE_DIRECTOR_SYSTEM_PROMPT },
                 { role: 'user', content: userMessage }
             ]
         });
 
-        // Extract text content
-        const textContent = response.content.find(c => c.type === 'text');
-        if (!textContent || !textContent.text) {
-            throw new Error('No text response from Claude');
+        // Extract content
+        const textContent = response.choices[0]?.message?.content;
+        if (!textContent) {
+            throw new Error('No response from GPT-4');
         }
 
         // Parse JSON from response
         let creativePlan;
         try {
-            // Try to extract JSON from the response (Claude might wrap it in markdown)
-            const jsonMatch = textContent.text.match(/```json\n?([\s\S]*?)\n?```/) ||
-                textContent.text.match(/```\n?([\s\S]*?)\n?```/);
-
-            if (jsonMatch) {
-                creativePlan = JSON.parse(jsonMatch[1]);
-            } else {
-                // Try parsing the whole response as JSON
-                creativePlan = JSON.parse(textContent.text);
-            }
+            creativePlan = JSON.parse(textContent);
         } catch (parseError) {
-            console.error('[LLM-CreativeDirector] Failed to parse Claude response:', textContent.text);
-            throw new Error('Failed to parse Scene Graph JSON from Claude response');
+            console.error('[LLM-CreativeDirector] Failed to parse GPT-4 response:', textContent);
+            throw new Error('Failed to parse Scene Graph JSON from GPT-4 response');
         }
 
         // Validate required fields
@@ -258,11 +251,9 @@ export async function handler(event) {
 
         if (variants > 1) {
             // For now, we'll generate variations by slightly modifying the prompt
-            // In future, this could use Claude to generate alternative versions
             for (let i = 1; i < variants; i++) {
                 const variantPlan = JSON.parse(JSON.stringify(creativePlan));
                 variantPlan.id = `variant_${i + 1}`;
-                // Slight modifications for variants could be added here
                 plans.push(variantPlan);
             }
         }
@@ -274,8 +265,9 @@ export async function handler(event) {
                 success: true,
                 plans,
                 usage: {
-                    input_tokens: response.usage?.input_tokens,
-                    output_tokens: response.usage?.output_tokens,
+                    prompt_tokens: response.usage?.prompt_tokens,
+                    completion_tokens: response.usage?.completion_tokens,
+                    total_tokens: response.usage?.total_tokens,
                     model: response.model
                 }
             })
