@@ -96,18 +96,54 @@ function escapeXml(text) {
 }
 
 function generateBackgroundSVG(width, height, colors, background) {
-    if (background?.type === 'gradient') {
-        return `
-            <defs>
-                <linearGradient id="bg-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
-                    <stop offset="0%" style="stop-color:${colors.background};stop-opacity:1" />
-                    <stop offset="100%" style="stop-color:${colors.secondary};stop-opacity:1" />
-                </linearGradient>
-            </defs>
-            <rect width="${width}" height="${height}" fill="url(#bg-gradient)"/>
-        `;
-    }
-    return `<rect width="${width}" height="${height}" fill="${colors.background}"/>`;
+    const cx = width / 2;
+    const cy = height / 2;
+
+    // Enhanced gradient with radial effect and vignette
+    return `
+        <defs>
+            <!-- Radial gradient for depth -->
+            <radialGradient id="bg-radial" cx="50%" cy="40%" r="70%">
+                <stop offset="0%" style="stop-color:${colors.secondary};stop-opacity:1" />
+                <stop offset="100%" style="stop-color:${colors.background};stop-opacity:1" />
+            </radialGradient>
+            
+            <!-- Vignette overlay -->
+            <radialGradient id="vignette" cx="50%" cy="50%" r="70%">
+                <stop offset="50%" style="stop-color:transparent;stop-opacity:0" />
+                <stop offset="100%" style="stop-color:${colors.background};stop-opacity:0.7" />
+            </radialGradient>
+            
+            <!-- Glow filter for elements -->
+            <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
+                <feGaussianBlur stdDeviation="8" result="coloredBlur"/>
+                <feMerge>
+                    <feMergeNode in="coloredBlur"/>
+                    <feMergeNode in="SourceGraphic"/>
+                </feMerge>
+            </filter>
+            
+            <!-- Drop shadow -->
+            <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+                <feDropShadow dx="0" dy="4" stdDeviation="8" flood-color="${colors.primary}" flood-opacity="0.3"/>
+            </filter>
+        </defs>
+        
+        <!-- Base background -->
+        <rect width="${width}" height="${height}" fill="${colors.background}"/>
+        
+        <!-- Radial gradient overlay -->
+        <rect width="${width}" height="${height}" fill="url(#bg-radial)" opacity="0.6"/>
+        
+        <!-- Subtle noise texture -->
+        <rect width="${width}" height="${height}" fill="url(#bg-radial)" opacity="0.1"/>
+        
+        <!-- Vignette -->
+        <rect width="${width}" height="${height}" fill="url(#vignette)"/>
+        
+        <!-- Accent glow spot -->
+        <ellipse cx="${cx}" cy="${cy * 0.6}" rx="${width * 0.3}" ry="${height * 0.15}" fill="${colors.primary}" opacity="0.08"/>
+    `;
 }
 
 function generateTextSVG(element, text, colors, isHeadline = false) {
@@ -157,16 +193,50 @@ function generateCTASVG(element, text, colors) {
     const centerX = x + width / 2;
     const centerY = y + height / 2;
     const rx = height / 2; // Pill shape
+    const gradientId = `cta-gradient-${x}-${y}`;
 
     return `
+        <defs>
+            <linearGradient id="${gradientId}" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" style="stop-color:${colors.primary};stop-opacity:1" />
+                <stop offset="100%" style="stop-color:${colors.accent};stop-opacity:1" />
+            </linearGradient>
+        </defs>
+        
+        <!-- Glow background -->
+        <rect 
+            x="${x - 4}" 
+            y="${y - 4}" 
+            width="${width + 8}" 
+            height="${height + 8}" 
+            rx="${rx + 4}"
+            fill="${colors.primary}"
+            opacity="0.3"
+            filter="url(#glow)"
+        />
+        
+        <!-- Main button -->
         <rect 
             x="${x}" 
             y="${y}" 
             width="${width}" 
             height="${height}" 
             rx="${rx}"
-            fill="${colors.primary}"
+            fill="url(#${gradientId})"
+            filter="url(#shadow)"
         />
+        
+        <!-- Highlight line -->
+        <rect 
+            x="${x + 4}" 
+            y="${y + 2}" 
+            width="${width - 8}" 
+            height="4" 
+            rx="2"
+            fill="${colors.text}"
+            opacity="0.2"
+        />
+        
         <text 
             x="${centerX}" 
             y="${centerY}" 

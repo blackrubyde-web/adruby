@@ -103,10 +103,34 @@ const INDUSTRY_TYPES = [
 ];
 
 const TONE_OPTIONS = [
-    { id: 'modern', label: 'Modern' },
-    { id: 'luxury', label: 'Luxury' },
-    { id: 'aggressive', label: 'Aggressive' },
-    { id: 'minimal', label: 'Minimal' },
+    { id: 'modern', label: 'Modern', colors: { bg: '#0D0D0D', primary: '#FF4444', text: '#FFFFFF' } },
+    { id: 'luxury', label: 'Luxury', colors: { bg: '#0A0A0A', primary: '#D4AF37', text: '#FFFFFF' } },
+    { id: 'aggressive', label: 'Aggressive', colors: { bg: '#000000', primary: '#FF0000', text: '#FFFFFF' } },
+    { id: 'minimal', label: 'Minimal', colors: { bg: '#FFFFFF', primary: '#000000', text: '#000000' } },
+];
+
+// Prompt templates for quick start
+const PROMPT_TEMPLATES = [
+    {
+        emoji: '🏋️',
+        title: 'Fitness Produkt',
+        prompt: 'Erstelle eine dynamische Ad für ein Fitness-Supplement. Zeige Vorher/Nachher Transformation mit starkem CTA "Jetzt starten".'
+    },
+    {
+        emoji: '💻',
+        title: 'SaaS Dashboard',
+        prompt: 'Zeige mein SaaS Dashboard mit Feature-Callouts. Modernes Design, dunkler Hintergrund, Workflow-Pfeile die Features verbinden.'
+    },
+    {
+        emoji: '🛍️',
+        title: 'E-Commerce Produkt',
+        prompt: 'Produktfokus Ad mit Discount-Badge, Produktbild zentral, Bullet Points für Features und "Jetzt kaufen" CTA.'
+    },
+    {
+        emoji: '📊',
+        title: 'Vergleichstabelle',
+        prompt: 'Vergleiche mein Produkt mit der Konkurrenz. Tabelle mit Checkmarks, unser Produkt hervorgehoben, klarer Gewinner-Effekt.'
+    },
 ];
 
 export const LLMAdBuilderPage = memo(function LLMAdBuilderPage() {
@@ -455,6 +479,23 @@ export const LLMAdBuilderPage = memo(function LLMAdBuilderPage() {
                                 placeholder="z.B. 'Erstelle eine Ad für mein neues Fitness-Produkt. Zeige Vorher/Nachher Ergebnisse mit einem starken CTA.'"
                                 className="w-full h-32 p-4 bg-muted/50 border border-border rounded-xl resize-none text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
                             />
+
+                            {/* Quick Prompt Templates */}
+                            <div className="mt-4">
+                                <div className="text-xs text-muted-foreground mb-2">Schnellstart-Templates:</div>
+                                <div className="flex flex-wrap gap-2">
+                                    {PROMPT_TEMPLATES.map((template) => (
+                                        <button
+                                            key={template.title}
+                                            onClick={() => setPrompt(template.prompt)}
+                                            className="px-3 py-1.5 text-xs font-medium bg-muted hover:bg-muted/80 rounded-lg transition-colors flex items-center gap-1.5"
+                                        >
+                                            <span>{template.emoji}</span>
+                                            {template.title}
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
                         </CardContent>
                     </Card>
 
@@ -561,22 +602,53 @@ export const LLMAdBuilderPage = memo(function LLMAdBuilderPage() {
                                     </div>
                                 </div>
 
-                                {/* Tone */}
+                                {/* Tone with Color Preview */}
                                 <div>
-                                    <label className="text-sm font-medium text-muted-foreground mb-2 block">Tone</label>
-                                    <div className="flex flex-wrap gap-2">
-                                        {TONE_OPTIONS.map((tone) => (
-                                            <button
-                                                key={tone.id}
-                                                onClick={() => setSelectedTone(tone.id)}
-                                                className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${selectedTone === tone.id
-                                                    ? 'bg-primary text-primary-foreground'
-                                                    : 'bg-muted hover:bg-muted/80'
-                                                    }`}
-                                            >
-                                                {tone.label}
-                                            </button>
-                                        ))}
+                                    <label className="text-sm font-medium text-muted-foreground mb-2 block">Tone & Color Scheme</label>
+                                    <div className="grid grid-cols-2 gap-2">
+                                        {TONE_OPTIONS.map((tone) => {
+                                            const isSelected = selectedTone === tone.id;
+                                            return (
+                                                <button
+                                                    key={tone.id}
+                                                    onClick={() => setSelectedTone(tone.id)}
+                                                    className={`p-3 rounded-xl border text-left transition-all ${isSelected
+                                                        ? 'border-primary bg-primary/10'
+                                                        : 'border-border hover:border-primary/50'
+                                                        }`}
+                                                >
+                                                    <div className="flex items-center gap-2 mb-2">
+                                                        {/* Color swatches */}
+                                                        <div className="flex -space-x-1">
+                                                            <div
+                                                                className="w-4 h-4 rounded-full border border-background"
+                                                                style={{ backgroundColor: tone.colors.bg }}
+                                                            />
+                                                            <div
+                                                                className="w-4 h-4 rounded-full border border-background"
+                                                                style={{ backgroundColor: tone.colors.primary }}
+                                                            />
+                                                            <div
+                                                                className="w-4 h-4 rounded-full border border-background"
+                                                                style={{ backgroundColor: tone.colors.text }}
+                                                            />
+                                                        </div>
+                                                        <span className="font-semibold text-sm">{tone.label}</span>
+                                                    </div>
+                                                    {/* Mini preview bar */}
+                                                    <div
+                                                        className="h-6 rounded flex items-center justify-center text-xs font-medium"
+                                                        style={{
+                                                            backgroundColor: tone.colors.bg,
+                                                            color: tone.colors.text,
+                                                            border: `1px solid ${tone.colors.primary}`
+                                                        }}
+                                                    >
+                                                        Preview
+                                                    </div>
+                                                </button>
+                                            );
+                                        })}
                                     </div>
                                 </div>
 
