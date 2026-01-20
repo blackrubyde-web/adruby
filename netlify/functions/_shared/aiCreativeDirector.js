@@ -6,13 +6,17 @@
  * - Chain-of-thought reasoning for creative strategy
  * - Automatic industry/product detection
  * - Individualized ad creation for ANY product
+ * - P0: Reliable text rendering + Quality verification
  * 
  * No hardcoded rules - pure AI decision making.
  */
 
 import sharp from 'sharp';
+import { applyTextOverlay } from './textRenderer.js';
+import { verifyAdQuality, passesQualityGate, improvePromptFromFeedback } from './qualityControl.js';
 
 const CANVAS = 1080;
+const MAX_QUALITY_RETRIES = 2;
 
 /**
  * Main entry point - creates ad using AI Creative Director approach
@@ -298,56 +302,99 @@ Ultra-premium $10,000 creative director quality. Sharp, professional, conversion
 
 
 /**
- * Phase 3: Execute the Creative Strategy
+ * Phase 3: Execute the Creative Strategy with Quality Verification
  */
 async function executeCreativeStrategy(openai, strategy, productImageUrl, generateHeroImage) {
-    // Step 1: Generate scene using AI's crafted prompt
-    console.log('[CreativeDirector] Generating scene with AI-crafted prompt...');
+    let currentPrompt = strategy.imagePrompt;
+    let finalBuffer = null;
+    let qualityResult = null;
 
-    const imageResult = await generateHeroImage({
-        prompt: strategy.imagePrompt,
-        size: '1024x1024',
-        quality: 'high'
-    });
+    // Quality retry loop
+    for (let attempt = 0; attempt <= MAX_QUALITY_RETRIES; attempt++) {
+        if (attempt > 0) {
+            console.log(`[CreativeDirector] 🔄 Quality retry ${attempt}/${MAX_QUALITY_RETRIES}...`);
+            currentPrompt = improvePromptFromFeedback(currentPrompt, qualityResult);
+        }
 
-    let sceneBuffer = Buffer.from(imageResult.b64, 'base64');
-    console.log('[CreativeDirector] ✓ Scene generated');
+        // Step 1: Generate scene using AI's crafted prompt
+        console.log('[CreativeDirector] Generating scene with AI-crafted prompt...');
 
-    // Step 2: Download and prepare product image
-    console.log('[CreativeDirector] Preparing product for integration...');
-    const productResponse = await fetch(productImageUrl);
-    const productBuffer = Buffer.from(await productResponse.arrayBuffer());
+        const imageResult = await generateHeroImage({
+            prompt: currentPrompt,
+            size: '1024x1024',
+            quality: 'high'
+        });
 
-    // Step 3: Integrate product based on strategy
-    let integratedBuffer;
-    const integration = strategy.productIntegration || {};
+        let sceneBuffer = Buffer.from(imageResult.b64, 'base64');
+        console.log('[CreativeDirector] ✓ Scene generated');
 
-    if (integration.method === 'device_mockup' && integration.device) {
-        integratedBuffer = await compositeIntoDevice(sceneBuffer, productBuffer, integration);
-    } else {
-        integratedBuffer = await compositeProduct(sceneBuffer, productBuffer, integration);
+        // Step 2: Download and prepare product image
+        console.log('[CreativeDirector] Preparing product for integration...');
+        const productResponse = await fetch(productImageUrl);
+        const productBuffer = Buffer.from(await productResponse.arrayBuffer());
+
+        // Step 3: Integrate product based on strategy
+        let integratedBuffer;
+        const integration = strategy.productIntegration || {};
+
+        if (integration.method === 'device_mockup' && integration.device) {
+            integratedBuffer = await compositeIntoDevice(sceneBuffer, productBuffer, integration);
+        } else {
+            integratedBuffer = await compositeProduct(sceneBuffer, productBuffer, integration);
+        }
+
+        console.log('[CreativeDirector] ✓ Product integrated');
+
+        // Step 4: Apply ALL effects from strategy
+        if (integration.effects && integration.effects.length > 0) {
+            console.log('[CreativeDirector] Applying effects:', integration.effects.join(', '));
+            integratedBuffer = await applyEffects(
+                integratedBuffer,
+                integration.effects,
+                strategy.colorScheme?.accent || '#FF4444'
+            );
+        }
+
+        // Step 5: Resize to final dimensions
+        let resizedBuffer = await sharp(integratedBuffer)
+            .resize(CANVAS, CANVAS, { fit: 'cover' })
+            .png()
+            .toBuffer();
+
+        // Step 6: Apply reliable text overlay (P0 fix - guaranteed rendering)
+        const textConfig = strategy.textConfig || {};
+        if (textConfig.headline?.text || textConfig.subheadline?.text || textConfig.cta?.text) {
+            console.log('[CreativeDirector] Applying text overlay...');
+            resizedBuffer = await applyTextOverlay(resizedBuffer, {
+                headline: textConfig.headline?.text,
+                subheadline: textConfig.subheadline?.text,
+                cta: textConfig.cta?.text,
+                position: textConfig.headline?.position || 'bottom',
+                colorScheme: strategy.colorScheme
+            }, sharp);
+            console.log('[CreativeDirector] ✓ Text overlay applied');
+        }
+
+        // Step 7: Quality verification (P0 - GPT-4V check)
+        console.log('[CreativeDirector] Running quality verification...');
+        qualityResult = await verifyAdQuality(openai, resizedBuffer, strategy);
+
+        if (passesQualityGate(qualityResult, 6)) {
+            console.log(`[CreativeDirector] ✅ Quality passed: ${qualityResult.overallScore}/10`);
+            finalBuffer = resizedBuffer;
+            break;
+        } else {
+            console.log(`[CreativeDirector] ⚠️ Quality score ${qualityResult.overallScore}/10 - below threshold`);
+            if (attempt === MAX_QUALITY_RETRIES) {
+                console.log('[CreativeDirector] Max retries reached, using best result');
+                finalBuffer = resizedBuffer;
+            }
+        }
     }
-
-    console.log('[CreativeDirector] ✓ Product integrated');
-
-    // Step 4: Apply ALL effects from strategy
-    if (integration.effects && integration.effects.length > 0) {
-        console.log('[CreativeDirector] Applying effects:', integration.effects.join(', '));
-        integratedBuffer = await applyEffects(
-            integratedBuffer,
-            integration.effects,
-            strategy.colorScheme?.accent || '#FF4444'
-        );
-    }
-
-    // Step 5: Final resize and output
-    const finalBuffer = await sharp(integratedBuffer)
-        .resize(CANVAS, CANVAS, { fit: 'cover' })
-        .png()
-        .toBuffer();
 
     return finalBuffer;
 }
+
 
 /**
  * Composite product into device (MacBook, iPad, iPhone)
