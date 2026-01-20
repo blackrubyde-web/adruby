@@ -1,5 +1,5 @@
 import { memo, useCallback, useState } from 'react';
-import { BarChart3, Layers, Brain, LogOut, X, BarChart2, Gift, BookOpen, Palette, Shield, Wand2, type LucideIcon } from 'lucide-react';
+import { BarChart3, Layers, Brain, LogOut, X, BarChart2, Gift, BookOpen, Palette, Shield, Wand2, Sparkles, type LucideIcon } from 'lucide-react';
 import { PageType } from '../App';
 import { useAdmin } from '../contexts/AdminContext';
 import { cn } from '../lib/utils';
@@ -26,6 +26,7 @@ const CORE_WORKFLOW: NavItem[] = [
   { icon: BarChart2, label: 'Analytics', page: 'analytics' },
   { icon: Palette, label: 'Creative Studio', page: 'studio' },
   { icon: Wand2, label: 'AI Ad Builder', page: 'aibuilder', badge: 'Neu' },
+  { icon: Sparkles, label: 'LLM Builder', page: 'llmbuilder', badge: 'Beta' },
   { icon: Layers, label: 'Kampagnen', page: 'campaigns' },
   { icon: Brain, label: 'AI Analyse', page: 'aianalysis' },
   { icon: BookOpen, label: 'Creative Library', page: 'library' },
