@@ -391,66 +391,151 @@ async function executeCreativeStrategy(openai, strategy, productImageUrl, genera
 
         let integratedBuffer = null;
 
-        // ============================================================\n        // STAGE-BASED GENERATION:\n        // 1. AI generates scene with EMPTY placeholder for product\n        // 2. Real product image is composited with professional effects\n        // ============================================================\n        console.log('[CreativeDirector] 🎨 Generating STAGE scene for product integration...');\n\n        const productIntegration = strategy.productIntegration || {};\n        const productMethod = productIntegration.method || 'centered';\n        const textConfig = strategy.textConfig || {};\n\n        // Build stage-focused prompt (scene prepared FOR the product, not WITH the product)\n        let stagePrompt = currentPrompt;\n\n        // For device mockups: Generate device with BLANK/BLACK screen\n        if (productMethod === 'device_mockup') {\n            stagePrompt = `ULTRA-PREMIUM META AD SCENE (1080x1080px):\n\nSZENE UND DEVICE:\n- Eleganter dunkler Hintergrund mit professioneller Studio-Beleuchtung\n- Ein schlankes MacBook Pro Space Black steht leicht angewinkelt in der Mitte-Oben des Bildes\n- DER BILDSCHIRM IST KOMPLETT SCHWARZ/DUNKEL (wird später befüllt!)\n- KEINE Inhalte auf dem Bildschirm generieren - nur schwarzer Screen!\n- Cinematische Beleuchtung: Hauptlicht von links, subtiler Glow um das Device\n- Reflexionen auf der Laptop-Oberfläche, professionelle Schatten\n\nBELEUCHTUNG:\n- Drei-Punkt-Beleuchtung für professionellen Look\n- Subtile farbige Akzente (Rot/Türkis) im Hintergrund als Lichtquellen\n- Der Bildschirm-Bereich sollte einen leichten Glow haben als ob er leuchtet\n\nTEXT IM BILD (KRITISCH - AM UNTEREN RAND):\n${textConfig.headline?.text ? `- Headline: \"${textConfig.headline.text}\" - Große, fette, weiße Schrift mit Text-Schatten` : ''}\n${textConfig.subheadline?.text ? `- Subheadline: \"${textConfig.subheadline.text}\" - Kleinere weiße Schrift` : ''}\n${textConfig.cta?.text ? `- CTA-Button: Roter Pill-Button (#FF4444) mit \"${textConfig.cta.text}\" in weißer Schrift` : ''}\n\nWICHTIG:\n- Der MacBook-Bildschirm muss KOMPLETT SCHWARZ sein (kein UI, keine Inhalte!)\n- Text muss SCHARF und LESBAR sein\n- Qualität: $10,000 Agentur-Level, Magazin-Cover\n- Das Layout muss Platz für das Produkt im oberen Bereich und Text im unteren Bereich haben`;\n        } else {\n            // For physical products: Generate scene with empty central area\n            stagePrompt = `ULTRA-PREMIUM META AD SCENE (1080x1080px):\n\nSZENE (BÜHNE FÜR PRODUKT):\n- Eleganter, dunkler Hintergrund mit professioneller Studio-Beleuchtung\n- ZENTRALE ZONE (40-60% des Bildes): Muss LEER/DUNKEL sein für spätere Produkt-Integration\n- Subtile Lichteffekte und Bokeh im Hintergrund\n- Cinematische Beleuchtung von oben-links\n- Eine reflektierende Oberfläche unten (z.B. polierter Tisch) für Produktschatten\n\nBELEUCHTUNG:\n- Professionelle Drei-Punkt-Beleuchtung\n- Spotlight auf die zentrale Zone gerichtet\n- Farbige Akzente im Hintergrund (passend zum Produkt)\n\nTEXT IM BILD (AM UNTEREN RAND):\n${textConfig.headline?.text ? `- Headline: \"${textConfig.headline.text}\" - Große, fette, weiße Schrift` : ''}\n${textConfig.subheadline?.text ? `- Subheadline: \"${textConfig.subheadline.text}\"` : ''}\n${textConfig.cta?.text ? `- CTA-Button: \"${textConfig.cta.text}\"` : ''}\n\nWICHTIG:\n- Die zentrale Zone MUSS leer bleiben (dort wird später das Produkt eingefügt)\n- Text am unteren Rand muss scharf und lesbar sein\n- Qualität: Agentur-Level, perfekte Komposition`;\n        }\n\n        // Generate the stage scene\n        const imageResult = await generateHeroImage({\n            prompt: stagePrompt,\n            size: '1024x1024',\n            quality: 'high'\n        });\n\n        let sceneBuffer = Buffer.from(imageResult.b64, 'base64');\n        console.log('[CreativeDirector] ✓ Stage scene generated');\n\n        // Composite the REAL product into the prepared stage\n        if (productMethod === 'device_mockup') {\n            console.log('[CreativeDirector] 🖥️ Compositing screenshot into device screen...');\n            integratedBuffer = await compositeIntoDevice(sceneBuffer, productBuffer, {\n                ...productIntegration,\n                accentColor: strategy.colorScheme?.accent || '#FF4444'\n            }, strategy.productBounds);\n        } else {
-        // For physical products, composite product onto scene
-        console.log('[CreativeDirector] Compositing product into scene...');
-        integratedBuffer = await compositeProduct(sceneBuffer, productBuffer, productIntegration, strategy.productBounds);
-    }
+        // ============================================================
+        // STAGE-BASED GENERATION:
+        // 1. AI generates scene with EMPTY placeholder for product
+        // 2. Real product image is composited with professional effects
+        // ============================================================
+        console.log('[CreativeDirector] 🎨 Generating STAGE scene for product integration...');
 
-    console.log('[CreativeDirector] ✓ Product integrated');
+        const productIntegration = strategy.productIntegration || {};
+        const productMethod = productIntegration.method || 'centered';
+        const textConfig = strategy.textConfig || {};
 
-    // Apply effects from strategy
-    if (productIntegration.effects && productIntegration.effects.length > 0) {
-        console.log('[CreativeDirector] Applying effects:', productIntegration.effects.join(', '));
-        integratedBuffer = await applyEffects(
-            integratedBuffer,
-            productIntegration.effects,
-            strategy.colorScheme?.accent || '#FF4444'
-        );
-    }
+        // Build stage-focused prompt (scene prepared FOR the product, not WITH the product)
+        let stagePrompt = currentPrompt;
 
-    // Resize to final dimensions
-    let resizedBuffer = await sharp(integratedBuffer)
-        .resize(CANVAS, CANVAS, { fit: 'cover' })
-        .png()
-        .toBuffer();
+        // For device mockups: Generate device with BLANK/BLACK screen
+        if (productMethod === 'device_mockup') {
+            stagePrompt = `ULTRA-PREMIUM META AD SCENE (1080x1080px):
 
-    // Quality verification
-    console.log('[CreativeDirector] Running quality verification...');
-    qualityResult = await verifyAdQuality(openai, resizedBuffer, strategy);
+SZENE UND DEVICE:
+- Eleganter dunkler Hintergrund mit professioneller Studio-Beleuchtung
+- Ein schlankes MacBook Pro Space Black steht leicht angewinkelt in der Mitte-Oben des Bildes
+- DER BILDSCHIRM IST KOMPLETT SCHWARZ/DUNKEL (wird später befüllt!)
+- KEINE Inhalte auf dem Bildschirm generieren - nur schwarzer Screen!
+- Cinematische Beleuchtung: Hauptlicht von links, subtiler Glow um das Device
+- Reflexionen auf der Laptop-Oberfläche, professionelle Schatten
 
-    // ONLY apply SVG text overlay if quality check says text is NOT readable
-    // (This is now a FALLBACK, not the primary text rendering method)
-    if (qualityResult.scores?.textReadability < 5) {
-        console.log('[CreativeDirector] ⚠️ AI text not readable, applying SVG fallback...');
-        if (textConfig.headline?.text || textConfig.cta?.text) {
-            resizedBuffer = await applyTextOverlay(resizedBuffer, {
-                headline: textConfig.headline?.text,
-                subheadline: textConfig.subheadline?.text,
-                cta: textConfig.cta?.text,
-                position: textConfig.headline?.position || 'bottom',
-                colorScheme: strategy.colorScheme
-            }, sharp);
-            console.log('[CreativeDirector] ✓ SVG text fallback applied');
+BELEUCHTUNG:
+- Drei-Punkt-Beleuchtung für professionellen Look
+- Subtile farbige Akzente (Rot/Türkis) im Hintergrund als Lichtquellen
+- Der Bildschirm-Bereich sollte einen leichten Glow haben als ob er leuchtet
+
+TEXT IM BILD (KRITISCH - AM UNTEREN RAND):
+${textConfig.headline?.text ? `- Headline: "${textConfig.headline.text}" - Große, fette, weiße Schrift mit Text-Schatten` : ''}
+${textConfig.subheadline?.text ? `- Subheadline: "${textConfig.subheadline.text}" - Kleinere weiße Schrift` : ''}
+${textConfig.cta?.text ? `- CTA-Button: Roter Pill-Button (#FF4444) mit "${textConfig.cta.text}" in weißer Schrift` : ''}
+
+WICHTIG:
+- Der MacBook-Bildschirm muss KOMPLETT SCHWARZ sein (kein UI, keine Inhalte!)
+- Text muss SCHARF und LESBAR sein
+- Qualität: $10,000 Agentur-Level, Magazin-Cover
+- Das Layout muss Platz für das Produkt im oberen Bereich und Text im unteren Bereich haben`;
+        } else {
+            // For physical products: Generate scene with empty central area
+            stagePrompt = `ULTRA-PREMIUM META AD SCENE (1080x1080px):
+
+SZENE (BÜHNE FÜR PRODUKT):
+- Eleganter, dunkler Hintergrund mit professioneller Studio-Beleuchtung
+- ZENTRALE ZONE (40-60% des Bildes): Muss LEER/DUNKEL sein für spätere Produkt-Integration
+- Subtile Lichteffekte und Bokeh im Hintergrund
+- Cinematische Beleuchtung von oben-links
+- Eine reflektierende Oberfläche unten (z.B. polierter Tisch) für Produktschatten
+
+BELEUCHTUNG:
+- Professionelle Drei-Punkt-Beleuchtung
+- Spotlight auf die zentrale Zone gerichtet
+- Farbige Akzente im Hintergrund (passend zum Produkt)
+
+TEXT IM BILD (AM UNTEREN RAND):
+${textConfig.headline?.text ? `- Headline: "${textConfig.headline.text}" - Große, fette, weiße Schrift` : ''}
+${textConfig.subheadline?.text ? `- Subheadline: "${textConfig.subheadline.text}"` : ''}
+${textConfig.cta?.text ? `- CTA-Button: "${textConfig.cta.text}"` : ''}
+
+WICHTIG:
+- Die zentrale Zone MUSS leer bleiben (dort wird später das Produkt eingefügt)
+- Text am unteren Rand muss scharf und lesbar sein
+- Qualität: Agentur-Level, perfekte Komposition`;
         }
-    } else {
-        console.log('[CreativeDirector] ✓ AI-rendered text is readable, no SVG overlay needed');
-    }
 
-    if (passesQualityGate(qualityResult, 6)) {
-        console.log(`[CreativeDirector] ✅ Quality passed: ${qualityResult.overallScore}/10`);
-        finalBuffer = resizedBuffer;
-        break;
-    } else {
-        console.log(`[CreativeDirector] ⚠️ Quality score ${qualityResult.overallScore}/10 - below threshold`);
-        if (attempt === MAX_QUALITY_RETRIES) {
-            console.log('[CreativeDirector] Max retries reached, using best result');
+        // Generate the stage scene
+        const imageResult = await generateHeroImage({
+            prompt: stagePrompt,
+            size: '1024x1024',
+            quality: 'high'
+        });
+
+        let sceneBuffer = Buffer.from(imageResult.b64, 'base64');
+        console.log('[CreativeDirector] ✓ Stage scene generated');
+
+        // Composite the REAL product into the prepared stage
+        if (productMethod === 'device_mockup') {
+            console.log('[CreativeDirector] 🖥️ Compositing screenshot into device screen...');
+            integratedBuffer = await compositeIntoDevice(sceneBuffer, productBuffer, {
+                ...productIntegration,
+                accentColor: strategy.colorScheme?.accent || '#FF4444'
+            }, strategy.productBounds);
+        } else {
+            // For physical products, composite product onto scene
+            console.log('[CreativeDirector] Compositing product into scene...');
+            integratedBuffer = await compositeProduct(sceneBuffer, productBuffer, productIntegration, strategy.productBounds);
+        }
+
+        console.log('[CreativeDirector] ✓ Product integrated');
+
+        // Apply effects from strategy
+        if (productIntegration.effects && productIntegration.effects.length > 0) {
+            console.log('[CreativeDirector] Applying effects:', productIntegration.effects.join(', '));
+            integratedBuffer = await applyEffects(
+                integratedBuffer,
+                productIntegration.effects,
+                strategy.colorScheme?.accent || '#FF4444'
+            );
+        }
+
+        // Resize to final dimensions
+        let resizedBuffer = await sharp(integratedBuffer)
+            .resize(CANVAS, CANVAS, { fit: 'cover' })
+            .png()
+            .toBuffer();
+
+        // Quality verification
+        console.log('[CreativeDirector] Running quality verification...');
+        qualityResult = await verifyAdQuality(openai, resizedBuffer, strategy);
+
+        // ONLY apply SVG text overlay if quality check says text is NOT readable
+        // (This is now a FALLBACK, not the primary text rendering method)
+        if (qualityResult.scores?.textReadability < 5) {
+            console.log('[CreativeDirector] ⚠️ AI text not readable, applying SVG fallback...');
+            if (textConfig.headline?.text || textConfig.cta?.text) {
+                resizedBuffer = await applyTextOverlay(resizedBuffer, {
+                    headline: textConfig.headline?.text,
+                    subheadline: textConfig.subheadline?.text,
+                    cta: textConfig.cta?.text,
+                    position: textConfig.headline?.position || 'bottom',
+                    colorScheme: strategy.colorScheme
+                }, sharp);
+                console.log('[CreativeDirector] ✓ SVG text fallback applied');
+            }
+        } else {
+            console.log('[CreativeDirector] ✓ AI-rendered text is readable, no SVG overlay needed');
+        }
+
+        if (passesQualityGate(qualityResult, 6)) {
+            console.log(`[CreativeDirector] ✅ Quality passed: ${qualityResult.overallScore}/10`);
             finalBuffer = resizedBuffer;
+            break;
+        } else {
+            console.log(`[CreativeDirector] ⚠️ Quality score ${qualityResult.overallScore}/10 - below threshold`);
+            if (attempt === MAX_QUALITY_RETRIES) {
+                console.log('[CreativeDirector] Max retries reached, using best result');
+                finalBuffer = resizedBuffer;
+            }
         }
     }
-}
 
-return finalBuffer;
+    return finalBuffer;
 }
 
 
