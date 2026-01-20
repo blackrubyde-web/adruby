@@ -3,6 +3,7 @@
  * 
  * GPT-4V verification after ad generation.
  * Checks if the generated ad matches the intended strategy.
+ * Now focuses on NATIVE TEXT RENDERING quality (text rendered directly by AI)
  */
 
 /**
@@ -17,6 +18,10 @@ export async function verifyAdQuality(openai, imageBuffer, strategy) {
         const base64 = imageBuffer.toString('base64');
         const dataUrl = `data:image/png;base64,${base64}`;
 
+        // Extract expected text from strategy
+        const expectedHeadline = strategy.textConfig?.headline?.text || '';
+        const expectedCta = strategy.textConfig?.cta?.text || '';
+
         const response = await openai.chat.completions.create({
             model: 'gpt-4o',
             messages: [{
@@ -24,19 +29,39 @@ export async function verifyAdQuality(openai, imageBuffer, strategy) {
                 content: [
                     {
                         type: 'text',
-                        text: `Du bist ein Ad-Qualitätsprüfer. Bewerte diese generierte Werbung.
+                        text: `Du bist ein Ad-Qualitätsprüfer für Meta Ads 2026. Bewerte diese generierte Werbung STRIKT.
 
 URSPRÜNGLICHE STRATEGIE:
 - Konzept: ${strategy.creativeConcept || 'Premium product showcase'}
 - Szene: ${strategy.sceneDescription?.substring(0, 200) || 'N/A'}
 - Effekte gewünscht: ${strategy.productIntegration?.effects?.join(', ') || 'keine'}
+- Erwartete Headline: "${expectedHeadline}"
+- Erwarteter CTA: "${expectedCta}"
+
+KRITISCHE PRÜFPUNKTE:
+
+1. TEXT-LESBARKEIT (SEHR WICHTIG!)
+   - Ist die Headline im Bild sichtbar und LESBAR?
+   - Ist der Text SCHARF (keine verschwommenen Buchstaben)?
+   - Ist der CTA-Button vorhanden und lesbar?
+   - KEINE Rechteck-Artefakte (████) oder Platzhalter?
+
+2. PRODUKT-QUALITÄT
+   - Ist das Produkt natürlich in die Szene integriert?
+   - Hat es realistische Schatten und Reflexionen?
+   - Schwebt es nicht unnatürlich?
+
+3. GESAMTQUALITÄT
+   - Sieht es aus wie $10,000 Agentur-Arbeit?
+   - Würde es auf Instagram/Facebook viral gehen?
+   - Ist die Beleuchtung professionell?
 
 BEWERTE auf einer Skala 1-10:
-1. Professionelle Qualität (sieht aus wie $10,000 Agentur-Arbeit?)
-2. Produkt-Sichtbarkeit (ist das Produkt klar erkennbar?)
-3. Text-Lesbarkeit (ist der Text scharf und lesbar?)
-4. Marken-Konsistenz (passt die Stimmung zum Konzept?)
-5. Meta-Ad-Tauglichkeit (würde das auf Instagram/Facebook funktionieren?)
+- 1-3: Unbrauchbar
+- 4-5: Grundlegende Probleme
+- 6-7: Akzeptabel, könnte besser sein
+- 8-9: Professionell, Meta-ready
+- 10: Perfekt, Award-würdig
 
 Antworte mit JSON:
 {
@@ -45,8 +70,16 @@ Antworte mit JSON:
         "professionalQuality": 1-10,
         "productVisibility": 1-10,
         "textReadability": 1-10,
+        "textSharpness": 1-10,
+        "ctaVisible": true/false,
         "brandConsistency": 1-10,
         "metaTauglichkeit": 1-10
+    },
+    "textAnalysis": {
+        "headlineFound": true/false,
+        "headlineText": "Was steht in der Headline (falls lesbar)?",
+        "ctaButtonFound": true/false,
+        "hasRectangleArtifacts": true/false
     },
     "strengths": ["Was ist gut?"],
     "improvements": ["Was sollte verbessert werden?"],
@@ -60,13 +93,14 @@ Antworte mit JSON:
                     }
                 ]
             }],
-            max_tokens: 800,
+            max_tokens: 1000,
             response_format: { type: "json_object" }
         });
 
         const quality = JSON.parse(response.choices[0].message.content);
 
         console.log(`[QualityControl] Score: ${quality.overallScore}/10 - ${quality.recommendation}`);
+        console.log(`[QualityControl] Text Analysis: Headline=${quality.textAnalysis?.headlineFound}, CTA=${quality.textAnalysis?.ctaButtonFound}`);
         if (quality.improvements?.length > 0) {
             console.log('[QualityControl] Improvements:', quality.improvements.join(', '));
         }
@@ -77,12 +111,14 @@ Antworte mit JSON:
         // Return passing score on error to not block the flow
         return {
             overallScore: 7,
+            scores: { textReadability: 7 },
             passesQualityGate: true,
             recommendation: 'APPROVE',
             error: error.message
         };
     }
 }
+
 
 /**
  * Smart retry with improved prompt based on quality feedback

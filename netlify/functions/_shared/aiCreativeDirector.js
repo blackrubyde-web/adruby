@@ -183,120 +183,117 @@ async function developCreativeStrategy(openai, config) {
             model: 'gpt-4o',
             messages: [{
                 role: 'system',
-                content: `Du bist ein Elite Creative Director mit 15+ Jahren Erfahrung bei Apple, Nike und Meta.
+                content: `Du bist ein ELITE CREATIVE DIRECTOR mit 15+ Jahren Erfahrung bei Apple, Nike und Meta.
+Du erstellst META ADS die VIRAL gehen und MILLIONEN an Umsatz generieren.
 
-DEINE AUFGABE: Entwickle die PERFEKTE Werbe-Strategie für dieses Produkt.
+=== DEINE MISSION ===
+Erstelle eine VOLLSTÄNDIGE, FERTIGE Ad die sofort auf Instagram/Facebook geschaltet werden kann.
+Das Bild muss KOMPLETT SEIN - inklusive Produkt, Text, und CTA-Button.
 
-=== DENKE SCHRITT FÜR SCHRITT (Chain-of-Thought) ===
+=== CHAIN-OF-THOUGHT PROZESS ===
 
-Schritt 1: PRODUKT-ESSENZ
-- Was ist das emotionale Kernversprechen?
-- Welches Problem löst es für den Käufer?
-- Warum sollte jemand JETZT kaufen?
+Schritt 1: PRODUKT-VERSTÄNDNIS
+- Was GENAU ist das Produkt? (Nutze die Analyse)
+- Welches PROBLEM löst es?
+- Welche EMOTION soll ausgelöst werden?
 
-Schritt 2: VISUELLE WELT
-- Welche Stimmung transportiert die Marke?
-- Welche Farben verstärken die Botschaft?
-- Welcher Stil passt (minimal, luxuriös, verspielt)?
+Schritt 2: SZENEN-DESIGN
+- Welche Umgebung präsentiert das Produkt am besten?
+- Welche Farben, Lichtstimmung, Atmosphäre?
+- Wie kann das Produkt ORGANISCH in die Szene integriert werden?
 
-Schritt 3: PRODUKT-INSZENIERUNG
-- Wie präsentieren wir das Produkt am wirkungsvollsten?
-- Device-Mockup für Screenshots, zentriert für Produkte
-- Welche Perspektive ist am schmeichelhaftesten?
+Schritt 3: TEXT-INTEGRATION (KRITISCH!)
+- Die Headline MUSS im Bild gerendert werden - groß, fett, lesbar
+- Der CTA-Button MUSS im Bild sein - auffällig, klickbar aussehend
+- Text muss TEIL der Komposition sein, nicht draufgeklebt
 
-Schritt 4: KREATIVE EFFEKTE
-Nutze passende Effekte:
-- "glow" = Leucht-Effekt für Lampen, Tech-Produkte
-- "sparkles" = Glitzer für Premium, Schmuck, Weihnachten
-- "snow_particles" = Fallender Schnee für Weihnachten/Winter
-- "light_rays" = Lichtstrahlen für dramatische Wirkung
-- "reflection" = Spiegelung auf Oberfläche für Eleganz
-- "bokeh" = Unscharfer Hintergrund für Fokus
-- "christmas_glow" = Warmes Weihnachtslicht
+Schritt 4: PREMIUM-QUALITÄT
+- Jedes Pixel muss aussehen wie $10,000 Agentur-Arbeit
+- Professionelle Beleuchtung, perfekte Komposition
+- Meta 2026 Ad-Standards
 
-Schritt 5: TEXT-PLATZIERUNG
-- Headline: Groß, fett, WEIß - lesbar auf jedem Hintergrund
-- Subheadline: Kleiner, unter Headline, 80% Opacity
-- CTA: Roter Pill-Button am unteren Rand
+=== KRITISCHE REGELN ===
 
-Schritt 6: EINZIGARTIGKEIT
-- Was macht DIESE Ad besser als 1000 andere?
-- Welches Detail überrascht den Betrachter?
+🔴 DAS PRODUKT:
+- Beschreibe das Produkt im imagePrompt EXAKT so wie in der Analyse
+- Das Produkt muss natürlich in die Szene eingebettet sein
+- Realistische Schatten, Reflexionen, Perspektive
 
-=== BEISPIEL EINER GUTEN STRATEGIE ===
+🔴 DER TEXT (MUSS IM BILD SEIN!):
+- Headline: Große, fette, weiße Schrift mit Schatten - AM UNTEREN RAND
+- Subheadline: Kleiner, unter der Headline
+- CTA-Button: Roter/farbiger Pill-Button mit weißem Text
+- Text muss SCHARF und LESBAR sein - keine verschwommenen Buchstaben!
 
-Produkt: Fuchs-Lampe | Vision: "Weihnachtsmütze, gemütlich, leuchtend"
+🔴 VERBOTEN:
+- Keine verzerrten Buchstaben oder unleserlichen Text
+- Keine abgeschnittenen Wörter
+- Keine generischen Platzhalter-Texte
+- Keine schwebenden/unnatürlichen Produkte
 
-Reasoning: 
-"1. Die Fuchs-Lampe ist ein Deko-Produkt für Kinderzimmer. Das emotionale Versprechen ist Geborgenheit und Wärme.
-2. Weihnachtsthema = emotionale Kaufentscheidung, perfekt für Geschenke-Kampagne.
-3. Die Lampe sollte LEUCHTEN (glow-Effekt) um ihre Funktion zu zeigen.
-4. Eine kleine Santa-Mütze auf dem Fuchs verstärkt den Weihnachts-Appeal.
-5. Gemütliche Szene mit Tanne im Hintergrund, warmes Licht, Schneepartikel.
-6. Text unten: 'Das perfekte Geschenk' in warmem Weiß mit Schatten."
+=== BEISPIEL EINES PERFEKTEN imagePrompt ===
 
-=== DEIN ANTWORT-FORMAT (JSON) ===
+"ULTRA-PREMIUM META AD (1080x1080px):
+
+SZENE: Eleganter dunkler Schreibtisch mit warmem Ambient-Licht von links. Subtiler Bokeh-Hintergrund mit Lichtpunkten.
+
+PRODUKT: Ein schlankes MacBook Pro Space Black steht leicht angewinkelt auf dem Tisch. Der Bildschirm zeigt ein professionelles Dashboard mit dunklem Theme, roten Akzenten, Statistik-Graphen. Das Dashboard zeigt den Text 'WERBUNG DIE KNALLT.' prominent.
+
+BELEUCHTUNG: Cinematisches Drei-Punkt-Licht. Hauptlicht von links oben, Fülllicht von rechts, Randlicht für Tiefe. Subtiler Glow um den Laptop-Bildschirm.
+
+TEXT IM BILD (KRITISCH - MUSS GERENDERT WERDEN):
+- Am unteren Bildrand: 'Erstelle Ads die konvertieren' in großer, fetter, weißer Schrift (ca. 48px). Der Text hat einen leichten Schatten für bessere Lesbarkeit.
+- Darunter in kleinerer Schrift: 'In nur 2 Minuten' in weiß mit 80% Opacity
+- CTA-Button: Roter Pill-Button mit dem Text 'Jetzt starten' in weißer Schrift
+
+QUALITÄT: Magazin-Cover-Niveau, fotorealistisch, perfekte Schärfe."
+
+=== DEIN OUTPUT (JSON) ===
 {
-    "reasoning": "DETAILLIERTE Gedankenkette - JEDER Schritt deiner Überlegung (min. 200 Wörter)...",
-    "creativeConcept": "Das übergreifende Konzept in einem Satz",
-    "sceneDescription": "Detaillierte Szenen-Beschreibung (min. 100 Wörter)",
+    "reasoning": "Deine komplette Gedankenkette (min. 200 Wörter)...",
+    "creativeConcept": "Das Konzept in einem Satz",
+    "sceneDescription": "Detaillierte Szenen-Beschreibung",
+    "productDescription": "EXAKTE Beschreibung des Produkts basierend auf der Analyse - wird in imagePrompt verwendet",
     "productIntegration": {
         "method": "device_mockup|centered|lifestyle|floating",
         "device": "macbook|ipad|iphone|none",
-        "effects": ["glow", "sparkles", "snow_particles", "reflection", "bokeh", "light_rays"],
-        "modifications": ["christmas_hat", "spotlight", "floating_elements"]
+        "effects": ["glow", "sparkles", "reflection", "bokeh", "light_rays"],
+        "sceneElements": ["Was ist noch in der Szene? Tisch, Pflanzen, etc."]
     },
     "productBounds": {
-        "description": "INDIVIDUELL für DIESE spezifische Szene - WO genau soll das Produkt platziert werden?",
-        "x": 0.0-1.0,
-        "y": 0.0-1.0,
-        "width": 0.0-1.0,
-        "height": 0.0-1.0,
-        "reasoning": "Warum genau DIESE Position? Z.B. 'Das Produkt muss links platziert werden weil rechts der Text steht' oder 'Zentral weil es das Hero-Element ist'"
+        "x": 0.15,
+        "y": 0.10,
+        "width": 0.70,
+        "height": 0.50,
+        "reasoning": "Warum diese Position?"
     },
     "textConfig": {
-        "headline": {
-            "text": "Der Headline-Text",
-            "position": "bottom",
-            "fontSize": "large",
-            "color": "#FFFFFF",
-            "shadow": true
-        },
-        "subheadline": {
-            "text": "Der Subheadline-Text",
-            "fontSize": "medium",
-            "color": "rgba(255,255,255,0.85)"
-        },
-        "cta": {
-            "text": "CTA Button Text",
-            "backgroundColor": "#FF4444",
-            "position": "bottom"
-        }
+        "headline": { "text": "...", "position": "bottom" },
+        "subheadline": { "text": "..." },
+        "cta": { "text": "...", "backgroundColor": "#FF4444" }
     },
-    "imagePrompt": "SEHR DETAILLIERTER Prompt für gpt-image-1 (min. 200 Wörter). Beschreibe EXAKT: 1) Die komplette Szene/Atmosphäre 2) Wo das Produkt platziert wird (als leere/dunkle Zone - MUSS zu productBounds passen!) 3) Die unteren 20% des Bildes müssen ein sauberer, dunkler Gradient sein für späteres Text-Overlay. WICHTIG: KEINE Text, Buttons oder UI-Elemente im Bild generieren! Der Text wird nachträglich als SVG-Overlay hinzugefügt.",
-    "colorScheme": {
-        "background": "#hex",
-        "accent": "#hex",
-        "text": "#FFFFFF"
-    },
+    "imagePrompt": "ULTRA-DETAILLIERTER PROMPT (min. 250 Wörter). MUSS ENTHALTEN: 1) Vollständige Szene mit Atmosphäre 2) Das Produkt EXAKT wie analysiert, natürlich in der Szene 3) TEXT IM BILD: Headline, Subheadline, CTA-Button - mit exakten Texten! 4) Professionelle Beleuchtung und Qualität",
+    "colorScheme": { "background": "#hex", "accent": "#hex", "text": "#FFFFFF" },
     "moodKeywords": ["keyword1", "keyword2", "keyword3"]
 }`
             }, {
                 role: 'user',
-                content: `=== PRODUKT-ANALYSE ===
+                content: `=== PRODUKT-ANALYSE (GPT-4V) ===
 ${JSON.stringify(analysis, null, 2)}
 
 === USER'S KREATIVE VISION ===
 "${userPrompt}"
 
-=== TEXT-ELEMENTE ===
-- Headline: "${headline || '(Keine angegeben - schlage eine vor)'}"
-- Subheadline: "${subheadline || '(Keine angegeben - optional)'}"
-- CTA: "${cta || '(Kein CTA - schlage einen vor)'}"
+=== TEXT-ELEMENTE FÜR DIE AD ===
+- Headline: "${headline || 'Schlage eine passende Headline vor'}"
+- Subheadline: "${subheadline || ''}"
+- CTA: "${cta || 'Jetzt entdecken'}"
 
 === DEINE AUFGABE ===
-Entwickle die PERFEKTE Creative-Strategie. Denke wie ein $10,000/Stunde Creative Director bei Apple.
-WICHTIG: Der imagePrompt darf KEINEN Text, Buttons oder UI-Elemente enthalten! Diese werden später als SVG-Overlay hinzugefügt. Das Bild muss im unteren Bereich clean bleiben für das Text-Overlay.`
+1. Entwickle die PERFEKTE Creative-Strategie
+2. Der imagePrompt MUSS das Produkt VOLLSTÄNDIG BESCHREIBEN (basierend auf der Analyse)
+3. Der imagePrompt MUSS die Text-Elemente ENTHALTEN - sie werden DIREKT von der KI gerendert
+4. Das Ergebnis muss eine FERTIGE, PROFESSIONELLE Meta Ad sein`
             }],
             max_tokens: 2500,
             response_format: { type: "json_object" }
@@ -318,28 +315,48 @@ function generateFallbackStrategy(analysis, headline, subheadline, cta) {
     const subheadlineText = subheadline || '';
     const ctaText = cta || 'Jetzt entdecken';
 
+    // Build product description from analysis
+    const productDesc = analysis.productName
+        ? `${analysis.productName} - ${analysis.productType || 'premium product'}`
+        : 'premium product';
+
     return {
-        reasoning: "Fallback: Using premium default strategy with complete text package",
-        creativeConcept: "Premium product showcase with clear call-to-action",
-        sceneDescription: `Premium advertisement featuring ${analysis.productName || 'product'} in an elegant setting`,
+        reasoning: "Fallback: Using premium default strategy with NATIVE text rendering",
+        creativeConcept: "Premium product showcase with integrated text and clear call-to-action",
+        sceneDescription: `Premium advertisement featuring ${productDesc} in an elegant setting with professional typography`,
+        productDescription: productDesc,
         productIntegration: {
             method: analysis.isScreenContent ? 'device_mockup' : 'centered',
             device: analysis.isScreenContent ? 'macbook' : 'none',
             position: 'center',
             scale: 0.6,
             effects: ['glow', 'reflection'],
-            modifications: []
+            sceneElements: ['elegant dark background', 'subtle lighting']
         },
         textConfig: {
             headline: { text: headlineText, position: 'bottom', fontSize: 'large', color: '#FFFFFF', shadow: true },
             subheadline: { text: subheadlineText, fontSize: 'medium', color: 'rgba(255,255,255,0.85)' },
             cta: { text: ctaText, backgroundColor: '#FF4444', position: 'bottom' }
         },
-        imagePrompt: `Premium advertisement image (1080x1080px). Dark sophisticated background with subtle gradient and soft glow. ${analysis.isScreenContent ? 'MacBook Pro Space Black in center with completely black screen for content overlay.' : 'Empty center area (50% of image) for product placement.'} Cinematic lighting from top-left creating elegant shadows.
+        imagePrompt: `ULTRA-PREMIUM META AD (1080x1080px):
 
-DO NOT render any text, buttons, or UI elements in the image. Leave the bottom 20% of the image as a clean gradient area for text overlay to be added later.
+SZENE: Eleganter dunkler Hintergrund mit subtilen Lichteffekten. Professionelle Studio-Beleuchtung mit cinematischem Drei-Punkt-Licht.
 
-Ultra-premium $10,000 creative director quality. Sharp, professional, conversion-focused.`,
+PRODUKT: ${analysis.isScreenContent
+                ? `Ein schlankes MacBook Pro Space Black steht zentral im Bild. Der Bildschirm zeigt ${productDesc} mit professionellem Interface-Design.`
+                : `${productDesc} steht zentral im Bild, perfekt ausgeleuchtet mit subtilen Reflexionen und Schatten.`
+            }
+
+BELEUCHTUNG: Hauptlicht von links oben (45 Grad), Fülllicht von rechts, Randlicht für Tiefe. Subtiler Glow um das Produkt.
+
+TEXT IM BILD (KRITISCH - MUSS GERENDERT WERDEN!):
+- Am unteren Bildrand in großer, fetter, weißer Schrift: "${headlineText}"
+- Leichter Text-Schatten für bessere Lesbarkeit auf jedem Hintergrund
+${subheadlineText ? `- Darunter in kleinerer weißer Schrift (80% Opacity): "${subheadlineText}"` : ''}
+- CTA-Button: Roter Pill-Button (#FF4444) mit weißem Text: "${ctaText}"
+
+QUALITÄT: Magazin-Cover-Niveau. Jedes Detail perfekt. $10,000 Agentur-Qualität.
+Der Text muss SCHARF und PERFEKT LESBAR sein - keine verschwommenen Buchstaben!`,
         colorScheme: {
             background: '#0a0a0a',
             accent: '#ff4444',
@@ -375,33 +392,47 @@ async function executeCreativeStrategy(openai, strategy, productImageUrl, genera
         let integratedBuffer = null;
 
         // ============================================================
-        // GENERATE AD WITH PRODUCT DESCRIPTION IN PROMPT
-        // The product details from GPT-4V analysis are already in the strategy
-        // We generate a scene that INCLUDES the product as part of the image
+        // GENERATE COMPLETE AD WITH PRODUCT + TEXT IN THE IMAGE
+        // The AI now renders the FULL ad including text directly
         // ============================================================
-        console.log('[CreativeDirector] 🎨 Generating ad with product in scene...');
+        console.log('[CreativeDirector] 🎨 Generating COMPLETE ad (product + text in image)...');
 
         // Build enhanced prompt that describes the product to render
         const productIntegration = strategy.productIntegration || {};
         const productMethod = productIntegration.method || 'centered';
+        const textConfig = strategy.textConfig || {};
 
-        // Enhanced prompt includes detailed product description
+        // Enhanced prompt with full product description and text
         let enhancedPrompt = currentPrompt;
 
-        // If it's a screen/dashboard product, generate with device mockup
-        if (productMethod === 'device_mockup') {
-            enhancedPrompt = `${currentPrompt}
+        // Ensure text instructions are prominent in the prompt
+        if (textConfig.headline?.text) {
+            const textReminder = `
 
-CRITICAL: Generate a premium MacBook Pro mockup in the center of the image. The laptop screen should display a professional dashboard with:
-- Dark theme interface
-- Red accent colors
-- Stats and charts visible
-- Clean, modern UI design
+KRITISCH - TEXT MUSS IM BILD SEIN:
+- Headline am unteren Rand: "${textConfig.headline.text}" - große, fette, weiße Schrift mit Schatten
+${textConfig.subheadline?.text ? `- Subheadline: "${textConfig.subheadline.text}" - kleinere weiße Schrift` : ''}
+${textConfig.cta?.text ? `- CTA-Button: Roter Pill-Button mit "${textConfig.cta.text}" in weißer Schrift` : ''}
 
-The laptop should be the HERO of the image, professionally lit with subtle reflections.`;
+Der Text muss SCHARF, LESBAR und PROFESSIONELL sein!`;
+
+            if (!enhancedPrompt.includes('KRITISCH')) {
+                enhancedPrompt += textReminder;
+            }
         }
 
-        // Generate the scene
+        // If it's a screen/dashboard product, add specific mockup instructions
+        if (productMethod === 'device_mockup') {
+            enhancedPrompt += `
+
+DEVICE MOCKUP KRITISCH:
+- Generate a premium MacBook Pro Space Black in the center
+- The laptop screen displays the dashboard/interface from the product
+- Professional studio lighting with reflections on the laptop surface
+- The laptop is the HERO element of the composition`;
+        }
+
+        // Generate the complete ad
         const imageResult = await generateHeroImage({
             prompt: enhancedPrompt,
             size: '1024x1024',
@@ -409,7 +440,7 @@ The laptop should be the HERO of the image, professionally lit with subtle refle
         });
 
         let sceneBuffer = Buffer.from(imageResult.b64, 'base64');
-        console.log('[CreativeDirector] ✓ Scene generated');
+        console.log('[CreativeDirector] ✓ Complete ad generated (with text)');
 
         // For screen content, composite the actual screenshot into the generated device
         if (productMethod === 'device_mockup') {
@@ -439,23 +470,27 @@ The laptop should be the HERO of the image, professionally lit with subtle refle
             .png()
             .toBuffer();
 
-        // Apply text overlay
-        const textConfig = strategy.textConfig || {};
-        if (textConfig.headline?.text || textConfig.subheadline?.text || textConfig.cta?.text) {
-            console.log('[CreativeDirector] Applying text overlay...');
-            resizedBuffer = await applyTextOverlay(resizedBuffer, {
-                headline: textConfig.headline?.text,
-                subheadline: textConfig.subheadline?.text,
-                cta: textConfig.cta?.text,
-                position: textConfig.headline?.position || 'bottom',
-                colorScheme: strategy.colorScheme
-            }, sharp);
-            console.log('[CreativeDirector] ✓ Text overlay applied');
-        }
-
         // Quality verification
         console.log('[CreativeDirector] Running quality verification...');
         qualityResult = await verifyAdQuality(openai, resizedBuffer, strategy);
+
+        // ONLY apply SVG text overlay if quality check says text is NOT readable
+        // (This is now a FALLBACK, not the primary text rendering method)
+        if (qualityResult.scores?.textReadability < 5) {
+            console.log('[CreativeDirector] ⚠️ AI text not readable, applying SVG fallback...');
+            if (textConfig.headline?.text || textConfig.cta?.text) {
+                resizedBuffer = await applyTextOverlay(resizedBuffer, {
+                    headline: textConfig.headline?.text,
+                    subheadline: textConfig.subheadline?.text,
+                    cta: textConfig.cta?.text,
+                    position: textConfig.headline?.position || 'bottom',
+                    colorScheme: strategy.colorScheme
+                }, sharp);
+                console.log('[CreativeDirector] ✓ SVG text fallback applied');
+            }
+        } else {
+            console.log('[CreativeDirector] ✓ AI-rendered text is readable, no SVG overlay needed');
+        }
 
         if (passesQualityGate(qualityResult, 6)) {
             console.log(`[CreativeDirector] ✅ Quality passed: ${qualityResult.overallScore}/10`);
