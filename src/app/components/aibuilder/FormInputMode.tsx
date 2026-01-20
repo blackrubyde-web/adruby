@@ -1,5 +1,6 @@
 /**
  * AI Ad Builder - Form Input Mode Component
+ * Template selection removed - AI Creative Director decides automatically
  */
 
 import { useState } from 'react';
@@ -7,22 +8,9 @@ import { t } from '../../lib/aibuilder/translations';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { Label } from '../ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import { Textarea } from '../ui/textarea';
-import { Sparkles, Wand2 } from 'lucide-react';
+import { Sparkles } from 'lucide-react';
 import type { AIAdBuilderComponentProps, FormInputData } from '../../types/aibuilder';
-
-// Templates are now OPTIONAL - AI Creative Director decides automatically
-const templates = [
-    'ai_automatic',  // NEW: Let AI decide
-    'product_launch',
-    'limited_offer',
-    'testimonial',
-    'before_after',
-    'seasonal',
-    'b2b_solution',
-    'lifestyle',
-] as const;
 
 export function FormInputMode({ language, onGenerate, loading }: AIAdBuilderComponentProps) {
     const [formData, setFormData] = useState<FormInputData>({
@@ -32,7 +20,7 @@ export function FormInputMode({ language, onGenerate, loading }: AIAdBuilderComp
         usp: '',
         tone: '',
         goal: '',
-        template: 'ai_automatic',  // Default to AI automatic
+        template: 'ai_automatic',  // Always AI automatic - no user selection needed
     });
 
     const handleSubmit = (e: React.FormEvent) => {
@@ -113,37 +101,6 @@ export function FormInputMode({ language, onGenerate, loading }: AIAdBuilderComp
                         placeholder={t('goalPlaceholder', language)}
                     />
                 </div>
-
-                {/* Template - NOW OPTIONAL with AI Automatic default */}
-                <div className="space-y-2">
-                    <Label htmlFor="template" className="flex items-center gap-2">
-                        <Wand2 className="w-4 h-4 text-primary" />
-                        {t('templateLabel', language)}
-                        <span className="text-xs text-muted-foreground">(optional)</span>
-                    </Label>
-                    <Select value={formData.template} onValueChange={(value) => handleChange('template', value)}>
-                        <SelectTrigger>
-                            <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                            {templates.map((template) => (
-                                <SelectItem key={template} value={template}>
-                                    {template === 'ai_automatic'
-                                        ? (language === 'de' ? '🤖 AI Automatisch (empfohlen)' : '🤖 AI Automatic (recommended)')
-                                        : t(`templates.${template}`, language)
-                                    }
-                                </SelectItem>
-                            ))}
-                        </SelectContent>
-                    </Select>
-                    {formData.template === 'ai_automatic' && (
-                        <p className="text-xs text-muted-foreground">
-                            {language === 'de'
-                                ? 'Der AI Creative Director analysiert dein Produkt und wählt den besten Stil automatisch.'
-                                : 'The AI Creative Director analyzes your product and automatically selects the best style.'}
-                        </p>
-                    )}
-                </div>
             </div>
 
             {/* Submit Button */}
@@ -159,4 +116,5 @@ export function FormInputMode({ language, onGenerate, loading }: AIAdBuilderComp
         </form>
     );
 }
+
 

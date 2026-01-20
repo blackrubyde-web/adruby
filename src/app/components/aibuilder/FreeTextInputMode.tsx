@@ -1,31 +1,20 @@
 /**
  * AI Ad Builder - Free Text Input Mode Component
+ * Template selection removed - AI Creative Director decides automatically
  */
 
 import { useState } from 'react';
 import { t } from '../../lib/aibuilder/translations';
 import { Button } from '../ui/button';
 import { Textarea } from '../ui/textarea';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import { Label } from '../ui/label';
 import { Sparkles, Mic, MicOff } from 'lucide-react';
 import { transcribeAudio } from '../../lib/api/aibuilder';
 import { toast } from 'sonner';
 import type { AIAdBuilderComponentProps, FreeTextInputData } from '../../types/aibuilder';
 
-const templates = [
-    'product_launch',
-    'limited_offer',
-    'testimonial',
-    'before_after',
-    'seasonal',
-    'b2b_solution',
-    'lifestyle',
-] as const;
-
 export function FreeTextInputMode({ language, onGenerate, loading }: AIAdBuilderComponentProps) {
     const [text, setText] = useState('');
-    const [template, setTemplate] = useState('product_launch');
     const [isRecording, setIsRecording] = useState(false);
     const [isTranscribing, setIsTranscribing] = useState(false);
     const [mediaRecorder, setMediaRecorder] = useState<MediaRecorder | null>(null);
@@ -36,7 +25,8 @@ export function FreeTextInputMode({ language, onGenerate, loading }: AIAdBuilder
             toast.error('Please enter some text');
             return;
         }
-        const data: FreeTextInputData = { text, template };
+        // Template is always ai_automatic - AI Creative Director decides
+        const data: FreeTextInputData = { text, template: 'ai_automatic' };
         onGenerate(data);
     };
 
@@ -88,23 +78,6 @@ export function FreeTextInputMode({ language, onGenerate, loading }: AIAdBuilder
     return (
         <form onSubmit={handleSubmit} className="space-y-4">
             <div className="rounded-xl border border-border/40 bg-card/50 backdrop-blur p-6 space-y-4">
-                {/* Template Selection */}
-                <div className="space-y-2">
-                    <Label htmlFor="template">{t('templateLabel', language)}</Label>
-                    <Select value={template} onValueChange={setTemplate}>
-                        <SelectTrigger>
-                            <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                            {templates.map((tmpl) => (
-                                <SelectItem key={tmpl} value={tmpl}>
-                                    {t(`templates.${tmpl}`, language)}
-                                </SelectItem>
-                            ))}
-                        </SelectContent>
-                    </Select>
-                </div>
-
                 {/* Free Text Input */}
                 <div className="space-y-2">
                     <div className="flex items-center justify-between">
@@ -153,3 +126,4 @@ export function FreeTextInputMode({ language, onGenerate, loading }: AIAdBuilder
         </form>
     );
 }
+
