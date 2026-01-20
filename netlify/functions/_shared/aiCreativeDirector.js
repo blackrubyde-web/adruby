@@ -123,7 +123,7 @@ Analysiere und antworte mit JSON:
 }
 
 /**
- * Phase 2: Develop Creative Strategy using Chain-of-Thought Reasoning
+ * Phase 2: Develop Creative Strategy using Enhanced Chain-of-Thought Reasoning
  */
 async function developCreativeStrategy(openai, config) {
     const { analysis, userPrompt, headline, subheadline, cta } = config;
@@ -133,60 +133,116 @@ async function developCreativeStrategy(openai, config) {
             model: 'gpt-4o',
             messages: [{
                 role: 'system',
-                content: `Du bist ein Elite Creative Director mit 15+ Jahren Erfahrung bei Top-Agenturen (Apple, Nike, Meta).
+                content: `Du bist ein Elite Creative Director mit 15+ Jahren Erfahrung bei Apple, Nike und Meta.
 
-Deine Aufgabe: Entwickle die PERFEKTE Werbe-Strategie für dieses Produkt.
+DEINE AUFGABE: Entwickle die PERFEKTE Werbe-Strategie für dieses Produkt.
 
-DENKE SCHRITT FÜR SCHRITT (Chain-of-Thought):
-1. Was ist das Kernversprechen des Produkts?
-2. Welche visuelle Welt passt am besten?
-3. Wie integrieren wir das Produkt optimal in die Szene?
-4. Welche kreativen Effekte verstärken die Botschaft?
-5. Wie platzieren wir Text für maximale Wirkung?
-6. Was macht diese Ad einzigartig und unwiderstehlich?
+=== DENKE SCHRITT FÜR SCHRITT (Chain-of-Thought) ===
 
-Antworte IMMER mit diesem JSON-Format:
+Schritt 1: PRODUKT-ESSENZ
+- Was ist das emotionale Kernversprechen?
+- Welches Problem löst es für den Käufer?
+- Warum sollte jemand JETZT kaufen?
+
+Schritt 2: VISUELLE WELT
+- Welche Stimmung transportiert die Marke?
+- Welche Farben verstärken die Botschaft?
+- Welcher Stil passt (minimal, luxuriös, verspielt)?
+
+Schritt 3: PRODUKT-INSZENIERUNG
+- Wie präsentieren wir das Produkt am wirkungsvollsten?
+- Device-Mockup für Screenshots, zentriert für Produkte
+- Welche Perspektive ist am schmeichelhaftesten?
+
+Schritt 4: KREATIVE EFFEKTE
+Nutze passende Effekte:
+- "glow" = Leucht-Effekt für Lampen, Tech-Produkte
+- "sparkles" = Glitzer für Premium, Schmuck, Weihnachten
+- "snow_particles" = Fallender Schnee für Weihnachten/Winter
+- "light_rays" = Lichtstrahlen für dramatische Wirkung
+- "reflection" = Spiegelung auf Oberfläche für Eleganz
+- "bokeh" = Unscharfer Hintergrund für Fokus
+- "christmas_glow" = Warmes Weihnachtslicht
+
+Schritt 5: TEXT-PLATZIERUNG
+- Headline: Groß, fett, WEIß - lesbar auf jedem Hintergrund
+- Subheadline: Kleiner, unter Headline, 80% Opacity
+- CTA: Roter Pill-Button am unteren Rand
+
+Schritt 6: EINZIGARTIGKEIT
+- Was macht DIESE Ad besser als 1000 andere?
+- Welches Detail überrascht den Betrachter?
+
+=== BEISPIEL EINER GUTEN STRATEGIE ===
+
+Produkt: Fuchs-Lampe | Vision: "Weihnachtsmütze, gemütlich, leuchtend"
+
+Reasoning: 
+"1. Die Fuchs-Lampe ist ein Deko-Produkt für Kinderzimmer. Das emotionale Versprechen ist Geborgenheit und Wärme.
+2. Weihnachtsthema = emotionale Kaufentscheidung, perfekt für Geschenke-Kampagne.
+3. Die Lampe sollte LEUCHTEN (glow-Effekt) um ihre Funktion zu zeigen.
+4. Eine kleine Santa-Mütze auf dem Fuchs verstärkt den Weihnachts-Appeal.
+5. Gemütliche Szene mit Tanne im Hintergrund, warmes Licht, Schneepartikel.
+6. Text unten: 'Das perfekte Geschenk' in warmem Weiß mit Schatten."
+
+=== DEIN ANTWORT-FORMAT (JSON) ===
 {
-    "reasoning": "Deine komplette Gedankenkette - jeden Schritt deiner Überlegung...",
-    "creativeConcept": "Das übergreifende kreative Konzept in einem Satz",
-    "sceneDescription": "Detaillierte Beschreibung der zu generierenden Szene (min. 100 Wörter)",
+    "reasoning": "DETAILLIERTE Gedankenkette - JEDER Schritt deiner Überlegung (min. 200 Wörter)...",
+    "creativeConcept": "Das übergreifende Konzept in einem Satz",
+    "sceneDescription": "Detaillierte Szenen-Beschreibung (min. 100 Wörter)",
     "productIntegration": {
-        "method": "device_mockup|centered|lifestyle|floating|integrated_scene",
+        "method": "device_mockup|centered|lifestyle|floating",
         "device": "macbook|ipad|iphone|none",
-        "position": "center|left|right|hero",
-        "scale": 0.4-0.9,
-        "effects": ["glow", "shadow", "reflection", "lighting", etc],
-        "modifications": ["christmas_hat", "sparkles", "light_rays", etc]
+        "position": "center|left|right",
+        "scale": 0.5-0.8,
+        "effects": ["glow", "sparkles", "snow_particles", "reflection", "bokeh", "light_rays"],
+        "modifications": ["christmas_hat", "spotlight", "floating_elements"]
     },
-    "textPlacement": {
-        "headlinePosition": "bottom|top|left_side|overlay",
-        "style": "bold_white|elegant|dynamic|minimal",
-        "alignment": "center|left|right"
+    "textConfig": {
+        "headline": {
+            "text": "Der Headline-Text",
+            "position": "bottom",
+            "fontSize": "large",
+            "color": "#FFFFFF",
+            "shadow": true
+        },
+        "subheadline": {
+            "text": "Der Subheadline-Text",
+            "fontSize": "medium",
+            "color": "rgba(255,255,255,0.85)"
+        },
+        "cta": {
+            "text": "CTA Button Text",
+            "backgroundColor": "#FF4444",
+            "position": "bottom"
+        }
     },
-    "imagePrompt": "Der optimierte Prompt für die Bildgenerierung - SEHR DETAILLIERT (min. 150 Wörter). Dieser Prompt geht direkt an gpt-image-1 und muss die KOMPLETTE Szene beschreiben inklusive wo das Produkt platziert wird (als leere Zone) und wo der Text erscheinen soll.",
+    "imagePrompt": "SEHR DETAILLIERTER Prompt für gpt-image-1 (min. 200 Wörter). Beschreibe EXAKT: 1) Die komplette Szene/Atmosphäre 2) Wo das Produkt platziert wird (als leere/dunkle Zone) 3) Die Headline am unteren Rand: '[HEADLINE TEXT]' in großer weißer Schrift 4) Die Subheadline darunter 5) Den CTA-Button. Der Text MUSS im Bild gerendert werden!",
     "colorScheme": {
         "background": "#hex",
         "accent": "#hex",
-        "text": "#hex"
+        "text": "#FFFFFF"
     },
     "moodKeywords": ["keyword1", "keyword2", "keyword3"]
 }`
             }, {
                 role: 'user',
-                content: `PRODUKT-ANALYSE:
+                content: `=== PRODUKT-ANALYSE ===
 ${JSON.stringify(analysis, null, 2)}
 
-USER'S KREATIVE VISION:
+=== USER'S KREATIVE VISION ===
 "${userPrompt}"
 
-TEXT-ELEMENTE:
-- Headline: "${headline || 'Keine Headline angegeben'}"
-- Subheadline: "${subheadline || 'Keine Subheadline'}"
-- CTA: "${cta || 'Kein CTA'}"
+=== TEXT-ELEMENTE ===
+- Headline: "${headline || '(Keine angegeben - schlage eine vor)'}"
+- Subheadline: "${subheadline || '(Keine angegeben - optional)'}"
+- CTA: "${cta || '(Kein CTA - schlage einen vor)'}"
 
-Entwickle jetzt die PERFEKTE Creative-Strategie. Denke wie ein $10,000/Stunde Creative Director.`
+=== DEINE AUFGABE ===
+Entwickle die PERFEKTE Creative-Strategie. Denke wie ein $10,000/Stunde Creative Director bei Apple.
+Der imagePrompt MUSS den kompletten Text (Headline, Subheadline, CTA) enthalten, damit gpt-image-1 den Text direkt rendert!`
             }],
-            max_tokens: 2000,
+            max_tokens: 2500,
             response_format: { type: "json_object" }
         });
 
@@ -194,41 +250,52 @@ Entwickle jetzt die PERFEKTE Creative-Strategie. Denke wie ein $10,000/Stunde Cr
         return strategy;
     } catch (error) {
         console.error('[CreativeDirector] Strategy development failed:', error.message);
-        // Fallback strategy
-        return generateFallbackStrategy(analysis, headline);
+        return generateFallbackStrategy(analysis, headline, subheadline, cta);
     }
 }
 
 /**
  * Fallback strategy if AI reasoning fails
  */
-function generateFallbackStrategy(analysis, headline) {
+function generateFallbackStrategy(analysis, headline, subheadline, cta) {
+    const headlineText = headline || 'Premium Quality';
+    const subheadlineText = subheadline || '';
+    const ctaText = cta || 'Jetzt entdecken';
+
     return {
-        reasoning: "Fallback: Using premium default strategy",
-        creativeConcept: "Premium product showcase",
-        sceneDescription: `Premium advertisement featuring ${analysis.productName} in an elegant setting`,
+        reasoning: "Fallback: Using premium default strategy with complete text package",
+        creativeConcept: "Premium product showcase with clear call-to-action",
+        sceneDescription: `Premium advertisement featuring ${analysis.productName || 'product'} in an elegant setting with professional text overlay`,
         productIntegration: {
             method: analysis.isScreenContent ? 'device_mockup' : 'centered',
             device: analysis.isScreenContent ? 'macbook' : 'none',
             position: 'center',
             scale: 0.6,
-            effects: ['shadow', 'soft_lighting'],
+            effects: ['glow', 'reflection'],
             modifications: []
         },
-        textPlacement: {
-            headlinePosition: 'bottom',
-            style: 'bold_white',
-            alignment: 'center'
+        textConfig: {
+            headline: { text: headlineText, position: 'bottom', fontSize: 'large', color: '#FFFFFF', shadow: true },
+            subheadline: { text: subheadlineText, fontSize: 'medium', color: 'rgba(255,255,255,0.85)' },
+            cta: { text: ctaText, backgroundColor: '#FF4444', position: 'bottom' }
         },
-        imagePrompt: `Premium advertisement image. Dark sophisticated background with subtle gradient. ${analysis.isScreenContent ? 'MacBook Pro Space Black in center with completely black screen for content overlay.' : 'Empty center area for product placement.'} Cinematic lighting from top-left. ${headline ? `Large bold white text at bottom reading "${headline}".` : ''} Ultra-premium $10,000 creative director quality. 1080x1080px.`,
+        imagePrompt: `Premium advertisement image (1080x1080px). Dark sophisticated background with subtle gradient and soft glow. ${analysis.isScreenContent ? 'MacBook Pro Space Black in center with completely black screen for content overlay.' : 'Empty center area (50% of image) for product placement.'} Cinematic lighting from top-left creating elegant shadows.
+
+TEXT RENDERED IN IMAGE:
+- Large bold headline at bottom: "${headlineText}" in white with subtle shadow
+${subheadlineText ? `- Subheadline below: "${subheadlineText}" in smaller white text (80% opacity)` : ''}
+- Red pill-shaped CTA button at very bottom: "${ctaText}"
+
+Ultra-premium $10,000 creative director quality. Sharp, professional, conversion-focused.`,
         colorScheme: {
             background: '#0a0a0a',
             accent: '#ff4444',
-            text: '#ffffff'
+            text: '#FFFFFF'
         },
         moodKeywords: ['premium', 'sophisticated', 'modern']
     };
 }
+
 
 /**
  * Phase 3: Execute the Creative Strategy
@@ -253,7 +320,7 @@ async function executeCreativeStrategy(openai, strategy, productImageUrl, genera
 
     // Step 3: Integrate product based on strategy
     let integratedBuffer;
-    const integration = strategy.productIntegration;
+    const integration = strategy.productIntegration || {};
 
     if (integration.method === 'device_mockup' && integration.device) {
         integratedBuffer = await compositeIntoDevice(sceneBuffer, productBuffer, integration);
@@ -263,9 +330,14 @@ async function executeCreativeStrategy(openai, strategy, productImageUrl, genera
 
     console.log('[CreativeDirector] ✓ Product integrated');
 
-    // Step 4: Apply effects if specified
-    if (integration.effects && integration.effects.includes('glow')) {
-        integratedBuffer = await applyGlowEffect(integratedBuffer, strategy.colorScheme?.accent || '#FF4444');
+    // Step 4: Apply ALL effects from strategy
+    if (integration.effects && integration.effects.length > 0) {
+        console.log('[CreativeDirector] Applying effects:', integration.effects.join(', '));
+        integratedBuffer = await applyEffects(
+            integratedBuffer,
+            integration.effects,
+            strategy.colorScheme?.accent || '#FF4444'
+        );
     }
 
     // Step 5: Final resize and output
@@ -368,10 +440,168 @@ async function applyGlowEffect(imageBuffer, color = '#FF4444') {
         .toBuffer();
 }
 
+/**
+ * Apply sparkles effect (for premium, jewelry, christmas)
+ */
+async function applySparklesEffect(imageBuffer) {
+    // Generate random sparkle positions
+    const sparkles = [];
+    for (let i = 0; i < 25; i++) {
+        const x = Math.random() * CANVAS;
+        const y = Math.random() * CANVAS * 0.7; // Top 70%
+        const size = 2 + Math.random() * 4;
+        const opacity = 0.4 + Math.random() * 0.6;
+        sparkles.push(`<circle cx="${x}" cy="${y}" r="${size}" fill="white" opacity="${opacity}"/>`);
+        // Add cross shape for some sparkles
+        if (Math.random() > 0.5) {
+            sparkles.push(`<line x1="${x - size * 2}" y1="${y}" x2="${x + size * 2}" y2="${y}" stroke="white" stroke-width="1" opacity="${opacity * 0.7}"/>`);
+            sparkles.push(`<line x1="${x}" y1="${y - size * 2}" x2="${x}" y2="${y + size * 2}" stroke="white" stroke-width="1" opacity="${opacity * 0.7}"/>`);
+        }
+    }
+
+    const sparklesSvg = `
+<svg width="${CANVAS}" height="${CANVAS}" xmlns="http://www.w3.org/2000/svg">
+    ${sparkles.join('\n')}
+</svg>`;
+
+    const resized = await sharp(imageBuffer)
+        .resize(CANVAS, CANVAS, { fit: 'cover' })
+        .png()
+        .toBuffer();
+
+    return sharp(resized)
+        .composite([{ input: Buffer.from(sparklesSvg), blend: 'screen' }])
+        .png()
+        .toBuffer();
+}
+
+/**
+ * Apply snow particles effect (for christmas, winter)
+ */
+async function applySnowEffect(imageBuffer) {
+    const snowflakes = [];
+    for (let i = 0; i < 50; i++) {
+        const x = Math.random() * CANVAS;
+        const y = Math.random() * CANVAS;
+        const size = 1 + Math.random() * 3;
+        const opacity = 0.3 + Math.random() * 0.5;
+        snowflakes.push(`<circle cx="${x}" cy="${y}" r="${size}" fill="white" opacity="${opacity}"/>`);
+    }
+
+    const snowSvg = `
+<svg width="${CANVAS}" height="${CANVAS}" xmlns="http://www.w3.org/2000/svg">
+    ${snowflakes.join('\n')}
+</svg>`;
+
+    const resized = await sharp(imageBuffer)
+        .resize(CANVAS, CANVAS, { fit: 'cover' })
+        .png()
+        .toBuffer();
+
+    return sharp(resized)
+        .composite([{ input: Buffer.from(snowSvg), blend: 'over' }])
+        .png()
+        .toBuffer();
+}
+
+/**
+ * Apply light rays effect (for dramatic emphasis)
+ */
+async function applyLightRaysEffect(imageBuffer, color = '#FFFFFF') {
+    const raysSvg = `
+<svg width="${CANVAS}" height="${CANVAS}" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+        <linearGradient id="ray1" x1="50%" y1="0%" x2="50%" y2="100%">
+            <stop offset="0%" style="stop-color:${color};stop-opacity:0.15"/>
+            <stop offset="100%" style="stop-color:${color};stop-opacity:0"/>
+        </linearGradient>
+    </defs>
+    <polygon points="${CANVAS * 0.45},0 ${CANVAS * 0.55},0 ${CANVAS * 0.7},${CANVAS} ${CANVAS * 0.3},${CANVAS}" fill="url(#ray1)"/>
+    <polygon points="${CANVAS * 0.3},0 ${CANVAS * 0.35},0 ${CANVAS * 0.5},${CANVAS} ${CANVAS * 0.2},${CANVAS}" fill="url(#ray1)" opacity="0.5"/>
+    <polygon points="${CANVAS * 0.65},0 ${CANVAS * 0.7},0 ${CANVAS * 0.8},${CANVAS} ${CANVAS * 0.5},${CANVAS}" fill="url(#ray1)" opacity="0.5"/>
+</svg>`;
+
+    const resized = await sharp(imageBuffer)
+        .resize(CANVAS, CANVAS, { fit: 'cover' })
+        .png()
+        .toBuffer();
+
+    return sharp(resized)
+        .composite([{ input: Buffer.from(raysSvg), blend: 'screen' }])
+        .png()
+        .toBuffer();
+}
+
+/**
+ * Apply reflection effect (for elegant products)
+ */
+async function applyReflectionEffect(imageBuffer) {
+    const reflectionSvg = `
+<svg width="${CANVAS}" height="${CANVAS}" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+        <linearGradient id="reflection" x1="0%" y1="80%" x2="0%" y2="100%">
+            <stop offset="0%" style="stop-color:white;stop-opacity:0"/>
+            <stop offset="50%" style="stop-color:white;stop-opacity:0.05"/>
+            <stop offset="100%" style="stop-color:white;stop-opacity:0.1"/>
+        </linearGradient>
+    </defs>
+    <rect x="0" y="${CANVAS * 0.75}" width="${CANVAS}" height="${CANVAS * 0.25}" fill="url(#reflection)"/>
+</svg>`;
+
+    const resized = await sharp(imageBuffer)
+        .resize(CANVAS, CANVAS, { fit: 'cover' })
+        .png()
+        .toBuffer();
+
+    return sharp(resized)
+        .composite([{ input: Buffer.from(reflectionSvg), blend: 'over' }])
+        .png()
+        .toBuffer();
+}
+
+/**
+ * Apply all effects based on strategy
+ */
+async function applyEffects(imageBuffer, effects = [], accentColor = '#FF4444') {
+    let result = imageBuffer;
+
+    for (const effect of effects) {
+        console.log(`[CreativeDirector] Applying effect: ${effect}`);
+        switch (effect) {
+            case 'glow':
+            case 'christmas_glow':
+                result = await applyGlowEffect(result, effect === 'christmas_glow' ? '#FFA500' : accentColor);
+                break;
+            case 'sparkles':
+                result = await applySparklesEffect(result);
+                break;
+            case 'snow_particles':
+            case 'snow':
+                result = await applySnowEffect(result);
+                break;
+            case 'light_rays':
+                result = await applyLightRaysEffect(result);
+                break;
+            case 'reflection':
+                result = await applyReflectionEffect(result);
+                break;
+            // bokeh is applied in the AI prompt itself
+        }
+    }
+
+    return result;
+}
+
 export default {
     createAdWithCreativeDirector,
     deepAnalyzeProduct,
     developCreativeStrategy,
     executeCreativeStrategy,
+    applyEffects,
+    applyGlowEffect,
+    applySparklesEffect,
+    applySnowEffect,
+    applyLightRaysEffect,
+    applyReflectionEffect,
     CANVAS
 };
