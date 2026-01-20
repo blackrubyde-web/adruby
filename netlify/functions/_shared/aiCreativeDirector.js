@@ -391,145 +391,94 @@ async function executeCreativeStrategy(openai, strategy, productImageUrl, genera
 
         let integratedBuffer = null;
 
-        // ============================================================
-        // GENERATE COMPLETE AD WITH PRODUCT + TEXT IN THE IMAGE
-        // The AI now renders the FULL ad including text directly
-        // ============================================================
-        console.log('[CreativeDirector] 🎨 Generating COMPLETE ad (product + text in image)...');
-
-        // Build enhanced prompt that describes the product to render
-        const productIntegration = strategy.productIntegration || {};
-        const productMethod = productIntegration.method || 'centered';
-        const textConfig = strategy.textConfig || {};
-
-        // Enhanced prompt with full product description and text
-        let enhancedPrompt = currentPrompt;
-
-        // Ensure text instructions are prominent in the prompt
-        if (textConfig.headline?.text) {
-            const textReminder = `
-
-KRITISCH - TEXT MUSS IM BILD SEIN:
-- Headline am unteren Rand: "${textConfig.headline.text}" - große, fette, weiße Schrift mit Schatten
-${textConfig.subheadline?.text ? `- Subheadline: "${textConfig.subheadline.text}" - kleinere weiße Schrift` : ''}
-${textConfig.cta?.text ? `- CTA-Button: Roter Pill-Button mit "${textConfig.cta.text}" in weißer Schrift` : ''}
-
-Der Text muss SCHARF, LESBAR und PROFESSIONELL sein!`;
-
-            if (!enhancedPrompt.includes('KRITISCH')) {
-                enhancedPrompt += textReminder;
-            }
-        }
-
-        // If it's a screen/dashboard product, add specific mockup instructions
-        if (productMethod === 'device_mockup') {
-            enhancedPrompt += `
-
-DEVICE MOCKUP KRITISCH:
-- Generate a premium MacBook Pro Space Black in the center
-- The laptop screen displays the dashboard/interface from the product
-- Professional studio lighting with reflections on the laptop surface
-- The laptop is the HERO element of the composition`;
-        }
-
-        // Generate the complete ad
-        const imageResult = await generateHeroImage({
-            prompt: enhancedPrompt,
-            size: '1024x1024',
-            quality: 'high'
-        });
-
-        let sceneBuffer = Buffer.from(imageResult.b64, 'base64');
-        console.log('[CreativeDirector] ✓ Complete ad generated (with text)');
-
-        // For screen content, composite the actual screenshot into the generated device
-        if (productMethod === 'device_mockup') {
-            console.log('[CreativeDirector] Compositing screen content into device...');
-            integratedBuffer = await compositeIntoDevice(sceneBuffer, productBuffer, productIntegration, strategy.productBounds);
-        } else {
-            // For physical products, composite product onto scene
-            console.log('[CreativeDirector] Compositing product into scene...');
-            integratedBuffer = await compositeProduct(sceneBuffer, productBuffer, productIntegration, strategy.productBounds);
-        }
-
-        console.log('[CreativeDirector] ✓ Product integrated');
-
-        // Apply effects from strategy
-        if (productIntegration.effects && productIntegration.effects.length > 0) {
-            console.log('[CreativeDirector] Applying effects:', productIntegration.effects.join(', '));
-            integratedBuffer = await applyEffects(
-                integratedBuffer,
-                productIntegration.effects,
-                strategy.colorScheme?.accent || '#FF4444'
-            );
-        }
-
-        // Resize to final dimensions
-        let resizedBuffer = await sharp(integratedBuffer)
-            .resize(CANVAS, CANVAS, { fit: 'cover' })
-            .png()
-            .toBuffer();
-
-        // Quality verification
-        console.log('[CreativeDirector] Running quality verification...');
-        qualityResult = await verifyAdQuality(openai, resizedBuffer, strategy);
-
-        // ONLY apply SVG text overlay if quality check says text is NOT readable
-        // (This is now a FALLBACK, not the primary text rendering method)
-        if (qualityResult.scores?.textReadability < 5) {
-            console.log('[CreativeDirector] ⚠️ AI text not readable, applying SVG fallback...');
-            if (textConfig.headline?.text || textConfig.cta?.text) {
-                resizedBuffer = await applyTextOverlay(resizedBuffer, {
-                    headline: textConfig.headline?.text,
-                    subheadline: textConfig.subheadline?.text,
-                    cta: textConfig.cta?.text,
-                    position: textConfig.headline?.position || 'bottom',
-                    colorScheme: strategy.colorScheme
-                }, sharp);
-                console.log('[CreativeDirector] ✓ SVG text fallback applied');
-            }
-        } else {
-            console.log('[CreativeDirector] ✓ AI-rendered text is readable, no SVG overlay needed');
-        }
-
-        if (passesQualityGate(qualityResult, 6)) {
-            console.log(`[CreativeDirector] ✅ Quality passed: ${qualityResult.overallScore}/10`);
-            finalBuffer = resizedBuffer;
-            break;
-        } else {
-            console.log(`[CreativeDirector] ⚠️ Quality score ${qualityResult.overallScore}/10 - below threshold`);
-            if (attempt === MAX_QUALITY_RETRIES) {
-                console.log('[CreativeDirector] Max retries reached, using best result');
-                finalBuffer = resizedBuffer;
-            }
-        }
+        // ============================================================\n        // STAGE-BASED GENERATION:\n        // 1. AI generates scene with EMPTY placeholder for product\n        // 2. Real product image is composited with professional effects\n        // ============================================================\n        console.log('[CreativeDirector] 🎨 Generating STAGE scene for product integration...');\n\n        const productIntegration = strategy.productIntegration || {};\n        const productMethod = productIntegration.method || 'centered';\n        const textConfig = strategy.textConfig || {};\n\n        // Build stage-focused prompt (scene prepared FOR the product, not WITH the product)\n        let stagePrompt = currentPrompt;\n\n        // For device mockups: Generate device with BLANK/BLACK screen\n        if (productMethod === 'device_mockup') {\n            stagePrompt = `ULTRA-PREMIUM META AD SCENE (1080x1080px):\n\nSZENE UND DEVICE:\n- Eleganter dunkler Hintergrund mit professioneller Studio-Beleuchtung\n- Ein schlankes MacBook Pro Space Black steht leicht angewinkelt in der Mitte-Oben des Bildes\n- DER BILDSCHIRM IST KOMPLETT SCHWARZ/DUNKEL (wird später befüllt!)\n- KEINE Inhalte auf dem Bildschirm generieren - nur schwarzer Screen!\n- Cinematische Beleuchtung: Hauptlicht von links, subtiler Glow um das Device\n- Reflexionen auf der Laptop-Oberfläche, professionelle Schatten\n\nBELEUCHTUNG:\n- Drei-Punkt-Beleuchtung für professionellen Look\n- Subtile farbige Akzente (Rot/Türkis) im Hintergrund als Lichtquellen\n- Der Bildschirm-Bereich sollte einen leichten Glow haben als ob er leuchtet\n\nTEXT IM BILD (KRITISCH - AM UNTEREN RAND):\n${textConfig.headline?.text ? `- Headline: \"${textConfig.headline.text}\" - Große, fette, weiße Schrift mit Text-Schatten` : ''}\n${textConfig.subheadline?.text ? `- Subheadline: \"${textConfig.subheadline.text}\" - Kleinere weiße Schrift` : ''}\n${textConfig.cta?.text ? `- CTA-Button: Roter Pill-Button (#FF4444) mit \"${textConfig.cta.text}\" in weißer Schrift` : ''}\n\nWICHTIG:\n- Der MacBook-Bildschirm muss KOMPLETT SCHWARZ sein (kein UI, keine Inhalte!)\n- Text muss SCHARF und LESBAR sein\n- Qualität: $10,000 Agentur-Level, Magazin-Cover\n- Das Layout muss Platz für das Produkt im oberen Bereich und Text im unteren Bereich haben`;\n        } else {\n            // For physical products: Generate scene with empty central area\n            stagePrompt = `ULTRA-PREMIUM META AD SCENE (1080x1080px):\n\nSZENE (BÜHNE FÜR PRODUKT):\n- Eleganter, dunkler Hintergrund mit professioneller Studio-Beleuchtung\n- ZENTRALE ZONE (40-60% des Bildes): Muss LEER/DUNKEL sein für spätere Produkt-Integration\n- Subtile Lichteffekte und Bokeh im Hintergrund\n- Cinematische Beleuchtung von oben-links\n- Eine reflektierende Oberfläche unten (z.B. polierter Tisch) für Produktschatten\n\nBELEUCHTUNG:\n- Professionelle Drei-Punkt-Beleuchtung\n- Spotlight auf die zentrale Zone gerichtet\n- Farbige Akzente im Hintergrund (passend zum Produkt)\n\nTEXT IM BILD (AM UNTEREN RAND):\n${textConfig.headline?.text ? `- Headline: \"${textConfig.headline.text}\" - Große, fette, weiße Schrift` : ''}\n${textConfig.subheadline?.text ? `- Subheadline: \"${textConfig.subheadline.text}\"` : ''}\n${textConfig.cta?.text ? `- CTA-Button: \"${textConfig.cta.text}\"` : ''}\n\nWICHTIG:\n- Die zentrale Zone MUSS leer bleiben (dort wird später das Produkt eingefügt)\n- Text am unteren Rand muss scharf und lesbar sein\n- Qualität: Agentur-Level, perfekte Komposition`;\n        }\n\n        // Generate the stage scene\n        const imageResult = await generateHeroImage({\n            prompt: stagePrompt,\n            size: '1024x1024',\n            quality: 'high'\n        });\n\n        let sceneBuffer = Buffer.from(imageResult.b64, 'base64');\n        console.log('[CreativeDirector] ✓ Stage scene generated');\n\n        // Composite the REAL product into the prepared stage\n        if (productMethod === 'device_mockup') {\n            console.log('[CreativeDirector] 🖥️ Compositing screenshot into device screen...');\n            integratedBuffer = await compositeIntoDevice(sceneBuffer, productBuffer, {\n                ...productIntegration,\n                accentColor: strategy.colorScheme?.accent || '#FF4444'\n            }, strategy.productBounds);\n        } else {
+        // For physical products, composite product onto scene
+        console.log('[CreativeDirector] Compositing product into scene...');
+        integratedBuffer = await compositeProduct(sceneBuffer, productBuffer, productIntegration, strategy.productBounds);
     }
 
-    return finalBuffer;
+    console.log('[CreativeDirector] ✓ Product integrated');
+
+    // Apply effects from strategy
+    if (productIntegration.effects && productIntegration.effects.length > 0) {
+        console.log('[CreativeDirector] Applying effects:', productIntegration.effects.join(', '));
+        integratedBuffer = await applyEffects(
+            integratedBuffer,
+            productIntegration.effects,
+            strategy.colorScheme?.accent || '#FF4444'
+        );
+    }
+
+    // Resize to final dimensions
+    let resizedBuffer = await sharp(integratedBuffer)
+        .resize(CANVAS, CANVAS, { fit: 'cover' })
+        .png()
+        .toBuffer();
+
+    // Quality verification
+    console.log('[CreativeDirector] Running quality verification...');
+    qualityResult = await verifyAdQuality(openai, resizedBuffer, strategy);
+
+    // ONLY apply SVG text overlay if quality check says text is NOT readable
+    // (This is now a FALLBACK, not the primary text rendering method)
+    if (qualityResult.scores?.textReadability < 5) {
+        console.log('[CreativeDirector] ⚠️ AI text not readable, applying SVG fallback...');
+        if (textConfig.headline?.text || textConfig.cta?.text) {
+            resizedBuffer = await applyTextOverlay(resizedBuffer, {
+                headline: textConfig.headline?.text,
+                subheadline: textConfig.subheadline?.text,
+                cta: textConfig.cta?.text,
+                position: textConfig.headline?.position || 'bottom',
+                colorScheme: strategy.colorScheme
+            }, sharp);
+            console.log('[CreativeDirector] ✓ SVG text fallback applied');
+        }
+    } else {
+        console.log('[CreativeDirector] ✓ AI-rendered text is readable, no SVG overlay needed');
+    }
+
+    if (passesQualityGate(qualityResult, 6)) {
+        console.log(`[CreativeDirector] ✅ Quality passed: ${qualityResult.overallScore}/10`);
+        finalBuffer = resizedBuffer;
+        break;
+    } else {
+        console.log(`[CreativeDirector] ⚠️ Quality score ${qualityResult.overallScore}/10 - below threshold`);
+        if (attempt === MAX_QUALITY_RETRIES) {
+            console.log('[CreativeDirector] Max retries reached, using best result');
+            finalBuffer = resizedBuffer;
+        }
+    }
+}
+
+return finalBuffer;
 }
 
 
 /**
+ * PROFESSIONAL COMPOSITING SYSTEM
+ * Makes product look NATIVE to the AI-generated scene
+ */
+
+/**
  * Composite product into device (MacBook, iPad, iPhone)
- * NOW USES AI-determined productBounds for individualized placement
+ * NOW WITH PROFESSIONAL EFFECTS: Shadows, Glow, Screen Light Bleed
  */
 async function compositeIntoDevice(sceneBuffer, productBuffer, integration, productBounds) {
     const meta = await sharp(sceneBuffer).metadata();
+    const accentColor = integration.accentColor || '#FF4444';
 
     // Use AI-determined bounds if provided, otherwise fallback to device defaults
     let screenX, screenY, screenW, screenH;
 
     if (productBounds && productBounds.x !== undefined) {
-        // AI-determined placement - INDIVIDUALIZED per ad!
         console.log(`[CreativeDirector] Using AI-determined device bounds: ${productBounds.reasoning || 'custom'}`);
         screenX = Math.round(meta.width * productBounds.x);
         screenY = Math.round(meta.height * productBounds.y);
         screenW = Math.round(meta.width * productBounds.width);
         screenH = Math.round(meta.height * productBounds.height);
     } else {
-        // Fallback to device defaults (legacy behavior)
         const deviceFrames = {
-            macbook: { x: 0.05, y: 0.08, width: 0.90, height: 0.55 },
+            macbook: { x: 0.12, y: 0.12, width: 0.76, height: 0.48 },
             ipad: { x: 0.15, y: 0.10, width: 0.70, height: 0.70 },
             iphone: { x: 0.30, y: 0.08, width: 0.40, height: 0.75 }
         };
@@ -540,49 +489,126 @@ async function compositeIntoDevice(sceneBuffer, productBuffer, integration, prod
         screenH = Math.round(meta.height * frame.height);
     }
 
+    // Resize product to fit screen
     const resizedProduct = await sharp(productBuffer)
         .resize(screenW, screenH, { fit: 'cover' })
         .png()
         .toBuffer();
 
+    // Create screen glow effect (light bleeding from screen)
+    const screenGlowSvg = `
+    <svg width="${meta.width}" height="${meta.height}" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+            <filter id="screenGlow" x="-50%" y="-50%" width="200%" height="200%">
+                <feGaussianBlur in="SourceGraphic" stdDeviation="30" result="blur"/>
+                <feMerge>
+                    <feMergeNode in="blur"/>
+                </feMerge>
+            </filter>
+            <linearGradient id="screenLight" x1="0%" y1="0%" x2="0%" y2="100%">
+                <stop offset="0%" style="stop-color:${accentColor};stop-opacity:0.15"/>
+                <stop offset="100%" style="stop-color:${accentColor};stop-opacity:0"/>
+            </linearGradient>
+        </defs>
+        <!-- Screen light bleed -->
+        <rect x="${screenX - 20}" y="${screenY - 20}" width="${screenW + 40}" height="${screenH + 40}" 
+              fill="url(#screenLight)" filter="url(#screenGlow)" opacity="0.6"/>
+    </svg>`;
+
+    // Composite with glow effect
     return sharp(sceneBuffer)
-        .composite([{ input: resizedProduct, left: screenX, top: screenY }])
+        .composite([
+            // First: Screen glow (light bleeding from device)
+            { input: Buffer.from(screenGlowSvg), blend: 'screen' },
+            // Then: The actual product/screenshot
+            { input: resizedProduct, left: screenX, top: screenY }
+        ])
         .png()
         .toBuffer();
 }
 
 /**
- * Composite product into scene (centered, lifestyle, etc.)
- * NOW USES AI-determined productBounds for individualized placement
+ * Composite product into scene with PROFESSIONAL EFFECTS
+ * Adds: Soft shadow, ambient glow, subtle reflection
  */
 async function compositeProduct(sceneBuffer, productBuffer, integration, productBounds) {
     const meta = await sharp(sceneBuffer).metadata();
+    const accentColor = integration.accentColor || '#FF4444';
 
     let productX, productY, productW, productH;
 
     if (productBounds && productBounds.x !== undefined) {
-        // AI-determined placement - INDIVIDUALIZED per ad!
         console.log(`[CreativeDirector] Using AI-determined product bounds: ${productBounds.reasoning || 'custom'}`);
         productX = Math.round(meta.width * productBounds.x);
         productY = Math.round(meta.height * productBounds.y);
         productW = Math.round(meta.width * productBounds.width);
         productH = Math.round(meta.height * productBounds.height);
     } else {
-        // Fallback to default centered placement (legacy behavior)
-        const scale = 0.6;
+        const scale = 0.55;
         productW = Math.round(meta.width * scale);
         productH = Math.round(meta.height * scale);
         productX = Math.round((meta.width - productW) / 2);
-        productY = Math.round((meta.height - productH) / 2) - 50;
+        productY = Math.round((meta.height - productH) / 2) - 30;
     }
 
+    // Resize product with contain to preserve aspect ratio
     const resizedProduct = await sharp(productBuffer)
         .resize(productW, productH, { fit: 'contain', background: { r: 0, g: 0, b: 0, alpha: 0 } })
         .png()
         .toBuffer();
 
+    // Get actual dimensions after resize
+    const productMeta = await sharp(resizedProduct).metadata();
+    const actualW = productMeta.width;
+    const actualH = productMeta.height;
+    const actualX = productX + Math.round((productW - actualW) / 2);
+    const actualY = productY + Math.round((productH - actualH) / 2);
+
+    // Create professional shadow and glow effects
+    const shadowGlowSvg = `
+    <svg width="${meta.width}" height="${meta.height}" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+            <!-- Soft drop shadow -->
+            <filter id="dropShadow" x="-50%" y="-50%" width="200%" height="200%">
+                <feDropShadow dx="0" dy="15" stdDeviation="25" flood-color="rgba(0,0,0,0.5)"/>
+            </filter>
+            <!-- Ambient glow -->
+            <radialGradient id="ambientGlow" cx="50%" cy="50%" r="60%">
+                <stop offset="0%" style="stop-color:${accentColor};stop-opacity:0.2"/>
+                <stop offset="100%" style="stop-color:${accentColor};stop-opacity:0"/>
+            </radialGradient>
+            <!-- Bottom reflection gradient -->
+            <linearGradient id="reflection" x1="0%" y1="0%" x2="0%" y2="100%">
+                <stop offset="0%" style="stop-color:white;stop-opacity:0"/>
+                <stop offset="70%" style="stop-color:white;stop-opacity:0"/>
+                <stop offset="100%" style="stop-color:white;stop-opacity:0.08"/>
+            </linearGradient>
+        </defs>
+        
+        <!-- Ambient glow behind product -->
+        <ellipse cx="${actualX + actualW / 2}" cy="${actualY + actualH / 2}" 
+                 rx="${actualW * 0.6}" ry="${actualH * 0.5}" 
+                 fill="url(#ambientGlow)"/>
+        
+        <!-- Drop shadow (positioned below product) -->
+        <ellipse cx="${actualX + actualW / 2}" cy="${actualY + actualH + 20}" 
+                 rx="${actualW * 0.4}" ry="20" 
+                 fill="rgba(0,0,0,0.3)" filter="url(#dropShadow)"/>
+        
+        <!-- Subtle reflection on surface -->
+        <rect x="${actualX}" y="${actualY + actualH}" 
+              width="${actualW}" height="60" 
+              fill="url(#reflection)" opacity="0.5"/>
+    </svg>`;
+
+    // Composite with shadow and glow
     return sharp(sceneBuffer)
-        .composite([{ input: resizedProduct, left: productX, top: productY }])
+        .composite([
+            // First: Shadow and ambient glow (behind product)
+            { input: Buffer.from(shadowGlowSvg), blend: 'over' },
+            // Then: The actual product
+            { input: resizedProduct, left: actualX, top: actualY }
+        ])
         .png()
         .toBuffer();
 }
