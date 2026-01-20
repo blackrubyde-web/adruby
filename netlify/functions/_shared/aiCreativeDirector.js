@@ -355,14 +355,14 @@ Ultra-premium $10,000 creative director quality. Sharp, professional, conversion
 
 /**
  * Phase 3: Execute the Creative Strategy with Quality Verification
- * NOW WITH TRUE IMAGE INTEGRATION - Product is INPUT to AI generation!
+ * Uses GPT-4V product analysis to include product in generation prompt
  */
 async function executeCreativeStrategy(openai, strategy, productImageUrl, generateHeroImage) {
     let currentPrompt = strategy.imagePrompt;
     let finalBuffer = null;
     let qualityResult = null;
 
-    // First, download the product image
+    // First, download the product image for compositing fallback
     console.log('[CreativeDirector] Downloading product image...');
     const productResponse = await fetch(productImageUrl);
     const productBuffer = Buffer.from(await productResponse.arrayBuffer());
@@ -378,93 +378,71 @@ async function executeCreativeStrategy(openai, strategy, productImageUrl, genera
         let integratedBuffer = null;
 
         // ============================================================
-        // APPROACH 1: TRUE IMAGE INTEGRATION (Preferred)
-        // Use the product image as INPUT to AI image generation
-        // The AI creates a new scene with the product INTEGRATED
+        // GENERATE AD WITH PRODUCT DESCRIPTION IN PROMPT
+        // The product details from GPT-4V analysis are already in the strategy
+        // We generate a scene that INCLUDES the product as part of the image
         // ============================================================
-        console.log('[CreativeDirector] 🎯 Attempting TRUE image integration...');
+        console.log('[CreativeDirector] 🎨 Generating ad with product in scene...');
 
-        try {
-            // Import the new function dynamically to avoid circular dependencies
-            const { generateImageWithReference } = await import('./openai.js');
+        // Build enhanced prompt that describes the product to render
+        const productIntegration = strategy.productIntegration || {};
+        const productMethod = productIntegration.method || 'centered';
 
-            const integrationPrompt = `Create a premium advertisement scene. The product from the reference image should be the HERO of this scene, professionally lit and seamlessly integrated.
+        // Enhanced prompt includes detailed product description
+        let enhancedPrompt = currentPrompt;
 
-Scene: ${currentPrompt}
+        // If it's a screen/dashboard product, generate with device mockup
+        if (productMethod === 'device_mockup') {
+            enhancedPrompt = `${currentPrompt}
 
-CRITICAL REQUIREMENTS:
-- The EXACT product from the reference image must be the centerpiece
-- The product should look like it BELONGS in this premium environment
-- Professional studio lighting that enhances the product
-- The product must be clearly visible and recognizable
-- Do NOT modify, distort, or alter the product's appearance
-- Create a cohesive, high-end advertising composition`;
+CRITICAL: Generate a premium MacBook Pro mockup in the center of the image. The laptop screen should display a professional dashboard with:
+- Dark theme interface
+- Red accent colors
+- Stats and charts visible
+- Clean, modern UI design
 
-            const integrationResult = await generateImageWithReference({
-                prompt: integrationPrompt,
-                referenceImageBuffer: productBuffer,
-                size: '1024x1024',
-                quality: 'high'
-            });
-
-            if (integrationResult.b64 && integrationResult.integrated) {
-                console.log('[CreativeDirector] ✅ TRUE IMAGE INTEGRATION SUCCESS!');
-                integratedBuffer = Buffer.from(integrationResult.b64, 'base64');
-            } else if (integrationResult.fallback) {
-                console.log('[CreativeDirector] ⚠️ True integration not available, using composite fallback');
-            }
-        } catch (integrationError) {
-            console.warn('[CreativeDirector] True integration failed:', integrationError.message);
+The laptop should be the HERO of the image, professionally lit with subtle reflections.`;
         }
 
-        // ============================================================
-        // APPROACH 2: COMPOSITE FALLBACK
-        // Generate background, then composite product on top
-        // (Only used if true integration fails)
-        // ============================================================
-        if (!integratedBuffer) {
-            console.log('[CreativeDirector] Using composite approach...');
+        // Generate the scene
+        const imageResult = await generateHeroImage({
+            prompt: enhancedPrompt,
+            size: '1024x1024',
+            quality: 'high'
+        });
 
-            // Generate scene/background
-            const imageResult = await generateHeroImage({
-                prompt: currentPrompt,
-                size: '1024x1024',
-                quality: 'high'
-            });
+        let sceneBuffer = Buffer.from(imageResult.b64, 'base64');
+        console.log('[CreativeDirector] ✓ Scene generated');
 
-            let sceneBuffer = Buffer.from(imageResult.b64, 'base64');
-            console.log('[CreativeDirector] ✓ Scene generated');
-
-            // Integrate product using composite
-            const integration = strategy.productIntegration || {};
-            const productBounds = strategy.productBounds;
-
-            if (integration.method === 'device_mockup' && integration.device) {
-                integratedBuffer = await compositeIntoDevice(sceneBuffer, productBuffer, integration, productBounds);
-            } else {
-                integratedBuffer = await compositeProduct(sceneBuffer, productBuffer, integration, productBounds);
-            }
-            console.log('[CreativeDirector] ✓ Product composited');
+        // For screen content, composite the actual screenshot into the generated device
+        if (productMethod === 'device_mockup') {
+            console.log('[CreativeDirector] Compositing screen content into device...');
+            integratedBuffer = await compositeIntoDevice(sceneBuffer, productBuffer, productIntegration, strategy.productBounds);
+        } else {
+            // For physical products, composite product onto scene
+            console.log('[CreativeDirector] Compositing product into scene...');
+            integratedBuffer = await compositeProduct(sceneBuffer, productBuffer, productIntegration, strategy.productBounds);
         }
 
-        // Step 4: Apply ALL effects from strategy
-        const integration = strategy.productIntegration || {};
-        if (integration.effects && integration.effects.length > 0) {
-            console.log('[CreativeDirector] Applying effects:', integration.effects.join(', '));
+        console.log('[CreativeDirector] ✓ Product integrated');
+
+        // Apply effects from strategy
+        if (productIntegration.effects && productIntegration.effects.length > 0) {
+            console.log('[CreativeDirector] Applying effects:', productIntegration.effects.join(', '));
             integratedBuffer = await applyEffects(
                 integratedBuffer,
-                integration.effects,
+                productIntegration.effects,
                 strategy.colorScheme?.accent || '#FF4444'
             );
         }
 
-        // Step 5: Resize to final dimensions
+        // Resize to final dimensions
         let resizedBuffer = await sharp(integratedBuffer)
             .resize(CANVAS, CANVAS, { fit: 'cover' })
             .png()
             .toBuffer();
 
-        // Step 6: Apply reliable text overlay (P0 fix - guaranteed rendering)
+        // Apply text overlay
         const textConfig = strategy.textConfig || {};
         if (textConfig.headline?.text || textConfig.subheadline?.text || textConfig.cta?.text) {
             console.log('[CreativeDirector] Applying text overlay...');
@@ -478,7 +456,7 @@ CRITICAL REQUIREMENTS:
             console.log('[CreativeDirector] ✓ Text overlay applied');
         }
 
-        // Step 7: Quality verification (P0 - GPT-4V check)
+        // Quality verification
         console.log('[CreativeDirector] Running quality verification...');
         qualityResult = await verifyAdQuality(openai, resizedBuffer, strategy);
 
