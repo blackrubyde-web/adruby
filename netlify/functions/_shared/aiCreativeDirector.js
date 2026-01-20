@@ -273,7 +273,7 @@ Reasoning:
             "position": "bottom"
         }
     },
-    "imagePrompt": "SEHR DETAILLIERTER Prompt für gpt-image-1 (min. 200 Wörter). Beschreibe EXAKT: 1) Die komplette Szene/Atmosphäre 2) Wo das Produkt platziert wird (als leere/dunkle Zone - MUSS zu productBounds passen!) 3) Die Headline am unteren Rand: '[HEADLINE TEXT]' in großer weißer Schrift 4) Die Subheadline darunter 5) Den CTA-Button. Der Text MUSS im Bild gerendert werden!",
+    "imagePrompt": "SEHR DETAILLIERTER Prompt für gpt-image-1 (min. 200 Wörter). Beschreibe EXAKT: 1) Die komplette Szene/Atmosphäre 2) Wo das Produkt platziert wird (als leere/dunkle Zone - MUSS zu productBounds passen!) 3) Die unteren 20% des Bildes müssen ein sauberer, dunkler Gradient sein für späteres Text-Overlay. WICHTIG: KEINE Text, Buttons oder UI-Elemente im Bild generieren! Der Text wird nachträglich als SVG-Overlay hinzugefügt.",
     "colorScheme": {
         "background": "#hex",
         "accent": "#hex",
@@ -296,7 +296,7 @@ ${JSON.stringify(analysis, null, 2)}
 
 === DEINE AUFGABE ===
 Entwickle die PERFEKTE Creative-Strategie. Denke wie ein $10,000/Stunde Creative Director bei Apple.
-Der imagePrompt MUSS den kompletten Text (Headline, Subheadline, CTA) enthalten, damit gpt-image-1 den Text direkt rendert!`
+WICHTIG: Der imagePrompt darf KEINEN Text, Buttons oder UI-Elemente enthalten! Diese werden später als SVG-Overlay hinzugefügt. Das Bild muss im unteren Bereich clean bleiben für das Text-Overlay.`
             }],
             max_tokens: 2500,
             response_format: { type: "json_object" }
@@ -321,7 +321,7 @@ function generateFallbackStrategy(analysis, headline, subheadline, cta) {
     return {
         reasoning: "Fallback: Using premium default strategy with complete text package",
         creativeConcept: "Premium product showcase with clear call-to-action",
-        sceneDescription: `Premium advertisement featuring ${analysis.productName || 'product'} in an elegant setting with professional text overlay`,
+        sceneDescription: `Premium advertisement featuring ${analysis.productName || 'product'} in an elegant setting`,
         productIntegration: {
             method: analysis.isScreenContent ? 'device_mockup' : 'centered',
             device: analysis.isScreenContent ? 'macbook' : 'none',
@@ -337,10 +337,7 @@ function generateFallbackStrategy(analysis, headline, subheadline, cta) {
         },
         imagePrompt: `Premium advertisement image (1080x1080px). Dark sophisticated background with subtle gradient and soft glow. ${analysis.isScreenContent ? 'MacBook Pro Space Black in center with completely black screen for content overlay.' : 'Empty center area (50% of image) for product placement.'} Cinematic lighting from top-left creating elegant shadows.
 
-TEXT RENDERED IN IMAGE:
-- Large bold headline at bottom: "${headlineText}" in white with subtle shadow
-${subheadlineText ? `- Subheadline below: "${subheadlineText}" in smaller white text (80% opacity)` : ''}
-- Red pill-shaped CTA button at very bottom: "${ctaText}"
+DO NOT render any text, buttons, or UI elements in the image. Leave the bottom 20% of the image as a clean gradient area for text overlay to be added later.
 
 Ultra-premium $10,000 creative director quality. Sharp, professional, conversion-focused.`,
         colorScheme: {

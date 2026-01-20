@@ -187,15 +187,10 @@ ${userPrompt}
 STYLE:
 ${styleElements.join(', ') || 'Premium dark aesthetic, cinematic lighting'}
 
-TEXT IN IMAGE (CRITICAL - MUST BE RENDERED):
-${headline ? `- Large bold headline text at BOTTOM of image: "${headline}"` : ''}
-- Text should be white, bold, and highly readable
-- Use clean sans-serif typography
-- Add subtle shadow behind text for readability
-
 CRITICAL:
 - Device screen MUST be solid black (content added later)
-- Text MUST be rendered clearly and legibly at the bottom
+- DO NOT render any text, buttons or UI elements in the image
+- Leave the bottom 20% as clean dark gradient for text overlay
 - Photorealistic device with designed background
 - Premium $10,000 ad creative quality
 
@@ -227,15 +222,10 @@ ${wantsGlow ? '- Add glow/light effects emanating from center where product will
 SCENE STYLE:
 ${styleElements.join(', ') || 'Premium aesthetic, cinematic lighting'}
 
-TEXT IN IMAGE (CRITICAL - MUST BE RENDERED):
-${headline ? `- Large bold headline text at BOTTOM of image: "${headline}"` : ''}
-- Text should be white, bold, and highly readable
-- Use clean sans-serif typography (similar to Apple ads)
-- Add subtle shadow behind text for readability on any background
-
 CRITICAL:
 - Central product area should be relatively empty/dark for compositing
-- Text MUST be rendered clearly and legibly at the bottom
+- DO NOT render any text, buttons or UI elements in the image
+- Leave the bottom 20% as clean dark gradient for text overlay
 - Premium $10,000 creative director quality
 - NO logos or watermarks
 
