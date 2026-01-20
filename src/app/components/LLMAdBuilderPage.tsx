@@ -161,6 +161,51 @@ export const LLMAdBuilderPage = memo(function LLMAdBuilderPage() {
         }
     }, [creativePlan]);
 
+    // Render image from layout
+    const [isRendering, setIsRendering] = useState(false);
+    const [renderTime, setRenderTime] = useState<number | null>(null);
+
+    const handleRenderImage = useCallback(async () => {
+        if (!solvedLayout || !creativePlan) return;
+
+        setIsRendering(true);
+        setGeneratedAd(null);
+
+        try {
+            const response = await fetch('/.netlify/functions/llm-render-image', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    layout: solvedLayout,
+                    copy: creativePlan.copy,
+                    style: creativePlan.style,
+                    background: creativePlan.background
+                })
+            });
+
+            const data = await response.json();
+
+            if (!response.ok || !data.success) {
+                throw new Error(data.error || 'Failed to render image');
+            }
+
+            // Set the generated image as data URL
+            setGeneratedAd(`data:${data.mimeType};base64,${data.image}`);
+            setRenderTime(data.renderTime);
+
+            toast.success('Ad gerendert!', {
+                description: `${(data.size / 1024).toFixed(1)} KB in ${data.renderTime}ms`,
+                icon: <CheckCircle2 className="w-4 h-4" />
+            });
+
+        } catch (err) {
+            const message = err instanceof Error ? err.message : 'Render-Fehler';
+            toast.error('Render-Fehler', { description: message });
+        } finally {
+            setIsRendering(false);
+        }
+    }, [solvedLayout, creativePlan]);
+
     const handleGenerate = useCallback(async () => {
         if (!prompt && uploadedImages.length === 0) return;
 
@@ -604,23 +649,56 @@ export const LLMAdBuilderPage = memo(function LLMAdBuilderPage() {
                                         {JSON.stringify(solvedLayout, null, 2)}
                                     </pre>
                                 </details>
+
+                                {/* Render Image Button */}
+                                <Button
+                                    className="w-full mt-4 gap-2 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700"
+                                    onClick={handleRenderImage}
+                                    disabled={isRendering}
+                                >
+                                    {isRendering ? (
+                                        <>
+                                            <RefreshCw className="w-4 h-4 animate-spin" />
+                                            Bild rendern...
+                                        </>
+                                    ) : (
+                                        <>
+                                            <ImageIcon className="w-4 h-4" />
+                                            Ad rendern (Sharp + SVG)
+                                        </>
+                                    )}
+                                </Button>
                             </CardContent>
                         </Card>
                     )}
 
                     {/* Generated Ad Preview */}
                     {generatedAd ? (
-                        <Card variant="glass" className="overflow-hidden">
+                        <Card variant="glass" className="overflow-hidden border-emerald-500/30">
                             <CardContent className="p-6">
                                 <div className="flex items-center justify-between mb-4">
-                                    <h3 className="font-bold text-lg">Generierte Ad</h3>
-                                    <Button variant="outline" size="sm" className="gap-2">
+                                    <div>
+                                        <h3 className="font-bold text-lg flex items-center gap-2">
+                                            <CheckCircle2 className="w-5 h-5 text-emerald-500" />
+                                            Generierte Ad
+                                        </h3>
+                                        {renderTime && (
+                                            <span className="text-xs text-muted-foreground">
+                                                Gerendert in {renderTime}ms
+                                            </span>
+                                        )}
+                                    </div>
+                                    <a
+                                        href={generatedAd}
+                                        download="llm-generated-ad.png"
+                                        className="inline-flex items-center gap-2 px-3 py-1.5 text-sm font-medium bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors"
+                                    >
                                         <Download className="w-4 h-4" />
                                         Download
-                                    </Button>
+                                    </a>
                                 </div>
-                                <div className="aspect-square bg-muted rounded-xl flex items-center justify-center">
-                                    <img src={generatedAd} alt="Generated Ad" className="max-w-full max-h-full rounded-lg" />
+                                <div className="aspect-square bg-muted rounded-xl flex items-center justify-center overflow-hidden">
+                                    <img src={generatedAd} alt="Generated Ad" className="max-w-full max-h-full rounded-lg shadow-lg" />
                                 </div>
                             </CardContent>
                         </Card>
