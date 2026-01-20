@@ -14,7 +14,12 @@ import {
     Grid3X3,
     Palette,
     AlertCircle,
-    CheckCircle2
+    CheckCircle2,
+    Play,
+    Square,
+    Smartphone,
+    Monitor,
+    Rocket
 } from 'lucide-react';
 import { DashboardShell } from './layout/DashboardShell';
 import { Card, CardContent } from './ui/card';
@@ -70,6 +75,16 @@ interface ApiResponse {
     hint?: string;
 }
 
+// Pipeline step for progress tracking
+type PipelineStep = 'idle' | 'creative' | 'layout' | 'render' | 'done' | 'error';
+
+// Format presets for multi-format export
+const FORMAT_PRESETS = [
+    { id: 'square', label: 'Square', width: 1080, height: 1080, icon: Square, description: 'Feed Post' },
+    { id: 'story', label: 'Story', width: 1080, height: 1920, icon: Smartphone, description: '9:16 Vertical' },
+    { id: 'feed', label: 'Feed', width: 1200, height: 628, icon: Monitor, description: 'Link Preview' },
+];
+
 const COMPOSITION_TYPES = [
     { id: 'product_focus', label: 'Product Focus', icon: ImageIcon, description: 'Produkt im Zentrum' },
     { id: 'before_after', label: 'Before/After', icon: ArrowRight, description: 'Vorher-Nachher Vergleich' },
@@ -101,11 +116,13 @@ export const LLMAdBuilderPage = memo(function LLMAdBuilderPage() {
     const [selectedComposition, setSelectedComposition] = useState<string>('product_focus');
     const [selectedIndustry, setSelectedIndustry] = useState<string>('ecommerce');
     const [selectedTone, setSelectedTone] = useState<string>('modern');
+    const [selectedFormat, setSelectedFormat] = useState<string>('square');
     const [isGenerating, setIsGenerating] = useState(false);
     const [isSolvingLayout, setIsSolvingLayout] = useState(false);
     const [creativePlan, setCreativePlan] = useState<CreativePlan | null>(null);
     const [allPlans, setAllPlans] = useState<CreativePlan[]>([]);
     const [generatedAd, setGeneratedAd] = useState<string | null>(null);
+    const [allFormatsAds, setAllFormatsAds] = useState<Record<string, string>>({});
     const [variantCount, setVariantCount] = useState(1);
     const [apiUsage, setApiUsage] = useState<{ input_tokens: number; output_tokens: number; model: string } | null>(null);
     const [error, setError] = useState<string | null>(null);
@@ -115,7 +132,8 @@ export const LLMAdBuilderPage = memo(function LLMAdBuilderPage() {
         canvasHeight: number;
     } | null>(null);
     const [layoutWarnings, setLayoutWarnings] = useState<string[]>([]);
-    const [pipelineStep, setPipelineStep] = useState<'idle' | 'creative' | 'layout' | 'render' | 'done'>('idle');
+    const [pipelineStep, setPipelineStep] = useState<PipelineStep>('idle');
+    const [productImageBase64, setProductImageBase64] = useState<string | null>(null);
 
     const handleImageUpload = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.files) {
@@ -140,9 +158,134 @@ export const LLMAdBuilderPage = memo(function LLMAdBuilderPage() {
         });
     }, []);
 
-    // Solve layout constraints
+    // Convert file to base64
+    const fileToBase64 = useCallback((file: File): Promise<string> => {
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = () => {
+                const result = reader.result as string;
+                // Remove data URL prefix to get pure base64
+                resolve(result.split(',')[1]);
+            };
+            reader.onerror = reject;
+            reader.readAsDataURL(file);
+        });
+    }, []);
+
+    // Get current format dimensions
+    const getCurrentFormat = useCallback(() => {
+        return FORMAT_PRESETS.find(f => f.id === selectedFormat) || FORMAT_PRESETS[0];
+    }, [selectedFormat]);
+
+    // ONE-CLICK MAGIC GENERATE - Full pipeline in one button
+    const handleMagicGenerate = useCallback(async () => {
+        if (!prompt && uploadedImages.length === 0) return;
+
+        const format = getCurrentFormat();
+        setPipelineStep('creative');
+        setError(null);
+        setGeneratedAd(null);
+        setCreativePlan(null);
+        setSolvedLayout(null);
+
+        try {
+            // Convert first image to base64 for compositing
+            let productBase64: string | null = null;
+            if (uploadedImages.length > 0) {
+                productBase64 = await fileToBase64(uploadedImages[0]);
+                setProductImageBase64(productBase64);
+            }
+
+            // Step 1: Claude Creative Director
+            toast.loading('Claude analysiert...', { id: 'magic-generate' });
+
+            const creativeResponse = await fetch('/.netlify/functions/llm-creative-director', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    prompt,
+                    images: uploadedImages.map((f, i) => ({ name: f.name, description: `Image ${i + 1}` })),
+                    composition: selectedComposition,
+                    industry: selectedIndustry,
+                    tone: selectedTone,
+                    platform: 'meta',
+                    variants: variantCount
+                })
+            });
+
+            const creativeData = await creativeResponse.json();
+            if (!creativeResponse.ok || !creativeData.success) {
+                throw new Error(creativeData.error || 'Creative Director failed');
+            }
+
+            const plan = creativeData.plans[0];
+            setCreativePlan(plan);
+            setAllPlans(creativeData.plans);
+            setApiUsage(creativeData.usage);
+
+            // Step 2: Constraint Solver
+            setPipelineStep('layout');
+            toast.loading('Layout berechnen...', { id: 'magic-generate' });
+
+            const layoutResponse = await fetch('/.netlify/functions/llm-solve-layout', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    sceneGraph: plan,
+                    canvasWidth: format.width,
+                    canvasHeight: format.height
+                })
+            });
+
+            const layoutData = await layoutResponse.json();
+            if (!layoutResponse.ok || !layoutData.success) {
+                throw new Error(layoutData.error || 'Layout solver failed');
+            }
+
+            setSolvedLayout(layoutData.layout);
+            setLayoutWarnings(layoutData.warnings || []);
+
+            // Step 3: Canvas Render
+            setPipelineStep('render');
+            toast.loading('Bild rendern...', { id: 'magic-generate' });
+
+            const renderResponse = await fetch('/.netlify/functions/llm-render-image', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    layout: layoutData.layout,
+                    copy: plan.copy,
+                    style: plan.style,
+                    background: plan.background,
+                    productImage: productBase64
+                })
+            });
+
+            const renderData = await renderResponse.json();
+            if (!renderResponse.ok || !renderData.success) {
+                throw new Error(renderData.error || 'Render failed');
+            }
+
+            setGeneratedAd(`data:${renderData.mimeType};base64,${renderData.image}`);
+            setPipelineStep('done');
+
+            toast.success('🎉 Ad generiert!', {
+                id: 'magic-generate',
+                description: `${format.label} (${format.width}×${format.height}) in ${renderData.renderTime}ms`
+            });
+
+        } catch (err) {
+            const message = err instanceof Error ? err.message : 'Pipeline fehlgeschlagen';
+            setError(message);
+            setPipelineStep('error');
+            toast.error('Fehler', { id: 'magic-generate', description: message });
+        }
+    }, [prompt, uploadedImages, selectedComposition, selectedIndustry, selectedTone, variantCount, getCurrentFormat, fileToBase64]);
+
+    // Solve layout constraints (manual step)
     const handleSolveLayout = useCallback(async () => {
         if (!creativePlan) return;
+        const format = getCurrentFormat();
 
         setIsSolvingLayout(true);
         setLayoutWarnings([]);
@@ -153,8 +296,8 @@ export const LLMAdBuilderPage = memo(function LLMAdBuilderPage() {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     sceneGraph: creativePlan,
-                    canvasWidth: 1080,
-                    canvasHeight: 1080
+                    canvasWidth: format.width,
+                    canvasHeight: format.height
                 })
             });
 
@@ -459,26 +602,103 @@ export const LLMAdBuilderPage = memo(function LLMAdBuilderPage() {
                         </CardContent>
                     </Card>
 
-                    {/* Generate Button */}
+                    {/* Format Selection */}
+                    <Card variant="glass" className="overflow-hidden">
+                        <CardContent className="p-6">
+                            <h3 className="font-bold text-lg mb-4 flex items-center gap-2">
+                                <Monitor className="w-5 h-5 text-primary" />
+                                Export Format
+                            </h3>
+                            <div className="grid grid-cols-3 gap-3">
+                                {FORMAT_PRESETS.map((format) => {
+                                    const Icon = format.icon;
+                                    const isSelected = selectedFormat === format.id;
+                                    return (
+                                        <button
+                                            key={format.id}
+                                            onClick={() => setSelectedFormat(format.id)}
+                                            className={`p-3 rounded-xl border text-center transition-all ${isSelected
+                                                ? 'border-primary bg-primary/10'
+                                                : 'border-border hover:border-primary/50'
+                                                }`}
+                                        >
+                                            <Icon className={`w-5 h-5 mx-auto mb-1 ${isSelected ? 'text-primary' : 'text-muted-foreground'}`} />
+                                            <div className="font-semibold text-sm">{format.label}</div>
+                                            <div className="text-xs text-muted-foreground">{format.width}×{format.height}</div>
+                                        </button>
+                                    );
+                                })}
+                            </div>
+                        </CardContent>
+                    </Card>
+
+                    {/* Pipeline Progress Indicator */}
+                    {pipelineStep !== 'idle' && pipelineStep !== 'done' && pipelineStep !== 'error' && (
+                        <Card variant="glass" className="overflow-hidden border-violet-500/30">
+                            <CardContent className="p-4">
+                                <div className="flex items-center gap-4">
+                                    {['creative', 'layout', 'render'].map((step, i) => {
+                                        const isActive = pipelineStep === step;
+                                        const isPast = ['creative', 'layout', 'render'].indexOf(pipelineStep) > i;
+                                        return (
+                                            <div key={step} className="flex items-center gap-2 flex-1">
+                                                <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold transition-all ${isActive ? 'bg-violet-500 text-white animate-pulse' :
+                                                    isPast ? 'bg-emerald-500 text-white' : 'bg-muted text-muted-foreground'
+                                                    }`}>
+                                                    {isPast ? '✓' : i + 1}
+                                                </div>
+                                                <span className={`text-xs font-medium ${isActive ? 'text-violet-500' : isPast ? 'text-emerald-500' : 'text-muted-foreground'}`}>
+                                                    {step === 'creative' ? 'Claude' : step === 'layout' ? 'Layout' : 'Render'}
+                                                </span>
+                                                {i < 2 && <ChevronRight className="w-4 h-4 text-muted-foreground" />}
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            </CardContent>
+                        </Card>
+                    )}
+
+                    {/* MAGIC GENERATE BUTTON */}
                     <Button
                         size="lg"
-                        onClick={handleGenerate}
-                        disabled={isGenerating || (!prompt && uploadedImages.length === 0)}
-                        className="w-full h-14 text-lg gap-3 bg-gradient-to-r from-violet-600 to-purple-600 hover:from-violet-700 hover:to-purple-700"
+                        onClick={handleMagicGenerate}
+                        disabled={pipelineStep !== 'idle' && pipelineStep !== 'done' && pipelineStep !== 'error' || (!prompt && uploadedImages.length === 0)}
+                        className="w-full h-16 text-lg gap-3 bg-gradient-to-r from-violet-600 via-purple-600 to-pink-600 hover:from-violet-700 hover:via-purple-700 hover:to-pink-700 shadow-lg shadow-purple-500/25"
                     >
-                        {isGenerating ? (
+                        {pipelineStep !== 'idle' && pipelineStep !== 'done' && pipelineStep !== 'error' ? (
                             <>
-                                <RefreshCw className="w-5 h-5 animate-spin" />
-                                Claude generiert Creative Plan...
+                                <RefreshCw className="w-6 h-6 animate-spin" />
+                                Pipeline läuft...
                             </>
                         ) : (
                             <>
-                                <Wand2 className="w-5 h-5" />
-                                Ad generieren
+                                <Rocket className="w-6 h-6" />
+                                ✨ Magic Generate
                                 <ChevronRight className="w-5 h-5" />
                             </>
                         )}
                     </Button>
+
+                    {/* Manual Step Buttons (collapsed by default) */}
+                    <details className="group">
+                        <summary className="text-xs text-muted-foreground cursor-pointer hover:text-foreground flex items-center gap-2">
+                            <ChevronRight className="w-3 h-3 group-open:rotate-90 transition-transform" />
+                            Manuelle Schritte anzeigen
+                        </summary>
+                        <div className="mt-3 space-y-2">
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={handleGenerate}
+                                disabled={isGenerating || (!prompt && uploadedImages.length === 0)}
+                                className="w-full gap-2"
+                            >
+                                {isGenerating ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
+                                1. Creative Plan
+                            </Button>
+                        </div>
+                    </details>
                 </div>
 
                 {/* RIGHT: Preview & Output Panel */}
@@ -751,6 +971,6 @@ export const LLMAdBuilderPage = memo(function LLMAdBuilderPage() {
                     )}
                 </div>
             </div>
-        </DashboardShell>
+        </DashboardShell >
     );
 });
