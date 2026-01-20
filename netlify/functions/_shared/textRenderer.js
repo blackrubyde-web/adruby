@@ -130,16 +130,38 @@ export async function applyTextOverlay(imageBuffer, config, sharp) {
 }
 
 /**
- * Escape XML special characters
+ * Escape XML special characters and sanitize problematic unicode
+ * Removes/replaces characters that cause rendering issues (appearing as rectangles)
  */
 function escapeXml(str) {
     if (!str) return '';
     return str
+        // First sanitize problematic unicode
+        .replace(/[\u2800-\u28FF]/g, '')  // Braille patterns (appear as rectangles)
+        .replace(/[\u2580-\u259F]/g, '')  // Block elements (appear as rectangles)
+        .replace(/[\u2588-\u259F]/g, '')  // Full block and variants
+        .replace(/[\uFFF0-\uFFFF]/g, '')  // Specials
+        .replace(/[\u0000-\u001F]/g, '')  // Control characters
+        .replace(/[\u007F-\u009F]/g, '')  // More control characters
+        .replace(/\u200B/g, '')           // Zero-width space
+        .replace(/\u200C/g, '')           // Zero-width non-joiner
+        .replace(/\u200D/g, '')           // Zero-width joiner
+        .replace(/\uFEFF/g, '')           // Byte order mark
+        // Smart quotes to regular quotes
+        .replace(/[\u201C\u201D]/g, '"')
+        .replace(/[\u2018\u2019]/g, "'")
+        // Em/en dashes to regular dash
+        .replace(/[\u2013\u2014]/g, '-')
+        // Ellipsis to three dots
+        .replace(/\u2026/g, '...')
+        // Then escape XML
         .replace(/&/g, '&amp;')
         .replace(/</g, '&lt;')
         .replace(/>/g, '&gt;')
         .replace(/"/g, '&quot;')
-        .replace(/'/g, '&apos;');
+        .replace(/'/g, '&apos;')
+        // Final cleanup - remove any remaining non-printable
+        .replace(/[^\x20-\x7E\xA0-\xFF\u0100-\u017F\u0400-\u04FF\u4E00-\u9FFF\u3040-\u309F]/g, '');
 }
 
 export default {
