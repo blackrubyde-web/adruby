@@ -12,12 +12,15 @@ import {
     Type,
     ArrowRight,
     Grid3X3,
-    Palette
+    Palette,
+    AlertCircle,
+    CheckCircle2
 } from 'lucide-react';
 import { DashboardShell } from './layout/DashboardShell';
 import { Card, CardContent } from './ui/card';
 import { Button } from './ui/button';
 import { Badge } from './ui/badge';
+import { toast } from 'sonner';
 
 // Scene Graph Types (will be moved to separate file later)
 interface SceneElement {
@@ -25,12 +28,14 @@ interface SceneElement {
     type: 'image' | 'text' | 'arrow' | 'badge' | 'shape' | 'table' | 'cta';
     role: string;
     priority: number;
+    props?: Record<string, unknown>;
 }
 
 interface SceneRelation {
     from: string;
     to: string;
-    type: 'left_of' | 'right_of' | 'above' | 'below' | 'leads_to' | 'near' | 'overlay';
+    type: 'left_of' | 'right_of' | 'above' | 'below' | 'leads_to' | 'near' | 'overlay' | 'inside';
+    gap?: number;
 }
 
 interface CreativePlan {
@@ -47,6 +52,22 @@ interface CreativePlan {
         tone: string;
         platform: string;
     };
+    background?: {
+        type: string;
+        prompt?: string;
+    };
+}
+
+interface ApiResponse {
+    success: boolean;
+    plans: CreativePlan[];
+    usage?: {
+        input_tokens: number;
+        output_tokens: number;
+        model: string;
+    };
+    error?: string;
+    hint?: string;
 }
 
 const COMPOSITION_TYPES = [
@@ -81,8 +102,11 @@ export const LLMAdBuilderPage = memo(function LLMAdBuilderPage() {
     const [selectedTone, setSelectedTone] = useState<string>('modern');
     const [isGenerating, setIsGenerating] = useState(false);
     const [creativePlan, setCreativePlan] = useState<CreativePlan | null>(null);
+    const [allPlans, setAllPlans] = useState<CreativePlan[]>([]);
     const [generatedAd, setGeneratedAd] = useState<string | null>(null);
     const [variantCount, setVariantCount] = useState(1);
+    const [apiUsage, setApiUsage] = useState<{ input_tokens: number; output_tokens: number; model: string } | null>(null);
+    const [error, setError] = useState<string | null>(null);
 
     const handleImageUpload = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.files) {
@@ -94,38 +118,61 @@ export const LLMAdBuilderPage = memo(function LLMAdBuilderPage() {
         if (!prompt && uploadedImages.length === 0) return;
 
         setIsGenerating(true);
+        setError(null);
+        setCreativePlan(null);
+        setAllPlans([]);
 
-        // TODO: Implement actual API call to Claude Creative Director
-        // For now, simulate with timeout
-        setTimeout(() => {
-            // Mock creative plan
-            const mockPlan: CreativePlan = {
-                composition: selectedComposition,
-                elements: [
-                    { id: 'product', type: 'image', role: 'hero_product', priority: 1 },
-                    { id: 'headline', type: 'text', role: 'main_headline', priority: 2 },
-                    { id: 'cta', type: 'cta', role: 'call_to_action', priority: 3 },
-                ],
-                relations: [
-                    { from: 'headline', to: 'product', type: 'above' },
-                    { from: 'cta', to: 'product', type: 'below' },
-                ],
-                copy: {
-                    headline: 'Your Amazing Product',
-                    subheadline: 'Solve your problems today',
-                    cta: 'Shop Now',
+        try {
+            // Prepare image descriptions for the API
+            const imageDescriptions = uploadedImages.map((file, i) => ({
+                name: file.name,
+                description: `Uploaded image ${i + 1}: ${file.name}`
+            }));
+
+            const response = await fetch('/.netlify/functions/llm-creative-director', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
                 },
-                style: {
+                body: JSON.stringify({
+                    prompt,
+                    images: imageDescriptions,
+                    composition: selectedComposition,
                     industry: selectedIndustry,
                     tone: selectedTone,
                     platform: 'meta',
-                },
-            };
+                    variants: variantCount
+                })
+            });
 
-            setCreativePlan(mockPlan);
+            const data: ApiResponse = await response.json();
+
+            if (!response.ok || !data.success) {
+                throw new Error(data.error || 'Failed to generate creative plan');
+            }
+
+            if (data.plans && data.plans.length > 0) {
+                setCreativePlan(data.plans[0]);
+                setAllPlans(data.plans);
+                setApiUsage(data.usage || null);
+
+                toast.success('Creative Plan generiert!', {
+                    description: `${data.plans[0].elements.length} Elemente, ${data.plans[0].relations.length} Relations`,
+                    icon: <CheckCircle2 className="w-4 h-4" />
+                });
+            }
+
+        } catch (err) {
+            const message = err instanceof Error ? err.message : 'Unbekannter Fehler';
+            setError(message);
+            toast.error('Fehler bei der Generierung', {
+                description: message,
+                icon: <AlertCircle className="w-4 h-4" />
+            });
+        } finally {
             setIsGenerating(false);
-        }, 2000);
-    }, [prompt, uploadedImages, selectedComposition, selectedIndustry, selectedTone]);
+        }
+    }, [prompt, uploadedImages, selectedComposition, selectedIndustry, selectedTone, variantCount]);
 
     return (
         <DashboardShell
@@ -205,8 +252,8 @@ export const LLMAdBuilderPage = memo(function LLMAdBuilderPage() {
                                             key={comp.id}
                                             onClick={() => setSelectedComposition(comp.id)}
                                             className={`p-4 rounded-xl border text-left transition-all ${isSelected
-                                                    ? 'border-primary bg-primary/10'
-                                                    : 'border-border hover:border-primary/50'
+                                                ? 'border-primary bg-primary/10'
+                                                : 'border-border hover:border-primary/50'
                                                 }`}
                                         >
                                             <Icon className={`w-5 h-5 mb-2 ${isSelected ? 'text-primary' : 'text-muted-foreground'}`} />
@@ -237,8 +284,8 @@ export const LLMAdBuilderPage = memo(function LLMAdBuilderPage() {
                                                 key={ind.id}
                                                 onClick={() => setSelectedIndustry(ind.id)}
                                                 className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${selectedIndustry === ind.id
-                                                        ? 'bg-primary text-primary-foreground'
-                                                        : 'bg-muted hover:bg-muted/80'
+                                                    ? 'bg-primary text-primary-foreground'
+                                                    : 'bg-muted hover:bg-muted/80'
                                                     }`}
                                             >
                                                 {ind.label}
@@ -256,8 +303,8 @@ export const LLMAdBuilderPage = memo(function LLMAdBuilderPage() {
                                                 key={tone.id}
                                                 onClick={() => setSelectedTone(tone.id)}
                                                 className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${selectedTone === tone.id
-                                                        ? 'bg-primary text-primary-foreground'
-                                                        : 'bg-muted hover:bg-muted/80'
+                                                    ? 'bg-primary text-primary-foreground'
+                                                    : 'bg-muted hover:bg-muted/80'
                                                     }`}
                                             >
                                                 {tone.label}
@@ -275,8 +322,8 @@ export const LLMAdBuilderPage = memo(function LLMAdBuilderPage() {
                                                 key={count}
                                                 onClick={() => setVariantCount(count)}
                                                 className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${variantCount === count
-                                                        ? 'bg-primary text-primary-foreground'
-                                                        : 'bg-muted hover:bg-muted/80'
+                                                    ? 'bg-primary text-primary-foreground'
+                                                    : 'bg-muted hover:bg-muted/80'
                                                     }`}
                                             >
                                                 {count}x
@@ -350,18 +397,74 @@ export const LLMAdBuilderPage = memo(function LLMAdBuilderPage() {
                             </div>
                         </CardContent>
                     </Card>
+                    {/* Error State */}
+                    {error && (
+                        <Card variant="glass" className="overflow-hidden border-red-500/30">
+                            <CardContent className="p-6">
+                                <div className="flex items-start gap-3">
+                                    <AlertCircle className="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" />
+                                    <div>
+                                        <h4 className="font-semibold text-red-500">Fehler</h4>
+                                        <p className="text-sm text-muted-foreground mt-1">{error}</p>
+                                        {error.includes('ANTHROPIC_API_KEY') && (
+                                            <p className="text-xs text-muted-foreground mt-2">
+                                                Füge <code className="bg-muted px-1 rounded">ANTHROPIC_API_KEY</code> in deinen Netlify Environment Variables hinzu.
+                                            </p>
+                                        )}
+                                    </div>
+                                </div>
+                            </CardContent>
+                        </Card>
+                    )}
 
                     {/* Creative Plan Preview */}
                     {creativePlan && (
-                        <Card variant="glass" className="overflow-hidden">
+                        <Card variant="glass" className="overflow-hidden border-violet-500/30">
                             <CardContent className="p-6">
-                                <h3 className="font-bold text-lg mb-4 flex items-center gap-2">
-                                    <Sparkles className="w-5 h-5 text-violet-500" />
-                                    Creative Plan (Scene Graph)
-                                </h3>
-                                <pre className="p-4 bg-muted/50 rounded-xl text-xs overflow-auto max-h-80 font-mono">
-                                    {JSON.stringify(creativePlan, null, 2)}
-                                </pre>
+                                <div className="flex items-center justify-between mb-4">
+                                    <h3 className="font-bold text-lg flex items-center gap-2">
+                                        <CheckCircle2 className="w-5 h-5 text-emerald-500" />
+                                        Creative Plan generiert
+                                    </h3>
+                                    {apiUsage && (
+                                        <span className="text-xs text-muted-foreground">
+                                            {apiUsage.input_tokens + apiUsage.output_tokens} tokens
+                                        </span>
+                                    )}
+                                </div>
+
+                                {/* Copy Preview */}
+                                <div className="mb-4 p-4 bg-gradient-to-br from-violet-500/10 to-purple-500/10 rounded-xl border border-violet-500/20">
+                                    <div className="text-lg font-bold mb-1">{creativePlan.copy.headline}</div>
+                                    {creativePlan.copy.subheadline && (
+                                        <div className="text-sm text-muted-foreground mb-2">{creativePlan.copy.subheadline}</div>
+                                    )}
+                                    <div className="inline-block px-4 py-2 bg-primary text-primary-foreground rounded-full text-sm font-semibold">
+                                        {creativePlan.copy.cta}
+                                    </div>
+                                </div>
+
+                                {/* Composition & Style */}
+                                <div className="flex flex-wrap gap-2 mb-4">
+                                    <Badge variant="secondary">{creativePlan.composition}</Badge>
+                                    <Badge variant="outline">{creativePlan.style.industry}</Badge>
+                                    <Badge variant="outline">{creativePlan.style.tone}</Badge>
+                                </div>
+
+                                {/* Elements Summary */}
+                                <div className="text-xs text-muted-foreground mb-2">
+                                    {creativePlan.elements.length} Elemente · {creativePlan.relations.length} Relations
+                                </div>
+
+                                {/* Raw JSON (collapsible) */}
+                                <details className="group">
+                                    <summary className="text-xs text-muted-foreground cursor-pointer hover:text-foreground">
+                                        Scene Graph JSON anzeigen
+                                    </summary>
+                                    <pre className="mt-2 p-4 bg-muted/50 rounded-xl text-xs overflow-auto max-h-60 font-mono">
+                                        {JSON.stringify(creativePlan, null, 2)}
+                                    </pre>
+                                </details>
                             </CardContent>
                         </Card>
                     )}
