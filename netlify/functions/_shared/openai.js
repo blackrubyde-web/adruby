@@ -183,83 +183,25 @@ export async function generateImageWithReference({
   const timeoutMs = Number(process.env.OPENAI_IMAGE_TIMEOUT_MS || 120000);
 
   try {
-    // Use images.edit for true image integration
-    // This takes the reference image and modifies/integrates it based on prompt
-    const result = await withTimeout(
-      openai.images.edit({
-        model: model === "gpt-image-1" ? "gpt-image-1" : "dall-e-2", // gpt-image-1 supports edit
-        image: imageBuffer,
-        prompt: prompt,
-        n: 1,
-        size: "1024x1024",
-      }),
-      timeoutMs,
-      "openai_image_edit_timeout"
-    );
+    // NOTE: images.edit API requires masks and doesn't work for our use case
+    // OpenAI's image editing is for inpainting, not reference-based generation
+    // Skip directly to intelligent composite approach for reliable results
+    console.log(`[OpenAI] Using intelligent composite approach (images.edit not suitable for product integration)`);
 
-    const item = result?.data?.[0];
-    if (!item) {
-      throw new Error("Image edit returned no data");
-    }
-
-    if (item.b64_json) {
-      return { b64: item.b64_json, model, integrated: true };
-    }
-
-    if (item.url) {
-      const b64 = await fetchImageAsBase64(item.url);
-      return { b64, model, integrated: true };
-    }
-
-    throw new Error("Image edit returned no usable output");
-
-  } catch (editError) {
-    console.warn(`[OpenAI] Image edit failed: ${editError.message}. Trying generation with image reference in prompt...`);
-
-    // Fallback: Use gpt-image-1 with image parameter (if supported)
-    // Or generate with detailed description and composite later
-    try {
-      // Second approach: Generate with images array parameter (gpt-image-1.5 feature)
-      const params = {
-        model,
-        prompt: `Create a professional advertisement image. IMPORTANT: Seamlessly integrate and feature the product shown in the reference image into this scene: ${prompt}
-        
-The product from the reference should be the HERO of the image, professionally lit and integrated into the scene - NOT overlaid or floating. Make it look like the product actually belongs in this premium environment.`,
-        n: 1,
-        size: "1024x1024",
-        quality: "high",
-      };
-
-      // Some models support images parameter
-      if (model === "gpt-image-1" || model === "gpt-image-1.5") {
-        params.images = [imageDataUrl];
-      }
-
-      const result = await withTimeout(
-        openai.images.generate(params),
-        timeoutMs,
-        "openai_image_generate_with_ref"
-      );
-
-      const item = result?.data?.[0];
-      if (item?.b64_json) {
-        return { b64: item.b64_json, model, integrated: true };
-      }
-      if (item?.url) {
-        const b64 = await fetchImageAsBase64(item.url);
-        return { b64, model, integrated: true };
-      }
-    } catch (genError) {
-      console.warn(`[OpenAI] Generation with reference also failed: ${genError.message}`);
-    }
-
-    // Final fallback: Return null to indicate integration not possible
-    // Caller should fall back to composite approach
     return {
       success: false,
-      error: editError.message,
+      fallback: true,
+      reason: 'Composite approach used for reliable product integration'
+    };
+
+  } catch (error) {
+    console.warn(`[OpenAI] Image integration error: ${error.message}`);
+    return {
+      success: false,
+      error: error.message,
       fallback: true
     };
   }
 }
+
 
