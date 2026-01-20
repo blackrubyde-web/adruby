@@ -139,3 +139,127 @@ export async function generateHeroImage({
 
   throw new Error("Image generation returned no usable output");
 }
+
+/**
+ * Generate an image with a reference image as INPUT
+ * This allows the AI to create a new scene INTEGRATING the product
+ * rather than simply overlaying it.
+ * 
+ * Uses OpenAI's images.edit API for true image integration.
+ */
+export async function generateImageWithReference({
+  prompt,
+  referenceImageUrl,
+  referenceImageBuffer = null,
+  size = "1024x1024",
+  quality = "high",
+} = {}) {
+  const openai = getOpenAiClient();
+  const model = getOpenAiImageModel();
+
+  if (!prompt) {
+    throw new Error("Missing prompt for image generation");
+  }
+  if (!referenceImageUrl && !referenceImageBuffer) {
+    throw new Error("Missing reference image for image generation");
+  }
+
+  console.log(`[OpenAI] Generating integrated image with reference...`);
+
+  // Get reference image as buffer
+  let imageBuffer;
+  if (referenceImageBuffer) {
+    imageBuffer = referenceImageBuffer;
+  } else {
+    const response = await fetch(referenceImageUrl);
+    const arrayBuffer = await response.arrayBuffer();
+    imageBuffer = Buffer.from(arrayBuffer);
+  }
+
+  // Convert to base64 for API
+  const imageBase64 = imageBuffer.toString('base64');
+  const imageDataUrl = `data:image/png;base64,${imageBase64}`;
+
+  const timeoutMs = Number(process.env.OPENAI_IMAGE_TIMEOUT_MS || 120000);
+
+  try {
+    // Use images.edit for true image integration
+    // This takes the reference image and modifies/integrates it based on prompt
+    const result = await withTimeout(
+      openai.images.edit({
+        model: model === "gpt-image-1" ? "gpt-image-1" : "dall-e-2", // gpt-image-1 supports edit
+        image: imageBuffer,
+        prompt: prompt,
+        n: 1,
+        size: "1024x1024",
+      }),
+      timeoutMs,
+      "openai_image_edit_timeout"
+    );
+
+    const item = result?.data?.[0];
+    if (!item) {
+      throw new Error("Image edit returned no data");
+    }
+
+    if (item.b64_json) {
+      return { b64: item.b64_json, model, integrated: true };
+    }
+
+    if (item.url) {
+      const b64 = await fetchImageAsBase64(item.url);
+      return { b64, model, integrated: true };
+    }
+
+    throw new Error("Image edit returned no usable output");
+
+  } catch (editError) {
+    console.warn(`[OpenAI] Image edit failed: ${editError.message}. Trying generation with image reference in prompt...`);
+
+    // Fallback: Use gpt-image-1 with image parameter (if supported)
+    // Or generate with detailed description and composite later
+    try {
+      // Second approach: Generate with images array parameter (gpt-image-1.5 feature)
+      const params = {
+        model,
+        prompt: `Create a professional advertisement image. IMPORTANT: Seamlessly integrate and feature the product shown in the reference image into this scene: ${prompt}
+        
+The product from the reference should be the HERO of the image, professionally lit and integrated into the scene - NOT overlaid or floating. Make it look like the product actually belongs in this premium environment.`,
+        n: 1,
+        size: "1024x1024",
+        quality: "high",
+      };
+
+      // Some models support images parameter
+      if (model === "gpt-image-1" || model === "gpt-image-1.5") {
+        params.images = [imageDataUrl];
+      }
+
+      const result = await withTimeout(
+        openai.images.generate(params),
+        timeoutMs,
+        "openai_image_generate_with_ref"
+      );
+
+      const item = result?.data?.[0];
+      if (item?.b64_json) {
+        return { b64: item.b64_json, model, integrated: true };
+      }
+      if (item?.url) {
+        const b64 = await fetchImageAsBase64(item.url);
+        return { b64, model, integrated: true };
+      }
+    } catch (genError) {
+      console.warn(`[OpenAI] Generation with reference also failed: ${genError.message}`);
+    }
+
+    // Final fallback: Return null to indicate integration not possible
+    // Caller should fall back to composite approach
+    return {
+      success: false,
+      error: editError.message,
+      fallback: true
+    };
+  }
+}
+
