@@ -7,6 +7,7 @@
  * - Automatic industry/product detection
  * - Individualized ad creation for ANY product
  * - P0: Reliable text rendering + Quality verification
+ * - P2: Industry best practices + A/B variants + All ad formats
  * 
  * No hardcoded rules - pure AI decision making.
  */
@@ -14,12 +15,15 @@
 import sharp from 'sharp';
 import { applyTextOverlay } from './textRenderer.js';
 import { verifyAdQuality, passesQualityGate, improvePromptFromFeedback } from './qualityControl.js';
+import { detectIndustry, getBestPractices } from './industryBestPractices.js';
+import { AD_FORMATS, generateVariantPrompts, resizeToFormat, generateAllFormats } from './adFormats.js';
 
 const CANVAS = 1080;
 const MAX_QUALITY_RETRIES = 2;
 
 /**
  * Main entry point - creates ad using AI Creative Director approach
+ * Now with industry detection and multiple format support
  */
 export async function createAdWithCreativeDirector(openai, config) {
     const {
@@ -28,7 +32,9 @@ export async function createAdWithCreativeDirector(openai, config) {
         headline,
         subheadline,
         cta,
-        generateHeroImage
+        generateHeroImage,
+        generateVariants = false,
+        generateMultiFormat = false
     } = config;
 
     console.log('[CreativeDirector] 🧠 Starting AI Creative Director...');
@@ -37,6 +43,12 @@ export async function createAdWithCreativeDirector(openai, config) {
     console.log('[CreativeDirector] Phase 1: Deep Analysis...');
     const analysis = await deepAnalyzeProduct(openai, productImageUrl, userPrompt);
 
+    // Phase 1.5: Detect Industry and get best practices (P2)
+    const industryKey = detectIndustry(analysis, userPrompt);
+    const industryPractices = getBestPractices(industryKey);
+    console.log(`[CreativeDirector] Industry detected: ${industryPractices.name}`);
+    console.log(`[CreativeDirector] Best practices: ${industryPractices.bestPractices[0]}`);
+
     // Phase 2: Develop Creative Strategy (Chain-of-Thought)
     console.log('[CreativeDirector] Phase 2: Developing Creative Strategy...');
     const strategy = await developCreativeStrategy(openai, {
@@ -44,7 +56,8 @@ export async function createAdWithCreativeDirector(openai, config) {
         userPrompt,
         headline,
         subheadline,
-        cta
+        cta,
+        industryPractices // Pass industry knowledge to strategy
     });
 
     console.log('[CreativeDirector] Strategy developed:', strategy.reasoning?.substring(0, 200) + '...');
@@ -55,12 +68,44 @@ export async function createAdWithCreativeDirector(openai, config) {
 
     console.log('[CreativeDirector] ✅ AI Creative Director Complete');
 
-    return {
+    // Build result object
+    const result = {
         buffer: adBuffer,
         strategy: strategy,
-        analysis: analysis
+        analysis: analysis,
+        industry: {
+            key: industryKey,
+            name: industryPractices.name,
+            bestPractices: industryPractices.bestPractices
+        },
+        formats: {
+            feed_square: adBuffer // Default format
+        }
     };
+
+    // Phase 4 (Optional): Generate all ad formats
+    if (generateMultiFormat) {
+        console.log('[CreativeDirector] Generating multiple ad formats...');
+        const allFormats = await generateAllFormats(adBuffer);
+        result.formats = {
+            ...result.formats, ...Object.fromEntries(
+                Object.entries(allFormats).map(([k, v]) => [k, v.buffer])
+            )
+        };
+        console.log(`[CreativeDirector] ✓ Generated ${Object.keys(allFormats).length + 1} formats`);
+    }
+
+    // Phase 5 (Optional): Generate A/B variants
+    if (generateVariants) {
+        console.log('[CreativeDirector] Generating A/B variants...');
+        const variantConfigs = generateVariantPrompts(strategy, 3);
+        result.variantConfigs = variantConfigs;
+        console.log(`[CreativeDirector] ✓ Generated ${variantConfigs.length} variant configurations`);
+    }
+
+    return result;
 }
+
 
 /**
  * Phase 1: Deep Product Analysis using GPT-4 Vision
@@ -128,9 +173,10 @@ Analysiere und antworte mit JSON:
 
 /**
  * Phase 2: Develop Creative Strategy using Enhanced Chain-of-Thought Reasoning
+ * Now includes industry-specific best practices (P2)
  */
 async function developCreativeStrategy(openai, config) {
-    const { analysis, userPrompt, headline, subheadline, cta } = config;
+    const { analysis, userPrompt, headline, subheadline, cta, industryPractices } = config;
 
     try {
         const response = await openai.chat.completions.create({
