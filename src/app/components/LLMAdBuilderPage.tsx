@@ -15,7 +15,6 @@ import {
     Palette,
     AlertCircle,
     CheckCircle2,
-    Play,
     Square,
     Smartphone,
     Monitor,
@@ -144,9 +143,9 @@ export const LLMAdBuilderPage = memo(function LLMAdBuilderPage() {
     const [isGenerating, setIsGenerating] = useState(false);
     const [isSolvingLayout, setIsSolvingLayout] = useState(false);
     const [creativePlan, setCreativePlan] = useState<CreativePlan | null>(null);
-    const [allPlans, setAllPlans] = useState<CreativePlan[]>([]);
+    const [_allPlans, setAllPlans] = useState<CreativePlan[]>([]);
     const [generatedAd, setGeneratedAd] = useState<string | null>(null);
-    const [allFormatsAds, setAllFormatsAds] = useState<Record<string, string>>({});
+    const [_allFormatsAds, _setAllFormatsAds] = useState<Record<string, string>>({});
     const [variantCount, setVariantCount] = useState(1);
     const [apiUsage, setApiUsage] = useState<{ input_tokens: number; output_tokens: number; model: string } | null>(null);
     const [error, setError] = useState<string | null>(null);
@@ -157,7 +156,7 @@ export const LLMAdBuilderPage = memo(function LLMAdBuilderPage() {
     } | null>(null);
     const [layoutWarnings, setLayoutWarnings] = useState<string[]>([]);
     const [pipelineStep, setPipelineStep] = useState<PipelineStep>('idle');
-    const [productImageBase64, setProductImageBase64] = useState<string | null>(null);
+    const [_productImageBase64, setProductImageBase64] = useState<string | null>(null);
 
     const handleImageUpload = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.files) {
@@ -345,7 +344,7 @@ export const LLMAdBuilderPage = memo(function LLMAdBuilderPage() {
         } finally {
             setIsSolvingLayout(false);
         }
-    }, [creativePlan]);
+    }, [creativePlan, getCurrentFormat]);
 
     // Render image from layout
     const [isRendering, setIsRendering] = useState(false);

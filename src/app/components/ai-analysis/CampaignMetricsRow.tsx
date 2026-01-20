@@ -1,5 +1,5 @@
 import { memo, useMemo } from 'react';
-import { TrendingUp, TrendingDown, Minus, Zap, Eye } from 'lucide-react';
+import { Zap, Eye } from 'lucide-react';
 import { TrendMiniChart } from './TrendMiniChart';
 
 interface CampaignMetricsRowProps {
