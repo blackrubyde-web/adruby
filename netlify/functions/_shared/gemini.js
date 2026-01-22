@@ -404,51 +404,38 @@ function buildAdPrompt({ headline, subheadline, cta, productAnalysis, style, ref
     const productName = productAnalysis?.productName || "Product";
     const mood = productAnalysis?.suggestedMood || "premium";
     const colors = productAnalysis?.colorPalette?.join(", ") || "elegant colors";
-    const industry = productAnalysis?.industry || "retail";
 
-    // Use reference pattern if provided, otherwise use style-based prompt
-    if (referencePattern && referencePattern.promptSnippet) {
-        console.log(`[Gemini] Using reference pattern: ${referencePattern.name}`);
+    // CRITICAL: Use English and avoid headline-like text that Gemini might render
+    // Keep the prompt focused on VISUAL elements only, not text
 
-        return `ERSTELLE EINE HOCHKONVERTIERENDE META AD (1080x1080px)
+    return `Create a premium product advertisement photo.
 
-Du siehst ein Produktbild. Erstelle eine PROFESSIONELLE Werbeanzeige im Stil erfolgreicher Meta Ads.
+PRODUCT: "${productName}"
+DESCRIPTION: ${productDesc}
+MOOD: ${mood}, professional, high-end
 
-=== REFERENZ-STIL: ${referencePattern.name} ===
-${referencePattern.promptSnippet}
+COMPOSITION:
+- Place the exact product from the input image as the hero
+- Dark elegant background with subtle gradient
+- Professional studio lighting (3-point setup)
+- Product should fill about 50% of the frame, centered
+- Leave clean space at top (20%) and bottom (25%) for text overlay later
 
-=== PRODUKT-INFORMATIONEN ===
-- Produkt: ${productName}
-- Beschreibung: ${productDesc}
-- Branche: ${industry}
-- Stimmung: ${mood}
-- Farbpalette: ${colors}
+STYLE:
+- Premium e-commerce aesthetic
+- Subtle bokeh/blur in background
+- Soft shadows and reflections
+- Magazine advertisement quality
+- Colors: ${colors}
 
-=== TEXT-ELEMENTE ===
-${headline ? `HEADLINE: "${headline}"` : 'Generiere eine passende Headline'}
-${subheadline ? `SUBHEADLINE: "${subheadline}"` : ''}
-${cta ? `CTA-BUTTON: "${cta}"` : 'CTA: "Jetzt entdecken"'}
+CRITICAL RULES:
+1. DO NOT add any text, words, or letters
+2. DO NOT add buttons, icons, or UI elements
+3. DO NOT change the product appearance
+4. Keep the original product colors and shape
+5. Only add lighting, background, and atmosphere
 
-=== KRITISCHE ANFORDERUNGEN ===
-
-🎯 PRODUKTINTEGRATION:
-- Das Produkt aus dem Bild muss EXAKT erhalten bleiben
-- Integriere es NATÜRLICH in die Szene - NICHT wie draufgeklebt
-- Passende Beleuchtung und Schatten zur Umgebung
-
-📐 KOMPOSITION:
-- Folge dem Referenz-Stil für Layout und Platzierung
-- Text muss LESBAR und SCHARF sein
-- Professionelle Typografie (Sans-Serif für Headlines)
-
-⚡ CONVERSION-QUALITÄT:
-- Die Ad muss einen SCROLL-STOPPER sein
-- Viral-würdig, Instagram/Facebook ready
-- Wie von einer $10,000 Agentur erstellt
-
-WICHTIG: Das Produkt darf NIEMALS verändert oder verfremdet werden!
-Erstelle die Szene DRUM HERUM, nicht das Produkt selbst.`;
-    }
+OUTPUT: A clean product photo ready for text overlay. No text whatsoever.`;
 
     // Fallback to original style-based prompt
     const styleConfigs = {
