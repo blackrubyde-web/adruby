@@ -46,7 +46,11 @@ import {
     applyTextOverlay as applyIntegratedTextOverlay,
 } from './_shared/productIntegrationEngine.js';
 // AI Creative Director - Chain-of-Thought reasoning for ANY product
-import { createAdWithCreativeDirector } from './_shared/aiCreativeDirector.js';
+// Now with GEMINI support for 100% product preservation!
+import { createAdWithCreativeDirector, createAdWithGeminiDirector } from './_shared/aiCreativeDirector.js';
+
+// Check if Gemini is available
+const USE_GEMINI = !!process.env.GEMINI_API_KEY;
 // Rate Limiting & Error Handling
 import { checkRateLimit } from './_shared/rateLimiter.js';
 import { categorizeError, getUserMessage } from './_shared/errorCategorizer.js';
@@ -548,23 +552,46 @@ Beginne mit: "PRÄZISE PRODUKTBESCHREIBUNG:"`
             console.log('[AI Ad Generate] 🧠 AI CREATIVE DIRECTOR MODE: Intelligent ad creation');
 
             const userCreativeText = body.text || body.productDescription || '';
-            await updateProgress('creative_director', 50, { mode: 'ai_creative_director' });
+            await updateProgress('creative_director', 50, { mode: USE_GEMINI ? 'gemini_creative_director' : 'ai_creative_director' });
 
             try {
-                // Always use the AI Creative Director for best results
-                console.log('[AI Ad Generate] 🎯 Starting AI Creative Director with Chain-of-Thought...');
+                let creativeResult;
 
-                const creativeResult = await createAdWithCreativeDirector(openai, {
-                    productImageUrl: body.productImageUrl,
-                    userPrompt: userCreativeText || `Premium advertisement for ${body.productName || 'this product'}. Professional quality, Meta 2026 level.`,
-                    headline: dynamicText.headline,
-                    subheadline: dynamicText.subheadline,
-                    cta: dynamicText.cta,
-                    generateHeroImage: (params) => withRetry(
-                        async () => generateHeroImage(params),
-                        { maxRetries: 2, initialDelay: 2000 }
-                    )
-                });
+                // Use Gemini when available for 100% product preservation
+                if (USE_GEMINI) {
+                    console.log('[AI Ad Generate] 🚀 Starting GEMINI Creative Director (Image-to-Image)...');
+
+                    creativeResult = await createAdWithGeminiDirector(openai, {
+                        productImageUrl: body.productImageUrl,
+                        userPrompt: userCreativeText || `Premium advertisement for ${body.productName || 'this product'}. Professional quality, Meta 2026 level.`,
+                        headline: dynamicText.headline,
+                        subheadline: dynamicText.subheadline,
+                        cta: dynamicText.cta,
+                        generateHeroImage: (params) => withRetry(
+                            async () => generateHeroImage(params),
+                            { maxRetries: 2, initialDelay: 2000 }
+                        )
+                    });
+
+                    console.log(`[AI Ad Generate] ✅ GEMINI AD COMPLETE (source: ${creativeResult.source})`);
+                } else {
+                    // Fallback to OpenAI-based Creative Director
+                    console.log('[AI Ad Generate] 🎯 Starting AI Creative Director with Chain-of-Thought...');
+
+                    creativeResult = await createAdWithCreativeDirector(openai, {
+                        productImageUrl: body.productImageUrl,
+                        userPrompt: userCreativeText || `Premium advertisement for ${body.productName || 'this product'}. Professional quality, Meta 2026 level.`,
+                        headline: dynamicText.headline,
+                        subheadline: dynamicText.subheadline,
+                        cta: dynamicText.cta,
+                        generateHeroImage: (params) => withRetry(
+                            async () => generateHeroImage(params),
+                            { maxRetries: 2, initialDelay: 2000 }
+                        )
+                    });
+
+                    console.log('[AI Ad Generate] ✅ AI CREATIVE DIRECTOR COMPLETE');
+                }
 
                 finalImageBuffer = creativeResult.buffer;
 
@@ -576,8 +603,6 @@ Beginne mit: "PRÄZISE PRODUKTBESCHREIBUNG:"`
                 if (creativeResult.strategy?.productBounds) {
                     console.log('[AI Ad Generate] Product Bounds:', creativeResult.strategy.productBounds);
                 }
-
-                console.log('[AI Ad Generate] ✅ AI CREATIVE DIRECTOR COMPLETE');
                 await updateProgress('creative_director_done', 75, {
                     mode: 'ai_creative_director',
                     hasProductBounds: !!creativeResult.strategy?.productBounds

@@ -105,7 +105,6 @@ export type PageType =
   | 'help'
   | 'studio'
   | 'aibuilder'
-  | 'llmbuilder'
   | 'admin'
   | 'campaign-canvas';
 
@@ -137,7 +136,6 @@ const PAGE_PATHS: Record<PageType, string> = {
   help: '/help',
   studio: '/studio',
   aibuilder: '/aibuilder',  // AI Ad Builder path
-  llmbuilder: '/llmbuilder',  // LLM Ad Builder path
   admin: '/admin',
   'campaign-canvas': '/campaign-canvas',
 };
@@ -391,15 +389,7 @@ const DashboardPageContent = memo(function DashboardPageContent({
           </Suspense>
         </div>
       );
-    case 'llmbuilder':
-      return (
-        <div className="min-h-screen pt-0 md:pt-[var(--header-height)]">
-          <Suspense fallback={pageFallback}>
-            <LazyLLMAdBuilderPage />
-          </Suspense>
-          <Footer />
-        </div>
-      );
+
     default:
       return null;
   }
@@ -424,9 +414,7 @@ const LazyAdminDashboardPage = lazy(() =>
 const LazyCampaignCanvasPage = lazy(() =>
   import('./components/CampaignCanvasPage').then((mod) => ({ default: mod.CampaignCanvasPage }))
 );
-const LazyLLMAdBuilderPage = lazy(() =>
-  import('./components/LLMAdBuilderPage').then((mod) => ({ default: mod.LLMAdBuilderPage }))
-);
+
 
 function AppContent() {
   const { user, profile, billing, isAuthReady, isLoading, profileError, authError } = useAuthState();

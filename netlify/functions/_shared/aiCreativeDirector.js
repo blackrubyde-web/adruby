@@ -2,14 +2,14 @@
  * AI CREATIVE DIRECTOR
  * 
  * An intelligent system that thinks like an elite Creative Director:
- * - Deep product analysis with GPT-4 Vision
+ * - Deep product analysis with Gemini Vision or GPT-4 Vision
  * - Chain-of-thought reasoning for creative strategy
  * - Automatic industry/product detection
  * - Individualized ad creation for ANY product
  * - P0: Reliable text rendering + Quality verification
  * - P2: Industry best practices + A/B variants + All ad formats
  * 
- * No hardcoded rules - pure AI decision making.
+ * Now with GEMINI IMAGE-TO-IMAGE for 100% product preservation!
  */
 
 import sharp from 'sharp';
@@ -17,9 +17,11 @@ import { applyTextOverlay } from './textRenderer.js';
 import { verifyAdQuality, passesQualityGate, improvePromptFromFeedback } from './qualityControl.js';
 import { detectIndustry, getBestPractices } from './industryBestPractices.js';
 import { AD_FORMATS, generateVariantPrompts, resizeToFormat, generateAllFormats } from './adFormats.js';
+import { analyzeProductWithGemini, generateAdWithGemini } from './gemini.js';
 
 const CANVAS = 1080;
 const MAX_QUALITY_RETRIES = 2;
+const USE_GEMINI = process.env.GEMINI_API_KEY ? true : false;
 
 /**
  * Main entry point - creates ad using AI Creative Director approach
@@ -101,6 +103,147 @@ export async function createAdWithCreativeDirector(openai, config) {
         const variantConfigs = generateVariantPrompts(strategy, 3);
         result.variantConfigs = variantConfigs;
         console.log(`[CreativeDirector] ✓ Generated ${variantConfigs.length} variant configurations`);
+    }
+
+    return result;
+}
+
+
+/**
+ * NEW: Create ad using Gemini Image-to-Image
+ * 
+ * This is the PREFERRED method when GEMINI_API_KEY is set.
+ * Uses Gemini's multimodal capabilities to create an ad AROUND the product
+ * while preserving the product image 100%.
+ */
+export async function createAdWithGeminiDirector(openai, config) {
+    const {
+        productImageUrl,
+        userPrompt,
+        headline,
+        subheadline,
+        cta,
+        generateHeroImage, // Fallback to OpenAI
+        generateVariants = false,
+        generateMultiFormat = false
+    } = config;
+
+    console.log('[CreativeDirector] 🚀 Starting GEMINI Creative Director (Image-to-Image)...');
+
+    // Download product image
+    console.log('[CreativeDirector] Downloading product image...');
+    const productResponse = await fetch(productImageUrl);
+    const productBuffer = Buffer.from(await productResponse.arrayBuffer());
+    console.log('[CreativeDirector] ✓ Product image ready');
+
+    // Phase 1: Analyze product with Gemini Vision
+    console.log('[CreativeDirector] Phase 1: Gemini Vision Analysis...');
+    let analysis;
+    try {
+        analysis = await analyzeProductWithGemini(productBuffer);
+    } catch (geminiError) {
+        console.warn('[CreativeDirector] Gemini analysis failed, falling back to OpenAI:', geminiError.message);
+        analysis = await deepAnalyzeProduct(openai, productImageUrl, userPrompt);
+    }
+
+    // Detect industry
+    const industryKey = detectIndustry(analysis, userPrompt);
+    const industryPractices = getBestPractices(industryKey);
+    console.log(`[CreativeDirector] Industry detected: ${industryPractices.name}`);
+
+    // Phase 2: Generate ad with Gemini Image-to-Image
+    console.log('[CreativeDirector] Phase 2: Gemini Image-to-Image Ad Generation...');
+
+    const geminiResult = await generateAdWithGemini({
+        productImageBuffer: productBuffer,
+        headline: headline || 'Premium Quality',
+        subheadline: subheadline || '',
+        cta: cta || 'Jetzt entdecken',
+        productAnalysis: analysis,
+        style: 'premium_dark'
+    });
+
+    let adBuffer;
+    let source = 'gemini';
+
+    if (geminiResult.success && geminiResult.buffer) {
+        console.log('[CreativeDirector] ✓ Gemini ad generation successful!');
+        adBuffer = geminiResult.buffer;
+    } else {
+        // Fallback to OpenAI-based generation
+        console.log('[CreativeDirector] ⚠️ Gemini failed, falling back to OpenAI...');
+        source = 'openai_fallback';
+
+        // Use existing strategy-based approach as fallback
+        const strategy = await developCreativeStrategy(openai, {
+            analysis,
+            userPrompt,
+            headline,
+            subheadline,
+            cta,
+            industryPractices
+        });
+
+        adBuffer = await executeCreativeStrategy(openai, strategy, productImageUrl, generateHeroImage);
+    }
+
+    // Resize to final dimensions
+    adBuffer = await sharp(adBuffer)
+        .resize(CANVAS, CANVAS, { fit: 'cover' })
+        .png()
+        .toBuffer();
+
+    // Quality verification with Gemini or GPT-4V
+    console.log('[CreativeDirector] Phase 3: Quality verification...');
+    const qualityResult = await verifyAdQuality(openai, adBuffer, {
+        textConfig: {
+            headline: { text: headline },
+            subheadline: { text: subheadline },
+            cta: { text: cta }
+        }
+    });
+
+    // Apply SVG text overlay if AI text not readable
+    if (qualityResult.scores?.textReadability < 5) {
+        console.log('[CreativeDirector] ⚠️ Text not readable, applying SVG overlay...');
+        if (headline || cta) {
+            adBuffer = await applyTextOverlay(adBuffer, {
+                headline,
+                subheadline,
+                cta,
+                position: 'bottom',
+                colorScheme: { accent: '#FF4444', text: '#FFFFFF' }
+            }, sharp);
+            console.log('[CreativeDirector] ✓ SVG text overlay applied');
+        }
+    }
+
+    console.log(`[CreativeDirector] ✅ Gemini Creative Director Complete (source: ${source})`);
+
+    // Build result
+    const result = {
+        buffer: adBuffer,
+        source,
+        analysis,
+        industry: {
+            key: industryKey,
+            name: industryPractices.name,
+            bestPractices: industryPractices.bestPractices
+        },
+        formats: {
+            feed_square: adBuffer
+        }
+    };
+
+    // Generate multiple formats if requested
+    if (generateMultiFormat) {
+        console.log('[CreativeDirector] Generating multiple ad formats...');
+        const allFormats = await generateAllFormats(adBuffer);
+        result.formats = {
+            ...result.formats,
+            ...Object.fromEntries(Object.entries(allFormats).map(([k, v]) => [k, v.buffer]))
+        };
+        console.log(`[CreativeDirector] ✓ Generated ${Object.keys(allFormats).length + 1} formats`);
     }
 
     return result;
@@ -429,7 +572,7 @@ ${textConfig.cta?.text ? `- CTA-Button: Roter Pill-Button (#FF4444) mit "${textC
 
 WICHTIG:
 - Der MacBook-Bildschirm muss KOMPLETT SCHWARZ sein (kein UI, keine Inhalte!)
-- Text muss SCHARF und LESBAR sein
+- Text muss SCHARF und LESBAR sein - keine verschwommenen Buchstaben!
 - Qualität: $10,000 Agentur-Level, Magazin-Cover
 - Das Layout muss Platz für das Produkt im oberen Bereich und Text im unteren Bereich haben`;
         } else {
@@ -448,14 +591,14 @@ BELEUCHTUNG:
 - Spotlight auf die zentrale Zone gerichtet
 - Farbige Akzente im Hintergrund (passend zum Produkt)
 
-TEXT IM BILD (AM UNTEREN RAND):
-${textConfig.headline?.text ? `- Headline: "${textConfig.headline.text}" - Große, fette, weiße Schrift` : ''}
-${textConfig.subheadline?.text ? `- Subheadline: "${textConfig.subheadline.text}"` : ''}
-${textConfig.cta?.text ? `- CTA-Button: "${textConfig.cta.text}"` : ''}
+TEXT IM BILD (AM UNTEREN RAND - MUSS GENERIERT WERDEN!):
+${textConfig.headline?.text ? `- Headline: "${textConfig.headline.text}" - Große, fette, weiße Schrift mit Schatten` : ''}
+${textConfig.subheadline?.text ? `- Subheadline: "${textConfig.subheadline.text}" - Kleinere weiße Schrift` : ''}
+${textConfig.cta?.text ? `- CTA-Button: Roter Pill-Button (#FF4444) mit "${textConfig.cta.text}"` : ''}
 
 WICHTIG:
 - Die zentrale Zone MUSS leer bleiben (dort wird später das Produkt eingefügt)
-- Text am unteren Rand muss scharf und lesbar sein
+- Text am unteren Rand muss SCHARF und LESBAR sein
 - Qualität: Agentur-Level, perfekte Komposition`;
         }
 
@@ -504,8 +647,7 @@ WICHTIG:
         console.log('[CreativeDirector] Running quality verification...');
         qualityResult = await verifyAdQuality(openai, resizedBuffer, strategy);
 
-        // ONLY apply SVG text overlay if quality check says text is NOT readable
-        // (This is now a FALLBACK, not the primary text rendering method)
+        // Apply SVG text overlay ONLY if AI text is not readable (fallback)
         if (qualityResult.scores?.textReadability < 5) {
             console.log('[CreativeDirector] ⚠️ AI text not readable, applying SVG fallback...');
             if (textConfig.headline?.text || textConfig.cta?.text) {
@@ -522,7 +664,7 @@ WICHTIG:
             console.log('[CreativeDirector] ✓ AI-rendered text is readable, no SVG overlay needed');
         }
 
-        if (passesQualityGate(qualityResult, 6)) {
+        if (passesQualityGate(qualityResult, 7)) {
             console.log(`[CreativeDirector] ✅ Quality passed: ${qualityResult.overallScore}/10`);
             finalBuffer = resizedBuffer;
             break;
