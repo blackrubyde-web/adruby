@@ -200,44 +200,43 @@ function buildAdPrompt({ headline, subheadline, cta, productAnalysis, style }) {
 
     const styleConfig = styleConfigs[style] || styleConfigs.premium_dark;
 
-    return `ULTRA-PREMIUM META AD CREATION (1080x1080px):
+    return `GENERIERE EINE KOMPLETTE META-WERBEANZEIGE (1080x1080px):
 
-🔴 KRITISCHE REGEL - PRODUKTERHALTUNG:
-Das Produktbild das du siehst MUSS 1:1 erhalten bleiben!
-- KEINE Änderungen am Produkt selbst
-- KEINE Verzerrung, Rotation oder Skalierung des Produkts
-- Das Produkt ist der HERO - es muss prominent und unverändert bleiben
+Du siehst ein Produktbild. Erstelle eine KOMPLETT NEUE, PROFESSIONELLE Werbeanzeige.
 
-📸 DEINE AUFGABE:
-Erstelle eine vollständige Meta-Werbeanzeige DRUMHERUM:
+🎯 WICHTIG - NAHTLOSE INTEGRATION:
+- Das Produkt muss NATÜRLICH in die Szene eingebettet sein
+- KEINE sichtbaren Ränder oder Rechteck-Rahmen um das Produkt!
+- Das Produkt soll aussehen als wäre es FOTOGRAFIERT in der Szene
+- Gleiche Beleuchtung, Schatten, Perspektive wie die Umgebung
 
-1. SZENE & HINTERGRUND:
-   - ${styleConfig.background}
-   - ${styleConfig.lighting}
-   - ${styleConfig.effects}
-   - Passend zum Produkt: ${productDesc}
-   - Stimmung: ${mood}
-   - Farbakzente passend zu: ${colors}
+📸 SZENE ERSTELLEN:
+- ${styleConfig.background}
+- ${styleConfig.lighting}
+- ${styleConfig.effects}
+- Das Produkt (${productDesc}) steht/liegt natürlich in der Szene
+- Stimmung: ${mood}
+- Farbpalette: ${colors}
 
-2. PRODUKT-PLATZIERUNG:
-   - Das Produkt sollte zentral-oben positioniert sein (ca. 50-60% der Bildhöhe)
-   - Professionelle Schatten und Reflexionen unter/hinter dem Produkt
-   - Das Produkt muss EXAKT so aussehen wie im Input-Bild!
+🖼️ KOMPOSITION:
+- Produkt im oberen/mittleren Bereich (ca. 40-60% der Bildhöhe)
+- Natürliche Schatten UNTER dem Produkt (kein Rechteck-Schatten!)
+- Professionelle Beleuchtung die zum Hintergrund passt
+- Das Produkt sieht aus als gehöre es in diese Szene
 
-3. TEXT IM BILD (am unteren Rand):
-${headline ? `   - HEADLINE: "${headline}" - Große, fette, weiße Schrift mit leichtem Schatten` : ''}
-${subheadline ? `   - SUBHEADLINE: "${subheadline}" - Kleinere weiße Schrift` : ''}
-${cta ? `   - CTA-BUTTON: Roter Pill-Button (#FF4444) mit weißem Text "${cta}"` : ''}
-   - Text muss SCHARF und LESBAR sein
+✍️ TEXT IM BILD (unterer Bereich):
+${headline ? `- HEADLINE: "${headline}" - Große, fette, weiße Schrift` : ''}
+${subheadline ? `- SUBHEADLINE: "${subheadline}" - Kleinere weiße Schrift` : ''}
+${cta ? `- CTA-BUTTON: Roter Pill-Button mit "${cta}"` : ''}
 
-4. QUALITÄT:
-   - $10,000 Creative Agency Level
-   - Meta 2026 Ad Standards
-   - Magazin-Cover Qualität
-   - Perfekte Komposition
+⭐ QUALITÄT:
+- Professionelle Meta/Instagram Ad Qualität
+- Keine sichtbaren Kanten oder Compositing-Artefakte
+- Das finale Bild muss aussehen wie EIN zusammenhängendes Foto
+- Magazin-Cover Niveau
 
-Das Produkt im Input-Bild ist heilig - es darf NICHT verändert werden!
-Generiere die komplette Ad als ein 1080x1080 Bild.`;
+KRITISCH: Das Produkt darf NICHT wie draufgeklebt aussehen!
+Es muss NATÜRLICH in die Szene integriert sein.`;
 }
 
 /**
@@ -288,7 +287,7 @@ export async function generateAdWithGeminiFallback({
         }
     }
 
-    throw new Error(`Gemini ad generation failed: ${geminiResult.error}`);
+    throw new Error(`Gemini ad generation failed: ${geminiResult.error} `);
 }
 
 export default {
