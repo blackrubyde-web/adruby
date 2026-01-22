@@ -1,14 +1,128 @@
-/**
- * GEMINI IMAGE API CLIENT
- * 
- * Provides image-to-image generation for 100% product preservation.
- * Uses Gemini's multimodal capabilities to create ads AROUND the product
- * rather than regenerating the product itself.
- */
-
 import { GoogleGenerativeAI } from "@google/generative-ai";
 
 let cachedClient = null;
+
+// Quota tracking for proactive fallback
+let quotaState = {
+    requestsThisMinute: 0,
+    requestsThisDay: 0,
+    lastMinuteReset: Date.now(),
+    lastDayReset: Date.now(),
+    quotaExhausted: false,
+    quotaResetAt: null,
+    consecutiveErrors: 0
+};
+
+// Gemini free tier limits (approximate)
+const QUOTA_LIMITS = {
+    requestsPerMinute: 15,
+    requestsPerDay: 1500,
+    errorThreshold: 3  // Switch to fallback after 3 consecutive errors
+};
+
+/**
+ * Check if Gemini quota is likely available
+ * Returns { available: boolean, reason?: string }
+ */
+export function checkGeminiQuota() {
+    const now = Date.now();
+
+    // Reset minute counter
+    if (now - quotaState.lastMinuteReset > 60000) {
+        quotaState.requestsThisMinute = 0;
+        quotaState.lastMinuteReset = now;
+    }
+
+    // Reset day counter
+    if (now - quotaState.lastDayReset > 86400000) {
+        quotaState.requestsThisDay = 0;
+        quotaState.lastDayReset = now;
+        quotaState.quotaExhausted = false;
+        quotaState.consecutiveErrors = 0;
+    }
+
+    // Check if quota was previously exhausted and not yet reset
+    if (quotaState.quotaExhausted && quotaState.quotaResetAt && now < quotaState.quotaResetAt) {
+        return {
+            available: false,
+            reason: 'quota_exhausted',
+            resetAt: quotaState.quotaResetAt
+        };
+    }
+
+    // Reset exhausted flag if past reset time
+    if (quotaState.quotaExhausted && quotaState.quotaResetAt && now >= quotaState.quotaResetAt) {
+        quotaState.quotaExhausted = false;
+        quotaState.consecutiveErrors = 0;
+    }
+
+    // Check consecutive errors
+    if (quotaState.consecutiveErrors >= QUOTA_LIMITS.errorThreshold) {
+        return {
+            available: false,
+            reason: 'too_many_errors',
+            consecutiveErrors: quotaState.consecutiveErrors
+        };
+    }
+
+    // Check rate limits
+    if (quotaState.requestsThisMinute >= QUOTA_LIMITS.requestsPerMinute) {
+        return {
+            available: false,
+            reason: 'rate_limit_minute',
+            resetIn: 60000 - (now - quotaState.lastMinuteReset)
+        };
+    }
+
+    if (quotaState.requestsThisDay >= QUOTA_LIMITS.requestsPerDay) {
+        return {
+            available: false,
+            reason: 'rate_limit_day',
+            resetIn: 86400000 - (now - quotaState.lastDayReset)
+        };
+    }
+
+    return {
+        available: true,
+        requestsRemaining: {
+            minute: QUOTA_LIMITS.requestsPerMinute - quotaState.requestsThisMinute,
+            day: QUOTA_LIMITS.requestsPerDay - quotaState.requestsThisDay
+        }
+    };
+}
+
+/**
+ * Record a successful Gemini request
+ */
+function recordGeminiSuccess() {
+    quotaState.requestsThisMinute++;
+    quotaState.requestsThisDay++;
+    quotaState.consecutiveErrors = 0;
+    console.log(`[Gemini] 📊 Quota: ${quotaState.requestsThisMinute}/${QUOTA_LIMITS.requestsPerMinute} this minute, ${quotaState.requestsThisDay}/${QUOTA_LIMITS.requestsPerDay} today`);
+}
+
+/**
+ * Record a Gemini error and check for quota issues
+ */
+function recordGeminiError(error) {
+    quotaState.consecutiveErrors++;
+
+    const errorMessage = error.message?.toLowerCase() || '';
+    const isQuotaError =
+        errorMessage.includes('quota') ||
+        errorMessage.includes('rate limit') ||
+        errorMessage.includes('resource_exhausted') ||
+        errorMessage.includes('429');
+
+    if (isQuotaError) {
+        quotaState.quotaExhausted = true;
+        // Reset after 1 minute for rate limits, 1 hour for quota
+        quotaState.quotaResetAt = Date.now() + (errorMessage.includes('quota') ? 3600000 : 60000);
+        console.warn(`[Gemini] ⚠️ Quota exhausted. Will retry after: ${new Date(quotaState.quotaResetAt).toISOString()}`);
+    }
+
+    console.warn(`[Gemini] ⚠️ Error recorded. Consecutive errors: ${quotaState.consecutiveErrors}`);
+}
 
 /**
  * Get or create Gemini client
@@ -96,6 +210,7 @@ Antworte mit JSON:
  * 
  * This is the CORE function - takes a product image and generates
  * a complete ad AROUND it while preserving the product 100%.
+ * Now with quota tracking for proactive fallback to OpenAI.
  */
 export async function generateAdWithGemini({
     productImageBuffer,
@@ -103,8 +218,21 @@ export async function generateAdWithGemini({
     subheadline,
     cta,
     productAnalysis,
-    style = "premium_dark"
+    style = "premium_dark",
+    referencePattern = null  // NEW: Reference pattern for style guidance
 }) {
+    // Check quota before making request
+    const quotaStatus = checkGeminiQuota();
+    if (!quotaStatus.available) {
+        console.warn(`[Gemini] ⚠️ Quota unavailable: ${quotaStatus.reason}. Using fallback.`);
+        return {
+            success: false,
+            error: `Quota unavailable: ${quotaStatus.reason}`,
+            quotaExhausted: true,
+            fallbackRecommended: true
+        };
+    }
+
     const genAI = getGeminiClient();
 
     // Use the image generation model
@@ -116,14 +244,19 @@ export async function generateAdWithGemini({
     });
 
     console.log("[Gemini] 🎨 Generating Meta Ad with image-to-image...");
+    console.log(`[Gemini] 📊 Quota remaining: ${quotaStatus.requestsRemaining?.minute || '?'}/min, ${quotaStatus.requestsRemaining?.day || '?'}/day`);
+    if (referencePattern) {
+        console.log(`[Gemini] 🎯 Using reference pattern: ${referencePattern.name}`);
+    }
 
-    // Build the ad generation prompt
+    // Build the ad generation prompt with optional reference pattern
     const adPrompt = buildAdPrompt({
         headline,
         subheadline,
         cta,
         productAnalysis,
-        style
+        style,
+        referencePattern  // Pass the pattern for style guidance
     });
 
     try {
@@ -144,6 +277,7 @@ export async function generateAdWithGemini({
             for (const part of response.candidates[0].content.parts) {
                 if (part.inlineData && part.inlineData.data) {
                     console.log("[Gemini] ✓ Ad image generated successfully");
+                    recordGeminiSuccess();
                     return {
                         success: true,
                         buffer: Buffer.from(part.inlineData.data, "base64"),
@@ -156,6 +290,7 @@ export async function generateAdWithGemini({
         // Check for text response (might contain error or instructions)
         const textResponse = response.text();
         console.warn("[Gemini] No image in response, text:", textResponse?.substring(0, 200));
+        recordGeminiError(new Error("No image in response"));
 
         return {
             success: false,
@@ -165,21 +300,71 @@ export async function generateAdWithGemini({
 
     } catch (error) {
         console.error("[Gemini] Image generation failed:", error.message);
+        recordGeminiError(error);
         return {
             success: false,
-            error: error.message
+            error: error.message,
+            quotaExhausted: error.message?.toLowerCase().includes('quota') || error.message?.toLowerCase().includes('429'),
+            fallbackRecommended: true
         };
     }
 }
 
 /**
- * Build the ad generation prompt
+ * Build the ad generation prompt with reference pattern support
  */
-function buildAdPrompt({ headline, subheadline, cta, productAnalysis, style }) {
+function buildAdPrompt({ headline, subheadline, cta, productAnalysis, style, referencePattern }) {
     const productDesc = productAnalysis?.productDescription || "premium product";
+    const productName = productAnalysis?.productName || "Product";
     const mood = productAnalysis?.suggestedMood || "premium";
     const colors = productAnalysis?.colorPalette?.join(", ") || "elegant colors";
+    const industry = productAnalysis?.industry || "retail";
 
+    // Use reference pattern if provided, otherwise use style-based prompt
+    if (referencePattern && referencePattern.promptSnippet) {
+        console.log(`[Gemini] Using reference pattern: ${referencePattern.name}`);
+
+        return `ERSTELLE EINE HOCHKONVERTIERENDE META AD (1080x1080px)
+
+Du siehst ein Produktbild. Erstelle eine PROFESSIONELLE Werbeanzeige im Stil erfolgreicher Meta Ads.
+
+=== REFERENZ-STIL: ${referencePattern.name} ===
+${referencePattern.promptSnippet}
+
+=== PRODUKT-INFORMATIONEN ===
+- Produkt: ${productName}
+- Beschreibung: ${productDesc}
+- Branche: ${industry}
+- Stimmung: ${mood}
+- Farbpalette: ${colors}
+
+=== TEXT-ELEMENTE ===
+${headline ? `HEADLINE: "${headline}"` : 'Generiere eine passende Headline'}
+${subheadline ? `SUBHEADLINE: "${subheadline}"` : ''}
+${cta ? `CTA-BUTTON: "${cta}"` : 'CTA: "Jetzt entdecken"'}
+
+=== KRITISCHE ANFORDERUNGEN ===
+
+🎯 PRODUKTINTEGRATION:
+- Das Produkt aus dem Bild muss EXAKT erhalten bleiben
+- Integriere es NATÜRLICH in die Szene - NICHT wie draufgeklebt
+- Passende Beleuchtung und Schatten zur Umgebung
+
+📐 KOMPOSITION:
+- Folge dem Referenz-Stil für Layout und Platzierung
+- Text muss LESBAR und SCHARF sein
+- Professionelle Typografie (Sans-Serif für Headlines)
+
+⚡ CONVERSION-QUALITÄT:
+- Die Ad muss einen SCROLL-STOPPER sein
+- Viral-würdig, Instagram/Facebook ready
+- Wie von einer $10,000 Agentur erstellt
+
+WICHTIG: Das Produkt darf NIEMALS verändert oder verfremdet werden!
+Erstelle die Szene DRUM HERUM, nicht das Produkt selbst.`;
+    }
+
+    // Fallback to original style-based prompt
     const styleConfigs = {
         premium_dark: {
             background: "Eleganter schwarzer/dunkler Hintergrund mit subtilen Lichteffekten",
@@ -290,9 +475,169 @@ export async function generateAdWithGeminiFallback({
     throw new Error(`Gemini ad generation failed: ${geminiResult.error} `);
 }
 
+/**
+ * Generate ad with optional reference image for style transfer
+ * 
+ * When a reference image is provided, Gemini uses it as visual inspiration
+ * to match the style, layout, and overall aesthetic of the reference ad.
+ * 
+ * @param {Buffer} productImageBuffer - The product image to feature in the ad
+ * @param {Buffer|null} referenceImageBuffer - Optional reference ad image for style guidance
+ * @param {string} headline - Ad headline text
+ * @param {string} subheadline - Ad subheadline text
+ * @param {string} cta - Call-to-action button text
+ * @param {Object} productAnalysis - Product analysis from vision model
+ */
+export async function generateWithStyleReference({
+    productImageBuffer,
+    referenceImageBuffer = null,
+    headline,
+    subheadline,
+    cta,
+    productAnalysis,
+    style = "premium_dark"
+}) {
+    // Check quota
+    const quotaStatus = checkGeminiQuota();
+    if (!quotaStatus.available) {
+        console.warn(`[Gemini] ⚠️ Quota unavailable for style transfer: ${quotaStatus.reason}`);
+        return {
+            success: false,
+            error: `Quota unavailable: ${quotaStatus.reason}`,
+            quotaExhausted: true,
+            fallbackRecommended: true
+        };
+    }
+
+    const genAI = getGeminiClient();
+    const model = genAI.getGenerativeModel({
+        model: "gemini-2.0-flash-exp",
+        generationConfig: {
+            responseModalities: ["image", "text"]
+        }
+    });
+
+    const productName = productAnalysis?.productName || "Product";
+    const productDesc = productAnalysis?.productDescription || "premium product";
+
+    // Build content array - reference image first (if provided), then product
+    const content = [];
+
+    if (referenceImageBuffer) {
+        console.log("[Gemini] 🎨 Style Transfer Mode: Using reference image for visual guidance");
+
+        // Add reference image first
+        content.push({
+            inlineData: {
+                mimeType: "image/png",
+                data: referenceImageBuffer.toString("base64")
+            }
+        });
+
+        // Add product image
+        content.push({
+            inlineData: {
+                mimeType: "image/png",
+                data: productImageBuffer.toString("base64")
+            }
+        });
+
+        // Style transfer prompt
+        content.push({
+            text: `STYLE TRANSFER AUFGABE:
+
+Das ERSTE Bild ist eine REFERENZ-WERBEANZEIGE. Kopiere deren STIL:
+- Layout und Komposition
+- Farben und Stimmung
+- Typografie-Stil
+- Grafische Elemente (Pfeile, Icons, Rahmen)
+
+Das ZWEITE Bild ist das PRODUKT das beworben werden soll.
+
+ERSTELLE EINE NEUE META AD (1080x1080px):
+
+1. STIL der Referenz übernehmen (Layout, Farben, Atmosphäre)
+2. PRODUKT 100% erhalten und natürlich integrieren
+3. TEXT im Bild:
+   ${headline ? `- Headline: "${headline}"` : ''}
+   ${subheadline ? `- Subheadline: "${subheadline}"` : ''}
+   ${cta ? `- CTA-Button: "${cta}"` : ''}
+
+WICHTIG:
+- Kopiere den STIL, nicht den INHALT der Referenz
+- Das Produkt darf NICHT verändert werden
+- Professionelle Meta Ad Qualität
+- Text muss LESBAR sein`
+        });
+
+    } else {
+        // No reference image - use standard generation
+        console.log("[Gemini] 📷 Standard Mode: No reference image provided");
+
+        content.push({
+            inlineData: {
+                mimeType: "image/png",
+                data: productImageBuffer.toString("base64")
+            }
+        });
+
+        content.push({
+            text: `ERSTELLE EINE META AD (1080x1080px) für: ${productName}
+
+${productDesc}
+
+TEXT:
+${headline ? `Headline: "${headline}"` : ''}
+${subheadline ? `Subheadline: "${subheadline}"` : ''}
+${cta ? `CTA: "${cta}"` : ''}
+
+Professionelle Qualität, Scroll-Stopper, viral-würdig.
+Produkt natürlich integrieren, nicht aufgeklebt.`
+        });
+    }
+
+    try {
+        const result = await model.generateContent(content);
+        const response = result.response;
+
+        if (response.candidates && response.candidates[0]?.content?.parts) {
+            for (const part of response.candidates[0].content.parts) {
+                if (part.inlineData && part.inlineData.data) {
+                    console.log("[Gemini] ✓ Style transfer ad generated successfully");
+                    recordGeminiSuccess();
+                    return {
+                        success: true,
+                        buffer: Buffer.from(part.inlineData.data, "base64"),
+                        model: "gemini-2.0-flash-exp",
+                        usedReference: !!referenceImageBuffer
+                    };
+                }
+            }
+        }
+
+        console.warn("[Gemini] No image in style transfer response");
+        recordGeminiError(new Error("No image in response"));
+        return {
+            success: false,
+            error: "No image generated"
+        };
+
+    } catch (error) {
+        console.error("[Gemini] Style transfer failed:", error.message);
+        recordGeminiError(error);
+        return {
+            success: false,
+            error: error.message,
+            fallbackRecommended: true
+        };
+    }
+}
+
 export default {
     getGeminiClient,
+    checkGeminiQuota,
     analyzeProductWithGemini,
     generateAdWithGemini,
-    generateAdWithGeminiFallback
+    generateAdWithGeminiFallback,
+    generateWithStyleReference
 };

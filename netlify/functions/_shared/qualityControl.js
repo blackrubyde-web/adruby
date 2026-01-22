@@ -148,8 +148,9 @@ export function improvePromptFromFeedback(originalPrompt, qualityResult) {
 
 /**
  * Quality gate check - determines if ad should be used or regenerated
+ * Threshold raised to 8 for Elite-level ad quality
  */
-export function passesQualityGate(qualityResult, threshold = 7) {
+export function passesQualityGate(qualityResult, threshold = 8) {
     if (!qualityResult) return true; // Pass on error
     return qualityResult.overallScore >= threshold;
 }

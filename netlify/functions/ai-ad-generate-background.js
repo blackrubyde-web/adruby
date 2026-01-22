@@ -26,7 +26,7 @@ import {
     CANVAS,
 } from './_shared/eliteCreativeSystem.js';
 import { getUserProfile } from './_shared/auth.js';
-import { assertAndConsumeCredits, CREDIT_COSTS } from './_shared/credits.js';
+import { assertAndConsumeCredits, refundCredits, CREDIT_COSTS } from './_shared/credits.js';
 import { supabaseAdmin } from './_shared/clients.js';
 import { withRetry } from './_shared/aiAd/retry.js';
 import { scoreAdQuality, validateAdContent, predictEngagement } from './_shared/aiAd/quality-scorer.js';
@@ -846,16 +846,42 @@ Beginne mit: "PRÄZISE PRODUKTBESCHREIBUNG:"`
         const categorized = categorizeError(error);
         console.error('[AI Ad Generate] Error category:', categorized.code);
 
-        // Update job status in database if jobId exists
+        // Get user ID and jobId for refund and status update
+        let userId = null;
+        let jobId = null;
         try {
             const body = JSON.parse(event.body || '{}');
-            const jobId = body.jobId;
+            jobId = body.jobId;
+
+            // Get user for refund
+            const authHeader = event.headers.authorization || event.headers.Authorization;
+            const user = await getUserProfile(authHeader);
+            userId = user?.id;
+        } catch (parseErr) {
+            console.error('[AI Ad Generate] Failed to parse request for refund:', parseErr.message);
+        }
+
+        // CRITICAL: Refund credits on failure
+        if (userId) {
+            console.log('[AI Ad Generate] 💰 Refunding credits due to generation failure...');
+            const refundResult = await refundCredits(userId, 'ai_ad_generate');
+            if (refundResult.ok) {
+                console.log(`[AI Ad Generate] ✅ Credits refunded successfully. New balance: ${refundResult.newBalance}`);
+            } else {
+                console.error('[AI Ad Generate] ⚠️ Credit refund failed:', refundResult.error);
+                // Log for manual intervention - this is a critical issue
+            }
+        }
+
+        // Update job status in database if jobId exists
+        try {
             if (jobId) {
                 await supabaseAdmin.from('generated_creatives').update({
                     metrics: {
                         status: 'error',
                         errorCode: categorized.code,
                         errorMessage: categorized.originalMessage,
+                        creditsRefunded: userId ? true : false,
                         failed_at: new Date().toISOString()
                     }
                 }).eq('id', jobId);

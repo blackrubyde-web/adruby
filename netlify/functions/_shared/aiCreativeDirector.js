@@ -19,6 +19,7 @@ import { detectIndustry, getBestPractices } from './industryBestPractices.js';
 import { AD_FORMATS, generateVariantPrompts, resizeToFormat, generateAllFormats } from './adFormats.js';
 import { analyzeProductWithGemini, generateAdWithGemini } from './gemini.js';
 import { generateImageWithReference } from './openai.js';
+import { selectBestPattern } from './referencePatterns.js';
 
 const CANVAS = 1080;
 const MAX_QUALITY_RETRIES = 2;
@@ -152,7 +153,19 @@ export async function createAdWithGeminiDirector(openai, config) {
     const industryPractices = getBestPractices(industryKey);
     console.log(`[CreativeDirector] Industry detected: ${industryPractices.name}`);
 
-    // Phase 2: Generate ad with Gemini Image-to-Image
+    // Phase 1.5: Select best reference pattern based on product analysis
+    const referencePattern = selectBestPattern({
+        productType: analysis.productType || 'general',
+        industry: industryKey,
+        hasMultipleFeatures: (analysis.keyVisualElements?.length || 0) > 3,
+        hasCompetitor: userPrompt?.toLowerCase().includes('vs') || userPrompt?.toLowerCase().includes('besser'),
+        isLifestyle: analysis.emotionalAppeal?.toLowerCase().includes('lifestyle') || analysis.suggestedMood?.includes('aspirational'),
+        productCount: 1,
+        userHint: userPrompt || ''
+    });
+    console.log(`[CreativeDirector] 🎯 Selected reference pattern: ${referencePattern.name}`);
+
+    // Phase 2: Generate ad with Gemini Image-to-Image using reference pattern
     console.log('[CreativeDirector] Phase 2: Gemini Image-to-Image Ad Generation...');
 
     const geminiResult = await generateAdWithGemini({
@@ -161,7 +174,8 @@ export async function createAdWithGeminiDirector(openai, config) {
         subheadline: subheadline || '',
         cta: cta || 'Jetzt entdecken',
         productAnalysis: analysis,
-        style: 'premium_dark'
+        style: 'premium_dark',
+        referencePattern  // Pass the selected pattern for style guidance
     });
 
     let adBuffer;
@@ -231,19 +245,18 @@ ${cta ? `- CTA button: red pill-shaped button with "${cta}"` : ''}
         }
     });
 
-    // Apply SVG text overlay if AI text not readable
-    if (qualityResult.scores?.textReadability < 5) {
-        console.log('[CreativeDirector] ⚠️ Text not readable, applying SVG overlay...');
-        if (headline || cta) {
-            adBuffer = await applyTextOverlay(adBuffer, {
-                headline,
-                subheadline,
-                cta,
-                position: 'bottom',
-                colorScheme: { accent: '#FF4444', text: '#FFFFFF' }
-            }, sharp);
-            console.log('[CreativeDirector] ✓ SVG text overlay applied');
-        }
+    // ALWAYS apply SVG text overlay for 100% reliable typography
+    // AI-rendered text is often unreadable, so we guarantee legibility with SVG
+    console.log('[CreativeDirector] 🔤 Applying reliable SVG text overlay...');
+    if (headline || cta) {
+        adBuffer = await applyTextOverlay(adBuffer, {
+            headline,
+            subheadline,
+            cta,
+            position: 'bottom',
+            colorScheme: { accent: '#FF4444', text: '#FFFFFF' }
+        }, sharp);
+        console.log('[CreativeDirector] ✓ SVG text overlay applied for guaranteed legibility');
     }
 
     console.log(`[CreativeDirector] ✅ Gemini Creative Director Complete (source: ${source})`);
@@ -675,29 +688,27 @@ WICHTIG:
         console.log('[CreativeDirector] Running quality verification...');
         qualityResult = await verifyAdQuality(openai, resizedBuffer, strategy);
 
-        // Apply SVG text overlay ONLY if AI text is not readable (fallback)
-        if (qualityResult.scores?.textReadability < 5) {
-            console.log('[CreativeDirector] ⚠️ AI text not readable, applying SVG fallback...');
-            if (textConfig.headline?.text || textConfig.cta?.text) {
-                resizedBuffer = await applyTextOverlay(resizedBuffer, {
-                    headline: textConfig.headline?.text,
-                    subheadline: textConfig.subheadline?.text,
-                    cta: textConfig.cta?.text,
-                    position: textConfig.headline?.position || 'bottom',
-                    colorScheme: strategy.colorScheme
-                }, sharp);
-                console.log('[CreativeDirector] ✓ SVG text fallback applied');
-            }
-        } else {
-            console.log('[CreativeDirector] ✓ AI-rendered text is readable, no SVG overlay needed');
+        // ALWAYS apply SVG text overlay for guaranteed legibility
+        // AI-rendered text is often unreadable, so we ensure text is always visible
+        console.log('[CreativeDirector] 🔤 Applying reliable SVG text overlay...');
+        if (textConfig.headline?.text || textConfig.cta?.text) {
+            resizedBuffer = await applyTextOverlay(resizedBuffer, {
+                headline: textConfig.headline?.text,
+                subheadline: textConfig.subheadline?.text,
+                cta: textConfig.cta?.text,
+                position: textConfig.headline?.position || 'bottom',
+                colorScheme: strategy.colorScheme
+            }, sharp);
+            console.log('[CreativeDirector] ✓ SVG text overlay applied for guaranteed legibility');
         }
 
-        if (passesQualityGate(qualityResult, 7)) {
+        // Quality gate with higher threshold (8) for Elite-level ads
+        if (passesQualityGate(qualityResult, 8)) {
             console.log(`[CreativeDirector] ✅ Quality passed: ${qualityResult.overallScore}/10`);
             finalBuffer = resizedBuffer;
             break;
         } else {
-            console.log(`[CreativeDirector] ⚠️ Quality score ${qualityResult.overallScore}/10 - below threshold`);
+            console.log(`[CreativeDirector] ⚠️ Quality score ${qualityResult.overallScore}/10 - below threshold (8)`);
             if (attempt === MAX_QUALITY_RETRIES) {
                 console.log('[CreativeDirector] Max retries reached, using best result');
                 finalBuffer = resizedBuffer;
