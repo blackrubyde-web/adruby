@@ -132,7 +132,15 @@ export function AIAdBuilderPage() {
                     .from('creative-images')
                     .getPublicUrl(filename);
                 productImageUrl = urlData.publicUrl;
+                console.log('[Frontend] Product image uploaded:', productImageUrl);
             }
+
+            console.log('[Frontend] Generating ad with params:', {
+                mode,
+                language,
+                hasProductImage: !!productImageUrl,
+                inputDataKeys: Object.keys(inputData)
+            });
 
             const response = await generateAd({
                 mode: mode as InputMode,

@@ -74,8 +74,8 @@ export function generateTextOverlaySvg(config) {
 <rect x="0" y="${position === 'top' ? '0' : CANVAS * 0.5}" width="${CANVAS}" height="${position === 'top' ? CANVAS * 0.5 : CANVAS * 0.5}" fill="url(#textBg)"/>
 `;
 
-    // Robust Font Stack - no emojis, no special symbols that break
-    const fontStack = "Inter, Roboto, 'Helvetica Neue', Arial, sans-serif";
+    // Use simplest font stack - Netlify has limited font support
+    const fontStack = "Arial, Helvetica, sans-serif";
 
     // Headline
     if (headline) {
