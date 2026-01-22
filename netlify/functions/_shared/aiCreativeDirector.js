@@ -250,19 +250,10 @@ ${cta ? `- CTA button: red pill-shaped button with "${cta}"` : ''}
         }
     });
 
-    // ALWAYS apply SVG text overlay for 100% reliable typography
-    // AI-rendered text is often unreadable, so we guarantee legibility with SVG
-    console.log('[CreativeDirector] 🔤 Applying reliable SVG text overlay...');
-    if (headline || cta) {
-        adBuffer = await applyTextOverlay(adBuffer, {
-            headline,
-            subheadline,
-            cta,
-            position: 'bottom',
-            colorScheme: { accent: '#FF4444', text: '#FFFFFF' }
-        }, sharp);
-        console.log('[CreativeDirector] ✓ SVG text overlay applied for guaranteed legibility');
-    }
+    // SVG overlay DISABLED - Gemini now generates complete ads with text
+    // The SVG overlay was causing rectangle bugs due to missing fonts on Netlify
+    // All text (headline, subheadline, CTA) is now rendered by Gemini directly
+    console.log('[CreativeDirector] ✓ Using Gemini-rendered text (no SVG overlay)');
 
     console.log(`[CreativeDirector] ✅ Gemini Creative Director Complete (source: ${source})`);
 
@@ -696,16 +687,8 @@ WICHTIG:
         // ALWAYS apply SVG text overlay for guaranteed legibility
         // AI-rendered text is often unreadable, so we ensure text is always visible
         console.log('[CreativeDirector] 🔤 Applying reliable SVG text overlay...');
-        if (textConfig.headline?.text || textConfig.cta?.text) {
-            resizedBuffer = await applyTextOverlay(resizedBuffer, {
-                headline: textConfig.headline?.text,
-                subheadline: textConfig.subheadline?.text,
-                cta: textConfig.cta?.text,
-                position: textConfig.headline?.position || 'bottom',
-                colorScheme: strategy.colorScheme
-            }, sharp);
-            console.log('[CreativeDirector] ✓ SVG text overlay applied for guaranteed legibility');
-        }
+        // SVG overlay DISABLED - using AI-rendered text instead
+        console.log('[CreativeDirector] ✓ Using Gemini-rendered text (no SVG overlay)');
 
         // Quality gate with higher threshold (8) for Elite-level ads
         if (passesQualityGate(qualityResult, 8)) {

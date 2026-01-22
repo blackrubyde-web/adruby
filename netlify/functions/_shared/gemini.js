@@ -405,37 +405,39 @@ function buildAdPrompt({ headline, subheadline, cta, productAnalysis, style, ref
     const mood = productAnalysis?.suggestedMood || "premium";
     const colors = productAnalysis?.colorPalette?.join(", ") || "elegant colors";
 
-    // CRITICAL: Use English and avoid headline-like text that Gemini might render
-    // Keep the prompt focused on VISUAL elements only, not text
+    // Gemini generates the COMPLETE ad including text
+    // No SVG overlay - everything in one generation
 
-    return `Create a premium product advertisement photo.
+    return `Create a complete Meta advertisement image (1080x1080px).
 
-PRODUCT: "${productName}"
-DESCRIPTION: ${productDesc}
-MOOD: ${mood}, professional, high-end
+PRODUCT: ${productName}
+${productDesc}
 
-COMPOSITION:
-- Place the exact product from the input image as the hero
-- Dark elegant background with subtle gradient
-- Professional studio lighting (3-point setup)
-- Product should fill about 50% of the frame, centered
-- Leave clean space at top (20%) and bottom (25%) for text overlay later
+LAYOUT:
+- Product image centered in the middle (50% of frame)
+- Dark elegant gradient background
+- Professional studio lighting
+
+TEXT TO RENDER (use clean, modern sans-serif font like Helvetica):
+${headline ? `HEADLINE at top: "${headline}" - Large, bold, white text with subtle shadow` : ''}
+${subheadline ? `SUBHEADLINE below headline: "${subheadline}" - Smaller, light gray text` : ''}
+${cta ? `CTA BUTTON at bottom: "${cta}" - Red pill-shaped button with white text inside` : ''}
 
 STYLE:
-- Premium e-commerce aesthetic
-- Subtle bokeh/blur in background
-- Soft shadows and reflections
-- Magazine advertisement quality
-- Colors: ${colors}
+- Premium e-commerce aesthetic like Apple or Nike ads
+- Subtle bokeh in background
+- Clean typography, easy to read
+- Colors that complement: ${colors}
 
-CRITICAL RULES:
-1. DO NOT add any text, words, or letters
-2. DO NOT add buttons, icons, or UI elements
-3. DO NOT change the product appearance
-4. Keep the original product colors and shape
-5. Only add lighting, background, and atmosphere
+REQUIREMENTS:
+1. Keep the product EXACTLY as shown - do not alter it
+2. Text must be SHARP and READABLE (no blur, no artifacts)
+3. Modern, professional ad design
+4. The headline "${headline || productName}" must be clearly visible at the top
+5. The CTA button "${cta || 'Shop Now'}" must be visible at the bottom
+6. NO placeholder rectangles or boxes - only the actual text
 
-OUTPUT: A clean product photo ready for text overlay. No text whatsoever.`;
+Generate a complete, ready-to-use advertisement with all text rendered.`;
 
     // Fallback to original style-based prompt
     const styleConfigs = {
