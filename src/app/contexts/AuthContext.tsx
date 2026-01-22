@@ -78,9 +78,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const ensureUserProfileExists = useCallback(async () => {
     try {
       await supabase.rpc('ensure_user_profile_exists');
-    } catch (err) {
-      // Best-effort: function may not exist in some environments
-      console.warn('[Auth] ensure_user_profile_exists failed', err);
+    } catch {
+      // Silently ignore - function may not exist, profile will be created on first save
     }
   }, []);
 
