@@ -408,9 +408,15 @@ function buildAdPrompt({ headline, subheadline, cta, productAnalysis, style, ref
     // Gemini generates the COMPLETE ad including text
     // No SVG overlay - everything in one generation
     // PHASE 1: Elite Prompt Engineering for 10/10 quality
+    // PHASE 4: Layout variations for diverse outputs
 
     const headlineText = headline || productName;
     const ctaText = cta || 'Shop Now';
+
+    // Phase 4: Random layout variation for diverse outputs
+    const layouts = ['centered', 'hero-bottom', 'hero-top'];
+    const selectedLayout = layouts[Math.floor(Math.random() * layouts.length)];
+    console.log(`[Gemini] Using layout variation: ${selectedLayout}`);
 
     return `You are an elite advertising designer creating a viral Meta ad.
 

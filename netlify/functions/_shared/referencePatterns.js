@@ -294,6 +294,8 @@ COLORS:
 
 /**
  * Select the best reference pattern based on product and context analysis
+ * Phase 3: Simplified - default to lifestyle_action for most cases
+ * Complex patterns (us_vs_them, feature_callouts) only when explicitly requested
  */
 export function selectBestPattern({
     productType = 'general',
@@ -307,60 +309,35 @@ export function selectBestPattern({
 }) {
     // Check user hint first (explicit pattern request)
     const hintLower = userHint.toLowerCase();
-    if (hintLower.includes('vergleich') || hintLower.includes('vs') || hintLower.includes('besser als')) {
+
+    // Only use complex patterns when user explicitly requests them
+    if (hintLower.includes('vergleich') || hintLower.includes('vs') || hintLower.includes('compare')) {
+        console.log('[ReferencePatterns] User requested comparison - using us_vs_them');
         return REFERENCE_PATTERNS.us_vs_them;
     }
-    if (hintLower.includes('feature') || hintLower.includes('pfeil') || hintLower.includes('zeigen')) {
+    if (hintLower.includes('feature') || hintLower.includes('pfeil') || hintLower.includes('arrows')) {
+        console.log('[ReferencePatterns] User requested features - using feature_callouts');
         return REFERENCE_PATTERNS.feature_callouts;
     }
-    if (hintLower.includes('vorher') || hintLower.includes('nachher') || hintLower.includes('transformation')) {
+    if (hintLower.includes('vorher') || hintLower.includes('nachher') || hintLower.includes('before') || hintLower.includes('after')) {
+        console.log('[ReferencePatterns] User requested transformation - using before_after');
         return REFERENCE_PATTERNS.before_after;
     }
-    if (hintLower.includes('lifestyle') || hintLower.includes('leben') || hintLower.includes('alltag')) {
-        return REFERENCE_PATTERNS.lifestyle_action;
+    if (hintLower.includes('check') || hintLower.includes('benefit') || hintLower.includes('list')) {
+        console.log('[ReferencePatterns] User requested benefits - using benefit_checkmarks');
+        return REFERENCE_PATTERNS.benefit_checkmarks;
     }
 
-    // Score each pattern based on context
-    const scores = {};
-
-    for (const [key, pattern] of Object.entries(REFERENCE_PATTERNS)) {
-        let score = pattern.conversionStrength;
-
-        // Boost for matching product type
-        if (pattern.bestFor.includes(productType)) {
-            score += 3;
-        }
-
-        // Pattern-specific boosts
-        if (key === 'feature_callouts' && hasMultipleFeatures) {
-            score += 4;
-        }
-        if (key === 'us_vs_them' && hasCompetitor) {
-            score += 5;
-        }
-        if (key === 'lifestyle_action' && isLifestyle) {
-            score += 4;
-        }
-        if (key === 'collage_grid' && productCount > 1) {
-            score += 5;
-        }
-        if (key === 'benefit_checkmarks' && ['food', 'health', 'supplements'].includes(industry)) {
-            score += 3;
-        }
-        if (key === 'before_after' && ['education', 'software', 'services'].includes(industry)) {
-            score += 4;
-        }
-
-        scores[key] = score;
+    // For multiple products, use collage
+    if (productCount > 1) {
+        console.log('[ReferencePatterns] Multiple products - using collage_grid');
+        return REFERENCE_PATTERNS.collage_grid;
     }
 
-    // Find highest scoring pattern
-    const bestKey = Object.entries(scores).sort((a, b) => b[1] - a[1])[0][0];
-
-    console.log('[ReferencePatterns] Pattern scores:', scores);
-    console.log('[ReferencePatterns] Selected:', bestKey);
-
-    return REFERENCE_PATTERNS[bestKey];
+    // DEFAULT: Use lifestyle_action for single products
+    // This is the safest, most reliable pattern for e-commerce
+    console.log('[ReferencePatterns] Single product - using lifestyle_action (default)');
+    return REFERENCE_PATTERNS.lifestyle_action;
 }
 
 /**
