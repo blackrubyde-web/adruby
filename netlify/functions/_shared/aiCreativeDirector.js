@@ -19,11 +19,13 @@ import { detectIndustry, getBestPractices } from './industryBestPractices.js';
 import { AD_FORMATS, generateVariantPrompts, resizeToFormat, generateAllFormats } from './adFormats.js';
 import { analyzeProductWithGemini, generateAdWithGemini } from './gemini.js';
 import { generateImageWithReference } from './openai.js';
-import { selectBestPattern } from './referencePatterns.js';
+import { selectBestPattern, REFERENCE_PATTERNS } from './referencePatterns.js';
+import { QUALITY, FEATURES, fetchWithTimeout, TIMEOUTS } from './config.js';
+import { buildMasterAdPrompt, ENHANCED_PATTERNS, PRODUCT_ANALYSIS_PROMPT } from './elitePrompts.js';
 
-const CANVAS = 1080;
-const MAX_QUALITY_RETRIES = 2;
-const USE_GEMINI = process.env.GEMINI_API_KEY ? true : false;
+const CANVAS = QUALITY.CANVAS_SIZE;
+const MAX_QUALITY_RETRIES = QUALITY.MAX_RETRIES;
+const USE_GEMINI = FEATURES.USE_GEMINI;
 
 /**
  * Main entry point - creates ad using AI Creative Director approach
@@ -132,9 +134,12 @@ export async function createAdWithGeminiDirector(openai, config) {
 
     console.log('[CreativeDirector] 🚀 Starting GEMINI Creative Director (Image-to-Image)...');
 
-    // Download product image
+    // Download product image with timeout protection
     console.log('[CreativeDirector] Downloading product image...');
-    const productResponse = await fetch(productImageUrl);
+    const productResponse = await fetchWithTimeout(productImageUrl, {}, TIMEOUTS.IMAGE_FETCH);
+    if (!productResponse.ok) {
+        throw new Error(`Failed to fetch product image: ${productResponse.status}`);
+    }
     const productBuffer = Buffer.from(await productResponse.arrayBuffer());
     console.log('[CreativeDirector] ✓ Product image ready');
 
