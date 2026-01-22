@@ -304,16 +304,40 @@ export function detectTextPosition(userPrompt) {
 }
 
 /**
- * Escape XML special characters
+ * Escape XML special characters and sanitize problematic unicode
+ * Removes/replaces characters that cause rendering issues (appearing as rectangles)
  */
-function escapeXml(text) {
-    if (!text) return '';
-    return text
+function escapeXml(str) {
+    if (!str) return '';
+    return str
+        // First sanitize problematic unicode
+        .replace(/[\u2800-\u28FF]/g, '')  // Braille patterns (appear as rectangles)
+        .replace(/[\u2580-\u259F]/g, '')  // Block elements (appear as rectangles)
+        .replace(/[\u2588-\u259F]/g, '')  // Full block and variants
+        .replace(/[\uFFF0-\uFFFF]/g, '')  // Specials
+        .replace(/[\u0000-\u001F]/g, '')  // Control characters
+        .replace(/[\u007F-\u009F]/g, '')  // More control characters
+        .replace(/[\u2000-\u200F]/g, '')  // Zero width chars
+        .replace(/[\u2028-\u202F]/g, '')  // Line separators
+        .replace(/\uFEFF/g, '')           // Byte order mark
+        .replace(/[\uE000-\uF8FF]/g, '')  // Private use area (often icons that fail)
+        // Smart quotes to regular quotes
+        .replace(/[\u201C\u201D]/g, '"')
+        .replace(/[\u2018\u2019]/g, "'")
+        // Em/en dashes to regular dash
+        .replace(/[\u2013\u2014]/g, '-')
+        // Ellipsis to three dots
+        .replace(/\u2026/g, '...')
+        // German umlauts - KEEP these (common in German)
+        // äöüÄÖÜß are in \u00C0-\u00FF range
+        // Then escape XML
         .replace(/&/g, '&amp;')
         .replace(/</g, '&lt;')
         .replace(/>/g, '&gt;')
         .replace(/"/g, '&quot;')
-        .replace(/'/g, '&apos;');
+        .replace(/'/g, '&apos;')
+        // Final cleanup - keep only printable Basic Latin, Latin-1 Supplement, and extended Latin
+        .replace(/[^\x20-\x7E\xA0-\xFF\u0100-\u017F]/g, '');
 }
 
 export default {
