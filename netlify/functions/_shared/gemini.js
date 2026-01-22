@@ -308,7 +308,7 @@ export async function generateAdWithGemini({
     referencePattern = null  // NEW: Reference pattern for style guidance
 }) {
     // Check quota before making request
-    const quotaStatus = checkGeminiQuota();
+    const quotaStatus = await checkGeminiQuota();
     if (!quotaStatus.available) {
         console.warn(`[Gemini] ⚠️ Quota unavailable: ${quotaStatus.reason}. Using fallback.`);
         return {
@@ -584,7 +584,7 @@ export async function generateWithStyleReference({
     style = "premium_dark"
 }) {
     // Check quota
-    const quotaStatus = checkGeminiQuota();
+    const quotaStatus = await checkGeminiQuota();
     if (!quotaStatus.available) {
         console.warn(`[Gemini] ⚠️ Quota unavailable for style transfer: ${quotaStatus.reason}`);
         return {
