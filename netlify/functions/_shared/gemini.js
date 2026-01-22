@@ -407,37 +407,75 @@ function buildAdPrompt({ headline, subheadline, cta, productAnalysis, style, ref
 
     // Gemini generates the COMPLETE ad including text
     // No SVG overlay - everything in one generation
+    // PHASE 1: Elite Prompt Engineering for 10/10 quality
 
-    return `Create a complete Meta advertisement image (1080x1080px).
+    const headlineText = headline || productName;
+    const ctaText = cta || 'Shop Now';
 
-PRODUCT: ${productName}
-${productDesc}
+    return `You are an elite advertising designer creating a viral Meta ad.
 
-LAYOUT:
-- Product image centered in the middle (50% of frame)
-- Dark elegant gradient background
-- Professional studio lighting
+TASK: Create a stunning 1080x1080px advertisement image.
 
-TEXT TO RENDER (use clean, modern sans-serif font like Helvetica):
-${headline ? `HEADLINE at top: "${headline}" - Large, bold, white text with subtle shadow` : ''}
-${subheadline ? `SUBHEADLINE below headline: "${subheadline}" - Smaller, light gray text` : ''}
-${cta ? `CTA BUTTON at bottom: "${cta}" - Red pill-shaped button with white text inside` : ''}
+═══════════════════════════════════════
+PRODUCT DETAILS
+═══════════════════════════════════════
+Name: ${productName}
+Description: ${productDesc}
+Mood: ${mood}
+Brand Colors: ${colors}
 
-STYLE:
-- Premium e-commerce aesthetic like Apple or Nike ads
-- Subtle bokeh in background
-- Clean typography, easy to read
-- Colors that complement: ${colors}
+═══════════════════════════════════════
+VISUAL COMPOSITION
+═══════════════════════════════════════
+• Background: Rich dark gradient (#0a0a0a to #1a1a2e)
+• Product: Centered, occupying 40-50% of frame
+• Lighting: Premium 3-point studio setup with soft shadows
+• Effects: Subtle bokeh, gentle glow around product
 
-REQUIREMENTS:
-1. Keep the product EXACTLY as shown - do not alter it
-2. Text must be SHARP and READABLE (no blur, no artifacts)
-3. Modern, professional ad design
-4. The headline "${headline || productName}" must be clearly visible at the top
-5. The CTA button "${cta || 'Shop Now'}" must be visible at the bottom
-6. NO placeholder rectangles or boxes - only the actual text
+═══════════════════════════════════════
+TYPOGRAPHY (CRITICAL)
+═══════════════════════════════════════
+Use ONLY clean, modern sans-serif fonts (Helvetica, Arial, SF Pro style).
+All text must be CRISP, SHARP, and PERFECTLY READABLE.
 
-Generate a complete, ready-to-use advertisement with all text rendered.`;
+TOP SECTION:
+• Headline: "${headlineText}"
+• Style: Bold, white (#FFFFFF), large (roughly 60-80pt equivalent)
+• Position: Centered horizontally, top 15% of image
+• Effect: Subtle drop shadow for depth
+
+MIDDLE SECTION:
+${subheadline ? `• Subheadline: "${subheadline}"
+• Style: Regular weight, light gray (#CCCCCC), medium size
+• Position: Below headline, centered` : '(no subheadline)'}
+
+BOTTOM SECTION:
+• CTA Button: "${ctaText}"
+• Style: Pill-shaped button, vibrant red (#FF4444) background
+• Text: White, bold, ALL CAPS
+• Position: Centered horizontally, bottom 10% of image
+• Size: Button should be roughly 200px wide, 50px tall
+
+═══════════════════════════════════════
+QUALITY REQUIREMENTS
+═══════════════════════════════════════
+✓ Text is 100% readable and sharp - no blur
+✓ Product looks exactly like the input - unchanged
+✓ Professional magazine-quality lighting
+✓ Premium aesthetic like Apple/Nike ads
+✓ Clean composition with breathing room
+
+═══════════════════════════════════════
+ABSOLUTELY DO NOT
+═══════════════════════════════════════
+✗ NO blurry or distorted text
+✗ NO placeholder boxes or rectangles
+✗ NO changing the product appearance
+✗ NO cluttered or busy layouts
+✗ NO watermarks or extra logos
+✗ NO gibberish or corrupted characters
+
+OUTPUT: A complete, professional advertisement ready for Meta/Instagram.`;
 
     // Fallback to original style-based prompt
     const styleConfigs = {

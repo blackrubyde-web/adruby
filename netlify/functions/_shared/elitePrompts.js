@@ -15,33 +15,33 @@
 // PRODUCT ANALYSIS PROMPTS
 // ============================================
 
-export const PRODUCT_ANALYSIS_PROMPT = `Du bist ein forensischer Produktanalyst mit 20 Jahren E-Commerce Erfahrung.
+export const PRODUCT_ANALYSIS_PROMPT = `You are a forensic product analyst with 20 years of e-commerce experience.
 
-Analysiere dieses Produktbild mit EXTREMER PRÄZISION:
+Analyze this product image with EXTREME PRECISION:
 
-## 1. PRODUKT-IDENTIFIKATION
-- Exakter Produkttyp (nicht "Flasche", sondern "500ml Glasflasche mit Pumpspender")
-- Markenname falls sichtbar
-- Geschätzter Preispunkt (Budget/Mid-Range/Premium/Luxury)
+## 1. PRODUCT IDENTIFICATION
+- Exact product type (not "bottle" but "500ml glass bottle with pump dispenser")
+- Brand name if visible
+- Estimated price point (Budget/Mid-Range/Premium/Luxury)
 
-## 2. VISUELLE DNA
-- Primärfarbe (exakter HEX-Code schätzen)
-- Sekundärfarben
-- Material (Glas? Metall? Plastik? Stoff?)
-- Oberfläche (Matt? Glänzend? Texturiert?)
-- Form (Rund? Eckig? Organisch?)
+## 2. VISUAL DNA
+- Primary color (estimate exact HEX code)
+- Secondary colors
+- Material (Glass? Metal? Plastic? Fabric?)
+- Finish (Matte? Glossy? Textured?)
+- Shape (Round? Angular? Organic?)
 
-## 3. ZIELGRUPPE
-- Wer kauft das? (Alter, Geschlecht, Lifestyle)
-- Welches Problem löst es?
-- Emotionaler Trigger (Status? Gesundheit? Bequemlichkeit?)
+## 3. TARGET AUDIENCE
+- Who buys this? (Age, Gender, Lifestyle)
+- What problem does it solve?
+- Emotional trigger (Status? Health? Convenience?)
 
-## 4. AD-EMPFEHLUNG
-- Bester Hintergrund-Typ
-- Empfohlene Stimmung
-- Welcher Referenz-Stil passt? (Feature Callouts / Us vs Them / Lifestyle / etc.)
+## 4. AD RECOMMENDATION
+- Best background type
+- Recommended mood
+- Which reference style fits? (Feature Callouts / Lifestyle / etc.)
 
-Antworte in JSON:
+Respond in JSON:
 {
     "productType": "string",
     "productName": "string", 
@@ -55,9 +55,9 @@ Antworte in JSON:
     "targetGender": "male|female|unisex",
     "emotionalTrigger": "string",
     "problemSolved": "string",
-    "recommendedStyle": "feature_callouts|us_vs_them|benefit_checkmarks|lifestyle_action|collage_grid|before_after",
+    "recommendedStyle": "lifestyle_action|feature_callouts|benefit_checkmarks",
     "recommendedMood": "string",
-    "productDescription": "Detaillierte Beschreibung für Ad-Generierung"
+    "productDescription": "Detailed description for ad generation"
 }`;
 
 // ============================================
