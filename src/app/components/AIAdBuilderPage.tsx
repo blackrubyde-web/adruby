@@ -379,12 +379,15 @@ export function AIAdBuilderPage() {
 
                         {/* Product Image Upload - only for form/free modes */}
                         {mode !== 'store' && (
-                            <div className="rounded-2xl border border-border/40 bg-card/50 backdrop-blur-sm p-6">
+                            <div className="rounded-2xl border-2 border-primary/30 bg-card/50 backdrop-blur-sm p-6">
                                 <div className="flex items-center gap-2 mb-4">
                                     <Image className="w-5 h-5 text-primary" />
                                     <h3 className="font-semibold">
-                                        {language === 'de' ? 'Produktbild (Optional)' : 'Product Image (Optional)'}
+                                        {language === 'de' ? 'Produktbild' : 'Product Image'}
                                     </h3>
+                                    <span className="text-xs px-2 py-0.5 bg-primary/10 text-primary rounded-full">
+                                        {language === 'de' ? '⭐ Empfohlen für beste Ergebnisse' : '⭐ Recommended for best results'}
+                                    </span>
                                 </div>
 
                                 {productImagePreview ? (

@@ -47,40 +47,37 @@ export function buildFullCreativePrompt(userPrompt, options = {}) {
 
     // Determine where to leave space for our text overlay
     const textZoneInstructions = textPosition === 'top'
-        ? 'Leave the TOP 20% of the image empty or with a simple solid color/gradient - this is reserved for text overlay.'
-        : 'Leave the BOTTOM 25% of the image empty or with a simple solid color/gradient - this is reserved for text overlay.';
+        ? 'Leave the TOP 20% of the image as a clean, dark gradient area.'
+        : 'Leave the BOTTOM 25% of the image as a clean, dark gradient area.';
 
     const prompt = `
-CREATE A PROFESSIONAL ADVERTISEMENT IMAGE (NO TEXT!)
+PRODUCT PHOTOGRAPHY FOR ADVERTISEMENT
 
-=== USER'S CREATIVE VISION ===
+Create a beautiful product photo based on this description:
 ${userPrompt}
-=== END VISION ===
 
-TECHNICAL SPECIFICATIONS:
-- Output: ${CANVAS}x${CANVAS}px square image
-- Style: Ultra-premium advertising quality
-- Lighting: Cinematic, professional
-- Focus: Sharp on main subject with subtle depth of field
+STYLE:
+- Premium product photography
+- Dark, elegant background with subtle lighting
+- Professional studio lighting setup
+- Sharp focus on the product
+- ${CANVAS}x${CANVAS}px square format
 
-LAYOUT REQUIREMENTS:
-${textZoneInstructions}
-The reserved zone should have simple colors (dark, light, or gradient) for text readability.
+COMPOSITION:
+- Product centered and well-lit
+- ${textZoneInstructions}
+- Simple, uncluttered background
 
-QUALITY STANDARDS:
-- Premium magazine advertisement quality
-- Professional color grading
-- Clean, sophisticated composition
-- High-end product photography feel
+CRITICAL - DO NOT INCLUDE:
+- NO text, words, letters, or numbers
+- NO buttons, boxes, or rectangles  
+- NO checkmarks, icons, or symbols
+- NO UI elements or interface components
+- NO placeholder shapes
+- NO feature lists or bullet points
+- Just the product on a beautiful background
 
-⚠️ ABSOLUTE RULES - MUST FOLLOW:
-1. ZERO TEXT - Do NOT include any words, letters, numbers, logos, or typography
-2. ZERO BUTTONS - Do NOT draw any buttons, CTAs, or UI elements
-3. ZERO WATERMARKS - No signatures, stamps, or marks
-4. The image should be TEXT-FREE so we can add our own text overlay
-
-This is a BACKGROUND IMAGE for an ad - all text will be added as a separate layer.
-Generate ONLY the visual scene, NO typography whatsoever.
+OUTPUT: A clean product photo with NOTHING but the product and background.
 `;
 
     return prompt.trim();
