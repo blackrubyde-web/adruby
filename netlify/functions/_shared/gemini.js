@@ -1,127 +1,216 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
+import { supabaseAdmin } from "./clients.js";
 
 let cachedClient = null;
 
-// Quota tracking for proactive fallback
-let quotaState = {
-    requestsThisMinute: 0,
-    requestsThisDay: 0,
-    lastMinuteReset: Date.now(),
-    lastDayReset: Date.now(),
-    quotaExhausted: false,
-    quotaResetAt: null,
-    consecutiveErrors: 0
-};
-
-// Gemini free tier limits (approximate)
+// Gemini quota limits (approximate for free tier)
 const QUOTA_LIMITS = {
     requestsPerMinute: 15,
     requestsPerDay: 1500,
     errorThreshold: 3  // Switch to fallback after 3 consecutive errors
 };
 
+// In-memory cache with short TTL (for same-instance optimization)
+let quotaCache = {
+    data: null,
+    fetchedAt: 0
+};
+const CACHE_TTL_MS = 5000; // 5 second cache
+
 /**
- * Check if Gemini quota is likely available
- * Returns { available: boolean, reason?: string }
+ * Get or initialize quota state from Supabase
+ * Falls back to in-memory if DB unavailable
  */
-export function checkGeminiQuota() {
+async function getQuotaState() {
     const now = Date.now();
 
-    // Reset minute counter
-    if (now - quotaState.lastMinuteReset > 60000) {
-        quotaState.requestsThisMinute = 0;
-        quotaState.lastMinuteReset = now;
+    // Use cache if fresh
+    if (quotaCache.data && (now - quotaCache.fetchedAt) < CACHE_TTL_MS) {
+        return quotaCache.data;
     }
 
-    // Reset day counter
-    if (now - quotaState.lastDayReset > 86400000) {
-        quotaState.requestsThisDay = 0;
-        quotaState.lastDayReset = now;
-        quotaState.quotaExhausted = false;
-        quotaState.consecutiveErrors = 0;
-    }
+    try {
+        const { data, error } = await supabaseAdmin
+            .from('gemini_quota')
+            .select('*')
+            .eq('id', 'global')
+            .single();
 
-    // Check if quota was previously exhausted and not yet reset
-    if (quotaState.quotaExhausted && quotaState.quotaResetAt && now < quotaState.quotaResetAt) {
+        if (error && error.code === 'PGRST116') {
+            // Row doesn't exist, create it
+            const newState = {
+                id: 'global',
+                requests_this_minute: 0,
+                requests_this_day: 0,
+                last_minute_reset: new Date().toISOString(),
+                last_day_reset: new Date().toISOString(),
+                quota_exhausted: false,
+                quota_reset_at: null,
+                consecutive_errors: 0
+            };
+
+            await supabaseAdmin.from('gemini_quota').insert(newState);
+            quotaCache = { data: newState, fetchedAt: now };
+            return newState;
+        }
+
+        if (error) {
+            console.warn('[Gemini] Failed to get quota state:', error.message);
+            // Return permissive fallback
+            return {
+                requests_this_minute: 0,
+                requests_this_day: 0,
+                quota_exhausted: false,
+                consecutive_errors: 0
+            };
+        }
+
+        quotaCache = { data, fetchedAt: now };
+        return data;
+
+    } catch (err) {
+        console.warn('[Gemini] Quota DB error, using permissive fallback:', err.message);
         return {
-            available: false,
-            reason: 'quota_exhausted',
-            resetAt: quotaState.quotaResetAt
+            requests_this_minute: 0,
+            requests_this_day: 0,
+            quota_exhausted: false,
+            consecutive_errors: 0
         };
     }
+}
 
-    // Reset exhausted flag if past reset time
-    if (quotaState.quotaExhausted && quotaState.quotaResetAt && now >= quotaState.quotaResetAt) {
-        quotaState.quotaExhausted = false;
-        quotaState.consecutiveErrors = 0;
+/**
+ * Check if Gemini quota is likely available (persistent version)
+ */
+export async function checkGeminiQuota() {
+    const state = await getQuotaState();
+    const now = Date.now();
+
+    // Check minute reset
+    const lastMinuteReset = new Date(state.last_minute_reset || 0).getTime();
+    if (now - lastMinuteReset > 60000) {
+        state.requests_this_minute = 0;
+    }
+
+    // Check day reset
+    const lastDayReset = new Date(state.last_day_reset || 0).getTime();
+    if (now - lastDayReset > 86400000) {
+        state.requests_this_day = 0;
+        state.quota_exhausted = false;
+        state.consecutive_errors = 0;
+    }
+
+    // Check if quota was exhausted
+    if (state.quota_exhausted && state.quota_reset_at) {
+        const resetTime = new Date(state.quota_reset_at).getTime();
+        if (now < resetTime) {
+            return {
+                available: false,
+                reason: 'quota_exhausted',
+                resetAt: state.quota_reset_at
+            };
+        }
     }
 
     // Check consecutive errors
-    if (quotaState.consecutiveErrors >= QUOTA_LIMITS.errorThreshold) {
+    if (state.consecutive_errors >= QUOTA_LIMITS.errorThreshold) {
         return {
             available: false,
             reason: 'too_many_errors',
-            consecutiveErrors: quotaState.consecutiveErrors
+            consecutiveErrors: state.consecutive_errors
         };
     }
 
     // Check rate limits
-    if (quotaState.requestsThisMinute >= QUOTA_LIMITS.requestsPerMinute) {
+    if (state.requests_this_minute >= QUOTA_LIMITS.requestsPerMinute) {
         return {
             available: false,
             reason: 'rate_limit_minute',
-            resetIn: 60000 - (now - quotaState.lastMinuteReset)
+            resetIn: 60000 - (now - lastMinuteReset)
         };
     }
 
-    if (quotaState.requestsThisDay >= QUOTA_LIMITS.requestsPerDay) {
+    if (state.requests_this_day >= QUOTA_LIMITS.requestsPerDay) {
         return {
             available: false,
-            reason: 'rate_limit_day',
-            resetIn: 86400000 - (now - quotaState.lastDayReset)
+            reason: 'rate_limit_day'
         };
     }
 
     return {
         available: true,
         requestsRemaining: {
-            minute: QUOTA_LIMITS.requestsPerMinute - quotaState.requestsThisMinute,
-            day: QUOTA_LIMITS.requestsPerDay - quotaState.requestsThisDay
+            minute: QUOTA_LIMITS.requestsPerMinute - (state.requests_this_minute || 0),
+            day: QUOTA_LIMITS.requestsPerDay - (state.requests_this_day || 0)
         }
     };
 }
 
 /**
- * Record a successful Gemini request
+ * Record a successful Gemini request (persistent)
  */
-function recordGeminiSuccess() {
-    quotaState.requestsThisMinute++;
-    quotaState.requestsThisDay++;
-    quotaState.consecutiveErrors = 0;
-    console.log(`[Gemini] 📊 Quota: ${quotaState.requestsThisMinute}/${QUOTA_LIMITS.requestsPerMinute} this minute, ${quotaState.requestsThisDay}/${QUOTA_LIMITS.requestsPerDay} today`);
+async function recordGeminiSuccess() {
+    try {
+        // Invalidate cache
+        quotaCache.data = null;
+
+        const { data, error } = await supabaseAdmin
+            .from('gemini_quota')
+            .update({
+                requests_this_minute: supabaseAdmin.sql`requests_this_minute + 1`,
+                requests_this_day: supabaseAdmin.sql`requests_this_day + 1`,
+                consecutive_errors: 0,
+                updated_at: new Date().toISOString()
+            })
+            .eq('id', 'global');
+
+        // Fallback: use RPC or direct increment
+        if (error) {
+            await supabaseAdmin.rpc('increment_gemini_quota');
+        }
+
+        console.log(`[Gemini] 📊 Request recorded successfully`);
+    } catch (err) {
+        console.warn('[Gemini] Failed to record success:', err.message);
+    }
 }
 
 /**
- * Record a Gemini error and check for quota issues
+ * Record a Gemini error (persistent)
  */
-function recordGeminiError(error) {
-    quotaState.consecutiveErrors++;
+async function recordGeminiError(error) {
+    try {
+        // Invalidate cache
+        quotaCache.data = null;
 
-    const errorMessage = error.message?.toLowerCase() || '';
-    const isQuotaError =
-        errorMessage.includes('quota') ||
-        errorMessage.includes('rate limit') ||
-        errorMessage.includes('resource_exhausted') ||
-        errorMessage.includes('429');
+        const errorMessage = error.message?.toLowerCase() || '';
+        const isQuotaError =
+            errorMessage.includes('quota') ||
+            errorMessage.includes('rate limit') ||
+            errorMessage.includes('resource_exhausted') ||
+            errorMessage.includes('429');
 
-    if (isQuotaError) {
-        quotaState.quotaExhausted = true;
-        // Reset after 1 minute for rate limits, 1 hour for quota
-        quotaState.quotaResetAt = Date.now() + (errorMessage.includes('quota') ? 3600000 : 60000);
-        console.warn(`[Gemini] ⚠️ Quota exhausted. Will retry after: ${new Date(quotaState.quotaResetAt).toISOString()}`);
+        const updates = {
+            consecutive_errors: supabaseAdmin.sql`consecutive_errors + 1`,
+            updated_at: new Date().toISOString()
+        };
+
+        if (isQuotaError) {
+            const resetAt = new Date(Date.now() + (errorMessage.includes('quota') ? 3600000 : 60000));
+            updates.quota_exhausted = true;
+            updates.quota_reset_at = resetAt.toISOString();
+            console.warn(`[Gemini] ⚠️ Quota exhausted. Will retry after: ${resetAt.toISOString()}`);
+        }
+
+        await supabaseAdmin
+            .from('gemini_quota')
+            .update(updates)
+            .eq('id', 'global');
+
+        console.warn(`[Gemini] ⚠️ Error recorded`);
+    } catch (err) {
+        console.warn('[Gemini] Failed to record error:', err.message);
     }
-
-    console.warn(`[Gemini] ⚠️ Error recorded. Consecutive errors: ${quotaState.consecutiveErrors}`);
 }
 
 /**

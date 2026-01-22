@@ -57,11 +57,83 @@ import { categorizeError, getUserMessage } from './_shared/errorCategorizer.js';
 
 const MAX_QUALITY_RETRIES = 2;
 
+// Allowed origins for CORS (production security)
+const ALLOWED_ORIGINS = [
+    'https://adruby.com',
+    'https://www.adruby.com',
+    'https://app.adruby.com',
+    'http://localhost:5173',  // Dev
+    'http://localhost:3000',  // Dev
+];
+
+// Allowed hosts for product image URLs (SSRF protection)
+const ALLOWED_IMAGE_HOSTS = [
+    'res.cloudinary.com',
+    'cdn.shopify.com',
+    'images.unsplash.com',
+    'supabase.co',
+    'storage.googleapis.com',
+    's3.amazonaws.com',
+    'i.imgur.com',
+];
+
+/**
+ * Validate image URL to prevent SSRF attacks
+ */
+function validateImageUrl(urlString) {
+    if (!urlString) return { valid: false, error: 'No URL provided' };
+
+    try {
+        const url = new URL(urlString);
+
+        // Must be HTTPS (except localhost for dev)
+        if (url.protocol !== 'https:' && !url.hostname.includes('localhost')) {
+            return { valid: false, error: 'URL must use HTTPS' };
+        }
+
+        // Check against allowed hosts
+        const isAllowedHost = ALLOWED_IMAGE_HOSTS.some(host =>
+            url.hostname.includes(host) || url.hostname === host
+        );
+
+        // Also allow Supabase storage URLs
+        if (url.hostname.includes('supabase')) {
+            return { valid: true };
+        }
+
+        if (!isAllowedHost) {
+            console.warn(`[Security] Blocked image URL from disallowed host: ${url.hostname}`);
+            return { valid: false, error: `Image host not allowed: ${url.hostname}` };
+        }
+
+        return { valid: true };
+    } catch (err) {
+        return { valid: false, error: 'Invalid URL format' };
+    }
+}
+
+/**
+ * Get CORS origin based on request
+ */
+function getCorsOrigin(requestOrigin) {
+    if (process.env.NODE_ENV === 'development') {
+        return '*';  // Allow all in dev
+    }
+
+    if (ALLOWED_ORIGINS.includes(requestOrigin)) {
+        return requestOrigin;
+    }
+
+    // Default to main domain
+    return 'https://adruby.com';
+}
+
 export const handler = async (event) => {
     const startTime = Date.now();
+    const requestOrigin = event.headers.origin || event.headers.Origin || '';
 
     const headers = {
-        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Origin': getCorsOrigin(requestOrigin),
         'Access-Control-Allow-Headers': 'Content-Type, Authorization',
         'Access-Control-Allow-Methods': 'POST, OPTIONS',
         'Content-Type': 'application/json',
@@ -95,12 +167,27 @@ export const handler = async (event) => {
             return { statusCode: 400, headers, body: JSON.stringify({ error: 'Missing text' }) };
         }
 
-        console.log('[AI Ad Generate] User:', user.id, 'Mode:', mode);
+        // SECURITY: Validate product image URL (SSRF protection)
+        if (body.productImageUrl) {
+            const urlValidation = validateImageUrl(body.productImageUrl);
+            if (!urlValidation.valid) {
+                return {
+                    statusCode: 400,
+                    headers,
+                    body: JSON.stringify({
+                        error: 'Invalid image URL',
+                        message: urlValidation.error
+                    }),
+                };
+            }
+        }
+
+        console.log('[AI Ad Generate] User:', user.id.substring(0, 8) + '...', 'Mode:', mode);
 
         // Rate Limiting Check
         const rateLimitResult = await checkRateLimit(user.id, 'ai_ad_generate');
         if (!rateLimitResult.allowed) {
-            console.log('[AI Ad Generate] Rate limit exceeded for user:', user.id);
+            console.log('[AI Ad Generate] Rate limit exceeded');
             return {
                 statusCode: 429,
                 headers: {
@@ -116,29 +203,48 @@ export const handler = async (event) => {
             };
         }
 
-        // Deduct credits
+        // Create job record FIRST (before credit deduction to avoid race condition)
+        // If this fails, user doesn't lose credits
+        const jobId = body.jobId || crypto.randomUUID();
+        try {
+            await supabaseAdmin.from('generated_creatives').insert({
+                id: jobId,
+                user_id: user.id,
+                saved: false,
+                inputs: { mode, language, ...body },
+                outputs: null,
+                metrics: { status: 'pending', started_at: new Date().toISOString() }
+            });
+        } catch (jobError) {
+            console.error('[AI Ad Generate] Failed to create job:', jobError.message);
+            return {
+                statusCode: 500,
+                headers,
+                body: JSON.stringify({ error: 'Failed to create job', message: 'Please try again' }),
+            };
+        }
+
+        console.log('[AI Ad Generate] Job created:', jobId);
+
+        // Deduct credits AFTER job creation (no race condition)
         try {
             await assertAndConsumeCredits(user.id, 'ai_ad_generate');
+
+            // Update job status to processing
+            await supabaseAdmin.from('generated_creatives').update({
+                metrics: { status: 'processing', credits_deducted: true, started_at: new Date().toISOString() }
+            }).eq('id', jobId);
+
         } catch (creditError) {
+            // Clean up the job record since we couldn't charge
+            await supabaseAdmin.from('generated_creatives').delete().eq('id', jobId);
+
             return {
                 statusCode: 402,
                 headers,
                 body: JSON.stringify({ error: 'Insufficient credits', message: creditError.message }),
             };
         }
-
-        // Create job record using client-provided jobId or generate new one
-        const jobId = body.jobId || crypto.randomUUID();
-        await supabaseAdmin.from('generated_creatives').insert({
-            id: jobId,
-            user_id: user.id,
-            saved: false,
-            inputs: { mode, language, ...body },
-            outputs: null,
-            metrics: { status: 'processing', started_at: new Date().toISOString() }
-        });
-
-        console.log('[AI Ad Generate] Job created:', jobId);
 
         // Progress Update Helper
         const updateProgress = async (step, progress, details = {}) => {

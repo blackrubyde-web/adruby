@@ -20,19 +20,7 @@ export async function assertAndConsumeCredits(userId, action) {
   }
   const creditCost = cost || 10;
 
-  // ATOMIC: Single UPDATE with WHERE clause ensures no race condition
-  // Only succeeds if user has >= creditCost credits
-  const { data, error } = await supabaseAdmin
-    .from("user_profiles")
-    .update({
-      credits: supabaseAdmin.rpc ? undefined : 0 // Trigger RPC path if available
-    })
-    .eq("id", userId)
-    .gte("credits", creditCost)
-    .select("credits")
-    .single();
-
-  // Supabase JS doesn't support raw SQL in update, use RPC instead
+  // Use atomic RPC for credit deduction (prevents race conditions)
   const { data: result, error: rpcError } = await supabaseAdmin.rpc(
     "consume_credits_atomic",
     { p_user_id: userId, p_amount: creditCost }
