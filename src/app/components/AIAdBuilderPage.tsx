@@ -119,8 +119,12 @@ export function AIAdBuilderPage() {
 
         try {
             let productImageUrl = undefined;
+
+            console.log('[Frontend] productImage state:', productImage ? `File: ${productImage.name}, ${productImage.size} bytes` : 'NULL');
+
             if (productImage) {
                 // Upload product image to Supabase
+                console.log('[Frontend] Uploading product image to Supabase...');
                 const filename = `temp/product-${profile?.id}-${Date.now()}.png`;
                 const { data: _uploadData, error: uploadError } = await supabase.storage
                     .from('creative-images')
@@ -132,13 +136,16 @@ export function AIAdBuilderPage() {
                     .from('creative-images')
                     .getPublicUrl(filename);
                 productImageUrl = urlData.publicUrl;
-                console.log('[Frontend] Product image uploaded:', productImageUrl);
+                console.log('[Frontend] ✅ Product image uploaded:', productImageUrl);
+            } else {
+                console.warn('[Frontend] ⚠️ NO PRODUCT IMAGE - will use OpenAI text-to-image instead of Gemini image-to-image');
             }
 
             console.log('[Frontend] Generating ad with params:', {
                 mode,
                 language,
                 hasProductImage: !!productImageUrl,
+                productImageUrl: productImageUrl ? '✅ ' + productImageUrl.substring(0, 50) + '...' : '❌ MISSING',
                 inputDataKeys: Object.keys(inputData)
             });
 
