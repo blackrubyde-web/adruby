@@ -3,7 +3,7 @@
  * Premium design with product upload, beautiful mode switcher
  */
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import {
     Wand2, Download, Save, Globe, Upload, FileText, MessageSquare,
     Sparkles, Image, Loader2, RefreshCw, Zap, ChevronRight,
@@ -46,6 +46,52 @@ export function AIAdBuilderPage() {
 
     // Multi-variant selection
     const [selectedVariantIndex, setSelectedVariantIndex] = useState(0);
+
+    // Session key for localStorage
+    const STORAGE_KEY = 'adruby_last_generated_ad';
+
+    // Restore last generated ad from localStorage on mount
+    useEffect(() => {
+        try {
+            const saved = localStorage.getItem(STORAGE_KEY);
+            if (saved) {
+                const parsed = JSON.parse(saved);
+                if (parsed.result && parsed.timestamp) {
+                    // Only restore if less than 24 hours old
+                    const age = Date.now() - parsed.timestamp;
+                    if (age < 24 * 60 * 60 * 1000) {
+                        setResult(parsed.result);
+                        setStep('result');
+                        if (parsed.productImagePreview) {
+                            setProductImagePreview(parsed.productImagePreview);
+                        }
+                        console.log('[AIAdBuilder] Restored last generated ad from session');
+                    } else {
+                        // Clear expired data
+                        localStorage.removeItem(STORAGE_KEY);
+                    }
+                }
+            }
+        } catch (e) {
+            console.warn('[AIAdBuilder] Failed to restore session:', e);
+        }
+    }, []);
+
+    // Save result to localStorage when it changes
+    useEffect(() => {
+        if (result) {
+            try {
+                localStorage.setItem(STORAGE_KEY, JSON.stringify({
+                    result,
+                    productImagePreview,
+                    timestamp: Date.now()
+                }));
+                console.log('[AIAdBuilder] Saved ad to session storage');
+            } catch (e) {
+                console.warn('[AIAdBuilder] Failed to save session:', e);
+            }
+        }
+    }, [result, productImagePreview]);
 
     const handleImageUpload = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
@@ -117,6 +163,8 @@ export function AIAdBuilderPage() {
         setResult(null);
         setError(null);
         setStep('input');
+        // Clear saved session when user explicitly resets
+        localStorage.removeItem(STORAGE_KEY);
     };
 
     const handleSaveToLibrary = async () => {
@@ -131,6 +179,8 @@ export function AIAdBuilderPage() {
                 .eq('id', result.id);
             if (error) throw error;
             toast.success(t('savedToLibrary', language));
+            // Clear session after saving - ad is now safely in library
+            localStorage.removeItem(STORAGE_KEY);
         } catch (err) {
             console.error('Save error:', err);
             toast.error(language === 'de' ? 'Speichern fehlgeschlagen' : 'Save failed');
