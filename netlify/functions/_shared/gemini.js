@@ -237,7 +237,18 @@ export async function analyzeProductWithGemini(productImageBuffer) {
     const genAI = getGeminiClient();
     const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash-exp" });
 
-    console.log("[Gemini] Analyzing product image...");
+    console.log("[Gemini] 🔍 Analyzing product image with elite prompt...");
+
+    // Import the elite analysis prompt dynamically to avoid circular deps
+    let analysisPrompt;
+    try {
+        const { PRODUCT_ANALYSIS_PROMPT } = await import('./elitePrompts.js');
+        analysisPrompt = PRODUCT_ANALYSIS_PROMPT;
+    } catch {
+        // Fallback to inline prompt if import fails
+        analysisPrompt = `Du bist ein Elite Creative Director. Analysiere dieses Produktbild.
+Antworte mit JSON: { "productName", "productType", "industry", "targetAudience", "emotionalAppeal", "keyVisualElements", "colorPalette", "suggestedMood", "productDescription" }`;
+    }
 
     const result = await model.generateContent([
         {
@@ -246,23 +257,7 @@ export async function analyzeProductWithGemini(productImageBuffer) {
                 data: productImageBuffer.toString("base64")
             }
         },
-        {
-            text: `Du bist ein Elite Creative Director. Analysiere dieses Produktbild TIEFGEHEND.
-
-Antworte mit JSON:
-{
-    "productName": "Was ist das Produkt genau?",
-    "productType": "Produktkategorie (electronics, fashion, beauty, food, toy, etc)",
-    "industry": "Branche",
-    "targetAudience": "Wer würde das kaufen?",
-    "emotionalAppeal": "Welche Emotionen soll es wecken?",
-    "keyVisualElements": ["Wichtige visuelle Elemente im Produkt"],
-    "colorPalette": ["Hauptfarben im Produkt als HEX"],
-    "suggestedMood": "Welche Stimmung passt am besten?",
-    "suggestedScene": "Welche Szene würde das Produkt am besten präsentieren?",
-    "productDescription": "Detaillierte Beschreibung für die Ad-Generierung"
-}`
-        }
+        { text: analysisPrompt }
     ]);
 
     const responseText = result.response.text();
@@ -273,6 +268,7 @@ Antworte mit JSON:
         if (jsonMatch) {
             const analysis = JSON.parse(jsonMatch[0]);
             console.log("[Gemini] ✓ Product analyzed:", analysis.productName);
+            console.log("[Gemini] 📊 Recommended style:", analysis.recommendedStyle || 'auto');
             return analysis;
         }
     } catch (e) {
@@ -290,7 +286,8 @@ Antworte mit JSON:
         colorPalette: [],
         suggestedMood: "premium",
         suggestedScene: "premium studio setting",
-        productDescription: "Premium product"
+        productDescription: "Premium product",
+        recommendedStyle: "lifestyle_action"
     };
 }
 
