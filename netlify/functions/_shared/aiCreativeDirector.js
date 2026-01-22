@@ -18,6 +18,7 @@ import { verifyAdQuality, passesQualityGate, improvePromptFromFeedback } from '.
 import { detectIndustry, getBestPractices } from './industryBestPractices.js';
 import { AD_FORMATS, generateVariantPrompts, resizeToFormat, generateAllFormats } from './adFormats.js';
 import { analyzeProductWithGemini, generateAdWithGemini } from './gemini.js';
+import { generateImageWithReference } from './openai.js';
 
 const CANVAS = 1080;
 const MAX_QUALITY_RETRIES = 2;
@@ -170,21 +171,48 @@ export async function createAdWithGeminiDirector(openai, config) {
         console.log('[CreativeDirector] ✓ Gemini ad generation successful!');
         adBuffer = geminiResult.buffer;
     } else {
-        // Fallback to OpenAI-based generation
-        console.log('[CreativeDirector] ⚠️ Gemini failed, falling back to OpenAI...');
-        source = 'openai_fallback';
+        // Fallback to OpenAI images.edit for true image-to-image
+        console.log('[CreativeDirector] ⚠️ Gemini failed, trying OpenAI images.edit...');
+        source = 'openai_images_edit';
 
-        // Use existing strategy-based approach as fallback
-        const strategy = await developCreativeStrategy(openai, {
-            analysis,
-            userPrompt,
-            headline,
-            subheadline,
-            cta,
-            industryPractices
+        // Build a prompt for OpenAI images.edit
+        const editPrompt = `Transform this product into a premium 2026 Meta advertisement:
+- Create a stunning, professional ad scene AROUND this exact product
+- Keep the product recognizable and as the hero
+- Add dramatic lighting: cinematic three-point lighting with subtle glow
+- Background: elegant dark gradient with subtle bokeh effects
+- Style: premium, viral dropshipping aesthetic
+- Text at bottom: "${headline || 'Premium Quality'}" as bold headline
+${subheadline ? `- Subheadline: "${subheadline}"` : ''}
+${cta ? `- CTA button: red pill-shaped button with "${cta}"` : ''}
+- Final result: Magazine-quality Meta ad, 1080x1080px`;
+
+        const editResult = await generateImageWithReference({
+            prompt: editPrompt,
+            referenceImageBuffer: productBuffer,
+            size: "1024x1024",
+            quality: "high"
         });
 
-        adBuffer = await executeCreativeStrategy(openai, strategy, productImageUrl, generateHeroImage);
+        if (editResult.success && editResult.buffer) {
+            console.log('[CreativeDirector] ✅ OpenAI images.edit successful!');
+            adBuffer = editResult.buffer;
+        } else {
+            // Last resort: composite fallback
+            console.log('[CreativeDirector] ⚠️ images.edit failed, using composite fallback...');
+            source = 'openai_composite_fallback';
+
+            const strategy = await developCreativeStrategy(openai, {
+                analysis,
+                userPrompt,
+                headline,
+                subheadline,
+                cta,
+                industryPractices
+            });
+
+            adBuffer = await executeCreativeStrategy(openai, strategy, productImageUrl, generateHeroImage);
+        }
     }
 
     // Resize to final dimensions

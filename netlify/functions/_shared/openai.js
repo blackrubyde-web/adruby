@@ -142,10 +142,9 @@ export async function generateHeroImage({
 
 /**
  * Generate an image with a reference image as INPUT
- * This allows the AI to create a new scene INTEGRATING the product
- * rather than simply overlaying it.
+ * Uses OpenAI's images.edit API for true image-to-image editing.
  * 
- * Uses OpenAI's images.edit API for true image integration.
+ * This creates a new ad creative based on the product image.
  */
 export async function generateImageWithReference({
   prompt,
@@ -155,7 +154,8 @@ export async function generateImageWithReference({
   quality = "high",
 } = {}) {
   const openai = getOpenAiClient();
-  const model = getOpenAiImageModel();
+  // gpt-image-1 supports images.edit with high fidelity
+  const model = "gpt-image-1";
 
   if (!prompt) {
     throw new Error("Missing prompt for image generation");
@@ -164,7 +164,7 @@ export async function generateImageWithReference({
     throw new Error("Missing reference image for image generation");
   }
 
-  console.log(`[OpenAI] Generating integrated image with reference...`);
+  console.log(`[OpenAI] 🎨 Using images.edit API with ${model} for image-to-image...`);
 
   // Get reference image as buffer
   let imageBuffer;
@@ -176,26 +176,49 @@ export async function generateImageWithReference({
     imageBuffer = Buffer.from(arrayBuffer);
   }
 
-  // Convert to base64 for API
-  const imageBase64 = imageBuffer.toString('base64');
-  const imageDataUrl = `data:image/png;base64,${imageBase64}`;
-
   const timeoutMs = Number(process.env.OPENAI_IMAGE_TIMEOUT_MS || 120000);
 
   try {
-    // NOTE: images.edit API requires masks and doesn't work for our use case
-    // OpenAI's image editing is for inpainting, not reference-based generation
-    // Skip directly to intelligent composite approach for reliable results
-    console.log(`[OpenAI] Using intelligent composite approach (images.edit not suitable for product integration)`);
+    // Use images.edit with the product image as input
+    // The API expects a File-like object or base64
+    const result = await withTimeout(
+      openai.images.edit({
+        model: model,
+        image: imageBuffer, // Buffer is accepted
+        prompt: prompt,
+        n: 1,
+        size: size === "1024x1024" ? "1024x1024" : "1024x1024", // gpt-image-1 edit sizes
+      }),
+      timeoutMs,
+      "openai_image_edit_timeout"
+    );
 
+    const item = result?.data?.[0];
+    if (!item) {
+      throw new Error("Image edit returned no data");
+    }
+
+    let b64;
+    if (item.b64_json) {
+      b64 = item.b64_json;
+    } else if (item.url) {
+      b64 = await fetchImageAsBase64(item.url);
+    } else {
+      throw new Error("Image edit returned no usable output");
+    }
+
+    console.log(`[OpenAI] ✅ images.edit successful!`);
     return {
-      success: false,
-      fallback: true,
-      reason: 'Composite approach used for reliable product integration'
+      success: true,
+      b64: b64,
+      buffer: Buffer.from(b64, 'base64'),
+      model: model
     };
 
   } catch (error) {
-    console.warn(`[OpenAI] Image integration error: ${error.message}`);
+    console.error(`[OpenAI] images.edit failed: ${error.message}`);
+
+    // Return failure - caller should use composite fallback
     return {
       success: false,
       error: error.message,
