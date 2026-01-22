@@ -33,6 +33,9 @@ const TEXT_ZONES = {
 /**
  * Build optimized prompt for DALL-E that creates complete ad scene
  * Includes user's vision + Meta ad quality requirements + text zone clearance
+ * 
+ * CRITICAL: We explicitly tell DALL-E to NOT generate any text because
+ * we apply our own SVG text overlay afterward. Double text is the #1 issue.
  */
 export function buildFullCreativePrompt(userPrompt, options = {}) {
     const {
@@ -42,51 +45,42 @@ export function buildFullCreativePrompt(userPrompt, options = {}) {
         textPosition = 'bottom', // 'top', 'bottom', 'left'
     } = options;
 
-    // Determine where text will be overlaid
+    // Determine where to leave space for our text overlay
     const textZoneInstructions = textPosition === 'top'
-        ? 'Keep the TOP 15% of the image relatively empty/simple for headline text overlay.'
-        : 'Keep the BOTTOM 20% of the image relatively empty/simple for headline and CTA text overlay.';
+        ? 'Leave the TOP 20% of the image empty or with a simple solid color/gradient - this is reserved for text overlay.'
+        : 'Leave the BOTTOM 25% of the image empty or with a simple solid color/gradient - this is reserved for text overlay.';
 
     const prompt = `
-PROFESSIONAL ADVERTISEMENT IMAGE - COMPLETE CREATIVE
+CREATE A PROFESSIONAL ADVERTISEMENT IMAGE (NO TEXT!)
 
-Create a ${CANVAS}x${CANVAS}px COMPLETE advertisement image based on this creative brief:
-
-=== CREATIVE VISION ===
+=== USER'S CREATIVE VISION ===
 ${userPrompt}
 === END VISION ===
 
-CRITICAL REQUIREMENTS:
+TECHNICAL SPECIFICATIONS:
+- Output: ${CANVAS}x${CANVAS}px square image
+- Style: Ultra-premium advertising quality
+- Lighting: Cinematic, professional
+- Focus: Sharp on main subject with subtle depth of field
 
-1. COMPLETE SCENE: Generate the ENTIRE scene as described, including:
-   - All products, devices, mockups mentioned
-   - All visual elements (screens, dashboards, UI if mentioned)
-   - Environment/background as described
-   - Lighting and atmosphere as specified
+LAYOUT REQUIREMENTS:
+${textZoneInstructions}
+The reserved zone should have simple colors (dark, light, or gradient) for text readability.
 
-2. META AD QUALITY (2026 Level):
-   - Ultra-premium, $10,000 creative director quality
-   - Cinematic lighting with soft shadows
-   - Professional color grading
-   - Sharp focus on main subject
-   - Subtle depth of field for premium feel
+QUALITY STANDARDS:
+- Premium magazine advertisement quality
+- Professional color grading
+- Clean, sophisticated composition
+- High-end product photography feel
 
-3. TEXT OVERLAY ZONES:
-   ${textZoneInstructions}
-   This area should have simple colors or subtle gradients to ensure text readability.
-   
-4. STYLE GUIDELINES:
-   - If Dark Mode mentioned → Deep blacks, subtle glows
-   - If Glassmorphism mentioned → Frosted glass effects, transparency
-   - If Neon mentioned → Subtle RGB accents, not overwhelming
-   - If Premium/Apple-like → Clean, minimal, sophisticated
+⚠️ ABSOLUTE RULES - MUST FOLLOW:
+1. ZERO TEXT - Do NOT include any words, letters, numbers, logos, or typography
+2. ZERO BUTTONS - Do NOT draw any buttons, CTAs, or UI elements
+3. ZERO WATERMARKS - No signatures, stamps, or marks
+4. The image should be TEXT-FREE so we can add our own text overlay
 
-5. ABSOLUTE PROHIBITION:
-   - DO NOT add ANY text, typography, logos, or words
-   - DO NOT add watermarks or signatures
-   - All text will be added as overlay later
-
-OUTPUT: ${CANVAS}x${CANVAS}px, photorealistic with designed elements, advertisement-ready
+This is a BACKGROUND IMAGE for an ad - all text will be added as a separate layer.
+Generate ONLY the visual scene, NO typography whatsoever.
 `;
 
     return prompt.trim();
