@@ -545,6 +545,13 @@ Beginne mit: "PRÄZISE PRODUKTBESCHREIBUNG:"`
         const filename = `ai-ad-${user.id}-${timestamp}.png`;
         const storagePath = `ai-ads/${filename}`;
 
+        // DEBUG: Log incoming product image URL
+        console.log('[AI Ad Generate] 📦 Request body keys:', Object.keys(body));
+        console.log('[AI Ad Generate] 📦 productImageUrl:', body.productImageUrl ? 'PRESENT' : 'MISSING');
+        if (body.productImageUrl) {
+            console.log('[AI Ad Generate] 📦 URL preview:', body.productImageUrl.substring(0, 80) + '...');
+        }
+
         if (body.productImageUrl) {
             // ===== AI CREATIVE DIRECTOR MODE =====
             // ALWAYS use intelligent product integration when product image is provided
