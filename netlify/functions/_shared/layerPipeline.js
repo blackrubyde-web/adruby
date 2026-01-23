@@ -73,26 +73,45 @@ export async function executeLayerPipeline({
         }
 
         // ═══════════════════════════════════════
-        // LAYER 2: Clean Canvas
+        // LAYER 2: Generate Ad with Gemini
         // ═══════════════════════════════════════
-        console.log('[Pipeline] Layer 2/4: Clean Canvas...');
+        console.log('[Pipeline] Layer 2/4: Generating ad with Gemini...');
 
         const canvasResult = await generateCleanCanvas({
             productImageBuffer,
             layoutPlan,
-            productAnalysis
+            productAnalysis,
+            copy: marketingCopy  // Pass copy so Gemini renders text
         });
 
         if (!canvasResult.success) {
-            throw new Error('Clean canvas generation failed: ' + canvasResult.error);
+            throw new Error('Ad generation failed: ' + canvasResult.error);
         }
 
-        console.log('[Pipeline] ✓ Clean canvas ready', canvasResult.isFallback ? '(fallback)' : '');
+        console.log('[Pipeline] ✓ Ad generated', canvasResult.includesText ? '(with text)' : '(no text)');
 
+        // If Gemini already rendered text, skip Art Director and Compositor
+        if (canvasResult.includesText) {
+            const duration = Date.now() - startTime;
+            console.log(`[Pipeline] ✅ Pipeline complete in ${duration}ms (Gemini rendered text)`);
+
+            return {
+                success: true,
+                buffer: canvasResult.buffer,
+                metadata: {
+                    layoutPlan,
+                    copy: marketingCopy,
+                    duration,
+                    source: 'gemini_direct'
+                }
+            };
+        }
+
+        // Fallback: If no text, continue with Art Director + Compositor
         // ═══════════════════════════════════════
-        // LAYER 3: Art Director
+        // LAYER 3: Art Director (fallback only)
         // ═══════════════════════════════════════
-        console.log('[Pipeline] Layer 3/4: Art Director...');
+        console.log('[Pipeline] Layer 3/4: Art Director (fallback)...');
 
         const coordinates = await getOverlayCoordinates({
             cleanCanvasBuffer: canvasResult.buffer,
@@ -103,9 +122,9 @@ export async function executeLayerPipeline({
         console.log('[Pipeline] ✓ Coordinates extracted');
 
         // ═══════════════════════════════════════
-        // LAYER 4: Vector Compositor
+        // LAYER 4: Vector Compositor (fallback only)
         // ═══════════════════════════════════════
-        console.log('[Pipeline] Layer 4/4: Vector Compositor...');
+        console.log('[Pipeline] Layer 4/4: Vector Compositor (fallback)...');
 
         const finalResult = await compositeAd({
             cleanCanvasBuffer: canvasResult.buffer,

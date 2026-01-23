@@ -1,8 +1,8 @@
 /**
- * CLEAN CANVAS GENERATOR - 10/10 VERSION
+ * CLEAN CANVAS GENERATOR - WITH TEXT
  * 
- * Layer 2: Generates premium product photo WITHOUT text.
- * Industry-aware backgrounds with proper negative space.
+ * Layer 2: Generates product photo WITH text overlay.
+ * Gemini renders text directly in the image (no separate compositor needed).
  */
 
 import { GoogleGenerativeAI } from '@google/generative-ai';
@@ -11,10 +11,10 @@ import sharp from 'sharp';
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
 /**
- * Generate clean product photo with industry-appropriate styling
+ * Generate complete ad with text using Gemini
  */
-export async function generateCleanCanvas({ productImageBuffer, layoutPlan, productAnalysis }) {
-    console.log('[CleanCanvas] 🎨 Generating premium product canvas...');
+export async function generateCleanCanvas({ productImageBuffer, layoutPlan, productAnalysis, copy }) {
+    console.log('[CleanCanvas] 🎨 Generating complete ad with Gemini...');
 
     const style = layoutPlan?.style || {};
     const composition = layoutPlan?.composition || {};
@@ -22,45 +22,59 @@ export async function generateCleanCanvas({ productImageBuffer, layoutPlan, prod
     const mood = style.mood || 'premium';
     const backgroundType = style.backgroundType || 'dark_gradient';
     const backgroundColor = style.backgroundColor || '#1a1a2e';
+    const accentColor = style.accentColor || '#FF4757';
     const lighting = style.lighting || 'studio';
-    const effects = style.effects || [];
-    const productPosition = composition.productPosition || 'center';
-    const negativeSpace = composition.negativeSpaceZone || 'top';
+
+    // Get copy text - either from copy parameter or use defaults
+    const headline = copy?.headline || productAnalysis?.productName || 'Premium Quality';
+    const tagline = copy?.tagline || '';
+    const cta = copy?.cta || 'Shop Now';
 
     const model = genAI.getGenerativeModel({
         model: 'gemini-2.0-flash-exp',
         generationConfig: { responseModalities: ['image', 'text'] }
     });
 
-    const prompt = `PRODUCT PHOTO ENHANCEMENT - NO TEXT
+    const prompt = `Create a professional Meta/Instagram advertisement (1080x1080px).
 
-Create a premium ${mood} advertisement background for this product.
+PRODUCT: Keep the product from the input image EXACTLY as shown. Do not modify the product.
 
-CRITICAL RULES:
-1. Keep the product EXACTLY as it appears - same pose, angle, details
-2. Generate NO text, NO buttons, NO graphics
-3. Leave empty ${negativeSpace} area (25%+) for text overlay later
-
-COMPOSITION:
-- Product position: ${productPosition}
-- Leave CLEAR space in: ${negativeSpace}
-- Product should fill ~45% of frame
-
-BACKGROUND STYLE: ${backgroundType}
-- Base color: ${backgroundColor}
+BACKGROUND:
+- Style: ${backgroundType}
+- Color: ${backgroundColor}
 - Lighting: ${lighting}
-${effects.includes('neon_glow') ? '- Add subtle neon glow accents' : ''}
-${effects.includes('reflection') ? '- Add subtle floor reflection' : ''}
-${effects.includes('warm_glow') ? '- Add warm cozy lighting' : ''}
-${effects.includes('soft_shadow') ? '- Add soft natural shadows' : ''}
+- Add subtle gradient and professional studio lighting
+- Leave space at top for headline and bottom for CTA button
 
-QUALITY:
-- Professional product photography level
-- Magazine/e-commerce quality
-- Clean, uncluttered
-- Premium aesthetic
+TEXT TO INCLUDE (render as clean, crisp typography):
 
-OUTPUT: 1080x1080 product photo WITHOUT any text or graphics.`;
+HEADLINE at top: "${headline}"
+- Large, bold, white text
+- Modern sans-serif font (like Inter, SF Pro, or Helvetica)
+- Drop shadow for readability
+- Centered
+
+${tagline ? `TAGLINE below headline: "${tagline}"
+- Smaller, lighter weight text
+- Gray or light color (#CCCCCC)
+- Centered` : ''}
+
+CTA BUTTON at bottom center: "${cta}"
+- Pill-shaped button with rounded corners
+- Background color: ${accentColor}
+- White text inside the button
+- Subtle glow/shadow effect
+- Width approximately 200-220px
+
+STYLE REQUIREMENTS:
+- ${mood} aesthetic
+- Professional ad quality
+- Clean, modern design
+- Text must be PERFECTLY READABLE and CRISP
+- No artifacts, no blurry text
+- Looks like a professional Meta ad
+
+OUTPUT: A complete advertisement ready to run on Instagram/Facebook.`;
 
     try {
         const result = await model.generateContent([
@@ -75,8 +89,12 @@ OUTPUT: 1080x1080 product photo WITHOUT any text or graphics.`;
                     const imageBuffer = Buffer.from(part.inlineData.data, 'base64');
                     const resized = await sharp(imageBuffer).resize(1080, 1080, { fit: 'cover' }).png().toBuffer();
 
-                    console.log('[CleanCanvas] ✅ Premium canvas generated');
-                    return { success: true, buffer: resized };
+                    console.log('[CleanCanvas] ✅ Complete ad generated with Gemini');
+                    return {
+                        success: true,
+                        buffer: resized,
+                        includesText: true  // Flag that text is already rendered
+                    };
                 }
             }
         }
@@ -88,12 +106,11 @@ OUTPUT: 1080x1080 product photo WITHOUT any text or graphics.`;
 }
 
 async function createFallbackCanvas(productImageBuffer, layoutPlan) {
-    console.log('[CleanCanvas] Using premium fallback...');
+    console.log('[CleanCanvas] Using fallback canvas...');
 
     const bgColor = layoutPlan?.style?.backgroundColor || '#1a1a2e';
 
     try {
-        // Create gradient background
         const gradientSvg = `<svg width="1080" height="1080">
             <defs>
                 <radialGradient id="bg" cx="50%" cy="70%" r="80%">
@@ -110,11 +127,10 @@ async function createFallbackCanvas(productImageBuffer, layoutPlan) {
             .png().toBuffer();
 
         const result = await sharp(background)
-            .composite([{ input: product, top: 320, left: 265 }])
+            .composite([{ input: product, top: 280, left: 265 }])
             .png().toBuffer();
 
-        console.log('[CleanCanvas] ✅ Fallback canvas created');
-        return { success: true, buffer: result, isFallback: true };
+        return { success: true, buffer: result, isFallback: true, includesText: false };
     } catch (error) {
         return { success: false, error: error.message };
     }
