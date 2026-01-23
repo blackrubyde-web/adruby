@@ -1,16 +1,16 @@
 /**
  * MARKETING EXPERT PROMPT POLISHER
  * 
- * Takes the user's simple prompt and transforms it into a 
- * professional Meta Ads creative brief based on:
- * - Product analysis
- * - Industry best practices
- * - What converts best on Meta
+ * Takes the user's simple prompt and transforms it into:
+ * 1. Professional marketing HEADLINE (not user's raw prompt!)
+ * 2. Compelling TAGLINE
+ * 3. CTA text
+ * 4. Visual direction for Gemini
  */
 
 /**
  * Polish user prompt with Marketing Expert AI
- * Takes raw user input and product analysis, returns optimized prompt for Gemini
+ * Returns: { headline, tagline, cta, visualDirection }
  */
 export async function polishPromptWithExpert(openai, {
     userPrompt,
@@ -20,44 +20,51 @@ export async function polishPromptWithExpert(openai, {
     subheadline,
     cta
 }) {
-    console.log('[MarketingExpert] 🎯 Polishing user prompt...');
+    console.log('[MarketingExpert] 🎯 Generating professional marketing copy...');
 
-    const systemPrompt = `You are a Senior Meta Ads Creative Director with 10+ years experience creating viral dropshipping ads.
+    const systemPrompt = `You are a Senior Meta Ads Copywriter creating viral 2026 dropshipping ads.
 
-Your job: Take the user's basic product description and transform it into a PROFESSIONAL creative brief for an AI image generator.
+CRITICAL: Generate MARKETING COPY, not the user's prompt as headline!
 
-You understand:
-- What makes people stop scrolling on Instagram/Facebook
-- Product photography best practices for each industry
-- Emotional triggers that drive purchases
-- 2026 Meta Ads visual trends
+The user describes what they WANT. You create:
+1. A CATCHY HEADLINE that sells (3-5 words max)
+2. A benefit-focused TAGLINE (1 sentence)
+3. A CTA (2-3 words)
+4. Visual direction for the image
 
-Output ONLY the enhanced prompt - no explanations.`;
+Output ONLY valid JSON, no markdown, no explanations.`;
 
-    const userMessage = `PRODUCT ANALYSIS:
-${JSON.stringify(productAnalysis, null, 2)}
-
+    const userMessage = `PRODUCT: ${productAnalysis?.productName || 'Product'}
+TYPE: ${productAnalysis?.productType || 'Unknown'}
 INDUSTRY: ${industry || 'e-commerce'}
 
-USER'S ORIGINAL REQUEST:
-"${userPrompt || 'Create a premium ad for this product'}"
+USER'S WISH: "${userPrompt || 'Premium ad'}"
 
-COPY ELEMENTS:
-- Headline: "${headline || 'Product Name'}"
+USER PROVIDED (use if good, improve if generic):
+- Headline: "${headline || ''}"
 - Tagline: "${subheadline || ''}"
-- CTA: "${cta || 'Shop Now'}"
+- CTA: "${cta || ''}"
 
 ---
 
-Transform this into a professional creative brief for generating a 1080x1080 Meta ad.
+Generate professional marketing copy. The headline should SELL, not describe the user's request.
 
-Focus on:
-1. SPECIFIC visual direction (lighting, mood, atmosphere)
-2. What makes THIS product category sell (based on industry)
-3. Emotional triggers for the target audience
-4. Premium styling that matches ${productAnalysis?.pricePoint || 'mid-range'} positioning
+Examples of GOOD headlines:
+- "Level Up Your Setup" (for gaming products)
+- "Glow Different" (for lamps)
+- "Sleep Like Never Before" (for pillows)
 
-Keep it concise but specific. Output the enhanced prompt only.`;
+Examples of BAD headlines (DO NOT DO THIS):
+- "Gaming background, bring the fox to glow" (user's raw prompt)
+- "Create a premium ad" (instruction, not headline)
+
+Return JSON:
+{
+  "headline": "Catchy 3-5 word headline that SELLS",
+  "tagline": "One sentence benefit",
+  "cta": "Shop Now",
+  "visualDirection": "Specific visual instructions for image generation"
+}`;
 
     try {
         const response = await openai.chat.completions.create({
@@ -66,20 +73,34 @@ Keep it concise but specific. Output the enhanced prompt only.`;
                 { role: 'system', content: systemPrompt },
                 { role: 'user', content: userMessage }
             ],
-            max_tokens: 500,
-            temperature: 0.7
+            max_tokens: 400,
+            temperature: 0.8,
+            response_format: { type: "json_object" }
         });
 
-        const polishedPrompt = response.choices[0].message.content.trim();
+        const result = JSON.parse(response.choices[0].message.content);
 
-        console.log('[MarketingExpert] ✅ Prompt polished');
-        console.log('[MarketingExpert] Enhanced prompt preview:', polishedPrompt.substring(0, 150) + '...');
+        console.log('[MarketingExpert] ✅ Generated copy:', {
+            headline: result.headline,
+            tagline: result.tagline?.substring(0, 50) + '...',
+            cta: result.cta
+        });
 
-        return polishedPrompt;
+        return {
+            headline: result.headline || headline || productAnalysis?.productName || 'Premium Quality',
+            tagline: result.tagline || subheadline || '',
+            cta: result.cta || cta || 'Shop Now',
+            visualDirection: result.visualDirection || ''
+        };
     } catch (error) {
-        console.error('[MarketingExpert] Failed to polish prompt:', error.message);
-        // Return original prompt if polishing fails
-        return userPrompt || `Premium advertisement for ${productAnalysis?.productName || 'this product'}`;
+        console.error('[MarketingExpert] Failed:', error.message);
+        // Fallback to provided or default values
+        return {
+            headline: headline || productAnalysis?.productName || 'Premium Quality',
+            tagline: subheadline || 'Discover the difference',
+            cta: cta || 'Shop Now',
+            visualDirection: ''
+        };
     }
 }
 

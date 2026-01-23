@@ -173,9 +173,9 @@ export async function createAdWithGeminiDirector(openai, config) {
 
     // Phase 1.5: Polish user prompt with Marketing Expert AI
     console.log('[CreativeDirector] Phase 1.5: Marketing Expert Prompt Polish...');
-    let enhancedPrompt;
+    let marketingCopy = { headline, tagline: subheadline, cta, visualDirection: '' };
     try {
-        enhancedPrompt = await polishPromptWithExpert(openai, {
+        marketingCopy = await polishPromptWithExpert(openai, {
             userPrompt,
             productAnalysis: analysis,
             industry: industryKey,
@@ -183,24 +183,23 @@ export async function createAdWithGeminiDirector(openai, config) {
             subheadline,
             cta
         });
-        console.log('[CreativeDirector] ✅ Prompt enhanced by Marketing Expert');
+        console.log('[CreativeDirector] ✅ Marketing copy generated:', marketingCopy.headline);
     } catch (polishError) {
-        console.warn('[CreativeDirector] Prompt polish failed, using original:', polishError.message);
-        enhancedPrompt = userPrompt || `Premium ad for ${analysis.productName || 'this product'}`;
+        console.warn('[CreativeDirector] Marketing expert failed, using defaults:', polishError.message);
     }
 
-    // Phase 2: Generate ad with Gemini Image-to-Image using enhanced prompt
+    // Phase 2: Generate ad with Gemini Image-to-Image using MARKETING COPY (not raw user prompt!)
     console.log('[CreativeDirector] Phase 2: Gemini Image-to-Image Ad Generation...');
 
     const geminiResult = await generateAdWithGemini({
         productImageBuffer: productBuffer,
-        headline: headline || 'Premium Quality',
-        subheadline: subheadline || '',
-        cta: cta || 'Shop Now',
+        headline: marketingCopy.headline || headline || 'Premium Quality',
+        subheadline: marketingCopy.tagline || subheadline || '',
+        cta: marketingCopy.cta || cta || 'Shop Now',
         productAnalysis: analysis,
         style: 'premium_dark',
-        referencePattern,  // Pass the selected pattern for style guidance
-        enhancedPrompt     // Pass the marketing-expert-polished prompt
+        referencePattern,
+        enhancedPrompt: marketingCopy.visualDirection || userPrompt
     });
 
     let adBuffer;
