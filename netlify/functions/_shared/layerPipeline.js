@@ -81,7 +81,8 @@ export async function executeLayerPipeline({
             productImageBuffer,
             layoutPlan,
             productAnalysis,
-            copy: marketingCopy  // Pass copy so Gemini renders text
+            copy: marketingCopy,
+            userPrompt  // NEW: Pass user's creative vision to Gemini
         });
 
         if (!canvasResult.success) {

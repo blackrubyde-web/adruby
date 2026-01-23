@@ -1,8 +1,8 @@
 /**
- * CLEAN CANVAS GENERATOR - WITH TEXT
+ * CLEAN CANVAS GENERATOR - USER PROMPT PRIORITY
  * 
- * Layer 2: Generates product photo WITH text overlay.
- * Gemini renders text directly in the image (no separate compositor needed).
+ * Layer 2: Generates complete ad based on USER'S creative vision.
+ * User prompt takes ABSOLUTE priority over system defaults.
  */
 
 import { GoogleGenerativeAI } from '@google/generative-ai';
@@ -11,21 +11,20 @@ import sharp from 'sharp';
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
 /**
- * Generate complete ad with text using Gemini
+ * Generate complete ad with USER PROMPT as priority
  */
-export async function generateCleanCanvas({ productImageBuffer, layoutPlan, productAnalysis, copy }) {
-    console.log('[CleanCanvas] 🎨 Generating complete ad with Gemini...');
+export async function generateCleanCanvas({
+    productImageBuffer,
+    layoutPlan,
+    productAnalysis,
+    copy,
+    userPrompt  // NEW: User's creative vision
+}) {
+    console.log('[CleanCanvas] 🎨 Generating ad based on user vision...');
 
     const style = layoutPlan?.style || {};
-    const composition = layoutPlan?.composition || {};
-
-    const mood = style.mood || 'premium';
-    const backgroundType = style.backgroundType || 'dark_gradient';
-    const backgroundColor = style.backgroundColor || '#1a1a2e';
     const accentColor = style.accentColor || '#FF4757';
-    const lighting = style.lighting || 'studio';
 
-    // Get copy text - either from copy parameter or use defaults
     const headline = copy?.headline || productAnalysis?.productName || 'Premium Quality';
     const tagline = copy?.tagline || '';
     const cta = copy?.cta || 'Shop Now';
@@ -35,46 +34,12 @@ export async function generateCleanCanvas({ productImageBuffer, layoutPlan, prod
         generationConfig: { responseModalities: ['image', 'text'] }
     });
 
-    const prompt = `Create a professional Meta/Instagram advertisement (1080x1080px).
+    // USER PROMPT HAS ABSOLUTE PRIORITY
+    const prompt = userPrompt
+        ? buildUserPromptFirst(userPrompt, headline, tagline, cta, accentColor)
+        : buildDefaultPrompt(style, headline, tagline, cta, accentColor);
 
-PRODUCT: Keep the product from the input image EXACTLY as shown. Do not modify the product.
-
-BACKGROUND:
-- Style: ${backgroundType}
-- Color: ${backgroundColor}
-- Lighting: ${lighting}
-- Add subtle gradient and professional studio lighting
-- Leave space at top for headline and bottom for CTA button
-
-TEXT TO INCLUDE (render as clean, crisp typography):
-
-HEADLINE at top: "${headline}"
-- Large, bold, white text
-- Modern sans-serif font (like Inter, SF Pro, or Helvetica)
-- Drop shadow for readability
-- Centered
-
-${tagline ? `TAGLINE below headline: "${tagline}"
-- Smaller, lighter weight text
-- Gray or light color (#CCCCCC)
-- Centered` : ''}
-
-CTA BUTTON at bottom center: "${cta}"
-- Pill-shaped button with rounded corners
-- Background color: ${accentColor}
-- White text inside the button
-- Subtle glow/shadow effect
-- Width approximately 200-220px
-
-STYLE REQUIREMENTS:
-- ${mood} aesthetic
-- Professional ad quality
-- Clean, modern design
-- Text must be PERFECTLY READABLE and CRISP
-- No artifacts, no blurry text
-- Looks like a professional Meta ad
-
-OUTPUT: A complete advertisement ready to run on Instagram/Facebook.`;
+    console.log('[CleanCanvas] Using prompt type:', userPrompt ? 'USER_PRIORITY' : 'DEFAULT');
 
     try {
         const result = await model.generateContent([
@@ -89,12 +54,8 @@ OUTPUT: A complete advertisement ready to run on Instagram/Facebook.`;
                     const imageBuffer = Buffer.from(part.inlineData.data, 'base64');
                     const resized = await sharp(imageBuffer).resize(1080, 1080, { fit: 'cover' }).png().toBuffer();
 
-                    console.log('[CleanCanvas] ✅ Complete ad generated with Gemini');
-                    return {
-                        success: true,
-                        buffer: resized,
-                        includesText: true  // Flag that text is already rendered
-                    };
+                    console.log('[CleanCanvas] ✅ Ad generated');
+                    return { success: true, buffer: resized, includesText: true };
                 }
             }
         }
@@ -105,9 +66,81 @@ OUTPUT: A complete advertisement ready to run on Instagram/Facebook.`;
     }
 }
 
-async function createFallbackCanvas(productImageBuffer, layoutPlan) {
-    console.log('[CleanCanvas] Using fallback canvas...');
+/**
+ * USER PROMPT FIRST - User's vision takes absolute priority
+ */
+function buildUserPromptFirst(userPrompt, headline, tagline, cta, accentColor) {
+    return `Create a Meta/Instagram advertisement (1080x1080px) based EXACTLY on this user request:
 
+══════════════════════════════════════════
+USER'S CREATIVE VISION (HIGHEST PRIORITY):
+══════════════════════════════════════════
+${userPrompt}
+
+Follow the user's instructions EXACTLY. If they want a Macbook, create a Macbook.
+If they want red lights, use red lights. If they want 3D effects, make 3D effects.
+DO NOT change or simplify their vision.
+
+══════════════════════════════════════════
+USE THE INPUT IMAGE AS THE PRODUCT/SCREENSHOT
+══════════════════════════════════════════
+The uploaded image is what the user wants to feature in the ad.
+Incorporate it exactly as they described.
+
+══════════════════════════════════════════
+TEXT TO INCLUDE:
+══════════════════════════════════════════
+HEADLINE: "${headline}"
+${tagline ? `TAGLINE: "${tagline}"` : ''}
+CTA BUTTON: "${cta}" (${accentColor} background, white text, pill shape, premium look with glow/shadow)
+
+══════════════════════════════════════════
+QUALITY REQUIREMENTS:
+══════════════════════════════════════════
+- Professional Meta ad quality
+- Sharp, crisp text with proper shadows
+- Premium, modern aesthetic
+- CTA button must look clickable and premium
+- 1080x1080 square format
+
+Create exactly what the user asked for. Their vision is the priority.`;
+}
+
+/**
+ * Default prompt when no user prompt provided
+ */
+function buildDefaultPrompt(style, headline, tagline, cta, accentColor) {
+    const mood = style.mood || 'premium';
+    const backgroundType = style.backgroundType || 'dark_gradient';
+    const backgroundColor = style.backgroundColor || '#1a1a2e';
+
+    return `Create a professional Meta/Instagram advertisement (1080x1080px).
+
+PRODUCT: Keep the product from the input image EXACTLY as shown.
+
+BACKGROUND:
+- Style: ${backgroundType}
+- Color: ${backgroundColor}
+- Professional studio lighting
+
+TEXT:
+HEADLINE: "${headline}" (large, bold, white, top center)
+${tagline ? `TAGLINE: "${tagline}" (smaller, gray, below headline)` : ''}
+
+CTA BUTTON: "${cta}"
+- Bottom center
+- Pill-shaped with rounded corners (28px radius)
+- Background: ${accentColor}
+- White bold text
+- IMPORTANT: Add glow effect and shadow to make it pop
+- Make it look PREMIUM and CLICKABLE
+
+STYLE: ${mood} aesthetic, clean, modern, professional
+TEXT: Perfectly readable, crisp, with shadows for depth`;
+}
+
+async function createFallbackCanvas(productImageBuffer, layoutPlan) {
+    console.log('[CleanCanvas] Using fallback...');
     const bgColor = layoutPlan?.style?.backgroundColor || '#1a1a2e';
 
     try {
