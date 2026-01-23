@@ -23,6 +23,7 @@ import { selectBestPattern, REFERENCE_PATTERNS } from './referencePatterns.js';
 import { QUALITY, FEATURES, fetchWithTimeout, TIMEOUTS } from './config.js';
 import { buildMasterAdPrompt, ENHANCED_PATTERNS, PRODUCT_ANALYSIS_PROMPT } from './elitePrompts.js';
 import { polishPromptWithExpert } from './promptPolisher.js';
+import { executeLayerPipeline } from './layerPipeline.js';
 
 const CANVAS = QUALITY.CANVAS_SIZE;
 const MAX_QUALITY_RETRIES = QUALITY.MAX_RETRIES;
@@ -111,6 +112,53 @@ export async function createAdWithCreativeDirector(openai, config) {
     }
 
     return result;
+}
+
+
+/**
+ * NEW: Create ad using 4-LAYER PIPELINE
+ * 
+ * Professional method with sharp text rendering.
+ * Layers: Strategist → Clean Canvas → Art Director → Compositor
+ */
+export async function createAdWithLayerPipeline(openai, config) {
+    const { productImageUrl, userPrompt, headline, subheadline, cta } = config;
+
+    console.log('[CreativeDirector] 🏗️ Starting 4-LAYER PIPELINE...');
+
+    // Download product image
+    const productResponse = await fetchWithTimeout(productImageUrl, {}, TIMEOUTS.IMAGE_FETCH);
+    if (!productResponse.ok) throw new Error(`Failed to fetch product image: ${productResponse.status}`);
+    const productBuffer = Buffer.from(await productResponse.arrayBuffer());
+
+    // Analyze product
+    let analysis;
+    try {
+        analysis = await analyzeProductWithGemini(productBuffer);
+    } catch (e) {
+        analysis = { productName: 'Product', productType: 'general' };
+    }
+
+    const industryKey = detectIndustry(analysis, userPrompt);
+
+    // Execute 4-layer pipeline
+    const result = await executeLayerPipeline({
+        productImageBuffer: productBuffer,
+        productAnalysis: analysis,
+        userPrompt,
+        headline: headline || analysis.productName || 'Premium Quality',
+        tagline: subheadline || '',
+        cta: cta || 'Shop Now',
+        industry: industryKey,
+        openai
+    });
+
+    if (!result.success) {
+        console.warn('[CreativeDirector] Layer pipeline failed, falling back...');
+        return createAdWithGeminiDirector(openai, config);
+    }
+
+    return { imageBuffer: result.buffer, metadata: { source: 'layer_pipeline', ...result.metadata } };
 }
 
 
