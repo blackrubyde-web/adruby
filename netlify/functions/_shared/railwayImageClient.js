@@ -53,16 +53,30 @@ export async function generateWithAIDesign(params) {
 
     const result = await response.json();
 
-    // Convert Railway response format to match existing format
+    // Railway returns imageBase64, convert to buffer and also provide data URL
+    let imageBuffer = null;
+    let imageDataUrl = null;
+
+    if (result.imageBase64) {
+        imageBuffer = Buffer.from(result.imageBase64, 'base64');
+        imageDataUrl = `data:image/png;base64,${result.imageBase64}`;
+        console.log('[Railway] ✅ Received image:', imageBuffer.length, 'bytes');
+    } else {
+        console.warn('[Railway] ⚠️ No imageBase64 in response');
+    }
+
+    // Return both buffer and dataUrl
     return {
-        imageUrl: result.imageUrl,
+        imageBuffer,
+        imageDataUrl,
+        imageBase64: result.imageBase64,
         imagePrompt: result.prompt || userPrompt,
         metadata: {
             source: 'railway-v3',
-            industry: result.industry,
-            composition: result.composition,
-            referenceCount: result.referenceCount,
-            generationTime: result.generationTime,
+            industry: result.metadata?.industry || industry,
+            pattern: result.metadata?.pattern,
+            referenceCount: result.metadata?.referenceCount,
+            generationTime: result.metadata?.duration,
         },
     };
 }

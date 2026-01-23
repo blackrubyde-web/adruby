@@ -295,30 +295,40 @@ export const handler = async (event) => {
                     });
 
                     console.log('[AI Ad Generate] ✅ Railway v3.0 generation complete!', {
-                        hasImage: !!railwayResult.imageUrl,
+                        hasImage: !!railwayResult.imageBuffer,
                         source: railwayResult.metadata?.source,
                         referenceCount: railwayResult.metadata?.referenceCount,
                     });
 
-                    // Upload to Supabase for permanent storage
-                    let finalImageUrl = railwayResult.imageUrl;
-                    let thumbnailUrl = railwayResult.imageUrl;
+                    // Check if we got an image
+                    if (!railwayResult.imageBuffer) {
+                        throw new Error('Railway returned no image');
+                    }
+
+                    // Upload buffer directly to Supabase
+                    let finalImageUrl = null;
+                    let thumbnailUrl = null;
+                    const filename = `creatives/${user.id}/${jobId}.png`;
 
                     try {
-                        const imageResponse = await fetch(railwayResult.imageUrl);
-                        const imageBuffer = await imageResponse.arrayBuffer();
-                        const filename = `creatives/${user.id}/${jobId}.png`;
                         const { error: uploadError } = await supabaseAdmin.storage
                             .from('creative-images')
-                            .upload(filename, Buffer.from(imageBuffer), { contentType: 'image/png', upsert: true });
+                            .upload(filename, railwayResult.imageBuffer, { contentType: 'image/png', upsert: true });
 
                         if (!uploadError) {
                             const { data: urlData } = supabaseAdmin.storage.from('creative-images').getPublicUrl(filename);
                             finalImageUrl = urlData.publicUrl;
                             thumbnailUrl = urlData.publicUrl;
+                            console.log('[AI Ad Generate] ✅ Image uploaded to Supabase:', finalImageUrl);
+                        } else {
+                            console.error('[AI Ad Generate] Upload error:', uploadError.message);
+                            throw new Error('Failed to upload to Supabase');
                         }
                     } catch (uploadErr) {
-                        console.warn('[AI Ad Generate] Railway image upload failed, using original URL:', uploadErr.message);
+                        console.error('[AI Ad Generate] Railway image upload failed:', uploadErr.message);
+                        // Use data URL as fallback
+                        finalImageUrl = railwayResult.imageDataUrl;
+                        thumbnailUrl = railwayResult.imageDataUrl;
                     }
 
                     // Save to database and return
