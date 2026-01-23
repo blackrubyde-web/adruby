@@ -53,7 +53,7 @@ export async function createLayoutStrategy({ productAnalysis, userPrompt, indust
     console.log(`[Strategist] Industry: ${industry || 'default'}, Mood: ${template.mood}`);
 
     const model = genAI.getGenerativeModel({
-        model: 'gemini-1.5-pro',
+        model: 'gemini-1.5-flash',
         generationConfig: { responseMimeType: 'application/json' }
     });
 
