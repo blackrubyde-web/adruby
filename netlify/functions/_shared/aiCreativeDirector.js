@@ -22,7 +22,7 @@ import { generateImageWithReference } from './openai.js';
 import { selectBestPattern, REFERENCE_PATTERNS } from './referencePatterns.js';
 import { QUALITY, FEATURES, fetchWithTimeout, TIMEOUTS } from './config.js';
 import { buildMasterAdPrompt, ENHANCED_PATTERNS, PRODUCT_ANALYSIS_PROMPT } from './elitePrompts.js';
-import { polishPromptWithExpert } from './promptPolisher.js';
+import { polishCreativePrompt } from './promptPolisher.js';
 import { executeLayerPipeline } from './layerPipeline.js';
 
 const CANVAS = QUALITY.CANVAS_SIZE;
@@ -223,14 +223,18 @@ export async function createAdWithGeminiDirector(openai, config) {
     console.log('[CreativeDirector] Phase 1.5: Marketing Expert Prompt Polish...');
     let marketingCopy = { headline, tagline: subheadline, cta, visualDirection: '' };
     try {
-        marketingCopy = await polishPromptWithExpert(openai, {
+        const polishResult = await polishCreativePrompt(openai, {
             userPrompt,
             productAnalysis: analysis,
             industry: industryKey,
-            headline,
-            subheadline,
-            cta
         });
+        // Map polished result to marketingCopy format
+        marketingCopy = {
+            headline: headline || polishResult.templateName || 'Premium Quality',
+            tagline: subheadline || '',
+            cta: cta || 'Shop Now',
+            visualDirection: polishResult.enhancedPrompt || '',
+        };
         console.log('[CreativeDirector] ✅ Marketing copy generated:', marketingCopy.headline);
     } catch (polishError) {
         console.warn('[CreativeDirector] Marketing expert failed, using defaults:', polishError.message);
