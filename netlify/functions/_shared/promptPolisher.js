@@ -122,7 +122,96 @@ export function getIndustryEnhancements(industry) {
     return enhancements[industry] || enhancements.default;
 }
 
+/**
+ * NEW: Polish User's Creative Prompt to Meta 2026 Standard
+ * 
+ * Takes user's raw creative vision and enhances it with:
+ * - Professional design techniques
+ * - Meta 2026 best practices
+ * - Conversion optimization
+ * - Premium visual elements
+ */
+export async function polishCreativePrompt(openai, {
+    userPrompt,
+    productAnalysis,
+    industry
+}) {
+    console.log('[CreativePolisher] 🎨 Enhancing user vision to Meta 2026 standard...');
+
+    if (!userPrompt || userPrompt.length < 10) {
+        console.log('[CreativePolisher] No user prompt, using defaults');
+        return null;
+    }
+
+    const systemPrompt = `You are an ELITE Creative Director at a top Meta Ads agency (2026 standard).
+
+Your job: Take the user's basic creative idea and TRANSFORM it into a PREMIUM Meta ad concept.
+
+Add:
+1. Professional lighting techniques (studio, dramatic, soft gradients)
+2. Premium mockup concepts (3D renders, device mockups, lifestyle contexts)
+3. Modern design trends (glassmorphism, neon accents, depth/layers)
+4. Conversion-optimized layouts
+5. Specific visual effects that make ads POP
+
+NEVER just repeat the user's prompt. ENHANCE it with professional details.
+
+Example:
+- User says: "put my screenshot in a macbook"
+- You output: "Place the screenshot inside a sleek MacBook Pro mockup with a 45-degree angle. Add soft ambient lighting from the left, subtle screen glow reflecting off the surface. Background: deep navy gradient with subtle purple light flares. Add 3D floating UI elements extracted from the screenshot to create depth. Include subtle particle effects and a glass-morphic overlay element."
+
+Return JSON with ONLY this structure:
+{
+  "enhancedPrompt": "The complete, professional creative direction",
+  "keyEnhancements": ["list of 3-5 specific premium elements added"],
+  "styleNotes": "Brief note on the overall aesthetic direction"
+}`;
+
+    const userMessage = `PRODUCT CONTEXT:
+- Type: ${productAnalysis?.productType || 'Product/Service'}
+- Industry: ${industry || 'technology'}
+- Product Name: ${productAnalysis?.productName || 'Unknown'}
+
+USER'S RAW CREATIVE VISION:
+"${userPrompt}"
+
+Transform this into a META 2026 PREMIUM ad concept. Be SPECIFIC about:
+- Exact lighting (direction, color, intensity)
+- Background (gradients, effects, colors)
+- Mockup/presentation style (3D, device frame, floating elements)
+- Premium effects (glow, particles, reflections, glassmorphism)
+- Layout and composition`;
+
+    try {
+        const response = await openai.chat.completions.create({
+            model: 'gpt-4o',
+            messages: [
+                { role: 'system', content: systemPrompt },
+                { role: 'user', content: userMessage }
+            ],
+            max_tokens: 800,
+            temperature: 0.9,
+            response_format: { type: "json_object" }
+        });
+
+        const result = JSON.parse(response.choices[0].message.content);
+
+        console.log('[CreativePolisher] ✅ Enhanced to Meta 2026 standard');
+        console.log('[CreativePolisher] Key enhancements:', result.keyEnhancements);
+
+        return {
+            enhancedPrompt: result.enhancedPrompt,
+            keyEnhancements: result.keyEnhancements || [],
+            styleNotes: result.styleNotes || ''
+        };
+    } catch (error) {
+        console.error('[CreativePolisher] Failed:', error.message);
+        return null;
+    }
+}
+
 export default {
     polishPromptWithExpert,
-    getIndustryEnhancements
+    getIndustryEnhancements,
+    polishCreativePrompt
 };

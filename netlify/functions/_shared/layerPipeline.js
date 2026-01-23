@@ -14,7 +14,7 @@ import { createLayoutStrategy } from './strategist.js';
 import { generateCleanCanvas } from './cleanCanvas.js';
 import { getOverlayCoordinates } from './artDirector.js';
 import { compositeAd } from './compositor.js';
-import { polishPromptWithExpert } from './promptPolisher.js';
+import { polishPromptWithExpert, polishCreativePrompt } from './promptPolisher.js';
 
 /**
  * Execute the full 4-layer pipeline
@@ -73,6 +73,28 @@ export async function executeLayerPipeline({
         }
 
         // ═══════════════════════════════════════
+        // LAYER 1.75: Polish User's Creative Vision (Meta 2026)
+        // ═══════════════════════════════════════
+        let enhancedPrompt = userPrompt;
+
+        if (userPrompt && openai) {
+            console.log('[Pipeline] Layer 1.75: Polishing creative vision to Meta 2026...');
+            try {
+                const polished = await polishCreativePrompt(openai, {
+                    userPrompt,
+                    productAnalysis,
+                    industry
+                });
+                if (polished?.enhancedPrompt) {
+                    enhancedPrompt = polished.enhancedPrompt;
+                    console.log('[Pipeline] ✓ Enhanced:', polished.keyEnhancements?.join(', '));
+                }
+            } catch (e) {
+                console.warn('[Pipeline] Creative polish failed, using raw prompt');
+            }
+        }
+
+        // ═══════════════════════════════════════
         // LAYER 2: Generate Ad with Gemini
         // ═══════════════════════════════════════
         console.log('[Pipeline] Layer 2/4: Generating ad with Gemini...');
@@ -82,7 +104,7 @@ export async function executeLayerPipeline({
             layoutPlan,
             productAnalysis,
             copy: marketingCopy,
-            userPrompt  // NEW: Pass user's creative vision to Gemini
+            userPrompt: enhancedPrompt  // POLISHED prompt, not raw
         });
 
         if (!canvasResult.success) {
