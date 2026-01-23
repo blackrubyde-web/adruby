@@ -1,17 +1,18 @@
 /**
- * CLEAN CANVAS GENERATOR - ELITE VERSION
+ * CLEAN CANVAS GENERATOR - TEMPLATE-BASED
  * 
- * Layer 2: Generates PREMIUM Meta 2026 ads using
- * pixel-precise prompts from the Creative Polisher.
+ * Layer 2: Uses reference-level templates to generate
+ * agency-quality Meta 2026 ads with Gemini.
  */
 
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import sharp from 'sharp';
+import { AD_TEMPLATES } from './adTemplates.js';
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
 /**
- * Generate elite Meta 2026 ad with Gemini
+ * Generate reference-level ad using templates
  */
 export async function generateCleanCanvas({
     productImageBuffer,
@@ -20,7 +21,7 @@ export async function generateCleanCanvas({
     copy,
     userPrompt  // This is the ENHANCED prompt from polishCreativePrompt
 }) {
-    console.log('[CleanCanvas] 🎨 Generating ELITE Meta 2026 ad...');
+    console.log('[CleanCanvas] 🎨 Generating reference-level ad...');
 
     const style = layoutPlan?.style || {};
     const accentColor = style.accentColor || '#FF4757';
@@ -34,12 +35,10 @@ export async function generateCleanCanvas({
         generationConfig: { responseModalities: ['image', 'text'] }
     });
 
-    // Build the final prompt - use enhanced prompt if available
-    const finalPrompt = userPrompt
-        ? buildElitePrompt(userPrompt, headline, tagline, cta, accentColor)
-        : buildDefaultElitePrompt(style, headline, tagline, cta, accentColor, productAnalysis);
+    // Build the final prompt
+    const finalPrompt = buildFinalPrompt(userPrompt, headline, tagline, cta, accentColor, productAnalysis);
 
-    console.log('[CleanCanvas] Prompt type:', userPrompt ? 'ENHANCED' : 'DEFAULT');
+    console.log('[CleanCanvas] Prompt length:', finalPrompt.length, 'chars');
 
     try {
         const result = await model.generateContent([
@@ -54,7 +53,7 @@ export async function generateCleanCanvas({
                     const imageBuffer = Buffer.from(part.inlineData.data, 'base64');
                     const resized = await sharp(imageBuffer).resize(1080, 1080, { fit: 'cover' }).png().toBuffer();
 
-                    console.log('[CleanCanvas] ✅ ELITE ad generated');
+                    console.log('[CleanCanvas] ✅ Reference-level ad generated');
                     return { success: true, buffer: resized, includesText: true };
                 }
             }
@@ -67,10 +66,12 @@ export async function generateCleanCanvas({
 }
 
 /**
- * Elite prompt using the enhanced creative direction
+ * Build comprehensive final prompt for Gemini
  */
-function buildElitePrompt(enhancedPrompt, headline, tagline, cta, accentColor) {
-    return `You are creating a PREMIUM Meta advertisement. Follow these EXACT specifications.
+function buildFinalPrompt(enhancedPrompt, headline, tagline, cta, accentColor, productAnalysis) {
+    // If we have an enhanced prompt from GPT-4o, use it with additions
+    if (enhancedPrompt && enhancedPrompt.length > 100) {
+        return `You are creating a PREMIUM Meta advertisement. Follow these EXACT specifications.
 
 ═══════════════════════════════════════════════════════════════
 CANVAS: 1080 x 1080 pixels (Instagram/Facebook Square)
@@ -86,89 +87,102 @@ TEXT CONTENT TO RENDER:
 ═══════════════════════════════════════════════════════════════
 HEADLINE: "${headline}"
 - Must be PERFECTLY READABLE
-- Use modern sans-serif font (like Inter, SF Pro)
-- Add text shadow for depth
+- Modern sans-serif font (Inter, SF Pro style)
+- Add text shadow for depth: 0 2px 8px rgba(0,0,0,0.5)
 
 ${tagline ? `TAGLINE: "${tagline}"
 - Smaller, below headline
-- Lighter weight, gray or white` : ''}
+- Lighter weight, slightly muted color` : ''}
 
 CTA BUTTON: "${cta}"
-- Pill-shaped button
-- Background: ${accentColor} (with subtle gradient)
+- Pill-shaped button with rounded corners
+- Background: ${accentColor} with subtle gradient
 - White bold text
-- Add glow/shadow effect to make it POP
-- MUST look clickable and premium
+- Add glow effect: 0 0 15px ${accentColor} at 40%
+- Add shadow: 0 6px 20px rgba(0,0,0,0.25)
+- MUST look premium and clickable
 
 ═══════════════════════════════════════════════════════════════
-QUALITY REQUIREMENTS:
+QUALITY REQUIREMENTS (NON-NEGOTIABLE):
 ═══════════════════════════════════════════════════════════════
-- SHARP, CRISP text with NO blur
-- Professional lighting
-- Premium, polished look
+- SHARP, CRISP text - NO BLUR
+- Professional lighting throughout
+- Premium, polished finish
 - High contrast for readability
-- Looks like a $10,000 agency ad
+- This should look like a $10,000+ agency ad
+- Meta 2026 standard - ready to run immediately
 
-USE THE INPUT IMAGE AS THE PRODUCT/SCREENSHOT - feature it prominently.
+USE THE INPUT IMAGE AS THE PRODUCT - feature it prominently.
 
 OUTPUT: A complete 1080x1080 Meta advertisement.`;
+    }
+
+    // Fallback to default hero product template
+    return getDefaultHeroPrompt(headline, tagline, cta, accentColor, productAnalysis);
 }
 
 /**
- * Default elite prompt when no enhanced prompt available
+ * Default hero product prompt when no enhanced prompt available
  */
-function buildDefaultElitePrompt(style, headline, tagline, cta, accentColor, productAnalysis) {
-    const mood = style.mood || 'premium';
-    const backgroundColor = style.backgroundColor || '#1a1a2e';
-    const productName = productAnalysis?.productName || 'Product';
-
+function getDefaultHeroPrompt(headline, tagline, cta, accentColor, productAnalysis) {
     return `Create a PREMIUM Meta advertisement (1080x1080 pixels).
 
+This should look like a $10,000 agency ad. Not generic AI art.
+
 ═══════════════════════════════════════════════════════════════
-PIXEL-PRECISE LAYOUT SPECIFICATIONS:
+LAYOUT SPECIFICATIONS:
 ═══════════════════════════════════════════════════════════════
 
 BACKGROUND:
-- Deep gradient from ${backgroundColor} (top) to darker shade (bottom)
-- Add subtle radial glow at center (${accentColor}, opacity 20%, blur 200px)
-- Optional: subtle particle/dust effect (10-20 small white dots, opacity 15%)
+- Deep, sophisticated gradient (#0a0a1f top to #1a1a3a bottom)
+- Add subtle radial glow at center (${accentColor} at 15% opacity)
+- Optional: very subtle particle/dust texture (30 tiny dots, white, 10% opacity)
 
 PRODUCT (from input image):
 - Position: CENTER of canvas (540, 500)
-- Size: approximately 550-600px
-- Add professional studio lighting from top-left
-- Add subtle reflection below product (opacity 25%)
-- Add very subtle glow around product edges
+- Size: approximately 580px
+- Professional studio lighting from top-left (45° angle)
+- Subtle reflection below: 25% opacity, slight blur
+- Very subtle glow around product edges: ${accentColor} at 15%
 
 HEADLINE: "${headline}"
 - Position: TOP CENTER (x: 540, y: 100)
-- Font: Bold, modern sans-serif
-- Size: 64px
+- Font: Bold, modern sans-serif (like Inter or SF Pro)
+- Size: 56-64px
 - Color: White (#FFFFFF)
-- Text shadow: 0 4px 8px rgba(0,0,0,0.5)
-- MUST be perfectly sharp and readable
+- Text shadow: 0 3px 10px rgba(0,0,0,0.5)
+- MUST be PERFECTLY SHARP and readable
 
 ${tagline ? `TAGLINE: "${tagline}"
-- Position: Below headline (x: 540, y: 170)
+- Position: Below headline (x: 540, y: 165)
 - Font: Regular weight
-- Size: 24px
-- Color: Light gray (#CCCCCC)` : ''}
+- Size: 22-24px
+- Color: Light gray (#B0B0B0)` : ''}
 
 CTA BUTTON: "${cta}"
 - Position: BOTTOM CENTER (x: 540, y: 970)
-- Size: 220px x 56px
-- Background: Linear gradient from lighter ${accentColor} to ${accentColor}
-- Border-radius: 28px (pill shape)
-- Text: Bold, 18px, white, centered
-- Add glow effect: 0 0 20px ${accentColor} at 50% opacity
-- Add shadow: 0 8px 24px rgba(0,0,0,0.3)
+- Size: 220px wide × 54px tall
+- Shape: Pill (27px border-radius)
+- Background: Linear gradient from ${lightenColor(accentColor, 10)} to ${accentColor}
+- Text: Bold, 17px, white, centered
+- Glow: 0 0 18px ${accentColor} at 45% opacity
+- Shadow: 0 6px 20px rgba(0,0,0,0.3)
 
 ═══════════════════════════════════════════════════════════════
-STYLE: ${mood}, professional, high-converting Meta 2026 ad
+STYLE: Premium, modern, high-converting Meta 2026 agency standard
 ═══════════════════════════════════════════════════════════════
 
-TEXT MUST BE PERFECTLY SHARP AND READABLE.
-This should look like a premium agency ad, not AI-generated.`;
+CRITICAL: Text must be PERFECTLY SHARP. Not blurry. Not AI-looking.
+This is a real Meta ad that will run to millions of people.`;
+}
+
+function lightenColor(hex, percent) {
+    const num = parseInt(hex.replace('#', ''), 16);
+    const amt = Math.round(2.55 * percent);
+    const R = Math.min(255, (num >> 16) + amt);
+    const G = Math.min(255, (num >> 8 & 0x00FF) + amt);
+    const B = Math.min(255, (num & 0x0000FF) + amt);
+    return '#' + (0x1000000 + R * 0x10000 + G * 0x100 + B).toString(16).slice(1);
 }
 
 async function createFallbackCanvas(productImageBuffer, layoutPlan) {
@@ -179,7 +193,7 @@ async function createFallbackCanvas(productImageBuffer, layoutPlan) {
         const gradientSvg = `<svg width="1080" height="1080">
             <defs>
                 <radialGradient id="bg" cx="50%" cy="70%" r="80%">
-                    <stop offset="0%" style="stop-color:${adjustColor(bgColor, 20)};stop-opacity:1"/>
+                    <stop offset="0%" style="stop-color:${lightenColor(bgColor, 15)};stop-opacity:1"/>
                     <stop offset="100%" style="stop-color:${bgColor};stop-opacity:1"/>
                 </radialGradient>
             </defs>
@@ -199,15 +213,6 @@ async function createFallbackCanvas(productImageBuffer, layoutPlan) {
     } catch (error) {
         return { success: false, error: error.message };
     }
-}
-
-function adjustColor(hex, percent) {
-    const num = parseInt(hex.replace('#', ''), 16);
-    const amt = Math.round(2.55 * percent);
-    const R = Math.min(255, Math.max(0, (num >> 16) + amt));
-    const G = Math.min(255, Math.max(0, (num >> 8 & 0x00FF) + amt));
-    const B = Math.min(255, Math.max(0, (num & 0x0000FF) + amt));
-    return '#' + (0x1000000 + R * 0x10000 + G * 0x100 + B).toString(16).slice(1);
 }
 
 export default { generateCleanCanvas };
