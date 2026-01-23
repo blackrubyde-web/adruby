@@ -425,70 +425,52 @@ function buildAdPrompt({ headline, subheadline, cta, productAnalysis, style, ref
         ? `\n═══════════════════════════════════════\nMARKETING EXPERT CREATIVE DIRECTION\n═══════════════════════════════════════\n${enhancedPrompt}\n`
         : '';
 
-    return `2026 META AD CREATIVE - PROFESSIONAL QUALITY
+    return `PRODUCT PHOTO ENHANCEMENT - MINIMAL CHANGES ONLY
 
-Create a scroll-stopping Meta advertisement (1080x1080px) matching the quality of top-performing 2026 dropshipping ads.
+CRITICAL: Keep the product EXACTLY as it appears in the input image.
+Do NOT change the product's pose, angle, position, or add other objects.
 
-PRODUCT: ${productName}
-${productDesc}
-${creativeDirection}
-
-═══════════════════════════════════════
-VISUAL STYLE (Choose based on product)
-═══════════════════════════════════════
-For this ${productAnalysis?.productType || 'product'}, use one of these proven styles:
-
-OPTION A - LIFESTYLE ACTION (Best for most products):
-• Show product being USED or HELD by hands
-• Natural environment (desk, kitchen, outdoor)
-• Warm, inviting lighting
-• Product is the hero but in CONTEXT
-
-OPTION B - PREMIUM STUDIO (Best for tech/luxury):
-• Dark gradient background with subtle glow
-• Product floating or on reflective surface
-• Dramatic lighting with rim lights
-• Clean, minimal, Apple-style aesthetic
+TASK: Enhance this product photo for a Meta advertisement (1080x1080px).
 
 ═══════════════════════════════════════
-TEXT LAYOUT (Clean & Readable)
+WHAT TO DO (Simple Changes Only)
 ═══════════════════════════════════════
-HEADLINE (top): "${headlineText}"
-• Bold, modern sans-serif (like SF Pro or Inter)
-• White or high contrast
-• Maximum 5 words, impactful
-
-${subheadline ? `TAGLINE: "${subheadline}"
-• Below headline, smaller, lighter weight
-• One sentence benefit` : ''}
-
-CTA BUTTON (bottom): "${ctaText}"
-• Pill-shaped, vibrant color (coral/red/orange)
-• White text, bold
-• Looks tappable
+1. BACKGROUND: Replace with clean dark gradient
+2. LIGHTING: Add professional studio lighting to product
+3. SURFACE: Add subtle reflection under product
+4. THAT'S IT - No other changes to the scene
 
 ═══════════════════════════════════════
-PROFESSIONAL PHOTOGRAPHY REQUIREMENTS
+TEXT OVERLAY (Clean Typography)
 ═══════════════════════════════════════
-✓ Looks like a REAL photo, not AI-generated
-✓ Natural lighting with proper shadows
-✓ Authentic textures and materials
-✓ Magazine advertisement quality
-✓ Would stop someone scrolling Instagram
-✓ Matches quality of Jungle, Wild, Native Union ads
+HEADLINE at top: "${headlineText}"
+- White, bold, sans-serif font
+- Clean and simple, no effects
+
+${subheadline ? `SUBHEADLINE: "${subheadline}"
+- Smaller, gray, below headline` : ''}
+
+CTA at bottom: "${ctaText}"
+- Simple rounded rectangle button
+- Solid red/coral color (#FF4757)
+- White text, no gradients, no shadows
+- Like a real iOS/web button
 
 ═══════════════════════════════════════
-STRICT RULES
+STRICT RULES - VERY IMPORTANT
 ═══════════════════════════════════════
-✗ NO duplicate or corrupted text
-✗ NO gibberish characters
-✗ NO generic stock photo look
-✗ NO cluttered layouts
-✗ NO fake looking materials
-✗ NO text that doesn't match the headline/CTA provided
-✗ Text must be EXACTLY as specified above
+✗ Do NOT change the product's appearance
+✗ Do NOT change the product's pose or angle
+✗ Do NOT add other products or characters
+✗ Do NOT add busy backgrounds
+✗ Do NOT add gradients or shadows to text/buttons
+✗ Do NOT make it look "AI-generated"
+✗ Keep it SIMPLE and CLEAN
 
-OUTPUT: A premium Meta ad that could run on Instagram/Facebook for a 7-figure brand.`;
+The product in the input image must look IDENTICAL in the output.
+Only the background, lighting, and text overlay should change.
+
+OUTPUT: A clean, professional product ad with minimal enhancements.`;
 
     // Fallback to original style-based prompt
     const styleConfigs = {
