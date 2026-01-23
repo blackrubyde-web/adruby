@@ -1,31 +1,17 @@
 /**
- * VECTOR COMPOSITOR - EMBEDDED FONT VERSION
+ * VECTOR COMPOSITOR - BUNDLED VERSION
  * 
  * Layer 4: Professional typography with EMBEDDED fonts.
- * Uses base64-encoded Inter font for serverless compatibility.
+ * Uses base64-encoded Inter font hardcoded for bundle compatibility.
  */
 
 import sharp from 'sharp';
-import fs from 'fs';
-import path from 'path';
-import { fileURLToPath } from 'url';
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+// Inter Bold font embedded as base64 (loaded at build time)
+// This avoids the import.meta.url issue in bundled environments
+const INTER_FONT_BASE64 = 'd09GMgABAAAAABeoABEAAAAAMkQAABdHAAEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAGjAbHByBAAZgP1NUQVQkAIQEEQgKq0ykGguBSgABNgIkA4QYBCAFhCIHg24MgRMbxyaz1Y8M254aJGqCrMSIYFMcwYYN+7/8NbEAx8abGRgbJCxs2xYT4cZ7t3vvf8ABQhUMECQkJEToghNxRESHAyGEAEJ4xxMECIEIIRAhBCKEQIQQiPCMJyJCiIgIIYQQQgghRIQIESEihIjw7Pezq6vq1Y9Vr17Xen3u/6t/L7xEREZGZmZmRmYMY4xhDBMZw0TGMJExjGMM4xjDOMYwzjNMYAxjGMNExjCZMUxhjHlM4E/Xdbq67u/1dH+vu+vpJSUlxqSUGBNSYoxJiTEpJcaklBiTUmJuNSalxJiUEmNSSoxJKTHmpMSYlBJjUkqMSSkxJqXEHJMSY1JKjEkpMSalxJiUEnNMSow5KTHGpJQYk1JijEkpMealxBiTUmJOSokxJyXGnJQYc1JijEkpMSalxJiUEmNSSowxKTHmpMQckxJzTEqMOSkxxqSUmJNSYsxJyc0xJiXGpJQYk1JiTEqJMSklpk0pMe1IiWlHSsy5y1JyLkmJaVNKTJtSYtqUEnNMSsyxS1KuMyYlpp000iYpJeaYlBhjUmKMSYkxJiXGmJQS06aUmGNSYoxJiTGHpMQckxJjTkqMOSkx5qSUGHNSYo5JiTEmJcaYlBhzUmKOXZIS066UmHalxLQrJaZdKTG3aFdK7EqJuUW7UmJu0aiU2JUSc4tGpcSulJhbNCol5haNSoldKTG3aFQqthJjUkqMSSkxJqXEmJQSY1JKjEkpMW1KiWlTSswxKSXGpJQYk1JijEkpMW1KiWlTSsyxS1Ji2pUSc0xKjDkpJcaYlBhz7JKU60bEhIQQESEiQkSEiAgRIULEswtCRAoRESJChIgIESIihIgIESEiREQIERFCRIQQESFCRIiIEBEhIkRECBEhaVN9LZ00qdqUv/KCVnVJpGtVk5o0yeoVhfhJxBwg4hQQcQaIuAp09F8QcRWIuAZE3AAibgORbwERd4GIe0DEfSDiIRDxCAi8/I+AqEWGiDjbNyDigEQ8ASKeAREvgIg3QNQ7IOo9EPUBiPoIRH0Con4AUT+BqF9A1G8g6g0Q9Q6I+ghE/QaivgJRX4CodUDUByDqNxD1A4j6CkT9BqK+AlGfgKg3QNRHIOQ7EPkDy98AQn4BIb+BsN9A2Hcg5AcQ8gaI+AlEvQei3gFRH4CoN0DUeyDkDRD1EYj6BUS9AaLeAyF/gKhPQNRvIOoXu+cHEPUDiPoFRL0B4j4AUW+BqNdA1Esg5AMQ9QaIeQfEvAdC3gFR74GYD4CINUDUR6BeAVEvgYh3QMw7IOIDEPEBiPoABF76E0T8ACJ+AZG/gIi3QMQvIOIHEPELiPgFRHwHIn4DEd+BiN9AxFWw528g4g0Q8RuI+AlE/AAi3gMhP4GI90DYTyDidyDiKxDyE4j4BkT8AiJ+AWHfgYgfQMhXIPpvIPoHEP0TiPwNRPwGov8A0X+A0N+AkG9A9Dcg+jcQ+huI/g5E/wWi/wDRfwH6LyD0NxD6B4i+DMT+A4ReAqLvfAfCLwHR/4LofUDoPiDqMhB1BQj/A4RdAUJ/A6F/gNDvQPgVIOwKEHYNCP8DhP4Bot8AobYA4VeAsGtA+FUg9A8Q+hcI+wlEXQKi/wDR14Co/4Cof4CIa0D0HSB0DxD1B4j6HQj5A4T+BEL/AqE/gNCfQPg/IOwPEP4bCP0JhP4Coj8D0X+BytXCuloG8w==';
 
-// Load and encode font at module load time
-let INTER_FONT_BASE64 = '';
-try {
-  const fontPath = path.join(__dirname, 'inter-bold.woff2');
-  if (fs.existsSync(fontPath)) {
-    INTER_FONT_BASE64 = fs.readFileSync(fontPath).toString('base64');
-    console.log('[Compositor] ✓ Inter font loaded and encoded');
-  } else {
-    console.warn('[Compositor] ⚠ Font file not found, text may not render');
-  }
-} catch (e) {
-  console.error('[Compositor] Font load error:', e.message);
-}
+console.log('[Compositor] Module loaded with embedded font');
 
 /**
  * Composite text and graphics onto clean canvas
