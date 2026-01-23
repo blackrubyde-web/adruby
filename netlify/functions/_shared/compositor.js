@@ -1,18 +1,37 @@
 /**
- * VECTOR COMPOSITOR - FIXED VERSION
+ * VECTOR COMPOSITOR - EMBEDDED FONT VERSION
  * 
- * Layer 4: Professional typography that works on serverless.
- * Uses sharp's text rendering with system-fallback fonts.
+ * Layer 4: Professional typography with EMBEDDED fonts.
+ * Uses base64-encoded Inter font for serverless compatibility.
  */
 
 import sharp from 'sharp';
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+// Load and encode font at module load time
+let INTER_FONT_BASE64 = '';
+try {
+  const fontPath = path.join(__dirname, 'inter-bold.woff2');
+  if (fs.existsSync(fontPath)) {
+    INTER_FONT_BASE64 = fs.readFileSync(fontPath).toString('base64');
+    console.log('[Compositor] ✓ Inter font loaded and encoded');
+  } else {
+    console.warn('[Compositor] ⚠ Font file not found, text may not render');
+  }
+} catch (e) {
+  console.error('[Compositor] Font load error:', e.message);
+}
 
 /**
  * Composite text and graphics onto clean canvas
- * Uses sharp's native text rendering (works without fontconfig)
  */
 export async function compositeAd({ cleanCanvasBuffer, coordinates, copy, layoutPlan }) {
-  console.log('[Compositor] ✨ Rendering text overlay...');
+  console.log('[Compositor] ✨ Rendering with embedded font...');
 
   const style = layoutPlan?.style || {};
   const accentColor = style.accentColor || '#FF4757';
@@ -22,66 +41,24 @@ export async function compositeAd({ cleanCanvasBuffer, coordinates, copy, layout
     const tagline = coordinates?.tagline;
     const cta = coordinates?.cta || { x: 430, y: 960, width: 220, height: 56 };
 
-    // Create text overlays using sharp's built-in text rendering
-    const overlays = [];
-
-    // Headline - using sharp's text method
-    if (copy.headline) {
-      const headlineSvg = createTextSvg({
-        text: copy.headline,
-        fontSize: headline.fontSize || 64,
-        fontWeight: 700,
-        color: '#FFFFFF',
-        width: 900,
-        height: 100,
-        align: 'center'
-      });
-      overlays.push({
-        input: Buffer.from(headlineSvg),
-        top: Math.round((headline.y || 100) - 50),
-        left: Math.round(540 - 450)
-      });
-    }
-
-    // Tagline
-    if (copy.tagline && tagline) {
-      const taglineSvg = createTextSvg({
-        text: copy.tagline,
-        fontSize: tagline.fontSize || 24,
-        fontWeight: 400,
-        color: '#CCCCCC',
-        width: 800,
-        height: 50,
-        align: 'center'
-      });
-      overlays.push({
-        input: Buffer.from(taglineSvg),
-        top: Math.round((tagline.y || 170) - 20),
-        left: Math.round(540 - 400)
-      });
-    }
-
-    // CTA Button
-    const ctaSvg = createCtaSvg({
-      text: copy.cta || 'Shop Now',
-      width: cta.width || 220,
-      height: cta.height || 56,
-      color: accentColor,
-      borderRadius: cta.borderRadius || 28
-    });
-    overlays.push({
-      input: Buffer.from(ctaSvg),
-      top: Math.round(cta.y || 960),
-      left: Math.round(cta.x || 430)
+    // Build SVG with embedded font
+    const svgContent = buildSvgWithEmbeddedFont({
+      headline: { ...headline, text: copy.headline },
+      tagline: tagline && copy.tagline ? { ...tagline, text: copy.tagline } : null,
+      cta: { ...cta, text: copy.cta || 'Shop Now' },
+      accentColor,
+      fontBase64: INTER_FONT_BASE64
     });
 
-    // Composite all overlays
+    const svgBuffer = Buffer.from(svgContent);
+
+    // Composite SVG onto canvas
     const result = await sharp(cleanCanvasBuffer)
-      .composite(overlays)
+      .composite([{ input: svgBuffer, top: 0, left: 0 }])
       .png({ quality: 100 })
       .toBuffer();
 
-    console.log('[Compositor] ✅ Ad composed successfully');
+    console.log('[Compositor] ✅ Ad composed with embedded font');
     return { success: true, buffer: result };
   } catch (error) {
     console.error('[Compositor] ❌ Failed:', error.message);
@@ -90,68 +67,102 @@ export async function compositeAd({ cleanCanvasBuffer, coordinates, copy, layout
 }
 
 /**
- * Create text SVG with embedded font styling
- * Uses basic web-safe fonts that work everywhere
+ * Build SVG with embedded @font-face
  */
-function createTextSvg({ text, fontSize, fontWeight, color, width, height, align }) {
-  const escapedText = (text || '')
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;');
+function buildSvgWithEmbeddedFont({ headline, tagline, cta, accentColor, fontBase64 }) {
+  const escapeText = (text) => {
+    if (!text) return '';
+    return text
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;');
+  };
 
-  const textX = align === 'center' ? width / 2 : 0;
-  const textAnchor = align === 'center' ? 'middle' : 'start';
+  const ctaCenterX = cta.x + (cta.width || 220) / 2;
+  const ctaCenterY = cta.y + (cta.height || 56) / 2 + 7;
 
-  return `<svg width="${width}" height="${height}" xmlns="http://www.w3.org/2000/svg">
+  // Font-face with embedded base64 font
+  const fontFace = fontBase64 ? `
+        @font-face {
+            font-family: 'Inter';
+            src: url(data:font/woff2;base64,${fontBase64}) format('woff2');
+            font-weight: 700;
+            font-style: normal;
+        }
+    ` : '';
+
+  return `<svg width="1080" height="1080" xmlns="http://www.w3.org/2000/svg">
+    <defs>
         <style>
-            .txt { 
-                font-family: Arial, Helvetica, sans-serif;
-                font-weight: ${fontWeight};
-                fill: ${color};
-                font-size: ${fontSize}px;
+            ${fontFace}
+            .headline {
+                font-family: 'Inter', Arial, sans-serif;
+                font-weight: 700;
+                fill: #FFFFFF;
+            }
+            .tagline {
+                font-family: 'Inter', Arial, sans-serif;
+                font-weight: 400;
+                fill: #CCCCCC;
+            }
+            .cta-text {
+                font-family: 'Inter', Arial, sans-serif;
+                font-weight: 600;
+                fill: #FFFFFF;
             }
         </style>
-        <text class="txt" x="${textX}" y="${fontSize * 0.8}" text-anchor="${textAnchor}">${escapedText}</text>
-    </svg>`;
-}
+        <linearGradient id="ctaGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+            <stop offset="0%" style="stop-color:${lightenColor(accentColor, 15)};stop-opacity:1"/>
+            <stop offset="100%" style="stop-color:${accentColor};stop-opacity:1"/>
+        </linearGradient>
+        <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+            <feDropShadow dx="0" dy="3" stdDeviation="4" flood-color="#000000" flood-opacity="0.5"/>
+        </filter>
+        <filter id="btnShadow" x="-30%" y="-30%" width="160%" height="160%">
+            <feDropShadow dx="0" dy="4" stdDeviation="8" flood-color="${accentColor}" flood-opacity="0.4"/>
+        </filter>
+    </defs>
 
-/**
- * Create CTA button SVG
- */
-function createCtaSvg({ text, width, height, color, borderRadius }) {
-  const escapedText = (text || 'Shop Now')
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;');
+    <!-- Headline -->
+    <text 
+        class="headline"
+        x="${headline.x || 540}" 
+        y="${headline.y || 100}" 
+        font-size="${headline.fontSize || 64}px"
+        text-anchor="middle"
+        filter="url(#shadow)"
+    >${escapeText(headline.text)}</text>
 
-  return `<svg width="${width}" height="${height}" xmlns="http://www.w3.org/2000/svg">
-        <defs>
-            <linearGradient id="btnGrad" x1="0%" y1="0%" x2="0%" y2="100%">
-                <stop offset="0%" style="stop-color:${lightenColor(color, 15)};stop-opacity:1"/>
-                <stop offset="100%" style="stop-color:${color};stop-opacity:1"/>
-            </linearGradient>
-            <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
-                <feDropShadow dx="0" dy="4" stdDeviation="6" flood-color="${color}" flood-opacity="0.4"/>
-            </filter>
-        </defs>
-        <rect 
-            x="0" y="0" 
-            width="${width}" height="${height}" 
-            rx="${borderRadius}" ry="${borderRadius}"
-            fill="url(#btnGrad)"
-            filter="url(#shadow)"
-        />
-        <text 
-            x="${width / 2}" 
-            y="${height / 2 + 6}" 
-            font-family="Arial, Helvetica, sans-serif"
-            font-size="18px"
-            font-weight="600"
-            fill="#FFFFFF"
-            text-anchor="middle"
-        >${escapedText}</text>
-    </svg>`;
+    ${tagline ? `
+    <!-- Tagline -->
+    <text 
+        class="tagline"
+        x="${tagline.x || 540}" 
+        y="${tagline.y || 170}" 
+        font-size="${tagline.fontSize || 24}px"
+        text-anchor="middle"
+    >${escapeText(tagline.text)}</text>
+    ` : ''}
+
+    <!-- CTA Button -->
+    <rect 
+        x="${cta.x || 430}" 
+        y="${cta.y || 960}" 
+        width="${cta.width || 220}" 
+        height="${cta.height || 56}" 
+        rx="${cta.borderRadius || 28}"
+        fill="url(#ctaGrad)"
+        filter="url(#btnShadow)"
+    />
+    <text 
+        class="cta-text"
+        x="${ctaCenterX}" 
+        y="${ctaCenterY}" 
+        font-size="18px"
+        text-anchor="middle"
+    >${escapeText(cta.text)}</text>
+</svg>`;
 }
 
 function lightenColor(hex, percent) {
