@@ -706,7 +706,7 @@ Beginne mit: "PRÄZISE PRODUKTBESCHREIBUNG:"`
                     console.log('[AI Ad Generate] ✅ AI CREATIVE DIRECTOR COMPLETE');
                 }
 
-                finalImageBuffer = creativeResult.buffer;
+                finalImageBuffer = creativeResult.imageBuffer || creativeResult.buffer;
 
                 // Log strategy reasoning for debugging
                 if (creativeResult.strategy?.reasoning) {
