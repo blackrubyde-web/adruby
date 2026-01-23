@@ -47,7 +47,7 @@ import {
 } from './_shared/productIntegrationEngine.js';
 // AI Creative Director - Chain-of-Thought reasoning for ANY product
 // Now with GEMINI support for 100% product preservation!
-import { createAdWithCreativeDirector, createAdWithGeminiDirector } from './_shared/aiCreativeDirector.js';
+import { createAdWithCreativeDirector, createAdWithGeminiDirector, createAdWithLayerPipeline } from './_shared/aiCreativeDirector.js';
 
 // Check if Gemini is available
 const USE_GEMINI = !!process.env.GEMINI_API_KEY;
@@ -672,9 +672,9 @@ Beginne mit: "PRÄZISE PRODUKTBESCHREIBUNG:"`
 
                 // Use Gemini when available for 100% product preservation
                 if (USE_GEMINI) {
-                    console.log('[AI Ad Generate] 🚀 Starting GEMINI Creative Director (Image-to-Image)...');
+                    console.log('[AI Ad Generate] 🏗️ Starting 4-LAYER PIPELINE (Professional Mode)...');
 
-                    creativeResult = await createAdWithGeminiDirector(openai, {
+                    creativeResult = await createAdWithLayerPipeline(openai, {
                         productImageUrl: body.productImageUrl,
                         userPrompt: userCreativeText || `Premium advertisement for ${body.productName || 'this product'}. Professional quality, Meta 2026 level.`,
                         headline: dynamicText.headline,
