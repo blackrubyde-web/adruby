@@ -1,9 +1,8 @@
 /**
- * ART DIRECTOR - Coordinate Extractor
+ * ART DIRECTOR - 10/10 VERSION
  * 
- * Layer 3 of the Pipeline
- * Analyzes the clean canvas and determines exact X/Y coordinates
- * for text overlay placement.
+ * Layer 3: Intelligent coordinate extraction for text placement.
+ * Returns pixel-precise positions based on image analysis.
  */
 
 import { GoogleGenerativeAI } from '@google/generative-ai';
@@ -11,165 +10,119 @@ import { GoogleGenerativeAI } from '@google/generative-ai';
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
 /**
- * Analyze clean canvas and get overlay coordinates
- * @returns {Object} Exact pixel coordinates for all text elements
+ * Get optimal text overlay coordinates
  */
-export async function getOverlayCoordinates({
-    cleanCanvasBuffer,
-    layoutPlan,
-    copy
-}) {
-    console.log('[ArtDirector] 📐 Analyzing image for optimal text placement...');
+export async function getOverlayCoordinates({ cleanCanvasBuffer, layoutPlan, copy }) {
+    console.log('[ArtDirector] 📐 Calculating optimal text positions...');
+
+    const composition = layoutPlan?.composition || {};
+    const typography = layoutPlan?.typography || {};
+    const negativeSpace = composition.negativeSpaceZone || 'top';
 
     const model = genAI.getGenerativeModel({
         model: 'gemini-1.5-pro',
-        generationConfig: {
-            responseMimeType: 'application/json'
-        }
+        generationConfig: { responseMimeType: 'application/json' }
     });
 
-    const prompt = `You are an Art Director analyzing an advertisement image.
-Your job: Determine EXACT pixel coordinates for text overlay placement.
+    const prompt = `Analyze this ad image and determine EXACT pixel coordinates for text.
 
-IMAGE SIZE: 1080 x 1080 pixels
+IMAGE: 1080 x 1080 pixels
+NEGATIVE SPACE: ${negativeSpace}
 
 TEXT TO PLACE:
-- Headline: "${copy.headline}" (primary, large, bold)
-- Tagline: "${copy.tagline || ''}" (secondary, smaller)
-- CTA Button: "${copy.cta}" (bottom, clickable button)
+- Headline: "${copy.headline}" (must be prominent, large)
+- Tagline: "${copy.tagline || ''}" (smaller, below headline)
+- CTA: "${copy.cta}" (button at bottom)
 
-LAYOUT GUIDANCE:
-- Preferred text zone: ${layoutPlan?.composition?.textZone?.position || 'top'}
-- Product position: ${layoutPlan?.composition?.productPosition || 'center'}
-- Style: ${layoutPlan?.style?.mood || 'premium'}
+TYPOGRAPHY GUIDANCE:
+- Headline size: ${typography.headline?.fontSize || 64}px
+- Tagline size: ${typography.tagline?.fontSize || 24}px
 
-Analyze the image and find the BEST positions for each element.
-Consider:
-1. Text should be in EMPTY space, not overlapping the product
-2. Headline should be prominent and immediately visible
-3. CTA should be at the bottom, clearly tappable
-4. Maintain visual hierarchy (headline > tagline > cta)
-
-Return JSON with EXACT pixel coordinates:
+Return JSON with PIXEL coordinates (x,y from TOP-LEFT):
 {
     "headline": {
         "x": 540,
         "y": 100,
-        "maxWidth": 900,
-        "fontSize": 72,
-        "fontWeight": "bold",
-        "color": "#FFFFFF",
+        "fontSize": ${typography.headline?.fontSize || 64},
+        "fontWeight": ${typography.headline?.fontWeight || 700},
+        "color": "${typography.headline?.color || '#FFFFFF'}",
         "textAlign": "center",
-        "lineHeight": 1.1
+        "shadow": true
     },
-    "tagline": {
+    "tagline": ${copy.tagline ? `{
         "x": 540,
-        "y": 180,
-        "maxWidth": 800,
-        "fontSize": 28,
-        "fontWeight": "normal",
-        "color": "#CCCCCC",
-        "textAlign": "center",
-        "lineHeight": 1.3
-    },
+        "y": 170,
+        "fontSize": ${typography.tagline?.fontSize || 24},
+        "fontWeight": 400,
+        "color": "${typography.tagline?.color || '#CCCCCC'}",
+        "textAlign": "center"
+    }` : 'null'},
     "cta": {
-        "x": 440,
-        "y": 950,
-        "width": 200,
-        "height": 56,
-        "borderRadius": 28,
-        "backgroundColor": "${layoutPlan?.style?.accentColor || '#FF4757'}",
-        "textColor": "#FFFFFF",
-        "fontSize": 18,
-        "fontWeight": "bold"
+        "x": 430,
+        "y": 970,
+        "width": ${typography.cta?.width || 220},
+        "height": ${typography.cta?.height || 56},
+        "borderRadius": ${typography.cta?.borderRadius || 28},
+        "fontSize": ${typography.cta?.fontSize || 18},
+        "fontWeight": 600
     },
-    "featureArrows": [],
-    "safeZones": {
-        "productArea": {"x": 200, "y": 250, "width": 680, "height": 650},
-        "textArea": {"x": 50, "y": 30, "width": 980, "height": 200}
-    },
-    "recommendations": "Brief note on placement choices"
+    "analysis": "Brief note on placement"
 }
 
-IMPORTANT:
-- x,y coordinates are from TOP-LEFT corner
-- For centered text, x should be 540 (center of 1080)
-- CTA button x is the LEFT edge of the button
-- All values must be integers`;
+RULES:
+- x=540 = horizontally centered (for center-aligned text)
+- Place text in EMPTY space, never over product
+- Headline y should be 80-120px for top placement
+- CTA y should be 950-980px (near bottom)
+- Ensure readable contrast`;
 
     try {
         const result = await model.generateContent([
-            {
-                inlineData: {
-                    mimeType: 'image/png',
-                    data: cleanCanvasBuffer.toString('base64')
-                }
-            },
+            { inlineData: { mimeType: 'image/png', data: cleanCanvasBuffer.toString('base64') } },
             { text: prompt }
         ]);
 
-        const response = result.response.text();
-        const coordinates = JSON.parse(response);
-
-        console.log('[ArtDirector] ✅ Coordinates extracted');
-        console.log('[ArtDirector] Headline at:', coordinates.headline?.x, coordinates.headline?.y);
-        console.log('[ArtDirector] CTA at:', coordinates.cta?.x, coordinates.cta?.y);
-
-        return coordinates;
+        const coords = JSON.parse(result.response.text());
+        console.log('[ArtDirector] ✅ Coordinates:', coords.headline?.y, coords.cta?.y);
+        return coords;
     } catch (error) {
         console.error('[ArtDirector] ❌ Failed:', error.message);
-
-        // Return sensible defaults
-        return getDefaultCoordinates(layoutPlan, copy);
+        return getDefaultCoords(layoutPlan, copy);
     }
 }
 
-/**
- * Default coordinates based on layout plan
- */
-function getDefaultCoordinates(layoutPlan, copy) {
-    const accentColor = layoutPlan?.style?.accentColor || '#FF4757';
-    const textColor = layoutPlan?.style?.mood === 'light' ? '#1a1a2e' : '#FFFFFF';
-    const subTextColor = layoutPlan?.style?.mood === 'light' ? '#666666' : '#CCCCCC';
+function getDefaultCoords(layoutPlan, copy) {
+    const typography = layoutPlan?.typography || {};
+    const negativeSpace = layoutPlan?.composition?.negativeSpaceZone || 'top';
+
+    // Position based on negative space zone
+    const headlineY = negativeSpace === 'top' ? 100 : negativeSpace === 'bottom' ? 900 : 100;
+    const taglineY = headlineY + 70;
 
     return {
         headline: {
-            x: 540,
-            y: 100,
-            maxWidth: 900,
-            fontSize: 64,
-            fontWeight: 'bold',
-            color: textColor,
-            textAlign: 'center',
-            lineHeight: 1.1
+            x: 540, y: headlineY,
+            fontSize: typography.headline?.fontSize || 64,
+            fontWeight: typography.headline?.fontWeight || 700,
+            color: typography.headline?.color || '#FFFFFF',
+            textAlign: 'center', shadow: true
         },
         tagline: copy.tagline ? {
-            x: 540,
-            y: 175,
-            maxWidth: 800,
-            fontSize: 24,
-            fontWeight: 'normal',
-            color: subTextColor,
-            textAlign: 'center',
-            lineHeight: 1.3
+            x: 540, y: taglineY,
+            fontSize: typography.tagline?.fontSize || 24,
+            fontWeight: 400,
+            color: typography.tagline?.color || '#CCCCCC',
+            textAlign: 'center'
         } : null,
         cta: {
-            x: 440,
-            y: 960,
-            width: 200,
-            height: 56,
-            borderRadius: 28,
-            backgroundColor: accentColor,
-            textColor: '#FFFFFF',
-            fontSize: 18,
-            fontWeight: 'bold'
+            x: 430, y: 970,
+            width: typography.cta?.width || 220,
+            height: typography.cta?.height || 56,
+            borderRadius: typography.cta?.borderRadius || 28,
+            fontSize: typography.cta?.fontSize || 18,
+            fontWeight: 600
         },
-        featureArrows: [],
-        safeZones: {
-            productArea: { x: 150, y: 200, width: 780, height: 700 },
-            textArea: { x: 50, y: 40, width: 980, height: 180 }
-        },
-        recommendations: 'Default centered layout with headline at top, CTA at bottom'
+        analysis: 'Default positions'
     };
 }
 

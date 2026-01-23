@@ -1,182 +1,166 @@
 /**
- * VECTOR COMPOSITOR
+ * VECTOR COMPOSITOR - 10/10 VERSION
  * 
- * Layer 4 of the Pipeline
- * Renders SHARP text, buttons, and graphics using SVG/Canvas.
- * This is what makes the text look professional - not AI-generated.
+ * Layer 4: Professional typography with shadows, glows, and premium effects.
+ * Renders 100% sharp text using SVG.
  */
 
 import sharp from 'sharp';
 
 /**
  * Composite text and graphics onto clean canvas
- * Uses SVG for 100% sharp text rendering
- * @returns {Buffer} Final ad with sharp text overlay
+ * Uses SVG for 100% sharp text rendering with premium effects
  */
-export async function compositeAd({
-    cleanCanvasBuffer,
-    coordinates,
-    copy,
-    layoutPlan
-}) {
-    console.log('[Compositor] ✨ Rendering sharp text overlay...');
+export async function compositeAd({ cleanCanvasBuffer, coordinates, copy, layoutPlan }) {
+  console.log('[Compositor] ✨ Rendering premium text overlay...');
 
-    const accentColor = layoutPlan?.style?.accentColor || coordinates?.cta?.backgroundColor || '#FF4757';
+  const style = layoutPlan?.style || {};
+  const typography = layoutPlan?.typography || {};
+  const features = layoutPlan?.features || {};
+  const accentColor = style.accentColor || '#FF4757';
+  const useGlow = features.useGlow !== false;
+  const useShadows = features.useShadows !== false;
 
-    // Build SVG overlay with real fonts
-    const svgOverlay = buildSVGOverlay(coordinates, copy, accentColor);
+  const svgOverlay = buildPremiumSVG(coordinates, copy, {
+    accentColor,
+    useGlow,
+    useShadows,
+    typography,
+    mood: style.mood || 'premium'
+  });
 
-    try {
-        // Convert SVG to buffer
-        const svgBuffer = Buffer.from(svgOverlay);
+  try {
+    const svgBuffer = Buffer.from(svgOverlay);
 
-        // Composite SVG onto clean canvas
-        const result = await sharp(cleanCanvasBuffer)
-            .composite([{
-                input: svgBuffer,
-                top: 0,
-                left: 0
-            }])
-            .png({ quality: 100 })
-            .toBuffer();
+    const result = await sharp(cleanCanvasBuffer)
+      .composite([{ input: svgBuffer, top: 0, left: 0 }])
+      .png({ quality: 100 })
+      .toBuffer();
 
-        console.log('[Compositor] ✅ Final ad composed successfully');
-        return {
-            success: true,
-            buffer: result
-        };
-    } catch (error) {
-        console.error('[Compositor] ❌ Failed:', error.message);
-        return {
-            success: false,
-            error: error.message
-        };
-    }
+    console.log('[Compositor] ✅ Premium ad composed');
+    return { success: true, buffer: result };
+  } catch (error) {
+    console.error('[Compositor] ❌ Failed:', error.message);
+    return { success: false, error: error.message };
+  }
 }
 
-/**
- * Build SVG overlay with all text elements
- */
-function buildSVGOverlay(coordinates, copy, accentColor) {
-    const headline = coordinates?.headline || { x: 540, y: 100, fontSize: 64 };
-    const tagline = coordinates?.tagline;
-    const cta = coordinates?.cta || { x: 440, y: 960, width: 200, height: 56 };
+function buildPremiumSVG(coordinates, copy, options) {
+  const { accentColor, useGlow, useShadows, typography, mood } = options;
 
-    // Calculate CTA text position (centered in button)
-    const ctaTextX = cta.x + (cta.width / 2);
-    const ctaTextY = cta.y + (cta.height / 2) + 6; // +6 for vertical centering
+  const headline = coordinates?.headline || { x: 540, y: 100, fontSize: 64 };
+  const tagline = coordinates?.tagline;
+  const cta = coordinates?.cta || { x: 430, y: 960, width: 220, height: 56 };
 
-    // Escape text for SVG
-    const escapeText = (text) => {
-        if (!text) return '';
-        return text
-            .replace(/&/g, '&amp;')
-            .replace(/</g, '&lt;')
-            .replace(/>/g, '&gt;')
-            .replace(/"/g, '&quot;');
-    };
+  const ctaTextX = cta.x + (cta.width / 2);
+  const ctaTextY = cta.y + (cta.height / 2) + 7;
 
-    const svg = `<svg width="1080" height="1080" xmlns="http://www.w3.org/2000/svg">
+  const escape = (text) => text ? text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;') : '';
+
+  // Premium headline styling based on mood
+  const headlineWeight = typography?.headline?.fontWeight || 700;
+  const headlineColor = typography?.headline?.color || '#FFFFFF';
+  const headlineTransform = typography?.headline?.transform || 'none';
+
+  // CTA gradient for premium look
+  const ctaGradient = mood === 'aggressive'
+    ? `<linearGradient id="ctaGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+             <stop offset="0%" style="stop-color:${accentColor};stop-opacity:1" />
+             <stop offset="100%" style="stop-color:${adjustColor(accentColor, 20)};stop-opacity:1" />
+           </linearGradient>`
+    : `<linearGradient id="ctaGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+             <stop offset="0%" style="stop-color:${adjustColor(accentColor, 15)};stop-opacity:1" />
+             <stop offset="100%" style="stop-color:${accentColor};stop-opacity:1" />
+           </linearGradient>`;
+
+  return `<svg width="1080" height="1080" xmlns="http://www.w3.org/2000/svg">
   <defs>
-    <style>
-      @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&amp;display=swap');
-      
-      .headline {
-        font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-        font-weight: 700;
-        fill: ${headline.color || '#FFFFFF'};
-        text-anchor: middle;
-      }
-      
-      .tagline {
-        font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-        font-weight: 400;
-        fill: ${tagline?.color || '#CCCCCC'};
-        text-anchor: middle;
-      }
-      
-      .cta-button {
-        fill: ${accentColor};
-      }
-      
-      .cta-text {
-        font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-        font-weight: 600;
-        fill: ${cta.textColor || '#FFFFFF'};
-        text-anchor: middle;
-      }
-    </style>
+    ${ctaGradient}
     
-    <!-- Drop shadow filter for text -->
+    <!-- Text shadow for depth -->
+    ${useShadows ? `
     <filter id="textShadow" x="-20%" y="-20%" width="140%" height="140%">
-      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#000000" flood-opacity="0.5"/>
+      <feDropShadow dx="0" dy="3" stdDeviation="4" flood-color="#000000" flood-opacity="0.6"/>
+    </filter>
+    <filter id="softShadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="2" stdDeviation="2" flood-color="#000000" flood-opacity="0.3"/>
+    </filter>` : ''}
+    
+    <!-- Glow effect for gaming/tech -->
+    ${useGlow ? `
+    <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
+      <feMerge>
+        <feMergeNode in="coloredBlur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>` : ''}
+    
+    <!-- CTA button shadow -->
+    <filter id="buttonShadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="4" stdDeviation="8" flood-color="${accentColor}" flood-opacity="0.4"/>
     </filter>
   </defs>
-  
+
   <!-- Headline -->
   <text 
-    class="headline" 
     x="${headline.x}" 
     y="${headline.y}" 
+    font-family="Inter, -apple-system, BlinkMacSystemFont, sans-serif"
     font-size="${headline.fontSize || 64}px"
-    filter="url(#textShadow)"
-  >${escapeText(copy.headline)}</text>
-  
+    font-weight="${headlineWeight}"
+    fill="${headlineColor}"
+    text-anchor="middle"
+    ${useShadows ? 'filter="url(#textShadow)"' : ''}
+    ${headlineTransform === 'uppercase' ? 'text-transform="uppercase"' : ''}
+  >${escape(copy.headline)}</text>
+
   ${tagline && copy.tagline ? `
   <!-- Tagline -->
   <text 
-    class="tagline" 
     x="${tagline.x}" 
     y="${tagline.y}" 
+    font-family="Inter, -apple-system, BlinkMacSystemFont, sans-serif"
     font-size="${tagline.fontSize || 24}px"
-  >${escapeText(copy.tagline)}</text>
-  ` : ''}
-  
-  <!-- CTA Button -->
+    font-weight="400"
+    fill="${tagline.color || '#CCCCCC'}"
+    text-anchor="middle"
+    ${useShadows ? 'filter="url(#softShadow)"' : ''}
+  >${escape(copy.tagline)}</text>` : ''}
+
+  <!-- CTA Button with premium styling -->
   <rect 
-    class="cta-button"
     x="${cta.x}" 
     y="${cta.y}" 
     width="${cta.width}" 
     height="${cta.height}" 
     rx="${cta.borderRadius || 28}"
     ry="${cta.borderRadius || 28}"
+    fill="url(#ctaGrad)"
+    filter="url(#buttonShadow)"
   />
   
   <!-- CTA Text -->
   <text 
-    class="cta-text"
     x="${ctaTextX}" 
     y="${ctaTextY}" 
+    font-family="Inter, -apple-system, BlinkMacSystemFont, sans-serif"
     font-size="${cta.fontSize || 18}px"
-  >${escapeText(copy.cta)}</text>
-  
+    font-weight="600"
+    fill="#FFFFFF"
+    text-anchor="middle"
+  >${escape(copy.cta)}</text>
 </svg>`;
-
-    return svg;
 }
 
-/**
- * Add feature arrows pointing to product
- */
-export function addFeatureArrows(svgContent, arrows) {
-    if (!arrows || arrows.length === 0) return svgContent;
-
-    const arrowsSvg = arrows.map(arrow => `
-        <line 
-            x1="${arrow.startX}" y1="${arrow.startY}" 
-            x2="${arrow.endX}" y2="${arrow.endY}" 
-            stroke="white" stroke-width="2" stroke-linecap="round"
-        />
-        <circle cx="${arrow.endX}" cy="${arrow.endY}" r="4" fill="white"/>
-        <text x="${arrow.startX}" y="${arrow.startY - 10}" 
-              font-family="Inter, sans-serif" font-size="14" fill="white" text-anchor="middle">
-            ${arrow.label}
-        </text>
-    `).join('\n');
-
-    // Insert arrows before closing </svg>
-    return svgContent.replace('</svg>', `${arrowsSvg}\n</svg>`);
+// Adjust color brightness
+function adjustColor(hex, percent) {
+  const num = parseInt(hex.replace('#', ''), 16);
+  const amt = Math.round(2.55 * percent);
+  const R = Math.min(255, Math.max(0, (num >> 16) + amt));
+  const G = Math.min(255, Math.max(0, (num >> 8 & 0x00FF) + amt));
+  const B = Math.min(255, Math.max(0, (num & 0x0000FF) + amt));
+  return '#' + (0x1000000 + R * 0x10000 + G * 0x100 + B).toString(16).slice(1);
 }
 
-export default { compositeAd, addFeatureArrows };
+export default { compositeAd };
