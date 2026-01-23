@@ -1,8 +1,8 @@
 /**
- * CLEAN CANVAS GENERATOR - USER PROMPT PRIORITY
+ * CLEAN CANVAS GENERATOR - ELITE VERSION
  * 
- * Layer 2: Generates complete ad based on USER'S creative vision.
- * User prompt takes ABSOLUTE priority over system defaults.
+ * Layer 2: Generates PREMIUM Meta 2026 ads using
+ * pixel-precise prompts from the Creative Polisher.
  */
 
 import { GoogleGenerativeAI } from '@google/generative-ai';
@@ -11,16 +11,16 @@ import sharp from 'sharp';
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
 /**
- * Generate complete ad with USER PROMPT as priority
+ * Generate elite Meta 2026 ad with Gemini
  */
 export async function generateCleanCanvas({
     productImageBuffer,
     layoutPlan,
     productAnalysis,
     copy,
-    userPrompt  // NEW: User's creative vision
+    userPrompt  // This is the ENHANCED prompt from polishCreativePrompt
 }) {
-    console.log('[CleanCanvas] 🎨 Generating ad based on user vision...');
+    console.log('[CleanCanvas] 🎨 Generating ELITE Meta 2026 ad...');
 
     const style = layoutPlan?.style || {};
     const accentColor = style.accentColor || '#FF4757';
@@ -34,17 +34,17 @@ export async function generateCleanCanvas({
         generationConfig: { responseModalities: ['image', 'text'] }
     });
 
-    // USER PROMPT HAS ABSOLUTE PRIORITY
-    const prompt = userPrompt
-        ? buildUserPromptFirst(userPrompt, headline, tagline, cta, accentColor)
-        : buildDefaultPrompt(style, headline, tagline, cta, accentColor);
+    // Build the final prompt - use enhanced prompt if available
+    const finalPrompt = userPrompt
+        ? buildElitePrompt(userPrompt, headline, tagline, cta, accentColor)
+        : buildDefaultElitePrompt(style, headline, tagline, cta, accentColor, productAnalysis);
 
-    console.log('[CleanCanvas] Using prompt type:', userPrompt ? 'USER_PRIORITY' : 'DEFAULT');
+    console.log('[CleanCanvas] Prompt type:', userPrompt ? 'ENHANCED' : 'DEFAULT');
 
     try {
         const result = await model.generateContent([
             { inlineData: { mimeType: 'image/png', data: productImageBuffer.toString('base64') } },
-            { text: prompt }
+            { text: finalPrompt }
         ]);
 
         const candidates = result.response?.candidates;
@@ -54,7 +54,7 @@ export async function generateCleanCanvas({
                     const imageBuffer = Buffer.from(part.inlineData.data, 'base64');
                     const resized = await sharp(imageBuffer).resize(1080, 1080, { fit: 'cover' }).png().toBuffer();
 
-                    console.log('[CleanCanvas] ✅ Ad generated');
+                    console.log('[CleanCanvas] ✅ ELITE ad generated');
                     return { success: true, buffer: resized, includesText: true };
                 }
             }
@@ -67,76 +67,108 @@ export async function generateCleanCanvas({
 }
 
 /**
- * USER PROMPT FIRST - User's vision takes absolute priority
+ * Elite prompt using the enhanced creative direction
  */
-function buildUserPromptFirst(userPrompt, headline, tagline, cta, accentColor) {
-    return `Create a Meta/Instagram advertisement (1080x1080px) based EXACTLY on this user request:
+function buildElitePrompt(enhancedPrompt, headline, tagline, cta, accentColor) {
+    return `You are creating a PREMIUM Meta advertisement. Follow these EXACT specifications.
 
-══════════════════════════════════════════
-USER'S CREATIVE VISION (HIGHEST PRIORITY):
-══════════════════════════════════════════
-${userPrompt}
+═══════════════════════════════════════════════════════════════
+CANVAS: 1080 x 1080 pixels (Instagram/Facebook Square)
+═══════════════════════════════════════════════════════════════
 
-Follow the user's instructions EXACTLY. If they want a Macbook, create a Macbook.
-If they want red lights, use red lights. If they want 3D effects, make 3D effects.
-DO NOT change or simplify their vision.
+═══════════════════════════════════════════════════════════════
+CREATIVE DIRECTION (FOLLOW EXACTLY):
+═══════════════════════════════════════════════════════════════
+${enhancedPrompt}
 
-══════════════════════════════════════════
-USE THE INPUT IMAGE AS THE PRODUCT/SCREENSHOT
-══════════════════════════════════════════
-The uploaded image is what the user wants to feature in the ad.
-Incorporate it exactly as they described.
-
-══════════════════════════════════════════
-TEXT TO INCLUDE:
-══════════════════════════════════════════
+═══════════════════════════════════════════════════════════════
+TEXT CONTENT TO RENDER:
+═══════════════════════════════════════════════════════════════
 HEADLINE: "${headline}"
-${tagline ? `TAGLINE: "${tagline}"` : ''}
-CTA BUTTON: "${cta}" (${accentColor} background, white text, pill shape, premium look with glow/shadow)
+- Must be PERFECTLY READABLE
+- Use modern sans-serif font (like Inter, SF Pro)
+- Add text shadow for depth
 
-══════════════════════════════════════════
+${tagline ? `TAGLINE: "${tagline}"
+- Smaller, below headline
+- Lighter weight, gray or white` : ''}
+
+CTA BUTTON: "${cta}"
+- Pill-shaped button
+- Background: ${accentColor} (with subtle gradient)
+- White bold text
+- Add glow/shadow effect to make it POP
+- MUST look clickable and premium
+
+═══════════════════════════════════════════════════════════════
 QUALITY REQUIREMENTS:
-══════════════════════════════════════════
-- Professional Meta ad quality
-- Sharp, crisp text with proper shadows
-- Premium, modern aesthetic
-- CTA button must look clickable and premium
-- 1080x1080 square format
+═══════════════════════════════════════════════════════════════
+- SHARP, CRISP text with NO blur
+- Professional lighting
+- Premium, polished look
+- High contrast for readability
+- Looks like a $10,000 agency ad
 
-Create exactly what the user asked for. Their vision is the priority.`;
+USE THE INPUT IMAGE AS THE PRODUCT/SCREENSHOT - feature it prominently.
+
+OUTPUT: A complete 1080x1080 Meta advertisement.`;
 }
 
 /**
- * Default prompt when no user prompt provided
+ * Default elite prompt when no enhanced prompt available
  */
-function buildDefaultPrompt(style, headline, tagline, cta, accentColor) {
+function buildDefaultElitePrompt(style, headline, tagline, cta, accentColor, productAnalysis) {
     const mood = style.mood || 'premium';
-    const backgroundType = style.backgroundType || 'dark_gradient';
     const backgroundColor = style.backgroundColor || '#1a1a2e';
+    const productName = productAnalysis?.productName || 'Product';
 
-    return `Create a professional Meta/Instagram advertisement (1080x1080px).
+    return `Create a PREMIUM Meta advertisement (1080x1080 pixels).
 
-PRODUCT: Keep the product from the input image EXACTLY as shown.
+═══════════════════════════════════════════════════════════════
+PIXEL-PRECISE LAYOUT SPECIFICATIONS:
+═══════════════════════════════════════════════════════════════
 
 BACKGROUND:
-- Style: ${backgroundType}
-- Color: ${backgroundColor}
-- Professional studio lighting
+- Deep gradient from ${backgroundColor} (top) to darker shade (bottom)
+- Add subtle radial glow at center (${accentColor}, opacity 20%, blur 200px)
+- Optional: subtle particle/dust effect (10-20 small white dots, opacity 15%)
 
-TEXT:
-HEADLINE: "${headline}" (large, bold, white, top center)
-${tagline ? `TAGLINE: "${tagline}" (smaller, gray, below headline)` : ''}
+PRODUCT (from input image):
+- Position: CENTER of canvas (540, 500)
+- Size: approximately 550-600px
+- Add professional studio lighting from top-left
+- Add subtle reflection below product (opacity 25%)
+- Add very subtle glow around product edges
+
+HEADLINE: "${headline}"
+- Position: TOP CENTER (x: 540, y: 100)
+- Font: Bold, modern sans-serif
+- Size: 64px
+- Color: White (#FFFFFF)
+- Text shadow: 0 4px 8px rgba(0,0,0,0.5)
+- MUST be perfectly sharp and readable
+
+${tagline ? `TAGLINE: "${tagline}"
+- Position: Below headline (x: 540, y: 170)
+- Font: Regular weight
+- Size: 24px
+- Color: Light gray (#CCCCCC)` : ''}
 
 CTA BUTTON: "${cta}"
-- Bottom center
-- Pill-shaped with rounded corners (28px radius)
-- Background: ${accentColor}
-- White bold text
-- IMPORTANT: Add glow effect and shadow to make it pop
-- Make it look PREMIUM and CLICKABLE
+- Position: BOTTOM CENTER (x: 540, y: 970)
+- Size: 220px x 56px
+- Background: Linear gradient from lighter ${accentColor} to ${accentColor}
+- Border-radius: 28px (pill shape)
+- Text: Bold, 18px, white, centered
+- Add glow effect: 0 0 20px ${accentColor} at 50% opacity
+- Add shadow: 0 8px 24px rgba(0,0,0,0.3)
 
-STYLE: ${mood} aesthetic, clean, modern, professional
-TEXT: Perfectly readable, crisp, with shadows for depth`;
+═══════════════════════════════════════════════════════════════
+STYLE: ${mood}, professional, high-converting Meta 2026 ad
+═══════════════════════════════════════════════════════════════
+
+TEXT MUST BE PERFECTLY SHARP AND READABLE.
+This should look like a premium agency ad, not AI-generated.`;
 }
 
 async function createFallbackCanvas(productImageBuffer, layoutPlan) {

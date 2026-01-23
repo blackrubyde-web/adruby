@@ -14,7 +14,7 @@ import { createLayoutStrategy } from './strategist.js';
 import { generateCleanCanvas } from './cleanCanvas.js';
 import { getOverlayCoordinates } from './artDirector.js';
 import { compositeAd } from './compositor.js';
-import { polishPromptWithExpert, polishCreativePrompt } from './promptPolisher.js';
+import { polishCreativePrompt } from './promptPolisher.js';
 
 /**
  * Execute the full 4-layer pipeline
@@ -52,25 +52,9 @@ export async function executeLayerPipeline({
 
         // ═══════════════════════════════════════
         // LAYER 1.5: Marketing Copy (if needed)
-        // ═══════════════════════════════════════
-        let marketingCopy = { headline, tagline, cta };
-
-        if (openai && (!headline || headline === 'Premium Quality')) {
-            console.log('[Pipeline] Layer 1.5: Generating marketing copy...');
-            try {
-                marketingCopy = await polishPromptWithExpert(openai, {
-                    userPrompt,
-                    productAnalysis,
-                    industry,
-                    headline,
-                    subheadline: tagline,
-                    cta
-                });
-                console.log('[Pipeline] ✓ Marketing copy:', marketingCopy.headline);
-            } catch (e) {
-                console.warn('[Pipeline] Marketing copy failed, using defaults');
-            }
-        }
+        // Layer 1.5 is now handled by Layer 1.75 (Creative Prompt Polisher)
+        // Marketing copy uses headline/tagline/cta passed from caller
+        const marketingCopy = { headline, tagline, cta };
 
         // ═══════════════════════════════════════
         // LAYER 1.75: Polish User's Creative Vision (Meta 2026)

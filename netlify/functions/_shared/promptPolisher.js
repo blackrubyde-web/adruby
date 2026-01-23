@@ -1,186 +1,103 @@
 /**
- * MARKETING EXPERT PROMPT POLISHER
+ * ELITE CREATIVE PROMPT POLISHER - META 2026 STANDARD
  * 
- * Takes the user's simple prompt and transforms it into:
- * 1. Professional marketing HEADLINE (not user's raw prompt!)
- * 2. Compelling TAGLINE
- * 3. CTA text
- * 4. Visual direction for Gemini
+ * Takes user's basic idea and transforms it into PIXEL-PRECISE
+ * premium ad direction for 1080x1080 canvas.
  */
 
 /**
- * Polish user prompt with Marketing Expert AI
- * Returns: { headline, tagline, cta, visualDirection }
- */
-export async function polishPromptWithExpert(openai, {
-    userPrompt,
-    productAnalysis,
-    industry,
-    headline,
-    subheadline,
-    cta
-}) {
-    console.log('[MarketingExpert] 🎯 Generating professional marketing copy...');
-
-    const systemPrompt = `You are a Senior Meta Ads Copywriter creating viral 2026 dropshipping ads.
-
-CRITICAL: Generate MARKETING COPY, not the user's prompt as headline!
-
-The user describes what they WANT. You create:
-1. A CATCHY HEADLINE that sells (3-5 words max)
-2. A benefit-focused TAGLINE (1 sentence)
-3. A CTA (2-3 words)
-4. Visual direction for the image
-
-Output ONLY valid JSON, no markdown, no explanations.`;
-
-    const userMessage = `PRODUCT: ${productAnalysis?.productName || 'Product'}
-TYPE: ${productAnalysis?.productType || 'Unknown'}
-INDUSTRY: ${industry || 'e-commerce'}
-
-USER'S WISH: "${userPrompt || 'Premium ad'}"
-
-USER PROVIDED (use if good, improve if generic):
-- Headline: "${headline || ''}"
-- Tagline: "${subheadline || ''}"
-- CTA: "${cta || ''}"
-
----
-
-Generate professional marketing copy. The headline should SELL, not describe the user's request.
-
-Examples of GOOD headlines:
-- "Level Up Your Setup" (for gaming products)
-- "Glow Different" (for lamps)
-- "Sleep Like Never Before" (for pillows)
-
-Examples of BAD headlines (DO NOT DO THIS):
-- "Gaming background, bring the fox to glow" (user's raw prompt)
-- "Create a premium ad" (instruction, not headline)
-
-Return JSON:
-{
-  "headline": "Catchy 3-5 word headline that SELLS",
-  "tagline": "One sentence benefit",
-  "cta": "Shop Now",
-  "visualDirection": "Specific visual instructions for image generation"
-}`;
-
-    try {
-        const response = await openai.chat.completions.create({
-            model: 'gpt-4o-mini',
-            messages: [
-                { role: 'system', content: systemPrompt },
-                { role: 'user', content: userMessage }
-            ],
-            max_tokens: 400,
-            temperature: 0.8,
-            response_format: { type: "json_object" }
-        });
-
-        const result = JSON.parse(response.choices[0].message.content);
-
-        console.log('[MarketingExpert] ✅ Generated copy:', {
-            headline: result.headline,
-            tagline: result.tagline?.substring(0, 50) + '...',
-            cta: result.cta
-        });
-
-        return {
-            headline: result.headline || headline || productAnalysis?.productName || 'Premium Quality',
-            tagline: result.tagline || subheadline || '',
-            cta: result.cta || cta || 'Shop Now',
-            visualDirection: result.visualDirection || ''
-        };
-    } catch (error) {
-        console.error('[MarketingExpert] Failed:', error.message);
-        // Fallback to provided or default values
-        return {
-            headline: headline || productAnalysis?.productName || 'Premium Quality',
-            tagline: subheadline || 'Discover the difference',
-            cta: cta || 'Shop Now',
-            visualDirection: ''
-        };
-    }
-}
-
-/**
- * Get industry-specific prompt enhancements
- */
-export function getIndustryEnhancements(industry) {
-    const enhancements = {
-        'electronics': 'Tech-forward aesthetic, clean lines, subtle RGB/neon accents, dark mode friendly',
-        'fashion': 'Lifestyle context, aspirational mood, model hands or styled flat lay',
-        'beauty': 'Soft lighting, skin-friendly tones, dewey/fresh aesthetic, luxury feel',
-        'food': 'Appetite appeal, warm lighting, steam/freshness cues, lifestyle context',
-        'home': 'Cozy atmosphere, lifestyle integration, warm ambient lighting',
-        'toys': 'Fun, vibrant, playful lighting, kid-friendly but parent-approved aesthetic',
-        'fitness': 'Dynamic, energetic, motivational, action-oriented',
-        'default': 'Premium e-commerce aesthetic, clean composition, professional lighting'
-    };
-
-    return enhancements[industry] || enhancements.default;
-}
-
-/**
- * NEW: Polish User's Creative Prompt to Meta 2026 Standard
- * 
- * Takes user's raw creative vision and enhances it with:
- * - Professional design techniques
- * - Meta 2026 best practices
- * - Conversion optimization
- * - Premium visual elements
+ * Polish user's creative prompt to Meta 2026 elite standard
+ * Returns pixel-precise layout + premium design direction
  */
 export async function polishCreativePrompt(openai, {
     userPrompt,
     productAnalysis,
     industry
 }) {
-    console.log('[CreativePolisher] 🎨 Enhancing user vision to Meta 2026 standard...');
+    console.log('[CreativePolisher] 🎯 Enhancing to Meta 2026 ELITE standard...');
 
-    if (!userPrompt || userPrompt.length < 10) {
-        console.log('[CreativePolisher] No user prompt, using defaults');
-        return null;
+    if (!userPrompt || userPrompt.length < 5) {
+        console.log('[CreativePolisher] No user prompt, using premium defaults');
+        return getEliteDefaultPrompt(industry, productAnalysis);
     }
 
-    const systemPrompt = `You are an ELITE Creative Director at a top Meta Ads agency (2026 standard).
+    const systemPrompt = `You are an ELITE Creative Director at the world's top Meta Ads agency.
+Your ads generate 10x ROAS. You create PIXEL-PRECISE creative direction for 1080x1080 ads.
 
-Your job: Take the user's basic creative idea and TRANSFORM it into a PREMIUM Meta ad concept.
+CANVAS: 1080 x 1080 pixels (Instagram/Facebook Square)
 
-Add:
-1. Professional lighting techniques (studio, dramatic, soft gradients)
-2. Premium mockup concepts (3D renders, device mockups, lifestyle contexts)
-3. Modern design trends (glassmorphism, neon accents, depth/layers)
-4. Conversion-optimized layouts
-5. Specific visual effects that make ads POP
+YOUR JOB: Take the user's basic idea and output SPECIFIC, DETAILED creative direction.
 
-NEVER just repeat the user's prompt. ENHANCE it with professional details.
+ALWAYS INCLUDE:
+1. EXACT PIXEL POSITIONS for every element
+2. SPECIFIC COLORS with hex codes
+3. EXACT SIZES for mockups/products
+4. LIGHTING with direction, color, intensity
+5. BACKGROUND with gradients, effects, colors
+6. PREMIUM EFFECTS (glow, particles, shadows, glassmorphism)
+7. TEXT STYLING (font style, size, shadow, position)
 
-Example:
-- User says: "put my screenshot in a macbook"
-- You output: "Place the screenshot inside a sleek MacBook Pro mockup with a 45-degree angle. Add soft ambient lighting from the left, subtle screen glow reflecting off the surface. Background: deep navy gradient with subtle purple light flares. Add 3D floating UI elements extracted from the screenshot to create depth. Include subtle particle effects and a glass-morphic overlay element."
+EXAMPLE OUTPUT:
+"Create a 1080x1080 Meta ad. 
 
-Return JSON with ONLY this structure:
+BACKGROUND: 
+- Deep navy gradient (#0a0a1f to #1a1a3a) from top to bottom
+- Subtle red/purple light flare at top-right (800,100), radius 200px, opacity 40%
+- Subtle particle dust effect, 20-30 small dots, white, opacity 20%
+
+MOCKUP/PRODUCT:
+- MacBook Pro 16" at 30° angle, centered
+- Position: center of canvas (540, 540)
+- Size: 700px wide
+- Screen showing user's screenshot
+- Subtle screen glow (#4a90d9, opacity 60%)
+- Reflection on surface below, opacity 30%
+
+3D FLOATING ELEMENTS:
+- Extract 2-3 UI cards from screenshot
+- Float them at angles around MacBook
+- Card 1: top-left (200, 300), rotated 15°, scale 0.8
+- Card 2: top-right (850, 350), rotated -10°, scale 0.7
+- Add glassmorphism (blur 10px, white border, 20% opacity)
+- Add drop shadow (0 8px 32px rgba(0,0,0,0.3))
+
+HEADLINE: 
+- Position: top center (540, 100)
+- Font: Bold, modern sans-serif
+- Size: 64-72px
+- Color: White (#FFFFFF)
+- Text shadow: 0 4px 8px rgba(0,0,0,0.5)
+
+CTA BUTTON:
+- Position: bottom center (540, 980)
+- Size: 240px x 56px
+- Background: Gradient (#FF4757 to #FF6B81)
+- Border-radius: 28px (pill shape)
+- Glow: 0 0 20px rgba(255,71,87,0.5)
+- Text: Bold, 18px, white
+
+OVERALL STYLE: Premium SaaS, futuristic but elegant, high-end tech"
+
+Return JSON:
 {
-  "enhancedPrompt": "The complete, professional creative direction",
-  "keyEnhancements": ["list of 3-5 specific premium elements added"],
-  "styleNotes": "Brief note on the overall aesthetic direction"
+  "enhancedPrompt": "The complete, PIXEL-PRECISE creative direction (like above)",
+  "keyEnhancements": ["list of 5+ specific premium elements"],
+  "layoutType": "mockup|product_hero|lifestyle|minimal",
+  "primaryColor": "#hexcode",
+  "mood": "premium|futuristic|elegant|bold"
 }`;
 
-    const userMessage = `PRODUCT CONTEXT:
-- Type: ${productAnalysis?.productType || 'Product/Service'}
+    const userMessage = `PRODUCT INFO:
+- Type: ${productAnalysis?.productType || 'SaaS/Product'}
 - Industry: ${industry || 'technology'}
-- Product Name: ${productAnalysis?.productName || 'Unknown'}
+- Name: ${productAnalysis?.productName || 'Product'}
 
 USER'S RAW CREATIVE VISION:
 "${userPrompt}"
 
-Transform this into a META 2026 PREMIUM ad concept. Be SPECIFIC about:
-- Exact lighting (direction, color, intensity)
-- Background (gradients, effects, colors)
-- Mockup/presentation style (3D, device frame, floating elements)
-- Premium effects (glow, particles, reflections, glassmorphism)
-- Layout and composition`;
+Transform this into ELITE Meta 2026 creative direction with PIXEL-PRECISE specifications.
+Be EXTREMELY SPECIFIC about positions, sizes, colors, effects.
+The output should be so detailed that anyone could recreate it exactly.`;
 
     try {
         const response = await openai.chat.completions.create({
@@ -189,29 +106,99 @@ Transform this into a META 2026 PREMIUM ad concept. Be SPECIFIC about:
                 { role: 'system', content: systemPrompt },
                 { role: 'user', content: userMessage }
             ],
-            max_tokens: 800,
-            temperature: 0.9,
+            max_tokens: 1500,
+            temperature: 0.85,
             response_format: { type: "json_object" }
         });
 
         const result = JSON.parse(response.choices[0].message.content);
 
-        console.log('[CreativePolisher] ✅ Enhanced to Meta 2026 standard');
-        console.log('[CreativePolisher] Key enhancements:', result.keyEnhancements);
+        console.log('[CreativePolisher] ✅ ELITE prompt generated');
+        console.log('[CreativePolisher] Layout:', result.layoutType);
+        console.log('[CreativePolisher] Mood:', result.mood);
+        console.log('[CreativePolisher] Enhancements:', result.keyEnhancements?.slice(0, 3).join(', '));
 
         return {
             enhancedPrompt: result.enhancedPrompt,
             keyEnhancements: result.keyEnhancements || [],
-            styleNotes: result.styleNotes || ''
+            layoutType: result.layoutType || 'premium',
+            primaryColor: result.primaryColor || '#FF4757',
+            mood: result.mood || 'premium'
         };
     } catch (error) {
         console.error('[CreativePolisher] Failed:', error.message);
-        return null;
+        return getEliteDefaultPrompt(industry, productAnalysis);
     }
 }
 
-export default {
-    polishPromptWithExpert,
-    getIndustryEnhancements,
-    polishCreativePrompt
-};
+/**
+ * Elite default prompt when no user input or API fails
+ */
+function getEliteDefaultPrompt(industry, productAnalysis) {
+    const industryStyles = {
+        technology: {
+            bg: '#0a0a1f to #1a1a3a',
+            accent: '#6366f1',
+            effects: 'subtle blue glow, tech grid pattern',
+            mood: 'futuristic'
+        },
+        gaming: {
+            bg: '#0a0a0a to #1a0a1a',
+            accent: '#00ff88',
+            effects: 'RGB accents, neon glow, particle effects',
+            mood: 'aggressive'
+        },
+        beauty: {
+            bg: '#fef5f0 to #fff0f5',
+            accent: '#e91e63',
+            effects: 'soft glow, bokeh, dreamy lighting',
+            mood: 'luxurious'
+        },
+        ecommerce: {
+            bg: '#1a1a2e to #16213e',
+            accent: '#FF4757',
+            effects: 'product highlight, subtle reflections',
+            mood: 'premium'
+        }
+    };
+
+    const style = industryStyles[industry] || industryStyles.ecommerce;
+    const productName = productAnalysis?.productName || 'Product';
+
+    return {
+        enhancedPrompt: `Create a 1080x1080 Meta ad.
+
+BACKGROUND:
+- Gradient: ${style.bg} (top to bottom)
+- Add ${style.effects}
+- Subtle vignette at edges
+
+PRODUCT:
+- Center the product (540, 480)
+- Size: 550-600px
+- Add studio lighting from top-left
+- Subtle reflection below, opacity 25%
+- Add subtle glow around product (${style.accent}, opacity 30%)
+
+HEADLINE:
+- Position: top center (540, 100)
+- Text: "${productName}"
+- Font: Bold, 64px, white
+- Drop shadow for depth
+
+CTA BUTTON:
+- Position: bottom center (540, 970)
+- Size: 220px x 56px
+- Color: ${style.accent}
+- Pill shape (28px radius)
+- Add glow effect
+
+STYLE: ${style.mood}, professional, high-converting`,
+        keyEnhancements: ['studio lighting', 'product glow', 'gradient background', 'premium CTA', 'text shadows'],
+        layoutType: 'product_hero',
+        primaryColor: style.accent,
+        mood: style.mood
+    };
+}
+
+export default { polishCreativePrompt };
