@@ -92,6 +92,46 @@ export class ForeplayClient {
     }
 
     /**
+     * Search by niche with custom query and filters
+     * Used by product matcher for smart ad discovery
+     */
+    async searchByNiche(niche, options = {}) {
+        const cacheKey = `byniche:${niche}:${options.query}:${options.runningDurationMin}`;
+
+        if (this.cache.has(cacheKey)) {
+            const cached = this.cache.get(cacheKey);
+            if (Date.now() - cached.timestamp < this.cacheExpiry) {
+                console.log(`[Foreplay] Using cached results for ${niche}`);
+                return cached.data;
+            }
+        }
+
+        const params = {
+            query: options.query || '',
+            niches: [niche],
+            display_format: 'image',
+            running_duration_min_days: options.runningDurationMin || 30,
+            order: options.order || 'longest_running',
+            live: 'true',
+            limit: options.limit || 10
+        };
+
+        try {
+            const result = await this.request('/api/discovery/ads', params);
+
+            this.cache.set(cacheKey, {
+                data: result.data,
+                timestamp: Date.now()
+            });
+
+            return result.data || [];
+        } catch (error) {
+            console.error('[Foreplay] searchByNiche error:', error.message);
+            return [];
+        }
+    }
+
+    /**
      * Get ads similar to a product/prompt
      * Searches by keywords extracted from the prompt
      */

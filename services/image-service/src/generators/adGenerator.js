@@ -1,18 +1,18 @@
 /**
- * Ad Generator v3.0 - AI Design Director Powered
+ * Ad Generator v4.0 - Elite AI-Directed Generation
  * 
- * No fixed templates - AI decides layout dynamically:
- * 1. Fetch reference ads from Foreplay
- * 2. Generate clean background with Gemini
- * 3. AI analyzes background + references
- * 4. AI decides layout and element positions
- * 5. Dynamic renderer creates overlay
+ * Complete pipeline for 10/10 quality ads:
+ * 1. Product Analysis with GPT-4V
+ * 2. Smart Foreplay Search for matching ads
+ * 3. Pattern Extraction from winners
+ * 4. Elite Prompt Building (500+ words)
+ * 5. Gemini Generation with COMPLETE ad (including text)
  */
 
 import sharp from 'sharp';
 import { GoogleGenerativeAI } from '@google/generative-ai';
-import { directAdDesign } from '../ai/designDirector.js';
-import { renderDynamicOverlay } from '../compositing/dynamicRenderer.js';
+import { matchProduct, analyzeProduct, findMatchingAds } from '../ai/productMatcher.js';
+import { buildElitePrompt, buildSimplePrompt } from '../ai/elitePromptBuilder.js';
 import { getIndustryConfig, detectIndustry } from '../config/industries.js';
 import { applyEffects } from '../effects/index.js';
 import { fetchProductImage } from '../utils/imageLoader.js';
@@ -20,7 +20,7 @@ import { fetchProductImage } from '../utils/imageLoader.js';
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
 /**
- * Main ad generation function - AI Director powered
+ * Main ad generation function - Elite Quality
  */
 export async function generateAd({
     productImageUrl,
@@ -38,7 +38,7 @@ export async function generateAd({
     enableQualityCheck = false,
     maxRetries = 2
 }) {
-    console.log('[AdGenerator] 🚀 Starting AI-directed generation...');
+    console.log('[AdGenerator] 🚀 Starting ELITE ad generation v4.0...');
     const startTime = Date.now();
 
     // Step 1: Load product image
@@ -49,169 +49,191 @@ export async function generateAd({
         productBuffer = await fetchProductImage(productImageUrl);
     }
 
-    // Step 2: Detect industry
-    const detectedIndustry = industry || detectIndustry(userPrompt || '', headline || '');
+    // Step 2: Deep product analysis with GPT-4V
+    console.log('[AdGenerator] Step 1: Deep Product Analysis...');
+    let productAnalysis;
+    let patterns;
+    let referenceAds = [];
+
+    if (productBuffer) {
+        const matchResult = await matchProduct(productBuffer);
+        productAnalysis = matchResult.analysis;
+        patterns = matchResult.patterns;
+        referenceAds = matchResult.referenceAds;
+        console.log(`[AdGenerator] Found ${referenceAds.length} reference ads`);
+    } else {
+        // Fallback without product image
+        productAnalysis = {
+            productName: 'Premium Product',
+            productType: industry || 'tech',
+            keywords: [userPrompt || 'premium'],
+            suggestedHeadlines: [headline || 'Shop Now'],
+            emotionalHook: 'Quality and Value',
+            adStyle: 'bold'
+        };
+        patterns = { layouts: ['hero_centered'] };
+    }
+
+    // Step 3: Determine industry from analysis
+    const detectedIndustry = industry || productAnalysis.productType || detectIndustry(userPrompt || '', headline || '');
     const industryConfig = getIndustryConfig(detectedIndustry);
     console.log('[AdGenerator] Industry:', detectedIndustry);
 
-    // Step 3: Determine style
-    const effectiveStyle = style || industryConfig.defaultStyle;
-    const effectiveAccent = accentColor || industryConfig.colors?.primary;
-
-    // Step 4: Generate clean background with Gemini (NO TEXT)
-    const backgroundBuffer = await generateCleanBackground({
-        productBuffer,
-        industry: detectedIndustry,
-        style: effectiveStyle,
-        userPrompt
-    });
-
-    // Step 5: AI Design Director decides layout
-    const designDecision = await directAdDesign({
-        backgroundBuffer,
-        productDescription: userPrompt,
-        headline,
+    // Step 4: Build elite prompt using patterns
+    console.log('[AdGenerator] Step 2: Building Elite Prompt...');
+    const { prompt, layout, colors } = buildElitePrompt({
+        productAnalysis,
+        patterns,
+        headline: headline || productAnalysis.suggestedHeadlines?.[0],
         tagline,
-        features,
+        features: features.length > 0 ? features : productAnalysis.keyFeatures?.slice(0, 3) || [],
         stats,
-        cta,
-        industry: detectedIndustry,
-        userPrompt
+        cta: cta || 'Shop Now',
+        industry: detectedIndustry
     });
 
-    console.log(`[AdGenerator] AI selected pattern: ${designDecision.pattern} (confidence: ${designDecision.confidence})`);
+    console.log('[AdGenerator] Layout:', layout);
+    console.log('[AdGenerator] Prompt length:', prompt.length, 'chars');
 
-    // Add accent color to instructions
-    designDecision.instructions.accentColor = effectiveAccent;
+    // Step 5: Generate complete ad with Gemini
+    console.log('[AdGenerator] Step 3: Generating Complete Ad...');
+    let adBuffer = await generateCompleteAd({
+        prompt,
+        productBuffer,
+        colors,
+        style: style || (productAnalysis.adStyle === 'minimal' ? 'light' : 'dark'),
+        retries: maxRetries
+    });
 
-    // Step 6: Render dynamic overlay based on AI instructions
-    let resultBuffer = await renderDynamicOverlay(backgroundBuffer, designDecision.instructions);
-
-    // Step 7: Apply industry effects
+    // Step 6: Apply finishing effects
     if (industryConfig.effects?.length > 0) {
-        const mappedEffects = mapEffects(industryConfig.effects.slice(0, 2));
-        if (mappedEffects.length > 0) {
-            resultBuffer = await applyEffects(resultBuffer, mappedEffects, {
-                color: effectiveAccent
+        const effectsToApply = mapEffects(industryConfig.effects.slice(0, 2));
+        if (effectsToApply.length > 0) {
+            console.log('[AdGenerator] Applying effects:', effectsToApply);
+            adBuffer = await applyEffects(adBuffer, effectsToApply, {
+                color: colors.accent
             });
         }
     }
 
     const duration = Date.now() - startTime;
-    console.log(`[AdGenerator] ✅ Complete in ${duration}ms`);
+    console.log(`[AdGenerator] ✅ Elite ad complete in ${duration}ms`);
 
     return {
-        buffer: resultBuffer,
-        pattern: designDecision.pattern,
+        buffer: adBuffer,
+        pattern: layout,
         industry: detectedIndustry,
-        referenceCount: designDecision.referenceCount,
-        confidence: designDecision.confidence,
-        duration
+        referenceCount: referenceAds.length,
+        confidence: patterns.layouts?.includes(layout) ? 0.9 : 0.7,
+        duration,
+        productAnalysis: {
+            name: productAnalysis.productName,
+            type: productAnalysis.productType,
+            style: productAnalysis.adStyle
+        }
     };
 }
 
 /**
- * Generate clean background with Gemini (NO TEXT)
+ * Generate complete ad with Gemini (includes all text)
  */
-async function generateCleanBackground({ productBuffer, industry, style, userPrompt }) {
-    console.log('[AdGenerator] Generating clean background...');
-
+async function generateCompleteAd({ prompt, productBuffer, colors, style, retries = 2 }) {
     const model = genAI.getGenerativeModel({
         model: 'gemini-2.0-flash-exp',
         generationConfig: { responseModalities: ['image', 'text'] }
     });
 
-    const industryConfig = getIndustryConfig(industry);
-    const isDark = style === 'dark';
+    for (let attempt = 0; attempt <= retries; attempt++) {
+        try {
+            const parts = [];
 
-    const prompt = `Create a premium 1080x1080 product advertisement BACKGROUND.
+            // Add product image if available
+            if (productBuffer) {
+                parts.push({
+                    inlineData: {
+                        mimeType: 'image/png',
+                        data: productBuffer.toString('base64')
+                    }
+                });
+            }
 
-ABSOLUTE RULE: DO NOT RENDER ANY TEXT, HEADLINES, LABELS, BUTTONS, OR WORDS.
-The text overlay will be added separately in post-processing.
+            parts.push({ text: prompt });
 
-COMPOSITION:
-- Product from the input image must be EXACTLY preserved
-- Place product CENTER, slightly below middle
-- Product should occupy 45-55% of the frame
-- Leave CLEAR SPACE at TOP (for headline) and BOTTOM (for CTA)
+            console.log(`[AdGenerator] Gemini attempt ${attempt + 1}/${retries + 1}...`);
+            const result = await model.generateContent(parts);
+            const candidates = result.response?.candidates;
 
-BACKGROUND STYLE (${style}):
-${isDark
-            ? `- Deep, dramatic gradient background
-    - Premium dark tones from ${industryConfig.colors?.backgroundDark || '#0a0f1a'}
-    - Subtle atmospheric glow behind product
-    - Moody, professional lighting`
-            : `- Clean, bright gradient background  
-    - Light tones from ${industryConfig.colors?.backgroundLight || '#F5F5F5'}
-    - Soft, diffused studio lighting
-    - Fresh, modern aesthetic`
-        }
-
-INDUSTRY CONTEXT: ${industryConfig.name || industry}
-USER CONTEXT: ${userPrompt || 'Premium product advertisement'}
-
-QUALITY:
-- Professional studio-quality lighting
-- Subtle drop shadow beneath product
-- High-end e-commerce look
-- Premium, aspirational feel
-
-OUTPUT: Clean product scene ready for text overlay. ABSOLUTELY NO TEXT OR LABELS.`;
-
-    try {
-        const parts = [];
-        if (productBuffer) {
-            parts.push({
-                inlineData: {
-                    mimeType: 'image/png',
-                    data: productBuffer.toString('base64')
-                }
-            });
-        }
-        parts.push({ text: prompt });
-
-        const result = await model.generateContent(parts);
-        const candidates = result.response?.candidates;
-
-        if (candidates?.[0]?.content?.parts) {
-            for (const part of candidates[0].content.parts) {
-                if (part.inlineData?.data) {
-                    const imageBuffer = Buffer.from(part.inlineData.data, 'base64');
-                    return await sharp(imageBuffer)
-                        .resize(1080, 1080, { fit: 'cover' })
-                        .png()
-                        .toBuffer();
+            if (candidates?.[0]?.content?.parts) {
+                for (const part of candidates[0].content.parts) {
+                    if (part.inlineData?.data) {
+                        const imageBuffer = Buffer.from(part.inlineData.data, 'base64');
+                        // Ensure proper dimensions
+                        return await sharp(imageBuffer)
+                            .resize(1080, 1080, { fit: 'cover' })
+                            .png()
+                            .toBuffer();
+                    }
                 }
             }
+
+            console.warn('[AdGenerator] No image in response, retrying...');
+        } catch (error) {
+            console.error(`[AdGenerator] Gemini attempt ${attempt + 1} failed:`, error.message);
+            if (attempt === retries) {
+                console.log('[AdGenerator] All attempts failed, using fallback');
+                return await createFallbackAd(colors, style);
+            }
         }
-        throw new Error('No image in response');
-    } catch (error) {
-        console.error('[AdGenerator] Gemini failed, using fallback:', error.message);
-        return createFallbackBackground(industryConfig, style);
     }
+
+    return await createFallbackAd(colors, style);
 }
 
 /**
- * Create fallback gradient background
+ * Create fallback ad when Gemini fails
  */
-async function createFallbackBackground(industryConfig, style) {
-    const isDark = style === 'dark';
-    const bgColor = isDark
-        ? industryConfig.colors?.backgroundDark || '#0a0f1a'
-        : industryConfig.colors?.backgroundLight || '#F5F5F5';
+async function createFallbackAd(colors, style) {
+    const bgColor = colors?.background || (style === 'dark' ? '#0F0F1A' : '#F5F5F5');
+    const textColor = colors?.textPrimary || '#FFFFFF';
 
-    const svg = `<svg width="1080" height="1080" xmlns="http://www.w3.org/2000/svg">
+    const svg = `
+    <svg width="1080" height="1080" xmlns="http://www.w3.org/2000/svg">
         <defs>
-            <radialGradient id="glow" cx="50%" cy="50%" r="50%">
-                <stop offset="0%" style="stop-color:${industryConfig.colors?.primary || '#333'};stop-opacity:0.1"/>
-                <stop offset="100%" style="stop-color:${industryConfig.colors?.primary || '#333'};stop-opacity:0"/>
+            <radialGradient id="glow" cx="50%" cy="40%" r="60%">
+                <stop offset="0%" style="stop-color:${colors?.primary || '#333'};stop-opacity:0.2"/>
+                <stop offset="100%" style="stop-color:${colors?.primary || '#333'};stop-opacity:0"/>
             </radialGradient>
+            <linearGradient id="bg" x1="0%" y1="0%" x2="0%" y2="100%">
+                <stop offset="0%" style="stop-color:${bgColor}"/>
+                <stop offset="100%" style="stop-color:${adjustBrightness(bgColor, -20)}"/>
+            </linearGradient>
         </defs>
-        <rect width="1080" height="1080" fill="${bgColor}"/>
-        <ellipse cx="540" cy="500" rx="400" ry="350" fill="url(#glow)"/>
+        <rect width="1080" height="1080" fill="url(#bg)"/>
+        <ellipse cx="540" cy="400" rx="450" ry="350" fill="url(#glow)"/>
+        <text x="540" y="200" text-anchor="middle" fill="${textColor}" 
+              font-family="Arial, sans-serif" font-size="64" font-weight="700">
+            Premium Quality
+        </text>
+        <rect x="390" y="950" width="300" height="60" rx="30" fill="${colors?.ctaBackground || '#FF4757'}"/>
+        <text x="540" y="990" text-anchor="middle" fill="#FFFFFF" 
+              font-family="Arial, sans-serif" font-size="24" font-weight="600">
+            Shop Now
+        </text>
     </svg>`;
 
     return await sharp(Buffer.from(svg)).png().toBuffer();
+}
+
+/**
+ * Adjust hex color brightness
+ */
+function adjustBrightness(hex, percent) {
+    const num = parseInt(hex.replace('#', ''), 16);
+    const amt = Math.round(2.55 * percent);
+    const R = Math.max(0, Math.min(255, (num >> 16) + amt));
+    const G = Math.max(0, Math.min(255, ((num >> 8) & 0x00FF) + amt));
+    const B = Math.max(0, Math.min(255, (num & 0x0000FF) + amt));
+    return `#${(1 << 24 | R << 16 | G << 8 | B).toString(16).slice(1)}`;
 }
 
 /**

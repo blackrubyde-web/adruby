@@ -1,11 +1,11 @@
 /**
- * AdRuby Image Service v3.0 - AI Design Director
+ * AdRuby Image Service v4.0 - Elite AI Generation
  * 
  * Premium ad generation using:
- * - Foreplay API (100M+ reference ads)
- * - GPT-4 Vision design analysis
- * - AI-directed dynamic layouts
- * - No fixed templates - unlimited variations
+ * - Product Matcher (GPT-4V analysis)
+ * - Foreplay API (100M+ reference ads, 30+ day winners)
+ * - Elite Prompt Builder (500+ word prompts)
+ * - Complete ad rendering with text
  */
 
 import express from 'express';
