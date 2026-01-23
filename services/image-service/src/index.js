@@ -1,11 +1,11 @@
 /**
- * AdRuby Image Service v4.0 - Elite AI Generation
+ * AdRuby Image Service v5.0 - Visual DNA Recreation System
  * 
- * Premium ad generation using:
- * - Product Matcher (GPT-4V analysis)
- * - Foreplay API (100M+ reference ads, 30+ day winners)
- * - Elite Prompt Builder (500+ word prompts)
- * - Complete ad rendering with text
+ * PERFECTION-level ad generation using:
+ * - Visual DNA Extraction (GPT-4V pixel-precise analysis)
+ * - Pattern DNA from 30+ day winning ads
+ * - 1000+ word pixel-precise prompts
+ * - Quality verification with regeneration loop
  */
 
 import express from 'express';

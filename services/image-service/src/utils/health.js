@@ -11,12 +11,13 @@ export function healthCheck() {
     return {
         status: 'healthy',
         service: 'adruby-image-service',
-        version: '4.0.0',
+        version: '5.0.0',
         timestamp: new Date().toISOString(),
         features: {
-            eliteGeneration: true,
-            productMatcher: true,
-            elitePromptBuilder: true,
+            visualDNA: true,
+            patternExtraction: true,
+            qualityVerification: true,
+            pixelPrecisePrompts: true,
             foreplayIntegration: true,
             gptVisionAnalysis: true,
             industries: ['tech', 'food', 'fashion', 'beauty', 'eco', 'fitness', 'saas', 'home'],
