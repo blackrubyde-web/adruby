@@ -62,7 +62,7 @@ export const CampaignMetricsRow = memo(function CampaignMetricsRow({
     roasHistory,
     ctrHistory,
     recommendation,
-    onAction,
+    onAction: _onAction,
     isExpanded,
     onToggle,
 }: CampaignMetricsRowProps) {

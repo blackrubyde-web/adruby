@@ -1,24 +1,26 @@
 /**
- * AdRuby Image Service (v2.0)
+ * AdRuby Image Service v3.0 - AI Design Director
  * 
- * Premium ad generation service with:
- * - 5 template types (feature_callout, hero_product, stats_grid, comparison_split, lifestyle_context)
- * - 8 industry presets
- * - Intelligent template selection
- * - Post-processing effects
- * - Quality validation
+ * Premium ad generation using:
+ * - Foreplay API (100M+ reference ads)
+ * - GPT-4 Vision design analysis
+ * - AI-directed dynamic layouts
+ * - No fixed templates - unlimited variations
  */
 
 import express from 'express';
 import cors from 'cors';
 import { generateAd } from './generators/adGenerator.js';
-import { listTemplates, getTemplatesForIndustry } from './templates/index.js';
+import { createForeplayClient } from './ai/foreplayClient.js';
 import { INDUSTRIES } from './config/industries.js';
 import { healthCheck } from './utils/health.js';
 import 'dotenv/config';
 
 const app = express();
 const PORT = process.env.PORT || 3001;
+
+// Initialize Foreplay client
+const foreplay = createForeplayClient(process.env.FOREPLAY_API_KEY);
 
 // Middleware
 app.use(cors({
@@ -38,29 +40,54 @@ app.use(express.json({ limit: '50mb' }));
 // Health check
 app.get('/health', (req, res) => {
     const status = healthCheck();
+    status.foreplay = !!foreplay;
     res.json(status);
 });
 
-// List available templates
-app.get('/templates', (req, res) => {
-    res.json({
-        templates: listTemplates(),
-        industries: Object.keys(INDUSTRIES)
-    });
-});
-
-// Get templates for industry
-app.get('/templates/:industry', (req, res) => {
-    const { industry } = req.params;
-    const templates = getTemplatesForIndustry(industry);
-    const config = INDUSTRIES[industry] || INDUSTRIES.tech;
-
-    res.json({
-        industry,
-        recommendedTemplates: templates,
+// List available industries
+app.get('/industries', (req, res) => {
+    const industries = Object.entries(INDUSTRIES).map(([key, config]) => ({
+        id: key,
+        name: config.name,
         colors: config.colors,
         defaultStyle: config.defaultStyle
-    });
+    }));
+    res.json({ industries });
+});
+
+// Check Foreplay API credits
+app.get('/foreplay/usage', async (req, res) => {
+    if (!foreplay) {
+        return res.status(503).json({ error: 'Foreplay not configured' });
+    }
+    try {
+        const usage = await foreplay.checkUsage();
+        res.json(usage);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// Get reference ads for an industry
+app.get('/references/:industry', async (req, res) => {
+    if (!foreplay) {
+        return res.status(503).json({ error: 'Foreplay not configured' });
+    }
+    try {
+        const ads = await foreplay.getTopPerformingAds(req.params.industry, { limit: 10 });
+        res.json({
+            count: ads.length,
+            ads: ads.map(ad => ({
+                id: ad.id,
+                thumbnail: ad.thumbnail,
+                image: ad.image,
+                niches: ad.niches,
+                runningDays: ad.running_duration?.days
+            }))
+        });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
 });
 
 // Main ad generation endpoint
@@ -69,32 +96,23 @@ app.post('/generate', async (req, res) => {
 
     try {
         const {
-            // Product
             productImageUrl,
             productImageBase64,
-
-            // Copy
             headline,
             tagline,
             cta,
-            features,      // Array of feature strings for feature_callout
-            stats,         // Array of {value, label} for stats_grid
-            comparisonData, // {leftTitle, rightTitle, leftPoints, rightPoints} for comparison
-
-            // Configuration
+            features,
+            stats,
+            comparisonData,
             userPrompt,
             industry,
-            template,      // Optional: auto-selected if not provided
-            style,         // 'dark' | 'light' | 'colorful'
+            style,
             accentColor,
-
-            // Quality
             enableQualityCheck = false
         } = req.body;
 
-        console.log('[ImageService] 🚀 Starting generation...');
+        console.log('[ImageService] 🚀 AI-directed generation starting...');
         console.log('[ImageService] Industry:', industry || 'auto-detect');
-        console.log('[ImageService] Template:', template || 'auto-select');
 
         const result = await generateAd({
             productImageUrl,
@@ -107,7 +125,6 @@ app.post('/generate', async (req, res) => {
             comparisonData,
             userPrompt,
             industry,
-            template,
             style,
             accentColor,
             enableQualityCheck
@@ -121,9 +138,13 @@ app.post('/generate', async (req, res) => {
             imageBase64: result.buffer.toString('base64'),
             metadata: {
                 duration,
-                template: result.template,
+                pattern: result.pattern,
                 industry: result.industry,
-                dimensions: { width: 1080, height: 1080 }
+                referenceCount: result.referenceCount,
+                confidence: result.confidence,
+                dimensions: { width: 1080, height: 1080 },
+                version: '3.0',
+                mode: 'ai_directed'
             }
         });
 
@@ -136,46 +157,50 @@ app.post('/generate', async (req, res) => {
     }
 });
 
-// Specific template endpoint (for testing)
-app.post('/generate/:template', async (req, res) => {
-    const { template } = req.params;
+// Search similar ads endpoint
+app.post('/search-references', async (req, res) => {
+    if (!foreplay) {
+        return res.status(503).json({ error: 'Foreplay not configured' });
+    }
 
     try {
-        const result = await generateAd({
-            ...req.body,
-            template
-        });
+        const { prompt, industry, limit = 5 } = req.body;
+        const ads = await foreplay.findSimilarAds(prompt, industry, { limit });
 
         res.json({
-            success: true,
-            imageBase64: result.buffer.toString('base64'),
-            metadata: {
-                template: result.template,
-                industry: result.industry
-            }
+            count: ads.length,
+            ads: ads.map(ad => ({
+                id: ad.id,
+                thumbnail: ad.thumbnail,
+                image: ad.image,
+                niches: ad.niches,
+                headline: ad.headline,
+                description: ad.description
+            }))
         });
-
     } catch (error) {
-        console.error(`[ImageService] ❌ ${template} error:`, error.message);
-        res.status(500).json({
-            success: false,
-            error: error.message
-        });
+        res.status(500).json({ error: error.message });
     }
 });
 
 app.listen(PORT, () => {
     console.log(`
-╔═══════════════════════════════════════════════════════════════╗
-║                                                               ║
-║   🎨 AdRuby Image Service v2.0                               ║
-║   Running on port ${PORT}                                       ║
-║                                                               ║
-║   Templates: ${listTemplates().length} available                                    ║
-║   Industries: ${Object.keys(INDUSTRIES).length} configured                                   ║
-║                                                               ║
-║   Ready to generate premium ads!                              ║
-║                                                               ║
-╚═══════════════════════════════════════════════════════════════╝
+╔══════════════════════════════════════════════════════════════════╗
+║                                                                  ║
+║   🎨 AdRuby Image Service v3.0 - AI Design Director             ║
+║   Running on port ${PORT}                                          ║
+║                                                                  ║
+║   Features:                                                      ║
+║   ✅ Foreplay Integration (100M+ reference ads)                 ║
+║   ✅ GPT-4 Vision Design Analysis                               ║
+║   ✅ AI-Directed Dynamic Layouts                                ║
+║   ✅ No Fixed Templates - Unlimited Variations                  ║
+║                                                                  ║
+║   Industries: ${Object.keys(INDUSTRIES).length} configured                                      ║
+║   Foreplay: ${foreplay ? '✅ Connected' : '❌ Not configured'}                                  ║
+║                                                                  ║
+║   Ready to generate designer-level ads!                          ║
+║                                                                  ║
+╚══════════════════════════════════════════════════════════════════╝
     `);
 });

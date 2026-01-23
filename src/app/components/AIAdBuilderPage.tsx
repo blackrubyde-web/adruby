@@ -65,7 +65,7 @@ export function AIAdBuilderPage() {
                         if (parsed.productImagePreview) {
                             setProductImagePreview(parsed.productImagePreview);
                         }
-                        console.log('[AIAdBuilder] Restored last generated ad from session');
+                        // Session restored
                     } else {
                         // Clear expired data
                         localStorage.removeItem(STORAGE_KEY);
@@ -73,7 +73,7 @@ export function AIAdBuilderPage() {
                 }
             }
         } catch (e) {
-            console.warn('[AIAdBuilder] Failed to restore session:', e);
+            // Failed to restore session
         }
     }, []);
 
@@ -86,9 +86,9 @@ export function AIAdBuilderPage() {
                     productImagePreview,
                     timestamp: Date.now()
                 }));
-                console.log('[AIAdBuilder] Saved ad to session storage');
-            } catch (e) {
-                console.warn('[AIAdBuilder] Failed to save session:', e);
+                // Saved to session storage
+            } catch {
+                // Failed to save session
             }
         }
     }, [result, productImagePreview]);
@@ -120,11 +120,11 @@ export function AIAdBuilderPage() {
         try {
             let productImageUrl = undefined;
 
-            console.log('[Frontend] productImage state:', productImage ? `File: ${productImage.name}, ${productImage.size} bytes` : 'NULL');
+
 
             if (productImage) {
                 // Upload product image to Supabase
-                console.log('[Frontend] Uploading product image to Supabase...');
+
                 const filename = `temp/product-${profile?.id}-${Date.now()}.png`;
                 const { data: _uploadData, error: uploadError } = await supabase.storage
                     .from('creative-images')
@@ -136,18 +136,9 @@ export function AIAdBuilderPage() {
                     .from('creative-images')
                     .getPublicUrl(filename);
                 productImageUrl = urlData.publicUrl;
-                console.log('[Frontend] ✅ Product image uploaded:', productImageUrl);
-            } else {
-                console.warn('[Frontend] ⚠️ NO PRODUCT IMAGE - will use OpenAI text-to-image instead of Gemini image-to-image');
             }
 
-            console.log('[Frontend] Generating ad with params:', {
-                mode,
-                language,
-                hasProductImage: !!productImageUrl,
-                productImageUrl: productImageUrl ? '✅ ' + productImageUrl.substring(0, 50) + '...' : '❌ MISSING',
-                inputDataKeys: Object.keys(inputData)
-            });
+
 
             const response = await generateAd({
                 mode: mode as InputMode,

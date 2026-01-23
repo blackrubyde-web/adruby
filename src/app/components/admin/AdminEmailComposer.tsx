@@ -109,13 +109,13 @@ export function AdminEmailComposer() {
         }
     };
 
-    // eslint-disable-next-line react-hooks/exhaustive-deps
     useEffect(() => {
         if (userFilter !== 'test') {
             loadUsers();
         } else {
             setUsers([]);
         }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [userFilter]);
 
     const recipientCount = useMemo(() => {

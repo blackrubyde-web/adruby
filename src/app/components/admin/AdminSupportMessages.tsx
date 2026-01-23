@@ -52,9 +52,9 @@ export function AdminSupportMessages() {
         }
     };
 
-    // eslint-disable-next-line react-hooks/exhaustive-deps
     useEffect(() => {
         fetchRequests();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [filter]);
 
     const updateStatus = async (id: string, newStatus: SupportRequest['status']) => {
