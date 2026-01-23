@@ -67,58 +67,138 @@ export async function generateCleanCanvas({
 
 /**
  * Build comprehensive final prompt for Gemini
+ * UPGRADED: Premium 10/10 quality with dynamic effects
  */
 function buildFinalPrompt(enhancedPrompt, headline, tagline, cta, accentColor, productAnalysis) {
-    // If we have an enhanced prompt from GPT-4o, use it with additions
-    if (enhancedPrompt && enhancedPrompt.length > 100) {
-        return `You are creating a PREMIUM Meta advertisement. Follow these EXACT specifications.
+    // Detect if product is a UI/SaaS/Dashboard
+    const productDesc = (productAnalysis?.description || '').toLowerCase();
+    const productType = (productAnalysis?.productType || '').toLowerCase();
+    const isSaaSProduct = productType.includes('saas') || productType.includes('software') ||
+        productType.includes('app') || productType.includes('dashboard') ||
+        productDesc.includes('dashboard') || productDesc.includes('interface') ||
+        productDesc.includes('platform') || productDesc.includes('tool');
 
+    // Premium gradient colors for CTA
+    const gradientStart = lightenColor(accentColor, 15);
+    const gradientEnd = accentColor;
+
+    const basePrompt = `
 ═══════════════════════════════════════════════════════════════
+🎯 PREMIUM META AD GENERATION - 10/10 QUALITY REQUIRED
+═══════════════════════════════════════════════════════════════
+
 CANVAS: 1080 x 1080 pixels (Instagram/Facebook Square)
-═══════════════════════════════════════════════════════════════
 
 ═══════════════════════════════════════════════════════════════
-CREATIVE DIRECTION (FOLLOW EXACTLY):
+🎨 DYNAMIC BACKGROUND (NOT STATIC!)
 ═══════════════════════════════════════════════════════════════
-${enhancedPrompt}
+Create a DYNAMIC, premium background with these effects:
+
+PRIMARY GRADIENT:
+- Direction: Radial from center, fading to edges
+- Colors: Deep navy #0D0D1A → Rich purple #1A1A35 → Almost black #0A0A12
+- Add subtle glow orbs: 2-3 soft circular gradients (${accentColor} at 8% opacity)
+
+DYNAMIC ELEMENTS (choose 2-3):
+- Subtle floating particles or dust specs (tiny white dots, 5-8% opacity)
+- Soft bokeh circles in background (3-5 circles, blurred, 10% opacity)
+- Gentle radial light rays emanating from product area
+- Subtle grid or mesh pattern (very faint, 3% opacity)
+
+CRITICAL: Background must feel ALIVE and DYNAMIC, not flat or static!
 
 ═══════════════════════════════════════════════════════════════
-TEXT CONTENT TO RENDER:
+📱 PRODUCT PRESENTATION
+═══════════════════════════════════════════════════════════════
+${isSaaSProduct ? `
+THIS IS A SAAS/UI PRODUCT - SPECIAL HANDLING:
+- Display the dashboard/interface AS SHOWN in the input image
+- Show it on a floating MacBook Pro or as a floating browser window
+- Add subtle perspective (slight 3D rotation, 5-10°)
+- Add screen glow: soft ${accentColor} emanating from the screen
+- Add floating shadow below the device
+- UI should be CLEARLY VISIBLE and READABLE
+- Don't modify the actual interface content - show it as-is` : `
+- Position: Centered, slightly above middle (Y: 45%)
+- Size: Fill approximately 55% of canvas width
+- Apply premium studio lighting from top-left
+- Add subtle glow halo around product (${accentColor} at 12%)
+- Add realistic shadow beneath`}
+
+═══════════════════════════════════════════════════════════════
+✍️ TYPOGRAPHY (PIXEL-PERFECT)
 ═══════════════════════════════════════════════════════════════
 HEADLINE: "${headline}"
-- Must be PERFECTLY READABLE
-- Modern sans-serif font (Inter, SF Pro style)
-- Add text shadow for depth: 0 2px 8px rgba(0,0,0,0.5)
+- Position: TOP CENTER (Y: 10-12%)
+- Font: Bold, modern sans-serif (Inter, Helvetica Neue, SF Pro Display)
+- Size: 54-60px, letter-spacing: -0.02em
+- Color: Pure white #FFFFFF
+- Text shadow: 0 4px 12px rgba(0,0,0,0.6)
+- CRITICAL: Text must be PERFECTLY SHARP and READABLE
 
-${tagline ? `TAGLINE: "${tagline}"
-- Smaller, below headline
-- Lighter weight, slightly muted color` : ''}
-
-CTA BUTTON: "${cta}"
-- Pill-shaped button with rounded corners
-- Background: ${accentColor} with subtle gradient
-- White bold text
-- Add glow effect: 0 0 15px ${accentColor} at 40%
-- Add shadow: 0 6px 20px rgba(0,0,0,0.25)
-- MUST look premium and clickable
+${tagline ? `SUBHEADLINE: "${tagline}"
+- Position: Below headline (Y: 18-20%)
+- Font: Regular weight, same family
+- Size: 22-26px
+- Color: Light gray #C0C0C0 or muted ${accentColor}` : ''}
 
 ═══════════════════════════════════════════════════════════════
-QUALITY REQUIREMENTS (NON-NEGOTIABLE):
+🔥 CTA BUTTON (PREMIUM - THIS IS CRITICAL!)
 ═══════════════════════════════════════════════════════════════
-- SHARP, CRISP text - NO BLUR
-- Professional lighting throughout
-- Premium, polished finish
-- High contrast for readability
-- This should look like a $10,000+ agency ad
-- Meta 2026 standard - ready to run immediately
+CTA TEXT: "${cta}"
 
-USE THE INPUT IMAGE AS THE PRODUCT - feature it prominently.
+SHAPE & SIZE:
+- Perfect pill shape (capsule with fully rounded ends)
+- Width: 240-280px, Height: 58-64px
+- Border-radius: 32px (fully rounded)
+- Position: BOTTOM CENTER (Y: 86-88%)
 
-OUTPUT: A complete 1080x1080 Meta advertisement.`;
-    }
+GRADIENT FILL (MUST HAVE GRADIENT, NOT SOLID!):
+- Type: Linear gradient, 135° angle (top-left to bottom-right)
+- Start color: ${gradientStart} (lighter, warmer)
+- End color: ${gradientEnd} (more saturated)
+- Optional: Add a very subtle shine line (white at 15%, 1px, near top)
 
-    // Fallback to default hero product template
-    return getDefaultHeroPrompt(headline, tagline, cta, accentColor, productAnalysis);
+GLOW EFFECT (CRITICAL FOR PREMIUM LOOK!):
+- Outer glow: 0 0 25px ${accentColor} at 50% opacity
+- Secondary glow: 0 0 50px ${accentColor} at 25% opacity
+- Creates a "pulsing" premium vibe
+
+TEXT STYLING:
+- Font: Bold, 18-20px
+- Color: Pure white #FFFFFF
+- Letter-spacing: 0.5px
+- Text shadow: 0 1px 3px rgba(0,0,0,0.3)
+
+BUTTON SHADOW:
+- Primary: 0 8px 32px rgba(0,0,0,0.4)
+- Color shadow: 0 4px 16px ${accentColor} at 30%
+
+THE BUTTON MUST LOOK LIKE A REAL, CLICKABLE, PREMIUM UI ELEMENT!
+NOT flat, NOT boring, NOT AI-generated looking.
+
+═══════════════════════════════════════════════════════════════
+⚡ QUALITY CHECKLIST (ALL MUST BE YES)
+═══════════════════════════════════════════════════════════════
+□ Text is PERFECTLY SHARP and readable (no blur, no AI artifacts)
+□ CTA button has visible GRADIENT (not solid color)
+□ CTA button has GLOW EFFECT (visible light emanating)
+□ Background feels DYNAMIC and ALIVE (not flat/static)
+□ Overall composition feels premium ($10,000 agency level)
+□ Ready to run on Meta Ads immediately
+
+${enhancedPrompt && enhancedPrompt.length > 100 ? `
+═══════════════════════════════════════════════════════════════
+📋 ADDITIONAL CREATIVE DIRECTION:
+═══════════════════════════════════════════════════════════════
+${enhancedPrompt}` : ''}
+
+USE THE INPUT IMAGE AS THE PRODUCT - integrate it prominently into the design.
+
+OUTPUT: A complete, premium 1080x1080 Meta advertisement.`;
+
+    console.log('[CleanCanvas] Built premium prompt:', basePrompt.length, 'chars');
+    return basePrompt;
 }
 
 /**
