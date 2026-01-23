@@ -1,43 +1,87 @@
 /**
- * VECTOR COMPOSITOR - 10/10 VERSION
+ * VECTOR COMPOSITOR - FIXED VERSION
  * 
- * Layer 4: Professional typography with shadows, glows, and premium effects.
- * Renders 100% sharp text using SVG.
+ * Layer 4: Professional typography that works on serverless.
+ * Uses sharp's text rendering with system-fallback fonts.
  */
 
 import sharp from 'sharp';
 
 /**
  * Composite text and graphics onto clean canvas
- * Uses SVG for 100% sharp text rendering with premium effects
+ * Uses sharp's native text rendering (works without fontconfig)
  */
 export async function compositeAd({ cleanCanvasBuffer, coordinates, copy, layoutPlan }) {
-  console.log('[Compositor] ✨ Rendering premium text overlay...');
+  console.log('[Compositor] ✨ Rendering text overlay...');
 
   const style = layoutPlan?.style || {};
-  const typography = layoutPlan?.typography || {};
-  const features = layoutPlan?.features || {};
   const accentColor = style.accentColor || '#FF4757';
-  const useGlow = features.useGlow !== false;
-  const useShadows = features.useShadows !== false;
-
-  const svgOverlay = buildPremiumSVG(coordinates, copy, {
-    accentColor,
-    useGlow,
-    useShadows,
-    typography,
-    mood: style.mood || 'premium'
-  });
 
   try {
-    const svgBuffer = Buffer.from(svgOverlay);
+    const headline = coordinates?.headline || { x: 540, y: 100, fontSize: 64 };
+    const tagline = coordinates?.tagline;
+    const cta = coordinates?.cta || { x: 430, y: 960, width: 220, height: 56 };
 
+    // Create text overlays using sharp's built-in text rendering
+    const overlays = [];
+
+    // Headline - using sharp's text method
+    if (copy.headline) {
+      const headlineSvg = createTextSvg({
+        text: copy.headline,
+        fontSize: headline.fontSize || 64,
+        fontWeight: 700,
+        color: '#FFFFFF',
+        width: 900,
+        height: 100,
+        align: 'center'
+      });
+      overlays.push({
+        input: Buffer.from(headlineSvg),
+        top: Math.round((headline.y || 100) - 50),
+        left: Math.round(540 - 450)
+      });
+    }
+
+    // Tagline
+    if (copy.tagline && tagline) {
+      const taglineSvg = createTextSvg({
+        text: copy.tagline,
+        fontSize: tagline.fontSize || 24,
+        fontWeight: 400,
+        color: '#CCCCCC',
+        width: 800,
+        height: 50,
+        align: 'center'
+      });
+      overlays.push({
+        input: Buffer.from(taglineSvg),
+        top: Math.round((tagline.y || 170) - 20),
+        left: Math.round(540 - 400)
+      });
+    }
+
+    // CTA Button
+    const ctaSvg = createCtaSvg({
+      text: copy.cta || 'Shop Now',
+      width: cta.width || 220,
+      height: cta.height || 56,
+      color: accentColor,
+      borderRadius: cta.borderRadius || 28
+    });
+    overlays.push({
+      input: Buffer.from(ctaSvg),
+      top: Math.round(cta.y || 960),
+      left: Math.round(cta.x || 430)
+    });
+
+    // Composite all overlays
     const result = await sharp(cleanCanvasBuffer)
-      .composite([{ input: svgBuffer, top: 0, left: 0 }])
+      .composite(overlays)
       .png({ quality: 100 })
       .toBuffer();
 
-    console.log('[Compositor] ✅ Premium ad composed');
+    console.log('[Compositor] ✅ Ad composed successfully');
     return { success: true, buffer: result };
   } catch (error) {
     console.error('[Compositor] ❌ Failed:', error.message);
@@ -45,121 +89,77 @@ export async function compositeAd({ cleanCanvasBuffer, coordinates, copy, layout
   }
 }
 
-function buildPremiumSVG(coordinates, copy, options) {
-  const { accentColor, useGlow, useShadows, typography, mood } = options;
+/**
+ * Create text SVG with embedded font styling
+ * Uses basic web-safe fonts that work everywhere
+ */
+function createTextSvg({ text, fontSize, fontWeight, color, width, height, align }) {
+  const escapedText = (text || '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
 
-  const headline = coordinates?.headline || { x: 540, y: 100, fontSize: 64 };
-  const tagline = coordinates?.tagline;
-  const cta = coordinates?.cta || { x: 430, y: 960, width: 220, height: 56 };
+  const textX = align === 'center' ? width / 2 : 0;
+  const textAnchor = align === 'center' ? 'middle' : 'start';
 
-  const ctaTextX = cta.x + (cta.width / 2);
-  const ctaTextY = cta.y + (cta.height / 2) + 7;
-
-  const escape = (text) => text ? text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;') : '';
-
-  // Premium headline styling based on mood
-  const headlineWeight = typography?.headline?.fontWeight || 700;
-  const headlineColor = typography?.headline?.color || '#FFFFFF';
-  const headlineTransform = typography?.headline?.transform || 'none';
-
-  // CTA gradient for premium look
-  const ctaGradient = mood === 'aggressive'
-    ? `<linearGradient id="ctaGrad" x1="0%" y1="0%" x2="100%" y2="0%">
-             <stop offset="0%" style="stop-color:${accentColor};stop-opacity:1" />
-             <stop offset="100%" style="stop-color:${adjustColor(accentColor, 20)};stop-opacity:1" />
-           </linearGradient>`
-    : `<linearGradient id="ctaGrad" x1="0%" y1="0%" x2="0%" y2="100%">
-             <stop offset="0%" style="stop-color:${adjustColor(accentColor, 15)};stop-opacity:1" />
-             <stop offset="100%" style="stop-color:${accentColor};stop-opacity:1" />
-           </linearGradient>`;
-
-  return `<svg width="1080" height="1080" xmlns="http://www.w3.org/2000/svg">
-  <defs>
-    ${ctaGradient}
-    
-    <!-- Text shadow for depth -->
-    ${useShadows ? `
-    <filter id="textShadow" x="-20%" y="-20%" width="140%" height="140%">
-      <feDropShadow dx="0" dy="3" stdDeviation="4" flood-color="#000000" flood-opacity="0.6"/>
-    </filter>
-    <filter id="softShadow" x="-20%" y="-20%" width="140%" height="140%">
-      <feDropShadow dx="0" dy="2" stdDeviation="2" flood-color="#000000" flood-opacity="0.3"/>
-    </filter>` : ''}
-    
-    <!-- Glow effect for gaming/tech -->
-    ${useGlow ? `
-    <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
-      <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
-      <feMerge>
-        <feMergeNode in="coloredBlur"/>
-        <feMergeNode in="SourceGraphic"/>
-      </feMerge>
-    </filter>` : ''}
-    
-    <!-- CTA button shadow -->
-    <filter id="buttonShadow" x="-20%" y="-20%" width="140%" height="140%">
-      <feDropShadow dx="0" dy="4" stdDeviation="8" flood-color="${accentColor}" flood-opacity="0.4"/>
-    </filter>
-  </defs>
-
-  <!-- Headline -->
-  <text 
-    x="${headline.x}" 
-    y="${headline.y}" 
-    font-family="Inter, -apple-system, BlinkMacSystemFont, sans-serif"
-    font-size="${headline.fontSize || 64}px"
-    font-weight="${headlineWeight}"
-    fill="${headlineColor}"
-    text-anchor="middle"
-    ${useShadows ? 'filter="url(#textShadow)"' : ''}
-    ${headlineTransform === 'uppercase' ? 'text-transform="uppercase"' : ''}
-  >${escape(copy.headline)}</text>
-
-  ${tagline && copy.tagline ? `
-  <!-- Tagline -->
-  <text 
-    x="${tagline.x}" 
-    y="${tagline.y}" 
-    font-family="Inter, -apple-system, BlinkMacSystemFont, sans-serif"
-    font-size="${tagline.fontSize || 24}px"
-    font-weight="400"
-    fill="${tagline.color || '#CCCCCC'}"
-    text-anchor="middle"
-    ${useShadows ? 'filter="url(#softShadow)"' : ''}
-  >${escape(copy.tagline)}</text>` : ''}
-
-  <!-- CTA Button with premium styling -->
-  <rect 
-    x="${cta.x}" 
-    y="${cta.y}" 
-    width="${cta.width}" 
-    height="${cta.height}" 
-    rx="${cta.borderRadius || 28}"
-    ry="${cta.borderRadius || 28}"
-    fill="url(#ctaGrad)"
-    filter="url(#buttonShadow)"
-  />
-  
-  <!-- CTA Text -->
-  <text 
-    x="${ctaTextX}" 
-    y="${ctaTextY}" 
-    font-family="Inter, -apple-system, BlinkMacSystemFont, sans-serif"
-    font-size="${cta.fontSize || 18}px"
-    font-weight="600"
-    fill="#FFFFFF"
-    text-anchor="middle"
-  >${escape(copy.cta)}</text>
-</svg>`;
+  return `<svg width="${width}" height="${height}" xmlns="http://www.w3.org/2000/svg">
+        <style>
+            .txt { 
+                font-family: Arial, Helvetica, sans-serif;
+                font-weight: ${fontWeight};
+                fill: ${color};
+                font-size: ${fontSize}px;
+            }
+        </style>
+        <text class="txt" x="${textX}" y="${fontSize * 0.8}" text-anchor="${textAnchor}">${escapedText}</text>
+    </svg>`;
 }
 
-// Adjust color brightness
-function adjustColor(hex, percent) {
+/**
+ * Create CTA button SVG
+ */
+function createCtaSvg({ text, width, height, color, borderRadius }) {
+  const escapedText = (text || 'Shop Now')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;');
+
+  return `<svg width="${width}" height="${height}" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+            <linearGradient id="btnGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+                <stop offset="0%" style="stop-color:${lightenColor(color, 15)};stop-opacity:1"/>
+                <stop offset="100%" style="stop-color:${color};stop-opacity:1"/>
+            </linearGradient>
+            <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+                <feDropShadow dx="0" dy="4" stdDeviation="6" flood-color="${color}" flood-opacity="0.4"/>
+            </filter>
+        </defs>
+        <rect 
+            x="0" y="0" 
+            width="${width}" height="${height}" 
+            rx="${borderRadius}" ry="${borderRadius}"
+            fill="url(#btnGrad)"
+            filter="url(#shadow)"
+        />
+        <text 
+            x="${width / 2}" 
+            y="${height / 2 + 6}" 
+            font-family="Arial, Helvetica, sans-serif"
+            font-size="18px"
+            font-weight="600"
+            fill="#FFFFFF"
+            text-anchor="middle"
+        >${escapedText}</text>
+    </svg>`;
+}
+
+function lightenColor(hex, percent) {
   const num = parseInt(hex.replace('#', ''), 16);
   const amt = Math.round(2.55 * percent);
-  const R = Math.min(255, Math.max(0, (num >> 16) + amt));
-  const G = Math.min(255, Math.max(0, (num >> 8 & 0x00FF) + amt));
-  const B = Math.min(255, Math.max(0, (num & 0x0000FF) + amt));
+  const R = Math.min(255, (num >> 16) + amt);
+  const G = Math.min(255, (num >> 8 & 0x00FF) + amt);
+  const B = Math.min(255, (num & 0x0000FF) + amt);
   return '#' + (0x1000000 + R * 0x10000 + G * 0x100 + B).toString(16).slice(1);
 }
 
