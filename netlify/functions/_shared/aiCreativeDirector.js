@@ -22,6 +22,7 @@ import { generateImageWithReference } from './openai.js';
 import { selectBestPattern, REFERENCE_PATTERNS } from './referencePatterns.js';
 import { QUALITY, FEATURES, fetchWithTimeout, TIMEOUTS } from './config.js';
 import { buildMasterAdPrompt, ENHANCED_PATTERNS, PRODUCT_ANALYSIS_PROMPT } from './elitePrompts.js';
+import { polishPromptWithExpert } from './promptPolisher.js';
 
 const CANVAS = QUALITY.CANVAS_SIZE;
 const MAX_QUALITY_RETRIES = QUALITY.MAX_RETRIES;
@@ -170,17 +171,36 @@ export async function createAdWithGeminiDirector(openai, config) {
     });
     console.log(`[CreativeDirector] 🎯 Selected reference pattern: ${referencePattern.name}`);
 
-    // Phase 2: Generate ad with Gemini Image-to-Image using reference pattern
+    // Phase 1.5: Polish user prompt with Marketing Expert AI
+    console.log('[CreativeDirector] Phase 1.5: Marketing Expert Prompt Polish...');
+    let enhancedPrompt;
+    try {
+        enhancedPrompt = await polishPromptWithExpert(openai, {
+            userPrompt,
+            productAnalysis: analysis,
+            industry: industryKey,
+            headline,
+            subheadline,
+            cta
+        });
+        console.log('[CreativeDirector] ✅ Prompt enhanced by Marketing Expert');
+    } catch (polishError) {
+        console.warn('[CreativeDirector] Prompt polish failed, using original:', polishError.message);
+        enhancedPrompt = userPrompt || `Premium ad for ${analysis.productName || 'this product'}`;
+    }
+
+    // Phase 2: Generate ad with Gemini Image-to-Image using enhanced prompt
     console.log('[CreativeDirector] Phase 2: Gemini Image-to-Image Ad Generation...');
 
     const geminiResult = await generateAdWithGemini({
         productImageBuffer: productBuffer,
         headline: headline || 'Premium Quality',
         subheadline: subheadline || '',
-        cta: cta || 'Jetzt entdecken',
+        cta: cta || 'Shop Now',
         productAnalysis: analysis,
         style: 'premium_dark',
-        referencePattern  // Pass the selected pattern for style guidance
+        referencePattern,  // Pass the selected pattern for style guidance
+        enhancedPrompt     // Pass the marketing-expert-polished prompt
     });
 
     let adBuffer;
