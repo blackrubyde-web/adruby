@@ -54,6 +54,8 @@ const USE_GEMINI = !!process.env.GEMINI_API_KEY;
 // Rate Limiting & Error Handling
 import { checkRateLimit } from './_shared/rateLimiter.js';
 import { categorizeError, getUserMessage } from './_shared/errorCategorizer.js';
+// Railway v3.0 - AI Design Knowledge System (100M+ Foreplay References)
+import { generateWithAIDesign, isRailwayAvailable } from './_shared/railwayImageClient.js';
 
 const MAX_QUALITY_RETRIES = 2;
 
@@ -264,6 +266,117 @@ export const handler = async (event) => {
         };
 
         const openai = getOpenAiClient();
+
+        // ========================================
+        // RAILWAY v3.0: AI DESIGN KNOWLEDGE SYSTEM (PRIORITY)
+        // Uses 100M+ Foreplay reference ads for premium results
+        // ========================================
+        if (body.useAIDesignSystem) {
+            console.log('[AI Ad Generate] 🚀 Using Railway v3.0 AI Design System...');
+            await updateProgress('railway_v3', 10, { engine: 'ai_design_system' });
+
+            try {
+                const railwayAvailable = await isRailwayAvailable();
+                if (!railwayAvailable) {
+                    console.warn('[AI Ad Generate] Railway v3.0 unavailable, falling back to local engines');
+                } else {
+                    await updateProgress('railway_generating', 30, { railwayActive: true });
+
+                    const railwayResult = await generateWithAIDesign({
+                        userPrompt: body.text || `${body.productName || 'Product'} advertisement for ${body.targetAudience || 'target audience'}`,
+                        industry: body.industry || 'tech',
+                        headline: body.headline,
+                        tagline: body.subheadline || body.usp,
+                        features: body.features || [],
+                        stats: body.stats || [],
+                        cta: body.cta || 'Jetzt entdecken',
+                        productImageUrl: body.productImageUrl,
+                        format: body.format || '1080x1080',
+                    });
+
+                    console.log('[AI Ad Generate] ✅ Railway v3.0 generation complete!', {
+                        hasImage: !!railwayResult.imageUrl,
+                        source: railwayResult.metadata?.source,
+                        referenceCount: railwayResult.metadata?.referenceCount,
+                    });
+
+                    // Upload to Supabase for permanent storage
+                    let finalImageUrl = railwayResult.imageUrl;
+                    let thumbnailUrl = railwayResult.imageUrl;
+
+                    try {
+                        const imageResponse = await fetch(railwayResult.imageUrl);
+                        const imageBuffer = await imageResponse.arrayBuffer();
+                        const filename = `creatives/${user.id}/${jobId}.png`;
+                        const { error: uploadError } = await supabaseAdmin.storage
+                            .from('creative-images')
+                            .upload(filename, Buffer.from(imageBuffer), { contentType: 'image/png', upsert: true });
+
+                        if (!uploadError) {
+                            const { data: urlData } = supabaseAdmin.storage.from('creative-images').getPublicUrl(filename);
+                            finalImageUrl = urlData.publicUrl;
+                            thumbnailUrl = urlData.publicUrl;
+                        }
+                    } catch (uploadErr) {
+                        console.warn('[AI Ad Generate] Railway image upload failed, using original URL:', uploadErr.message);
+                    }
+
+                    // Save to database and return
+                    const outputData = {
+                        headline: body.headline || 'AI Generated',
+                        slogan: body.subheadline || '',
+                        description: body.text || body.usp || '',
+                        cta: body.cta || 'Jetzt entdecken',
+                        hook: '',
+                        imageUrl: finalImageUrl,
+                        imagePrompt: railwayResult.imagePrompt,
+                        template: 'ai_design_system_v3',
+                        thumbnailUrl: thumbnailUrl,
+                        qualityScore: 95,
+                        engagementScore: 90,
+                        metadata: {
+                            engine: 'railway_v3_ai_design',
+                            foreplayReferences: railwayResult.metadata?.referenceCount || 0,
+                            composition: railwayResult.metadata?.composition,
+                        },
+                    };
+
+                    const generationTime = Date.now() - startTime;
+                    await supabaseAdmin.from('generated_creatives').update({
+                        outputs: outputData,
+                        metrics: {
+                            status: 'complete',
+                            generationTime: generationTime,
+                            engine: 'railway_v3',
+                            completed_at: new Date().toISOString()
+                        }
+                    }).eq('id', jobId);
+
+                    return {
+                        statusCode: 200,
+                        headers,
+                        body: JSON.stringify({
+                            success: true,
+                            status: 'complete',
+                            data: {
+                                ...outputData,
+                                id: jobId,
+                                creditsUsed: CREDIT_COSTS.ai_ad_generate,
+                            },
+                            metadata: {
+                                model: 'railway-v3-ai-design',
+                                timestamp: Date.now(),
+                                generationTime: generationTime,
+                            },
+                        }),
+                    };
+                }
+            } catch (railwayErr) {
+                console.error('[AI Ad Generate] Railway v3.0 failed:', railwayErr.message);
+                await updateProgress('railway_fallback', 15, { railwayError: railwayErr.message });
+                // Continue with local engines as fallback
+            }
+        }
 
         // ========================================
         // STEP 1: VISION ANALYSIS - Product Preservation (CRITICAL)

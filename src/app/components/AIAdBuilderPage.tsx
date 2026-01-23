@@ -7,7 +7,7 @@ import { useState, useCallback, useEffect } from 'react';
 import {
     Wand2, Download, Save, Globe, Upload, FileText, MessageSquare,
     Sparkles, Image, Loader2, RefreshCw, Zap, ChevronRight,
-    CheckCircle2, AlertCircle, Store
+    CheckCircle2, AlertCircle, Store, Brain
 } from 'lucide-react';
 import { generateAd } from '../lib/api/aibuilder';
 import { t } from '../lib/aibuilder/translations';
@@ -46,6 +46,9 @@ export function AIAdBuilderPage() {
 
     // Multi-variant selection
     const [selectedVariantIndex, setSelectedVariantIndex] = useState(0);
+
+    // AI Design System v3.0 (Railway with 100M+ Foreplay references)
+    const [useAIDesignSystem, setUseAIDesignSystem] = useState(true);
 
     // Session key for localStorage
     const STORAGE_KEY = 'adruby_last_generated_ad';
@@ -144,6 +147,7 @@ export function AIAdBuilderPage() {
                 mode: mode as InputMode,
                 language,
                 productImageUrl,
+                useAIDesignSystem,
                 ...inputData,
             });
 
@@ -224,6 +228,23 @@ export function AIAdBuilderPage() {
                         </div>
 
                         <div className="flex items-center gap-3">
+                            {/* AI Design System Toggle */}
+                            <Button
+                                variant={useAIDesignSystem ? "default" : "outline"}
+                                size="sm"
+                                onClick={() => setUseAIDesignSystem(!useAIDesignSystem)}
+                                className={cn(
+                                    "gap-2 rounded-full transition-all",
+                                    useAIDesignSystem && "bg-gradient-to-r from-violet-600 to-purple-600 text-white border-0"
+                                )}
+                                title={language === 'de' ? 'AI Design System v3.0 mit 100M+ Referenzen' : 'AI Design System v3.0 with 100M+ references'}
+                            >
+                                <Brain className="w-4 h-4" />
+                                <span className="hidden sm:inline">
+                                    {useAIDesignSystem ? 'v3.0' : 'Classic'}
+                                </span>
+                            </Button>
+
                             {/* Credits Badge */}
                             <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 bg-primary/10 rounded-full text-sm">
                                 <Zap className="w-4 h-4 text-primary" />

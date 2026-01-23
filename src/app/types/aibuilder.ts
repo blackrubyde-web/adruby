@@ -37,6 +37,10 @@ export interface AdGenerationParams {
     productImageUrl?: string;
     // Multi-variant generation
     variantCount?: number;
+    // Railway v3.0 AI Design System
+    useAIDesignSystem?: boolean;
+    format?: string;
+    stats?: Array<{ label: string; value: string }>;
 }
 
 // Single ad variant
