@@ -303,7 +303,8 @@ function synthesizeLayout(analyses) {
             yPercent: avgProductY,
             scalePercent: avgProductScale,
             rotation: average(layouts.map(l => l.productPlacement?.rotation || 0)),
-            hasDeviceFrame: layouts.some(l => l.productPlacement?.hasDeviceFrame),
+            // FIX: Default to TRUE, only false if explicitly set to false in all layouts
+            hasDeviceFrame: !layouts.every(l => l.productPlacement?.hasDeviceFrame === false),
             deviceType: mostCommonDevice
         },
         margins: {
