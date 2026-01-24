@@ -14,7 +14,7 @@ const CANVAS_WIDTH = 1080;
 const CANVAS_HEIGHT = 1080;
 
 // Layout presets derived from Foreplay analysis
-const LAYOUT_PRESETS = {
+export const LAYOUT_PRESETS = {
     // Hero layouts
     hero_centered: {
         name: 'Hero Centered',
