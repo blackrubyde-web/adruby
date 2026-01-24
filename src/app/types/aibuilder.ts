@@ -39,6 +39,8 @@ export interface AdGenerationParams {
     variantCount?: number;
     // Railway v3.0 AI Design System
     useAIDesignSystem?: boolean;
+    // Railway v6.0 Composite Pipeline (100% screenshot preservation)
+    useCompositePipeline?: boolean;
     format?: string;
     stats?: Array<{ label: string; value: string }>;
 }

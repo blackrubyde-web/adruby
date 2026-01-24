@@ -7,7 +7,7 @@ import { useState, useCallback, useEffect } from 'react';
 import {
     Wand2, Download, Save, Globe, Upload, FileText, MessageSquare,
     Sparkles, Image, Loader2, RefreshCw, Zap, ChevronRight,
-    CheckCircle2, AlertCircle, Store, Brain
+    CheckCircle2, AlertCircle, Store, Brain, Monitor
 } from 'lucide-react';
 import { generateAd } from '../lib/api/aibuilder';
 import { t } from '../lib/aibuilder/translations';
@@ -49,6 +49,8 @@ export function AIAdBuilderPage() {
 
     // AI Design System v3.0 (Railway with 100M+ Foreplay references)
     const [useAIDesignSystem, setUseAIDesignSystem] = useState(true);
+    // Composite Pipeline v6.0 (100% screenshot preservation for SaaS/dashboards)
+    const [useCompositePipeline, setUseCompositePipeline] = useState(false);
 
     // Session key for localStorage
     const STORAGE_KEY = 'adruby_last_generated_ad';
@@ -148,6 +150,7 @@ export function AIAdBuilderPage() {
                 language,
                 productImageUrl,
                 useAIDesignSystem,
+                useCompositePipeline,
                 ...inputData,
             });
 
@@ -242,6 +245,23 @@ export function AIAdBuilderPage() {
                                 <Brain className="w-4 h-4" />
                                 <span className="hidden sm:inline">
                                     {useAIDesignSystem ? 'v3.0' : 'Classic'}
+                                </span>
+                            </Button>
+
+                            {/* v6.0 Composite Pipeline Toggle (for Screenshots/SaaS) */}
+                            <Button
+                                variant={useCompositePipeline ? "default" : "outline"}
+                                size="sm"
+                                onClick={() => setUseCompositePipeline(!useCompositePipeline)}
+                                className={cn(
+                                    "gap-2 rounded-full transition-all",
+                                    useCompositePipeline && "bg-gradient-to-r from-emerald-600 to-teal-600 text-white border-0"
+                                )}
+                                title={language === 'de' ? 'v6.0 Pixel-Perfect Mode für Screenshots/Dashboards' : 'v6.0 Pixel-Perfect Mode for Screenshots/Dashboards'}
+                            >
+                                <Monitor className="w-4 h-4" />
+                                <span className="hidden sm:inline">
+                                    {useCompositePipeline ? 'Pixel-Perfect' : 'Standard'}
                                 </span>
                             </Button>
 
