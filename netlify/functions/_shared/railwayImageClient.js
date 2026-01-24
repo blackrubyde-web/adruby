@@ -166,8 +166,74 @@ export async function isRailwayAvailable() {
     }
 }
 
+/**
+ * Generate ad using the new Composite Pipeline (v6.0)
+ * 100% Product Preservation - Background + Sharp Overlay + SVG Text
+ * 
+ * @param {Object} params - Generation parameters
+ * @returns {Promise<Object>} - Generated ad with buffer and metadata
+ */
+export async function generateWithComposite({
+    productImageBase64,
+    productImageUrl,
+    headline,
+    tagline,
+    cta,
+    userPrompt,
+    industry,
+    accentColor = '#FF4757',
+}) {
+    console.log('[Railway] 🎨 Composite Pipeline v6.0 request...');
+
+    const response = await fetch(`${RAILWAY_URL}/generate-composite`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            productImageBase64,
+            productImageUrl,
+            headline,
+            tagline,
+            cta,
+            userPrompt,
+            industry,
+            accentColor,
+        }),
+        signal: AbortSignal.timeout(120000),
+    });
+
+    if (!response.ok) {
+        const error = await response.json().catch(() => ({ error: 'Unknown error' }));
+        throw new Error(error.error || `Railway composite error: ${response.status}`);
+    }
+
+    const result = await response.json();
+
+    let imageBuffer = null;
+    let imageDataUrl = null;
+
+    if (result.imageBase64) {
+        imageBuffer = Buffer.from(result.imageBase64, 'base64');
+        imageDataUrl = `data:image/png;base64,${result.imageBase64}`;
+        console.log('[Railway] ✅ Composite image received:', imageBuffer.length, 'bytes');
+    }
+
+    return {
+        imageBuffer,
+        imageDataUrl,
+        imageBase64: result.imageBase64,
+        metadata: {
+            source: 'railway-composite-v6',
+            isSaaSProduct: result.metadata?.isSaaSProduct,
+            referenceCount: result.metadata?.referenceCount,
+            duration: result.metadata?.duration,
+            mode: 'composite_pipeline'
+        },
+    };
+}
+
 export default {
     generateWithAIDesign,
+    generateWithComposite,
     getReferences,
     searchReferences,
     getForeplayUsage,

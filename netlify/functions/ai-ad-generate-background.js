@@ -55,7 +55,8 @@ const USE_GEMINI = !!process.env.GEMINI_API_KEY;
 import { checkRateLimit } from './_shared/rateLimiter.js';
 import { categorizeError, getUserMessage } from './_shared/errorCategorizer.js';
 // Railway v3.0 - AI Design Knowledge System (100M+ Foreplay References)
-import { generateWithAIDesign, isRailwayAvailable } from './_shared/railwayImageClient.js';
+// Railway v6.0 - Composite Pipeline (100% Product Preservation)
+import { generateWithAIDesign, generateWithComposite, isRailwayAvailable } from './_shared/railwayImageClient.js';
 
 const MAX_QUALITY_RETRIES = 2;
 
@@ -266,6 +267,78 @@ export const handler = async (event) => {
         };
 
         const openai = getOpenAiClient();
+
+        // ========================================
+        // RAILWAY v6.0: COMPOSITE PIPELINE (NEW - 100% SCREEN PRESERVATION)
+        // For SaaS/Dashboard products that need pixel-perfect preservation
+        // ========================================
+        if (body.useCompositePipeline) {
+            console.log('[AI Ad Generate] 🎨 Using Railway v6.0 Composite Pipeline...');
+            await updateProgress('composite_v6', 10, { engine: 'composite_pipeline' });
+
+            try {
+                const railwayAvailable = await isRailwayAvailable();
+                if (!railwayAvailable) {
+                    console.warn('[AI Ad Generate] Railway v6.0 unavailable, falling back to local engines');
+                } else {
+                    await updateProgress('composite_generating', 30, { compositeActive: true });
+
+                    // For composite, we need to send the product image as base64
+                    let productBase64 = null;
+                    if (productBuffer) {
+                        productBase64 = productBuffer.toString('base64');
+                    }
+
+                    const compositeResult = await generateWithComposite({
+                        productImageBase64: productBase64,
+                        productImageUrl: body.productImageUrl,
+                        headline: body.headline,
+                        tagline: body.subheadline || body.usp,
+                        cta: body.cta || 'Jetzt entdecken',
+                        userPrompt: body.text || `${body.productName || 'Product'} advertisement`,
+                        industry: body.industry || 'tech',
+                        accentColor: body.accentColor || '#FF4757',
+                    });
+
+                    console.log('[AI Ad Generate] ✅ Composite Pipeline complete!', {
+                        hasImage: !!compositeResult.imageBuffer,
+                        source: compositeResult.metadata?.source,
+                        isSaaSProduct: compositeResult.metadata?.isSaaSProduct,
+                    });
+
+                    if (!compositeResult.imageBuffer) {
+                        throw new Error('Composite returned no image');
+                    }
+
+                    // Upload to Supabase
+                    let finalImageUrl = null;
+                    const filename = `creatives/${user.id}/${jobId}.png`;
+
+                    const { error: uploadError } = await supabaseAdmin.storage
+                        .from('creative-images')
+                        .upload(filename, compositeResult.imageBuffer, { contentType: 'image/png', upsert: true });
+
+                    if (!uploadError) {
+                        const { data: urlData } = supabaseAdmin.storage.from('creative-images').getPublicUrl(filename);
+                        finalImageUrl = urlData.publicUrl;
+                    }
+
+                    await updateProgress('completed', 100, { imageUrl: finalImageUrl });
+
+                    return new Response(JSON.stringify({
+                        success: true,
+                        imageUrl: finalImageUrl || compositeResult.imageDataUrl,
+                        imageDataUrl: compositeResult.imageDataUrl,
+                        engine: 'railway_composite_v6',
+                        metadata: compositeResult.metadata,
+                    }), { status: 200, headers: corsHeaders });
+                }
+            } catch (compositeError) {
+                console.error('[AI Ad Generate] ❌ Composite error:', compositeError.message);
+                await updateProgress('composite_error', 25, { error: compositeError.message });
+                // Fall through to other engines
+            }
+        }
 
         // ========================================
         // RAILWAY v3.0: AI DESIGN KNOWLEDGE SYSTEM (PRIORITY)
