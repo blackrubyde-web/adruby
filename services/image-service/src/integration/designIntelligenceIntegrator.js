@@ -21,12 +21,12 @@ import { deepAnalyzeForeplayPatterns } from '../patterns/deepForeplayMatcher.js'
 
 // v12.0 Modules - Design Primitives
 import * as colorScience from '../design/colorScience.js';
-import * as typography from '../design/typographySystem.js';
+import * as typography from '../design/typographyMastery.js';
 import * as brandDNA from '../design/brandDNAExtractor.js';
-import * as composition from '../design/compositionRules.js';
-import * as materials from '../design/materialDesignSystem.js';
-import * as aiCritic from '../ai/aiDesignCritic.js';
-import * as masterDesigner from '../design/masterDesignerOrchestrator.js';
+import * as composition from '../design/compositionIntelligence.js';
+import * as materials from '../design/materialTextures.js';
+import * as aiCritic from '../design/aiDesignCritic.js';
+import * as masterDesigner from '../design/masterOrchestrator.js';
 
 // v13.0 Modules - 360° Elements
 import * as shapes from '../elements/shapeGenerator.js';
