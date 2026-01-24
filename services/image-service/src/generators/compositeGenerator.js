@@ -148,6 +148,23 @@ import { generateHeadlineFromTemplate, generateTaglineFromTemplate, getCTAOption
 // NEW: Deep Foreplay Pattern Matcher (GPT-4V analysis, pattern synthesis)
 import { deepAnalyzeForeplayPatterns } from '../patterns/deepForeplayMatcher.js';
 
+// NEW v12-v13: Design Intelligence Integration
+import { generateDesignIntelligence, quickForeplayAnalysis } from '../integration/designIntelligenceIntegrator.js';
+
+// NEW: Multi-Format Export (Story, Reel, Portrait, etc.)
+import { exportToFormat, exportToAllFormats, getFormatLayout, AD_FORMATS } from '../export/multiFormatExporter.js';
+
+// NEW: Animation Layer (CSS animations for web ads)
+import { generateAdAnimationCSS, getAnimationPreset, generateAnimatedSparkleSVG } from '../animation/animationLayer.js';
+
+// NEW v13: Element Generators
+import { generateAtmosphereLayer } from '../elements/decorativeOverlays.js';
+import { generateGlassCard as generateGlassCardV2, generateGlassButton } from '../elements/glassmorphicComponents.js';
+import { createGradientText, createGlowText, create3DText } from '../elements/enhancedTextEffects.js';
+import { generateDiscountBadge, generateTrustBadge, generateFeatureBadge } from '../elements/badgeGenerator.js';
+import { generateProgressBar, generateStarRating, generateStatCounter } from '../elements/dataVisualization.js';
+import { generateFeatureCallout, generateIconCallout } from '../elements/calloutGenerator.js';
+
 // Premium Prompt Builder
 import { buildBackgroundPrompt, buildTypographySpecs, buildProductSpecs } from './premiumPromptBuilder.js';
 
@@ -459,8 +476,30 @@ export async function generateCompositeAd({
         regenerationAttempts: regenerationAttempt,
         referenceCount: 0, // This would come from matchProduct
         metadata: {
-            version: '10.0',
-            mode: 'master_designer'
+            version: '11.0',
+            mode: 'foreplay_driven_designer'
+        },
+
+        // NEW: Animation CSS for web ads
+        animationCSS: generateAdAnimationCSS({
+            glowColor: finalAccentColor,
+            featureCount: 4
+        }),
+
+        // NEW: Multi-format export helper
+        exportFormats: async (formats = ['square', 'story', 'landscape']) => {
+            return await exportToAllFormats({
+                sourceBuffer: finalBuffer,
+                formats
+            });
+        },
+
+        // Quick export to single format
+        exportTo: async (format) => {
+            return await exportToFormat({
+                sourceBuffer: finalBuffer,
+                format
+            });
         }
     };
 }
