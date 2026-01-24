@@ -35,6 +35,7 @@ export interface AdGenerationParams {
     text?: string;
     // Optional product image
     productImageUrl?: string;
+    productImageBase64?: string;  // Direct base64 for compositing
     // Multi-variant generation
     variantCount?: number;
     // Railway v3.0 AI Design System

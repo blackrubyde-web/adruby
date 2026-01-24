@@ -124,8 +124,13 @@ export function AIAdBuilderPage() {
 
         try {
             let productImageUrl = undefined;
+            let productImageBase64 = undefined;
 
-
+            // Extract base64 from preview for direct compositing
+            if (productImagePreview && productImagePreview.startsWith('data:')) {
+                // Remove data:image/xxx;base64, prefix
+                productImageBase64 = productImagePreview.split(',')[1];
+            }
 
             if (productImage) {
                 // Upload product image to Supabase
@@ -149,6 +154,7 @@ export function AIAdBuilderPage() {
                 mode: mode as InputMode,
                 language,
                 productImageUrl,
+                productImageBase64,  // ← CRITICAL: Send base64 for direct compositing
                 useAIDesignSystem,
                 useCompositePipeline,
                 ...inputData,
