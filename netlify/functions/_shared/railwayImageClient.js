@@ -188,6 +188,8 @@ export async function generateWithComposite({
 }) {
     console.log('[Railway] 🎨 MASTER Pipeline v10.0 request...');
     console.log('[Railway] Mode: 10-Phase Designer-Level + Quality Verification');
+    console.log('[Railway] Has productImageBase64:', !!productImageBase64, productImageBase64 ? `(${Math.round(productImageBase64.length / 1024)}KB)` : '');
+    console.log('[Railway] Has productImageUrl:', !!productImageUrl);
 
     const response = await fetch(`${RAILWAY_URL}/generate-composite`, {
         method: 'POST',
@@ -209,8 +211,11 @@ export async function generateWithComposite({
     });
 
     if (!response.ok) {
-        const error = await response.json().catch(() => ({ error: 'Unknown error' }));
-        throw new Error(error.error || `Railway master error: ${response.status}`);
+        const errorText = await response.text().catch(() => 'No error body');
+        console.error('[Railway] Request failed:', response.status, errorText.substring(0, 500));
+        let errorData = {};
+        try { errorData = JSON.parse(errorText); } catch (e) { /* not JSON */ }
+        throw new Error(errorData.error || `Railway master error: ${response.status}`);
     }
 
     const result = await response.json();
