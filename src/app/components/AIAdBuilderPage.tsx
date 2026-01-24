@@ -124,17 +124,9 @@ export function AIAdBuilderPage() {
 
         try {
             let productImageUrl = undefined;
-            let productImageBase64 = undefined;
-
-            // Extract base64 from preview for direct compositing
-            if (productImagePreview && productImagePreview.startsWith('data:')) {
-                // Remove data:image/xxx;base64, prefix
-                productImageBase64 = productImagePreview.split(',')[1];
-            }
 
             if (productImage) {
                 // Upload product image to Supabase
-
                 const filename = `temp/product-${profile?.id}-${Date.now()}.png`;
                 const { data: _uploadData, error: uploadError } = await supabase.storage
                     .from('creative-images')
@@ -146,15 +138,14 @@ export function AIAdBuilderPage() {
                     .from('creative-images')
                     .getPublicUrl(filename);
                 productImageUrl = urlData.publicUrl;
+                console.log('[AIAdBuilder] Product image uploaded:', productImageUrl);
             }
 
-
-
+            // Note: Railway fetches image from URL directly - no base64 needed
             const response = await generateAd({
                 mode: mode as InputMode,
                 language,
-                productImageUrl,
-                productImageBase64,  // ← CRITICAL: Send base64 for direct compositing
+                productImageUrl,  // Railway will fetch this URL directly
                 useAIDesignSystem,
                 useCompositePipeline,
                 ...inputData,
