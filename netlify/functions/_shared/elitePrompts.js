@@ -24,38 +24,51 @@ Analyze this product image with EXTREME PRECISION:
 - Brand name if visible
 - Estimated price point (Budget/Mid-Range/Premium/Luxury)
 
-## 2. VISUAL DNA
+## 2. PRODUCT CATEGORY
+- Is this a PHYSICAL product (consumer goods, electronics, fashion)?
+- Is this a DIGITAL/SAAS product (software screenshot, dashboard, app interface, UI mockup)?
+- Is this a DEVICE MOCKUP (MacBook with screen content, phone with app, monitor with website)?
+
+## 3. VISUAL DNA
 - Primary color (estimate exact HEX code)
 - Secondary colors
-- Material (Glass? Metal? Plastic? Fabric?)
+- Material (Glass? Metal? Plastic? Fabric? OR: Screen/Digital)
 - Finish (Matte? Glossy? Textured?)
 - Shape (Round? Angular? Organic?)
 
-## 3. TARGET AUDIENCE
+## 4. TARGET AUDIENCE
 - Who buys this? (Age, Gender, Lifestyle)
 - What problem does it solve?
-- Emotional trigger (Status? Health? Convenience?)
+- Emotional trigger (Status? Health? Convenience? Productivity?)
 
-## 4. AD RECOMMENDATION
+## 5. AD RECOMMENDATION
 - Best background type
 - Recommended mood
 - Which reference style fits? (Feature Callouts / Lifestyle / etc.)
 
+IMPORTANT FOR SAAS/DIGITAL PRODUCTS:
+- If the image shows a dashboard, interface, or software UI
+- If it's a screenshot or device mockup
+- Mark isSaaSProduct as true
+- Recommend "mockup_showcase" or "feature_callouts" style
+
 Respond in JSON:
 {
-    "productType": "string",
+    "productType": "string (e.g., 'SaaS Dashboard', 'Mobile App', 'Physical Product')",
     "productName": "string", 
     "pricePoint": "budget|midrange|premium|luxury",
+    "isSaaSProduct": true/false,
+    "isDeviceMockup": true/false,
     "primaryColor": "#HEX",
     "secondaryColors": ["#HEX"],
-    "material": "string",
-    "finish": "matte|glossy|textured|mixed",
+    "material": "string (or 'digital' for software)",
+    "finish": "matte|glossy|textured|mixed|screen",
     "shape": "string",
     "targetAge": "18-24|25-34|35-44|45-54|55+",
     "targetGender": "male|female|unisex",
     "emotionalTrigger": "string",
     "problemSolved": "string",
-    "recommendedStyle": "lifestyle_action|feature_callouts|benefit_checkmarks",
+    "recommendedStyle": "lifestyle_action|feature_callouts|benefit_checkmarks|mockup_showcase",
     "recommendedMood": "string",
     "productDescription": "Detailed description for ad generation"
 }`;

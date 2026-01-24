@@ -70,10 +70,12 @@ export async function generateCleanCanvas({
  * UPGRADED: Premium 10/10 quality with dynamic effects
  */
 function buildFinalPrompt(enhancedPrompt, headline, tagline, cta, accentColor, productAnalysis) {
-    // Detect if product is a UI/SaaS/Dashboard
-    const productDesc = (productAnalysis?.description || '').toLowerCase();
+    // Detect if product is a UI/SaaS/Dashboard - use the analysis field first, then fallback to string detection
+    const productDesc = (productAnalysis?.productDescription || productAnalysis?.description || '').toLowerCase();
     const productType = (productAnalysis?.productType || '').toLowerCase();
-    const isSaaSProduct = productType.includes('saas') || productType.includes('software') ||
+    const isSaaSProduct = productAnalysis?.isSaaSProduct === true ||
+        productAnalysis?.isDeviceMockup === true ||
+        productType.includes('saas') || productType.includes('software') ||
         productType.includes('app') || productType.includes('dashboard') ||
         productDesc.includes('dashboard') || productDesc.includes('interface') ||
         productDesc.includes('platform') || productDesc.includes('tool');
