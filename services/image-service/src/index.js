@@ -158,8 +158,8 @@ app.post('/generate', async (req, res) => {
     }
 });
 
-// DESIGNER-LEVEL Composite Generation v9.0
-// Deep Foreplay Analysis + Visual Elements + Premium Prompts + Quality Verification
+// MASTER COMPOSITE GENERATOR v10.0
+// 10-Phase Designer-Level Pipeline with Quality Verification
 app.post('/generate-composite', async (req, res) => {
     const startTime = Date.now();
 
@@ -173,11 +173,13 @@ app.post('/generate-composite', async (req, res) => {
             userPrompt,
             industry,
             accentColor,
-            enableQualityCheck = true
+            enableQualityCheck = true,
+            enableAIContent = true,
+            enableAdvancedEffects = true
         } = req.body;
 
-        console.log('[ImageService] 🎨 DESIGNER-LEVEL Pipeline v9.0 starting...');
-        console.log('[ImageService] Mode: Full Foreplay Analysis + Visual Elements + Premium Prompts');
+        console.log('[ImageService] 🎨 MASTER PIPELINE v10.0 starting...');
+        console.log('[ImageService] Mode: 10-Phase Designer-Level + Quality Verification');
 
         let productBuffer = null;
         if (productImageBase64) {
@@ -195,32 +197,33 @@ app.post('/generate-composite', async (req, res) => {
             accentColor: accentColor || '#FF4757',
             industry,
             userPrompt,
-            enableQualityCheck
+            enableQualityCheck,
+            enableAIContent,
+            enableAdvancedEffects
         });
 
         const duration = Date.now() - startTime;
-        console.log(`[ImageService] ✅ DESIGNER-LEVEL ad complete in ${duration}ms`);
-        console.log(`[ImageService] Quality: ${result.qualityScore}/10 | References: ${result.referenceCount} | Elements: ${result.visualElementsCount}`);
+        console.log(`[ImageService] ✅ MASTER v10.0 complete in ${duration}ms`);
+        console.log(`[ImageService] Quality: ${result.qualityScore}/10 (${result.qualityTier}) | Attempts: ${result.regenerationAttempts + 1}`);
 
         res.json({
             success: true,
             imageBase64: result.buffer.toString('base64'),
             metadata: {
                 duration: result.duration,
-                designSpecs: result.designSpecs,
-                referenceCount: result.referenceCount,
-                visualElementsCount: result.visualElementsCount,
                 qualityScore: result.qualityScore,
+                qualityTier: result.qualityTier,
                 qualityDetails: result.qualityDetails,
-                extractedColors: result.extractedColors,
+                regenerationAttempts: result.regenerationAttempts,
+                referenceCount: result.referenceCount,
                 dimensions: { width: 1080, height: 1080 },
-                version: '9.0',
-                mode: 'designer_level'
+                version: '10.0',
+                mode: 'master_designer'
             }
         });
 
     } catch (error) {
-        console.error('[ImageService] ❌ Designer Error:', error.message);
+        console.error('[ImageService] ❌ Master Error:', error.message);
         res.status(500).json({
             success: false,
             error: error.message

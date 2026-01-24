@@ -167,8 +167,8 @@ export async function isRailwayAvailable() {
 }
 
 /**
- * Generate ad using DESIGNER-LEVEL Pipeline v9.0
- * Deep Foreplay Analysis + Visual Elements + Premium Prompts + Quality Verification
+ * Generate ad using MASTER Pipeline v10.0
+ * 10-Phase Designer-Level + Quality Verification + Regeneration
  * 
  * @param {Object} params - Generation parameters
  * @returns {Promise<Object>} - Generated ad with buffer and metadata
@@ -183,9 +183,11 @@ export async function generateWithComposite({
     industry,
     accentColor = '#FF4757',
     enableQualityCheck = true,
+    enableAIContent = true,
+    enableAdvancedEffects = true,
 }) {
-    console.log('[Railway] 🎨 DESIGNER-LEVEL Pipeline v9.0 request...');
-    console.log('[Railway] Mode: Full Foreplay Analysis + Visual Elements + Premium Prompts');
+    console.log('[Railway] 🎨 MASTER Pipeline v10.0 request...');
+    console.log('[Railway] Mode: 10-Phase Designer-Level + Quality Verification');
 
     const response = await fetch(`${RAILWAY_URL}/generate-composite`, {
         method: 'POST',
@@ -200,13 +202,15 @@ export async function generateWithComposite({
             industry,
             accentColor,
             enableQualityCheck,
+            enableAIContent,
+            enableAdvancedEffects,
         }),
-        signal: AbortSignal.timeout(180000), // Extended for deep analysis
+        signal: AbortSignal.timeout(240000), // Extended for full pipeline + regen
     });
 
     if (!response.ok) {
         const error = await response.json().catch(() => ({ error: 'Unknown error' }));
-        throw new Error(error.error || `Railway designer error: ${response.status}`);
+        throw new Error(error.error || `Railway master error: ${response.status}`);
     }
 
     const result = await response.json();
@@ -217,8 +221,8 @@ export async function generateWithComposite({
     if (result.imageBase64) {
         imageBuffer = Buffer.from(result.imageBase64, 'base64');
         imageDataUrl = `data:image/png;base64,${result.imageBase64}`;
-        console.log('[Railway] ✅ DESIGNER-LEVEL ad received:', imageBuffer.length, 'bytes');
-        console.log('[Railway] Quality:', result.metadata?.qualityScore, '| References:', result.metadata?.referenceCount);
+        console.log('[Railway] ✅ MASTER v10.0 ad received:', imageBuffer.length, 'bytes');
+        console.log('[Railway] Quality:', result.metadata?.qualityScore, `(${result.metadata?.qualityTier})`);
     }
 
     return {
@@ -226,15 +230,14 @@ export async function generateWithComposite({
         imageDataUrl,
         imageBase64: result.imageBase64,
         metadata: {
-            source: 'railway-designer-v9',
-            designSpecs: result.metadata?.designSpecs,
-            referenceCount: result.metadata?.referenceCount,
-            visualElementsCount: result.metadata?.visualElementsCount,
+            source: 'railway-master-v10',
             qualityScore: result.metadata?.qualityScore,
+            qualityTier: result.metadata?.qualityTier,
             qualityDetails: result.metadata?.qualityDetails,
-            extractedColors: result.metadata?.extractedColors,
+            regenerationAttempts: result.metadata?.regenerationAttempts,
+            referenceCount: result.metadata?.referenceCount,
             duration: result.metadata?.duration,
-            mode: 'designer_level'
+            mode: 'master_designer'
         },
     };
 }
