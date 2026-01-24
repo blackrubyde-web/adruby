@@ -348,9 +348,10 @@ function synthesizeTypography(analyses) {
             widthPx: Math.round(average(typos.map(t => t.cta?.widthPx || 280))),
             heightPx: Math.round(average(typos.map(t => t.cta?.heightPx || 56))),
             borderRadius: Math.round(average(typos.map(t => t.cta?.borderRadius || 28))),
-            hasGradient: typos.filter(t => t.cta?.hasGradient).length >= typos.length / 2,
-            hasGlow: typos.filter(t => t.cta?.hasGlow).length >= typos.length / 2,
-            glowIntensity: average(typos.map(t => t.cta?.glowIntensity || 0.4)),
+            // FIX: Default to TRUE for premium effects - only false if explicitly disabled
+            hasGradient: !typos.every(t => t.cta?.hasGradient === false),
+            hasGlow: !typos.every(t => t.cta?.hasGlow === false),
+            glowIntensity: average(typos.map(t => t.cta?.glowIntensity || 0.5)),
             textSizePx: Math.round(average(typos.map(t => t.cta?.textSizePx || 20))),
             textWeight: Math.round(average(typos.map(t => t.cta?.textWeight || 700)))
         }
@@ -410,26 +411,29 @@ function synthesizeEffects(analyses) {
 
     return {
         productShadow: {
-            show: effects.filter(e => e.productShadow?.show !== false).length >= effects.length / 2,
-            type: mostCommon(effects.map(e => e.productShadow?.type)) || 'drop',
-            blur: Math.round(average(effects.map(e => e.productShadow?.blur || 25))),
-            opacity: average(effects.map(e => e.productShadow?.opacity || 0.5)),
-            offsetY: Math.round(average(effects.map(e => e.productShadow?.offsetY || 15)))
+            // FIX: Default show to TRUE unless explicitly disabled
+            show: !effects.every(e => e.productShadow?.show === false),
+            type: mostCommon(effects.map(e => e.productShadow?.type)) || 'layered',
+            blur: Math.round(average(effects.map(e => e.productShadow?.blur || 30))),
+            opacity: average(effects.map(e => e.productShadow?.opacity || 0.6)),
+            offsetY: Math.round(average(effects.map(e => e.productShadow?.offsetY || 20)))
         },
         productReflection: {
-            show: effects.filter(e => e.productReflection?.show).length >= effects.length / 3,
-            opacity: average(effects.map(e => e.productReflection?.opacity || 0.1))
+            show: effects.some(e => e.productReflection?.show),
+            opacity: average(effects.map(e => e.productReflection?.opacity || 0.15))
         },
         backgroundEffects: {
-            hasParticles: effects.filter(e => e.backgroundEffects?.hasParticles).length >= effects.length / 3,
-            hasBokeh: effects.filter(e => e.backgroundEffects?.hasBokeh).length >= effects.length / 2,
-            bokehCount: Math.round(average(effects.map(e => e.backgroundEffects?.bokehCount || 4))),
-            hasNoiseTexture: effects.filter(e => e.backgroundEffects?.hasNoiseTexture).length >= effects.length / 2,
-            noiseOpacity: average(effects.map(e => e.backgroundEffects?.noiseOpacity || 0.02))
+            // FIX: All premium effects default TRUE
+            hasParticles: !effects.every(e => e.backgroundEffects?.hasParticles === false),
+            hasBokeh: !effects.every(e => e.backgroundEffects?.hasBokeh === false),
+            bokehCount: Math.round(average(effects.map(e => e.backgroundEffects?.bokehCount || 6))),
+            hasNoiseTexture: !effects.every(e => e.backgroundEffects?.hasNoiseTexture === false),
+            noiseOpacity: average(effects.map(e => e.backgroundEffects?.noiseOpacity || 0.03))
         },
         screenGlow: {
-            show: effects.filter(e => e.screenGlow?.show).length >= effects.length / 2,
-            intensity: average(effects.map(e => e.screenGlow?.intensity || 0.08))
+            // FIX: Screen glow default TRUE for premium look
+            show: !effects.every(e => e.screenGlow?.show === false),
+            intensity: average(effects.map(e => e.screenGlow?.intensity || 0.12))
         }
     };
 }
