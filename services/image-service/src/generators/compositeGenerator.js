@@ -1,114 +1,198 @@
 /**
- * Composite Ad Generator v6.0
+ * Composite Ad Generator v7.0 - ADVANCED LOGIC
  * 
- * SOLUTION: Gemini corrupts screenshots when trying to "integrate" them.
- * 
- * NEW APPROACH:
- * 1. Gemini generates ONLY an empty premium background (no product!)
- * 2. Sharp composites the ORIGINAL screenshot pixelgenau on top
- * 3. SVG renders perfect text (headline + CTA with gradient/glow)
- * 
- * Result: 100% product preservation + premium visuals
+ * FULL PIPELINE:
+ * 1. Product Analysis → GPT-4V deep understanding
+ * 2. Foreplay Pattern Application → Copy layouts from winning ads
+ * 3. Brand Color Extraction → Extract colors from screenshot
+ * 4. Background Generation → Gemini creates matching scene
+ * 5. Device Mockup Selection → MacBook/iPad/Browser/Floating/Phone
+ * 6. Advanced Compositing → Shadows, reflections, perspective
+ * 7. Text Overlay → Typography from Foreplay patterns
+ * 8. Quality Verification → GPT-4V checks result
  */
 
 import sharp from 'sharp';
+import OpenAI from 'openai';
 import { GoogleGenerativeAI } from '@google/generative-ai';
-import { matchProduct } from '../ai/productMatcher.js';
+import { matchProduct, analyzeProduct } from '../ai/productMatcher.js';
 import { extractPatternDNA, getDefaultDNA } from '../ai/visualDNA.js';
+import { quickQualityCheck } from '../ai/qualityVerifier.js';
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
 // Canvas dimensions
 const CANVAS_WIDTH = 1080;
 const CANVAS_HEIGHT = 1080;
 
+// Device mockup types
+const MOCKUP_TYPES = {
+    MACBOOK: 'macbook',
+    MACBOOK_PRO: 'macbook_pro',
+    IPAD: 'ipad',
+    BROWSER: 'browser',
+    FLOATING: 'floating',
+    PHONE: 'phone',
+    MINIMAL: 'minimal'
+};
+
+// Layout templates from Foreplay patterns
+const LAYOUT_TEMPLATES = {
+    hero_centered: { productY: 0.45, headlineY: 0.08, ctaY: 0.88, productScale: 0.55 },
+    hero_left: { productX: 0.25, headlineX: 0.7, ctaX: 0.7, productScale: 0.5 },
+    hero_right: { productX: 0.75, headlineX: 0.3, ctaX: 0.3, productScale: 0.5 },
+    hero_top: { productY: 0.25, headlineY: 0.65, ctaY: 0.88, productScale: 0.45 },
+    hero_bottom: { productY: 0.6, headlineY: 0.1, ctaY: 0.88, productScale: 0.5 },
+    floating_cards: { productY: 0.45, headlineY: 0.08, ctaY: 0.88, productScale: 0.6, floating: true },
+    split_screen: { productX: 0.65, textX: 0.25, productScale: 0.45 }
+};
+
 /**
- * Main composite ad generation
+ * Main composite ad generation - ADVANCED
  */
 export async function generateCompositeAd({
     productImageBuffer,
     headline,
     tagline,
     cta,
-    accentColor = '#FF4757',
+    accentColor,
     industry,
-    userPrompt
+    userPrompt,
+    mockupType,
+    layoutTemplate,
+    enableQualityCheck = true
 }) {
-    console.log('[CompositeGen] 🎨 Starting Composite Pipeline v6.0...');
+    console.log('[CompositeGen] 🎨 Starting ADVANCED Composite Pipeline v7.0...');
     const startTime = Date.now();
 
     // ========================================
-    // PHASE 1: Product Analysis + Foreplay
+    // PHASE 1: Deep Product Analysis
     // ========================================
-    console.log('[CompositeGen] Phase 1: Product Analysis...');
+    console.log('[CompositeGen] Phase 1: Deep Product Analysis...');
 
     let productAnalysis = null;
     let referenceAds = [];
     let visualDNA = getDefaultDNA();
+    let extractedColors = { primary: '#0A0A1A', accent: accentColor || '#FF4757', text: '#FFFFFF' };
 
     if (productImageBuffer) {
         try {
+            // Full product matching with Foreplay
             const matchResult = await matchProduct(productImageBuffer);
             productAnalysis = matchResult.analysis;
             referenceAds = matchResult.referenceAds || [];
 
             console.log(`[CompositeGen] Product: ${productAnalysis?.productName || 'Unknown'}`);
-            console.log(`[CompositeGen] Found ${referenceAds.length} Foreplay references`);
+            console.log(`[CompositeGen] Type: ${productAnalysis?.productType || 'unknown'}`);
+            console.log(`[CompositeGen] Foreplay references: ${referenceAds.length}`);
 
-            // Extract DNA from winning ads if available
+            // Extract DNA from winning ads
             if (referenceAds.length > 0) {
-                const dnaResult = await extractPatternDNA(referenceAds, 3);
+                const dnaResult = await extractPatternDNA(referenceAds, 5);
                 visualDNA = dnaResult.pattern || visualDNA;
-                console.log(`[CompositeGen] DNA extracted: ${visualDNA.layout?.type || 'default'}`);
+                console.log(`[CompositeGen] DNA: ${visualDNA.layout?.type || 'default'}, confidence: ${dnaResult.confidence || 0}`);
             }
+
+            // Extract colors from product image
+            extractedColors = await extractBrandColors(productImageBuffer, productAnalysis);
+            console.log(`[CompositeGen] Extracted colors: primary=${extractedColors.primary}, accent=${extractedColors.accent}`);
+
         } catch (e) {
             console.warn('[CompositeGen] Product analysis failed:', e.message);
         }
     }
 
-    // Detect if this is a SaaS/UI product
+    // Use provided accent or extracted
+    const finalAccentColor = accentColor || extractedColors.accent || '#FF4757';
+
+    // Detect product type
     const isSaaSProduct = detectSaaSProduct(productAnalysis, userPrompt);
-    console.log(`[CompositeGen] SaaS Product: ${isSaaSProduct}`);
+    const isPhoneApp = detectPhoneApp(productAnalysis, userPrompt);
+    console.log(`[CompositeGen] SaaS: ${isSaaSProduct}, Phone App: ${isPhoneApp}`);
 
     // ========================================
-    // PHASE 2: Generate Background Only
+    // PHASE 2: Layout Selection from Foreplay
     // ========================================
-    console.log('[CompositeGen] Phase 2: Generating premium background...');
+    console.log('[CompositeGen] Phase 2: Layout Selection...');
 
-    const backgroundBuffer = await generateBackgroundOnly({
-        accentColor,
+    const selectedLayout = selectLayoutFromDNA(visualDNA, layoutTemplate, isSaaSProduct);
+    const selectedMockup = selectMockupType(isSaaSProduct, isPhoneApp, mockupType, visualDNA);
+
+    console.log(`[CompositeGen] Layout: ${selectedLayout.name}, Mockup: ${selectedMockup}`);
+
+    // ========================================
+    // PHASE 3: Generate Scene Background
+    // ========================================
+    console.log('[CompositeGen] Phase 3: Generating scene background...');
+
+    const backgroundBuffer = await generateSceneBackground({
+        accentColor: finalAccentColor,
         visualDNA,
-        industry: industry || productAnalysis?.productType || 'tech'
+        industry: industry || productAnalysis?.productType || 'tech',
+        layout: selectedLayout,
+        extractedColors
     });
 
-    if (!backgroundBuffer) {
-        console.error('[CompositeGen] Background generation failed, using fallback');
-        return await createFallbackComposite(productImageBuffer, headline, cta, accentColor);
+    // ========================================
+    // PHASE 4: Advanced Device Mockup
+    // ========================================
+    console.log('[CompositeGen] Phase 4: Creating device mockup...');
+
+    let mockupBuffer = null;
+    if (productImageBuffer) {
+        mockupBuffer = await createAdvancedMockup({
+            screenshotBuffer: productImageBuffer,
+            mockupType: selectedMockup,
+            accentColor: finalAccentColor,
+            addReflection: true,
+            addShadow: true,
+            perspective: visualDNA.effects?.perspective || 'subtle'
+        });
     }
 
     // ========================================
-    // PHASE 3: Composite Product on Background
+    // PHASE 5: Composite with Layout
     // ========================================
-    console.log('[CompositeGen] Phase 3: Compositing product...');
+    console.log('[CompositeGen] Phase 5: Layout compositing...');
 
-    let compositeBuffer;
-    if (isSaaSProduct) {
-        compositeBuffer = await compositeWithMockup(backgroundBuffer, productImageBuffer);
-    } else {
-        compositeBuffer = await compositeProduct(backgroundBuffer, productImageBuffer);
-    }
+    const compositeBuffer = await applyLayoutComposite({
+        backgroundBuffer,
+        mockupBuffer,
+        layout: selectedLayout,
+        visualDNA
+    });
 
     // ========================================
-    // PHASE 4: Add Text Overlay
+    // PHASE 6: Text Overlay with DNA Typography
     // ========================================
-    console.log('[CompositeGen] Phase 4: Adding text overlay...');
+    console.log('[CompositeGen] Phase 6: Typography from DNA...');
 
-    const finalBuffer = await addTextOverlay(compositeBuffer, {
+    const typographyConfig = extractTypographyFromDNA(visualDNA, selectedLayout);
+
+    const finalBuffer = await addAdvancedTextOverlay(compositeBuffer, {
         headline: headline || productAnalysis?.suggestedHeadlines?.[0] || 'Premium Quality',
         tagline,
         cta: cta || 'Shop Now',
-        accentColor
+        accentColor: finalAccentColor,
+        typography: typographyConfig,
+        layout: selectedLayout
     });
+
+    // ========================================
+    // PHASE 7: Quality Verification
+    // ========================================
+    let qualityScore = 0;
+    if (enableQualityCheck) {
+        console.log('[CompositeGen] Phase 7: Quality verification...');
+        try {
+            const qualityResult = await quickQualityCheck(finalBuffer);
+            qualityScore = qualityResult.score || 0;
+            console.log(`[CompositeGen] Quality score: ${qualityScore}/10`);
+        } catch (e) {
+            console.warn('[CompositeGen] Quality check failed:', e.message);
+        }
+    }
 
     const duration = Date.now() - startTime;
     console.log(`[CompositeGen] ✅ Complete in ${duration}ms`);
@@ -117,47 +201,177 @@ export async function generateCompositeAd({
         buffer: finalBuffer,
         duration,
         isSaaSProduct,
+        isPhoneApp,
         productAnalysis,
-        referenceCount: referenceAds.length
+        referenceCount: referenceAds.length,
+        layout: selectedLayout.name,
+        mockupType: selectedMockup,
+        qualityScore,
+        extractedColors
     };
 }
 
 /**
- * Generate ONLY a premium background - no products, no text
+ * Extract brand colors from product image using Sharp
  */
-async function generateBackgroundOnly({ accentColor, visualDNA, industry }) {
+async function extractBrandColors(imageBuffer, productAnalysis) {
+    try {
+        // Get dominant colors using Sharp stats
+        const { dominant, channels } = await sharp(imageBuffer)
+            .resize(100, 100, { fit: 'cover' })
+            .raw()
+            .toBuffer({ resolveWithObject: true })
+            .then(async ({ data, info }) => {
+                // Sample pixels and find dominant colors
+                const colors = {};
+                for (let i = 0; i < data.length; i += info.channels) {
+                    const r = data[i];
+                    const g = data[i + 1];
+                    const b = data[i + 2];
+                    // Quantize to reduce color space
+                    const key = `${Math.round(r / 32) * 32},${Math.round(g / 32) * 32},${Math.round(b / 32) * 32}`;
+                    colors[key] = (colors[key] || 0) + 1;
+                }
+                // Sort by frequency
+                const sorted = Object.entries(colors).sort((a, b) => b[1] - a[1]);
+                return { dominant: sorted.slice(0, 5), channels: info.channels };
+            });
+
+        // Find most vibrant color for accent
+        let accentColor = '#FF4757';
+        let primaryColor = '#0A0A1A';
+
+        for (const [colorKey] of dominant) {
+            const [r, g, b] = colorKey.split(',').map(Number);
+            const saturation = Math.max(r, g, b) - Math.min(r, g, b);
+            const brightness = (r + g + b) / 3;
+
+            // Use vibrant color as accent
+            if (saturation > 80 && brightness > 50 && brightness < 220) {
+                accentColor = `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`;
+                break;
+            }
+        }
+
+        // Use product analysis colors if available
+        if (productAnalysis?.colorPalette?.length > 0) {
+            accentColor = productAnalysis.colorPalette[0] || accentColor;
+        }
+
+        return { primary: primaryColor, accent: accentColor, text: '#FFFFFF' };
+    } catch (e) {
+        console.warn('[CompositeGen] Color extraction failed:', e.message);
+        return { primary: '#0A0A1A', accent: '#FF4757', text: '#FFFFFF' };
+    }
+}
+
+/**
+ * Select layout template based on Visual DNA
+ */
+function selectLayoutFromDNA(visualDNA, preferredLayout, isSaaSProduct) {
+    // If user specified a layout, use it
+    if (preferredLayout && LAYOUT_TEMPLATES[preferredLayout]) {
+        return { ...LAYOUT_TEMPLATES[preferredLayout], name: preferredLayout };
+    }
+
+    // Extract from DNA if available
+    const dnaLayout = visualDNA.layout?.type;
+    if (dnaLayout && LAYOUT_TEMPLATES[dnaLayout]) {
+        return { ...LAYOUT_TEMPLATES[dnaLayout], name: dnaLayout };
+    }
+
+    // Default based on product type
+    if (isSaaSProduct) {
+        return { ...LAYOUT_TEMPLATES.hero_centered, name: 'hero_centered' };
+    }
+
+    // Random selection for variety
+    const layoutKeys = Object.keys(LAYOUT_TEMPLATES);
+    const randomLayout = layoutKeys[Math.floor(Math.random() * layoutKeys.length)];
+    return { ...LAYOUT_TEMPLATES[randomLayout], name: randomLayout };
+}
+
+/**
+ * Select mockup type based on product analysis
+ */
+function selectMockupType(isSaaSProduct, isPhoneApp, preferredType, visualDNA) {
+    if (preferredType && Object.values(MOCKUP_TYPES).includes(preferredType)) {
+        return preferredType;
+    }
+
+    // From DNA
+    if (visualDNA.elements?.deviceType) {
+        return visualDNA.elements.deviceType;
+    }
+
+    // Based on product type
+    if (isPhoneApp) return MOCKUP_TYPES.PHONE;
+    if (isSaaSProduct) return MOCKUP_TYPES.MACBOOK_PRO;
+
+    return MOCKUP_TYPES.FLOATING;
+}
+
+/**
+ * Detect if product is a phone app
+ */
+function detectPhoneApp(productAnalysis, userPrompt) {
+    const keywords = ['phone', 'mobile', 'ios', 'android', 'app store', 'play store', 'iphone'];
+    const text = `${userPrompt || ''} ${productAnalysis?.productName || ''} ${productAnalysis?.productType || ''}`.toLowerCase();
+    return keywords.some(kw => text.includes(kw));
+}
+
+/**
+ * Detect SaaS product
+ */
+function detectSaaSProduct(productAnalysis, userPrompt) {
+    const keywords = ['saas', 'dashboard', 'app', 'software', 'platform', 'tool', 'interface', 'ui', 'screenshot', 'analytics', 'crm', 'erp', 'admin', 'panel'];
+    const text = `${userPrompt || ''} ${productAnalysis?.productName || ''} ${productAnalysis?.productType || ''}`.toLowerCase();
+    return keywords.some(kw => text.includes(kw));
+}
+
+/**
+ * Generate scene background with Gemini
+ */
+async function generateSceneBackground({ accentColor, visualDNA, industry, layout, extractedColors }) {
     try {
         const model = genAI.getGenerativeModel({
             model: 'gemini-2.0-flash-exp',
             generationConfig: { responseModalities: ['image', 'text'] }
         });
 
+        const bgStyle = visualDNA.style || 'premium_dark';
         const bgColors = visualDNA.colors?.background || {};
-        const primaryColor = bgColors.primary || '#0A0A1A';
-        const secondaryColor = bgColors.secondary || '#1A1A3A';
 
-        const prompt = `Generate ONLY a premium advertisement background.
+        const prompt = `Create a premium advertisement background scene.
 
-⛔ DO NOT include any products, text, buttons, devices, or objects.
-⛔ This is ONLY an empty background scene.
+⛔ NO products, devices, text, buttons, or UI elements - EMPTY SCENE ONLY.
 
-REQUIREMENTS:
-- Size: ${CANVAS_WIDTH}x${CANVAS_HEIGHT} pixels (square)
-- Style: Premium, modern, professional
-- Empty center area for product placement
+SCENE REQUIREMENTS:
+- Canvas: ${CANVAS_WIDTH}x${CANVAS_HEIGHT}px (square)
+- Style: ${bgStyle === 'light' ? 'Clean light premium' : 'Dark luxury tech'}
+- Industry: ${industry}
 
-BACKGROUND DESIGN:
-- Primary gradient: ${primaryColor} to ${secondaryColor}
-- Gradient direction: Radial from center
-- Subtle glow orb in center using ${accentColor} at 15% opacity
-- Subtle bokeh circles (3-5 circles, very soft, 8% opacity)
-- Optional: very faint floating particles
-- Optional: subtle vignette at edges
+COMPOSITION (based on layout: ${layout.name}):
+- Leave clear space for product placement at the designated area
+- ${layout.name === 'hero_centered' ? 'Central focus point with radial composition' : ''}
+- ${layout.name === 'hero_left' || layout.name === 'hero_right' ? 'Asymmetric composition with gradient flow' : ''}
+- ${layout.name === 'split_screen' ? 'Two-zone composition with subtle divider' : ''}
 
-MOOD: Premium ${industry} advertisement, agency-quality
+COLOR PALETTE:
+- Primary: ${bgColors.primary || extractedColors.primary || '#0A0A1A'}
+- Secondary: ${bgColors.secondary || '#1A1A3A'}
+- Accent glow: ${accentColor} at 12-18% opacity
 
-⛔ CRITICAL: Output must be a completely EMPTY background.
-No products. No text. No UI elements. Just the background.`;
+EFFECTS (choose based on style):
+${visualDNA.effects?.hasParticles ? '- Floating particles or dust motes' : ''}
+${visualDNA.effects?.hasBokeh ? '- Soft bokeh circles (3-5, blurred)' : ''}
+${visualDNA.effects?.hasLightRays ? '- Subtle light rays from top' : ''}
+- Subtle vignette at edges
+- Subtle noise texture (2-3%)
+
+MOOD: Premium ${industry} brand, agency-quality production value.
+
+OUTPUT: ONLY the background, completely empty, ready for product overlay.`;
 
         const result = await model.generateContent([{ text: prompt }]);
         const candidates = result.response?.candidates;
@@ -165,139 +379,425 @@ No products. No text. No UI elements. Just the background.`;
         if (candidates?.[0]?.content?.parts) {
             for (const part of candidates[0].content.parts) {
                 if (part.inlineData?.data) {
-                    console.log('[CompositeGen] ✅ Background generated');
-                    return Buffer.from(part.inlineData.data, 'base64');
+                    console.log('[CompositeGen] ✅ Scene background generated');
+                    const buffer = Buffer.from(part.inlineData.data, 'base64');
+                    return await sharp(buffer).resize(CANVAS_WIDTH, CANVAS_HEIGHT).png().toBuffer();
                 }
             }
         }
 
-        throw new Error('No image in response');
+        throw new Error('No background generated');
     } catch (error) {
-        console.error('[CompositeGen] Background generation error:', error.message);
-        // Return gradient fallback
-        return await createGradientBackground(accentColor);
+        console.warn('[CompositeGen] Gemini background failed:', error.message);
+        return await createPremiumGradientBackground(accentColor, visualDNA);
     }
 }
 
 /**
- * Create gradient background fallback using Sharp
+ * Create premium gradient fallback
  */
-async function createGradientBackground(accentColor) {
+async function createPremiumGradientBackground(accentColor, visualDNA) {
+    const style = visualDNA?.style || 'dark';
+    const bgColor1 = style === 'light' ? '#F5F5F7' : '#0A0A18';
+    const bgColor2 = style === 'light' ? '#E8E8ED' : '#151525';
+
     const svg = `
     <svg width="${CANVAS_WIDTH}" height="${CANVAS_HEIGHT}" xmlns="http://www.w3.org/2000/svg">
         <defs>
-            <radialGradient id="bg" cx="50%" cy="40%" r="80%">
-                <stop offset="0%" style="stop-color:#1A1A3A"/>
-                <stop offset="100%" style="stop-color:#0A0A1A"/>
+            <radialGradient id="bg" cx="50%" cy="35%" r="90%">
+                <stop offset="0%" style="stop-color:${bgColor2}"/>
+                <stop offset="100%" style="stop-color:${bgColor1}"/>
             </radialGradient>
-            <radialGradient id="glow" cx="50%" cy="45%" r="50%">
-                <stop offset="0%" style="stop-color:${accentColor};stop-opacity:0.15"/>
+            <radialGradient id="glow1" cx="30%" cy="30%" r="40%">
+                <stop offset="0%" style="stop-color:${accentColor};stop-opacity:0.12"/>
                 <stop offset="100%" style="stop-color:${accentColor};stop-opacity:0"/>
             </radialGradient>
+            <radialGradient id="glow2" cx="70%" cy="60%" r="35%">
+                <stop offset="0%" style="stop-color:${accentColor};stop-opacity:0.08"/>
+                <stop offset="100%" style="stop-color:${accentColor};stop-opacity:0"/>
+            </radialGradient>
+            <filter id="noise">
+                <feTurbulence type="fractalNoise" baseFrequency="0.8" numOctaves="4" result="noise"/>
+                <feColorMatrix type="saturate" values="0"/>
+                <feBlend in="SourceGraphic" in2="noise" mode="overlay" result="blend"/>
+                <feComposite in="blend" in2="SourceGraphic" operator="in"/>
+            </filter>
         </defs>
         <rect width="100%" height="100%" fill="url(#bg)"/>
-        <ellipse cx="540" cy="450" rx="400" ry="350" fill="url(#glow)"/>
+        <ellipse cx="320" cy="320" rx="450" ry="380" fill="url(#glow1)"/>
+        <ellipse cx="760" cy="650" rx="380" ry="320" fill="url(#glow2)"/>
+        <!-- Bokeh circles -->
+        <circle cx="200" cy="200" r="80" fill="${accentColor}" fill-opacity="0.04"/>
+        <circle cx="850" cy="350" r="60" fill="${accentColor}" fill-opacity="0.05"/>
+        <circle cx="150" cy="700" r="100" fill="${accentColor}" fill-opacity="0.03"/>
+        <circle cx="900" cy="800" r="70" fill="${accentColor}" fill-opacity="0.04"/>
+        <!-- Noise overlay -->
+        <rect width="100%" height="100%" fill="white" opacity="0.02" filter="url(#noise)"/>
     </svg>`;
 
     return await sharp(Buffer.from(svg)).png().toBuffer();
 }
 
 /**
- * Composite product onto background (for physical products)
+ * Create advanced device mockup with effects
  */
-async function compositeProduct(backgroundBuffer, productBuffer) {
-    if (!productBuffer) return backgroundBuffer;
-
-    // Resize product to fit nicely
-    const productResized = await sharp(productBuffer)
-        .resize(600, 600, { fit: 'inside', background: { r: 0, g: 0, b: 0, alpha: 0 } })
-        .png()
-        .toBuffer();
-
-    const productMeta = await sharp(productResized).metadata();
-    const left = Math.round((CANVAS_WIDTH - productMeta.width) / 2);
-    const top = Math.round((CANVAS_HEIGHT - productMeta.height) / 2) - 50; // Slightly above center
-
-    return await sharp(backgroundBuffer)
-        .resize(CANVAS_WIDTH, CANVAS_HEIGHT)
-        .composite([
-            { input: productResized, left, top }
-        ])
-        .png()
-        .toBuffer();
+async function createAdvancedMockup({ screenshotBuffer, mockupType, accentColor, addReflection, addShadow, perspective }) {
+    switch (mockupType) {
+        case MOCKUP_TYPES.MACBOOK:
+        case MOCKUP_TYPES.MACBOOK_PRO:
+            return await createMacBookMockup(screenshotBuffer, accentColor, addReflection, addShadow, perspective);
+        case MOCKUP_TYPES.IPAD:
+            return await createIPadMockup(screenshotBuffer, accentColor, addReflection, addShadow);
+        case MOCKUP_TYPES.BROWSER:
+            return await createBrowserMockup(screenshotBuffer, accentColor, addShadow);
+        case MOCKUP_TYPES.PHONE:
+            return await createPhoneMockup(screenshotBuffer, accentColor, addReflection, addShadow);
+        case MOCKUP_TYPES.MINIMAL:
+            return await createMinimalMockup(screenshotBuffer, addShadow);
+        case MOCKUP_TYPES.FLOATING:
+        default:
+            return await createFloatingMockup(screenshotBuffer, accentColor, addShadow);
+    }
 }
 
 /**
- * Composite screenshot with MacBook-like mockup (for SaaS products)
+ * MacBook Pro mockup with screen glow and reflection
  */
-async function compositeWithMockup(backgroundBuffer, screenshotBuffer) {
-    if (!screenshotBuffer) return backgroundBuffer;
+async function createMacBookMockup(screenshotBuffer, accentColor, addReflection, addShadow, perspective) {
+    const screenWidth = 680;
+    const screenHeight = 425;
+    const frameWidth = screenWidth + 50;
+    const frameHeight = screenHeight + 85;
 
-    // Create a simple MacBook-like frame using SVG
-    const screenWidth = 700;
-    const screenHeight = 438; // 16:10 aspect ratio
-    const frameWidth = screenWidth + 40;
-    const frameHeight = screenHeight + 70;
-
-    // Create the MacBook frame
+    // Create frame with gradients
     const frameSvg = `
     <svg width="${frameWidth}" height="${frameHeight}" xmlns="http://www.w3.org/2000/svg">
         <defs>
-            <linearGradient id="bezel" x1="0%" y1="0%" x2="0%" y2="100%">
-                <stop offset="0%" style="stop-color:#3a3a3c"/>
+            <linearGradient id="lid" x1="0%" y1="0%" x2="0%" y2="100%">
+                <stop offset="0%" style="stop-color:#4a4a4c"/>
+                <stop offset="50%" style="stop-color:#2c2c2e"/>
                 <stop offset="100%" style="stop-color:#1c1c1e"/>
             </linearGradient>
-            <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
-                <feDropShadow dx="0" dy="10" stdDeviation="20" flood-color="#000000" flood-opacity="0.5"/>
+            <linearGradient id="screenBezel" x1="0%" y1="0%" x2="0%" y2="100%">
+                <stop offset="0%" style="stop-color:#1a1a1a"/>
+                <stop offset="100%" style="stop-color:#000000"/>
+            </linearGradient>
+            ${addShadow ? `
+            <filter id="dropShadow" x="-30%" y="-30%" width="160%" height="160%">
+                <feDropShadow dx="0" dy="15" stdDeviation="25" flood-color="#000000" flood-opacity="0.6"/>
+            </filter>` : ''}
+            ${addReflection ? `
+            <linearGradient id="reflection" x1="0%" y1="0%" x2="0%" y2="100%">
+                <stop offset="0%" style="stop-color:white;stop-opacity:0.15"/>
+                <stop offset="50%" style="stop-color:white;stop-opacity:0"/>
+            </linearGradient>` : ''}
+            <filter id="screenGlow" x="-50%" y="-50%" width="200%" height="200%">
+                <feGaussianBlur stdDeviation="8" result="glow"/>
+                <feMerge>
+                    <feMergeNode in="glow"/>
+                    <feMergeNode in="SourceGraphic"/>
+                </feMerge>
             </filter>
         </defs>
-        <!-- MacBook body -->
-        <rect x="0" y="0" width="${frameWidth}" height="${frameHeight - 20}" rx="12" fill="url(#bezel)" filter="url(#shadow)"/>
+        
+        <!-- Main body with shadow -->
+        <g ${addShadow ? 'filter="url(#dropShadow)"' : ''}>
+            <rect x="0" y="0" width="${frameWidth}" height="${frameHeight - 25}" rx="14" fill="url(#lid)"/>
+        </g>
+        
         <!-- Screen bezel -->
-        <rect x="10" y="10" width="${screenWidth + 20}" height="${screenHeight + 20}" rx="4" fill="#000000"/>
-        <!-- Camera dot -->
-        <circle cx="${frameWidth / 2}" cy="20" r="3" fill="#2a2a2c"/>
-        <!-- Bottom bar -->
-        <rect x="0" y="${frameHeight - 20}" width="${frameWidth}" height="20" rx="2" fill="#2a2a2c"/>
-        <ellipse cx="${frameWidth / 2}" cy="${frameHeight - 10}" rx="80" ry="8" fill="#1c1c1e"/>
+        <rect x="12" y="12" width="${screenWidth + 26}" height="${screenHeight + 26}" rx="6" fill="url(#screenBezel)"/>
+        
+        <!-- Screen area (where screenshot goes) -->
+        <rect x="25" y="25" width="${screenWidth}" height="${screenHeight}" rx="2" fill="#000"/>
+        
+        <!-- Screen glow effect -->
+        <rect x="25" y="25" width="${screenWidth}" height="${screenHeight}" rx="2" fill="${accentColor}" fill-opacity="0.03" filter="url(#screenGlow)"/>
+        
+        <!-- Camera -->
+        <circle cx="${frameWidth / 2}" cy="20" r="4" fill="#1a1a1a"/>
+        <circle cx="${frameWidth / 2}" cy="20" r="2" fill="#0a0a0a"/>
+        
+        <!-- Bottom hinge -->
+        <rect x="0" y="${frameHeight - 25}" width="${frameWidth}" height="25" rx="3" fill="#2a2a2c"/>
+        <rect x="0" y="${frameHeight - 25}" width="${frameWidth}" height="4" fill="#3a3a3c"/>
+        
+        <!-- Trackpad hint -->
+        <rect x="${frameWidth / 2 - 60}" y="${frameHeight - 18}" width="120" height="10" rx="2" fill="#1c1c1e"/>
+        
+        ${addReflection ? `
+        <!-- Screen reflection -->
+        <rect x="25" y="25" width="${screenWidth}" height="${screenHeight / 2}" rx="2" fill="url(#reflection)"/>
+        ` : ''}
     </svg>`;
 
     const frameBuffer = await sharp(Buffer.from(frameSvg)).png().toBuffer();
 
-    // Resize screenshot to fit screen area
+    // Resize screenshot
     const screenshotResized = await sharp(screenshotBuffer)
         .resize(screenWidth, screenHeight, { fit: 'cover' })
         .png()
         .toBuffer();
 
-    // Composite frame with screenshot
-    const mockupBuffer = await sharp(frameBuffer)
+    // Composite
+    return await sharp(frameBuffer)
         .composite([
-            { input: screenshotResized, left: 20, top: 20 }
-        ])
-        .png()
-        .toBuffer();
-
-    // Position mockup on background
-    const mockupLeft = Math.round((CANVAS_WIDTH - frameWidth) / 2);
-    const mockupTop = 200;
-
-    return await sharp(backgroundBuffer)
-        .resize(CANVAS_WIDTH, CANVAS_HEIGHT)
-        .composite([
-            { input: mockupBuffer, left: mockupLeft, top: mockupTop }
+            { input: screenshotResized, left: 25, top: 25 }
         ])
         .png()
         .toBuffer();
 }
 
 /**
- * Add text overlay with SVG (headline + CTA)
+ * iPad mockup
  */
-async function addTextOverlay(imageBuffer, { headline, tagline, cta, accentColor }) {
-    // Calculate gradient colors for CTA
+async function createIPadMockup(screenshotBuffer, accentColor, addReflection, addShadow) {
+    const screenWidth = 600;
+    const screenHeight = 450;
+    const frameWidth = screenWidth + 40;
+    const frameHeight = screenHeight + 40;
+
+    const frameSvg = `
+    <svg width="${frameWidth}" height="${frameHeight}" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+            <linearGradient id="ipadBody" x1="0%" y1="0%" x2="0%" y2="100%">
+                <stop offset="0%" style="stop-color:#e0e0e0"/>
+                <stop offset="100%" style="stop-color:#c0c0c0"/>
+            </linearGradient>
+            ${addShadow ? `
+            <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+                <feDropShadow dx="0" dy="12" stdDeviation="20" flood-color="#000" flood-opacity="0.5"/>
+            </filter>` : ''}
+        </defs>
+        <rect x="0" y="0" width="${frameWidth}" height="${frameHeight}" rx="20" fill="url(#ipadBody)" ${addShadow ? 'filter="url(#shadow)"' : ''}/>
+        <rect x="20" y="20" width="${screenWidth}" height="${screenHeight}" rx="4" fill="#000"/>
+        <circle cx="${frameWidth / 2}" cy="12" r="4" fill="#888"/>
+    </svg>`;
+
+    const frameBuffer = await sharp(Buffer.from(frameSvg)).png().toBuffer();
+    const screenshotResized = await sharp(screenshotBuffer)
+        .resize(screenWidth, screenHeight, { fit: 'cover' })
+        .png()
+        .toBuffer();
+
+    return await sharp(frameBuffer)
+        .composite([{ input: screenshotResized, left: 20, top: 20 }])
+        .png()
+        .toBuffer();
+}
+
+/**
+ * Browser window mockup
+ */
+async function createBrowserMockup(screenshotBuffer, accentColor, addShadow) {
+    const screenWidth = 720;
+    const screenHeight = 480;
+    const frameWidth = screenWidth + 16;
+    const frameHeight = screenHeight + 48;
+
+    const frameSvg = `
+    <svg width="${frameWidth}" height="${frameHeight}" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+            ${addShadow ? `
+            <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+                <feDropShadow dx="0" dy="8" stdDeviation="15" flood-color="#000" flood-opacity="0.4"/>
+            </filter>` : ''}
+        </defs>
+        <!-- Window -->
+        <rect x="0" y="0" width="${frameWidth}" height="${frameHeight}" rx="10" fill="#1e1e1e" ${addShadow ? 'filter="url(#shadow)"' : ''}/>
+        <!-- Title bar -->
+        <rect x="0" y="0" width="${frameWidth}" height="40" rx="10" fill="#2d2d2d"/>
+        <rect x="0" y="30" width="${frameWidth}" height="10" fill="#2d2d2d"/>
+        <!-- Traffic lights -->
+        <circle cx="20" cy="20" r="6" fill="#ff5f57"/>
+        <circle cx="40" cy="20" r="6" fill="#febc2e"/>
+        <circle cx="60" cy="20" r="6" fill="#28c840"/>
+        <!-- URL bar -->
+        <rect x="90" y="10" width="${frameWidth - 110}" height="20" rx="4" fill="#1a1a1a"/>
+        <text x="100" y="24" fill="#666" font-size="10" font-family="system-ui">adruby.com</text>
+    </svg>`;
+
+    const frameBuffer = await sharp(Buffer.from(frameSvg)).png().toBuffer();
+    const screenshotResized = await sharp(screenshotBuffer)
+        .resize(screenWidth, screenHeight, { fit: 'cover' })
+        .png()
+        .toBuffer();
+
+    return await sharp(frameBuffer)
+        .composite([{ input: screenshotResized, left: 8, top: 40 }])
+        .png()
+        .toBuffer();
+}
+
+/**
+ * Phone mockup
+ */
+async function createPhoneMockup(screenshotBuffer, accentColor, addReflection, addShadow) {
+    const screenWidth = 280;
+    const screenHeight = 600;
+    const frameWidth = screenWidth + 24;
+    const frameHeight = screenHeight + 48;
+
+    const frameSvg = `
+    <svg width="${frameWidth}" height="${frameHeight}" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+            <linearGradient id="phoneBody" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" style="stop-color:#3a3a3c"/>
+                <stop offset="100%" style="stop-color:#1c1c1e"/>
+            </linearGradient>
+            ${addShadow ? `
+            <filter id="shadow" x="-30%" y="-30%" width="160%" height="160%">
+                <feDropShadow dx="0" dy="10" stdDeviation="20" flood-color="#000" flood-opacity="0.5"/>
+            </filter>` : ''}
+        </defs>
+        <rect x="0" y="0" width="${frameWidth}" height="${frameHeight}" rx="30" fill="url(#phoneBody)" ${addShadow ? 'filter="url(#shadow)"' : ''}/>
+        <rect x="12" y="24" width="${screenWidth}" height="${screenHeight}" rx="8" fill="#000"/>
+        <!-- Dynamic Island -->
+        <rect x="${frameWidth / 2 - 40}" y="32" width="80" height="22" rx="11" fill="#1a1a1a"/>
+    </svg>`;
+
+    const frameBuffer = await sharp(Buffer.from(frameSvg)).png().toBuffer();
+    const screenshotResized = await sharp(screenshotBuffer)
+        .resize(screenWidth, screenHeight, { fit: 'cover' })
+        .png()
+        .toBuffer();
+
+    return await sharp(frameBuffer)
+        .composite([{ input: screenshotResized, left: 12, top: 24 }])
+        .png()
+        .toBuffer();
+}
+
+/**
+ * Floating card mockup (no device frame)
+ */
+async function createFloatingMockup(screenshotBuffer, accentColor, addShadow) {
+    const width = 700;
+    const height = 450;
+
+    // Just resize with rounded corners and shadow
+    const rounded = await sharp(screenshotBuffer)
+        .resize(width, height, { fit: 'cover' })
+        .png()
+        .toBuffer();
+
+    if (!addShadow) return rounded;
+
+    // Add shadow via composite
+    const shadowSvg = `
+    <svg width="${width + 60}" height="${height + 60}" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+            <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+                <feDropShadow dx="0" dy="12" stdDeviation="20" flood-color="#000" flood-opacity="0.5"/>
+            </filter>
+        </defs>
+        <rect x="30" y="20" width="${width}" height="${height}" rx="12" fill="#000" filter="url(#shadow)"/>
+    </svg>`;
+
+    const shadowBuffer = await sharp(Buffer.from(shadowSvg)).png().toBuffer();
+
+    return await sharp(shadowBuffer)
+        .composite([{ input: rounded, left: 30, top: 20 }])
+        .png()
+        .toBuffer();
+}
+
+/**
+ * Minimal mockup - just rounded corners
+ */
+async function createMinimalMockup(screenshotBuffer, addShadow) {
+    return await createFloatingMockup(screenshotBuffer, '#FF4757', addShadow);
+}
+
+/**
+ * Apply layout-based compositing
+ */
+async function applyLayoutComposite({ backgroundBuffer, mockupBuffer, layout, visualDNA }) {
+    if (!mockupBuffer) {
+        return await sharp(backgroundBuffer).resize(CANVAS_WIDTH, CANVAS_HEIGHT).png().toBuffer();
+    }
+
+    const mockupMeta = await sharp(mockupBuffer).metadata();
+
+    // Calculate position based on layout
+    let left, top;
+    const productScale = layout.productScale || 0.55;
+
+    // Resize mockup according to layout scale
+    const targetWidth = Math.round(CANVAS_WIDTH * productScale);
+    const targetHeight = Math.round(mockupMeta.height * (targetWidth / mockupMeta.width));
+
+    const resizedMockup = await sharp(mockupBuffer)
+        .resize(targetWidth, targetHeight, { fit: 'inside' })
+        .png()
+        .toBuffer();
+
+    const resizedMeta = await sharp(resizedMockup).metadata();
+
+    // Position based on layout type
+    if (layout.productX !== undefined) {
+        left = Math.round(CANVAS_WIDTH * layout.productX - resizedMeta.width / 2);
+    } else {
+        left = Math.round((CANVAS_WIDTH - resizedMeta.width) / 2);
+    }
+
+    if (layout.productY !== undefined) {
+        top = Math.round(CANVAS_HEIGHT * layout.productY - resizedMeta.height / 2);
+    } else {
+        top = Math.round((CANVAS_HEIGHT - resizedMeta.height) / 2);
+    }
+
+    // Ensure within bounds
+    left = Math.max(0, Math.min(left, CANVAS_WIDTH - resizedMeta.width));
+    top = Math.max(0, Math.min(top, CANVAS_HEIGHT - resizedMeta.height));
+
+    return await sharp(backgroundBuffer)
+        .resize(CANVAS_WIDTH, CANVAS_HEIGHT)
+        .composite([{ input: resizedMockup, left, top }])
+        .png()
+        .toBuffer();
+}
+
+/**
+ * Extract typography settings from Visual DNA
+ */
+function extractTypographyFromDNA(visualDNA, layout) {
+    const defaultTypo = {
+        headlineSize: 56,
+        headlineWeight: 800,
+        headlineLetterSpacing: -1,
+        taglineSize: 24,
+        ctaSize: 22,
+        ctaWeight: 700,
+        fontFamily: "system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif"
+    };
+
+    // Override from DNA if available
+    if (visualDNA.typography) {
+        return {
+            ...defaultTypo,
+            headlineSize: visualDNA.typography.headlineSize || defaultTypo.headlineSize,
+            headlineWeight: visualDNA.typography.headlineWeight || defaultTypo.headlineWeight,
+            taglineSize: visualDNA.typography.taglineSize || defaultTypo.taglineSize,
+            ctaSize: visualDNA.typography.ctaSize || defaultTypo.ctaSize
+        };
+    }
+
+    return defaultTypo;
+}
+
+/**
+ * Advanced text overlay with DNA-based typography
+ */
+async function addAdvancedTextOverlay(imageBuffer, { headline, tagline, cta, accentColor, typography, layout }) {
     const ctaGradientStart = lightenColor(accentColor, 15);
     const ctaGradientEnd = accentColor;
+
+    // Calculate positions based on layout
+    const headlineY = Math.round(CANVAS_HEIGHT * (layout.headlineY || 0.08));
+    const taglineY = headlineY + typography.headlineSize + 10;
+    const ctaY = Math.round(CANVAS_HEIGHT * (layout.ctaY || 0.88));
+    const centerX = CANVAS_WIDTH / 2;
 
     const textSvg = `
     <svg width="${CANVAS_WIDTH}" height="${CANVAS_HEIGHT}" xmlns="http://www.w3.org/2000/svg">
@@ -307,53 +807,55 @@ async function addTextOverlay(imageBuffer, { headline, tagline, cta, accentColor
                 <stop offset="100%" style="stop-color:${ctaGradientEnd}"/>
             </linearGradient>
             <filter id="textShadow" x="-20%" y="-20%" width="140%" height="140%">
-                <feDropShadow dx="0" dy="4" stdDeviation="8" flood-color="#000000" flood-opacity="0.7"/>
+                <feDropShadow dx="0" dy="4" stdDeviation="10" flood-color="#000000" flood-opacity="0.8"/>
             </filter>
             <filter id="ctaGlow" x="-50%" y="-50%" width="200%" height="200%">
-                <feGaussianBlur stdDeviation="12" result="blur"/>
+                <feGaussianBlur stdDeviation="15" result="glow"/>
                 <feMerge>
-                    <feMergeNode in="blur"/>
+                    <feMergeNode in="glow"/>
                     <feMergeNode in="SourceGraphic"/>
                 </feMerge>
             </filter>
-            <filter id="ctaShadow" x="-30%" y="-30%" width="160%" height="160%">
-                <feDropShadow dx="0" dy="6" stdDeviation="15" flood-color="${accentColor}" flood-opacity="0.4"/>
+            <filter id="ctaShadow" x="-40%" y="-40%" width="180%" height="180%">
+                <feDropShadow dx="0" dy="8" stdDeviation="18" flood-color="${accentColor}" flood-opacity="0.5"/>
             </filter>
         </defs>
         
         <!-- Headline -->
-        <text x="540" y="100" text-anchor="middle" 
+        <text x="${centerX}" y="${headlineY + typography.headlineSize}" 
+              text-anchor="middle" 
               fill="#FFFFFF" 
-              font-family="system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" 
-              font-size="56" 
-              font-weight="800"
-              letter-spacing="-1"
+              font-family="${typography.fontFamily}" 
+              font-size="${typography.headlineSize}" 
+              font-weight="${typography.headlineWeight}"
+              letter-spacing="${typography.headlineLetterSpacing}"
               filter="url(#textShadow)">
             ${escapeXml(headline)}
         </text>
         
         ${tagline ? `
-        <!-- Tagline -->
-        <text x="540" y="150" text-anchor="middle" 
-              fill="rgba(255,255,255,0.75)" 
-              font-family="system-ui, sans-serif" 
-              font-size="24" 
-              font-weight="400">
+        <text x="${centerX}" y="${taglineY + typography.taglineSize}" 
+              text-anchor="middle" 
+              fill="rgba(255,255,255,0.8)" 
+              font-family="${typography.fontFamily}" 
+              font-size="${typography.taglineSize}" 
+              font-weight="400"
+              filter="url(#textShadow)">
             ${escapeXml(tagline)}
         </text>
         ` : ''}
         
-        <!-- CTA Button with Gradient and Glow -->
+        <!-- CTA Button -->
         <g filter="url(#ctaShadow)">
-            <rect x="390" y="940" width="300" height="64" rx="32" fill="url(#ctaGradient)"/>
-            <!-- Shine line -->
-            <rect x="440" y="948" width="140" height="2" rx="1" fill="rgba(255,255,255,0.25)"/>
+            <rect x="${centerX - 150}" y="${ctaY}" width="300" height="64" rx="32" fill="url(#ctaGradient)"/>
+            <rect x="${centerX - 100}" y="${ctaY + 6}" width="200" height="2" rx="1" fill="rgba(255,255,255,0.3)"/>
         </g>
-        <text x="540" y="982" text-anchor="middle" 
+        <text x="${centerX}" y="${ctaY + 42}" 
+              text-anchor="middle" 
               fill="#FFFFFF" 
-              font-family="system-ui, sans-serif" 
-              font-size="22" 
-              font-weight="700"
+              font-family="${typography.fontFamily}" 
+              font-size="${typography.ctaSize}" 
+              font-weight="${typography.ctaWeight}"
               letter-spacing="0.5">
             ${escapeXml(cta)}
         </text>
@@ -362,46 +864,13 @@ async function addTextOverlay(imageBuffer, { headline, tagline, cta, accentColor
     const textBuffer = await sharp(Buffer.from(textSvg)).png().toBuffer();
 
     return await sharp(imageBuffer)
-        .composite([
-            { input: textBuffer, left: 0, top: 0 }
-        ])
+        .composite([{ input: textBuffer, left: 0, top: 0 }])
         .png()
         .toBuffer();
 }
 
 /**
- * Detect if product is SaaS/UI/Dashboard
- */
-function detectSaaSProduct(productAnalysis, userPrompt) {
-    const promptLower = (userPrompt || '').toLowerCase();
-    const typeLower = (productAnalysis?.productType || '').toLowerCase();
-    const nameLower = (productAnalysis?.productName || '').toLowerCase();
-
-    const saasKeywords = ['saas', 'dashboard', 'app', 'software', 'platform', 'tool', 'interface', 'ui', 'screenshot', 'analytics', 'crm', 'erp'];
-
-    return saasKeywords.some(keyword =>
-        promptLower.includes(keyword) ||
-        typeLower.includes(keyword) ||
-        nameLower.includes(keyword)
-    );
-}
-
-/**
- * Fallback composite when generation fails
- */
-async function createFallbackComposite(productBuffer, headline, cta, accentColor) {
-    const background = await createGradientBackground(accentColor);
-
-    let composite = background;
-    if (productBuffer) {
-        composite = await compositeProduct(background, productBuffer);
-    }
-
-    return await addTextOverlay(composite, { headline, cta, accentColor });
-}
-
-/**
- * Lighten a hex color
+ * Helper functions
  */
 function lightenColor(hex, percent) {
     const num = parseInt(hex.replace('#', ''), 16);
@@ -412,9 +881,6 @@ function lightenColor(hex, percent) {
     return `#${(1 << 24 | R << 16 | G << 8 | B).toString(16).slice(1)}`;
 }
 
-/**
- * Escape XML special characters
- */
 function escapeXml(str) {
     if (!str) return '';
     return str

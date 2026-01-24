@@ -158,8 +158,8 @@ app.post('/generate', async (req, res) => {
     }
 });
 
-// NEW: Composite Ad Generation (100% Product Preservation)
-// Uses: Background-only Gemini + Sharp Compositing + SVG Text
+// NEW: Composite Ad Generation v7.0 (100% Product Preservation + Advanced Logic)
+// Uses: Foreplay DNA + Brand Colors + Device Mockups + Quality Verification
 app.post('/generate-composite', async (req, res) => {
     const startTime = Date.now();
 
@@ -172,11 +172,16 @@ app.post('/generate-composite', async (req, res) => {
             cta,
             userPrompt,
             industry,
-            accentColor
+            accentColor,
+            // NEW v7.0 parameters
+            mockupType,      // 'macbook', 'ipad', 'browser', 'phone', 'floating', 'minimal'
+            layoutTemplate,  // 'hero_centered', 'hero_left', 'hero_right', etc.
+            enableQualityCheck = true
         } = req.body;
 
-        console.log('[ImageService] 🎨 Composite Pipeline v6.0 starting...');
-        console.log('[ImageService] Mode: 100% Product Preservation');
+        console.log('[ImageService] 🎨 Composite Pipeline v7.0 starting...');
+        console.log('[ImageService] Mode: Advanced + 100% Product Preservation');
+        console.log('[ImageService] Mockup:', mockupType || 'auto', '| Layout:', layoutTemplate || 'auto');
 
         // Convert URL to buffer if needed
         let productBuffer = null;
@@ -194,11 +199,15 @@ app.post('/generate-composite', async (req, res) => {
             cta,
             accentColor: accentColor || '#FF4757',
             industry,
-            userPrompt
+            userPrompt,
+            mockupType,
+            layoutTemplate,
+            enableQualityCheck
         });
 
         const duration = Date.now() - startTime;
-        console.log(`[ImageService] ✅ Composite complete in ${duration}ms`);
+        console.log(`[ImageService] ✅ Composite v7.0 complete in ${duration}ms`);
+        console.log(`[ImageService] Quality: ${result.qualityScore}/10 | Layout: ${result.layout} | Mockup: ${result.mockupType}`);
 
         res.json({
             success: true,
@@ -206,10 +215,15 @@ app.post('/generate-composite', async (req, res) => {
             metadata: {
                 duration: result.duration,
                 isSaaSProduct: result.isSaaSProduct,
+                isPhoneApp: result.isPhoneApp,
                 referenceCount: result.referenceCount,
+                layout: result.layout,
+                mockupType: result.mockupType,
+                qualityScore: result.qualityScore,
+                extractedColors: result.extractedColors,
                 dimensions: { width: 1080, height: 1080 },
-                version: '6.0',
-                mode: 'composite_pipeline'
+                version: '7.0',
+                mode: 'composite_advanced'
             }
         });
 
@@ -221,6 +235,7 @@ app.post('/generate-composite', async (req, res) => {
         });
     }
 });
+
 
 // Search similar ads endpoint
 app.post('/search-references', async (req, res) => {

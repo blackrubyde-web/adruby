@@ -167,8 +167,8 @@ export async function isRailwayAvailable() {
 }
 
 /**
- * Generate ad using the new Composite Pipeline (v6.0)
- * 100% Product Preservation - Background + Sharp Overlay + SVG Text
+ * Generate ad using the Composite Pipeline v7.0 (ADVANCED)
+ * 100% Product Preservation + Foreplay DNA + Brand Colors + Device Mockups
  * 
  * @param {Object} params - Generation parameters
  * @returns {Promise<Object>} - Generated ad with buffer and metadata
@@ -182,8 +182,13 @@ export async function generateWithComposite({
     userPrompt,
     industry,
     accentColor = '#FF4757',
+    // NEW v7.0 parameters
+    mockupType,      // 'macbook', 'ipad', 'browser', 'phone', 'floating', 'minimal'
+    layoutTemplate,  // 'hero_centered', 'hero_left', 'hero_right', etc.
+    enableQualityCheck = true,
 }) {
-    console.log('[Railway] 🎨 Composite Pipeline v6.0 request...');
+    console.log('[Railway] 🎨 Composite Pipeline v7.0 request...');
+    console.log('[Railway] Mockup:', mockupType || 'auto', '| Layout:', layoutTemplate || 'auto');
 
     const response = await fetch(`${RAILWAY_URL}/generate-composite`, {
         method: 'POST',
@@ -197,6 +202,9 @@ export async function generateWithComposite({
             userPrompt,
             industry,
             accentColor,
+            mockupType,
+            layoutTemplate,
+            enableQualityCheck,
         }),
         signal: AbortSignal.timeout(120000),
     });
@@ -214,7 +222,8 @@ export async function generateWithComposite({
     if (result.imageBase64) {
         imageBuffer = Buffer.from(result.imageBase64, 'base64');
         imageDataUrl = `data:image/png;base64,${result.imageBase64}`;
-        console.log('[Railway] ✅ Composite image received:', imageBuffer.length, 'bytes');
+        console.log('[Railway] ✅ Composite v7.0 received:', imageBuffer.length, 'bytes');
+        console.log('[Railway] Quality:', result.metadata?.qualityScore, '| Layout:', result.metadata?.layout);
     }
 
     return {
@@ -222,14 +231,20 @@ export async function generateWithComposite({
         imageDataUrl,
         imageBase64: result.imageBase64,
         metadata: {
-            source: 'railway-composite-v6',
+            source: 'railway-composite-v7',
             isSaaSProduct: result.metadata?.isSaaSProduct,
+            isPhoneApp: result.metadata?.isPhoneApp,
             referenceCount: result.metadata?.referenceCount,
+            layout: result.metadata?.layout,
+            mockupType: result.metadata?.mockupType,
+            qualityScore: result.metadata?.qualityScore,
+            extractedColors: result.metadata?.extractedColors,
             duration: result.metadata?.duration,
-            mode: 'composite_pipeline'
+            mode: 'composite_advanced'
         },
     };
 }
+
 
 export default {
     generateWithAIDesign,
