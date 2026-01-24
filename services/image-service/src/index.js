@@ -158,8 +158,8 @@ app.post('/generate', async (req, res) => {
     }
 });
 
-// Composite Ad Generation v8.0 - FULLY DYNAMIC AI
-// NO TEMPLATES - GPT-4V creates unique layout for each ad
+// DESIGNER-LEVEL Composite Generation v9.0
+// Deep Foreplay Analysis + Visual Elements + Premium Prompts + Quality Verification
 app.post('/generate-composite', async (req, res) => {
     const startTime = Date.now();
 
@@ -176,10 +176,9 @@ app.post('/generate-composite', async (req, res) => {
             enableQualityCheck = true
         } = req.body;
 
-        console.log('[ImageService] 🎨 DYNAMIC Pipeline v8.0 starting...');
-        console.log('[ImageService] Mode: NO TEMPLATES - 100% AI-Generated Layout');
+        console.log('[ImageService] 🎨 DESIGNER-LEVEL Pipeline v9.0 starting...');
+        console.log('[ImageService] Mode: Full Foreplay Analysis + Visual Elements + Premium Prompts');
 
-        // Convert URL to buffer if needed
         let productBuffer = null;
         if (productImageBase64) {
             productBuffer = Buffer.from(productImageBase64, 'base64');
@@ -200,26 +199,28 @@ app.post('/generate-composite', async (req, res) => {
         });
 
         const duration = Date.now() - startTime;
-        console.log(`[ImageService] ✅ DYNAMIC ad complete in ${duration}ms`);
-        console.log(`[ImageService] Layout: ${JSON.stringify(result.dynamicLayout?.product || {})}`);
+        console.log(`[ImageService] ✅ DESIGNER-LEVEL ad complete in ${duration}ms`);
+        console.log(`[ImageService] Quality: ${result.qualityScore}/10 | References: ${result.referenceCount} | Elements: ${result.visualElementsCount}`);
 
         res.json({
             success: true,
             imageBase64: result.buffer.toString('base64'),
             metadata: {
                 duration: result.duration,
+                designSpecs: result.designSpecs,
                 referenceCount: result.referenceCount,
-                dynamicLayout: result.dynamicLayout,
+                visualElementsCount: result.visualElementsCount,
                 qualityScore: result.qualityScore,
+                qualityDetails: result.qualityDetails,
                 extractedColors: result.extractedColors,
                 dimensions: { width: 1080, height: 1080 },
-                version: '8.0',
-                mode: 'fully_dynamic_ai'
+                version: '9.0',
+                mode: 'designer_level'
             }
         });
 
     } catch (error) {
-        console.error('[ImageService] ❌ Dynamic Error:', error.message);
+        console.error('[ImageService] ❌ Designer Error:', error.message);
         res.status(500).json({
             success: false,
             error: error.message

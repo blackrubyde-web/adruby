@@ -1,0 +1,587 @@
+/**
+ * FOREPLAY DESIGN ANALYZER - Deep Pattern Extraction
+ * 
+ * Analyzes winning Foreplay ads with GPT-4V to extract:
+ * - Exact layout metrics (margins, spacing, alignment)
+ * - Typography patterns (font sizes, weights, letter spacing)
+ * - Color usage (gradients, overlays, accent placement)
+ * - Visual elements (badges, icons, callouts, decorative shapes)
+ * - CTA styles and placements
+ * - Composition rules (rule of thirds, focal points)
+ */
+
+import OpenAI from 'openai';
+
+const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+
+/**
+ * Deep analyze multiple Foreplay reference ads
+ * Returns comprehensive design specs for recreation
+ */
+export async function analyzeReferenceAds(referenceAds, productAnalysis) {
+    if (!referenceAds || referenceAds.length === 0) {
+        console.log('[DesignAnalyzer] No references, using default patterns');
+        return getDefaultDesignSpecs();
+    }
+
+    console.log(`[DesignAnalyzer] 🔍 Analyzing ${referenceAds.length} Foreplay references...`);
+
+    try {
+        // Analyze up to 5 top-performing ads
+        const adsToAnalyze = referenceAds
+            .sort((a, b) => (b.running_duration?.days || 0) - (a.running_duration?.days || 0))
+            .slice(0, 5);
+
+        const analyses = await Promise.all(
+            adsToAnalyze.map(ad => analyzeSingleAd(ad))
+        );
+
+        // Synthesize patterns from all analyses
+        const synthesized = synthesizePatterns(analyses, productAnalysis);
+
+        console.log('[DesignAnalyzer] ✅ Pattern synthesis complete');
+        return synthesized;
+
+    } catch (error) {
+        console.error('[DesignAnalyzer] Analysis failed:', error.message);
+        return getDefaultDesignSpecs();
+    }
+}
+
+/**
+ * Deep analyze a single ad with GPT-4V
+ */
+async function analyzeSingleAd(ad) {
+    const imageUrl = ad.image || ad.thumbnail;
+    if (!imageUrl) return null;
+
+    try {
+        const response = await openai.chat.completions.create({
+            model: 'gpt-4o',
+            messages: [{
+                role: 'user',
+                content: [
+                    {
+                        type: 'image_url',
+                        image_url: { url: imageUrl, detail: 'high' }
+                    },
+                    {
+                        type: 'text',
+                        text: `You are an elite creative director analyzing this high-performing ad (running ${ad.running_duration?.days || 30}+ days).
+
+Analyze EVERY visual element with pixel-level precision.
+
+Return JSON with these EXACT specifications:
+
+{
+    "layout": {
+        "gridType": "rule_of_thirds|centered|asymmetric|diagonal",
+        "productPlacement": {
+            "zone": "center|left|right|top|bottom|top_left|top_right|bottom_left|bottom_right",
+            "xPercent": 0.5,
+            "yPercent": 0.45,
+            "scalePercent": 0.55,
+            "rotation": 0,
+            "hasDeviceFrame": true,
+            "deviceType": "macbook|ipad|phone|browser|none"
+        },
+        "margins": {
+            "topPercent": 0.08,
+            "bottomPercent": 0.1,
+            "leftPercent": 0.06,
+            "rightPercent": 0.06
+        },
+        "spacing": "tight|normal|loose"
+    },
+    "typography": {
+        "headline": {
+            "placement": "top|bottom|left|right|overlay",
+            "yPercent": 0.1,
+            "alignment": "center|left|right",
+            "sizePx": 56,
+            "weight": 800,
+            "letterSpacing": "tight|normal|wide",
+            "color": "#FFFFFF",
+            "hasGradient": false,
+            "gradientColors": [],
+            "hasShadow": true,
+            "shadowBlur": 10,
+            "maxLines": 2
+        },
+        "tagline": {
+            "show": true,
+            "yPercent": 0.18,
+            "sizePx": 24,
+            "weight": 400,
+            "color": "rgba(255,255,255,0.8)",
+            "style": "normal|italic"
+        },
+        "cta": {
+            "placement": "bottom|inline|floating",
+            "yPercent": 0.88,
+            "style": "pill|rounded|square|outline|gradient",
+            "widthPx": 280,
+            "heightPx": 56,
+            "borderRadius": 28,
+            "backgroundColor": "#FF4757",
+            "hasGradient": true,
+            "gradientDirection": "horizontal|vertical|diagonal",
+            "hasGlow": true,
+            "glowColor": "#FF4757",
+            "glowIntensity": 0.4,
+            "textColor": "#FFFFFF",
+            "textSizePx": 20,
+            "textWeight": 700,
+            "hasIcon": false,
+            "iconPosition": "left|right"
+        }
+    },
+    "colors": {
+        "backgroundType": "solid|gradient|image|pattern",
+        "backgroundPrimary": "#0A0A1A",
+        "backgroundSecondary": "#1A1A3A",
+        "gradientDirection": "radial|linear_vertical|linear_horizontal|linear_diagonal",
+        "accentColor": "#FF4757",
+        "accentUsage": ["cta", "glow", "highlights"],
+        "overlayColor": "rgba(0,0,0,0.3)",
+        "hasVignette": true
+    },
+    "visualElements": {
+        "badges": [
+            {
+                "type": "trust|award|rating|discount|new",
+                "text": "⭐ 4.9 Rating",
+                "position": "top_left|top_right|near_cta",
+                "style": "pill|circle|rectangle",
+                "backgroundColor": "rgba(255,255,255,0.1)",
+                "borderColor": "rgba(255,255,255,0.2)"
+            }
+        ],
+        "featureCallouts": [
+            {
+                "text": "AI-Powered",
+                "position": { "xPercent": 0.2, "yPercent": 0.6 },
+                "hasPointer": true,
+                "pointerTarget": "product"
+            }
+        ],
+        "decorativeElements": [
+            {
+                "type": "glow_orb|line|shape|particles|bokeh",
+                "position": { "xPercent": 0.5, "yPercent": 0.4 },
+                "color": "#FF4757",
+                "opacity": 0.15,
+                "size": "small|medium|large"
+            }
+        ],
+        "icons": [],
+        "socialProof": {
+            "show": false,
+            "type": "stars|reviews_count|users_count|logo_bar",
+            "position": "bottom|top|near_cta"
+        }
+    },
+    "effects": {
+        "productShadow": {
+            "show": true,
+            "type": "drop|ambient|hard",
+            "blur": 25,
+            "opacity": 0.5,
+            "offsetY": 15
+        },
+        "productReflection": {
+            "show": false,
+            "opacity": 0.1
+        },
+        "backgroundEffects": {
+            "hasParticles": false,
+            "hasBokeh": true,
+            "bokehCount": 4,
+            "hasNoiseTexture": true,
+            "noiseOpacity": 0.02,
+            "hasLightRays": false
+        },
+        "screenGlow": {
+            "show": true,
+            "color": "#4A90D9",
+            "intensity": 0.08
+        }
+    },
+    "composition": {
+        "focalPoint": { "xPercent": 0.5, "yPercent": 0.45 },
+        "visualFlow": "top_to_bottom|left_to_right|center_out|z_pattern",
+        "hierarchy": ["headline", "product", "tagline", "cta"],
+        "whitespaceBalance": "minimal|balanced|generous",
+        "contrast": "high|medium|subtle"
+    },
+    "mood": {
+        "primary": "premium|playful|urgent|professional|minimal",
+        "energy": "calm|dynamic|intense",
+        "trust": "corporate|friendly|luxury"
+    }
+}`
+                    }
+                ]
+            }],
+            max_tokens: 2000,
+            response_format: { type: 'json_object' }
+        });
+
+        const analysis = JSON.parse(response.choices[0].message.content);
+        console.log(`[DesignAnalyzer] ✅ Analyzed: ${ad.headline || 'Ad'}`);
+        return analysis;
+
+    } catch (error) {
+        console.warn(`[DesignAnalyzer] Single ad analysis failed:`, error.message);
+        return null;
+    }
+}
+
+/**
+ * Synthesize patterns from multiple ad analyses
+ */
+function synthesizePatterns(analyses, productAnalysis) {
+    const validAnalyses = analyses.filter(a => a !== null);
+
+    if (validAnalyses.length === 0) {
+        return getDefaultDesignSpecs();
+    }
+
+    // Aggregate common patterns
+    const synthesis = {
+        // Layout - average or most common
+        layout: synthesizeLayout(validAnalyses),
+
+        // Typography - most successful patterns
+        typography: synthesizeTypography(validAnalyses),
+
+        // Colors - extract palette
+        colors: synthesizeColors(validAnalyses, productAnalysis),
+
+        // Visual elements - collect unique ones
+        visualElements: synthesizeVisualElements(validAnalyses),
+
+        // Effects - merge best ones
+        effects: synthesizeEffects(validAnalyses),
+
+        // Composition rules
+        composition: synthesizeComposition(validAnalyses),
+
+        // Mood - most common
+        mood: synthesizeMood(validAnalyses),
+
+        // Meta
+        confidence: validAnalyses.length / 5,
+        referenceCount: validAnalyses.length
+    };
+
+    return synthesis;
+}
+
+function synthesizeLayout(analyses) {
+    const layouts = analyses.map(a => a.layout).filter(Boolean);
+    if (layouts.length === 0) return getDefaultDesignSpecs().layout;
+
+    // Average positions
+    const avgProductX = average(layouts.map(l => l.productPlacement?.xPercent || 0.5));
+    const avgProductY = average(layouts.map(l => l.productPlacement?.yPercent || 0.45));
+    const avgProductScale = average(layouts.map(l => l.productPlacement?.scalePercent || 0.55));
+
+    // Most common grid type
+    const gridTypes = layouts.map(l => l.gridType);
+    const mostCommonGrid = mostCommon(gridTypes) || 'centered';
+
+    // Most common device
+    const devices = layouts.map(l => l.productPlacement?.deviceType).filter(Boolean);
+    const mostCommonDevice = mostCommon(devices) || 'macbook';
+
+    return {
+        gridType: mostCommonGrid,
+        productPlacement: {
+            zone: mostCommon(layouts.map(l => l.productPlacement?.zone)) || 'center',
+            xPercent: avgProductX,
+            yPercent: avgProductY,
+            scalePercent: avgProductScale,
+            rotation: average(layouts.map(l => l.productPlacement?.rotation || 0)),
+            hasDeviceFrame: layouts.some(l => l.productPlacement?.hasDeviceFrame),
+            deviceType: mostCommonDevice
+        },
+        margins: {
+            topPercent: average(layouts.map(l => l.margins?.topPercent || 0.08)),
+            bottomPercent: average(layouts.map(l => l.margins?.bottomPercent || 0.1)),
+            leftPercent: average(layouts.map(l => l.margins?.leftPercent || 0.06)),
+            rightPercent: average(layouts.map(l => l.margins?.rightPercent || 0.06))
+        },
+        spacing: mostCommon(layouts.map(l => l.spacing)) || 'normal'
+    };
+}
+
+function synthesizeTypography(analyses) {
+    const typos = analyses.map(a => a.typography).filter(Boolean);
+    if (typos.length === 0) return getDefaultDesignSpecs().typography;
+
+    return {
+        headline: {
+            placement: mostCommon(typos.map(t => t.headline?.placement)) || 'top',
+            yPercent: average(typos.map(t => t.headline?.yPercent || 0.1)),
+            alignment: mostCommon(typos.map(t => t.headline?.alignment)) || 'center',
+            sizePx: Math.round(average(typos.map(t => t.headline?.sizePx || 56))),
+            weight: Math.round(average(typos.map(t => t.headline?.weight || 800))),
+            letterSpacing: mostCommon(typos.map(t => t.headline?.letterSpacing)) || 'tight',
+            color: '#FFFFFF',
+            hasShadow: typos.some(t => t.headline?.hasShadow !== false),
+            shadowBlur: Math.round(average(typos.map(t => t.headline?.shadowBlur || 10))),
+            maxLines: Math.round(average(typos.map(t => t.headline?.maxLines || 2)))
+        },
+        tagline: {
+            show: typos.filter(t => t.tagline?.show).length >= typos.length / 2,
+            yPercent: average(typos.map(t => t.tagline?.yPercent || 0.18)),
+            sizePx: Math.round(average(typos.map(t => t.tagline?.sizePx || 24))),
+            weight: Math.round(average(typos.map(t => t.tagline?.weight || 400))),
+            color: 'rgba(255,255,255,0.8)'
+        },
+        cta: {
+            placement: mostCommon(typos.map(t => t.cta?.placement)) || 'bottom',
+            yPercent: average(typos.map(t => t.cta?.yPercent || 0.88)),
+            style: mostCommon(typos.map(t => t.cta?.style)) || 'pill',
+            widthPx: Math.round(average(typos.map(t => t.cta?.widthPx || 280))),
+            heightPx: Math.round(average(typos.map(t => t.cta?.heightPx || 56))),
+            borderRadius: Math.round(average(typos.map(t => t.cta?.borderRadius || 28))),
+            hasGradient: typos.filter(t => t.cta?.hasGradient).length >= typos.length / 2,
+            hasGlow: typos.filter(t => t.cta?.hasGlow).length >= typos.length / 2,
+            glowIntensity: average(typos.map(t => t.cta?.glowIntensity || 0.4)),
+            textSizePx: Math.round(average(typos.map(t => t.cta?.textSizePx || 20))),
+            textWeight: Math.round(average(typos.map(t => t.cta?.textWeight || 700)))
+        }
+    };
+}
+
+function synthesizeColors(analyses, productAnalysis) {
+    const colors = analyses.map(a => a.colors).filter(Boolean);
+    if (colors.length === 0) return getDefaultDesignSpecs().colors;
+
+    // Use product accent if available
+    const accent = productAnalysis?.colorPalette?.[0] ||
+        mostCommon(colors.map(c => c.accentColor)) ||
+        '#FF4757';
+
+    return {
+        backgroundType: mostCommon(colors.map(c => c.backgroundType)) || 'gradient',
+        backgroundPrimary: mostCommon(colors.map(c => c.backgroundPrimary)) || '#0A0A1A',
+        backgroundSecondary: mostCommon(colors.map(c => c.backgroundSecondary)) || '#1A1A3A',
+        gradientDirection: mostCommon(colors.map(c => c.gradientDirection)) || 'radial',
+        accentColor: accent,
+        hasVignette: colors.filter(c => c.hasVignette).length >= colors.length / 2
+    };
+}
+
+function synthesizeVisualElements(analyses) {
+    const elements = analyses.map(a => a.visualElements).filter(Boolean);
+    if (elements.length === 0) return getDefaultDesignSpecs().visualElements;
+
+    // Collect all unique badges
+    const allBadges = elements.flatMap(e => e.badges || []);
+    const uniqueBadges = allBadges.slice(0, 3); // Limit to 3
+
+    // Collect feature callouts
+    const allCallouts = elements.flatMap(e => e.featureCallouts || []);
+    const uniqueCallouts = allCallouts.slice(0, 4);
+
+    // Collect decorative elements
+    const allDecorative = elements.flatMap(e => e.decorativeElements || []);
+    const uniqueDecorative = allDecorative.slice(0, 5);
+
+    // Social proof
+    const socialProofs = elements.map(e => e.socialProof).filter(s => s?.show);
+    const useSocialProof = socialProofs.length >= elements.length / 3;
+
+    return {
+        badges: uniqueBadges,
+        featureCallouts: uniqueCallouts,
+        decorativeElements: uniqueDecorative,
+        socialProof: useSocialProof ? socialProofs[0] : { show: false }
+    };
+}
+
+function synthesizeEffects(analyses) {
+    const effects = analyses.map(a => a.effects).filter(Boolean);
+    if (effects.length === 0) return getDefaultDesignSpecs().effects;
+
+    return {
+        productShadow: {
+            show: effects.filter(e => e.productShadow?.show !== false).length >= effects.length / 2,
+            type: mostCommon(effects.map(e => e.productShadow?.type)) || 'drop',
+            blur: Math.round(average(effects.map(e => e.productShadow?.blur || 25))),
+            opacity: average(effects.map(e => e.productShadow?.opacity || 0.5)),
+            offsetY: Math.round(average(effects.map(e => e.productShadow?.offsetY || 15)))
+        },
+        productReflection: {
+            show: effects.filter(e => e.productReflection?.show).length >= effects.length / 3,
+            opacity: average(effects.map(e => e.productReflection?.opacity || 0.1))
+        },
+        backgroundEffects: {
+            hasParticles: effects.filter(e => e.backgroundEffects?.hasParticles).length >= effects.length / 3,
+            hasBokeh: effects.filter(e => e.backgroundEffects?.hasBokeh).length >= effects.length / 2,
+            bokehCount: Math.round(average(effects.map(e => e.backgroundEffects?.bokehCount || 4))),
+            hasNoiseTexture: effects.filter(e => e.backgroundEffects?.hasNoiseTexture).length >= effects.length / 2,
+            noiseOpacity: average(effects.map(e => e.backgroundEffects?.noiseOpacity || 0.02))
+        },
+        screenGlow: {
+            show: effects.filter(e => e.screenGlow?.show).length >= effects.length / 2,
+            intensity: average(effects.map(e => e.screenGlow?.intensity || 0.08))
+        }
+    };
+}
+
+function synthesizeComposition(analyses) {
+    const compositions = analyses.map(a => a.composition).filter(Boolean);
+    if (compositions.length === 0) return getDefaultDesignSpecs().composition;
+
+    return {
+        focalPoint: {
+            xPercent: average(compositions.map(c => c.focalPoint?.xPercent || 0.5)),
+            yPercent: average(compositions.map(c => c.focalPoint?.yPercent || 0.45))
+        },
+        visualFlow: mostCommon(compositions.map(c => c.visualFlow)) || 'top_to_bottom',
+        hierarchy: ['headline', 'product', 'tagline', 'cta'],
+        whitespaceBalance: mostCommon(compositions.map(c => c.whitespaceBalance)) || 'balanced',
+        contrast: mostCommon(compositions.map(c => c.contrast)) || 'high'
+    };
+}
+
+function synthesizeMood(analyses) {
+    const moods = analyses.map(a => a.mood).filter(Boolean);
+    if (moods.length === 0) return { primary: 'premium', energy: 'dynamic', trust: 'luxury' };
+
+    return {
+        primary: mostCommon(moods.map(m => m.primary)) || 'premium',
+        energy: mostCommon(moods.map(m => m.energy)) || 'dynamic',
+        trust: mostCommon(moods.map(m => m.trust)) || 'luxury'
+    };
+}
+
+/**
+ * Default design specs for fallback
+ */
+export function getDefaultDesignSpecs() {
+    return {
+        layout: {
+            gridType: 'centered',
+            productPlacement: {
+                zone: 'center',
+                xPercent: 0.5,
+                yPercent: 0.45,
+                scalePercent: 0.55,
+                rotation: 0,
+                hasDeviceFrame: true,
+                deviceType: 'macbook'
+            },
+            margins: {
+                topPercent: 0.08,
+                bottomPercent: 0.1,
+                leftPercent: 0.06,
+                rightPercent: 0.06
+            },
+            spacing: 'normal'
+        },
+        typography: {
+            headline: {
+                placement: 'top',
+                yPercent: 0.1,
+                alignment: 'center',
+                sizePx: 56,
+                weight: 800,
+                letterSpacing: 'tight',
+                color: '#FFFFFF',
+                hasShadow: true,
+                shadowBlur: 10,
+                maxLines: 2
+            },
+            tagline: {
+                show: true,
+                yPercent: 0.18,
+                sizePx: 24,
+                weight: 400,
+                color: 'rgba(255,255,255,0.8)'
+            },
+            cta: {
+                placement: 'bottom',
+                yPercent: 0.88,
+                style: 'pill',
+                widthPx: 280,
+                heightPx: 56,
+                borderRadius: 28,
+                hasGradient: true,
+                hasGlow: true,
+                glowIntensity: 0.4,
+                textSizePx: 20,
+                textWeight: 700
+            }
+        },
+        colors: {
+            backgroundType: 'gradient',
+            backgroundPrimary: '#0A0A1A',
+            backgroundSecondary: '#1A1A3A',
+            gradientDirection: 'radial',
+            accentColor: '#FF4757',
+            hasVignette: true
+        },
+        visualElements: {
+            badges: [],
+            featureCallouts: [],
+            decorativeElements: [
+                { type: 'glow_orb', position: { xPercent: 0.5, yPercent: 0.4 }, color: '#FF4757', opacity: 0.15 }
+            ],
+            socialProof: { show: false }
+        },
+        effects: {
+            productShadow: { show: true, type: 'drop', blur: 25, opacity: 0.5, offsetY: 15 },
+            productReflection: { show: false, opacity: 0.1 },
+            backgroundEffects: { hasBokeh: true, bokehCount: 4, hasNoiseTexture: true, noiseOpacity: 0.02 },
+            screenGlow: { show: true, intensity: 0.08 }
+        },
+        composition: {
+            focalPoint: { xPercent: 0.5, yPercent: 0.45 },
+            visualFlow: 'top_to_bottom',
+            hierarchy: ['headline', 'product', 'tagline', 'cta'],
+            whitespaceBalance: 'balanced',
+            contrast: 'high'
+        },
+        mood: {
+            primary: 'premium',
+            energy: 'dynamic',
+            trust: 'luxury'
+        },
+        confidence: 0.5,
+        referenceCount: 0
+    };
+}
+
+// Helper functions
+function average(arr) {
+    const nums = arr.filter(n => typeof n === 'number');
+    if (nums.length === 0) return 0;
+    return nums.reduce((a, b) => a + b, 0) / nums.length;
+}
+
+function mostCommon(arr) {
+    const filtered = arr.filter(Boolean);
+    if (filtered.length === 0) return null;
+
+    const counts = {};
+    for (const item of filtered) {
+        counts[item] = (counts[item] || 0) + 1;
+    }
+
+    let max = 0;
+    let result = null;
+    for (const [key, count] of Object.entries(counts)) {
+        if (count > max) {
+            max = count;
+            result = key;
+        }
+    }
+    return result;
+}
+
+export default { analyzeReferenceAds, getDefaultDesignSpecs };

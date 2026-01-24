@@ -167,8 +167,8 @@ export async function isRailwayAvailable() {
 }
 
 /**
- * Generate ad using the Composite Pipeline v8.0 - FULLY DYNAMIC AI
- * NO TEMPLATES - GPT-4V creates unique layout for each ad
+ * Generate ad using DESIGNER-LEVEL Pipeline v9.0
+ * Deep Foreplay Analysis + Visual Elements + Premium Prompts + Quality Verification
  * 
  * @param {Object} params - Generation parameters
  * @returns {Promise<Object>} - Generated ad with buffer and metadata
@@ -184,8 +184,8 @@ export async function generateWithComposite({
     accentColor = '#FF4757',
     enableQualityCheck = true,
 }) {
-    console.log('[Railway] 🎨 DYNAMIC Pipeline v8.0 request...');
-    console.log('[Railway] Mode: NO TEMPLATES - 100% AI-Generated Layout');
+    console.log('[Railway] 🎨 DESIGNER-LEVEL Pipeline v9.0 request...');
+    console.log('[Railway] Mode: Full Foreplay Analysis + Visual Elements + Premium Prompts');
 
     const response = await fetch(`${RAILWAY_URL}/generate-composite`, {
         method: 'POST',
@@ -201,12 +201,12 @@ export async function generateWithComposite({
             accentColor,
             enableQualityCheck,
         }),
-        signal: AbortSignal.timeout(120000),
+        signal: AbortSignal.timeout(180000), // Extended for deep analysis
     });
 
     if (!response.ok) {
         const error = await response.json().catch(() => ({ error: 'Unknown error' }));
-        throw new Error(error.error || `Railway dynamic error: ${response.status}`);
+        throw new Error(error.error || `Railway designer error: ${response.status}`);
     }
 
     const result = await response.json();
@@ -217,7 +217,7 @@ export async function generateWithComposite({
     if (result.imageBase64) {
         imageBuffer = Buffer.from(result.imageBase64, 'base64');
         imageDataUrl = `data:image/png;base64,${result.imageBase64}`;
-        console.log('[Railway] ✅ DYNAMIC ad received:', imageBuffer.length, 'bytes');
+        console.log('[Railway] ✅ DESIGNER-LEVEL ad received:', imageBuffer.length, 'bytes');
         console.log('[Railway] Quality:', result.metadata?.qualityScore, '| References:', result.metadata?.referenceCount);
     }
 
@@ -226,13 +226,15 @@ export async function generateWithComposite({
         imageDataUrl,
         imageBase64: result.imageBase64,
         metadata: {
-            source: 'railway-dynamic-v8',
+            source: 'railway-designer-v9',
+            designSpecs: result.metadata?.designSpecs,
             referenceCount: result.metadata?.referenceCount,
-            dynamicLayout: result.metadata?.dynamicLayout,
+            visualElementsCount: result.metadata?.visualElementsCount,
             qualityScore: result.metadata?.qualityScore,
+            qualityDetails: result.metadata?.qualityDetails,
             extractedColors: result.metadata?.extractedColors,
             duration: result.metadata?.duration,
-            mode: 'fully_dynamic_ai'
+            mode: 'designer_level'
         },
     };
 }
