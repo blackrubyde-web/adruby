@@ -355,16 +355,18 @@ export const handler = async (event) => {
                 } else {
                     await updateProgress('railway_generating', 30, { railwayActive: true });
 
-                    const railwayResult = await generateWithAIDesign({
-                        userPrompt: body.text || `${body.productName || 'Product'} advertisement for ${body.targetAudience || 'target audience'}`,
-                        industry: body.industry || 'tech',
+                    const railwayResult = await generateWithComposite({
+                        productImageBase64: body.productImageBase64,
+                        productImageUrl: body.productImageUrl,
                         headline: body.headline,
                         tagline: body.subheadline || body.usp,
-                        features: body.features || [],
-                        stats: body.stats || [],
                         cta: body.cta || 'Jetzt entdecken',
-                        productImageUrl: body.productImageUrl,
-                        format: body.format || '1080x1080',
+                        userPrompt: body.text || `${body.productName || 'Product'} advertisement for ${body.targetAudience || 'target audience'}`,
+                        industry: body.industry || 'tech',
+                        accentColor: body.accentColor || '#FF4757',
+                        enableQualityCheck: true,
+                        enableAIContent: true,
+                        enableAdvancedEffects: true,
                     });
 
                     console.log('[AI Ad Generate] ✅ Railway v3.0 generation complete!', {
