@@ -158,8 +158,8 @@ app.post('/generate', async (req, res) => {
     }
 });
 
-// NEW: Composite Ad Generation v7.0 (100% Product Preservation + Advanced Logic)
-// Uses: Foreplay DNA + Brand Colors + Device Mockups + Quality Verification
+// Composite Ad Generation v8.0 - FULLY DYNAMIC AI
+// NO TEMPLATES - GPT-4V creates unique layout for each ad
 app.post('/generate-composite', async (req, res) => {
     const startTime = Date.now();
 
@@ -173,15 +173,11 @@ app.post('/generate-composite', async (req, res) => {
             userPrompt,
             industry,
             accentColor,
-            // NEW v7.0 parameters
-            mockupType,      // 'macbook', 'ipad', 'browser', 'phone', 'floating', 'minimal'
-            layoutTemplate,  // 'hero_centered', 'hero_left', 'hero_right', etc.
             enableQualityCheck = true
         } = req.body;
 
-        console.log('[ImageService] 🎨 Composite Pipeline v7.0 starting...');
-        console.log('[ImageService] Mode: Advanced + 100% Product Preservation');
-        console.log('[ImageService] Mockup:', mockupType || 'auto', '| Layout:', layoutTemplate || 'auto');
+        console.log('[ImageService] 🎨 DYNAMIC Pipeline v8.0 starting...');
+        console.log('[ImageService] Mode: NO TEMPLATES - 100% AI-Generated Layout');
 
         // Convert URL to buffer if needed
         let productBuffer = null;
@@ -200,35 +196,30 @@ app.post('/generate-composite', async (req, res) => {
             accentColor: accentColor || '#FF4757',
             industry,
             userPrompt,
-            mockupType,
-            layoutTemplate,
             enableQualityCheck
         });
 
         const duration = Date.now() - startTime;
-        console.log(`[ImageService] ✅ Composite v7.0 complete in ${duration}ms`);
-        console.log(`[ImageService] Quality: ${result.qualityScore}/10 | Layout: ${result.layout} | Mockup: ${result.mockupType}`);
+        console.log(`[ImageService] ✅ DYNAMIC ad complete in ${duration}ms`);
+        console.log(`[ImageService] Layout: ${JSON.stringify(result.dynamicLayout?.product || {})}`);
 
         res.json({
             success: true,
             imageBase64: result.buffer.toString('base64'),
             metadata: {
                 duration: result.duration,
-                isSaaSProduct: result.isSaaSProduct,
-                isPhoneApp: result.isPhoneApp,
                 referenceCount: result.referenceCount,
-                layout: result.layout,
-                mockupType: result.mockupType,
+                dynamicLayout: result.dynamicLayout,
                 qualityScore: result.qualityScore,
                 extractedColors: result.extractedColors,
                 dimensions: { width: 1080, height: 1080 },
-                version: '7.0',
-                mode: 'composite_advanced'
+                version: '8.0',
+                mode: 'fully_dynamic_ai'
             }
         });
 
     } catch (error) {
-        console.error('[ImageService] ❌ Composite Error:', error.message);
+        console.error('[ImageService] ❌ Dynamic Error:', error.message);
         res.status(500).json({
             success: false,
             error: error.message

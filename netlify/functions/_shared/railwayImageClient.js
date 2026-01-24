@@ -167,8 +167,8 @@ export async function isRailwayAvailable() {
 }
 
 /**
- * Generate ad using the Composite Pipeline v7.0 (ADVANCED)
- * 100% Product Preservation + Foreplay DNA + Brand Colors + Device Mockups
+ * Generate ad using the Composite Pipeline v8.0 - FULLY DYNAMIC AI
+ * NO TEMPLATES - GPT-4V creates unique layout for each ad
  * 
  * @param {Object} params - Generation parameters
  * @returns {Promise<Object>} - Generated ad with buffer and metadata
@@ -182,13 +182,10 @@ export async function generateWithComposite({
     userPrompt,
     industry,
     accentColor = '#FF4757',
-    // NEW v7.0 parameters
-    mockupType,      // 'macbook', 'ipad', 'browser', 'phone', 'floating', 'minimal'
-    layoutTemplate,  // 'hero_centered', 'hero_left', 'hero_right', etc.
     enableQualityCheck = true,
 }) {
-    console.log('[Railway] 🎨 Composite Pipeline v7.0 request...');
-    console.log('[Railway] Mockup:', mockupType || 'auto', '| Layout:', layoutTemplate || 'auto');
+    console.log('[Railway] 🎨 DYNAMIC Pipeline v8.0 request...');
+    console.log('[Railway] Mode: NO TEMPLATES - 100% AI-Generated Layout');
 
     const response = await fetch(`${RAILWAY_URL}/generate-composite`, {
         method: 'POST',
@@ -202,8 +199,6 @@ export async function generateWithComposite({
             userPrompt,
             industry,
             accentColor,
-            mockupType,
-            layoutTemplate,
             enableQualityCheck,
         }),
         signal: AbortSignal.timeout(120000),
@@ -211,7 +206,7 @@ export async function generateWithComposite({
 
     if (!response.ok) {
         const error = await response.json().catch(() => ({ error: 'Unknown error' }));
-        throw new Error(error.error || `Railway composite error: ${response.status}`);
+        throw new Error(error.error || `Railway dynamic error: ${response.status}`);
     }
 
     const result = await response.json();
@@ -222,8 +217,8 @@ export async function generateWithComposite({
     if (result.imageBase64) {
         imageBuffer = Buffer.from(result.imageBase64, 'base64');
         imageDataUrl = `data:image/png;base64,${result.imageBase64}`;
-        console.log('[Railway] ✅ Composite v7.0 received:', imageBuffer.length, 'bytes');
-        console.log('[Railway] Quality:', result.metadata?.qualityScore, '| Layout:', result.metadata?.layout);
+        console.log('[Railway] ✅ DYNAMIC ad received:', imageBuffer.length, 'bytes');
+        console.log('[Railway] Quality:', result.metadata?.qualityScore, '| References:', result.metadata?.referenceCount);
     }
 
     return {
@@ -231,19 +226,17 @@ export async function generateWithComposite({
         imageDataUrl,
         imageBase64: result.imageBase64,
         metadata: {
-            source: 'railway-composite-v7',
-            isSaaSProduct: result.metadata?.isSaaSProduct,
-            isPhoneApp: result.metadata?.isPhoneApp,
+            source: 'railway-dynamic-v8',
             referenceCount: result.metadata?.referenceCount,
-            layout: result.metadata?.layout,
-            mockupType: result.metadata?.mockupType,
+            dynamicLayout: result.metadata?.dynamicLayout,
             qualityScore: result.metadata?.qualityScore,
             extractedColors: result.metadata?.extractedColors,
             duration: result.metadata?.duration,
-            mode: 'composite_advanced'
+            mode: 'fully_dynamic_ai'
         },
     };
 }
+
 
 
 export default {
