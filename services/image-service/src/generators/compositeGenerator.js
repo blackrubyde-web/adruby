@@ -130,6 +130,24 @@ import {
     generateRegenerationGuidance
 } from '../quality/qualityScoringEngine.js';
 
+// NEW: Industry Database (1000+ industries)
+import { getIndustryConfig, getVisualStyleForProduct } from '../data/industryDatabase.js';
+
+// NEW: Creative Variant Engine (A/B variants, batch generation)
+import { generateCreativeVariants, generateVariantBatch, predictVariantPerformance } from '../variants/creativeVariantEngine.js';
+
+// NEW: Emotion & Mood System (10 emotions, seasonal trends)
+import { getEmotionsForProduct, mapEmotionToDesign, generateEmotionBasedDesign, getCurrentSeasonalTrend, applySeasonalTrend } from '../data/emotionMoodSystem.js';
+
+// NEW: Product Visual Rules (detailed mockup/effect/typography rules per product type)
+import { getProductVisualRules, applyVisualRules, getMockupRecommendation, getEffectRecommendations } from '../rules/productVisualRules.js';
+
+// NEW: Copy Template Library (headlines, taglines, CTAs by strategy)
+import { generateHeadlineFromTemplate, generateTaglineFromTemplate, getCTAOptions, generateCopyPackage } from '../copy/copyTemplateLibrary.js';
+
+// NEW: Deep Foreplay Pattern Matcher (GPT-4V analysis, pattern synthesis)
+import { deepAnalyzeForeplayPatterns } from '../patterns/deepForeplayMatcher.js';
+
 // Premium Prompt Builder
 import { buildBackgroundPrompt, buildTypographySpecs, buildProductSpecs } from './premiumPromptBuilder.js';
 
