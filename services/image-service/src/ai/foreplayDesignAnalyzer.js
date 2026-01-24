@@ -379,29 +379,29 @@ function synthesizeColors(analyses, productAnalysis) {
 
 function synthesizeVisualElements(analyses) {
     const elements = analyses.map(a => a.visualElements).filter(Boolean);
-    if (elements.length === 0) return getDefaultDesignSpecs().visualElements;
+    const defaults = getDefaultDesignSpecs().visualElements;
 
-    // Collect all unique badges
+    // If no reference elements, use rich defaults
+    if (elements.length === 0) return defaults;
+
+    // Collect all from references
     const allBadges = elements.flatMap(e => e.badges || []);
-    const uniqueBadges = allBadges.slice(0, 3); // Limit to 3
-
-    // Collect feature callouts
     const allCallouts = elements.flatMap(e => e.featureCallouts || []);
-    const uniqueCallouts = allCallouts.slice(0, 4);
-
-    // Collect decorative elements
     const allDecorative = elements.flatMap(e => e.decorativeElements || []);
-    const uniqueDecorative = allDecorative.slice(0, 5);
-
-    // Social proof
     const socialProofs = elements.map(e => e.socialProof).filter(s => s?.show);
-    const useSocialProof = socialProofs.length >= elements.length / 3;
 
+    // FIX: Merge with defaults - use defaults if reference has fewer elements
     return {
-        badges: uniqueBadges,
-        featureCallouts: uniqueCallouts,
-        decorativeElements: uniqueDecorative,
-        socialProof: useSocialProof ? socialProofs[0] : { show: false }
+        // Use reference badges if found, otherwise use defaults
+        badges: allBadges.length > 0 ? allBadges.slice(0, 3) : defaults.badges,
+        // Use reference callouts if found, otherwise use defaults  
+        featureCallouts: allCallouts.length > 0 ? allCallouts.slice(0, 4) : defaults.featureCallouts,
+        // ALWAYS include decorative elements - merge reference + defaults
+        decorativeElements: allDecorative.length > 0
+            ? [...allDecorative.slice(0, 3), ...defaults.decorativeElements.slice(0, 2)]
+            : defaults.decorativeElements,
+        // Use reference social proof if any show, otherwise use default (now enabled)
+        socialProof: socialProofs.length > 0 ? socialProofs[0] : defaults.socialProof
     };
 }
 
@@ -532,12 +532,48 @@ export function getDefaultDesignSpecs() {
             hasVignette: true
         },
         visualElements: {
-            badges: [],
-            featureCallouts: [],
-            decorativeElements: [
-                { type: 'glow_orb', position: { xPercent: 0.5, yPercent: 0.4 }, color: '#FF4757', opacity: 0.15 }
+            // Premium badges for trust and credibility
+            badges: [
+                {
+                    type: 'trust',
+                    text: '⭐ 4.9 Rating',
+                    position: 'top_right',
+                    style: 'pill',
+                    backgroundColor: 'rgba(255,215,0,0.15)',
+                    borderColor: 'rgba(255,215,0,0.3)'
+                }
             ],
-            socialProof: { show: false }
+            // Feature callouts with pointer lines to product
+            featureCallouts: [
+                {
+                    text: '✨ AI-Powered',
+                    position: { xPercent: 0.15, yPercent: 0.55 },
+                    hasPointer: true,
+                    pointerTarget: 'product'
+                },
+                {
+                    text: '⚡ Lightning Fast',
+                    position: { xPercent: 0.85, yPercent: 0.50 },
+                    hasPointer: true,
+                    pointerTarget: 'product'
+                }
+            ],
+            // Rich decorative elements for visual interest
+            decorativeElements: [
+                { type: 'glow_orb', position: { xPercent: 0.2, yPercent: 0.3 }, color: '#FF4757', opacity: 0.12, size: 'large' },
+                { type: 'glow_orb', position: { xPercent: 0.8, yPercent: 0.6 }, color: '#4A90D9', opacity: 0.1, size: 'medium' },
+                { type: 'bokeh', position: { xPercent: 0.3, yPercent: 0.25 }, color: '#FFFFFF', opacity: 0.08, size: 'medium' },
+                { type: 'bokeh', position: { xPercent: 0.7, yPercent: 0.7 }, color: '#FF4757', opacity: 0.06, size: 'small' },
+                { type: 'particles', position: { xPercent: 0.5, yPercent: 0.35 }, color: '#FFFFFF', opacity: 0.15, size: 'large' }
+            ],
+            // Social proof for conversion
+            socialProof: {
+                show: true,
+                type: 'stars',
+                rating: 4.9,
+                count: '2,500+',
+                position: 'near_cta'
+            }
         },
         effects: {
             productShadow: { show: true, type: 'drop', blur: 25, opacity: 0.5, offsetY: 15 },
