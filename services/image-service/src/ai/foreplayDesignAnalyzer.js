@@ -292,13 +292,9 @@ function synthesizeLayout(analyses) {
     const gridTypes = layouts.map(l => l.gridType);
     const mostCommonGrid = mostCommon(gridTypes) || 'centered';
 
-    // Most common device - FORCE macbook_pro for SaaS dashboards (looks much better than browser)
+    // Device type - determined dynamically from Foreplay patterns, NO hardcodes
     const devices = layouts.map(l => l.productPlacement?.deviceType).filter(Boolean);
-    let mostCommonDevice = mostCommon(devices) || 'macbook_pro';
-    // Override browser to macbook_pro for premium look
-    if (mostCommonDevice === 'browser') {
-        mostCommonDevice = 'macbook_pro';
-    }
+    const mostCommonDevice = mostCommon(devices) || null; // null = let AI decide based on user prompt
 
     return {
         gridType: mostCommonGrid,
@@ -661,36 +657,41 @@ export async function planAdComposition(foreplayPatterns, deepAnalysis, productA
             model: 'gpt-4o',
             messages: [{
                 role: 'system',
-                content: `You are an elite creative director who creates 100% UNIQUE, INDIVIDUALIZED ad compositions.
+                content: `You are an elite creative director who creates 100% DYNAMIC, INDIVIDUALIZED ad compositions.
 
-CRITICAL: NO TEMPLATES, NO SCHEMAS. Every ad you create is COMPLETELY ORIGINAL and tailored to THIS specific product.
+NO HARDCODES. Every decision is based on the inputs you receive.
 
-You will receive:
-1. REAL FOREPLAY PATTERNS: Design specs extracted from winning ads (use as INSPIRATION, not copy)
-2. PRODUCT SMART PLACEMENTS: Pre-computed optimal positions based on screenshot analysis
-3. SAFE ZONES: Areas to AVOID placing elements
-4. DEEP ANALYSIS: Understanding of the product screenshot
-5. PRODUCT INFO: What the product is
+PRIORITY ORDER (most important first):
+1. USER PROMPT - This is the #1 priority! If user says "macbook mockup" -> use macbook. If user says "minimal" -> be minimal.
+2. PRODUCT SCREENSHOT - Analyze visual hierarchy, where elements are, what looks good
+3. FOREPLAY PATTERNS - Learn from winning ads but adapt, don't copy
+4. SMART PLACEMENTS - Use pre-computed positions as guidance
 
-Your job: Create a 100% ORIGINAL composition:
-- LEARN from Foreplay patterns but CREATE something NEW
-- Use the smart placements as your FOUNDATION (they're computed from the actual screenshot)
-- NEVER copy directly - adapt, improve, innovate
-- Each ad must feel CUSTOM MADE for this specific product
+READING THE USER PROMPT:
+- If user mentions "macbook" or "laptop" -> mockupType = "macbook_pro"
+- If user mentions "phone" or "mobile" -> mockupType = "phone"
+- If user mentions "browser" -> mockupType = "browser"
+- If user mentions "floating" or "no frame" -> mockupType = "floating"
+- If user mentions "minimal" -> fewer elements, more whitespace
+- If user mentions "rich" or "full" or "more features" -> more callouts, badges, features
+- If no mockup mentioned -> decide based on product screenshot (dashboard = macbook, app = phone, etc)
 
-RULES:
-- 100% INDIVIDUAL: No two ads should look the same
-- SMART PLACEMENTS FIRST: Use pre-computed positions as your starting point
-- SAFE ZONES: NEVER place elements in noOverlay or noText areas
-- BE CREATIVE: Combine patterns in new ways
-- BE PRECISE: Give exact positions as percentages (0.0-1.0)
-- PRODUCT FOCUS: The product screenshot is the hero
-- MINIMAL BUT IMPACTFUL: Better to have fewer, perfect elements`
+READING THE PRODUCT SCREENSHOT:
+- Desktop/Dashboard screenshot -> recommend macbook_pro
+- Mobile app screenshot -> recommend phone
+- Wide interface -> recommend browser or macbook_pro
+- Just product/logo -> recommend floating
+
+CREATE 100% ORIGINAL compositions - every ad is unique!`
             }, {
                 role: 'user',
-                content: `Create a 100% ORIGINAL composition plan for this ad.
+                content: `Create a composition plan based on these inputs.
 
-FOREPLAY PATTERNS (INSPIRATION ONLY - do NOT copy, use as reference):
+=== #1 PRIORITY: USER PROMPT ===
+"${userPrompt || 'No specific instructions'}"
+
+READ THIS CAREFULLY. If the user mentions mockup type, style, or elements - USE THEM!
+
 ${JSON.stringify({
                     layout: {
                         gridType: foreplayPatterns.layout?.gridType,
