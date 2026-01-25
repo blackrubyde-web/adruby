@@ -11,6 +11,7 @@
  */
 
 import OpenAI from 'openai';
+import { selectWinningSchema, WINNING_AD_SCHEMAS } from '../patterns/foreplayPatternLibrary.js';
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
@@ -641,30 +642,48 @@ function mostCommon(arr) {
  * - Which Foreplay patterns to apply
  * - What to explicitly EXCLUDE
  */
-export async function planAdComposition(foreplayPatterns, deepAnalysis, productAnalysis) {
+export async function planAdComposition(foreplayPatterns, deepAnalysis, productAnalysis, userPrompt = '', industry = '') {
     console.log('[AdPlanner] 🧠 AI Creative Director planning final composition...');
 
     try {
+        // NEW: Select best winning schema based on product analysis
+        const schemaResult = selectWinningSchema(productAnalysis, industry, userPrompt);
+        const selectedSchema = schemaResult.schema;
+        console.log(`[AdPlanner] 📋 Using Schema: ${selectedSchema.name}`);
+        console.log(`[AdPlanner]   Psychology: ${selectedSchema.psychology.join(', ')}`);
+
         const response = await openai.chat.completions.create({
             model: 'gpt-4o',
             messages: [{
                 role: 'system',
                 content: `You are an elite creative director who creates stunning ad compositions.
 You will receive:
-1. FOREPLAY PATTERNS: Design patterns from winning ads (layout, typography, colors, effects)
-2. DEEP ANALYSIS: Analysis of the user's product screenshot (visual anchors, empty spaces, content zones)
-3. PRODUCT ANALYSIS: Basic product info
+1. WINNING AD SCHEMA: A proven template from Foreplay winning ads (use this as your BASE)
+2. FOREPLAY PATTERNS: Design patterns from winning ads (layout, typography, colors, effects)
+3. DEEP ANALYSIS: Analysis of the user's product screenshot (visual anchors, empty spaces, content zones)
+4. PRODUCT ANALYSIS: Basic product info
 
-Your job: Create a SPECIFIC composition plan that combines the best of Foreplay patterns with intelligent placement based on the user's actual product.
+Your job: Create a SPECIFIC composition plan based on the WINNING SCHEMA, adapted to the user's product.
 
 RULES:
-- Be MINIMAL: Less is more. Max 2 callouts, 1 badge if any
+- FOLLOW THE SCHEMA: Use the schema's layout, element count, and psychology as your guide
+- Be MINIMAL: Respect the schema's callout/badge limits
 - Be PRECISE: Give exact positions as percentages
 - Be SMART: Use empty spaces for elements, don't overlap with content
-- REFERENCE winning patterns but adapt to the specific product`
+- USE SCHEMA PSYCHOLOGY: Apply the conversion tactics from the schema`
             }, {
                 role: 'user',
                 content: `Create a composition plan for this ad.
+
+WINNING AD SCHEMA (your template):
+${JSON.stringify({
+                    name: selectedSchema.name,
+                    description: selectedSchema.description,
+                    layout: selectedSchema.layout,
+                    typography: selectedSchema.typography,
+                    elements: selectedSchema.elements,
+                    psychology: selectedSchema.psychology
+                }, null, 2)}
 
 FOREPLAY PATTERNS (from ${foreplayPatterns.referenceCount || 0} winning ads):
 ${JSON.stringify({

@@ -255,7 +255,7 @@ export async function generateCompositeAd({
             // NEW: AI Creative Director - Plan final composition
             let compositionPlan = null;
             if (deepAnalysis && designSpecs) {
-                compositionPlan = await planAdComposition(designSpecs, deepAnalysis, productAnalysis);
+                compositionPlan = await planAdComposition(designSpecs, deepAnalysis, productAnalysis, userPrompt, industry);
                 console.log(`[MasterGen] 🧠 AI Composition Plan:`);
                 console.log(`[MasterGen]   Headline: "${compositionPlan?.headline?.text?.substring(0, 25) || 'N/A'}..."`);
                 console.log(`[MasterGen]   Callouts: ${compositionPlan?.callouts?.length || 0}`);
