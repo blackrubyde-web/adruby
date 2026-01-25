@@ -466,7 +466,7 @@ export async function generateCompositeAd({
                 cta: finalCTA,
                 features: finalCallouts.length > 0
                     ? finalCallouts.map(c => ({ text: c.text, position: c.position }))
-                    : contentPackage?.features?.slice(0, compositionPlan?.designRecommendations?.maxCallouts || 2) || [],
+                    : contentPackage?.features?.slice(0, compositionPlan?.designRecommendations?.maxCallouts || 6) || [],
                 socialProof: shouldShowSocialProof ? {
                     show: true,
                     type: 'rating',

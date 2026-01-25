@@ -411,10 +411,10 @@ function generateAutoElements(productAnalysis, accentColor) {
         </g>`;
     }
 
-    // Add feature highlights from product analysis
+    // Add feature highlights from product analysis - show up to 6 features
     if (productAnalysis.keyFeatures && productAnalysis.keyFeatures.length > 0) {
-        productAnalysis.keyFeatures.slice(0, 2).forEach((feature, i) => {
-            const y = 700 + i * 50;
+        productAnalysis.keyFeatures.slice(0, 6).forEach((feature, i) => {
+            const y = 580 + i * 45; // Start higher, tighter spacing for more items
             autoSvg += `
             <g transform="translate(80, ${y})">
                 <circle cx="0" cy="0" r="6" fill="${accentColor}"/>
