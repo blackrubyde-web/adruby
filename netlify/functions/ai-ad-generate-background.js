@@ -298,14 +298,11 @@ export const handler = async (event) => {
                 } else {
                     await updateProgress('composite_generating', 30, { compositeActive: true });
 
-                    // For composite, we need to send the product image as base64
-                    let productBase64 = null;
-                    if (productBuffer) {
-                        productBase64 = productBuffer.toString('base64');
-                    }
+                    // Railway fetches the image from URL directly - no base64 needed
+                    console.log('[AI Ad Generate] 🚂 Calling Railway with productImageUrl...');
 
                     const compositeResult = await generateWithComposite({
-                        productImageBase64: productBase64,
+                        productImageBase64: null,  // Railway will fetch from URL
                         productImageUrl: body.productImageUrl,
                         headline: body.headline,
                         tagline: body.subheadline || body.usp,
@@ -350,8 +347,10 @@ export const handler = async (event) => {
                 }
             } catch (compositeError) {
                 console.error('[AI Ad Generate] ❌ Composite error:', compositeError.message);
+                console.error('[AI Ad Generate] ❌ Full error:', compositeError.stack);
                 await updateProgress('composite_error', 25, { error: compositeError.message });
-                // Fall through to other engines
+                // Re-throw with context - don't silently fall through
+                throw new Error(`Composite pipeline failed: ${compositeError.message}`);
             }
         }
 
