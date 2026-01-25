@@ -90,6 +90,177 @@ export async function analyzeProduct(productBuffer) {
 }
 
 /**
+ * DEEP PRODUCT ANALYSIS - Phase 1 of AI Creative Director
+ * 
+ * Analyzes user's product screenshot with GPT-4V to understand:
+ * - Where are the key content zones (charts, metrics, text)?
+ * - What visual elements can callouts point to?
+ * - Where are empty spaces suitable for badges/text?
+ * - What colors dominate the screenshot?
+ * - What features are worth highlighting?
+ * 
+ * This drives intelligent element placement decisions.
+ */
+export async function deepProductAnalysis(productBuffer) {
+    console.log('[DeepAnalysis] 🔬 Starting deep screenshot analysis with GPT-4V...');
+
+    try {
+        const base64 = productBuffer.toString('base64');
+
+        const response = await openai.chat.completions.create({
+            model: 'gpt-4o',
+            messages: [{
+                role: 'user',
+                content: [
+                    {
+                        type: 'text',
+                        text: `You are an expert UI/UX designer and creative director analyzing a product screenshot for ad creation.
+
+Your task: Analyze this image to help me create a stunning ad that highlights the RIGHT features in the RIGHT places.
+
+Return detailed JSON with these EXACT specifications:
+
+{
+    "productType": "saas_dashboard|mobile_app|ecommerce_store|physical_product|service|other",
+    
+    "contentZones": {
+        "primaryFocus": {
+            "description": "What is the main visual focus of this image?",
+            "xPercent": 0.5,
+            "yPercent": 0.4,
+            "widthPercent": 0.6,
+            "heightPercent": 0.5,
+            "type": "dashboard|chart|product|text|hero_image|interface"
+        },
+        "emptySpaces": [
+            {
+                "xPercent": 0.1,
+                "yPercent": 0.85,
+                "suitableFor": "badge|cta|callout|text",
+                "size": "small|medium|large"
+            }
+        ],
+        "dataDenseAreas": [
+            {
+                "xPercent": 0.5,
+                "yPercent": 0.5,
+                "type": "chart|metrics|table|form",
+                "description": "brief description"
+            }
+        ]
+    },
+    
+    "visualAnchors": [
+        {
+            "type": "metric|chart|button|feature|icon|logo",
+            "description": "what this element shows",
+            "xPercent": 0.25,
+            "yPercent": 0.3,
+            "highlightPriority": 1,
+            "suggestedCallout": "concise callout text"
+        }
+    ],
+    
+    "colorPalette": {
+        "dominant": "#hex",
+        "secondary": "#hex",
+        "accent": "#hex",
+        "background": "#hex",
+        "textColor": "#hex"
+    },
+    
+    "designRecommendations": {
+        "maxCallouts": 2,
+        "suggestedHeadline": "compelling headline based on what the image shows",
+        "suggestedSubheadline": "supporting text",
+        "ctaText": "action text",
+        "mockupStyle": "macbook|ipad|phone|browser|floating|none",
+        "backgroundStyle": "gradient_dark|gradient_light|solid|abstract|blur",
+        "elementPlacement": {
+            "headlinePosition": "top_center|top_left|bottom",
+            "productPosition": "center|left|right",
+            "ctaPosition": "bottom_center|bottom_right"
+        }
+    },
+    
+    "excludeElements": ["reason to NOT add certain elements like too many badges"],
+    
+    "overallMood": "professional|playful|luxury|tech|minimal|bold"
+}`
+                    },
+                    {
+                        type: 'image_url',
+                        image_url: { url: `data:image/png;base64,${base64}`, detail: 'high' }
+                    }
+                ]
+            }],
+            max_tokens: 2000,
+            response_format: { type: 'json_object' }
+        });
+
+        const analysis = JSON.parse(response.choices[0].message.content);
+
+        console.log('[DeepAnalysis] ✅ Analysis complete:');
+        console.log(`[DeepAnalysis]   Product type: ${analysis.productType}`);
+        console.log(`[DeepAnalysis]   Visual anchors: ${analysis.visualAnchors?.length || 0}`);
+        console.log(`[DeepAnalysis]   Empty spaces: ${analysis.contentZones?.emptySpaces?.length || 0}`);
+        console.log(`[DeepAnalysis]   Max callouts: ${analysis.designRecommendations?.maxCallouts || 2}`);
+        console.log(`[DeepAnalysis]   Exclude: ${analysis.excludeElements?.join(', ') || 'none'}`);
+
+        return analysis;
+    } catch (error) {
+        console.error('[DeepAnalysis] GPT-4V deep analysis failed:', error.message);
+        return getDefaultDeepAnalysis();
+    }
+}
+
+/**
+ * Default deep analysis when GPT-4V fails
+ */
+function getDefaultDeepAnalysis() {
+    return {
+        productType: 'other',
+        contentZones: {
+            primaryFocus: {
+                description: 'Product image',
+                xPercent: 0.5,
+                yPercent: 0.5,
+                widthPercent: 0.6,
+                heightPercent: 0.6,
+                type: 'product'
+            },
+            emptySpaces: [
+                { xPercent: 0.1, yPercent: 0.9, suitableFor: 'badge', size: 'small' }
+            ],
+            dataDenseAreas: []
+        },
+        visualAnchors: [],
+        colorPalette: {
+            dominant: '#1a1a2e',
+            secondary: '#2f3542',
+            accent: '#e74c3c',
+            background: '#0f0f23',
+            textColor: '#ffffff'
+        },
+        designRecommendations: {
+            maxCallouts: 2,
+            suggestedHeadline: 'Premium Quality',
+            suggestedSubheadline: 'Discover the difference',
+            ctaText: 'Learn More',
+            mockupStyle: 'floating',
+            backgroundStyle: 'gradient_dark',
+            elementPlacement: {
+                headlinePosition: 'top_center',
+                productPosition: 'center',
+                ctaPosition: 'bottom_center'
+            }
+        },
+        excludeElements: [],
+        overallMood: 'professional'
+    };
+}
+
+/**
  * Find matching reference ads from Foreplay
  * Uses smart search based on product analysis
  */
@@ -204,20 +375,25 @@ function getDefaultPatterns() {
 
 /**
  * Complete product matching pipeline
+ * Now includes deep analysis for intelligent element placement
  */
 export async function matchProduct(productBuffer) {
-    // Step 1: Analyze product
+    // Step 1: Basic product analysis
     const analysis = await analyzeProduct(productBuffer);
 
-    // Step 2: Find matching ads
+    // Step 2: Deep analysis for element placement (NEW!)
+    const deepAnalysis = await deepProductAnalysis(productBuffer);
+
+    // Step 3: Find matching ads
     const { ads, patterns } = await findMatchingAds(analysis);
 
     return {
         analysis,
+        deepAnalysis,  // NEW: Contains visual anchors, content zones, design recommendations
         referenceAds: ads,
         patterns,
         searchKeywords: analysis.keywords
     };
 }
 
-export default { analyzeProduct, findMatchingAds, matchProduct };
+export default { analyzeProduct, deepProductAnalysis, findMatchingAds, matchProduct };
