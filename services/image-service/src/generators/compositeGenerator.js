@@ -318,10 +318,20 @@ export async function generateCompositeAd({
             // ════════════════════════════════════════════════════════════
             console.log('[MasterGen] ▶ PHASE 3: Background Generation...');
 
-            const backgroundPrompt = buildBackgroundPrompt(designSpecs, productAnalysis, finalAccentColor);
+            // NEW: Use colors from AI analysis if available
+            let enhancedAccentColor = finalAccentColor;
+            if (deepAnalysis?.colorPalette?.accent) {
+                enhancedAccentColor = deepAnalysis.colorPalette.accent;
+                console.log(`[MasterGen]   Using screenshot accent: ${enhancedAccentColor}`);
+            }
+            if (compositionPlan?.background?.primaryColor) {
+                console.log(`[MasterGen]   Background style: ${compositionPlan.background.style}`);
+            }
+
+            const backgroundPrompt = buildBackgroundPrompt(designSpecs, productAnalysis, enhancedAccentColor);
             console.log(`[MasterGen]   Prompt: ${backgroundPrompt.length} characters`);
 
-            let backgroundBuffer = await generatePremiumBackground(backgroundPrompt, finalAccentColor, designSpecs);
+            let backgroundBuffer = await generatePremiumBackground(backgroundPrompt, enhancedAccentColor, designSpecs);
             console.log('[MasterGen]   Background: ✓');
 
             // ════════════════════════════════════════════════════════════
@@ -486,6 +496,21 @@ export async function generateCompositeAd({
             console.log('[MasterGen]   Final effects: ✓');
 
             finalBuffer = compositeBuffer;
+
+            // ════════════════════════════════════════════════════════════
+            // AI COMPOSITION SUMMARY
+            // ════════════════════════════════════════════════════════════
+            if (compositionPlan) {
+                console.log('[MasterGen] ═══════════════════════════════════════');
+                console.log('[MasterGen] 🧠 AI COMPOSITION SUMMARY:');
+                console.log(`[MasterGen]   ├─ Headline: ${compositionPlan.headline?.text?.substring(0, 40) || 'N/A'}...`);
+                console.log(`[MasterGen]   ├─ CTA: ${compositionPlan.cta?.text || 'N/A'} @ ${Math.round((compositionPlan.cta?.position?.yPercent || 0.88) * 100)}%`);
+                console.log(`[MasterGen]   ├─ Callouts: ${compositionPlan.callouts?.length || 0}`);
+                console.log(`[MasterGen]   ├─ Badges: ${compositionPlan.badges?.length || 0}`);
+                console.log(`[MasterGen]   ├─ Excluded: ${compositionPlan.excludeFromDesign?.slice(0, 3).join(', ') || 'none'}`);
+                console.log(`[MasterGen]   └─ Rationale: ${compositionPlan.designRationale?.substring(0, 50) || 'N/A'}...`);
+                console.log('[MasterGen] ═══════════════════════════════════════');
+            }
 
             // ════════════════════════════════════════════════════════════
             // PHASE 10: QUALITY VERIFICATION
