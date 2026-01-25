@@ -268,12 +268,23 @@ export const handler = async (event) => {
 
         const openai = getOpenAiClient();
 
+        // DEBUG: Log the actual value of useCompositePipeline
+        console.log('[AI Ad Generate] 📦 useCompositePipeline value:', body.useCompositePipeline, typeof body.useCompositePipeline);
+        // DEBUG: Log the actual values
+        console.log('[AI Ad Generate] 📦 useCompositePipeline:', body.useCompositePipeline);
+        console.log('[AI Ad Generate] 📦 productImageUrl exists:', !!body.productImageUrl);
+
+        // FORCE: Always use composite pipeline when user uploaded a product image
+        const forceComposite = !!body.productImageUrl;
+        const useComposite = body.useCompositePipeline === true || forceComposite;
+        console.log('[AI Ad Generate] 📦 FINAL useComposite:', useComposite);
+
         // ========================================
-        // RAILWAY v6.0: COMPOSITE PIPELINE (NEW - 100% SCREEN PRESERVATION)
-        // For SaaS/Dashboard products that need pixel-perfect preservation
+        // RAILWAY v6.0: COMPOSITE PIPELINE (FORCED FOR PRODUCT IMAGES)
+        // Uses pixel-perfect screenshot preservation
         // ========================================
-        if (body.useCompositePipeline) {
-            console.log('[AI Ad Generate] 🎨 Using Railway v6.0 Composite Pipeline...');
+        if (useComposite) {
+            console.log('[AI Ad Generate] 🎨 COMPOSITE PIPELINE ACTIVATED!');
             await updateProgress('composite_v6', 10, { engine: 'composite_pipeline' });
 
             try {
