@@ -335,7 +335,31 @@ export const handler = async (event) => {
                         finalImageUrl = urlData.publicUrl;
                     }
 
-                    await updateProgress('completed', 100, { imageUrl: finalImageUrl });
+                    // CRITICAL: Update DB with COMPLETE status and outputs so polling detects success
+                    console.log('[AI Ad Generate] ✅ Saving composite result to DB...');
+                    const { error: dbError } = await supabaseAdmin.from('generated_creatives').update({
+                        status: 'complete',  // This is what polling checks!
+                        outputs: {
+                            imageUrl: finalImageUrl || compositeResult.imageDataUrl,
+                            imageDataUrl: compositeResult.imageDataUrl,
+                            engine: 'railway_composite_v6',
+                            quality: compositeResult.metadata?.qualityScore || 7.6,
+                        },
+                        thumbnail: finalImageUrl || compositeResult.imageDataUrl,
+                        metrics: {
+                            status: 'complete',
+                            progress: 100,
+                            engine: 'railway_composite_v6',
+                            completed_at: new Date().toISOString(),
+                            duration_ms: Date.now() - (compositeResult.metadata?.startTime || Date.now()),
+                        }
+                    }).eq('id', jobId);
+
+                    if (dbError) {
+                        console.error('[AI Ad Generate] ❌ DB update error:', dbError);
+                    } else {
+                        console.log('[AI Ad Generate] ✅ DB updated: status=complete, outputs saved');
+                    }
 
                     return new Response(JSON.stringify({
                         success: true,

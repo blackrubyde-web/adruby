@@ -8,7 +8,7 @@ import type { AdGenerationParams, AdGenerationResponse } from '../../types/aibui
 
 const API_BASE = '/.netlify/functions';
 const POLL_INTERVAL = 2500; // 2.5 seconds
-const MAX_POLL_TIME = 180000; // 3 minutes max
+const MAX_POLL_TIME = 300000; // 5 minutes max (Railway composite can take up to 240s)
 
 /**
  * Get current auth token from Supabase session
