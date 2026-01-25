@@ -90,19 +90,17 @@ export async function analyzeProduct(productBuffer) {
 }
 
 /**
- * DEEP PRODUCT ANALYSIS - Phase 1 of AI Creative Director
+ * DEEP PRODUCT ANALYSIS v2.0 - Advanced AI Visual Intelligence
  * 
- * Analyzes user's product screenshot with GPT-4V to understand:
- * - Where are the key content zones (charts, metrics, text)?
- * - What visual elements can callouts point to?
- * - Where are empty spaces suitable for badges/text?
- * - What colors dominate the screenshot?
- * - What features are worth highlighting?
- * 
- * This drives intelligent element placement decisions.
+ * Comprehensive GPT-4V analysis of user's product screenshot:
+ * - 9-Zone Spatial Grid for precise positioning
+ * - Safe Zones (where NOT to place elements)
+ * - Visual Hierarchy Map with eye-flow analysis
+ * - Semantic Content Understanding
+ * - Smart Placement Recommendations with exact coordinates
  */
 export async function deepProductAnalysis(productBuffer) {
-    console.log('[DeepAnalysis] 🔬 Starting deep screenshot analysis with GPT-4V...');
+    console.log('[DeepAnalysis] 🔬 Starting ADVANCED deep analysis with GPT-4V...');
 
     try {
         const base64 = productBuffer.toString('base64');
@@ -114,77 +112,106 @@ export async function deepProductAnalysis(productBuffer) {
                 content: [
                     {
                         type: 'text',
-                        text: `You are an expert UI/UX designer and creative director analyzing a product screenshot for ad creation.
+                        text: `You are an ELITE creative director analyzing a product screenshot.
 
-Your task: Analyze this image to help me create a stunning ad that highlights the RIGHT features in the RIGHT places.
-
-Return detailed JSON with these EXACT specifications:
+Return COMPREHENSIVE JSON:
 
 {
-    "productType": "saas_dashboard|mobile_app|ecommerce_store|physical_product|service|other",
+    "productType": "saas_dashboard|mobile_app|ecommerce_product|physical_product|service|website|other",
+    
+    "spatialGrid": {
+        "zones": {
+            "top_left": { "occupied": true, "content": "description", "suitableFor": ["badge"] },
+            "top_center": { "occupied": false, "content": "", "suitableFor": ["headline"] },
+            "top_right": { "occupied": true, "content": "", "suitableFor": [] },
+            "middle_left": { "occupied": false, "content": "", "suitableFor": ["callout"] },
+            "middle_center": { "occupied": true, "content": "main content", "suitableFor": [] },
+            "middle_right": { "occupied": false, "content": "", "suitableFor": ["callout"] },
+            "bottom_left": { "occupied": false, "content": "", "suitableFor": ["text"] },
+            "bottom_center": { "occupied": false, "content": "", "suitableFor": ["cta"] },
+            "bottom_right": { "occupied": false, "content": "", "suitableFor": ["badge", "social"] }
+        }
+    },
+    
+    "safeZones": {
+        "noOverlay": [
+            { "xPercent": 0.5, "yPercent": 0.5, "radiusPercent": 0.25, "reason": "main content" }
+        ],
+        "noText": [
+            { "xPercent": 0.3, "yPercent": 0.4, "radiusPercent": 0.1, "reason": "busy area" }
+        ]
+    },
+    
+    "visualHierarchy": {
+        "primaryFocus": { "xPercent": 0.5, "yPercent": 0.45, "description": "main focus" },
+        "secondaryFocus": { "xPercent": 0.3, "yPercent": 0.6, "description": "secondary" },
+        "eyeFlowDirection": "left_to_right|top_to_bottom|center_out|z_pattern|f_pattern",
+        "focalWeight": "center_heavy|left_heavy|right_heavy|balanced"
+    },
+    
+    "semanticContent": {
+        "mainValueProp": "the key benefit shown",
+        "keyFeatures": ["feature 1", "feature 2"],
+        "targetAudience": "who wants this",
+        "emotionalAppeal": "efficiency|growth|savings|ease|power|security",
+        "uniqueElements": ["specific unique things"]
+    },
     
     "contentZones": {
         "primaryFocus": {
-            "description": "What is the main visual focus of this image?",
-            "xPercent": 0.5,
-            "yPercent": 0.4,
-            "widthPercent": 0.6,
-            "heightPercent": 0.5,
-            "type": "dashboard|chart|product|text|hero_image|interface"
+            "description": "main visual focus",
+            "xPercent": 0.5, "yPercent": 0.45,
+            "widthPercent": 0.6, "heightPercent": 0.5,
+            "type": "dashboard|chart|product|interface"
         },
         "emptySpaces": [
-            {
-                "xPercent": 0.1,
-                "yPercent": 0.85,
-                "suitableFor": "badge|cta|callout|text",
-                "size": "small|medium|large"
-            }
+            { "zone": "bottom_center", "xPercent": 0.5, "yPercent": 0.9, "suitableFor": ["cta"], "size": "medium" }
         ],
         "dataDenseAreas": [
-            {
-                "xPercent": 0.5,
-                "yPercent": 0.5,
-                "type": "chart|metrics|table|form",
-                "description": "brief description"
-            }
+            { "xPercent": 0.5, "yPercent": 0.5, "type": "chart|metrics", "avoidOverlay": true }
         ]
     },
     
     "visualAnchors": [
         {
-            "type": "metric|chart|button|feature|icon|logo",
-            "description": "what this element shows",
-            "xPercent": 0.25,
-            "yPercent": 0.3,
+            "type": "metric|chart|button|feature|icon",
+            "description": "what this shows",
+            "xPercent": 0.25, "yPercent": 0.3,
+            "size": "medium",
             "highlightPriority": 1,
-            "suggestedCallout": "concise callout text"
+            "suggestedCallout": "max 4 words",
+            "calloutPosition": "left|right|above|below"
         }
     ],
     
     "colorPalette": {
-        "dominant": "#hex",
-        "secondary": "#hex",
-        "accent": "#hex",
-        "background": "#hex",
-        "textColor": "#hex"
+        "dominant": "#hex", "secondary": "#hex", "accent": "#hex",
+        "background": "#hex", "textColor": "#hex",
+        "suggestedAdBackground": "#hex", "suggestedAccent": "#hex"
+    },
+    
+    "smartPlacements": {
+        "headline": { "position": { "xPercent": 0.5, "yPercent": 0.08 }, "alignment": "center", "reasoning": "why" },
+        "tagline": { "position": { "xPercent": 0.5, "yPercent": 0.16 }, "show": true },
+        "cta": { "position": { "xPercent": 0.5, "yPercent": 0.88 }, "style": "pill" },
+        "badges": [{ "position": { "xPercent": 0.9, "yPercent": 0.05 }, "shouldInclude": true, "text": "badge text" }],
+        "callouts": [{ "position": { "xPercent": 0.15, "yPercent": 0.45 }, "pointsTo": { "xPercent": 0.25, "yPercent": 0.35 }, "text": "callout", "shouldInclude": true }],
+        "socialProof": { "position": { "xPercent": 0.5, "yPercent": 0.82 }, "shouldInclude": true }
     },
     
     "designRecommendations": {
-        "maxCallouts": 2,
-        "suggestedHeadline": "compelling headline based on what the image shows",
+        "maxCallouts": 0-3,
+        "maxBadges": 0-2,
+        "showSocialProof": true,
+        "suggestedHeadline": "headline based on content",
         "suggestedSubheadline": "supporting text",
         "ctaText": "action text",
-        "mockupStyle": "macbook|ipad|phone|browser|floating|none",
-        "backgroundStyle": "gradient_dark|gradient_light|solid|abstract|blur",
-        "elementPlacement": {
-            "headlinePosition": "top_center|top_left|bottom",
-            "productPosition": "center|left|right",
-            "ctaPosition": "bottom_center|bottom_right"
-        }
+        "mockupStyle": "macbook|phone|browser|floating",
+        "backgroundStyle": "gradient_dark|gradient_light|solid",
+        "recommendedApproach": "clean_minimal|feature_showcase|benefit_focused"
     },
     
-    "excludeElements": ["reason to NOT add certain elements like too many badges"],
-    
+    "excludeElements": ["what NOT to include and why"],
     "overallMood": "professional|playful|luxury|tech|minimal|bold"
 }`
                     },
@@ -194,25 +221,31 @@ Return detailed JSON with these EXACT specifications:
                     }
                 ]
             }],
-            max_tokens: 2000,
+            max_tokens: 4000,
             response_format: { type: 'json_object' }
         });
 
         const analysis = JSON.parse(response.choices[0].message.content);
 
-        console.log('[DeepAnalysis] ✅ Analysis complete:');
-        console.log(`[DeepAnalysis]   Product type: ${analysis.productType}`);
+        console.log('[DeepAnalysis] ✅ ADVANCED Analysis complete:');
+        console.log(`[DeepAnalysis]   Product: ${analysis.productType}`);
+        console.log(`[DeepAnalysis]   9-Zone Grid: analyzed`);
+        console.log(`[DeepAnalysis]   Safe zones: ${analysis.safeZones?.noOverlay?.length || 0}`);
         console.log(`[DeepAnalysis]   Visual anchors: ${analysis.visualAnchors?.length || 0}`);
         console.log(`[DeepAnalysis]   Empty spaces: ${analysis.contentZones?.emptySpaces?.length || 0}`);
-        console.log(`[DeepAnalysis]   Max callouts: ${analysis.designRecommendations?.maxCallouts || 2}`);
-        console.log(`[DeepAnalysis]   Exclude: ${analysis.excludeElements?.join(', ') || 'none'}`);
+        console.log(`[DeepAnalysis]   Eye-flow: ${analysis.visualHierarchy?.eyeFlowDirection || 'unknown'}`);
+        console.log(`[DeepAnalysis]   Value prop: ${analysis.semanticContent?.mainValueProp?.substring(0, 40) || 'N/A'}...`);
+        console.log(`[DeepAnalysis]   Headline @ ${JSON.stringify(analysis.smartPlacements?.headline?.position || {})}`);
+        console.log(`[DeepAnalysis]   Approach: ${analysis.designRecommendations?.recommendedApproach || 'default'}`);
+        console.log(`[DeepAnalysis]   Exclude: ${analysis.excludeElements?.slice(0, 2).join(', ') || 'none'}`);
 
         return analysis;
     } catch (error) {
-        console.error('[DeepAnalysis] GPT-4V deep analysis failed:', error.message);
+        console.error('[DeepAnalysis] GPT-4V failed:', error.message);
         return getDefaultDeepAnalysis();
     }
 }
+
 
 /**
  * Default deep analysis when GPT-4V fails
