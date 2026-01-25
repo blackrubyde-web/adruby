@@ -335,10 +335,10 @@ export const handler = async (event) => {
                         finalImageUrl = urlData.publicUrl;
                     }
 
-                    // CRITICAL: Update DB with COMPLETE status and outputs so polling detects success
+                    // CRITICAL: Update DB with outputs and metrics so polling detects success
+                    // Note: No 'status' column exists - polling reads metrics.status
                     console.log('[AI Ad Generate] ✅ Saving composite result to DB...');
                     const { error: dbError } = await supabaseAdmin.from('generated_creatives').update({
-                        status: 'complete',  // This is what polling checks!
                         outputs: {
                             imageUrl: finalImageUrl || compositeResult.imageDataUrl,
                             imageDataUrl: compositeResult.imageDataUrl,
@@ -347,7 +347,7 @@ export const handler = async (event) => {
                         },
                         thumbnail: finalImageUrl || compositeResult.imageDataUrl,
                         metrics: {
-                            status: 'complete',
+                            status: 'complete',  // This is what ai-ad-status reads!
                             progress: 100,
                             engine: 'railway_composite_v6',
                             completed_at: new Date().toISOString(),
