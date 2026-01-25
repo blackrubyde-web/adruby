@@ -204,6 +204,7 @@ export async function generateCompositeAd({
     let regenerationAttempt = 0;
     let finalBuffer = null;
     let qualityResult = null;
+    let finalAccentColor = accentColor || '#FF4757';  // Declare outside loop for proper scope
 
     while (regenerationAttempt <= MAX_REGENERATION_ATTEMPTS) {
         try {
@@ -232,7 +233,7 @@ export async function generateCompositeAd({
                 }
             }
 
-            const finalAccentColor = accentColor || extractedColors.accent || '#FF4757';
+            finalAccentColor = accentColor || extractedColors.accent || '#FF4757';  // Update with extracted colors
 
             // Deep Foreplay Design Analysis
             const designSpecs = await analyzeReferenceAds(referenceAds, productAnalysis);
