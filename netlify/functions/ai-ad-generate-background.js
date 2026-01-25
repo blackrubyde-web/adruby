@@ -361,13 +361,17 @@ export const handler = async (event) => {
                         console.log('[AI Ad Generate] ✅ DB updated: status=complete, outputs saved');
                     }
 
-                    return new Response(JSON.stringify({
-                        success: true,
-                        imageUrl: finalImageUrl || compositeResult.imageDataUrl,
-                        imageDataUrl: compositeResult.imageDataUrl,
-                        engine: 'railway_composite_v6',
-                        metadata: compositeResult.metadata,
-                    }), { status: 200, headers });
+                    return {
+                        statusCode: 200,
+                        headers,
+                        body: JSON.stringify({
+                            success: true,
+                            imageUrl: finalImageUrl || compositeResult.imageDataUrl,
+                            imageDataUrl: compositeResult.imageDataUrl,
+                            engine: 'railway_composite_v6',
+                            metadata: compositeResult.metadata,
+                        })
+                    };
                 }
             } catch (compositeError) {
                 console.error('[AI Ad Generate] ❌ Composite error:', compositeError.message);
