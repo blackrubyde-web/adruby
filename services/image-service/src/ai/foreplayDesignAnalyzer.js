@@ -631,4 +631,190 @@ function mostCommon(arr) {
     return result;
 }
 
-export default { analyzeReferenceAds, getDefaultDesignSpecs };
+/**
+ * PLAN AD COMPOSITION - AI Creative Director Final Step
+ * 
+ * Takes synthesized Foreplay patterns + user's deepAnalysis and creates
+ * an optimal AI-driven composition plan with specific decisions about:
+ * - What elements to include and WHERE exactly
+ * - What text to use (from deepAnalysis suggestions or custom)
+ * - Which Foreplay patterns to apply
+ * - What to explicitly EXCLUDE
+ */
+export async function planAdComposition(foreplayPatterns, deepAnalysis, productAnalysis) {
+    console.log('[AdPlanner] 🧠 AI Creative Director planning final composition...');
+
+    try {
+        const response = await openai.chat.completions.create({
+            model: 'gpt-4o',
+            messages: [{
+                role: 'system',
+                content: `You are an elite creative director who creates stunning ad compositions.
+You will receive:
+1. FOREPLAY PATTERNS: Design patterns from winning ads (layout, typography, colors, effects)
+2. DEEP ANALYSIS: Analysis of the user's product screenshot (visual anchors, empty spaces, content zones)
+3. PRODUCT ANALYSIS: Basic product info
+
+Your job: Create a SPECIFIC composition plan that combines the best of Foreplay patterns with intelligent placement based on the user's actual product.
+
+RULES:
+- Be MINIMAL: Less is more. Max 2 callouts, 1 badge if any
+- Be PRECISE: Give exact positions as percentages
+- Be SMART: Use empty spaces for elements, don't overlap with content
+- REFERENCE winning patterns but adapt to the specific product`
+            }, {
+                role: 'user',
+                content: `Create a composition plan for this ad.
+
+FOREPLAY PATTERNS (from ${foreplayPatterns.referenceCount || 0} winning ads):
+${JSON.stringify({
+                    layout: foreplayPatterns.layout,
+                    typography: foreplayPatterns.typography,
+                    colors: foreplayPatterns.colors,
+                    mood: foreplayPatterns.mood
+                }, null, 2)}
+
+PRODUCT DEEP ANALYSIS:
+${JSON.stringify({
+                    productType: deepAnalysis?.productType,
+                    contentZones: deepAnalysis?.contentZones,
+                    visualAnchors: deepAnalysis?.visualAnchors?.slice(0, 3),
+                    designRecommendations: deepAnalysis?.designRecommendations,
+                    excludeElements: deepAnalysis?.excludeElements,
+                    overallMood: deepAnalysis?.overallMood
+                }, null, 2)}
+
+PRODUCT INFO:
+${JSON.stringify({
+                    name: productAnalysis?.productName,
+                    type: productAnalysis?.productType,
+                    keywords: productAnalysis?.keywords?.slice(0, 5)
+                }, null, 2)}
+
+Return JSON with this EXACT structure:
+{
+    "headline": {
+        "text": "compelling headline",
+        "position": { "xPercent": 0.5, "yPercent": 0.08 },
+        "sizePx": 48,
+        "weight": 800,
+        "alignment": "center",
+        "useGradient": true,
+        "colors": ["#FFFFFF", "#FF4757"]
+    },
+    "subheadline": {
+        "text": "supporting text or null if not needed",
+        "position": { "xPercent": 0.5, "yPercent": 0.16 },
+        "sizePx": 20
+    },
+    "product": {
+        "position": { "xPercent": 0.5, "yPercent": 0.5 },
+        "scale": 0.65,
+        "rotation": -3,
+        "mockupType": "macbook|floating|browser|none",
+        "addShadow": true,
+        "addGlow": true
+    },
+    "cta": {
+        "text": "Action Text",
+        "position": { "xPercent": 0.5, "yPercent": 0.9 },
+        "style": "gradient_pill",
+        "primaryColor": "#FF4757",
+        "textColor": "#FFFFFF"
+    },
+    "callouts": [
+        {
+            "text": "Feature callout",
+            "pointTo": { "xPercent": 0.3, "yPercent": 0.4 },
+            "position": { "xPercent": 0.15, "yPercent": 0.35 },
+            "style": "glass_card"
+        }
+    ],
+    "badges": [
+        {
+            "type": "rating",
+            "text": "⭐ 4.9",
+            "position": { "xPercent": 0.9, "yPercent": 0.1 }
+        }
+    ],
+    "excludeFromDesign": ["excessive_badges", "multiple_callouts", "reason..."],
+    "background": {
+        "style": "gradient_dark",
+        "primaryColor": "#0A0A1A",
+        "secondaryColor": "#1A1A3A",
+        "addBokeh": true,
+        "addVignette": true
+    },
+    "designRationale": "Brief explanation of design choices"
+}`
+            }],
+            max_tokens: 2000,
+            response_format: { type: 'json_object' }
+        });
+
+        const compositionPlan = JSON.parse(response.choices[0].message.content);
+
+        console.log('[AdPlanner] ✅ Composition Plan Created:');
+        console.log(`[AdPlanner]   Headline: "${compositionPlan.headline?.text?.substring(0, 30)}..."`);
+        console.log(`[AdPlanner]   Callouts: ${compositionPlan.callouts?.length || 0}`);
+        console.log(`[AdPlanner]   Badges: ${compositionPlan.badges?.length || 0}`);
+        console.log(`[AdPlanner]   Mockup: ${compositionPlan.product?.mockupType || 'floating'}`);
+        console.log(`[AdPlanner]   Excluded: ${compositionPlan.excludeFromDesign?.join(', ') || 'none'}`);
+        console.log(`[AdPlanner]   Rationale: ${compositionPlan.designRationale?.substring(0, 60)}...`);
+
+        return compositionPlan;
+    } catch (error) {
+        console.error('[AdPlanner] GPT-4 planning failed:', error.message);
+        return getDefaultCompositionPlan(foreplayPatterns, deepAnalysis);
+    }
+}
+
+/**
+ * Default composition plan when AI planning fails
+ */
+function getDefaultCompositionPlan(foreplayPatterns, deepAnalysis) {
+    return {
+        headline: {
+            text: deepAnalysis?.designRecommendations?.suggestedHeadline || 'Premium Quality',
+            position: { xPercent: 0.5, yPercent: 0.08 },
+            sizePx: foreplayPatterns?.typography?.headline?.sizePx || 48,
+            weight: 800,
+            alignment: 'center',
+            useGradient: true,
+            colors: ['#FFFFFF', foreplayPatterns?.colors?.accentColor || '#FF4757']
+        },
+        subheadline: {
+            text: deepAnalysis?.designRecommendations?.suggestedSubheadline || null,
+            position: { xPercent: 0.5, yPercent: 0.16 },
+            sizePx: 20
+        },
+        product: {
+            position: { xPercent: 0.5, yPercent: 0.5 },
+            scale: foreplayPatterns?.layout?.productPlacement?.scalePercent || 0.65,
+            rotation: 0,
+            mockupType: foreplayPatterns?.layout?.productPlacement?.deviceType || 'macbook',
+            addShadow: true,
+            addGlow: true
+        },
+        cta: {
+            text: deepAnalysis?.designRecommendations?.ctaText || 'Learn More',
+            position: { xPercent: 0.5, yPercent: 0.9 },
+            style: 'gradient_pill',
+            primaryColor: foreplayPatterns?.colors?.accentColor || '#FF4757',
+            textColor: '#FFFFFF'
+        },
+        callouts: [],
+        badges: [],
+        excludeFromDesign: deepAnalysis?.excludeElements || [],
+        background: {
+            style: 'gradient_dark',
+            primaryColor: foreplayPatterns?.colors?.backgroundPrimary || '#0A0A1A',
+            secondaryColor: foreplayPatterns?.colors?.backgroundSecondary || '#1A1A3A',
+            addBokeh: true,
+            addVignette: true
+        },
+        designRationale: 'Fallback to safe defaults'
+    };
+}
+
+export default { analyzeReferenceAds, getDefaultDesignSpecs, planAdComposition };

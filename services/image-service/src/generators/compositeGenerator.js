@@ -71,7 +71,7 @@ import { GoogleGenerativeAI } from '@google/generative-ai';
 
 // AI Modules
 import { matchProduct } from '../ai/productMatcher.js';
-import { analyzeReferenceAds, getDefaultDesignSpecs } from '../ai/foreplayDesignAnalyzer.js';
+import { analyzeReferenceAds, getDefaultDesignSpecs, planAdComposition } from '../ai/foreplayDesignAnalyzer.js';
 import { generateAdContent, generateFeatureCallouts, generateSocialProof } from '../ai/aiContentGenerator.js';
 
 // Effects Modules
@@ -251,6 +251,16 @@ export async function generateCompositeAd({
             const designSpecs = await analyzeReferenceAds(referenceAds, productAnalysis);
             console.log(`[MasterGen]   Design Specs: ${designSpecs.layout?.gridType || 'centered'} layout`);
             console.log(`[MasterGen]   Mood: ${designSpecs.mood?.primary || 'premium'}`);
+
+            // NEW: AI Creative Director - Plan final composition
+            let compositionPlan = null;
+            if (deepAnalysis && designSpecs) {
+                compositionPlan = await planAdComposition(designSpecs, deepAnalysis, productAnalysis);
+                console.log(`[MasterGen] 🧠 AI Composition Plan:`);
+                console.log(`[MasterGen]   Headline: "${compositionPlan?.headline?.text?.substring(0, 25) || 'N/A'}..."`);
+                console.log(`[MasterGen]   Callouts: ${compositionPlan?.callouts?.length || 0}`);
+                console.log(`[MasterGen]   Badges: ${compositionPlan?.badges?.length || 0}`);
+            }
 
             // AI Content Generation
             let contentPackage = null;
