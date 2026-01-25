@@ -343,7 +343,7 @@ export const handler = async (event) => {
                         imageDataUrl: compositeResult.imageDataUrl,
                         engine: 'railway_composite_v6',
                         metadata: compositeResult.metadata,
-                    }), { status: 200, headers: corsHeaders });
+                    }), { status: 200, headers });
                 }
             } catch (compositeError) {
                 console.error('[AI Ad Generate] ❌ Composite error:', compositeError.message);
