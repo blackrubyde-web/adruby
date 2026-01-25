@@ -292,9 +292,13 @@ function synthesizeLayout(analyses) {
     const gridTypes = layouts.map(l => l.gridType);
     const mostCommonGrid = mostCommon(gridTypes) || 'centered';
 
-    // Most common device
+    // Most common device - FORCE macbook_pro for SaaS dashboards (looks much better than browser)
     const devices = layouts.map(l => l.productPlacement?.deviceType).filter(Boolean);
-    const mostCommonDevice = mostCommon(devices) || 'macbook';
+    let mostCommonDevice = mostCommon(devices) || 'macbook_pro';
+    // Override browser to macbook_pro for premium look
+    if (mostCommonDevice === 'browser') {
+        mostCommonDevice = 'macbook_pro';
+    }
 
     return {
         gridType: mostCommonGrid,
@@ -755,25 +759,53 @@ Return JSON with this EXACT structure:
         "sizePx": 20
     },
     "product": {
-        "position": { "xPercent": 0.5, "yPercent": 0.5 },
-        "scale": 0.65,
-        "rotation": -3,
-        "mockupType": "macbook|floating|browser|none",
+        "position": { "xPercent": 0.5, "yPercent": 0.48 },
+        "scale": 0.58,
+        "rotation": -2,
+        "mockupType": "macbook_pro",
         "addShadow": true,
         "addGlow": true
     },
     "cta": {
         "text": "Action Text",
-        "position": { "xPercent": 0.5, "yPercent": 0.9 },
+        "position": { "xPercent": 0.5, "yPercent": 0.92 },
         "style": "gradient_pill",
         "primaryColor": "#FF4757",
         "textColor": "#FFFFFF"
     },
+    "features": [
+        {
+            "text": "Feature 1 with short text",
+            "icon": "checkmark",
+            "position": { "xPercent": 0.12, "yPercent": 0.6 }
+        },
+        {
+            "text": "Feature 2 with benefit",
+            "icon": "checkmark",
+            "position": { "xPercent": 0.12, "yPercent": 0.66 }
+        },
+        {
+            "text": "Feature 3 value prop",
+            "icon": "checkmark",
+            "position": { "xPercent": 0.12, "yPercent": 0.72 }
+        },
+        {
+            "text": "Feature 4 unique selling point",
+            "icon": "checkmark",
+            "position": { "xPercent": 0.12, "yPercent": 0.78 }
+        }
+    ],
     "callouts": [
         {
-            "text": "Feature callout",
-            "pointTo": { "xPercent": 0.3, "yPercent": 0.4 },
+            "text": "Key insight",
+            "pointTo": { "xPercent": 0.4, "yPercent": 0.35 },
             "position": { "xPercent": 0.15, "yPercent": 0.35 },
+            "style": "glass_card"
+        },
+        {
+            "text": "Another benefit",
+            "pointTo": { "xPercent": 0.6, "yPercent": 0.55 },
+            "position": { "xPercent": 0.85, "yPercent": 0.55 },
             "style": "glass_card"
         }
     ],
@@ -781,10 +813,20 @@ Return JSON with this EXACT structure:
         {
             "type": "rating",
             "text": "⭐ 4.9",
-            "position": { "xPercent": 0.9, "yPercent": 0.1 }
+            "position": { "xPercent": 0.92, "yPercent": 0.06 }
+        },
+        {
+            "type": "social_proof",
+            "text": "10K+ Users",
+            "position": { "xPercent": 0.08, "yPercent": 0.06 }
         }
     ],
-    "excludeFromDesign": ["excessive_badges", "multiple_callouts", "reason..."],
+    "socialProof": {
+        "text": "Trusted by 10,000+ users",
+        "position": { "xPercent": 0.5, "yPercent": 0.85 },
+        "stars": true
+    },
+    "excludeFromDesign": [],
     "background": {
         "style": "gradient_dark",
         "primaryColor": "#0A0A1A",
@@ -793,7 +835,14 @@ Return JSON with this EXACT structure:
         "addVignette": true
     },
     "designRationale": "Brief explanation of design choices"
-}`
+}
+
+IMPORTANT REQUIREMENTS:
+- Include EXACTLY 4-6 features/bullet points (short, impactful text)
+- Include 2-3 callouts pointing to key UI elements
+- Include 2 badges (rating + social proof)
+- Product mockupType MUST be "macbook_pro" for dashboards
+- Make ads visually RICH, not minimal`
             }],
             max_tokens: 2000,
             response_format: { type: 'json_object' }
