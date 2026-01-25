@@ -868,10 +868,17 @@ Beginne mit: "PRÄZISE PRODUKTBESCHREIBUNG:"`
         }
 
         if (body.productImageUrl) {
+            // SKIP if composite was intended (this means composite failed but we should NOT fallback to Gemini)
+            if (useComposite) {
+                console.log('[AI Ad Generate] ⚠️ Composite was intended but failed - NOT falling back to Gemini 4-LAYER');
+                console.log('[AI Ad Generate] ⚠️ This preserves user screenshot integrity - retry or check Railway');
+                throw new Error('Composite pipeline failed and fallback is disabled for product images');
+            }
+
             // ===== AI CREATIVE DIRECTOR MODE =====
-            // ALWAYS use intelligent product integration when product image is provided
+            // ONLY runs if composite was NOT intended (legacy mode)
             // This ensures products are properly composited INTO AI-generated backgrounds
-            console.log('[AI Ad Generate] 🧠 AI CREATIVE DIRECTOR MODE: Intelligent ad creation');
+            console.log('[AI Ad Generate] 🧠 AI CREATIVE DIRECTOR MODE: Intelligent ad creation (NO COMPOSITE)');
 
             const userCreativeText = body.text || body.productDescription || '';
             await updateProgress('creative_director', 50, { mode: USE_GEMINI ? 'gemini_creative_director' : 'ai_creative_director' });
