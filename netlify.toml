@@ -12,8 +12,9 @@
   external_node_modules = ["sharp", "@img/sharp-linux-x64", "@img/sharp-darwin-arm64", "@img/sharp-darwin-x64", "@img/sharp-libvips-linux-x64", "@img/sharp-libvips-darwin-arm64", "@img/sharp-libvips-darwin-x64"]
   included_files = ["node_modules/sharp/**/*", "node_modules/@img/**/*"]
 
-# Background function for ad generation
+# Background function for ad generation (15 min timeout)
 [functions."ai-ad-generate-background"]
+  background = true
   external_node_modules = ["sharp", "@img/sharp-linux-x64", "@img/sharp-libvips-linux-x64"]
 
 # Extend timeout for AI functions
