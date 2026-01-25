@@ -34,6 +34,249 @@ const SCORING_WEIGHTS = {
 };
 
 // ========================================
+// COLLISION DETECTION
+// ========================================
+
+/**
+ * Detect collisions between placed elements
+ * Returns array of collision issues
+ */
+export function detectCollisions(compositionPlan, canvasSize = { width: 1080, height: 1080 }) {
+    console.log('[CollisionDetector] 🔍 Checking for element collisions...');
+
+    const collisions = [];
+    const elements = [];
+
+    // Convert composition plan to bounding boxes
+    if (compositionPlan?.headline) {
+        elements.push({
+            type: 'headline',
+            bounds: calculateTextBounds(
+                compositionPlan.headline.position,
+                compositionPlan.headline.sizePx || 48,
+                compositionPlan.headline.text?.length || 20,
+                canvasSize
+            )
+        });
+    }
+
+    if (compositionPlan?.subheadline?.text) {
+        elements.push({
+            type: 'subheadline',
+            bounds: calculateTextBounds(
+                compositionPlan.subheadline.position,
+                compositionPlan.subheadline.sizePx || 20,
+                compositionPlan.subheadline.text?.length || 40,
+                canvasSize
+            )
+        });
+    }
+
+    if (compositionPlan?.product) {
+        elements.push({
+            type: 'product',
+            bounds: calculateProductBounds(compositionPlan.product, canvasSize)
+        });
+    }
+
+    if (compositionPlan?.cta) {
+        elements.push({
+            type: 'cta',
+            bounds: calculateCTABounds(compositionPlan.cta, canvasSize)
+        });
+    }
+
+    // Add badges
+    (compositionPlan?.badges || []).forEach((badge, i) => {
+        elements.push({
+            type: `badge_${i}`,
+            bounds: calculateBadgeBounds(badge, canvasSize)
+        });
+    });
+
+    // Add callouts
+    (compositionPlan?.callouts || []).forEach((callout, i) => {
+        elements.push({
+            type: `callout_${i}`,
+            bounds: calculateCalloutBounds(callout, canvasSize)
+        });
+    });
+
+    // Check all pairs for collision
+    for (let i = 0; i < elements.length; i++) {
+        for (let j = i + 1; j < elements.length; j++) {
+            const overlap = calculateOverlap(elements[i].bounds, elements[j].bounds);
+            if (overlap > 0.05) { // More than 5% overlap
+                collisions.push({
+                    element1: elements[i].type,
+                    element2: elements[j].type,
+                    overlapPercent: Math.round(overlap * 100),
+                    severity: overlap > 0.3 ? 'critical' : overlap > 0.15 ? 'high' : 'medium'
+                });
+            }
+        }
+    }
+
+    console.log(`[CollisionDetector] ${collisions.length === 0 ? '✅ No collisions' : `⚠️ ${collisions.length} collisions found`}`);
+    collisions.forEach(c => {
+        console.log(`[CollisionDetector]   ${c.severity.toUpperCase()}: ${c.element1} ↔ ${c.element2} (${c.overlapPercent}% overlap)`);
+    });
+
+    return collisions;
+}
+
+/**
+ * Validate element placements against safe zones
+ */
+export function validateElementPlacements(compositionPlan, deepAnalysis, canvasSize = { width: 1080, height: 1080 }) {
+    console.log('[PlacementValidator] 🔍 Validating placements against safe zones...');
+
+    const violations = [];
+    const safeZones = deepAnalysis?.safeZones || {};
+
+    // Check headline against noText zones
+    if (compositionPlan?.headline && safeZones.noText) {
+        for (const zone of safeZones.noText) {
+            const distance = calculateDistance(
+                compositionPlan.headline.position,
+                { xPercent: zone.xPercent, yPercent: zone.yPercent }
+            );
+            if (distance < zone.radiusPercent) {
+                violations.push({
+                    element: 'headline',
+                    zone: 'noText',
+                    reason: zone.reason,
+                    severity: 'high'
+                });
+            }
+        }
+    }
+
+    // Check all elements against noOverlay zones
+    const elements = [
+        { name: 'headline', pos: compositionPlan?.headline?.position },
+        { name: 'cta', pos: compositionPlan?.cta?.position },
+        { name: 'subheadline', pos: compositionPlan?.subheadline?.position }
+    ].filter(e => e.pos);
+
+    for (const element of elements) {
+        for (const zone of safeZones.noOverlay || []) {
+            const distance = calculateDistance(element.pos, { xPercent: zone.xPercent, yPercent: zone.yPercent });
+            if (distance < zone.radiusPercent * 0.5) { // Inside core of no-overlay zone
+                violations.push({
+                    element: element.name,
+                    zone: 'noOverlay',
+                    reason: zone.reason,
+                    severity: 'critical'
+                });
+            }
+        }
+    }
+
+    // Check spatial grid occupancy
+    const spatialGrid = deepAnalysis?.spatialGrid?.zones || {};
+    const gridPositions = {
+        'top_left': { x: 0.16, y: 0.16 },
+        'top_center': { x: 0.5, y: 0.16 },
+        'top_right': { x: 0.84, y: 0.16 },
+        'middle_left': { x: 0.16, y: 0.5 },
+        'middle_center': { x: 0.5, y: 0.5 },
+        'middle_right': { x: 0.84, y: 0.5 },
+        'bottom_left': { x: 0.16, y: 0.84 },
+        'bottom_center': { x: 0.5, y: 0.84 },
+        'bottom_right': { x: 0.84, y: 0.84 }
+    };
+
+    // Check if badges/callouts are placed in occupied zones
+    (compositionPlan?.badges || []).forEach((badge, i) => {
+        const zone = findNearestZone(badge.position, gridPositions);
+        if (spatialGrid[zone]?.occupied && !spatialGrid[zone]?.suitableFor?.includes('badge')) {
+            violations.push({
+                element: `badge_${i}`,
+                zone: zone,
+                reason: `Zone "${zone}" is occupied by: ${spatialGrid[zone].content}`,
+                severity: 'medium'
+            });
+        }
+    });
+
+    console.log(`[PlacementValidator] ${violations.length === 0 ? '✅ All placements valid' : `⚠️ ${violations.length} violations found`}`);
+    violations.forEach(v => {
+        console.log(`[PlacementValidator]   ${v.severity.toUpperCase()}: ${v.element} in ${v.zone} - ${v.reason}`);
+    });
+
+    return violations;
+}
+
+// Helper functions for collision detection
+function calculateTextBounds(position, sizePx, charCount, canvasSize) {
+    const charWidth = sizePx * 0.6;
+    const width = Math.min(charCount * charWidth, canvasSize.width * 0.9);
+    const height = sizePx * 1.2;
+    const x = position.xPercent * canvasSize.width - width / 2;
+    const y = position.yPercent * canvasSize.height - height / 2;
+    return { x, y, width, height };
+}
+
+function calculateProductBounds(product, canvasSize) {
+    const scale = product.scale || 0.6;
+    const width = canvasSize.width * scale;
+    const height = canvasSize.height * scale * 0.8;
+    const x = product.position.xPercent * canvasSize.width - width / 2;
+    const y = product.position.yPercent * canvasSize.height - height / 2;
+    return { x, y, width, height };
+}
+
+function calculateCTABounds(cta, canvasSize) {
+    const width = 280;
+    const height = 56;
+    const x = cta.position.xPercent * canvasSize.width - width / 2;
+    const y = cta.position.yPercent * canvasSize.height - height / 2;
+    return { x, y, width, height };
+}
+
+function calculateBadgeBounds(badge, canvasSize) {
+    const width = 120;
+    const height = 40;
+    const x = badge.position.xPercent * canvasSize.width - width / 2;
+    const y = badge.position.yPercent * canvasSize.height - height / 2;
+    return { x, y, width, height };
+}
+
+function calculateCalloutBounds(callout, canvasSize) {
+    const width = 180;
+    const height = 60;
+    const x = callout.position.xPercent * canvasSize.width - width / 2;
+    const y = callout.position.yPercent * canvasSize.height - height / 2;
+    return { x, y, width, height };
+}
+
+function calculateOverlap(bounds1, bounds2) {
+    const xOverlap = Math.max(0, Math.min(bounds1.x + bounds1.width, bounds2.x + bounds2.width) - Math.max(bounds1.x, bounds2.x));
+    const yOverlap = Math.max(0, Math.min(bounds1.y + bounds1.height, bounds2.y + bounds2.height) - Math.max(bounds1.y, bounds2.y));
+    const overlapArea = xOverlap * yOverlap;
+    const minArea = Math.min(bounds1.width * bounds1.height, bounds2.width * bounds2.height);
+    return minArea > 0 ? overlapArea / minArea : 0;
+}
+
+function calculateDistance(pos1, pos2) {
+    return Math.sqrt(Math.pow(pos1.xPercent - pos2.xPercent, 2) + Math.pow(pos1.yPercent - pos2.yPercent, 2));
+}
+
+function findNearestZone(position, gridPositions) {
+    let nearestZone = 'middle_center';
+    let minDistance = Infinity;
+    for (const [zone, pos] of Object.entries(gridPositions)) {
+        const dist = Math.sqrt(Math.pow(position.xPercent - pos.x, 2) + Math.pow(position.yPercent - pos.y, 2));
+        if (dist < minDistance) {
+            minDistance = dist;
+            nearestZone = zone;
+        }
+    }
+    return nearestZone;
+}
+
+// ========================================
 // MAIN QUALITY SCORER
 // ========================================
 
@@ -490,5 +733,7 @@ export default {
     quickQualityCheck,
     generateRegenerationGuidance,
     compareVariants,
+    detectCollisions,
+    validateElementPlacements,
     QUALITY_THRESHOLDS
 };

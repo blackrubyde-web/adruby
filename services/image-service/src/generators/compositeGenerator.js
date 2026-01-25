@@ -73,6 +73,7 @@ import { GoogleGenerativeAI } from '@google/generative-ai';
 import { matchProduct } from '../ai/productMatcher.js';
 import { analyzeReferenceAds, getDefaultDesignSpecs, planAdComposition } from '../ai/foreplayDesignAnalyzer.js';
 import { generateAdContent, generateFeatureCallouts, generateSocialProof } from '../ai/aiContentGenerator.js';
+import { detectCollisions, validateElementPlacements } from '../quality/qualityScoringEngine.js';
 
 // Effects Modules
 import {
@@ -260,6 +261,18 @@ export async function generateCompositeAd({
                 console.log(`[MasterGen]   Headline: "${compositionPlan?.headline?.text?.substring(0, 25) || 'N/A'}..."`);
                 console.log(`[MasterGen]   Callouts: ${compositionPlan?.callouts?.length || 0}`);
                 console.log(`[MasterGen]   Badges: ${compositionPlan?.badges?.length || 0}`);
+
+                // NEW: Validate composition before rendering
+                const collisions = detectCollisions(compositionPlan, { width: 1080, height: 1080 });
+                const violations = validateElementPlacements(compositionPlan, deepAnalysis, { width: 1080, height: 1080 });
+
+                if (collisions.length > 0 || violations.length > 0) {
+                    console.log(`[MasterGen] ⚠️ VALIDATION ISSUES DETECTED:`);
+                    collisions.forEach(c => console.log(`[MasterGen]   Collision: ${c.element1} ↔ ${c.element2} (${c.overlapPercent}%)`));
+                    violations.forEach(v => console.log(`[MasterGen]   Violation: ${v.element} in ${v.zone} - ${v.reason}`));
+                } else {
+                    console.log(`[MasterGen] ✅ Composition validated - no collisions or violations`);
+                }
             }
 
             // AI Content Generation
