@@ -4,7 +4,7 @@
  */
 
 // Railway service URL from environment
-const RAILWAY_URL = process.env.RAILWAY_IMAGE_SERVICE_URL || 'https://adruby-image-service.up.railway.app';
+const RAILWAY_URL = process.env.RAILWAY_IMAGE_SERVICE_URL || 'https://adruby-production.up.railway.app';
 
 /**
  * Generate ad using AI Design Knowledge System
