@@ -50,7 +50,7 @@ export function AIAdBuilderPage() {
     // AI Design System v3.0 (Railway with 100M+ Foreplay references)
     const [useAIDesignSystem, setUseAIDesignSystem] = useState(true);
     // Composite Pipeline v6.0 (100% screenshot preservation for SaaS/dashboards)
-    const [useCompositePipeline, setUseCompositePipeline] = useState(false);
+    const [useCompositePipeline, setUseCompositePipeline] = useState(true);  // CRITICAL: TRUE for pixel-perfect screenshot preservation
 
     // Session key for localStorage
     const STORAGE_KEY = 'adruby_last_generated_ad';
