@@ -646,60 +646,117 @@ export async function planAdComposition(foreplayPatterns, deepAnalysis, productA
     console.log('[AdPlanner] 🧠 AI Creative Director planning final composition...');
 
     try {
-        // NEW: Select best winning schema based on product analysis
+        // Select base schema for psychology/fallback, but REAL patterns take priority
         const schemaResult = selectWinningSchema(productAnalysis, industry, userPrompt);
         const selectedSchema = schemaResult.schema;
-        console.log(`[AdPlanner] 📋 Using Schema: ${selectedSchema.name}`);
-        console.log(`[AdPlanner]   Psychology: ${selectedSchema.psychology.join(', ')}`);
+        console.log(`[AdPlanner] 📋 Base Schema: ${selectedSchema.name} (for psychology guidance)`);
+
+        // Count how many actual Foreplay references we have
+        const hasRealPatterns = foreplayPatterns && foreplayPatterns.referenceCount > 0;
+        console.log(`[AdPlanner] 🎯 ${hasRealPatterns ? `Using ${foreplayPatterns.referenceCount} REAL Foreplay patterns` : 'No real patterns - using schema defaults'}`);
+
+        // Create CUSTOMIZED schema by merging real patterns with template
+        const customizedSchema = hasRealPatterns ? {
+            name: `Custom: ${selectedSchema.name}`,
+            // Use REAL patterns for layout, override schema
+            layout: {
+                ...selectedSchema.layout,
+                productPosition: foreplayPatterns.layout?.productPlacement ? {
+                    x: foreplayPatterns.layout.productPlacement.xPercent,
+                    y: foreplayPatterns.layout.productPlacement.yPercent
+                } : selectedSchema.layout.productPosition,
+                productScale: foreplayPatterns.layout?.productPlacement?.scalePercent || selectedSchema.layout.productScale
+            },
+            // Use REAL typography from Foreplay
+            typography: {
+                headline: foreplayPatterns.typography?.headline || selectedSchema.typography?.headline,
+                tagline: foreplayPatterns.typography?.tagline || selectedSchema.typography?.tagline,
+                cta: foreplayPatterns.typography?.cta || selectedSchema.typography?.cta
+            },
+            // Use REAL colors from Foreplay
+            colors: {
+                background: foreplayPatterns.colors?.backgroundType || 'dark_gradient',
+                accent: foreplayPatterns.colors?.accentColor || selectedSchema.colors?.accent,
+                primary: foreplayPatterns.colors?.backgroundPrimary,
+                secondary: foreplayPatterns.colors?.backgroundSecondary
+            },
+            // Keep schema elements limits but adapt to real patterns
+            elements: selectedSchema.elements,
+            // Use schema psychology
+            psychology: selectedSchema.psychology
+        } : selectedSchema;
+
+        console.log(`[AdPlanner] 🎨 Customized Schema Created:`);
+        console.log(`[AdPlanner]   Layout: ${JSON.stringify(customizedSchema.layout?.productPosition || {})}`);
+        console.log(`[AdPlanner]   Accent: ${customizedSchema.colors?.accent || 'default'}`);
 
         const response = await openai.chat.completions.create({
             model: 'gpt-4o',
             messages: [{
                 role: 'system',
-                content: `You are an elite creative director who creates stunning ad compositions.
+                content: `You are an elite creative director who creates UNIQUE, individualized ad compositions.
+
+CRITICAL: You create CUSTOM designs, NOT from templates. Each ad must be unique to the product.
+
 You will receive:
-1. WINNING AD SCHEMA: A proven template from Foreplay winning ads (use this as your BASE)
-2. FOREPLAY PATTERNS: Design patterns from winning ads (layout, typography, colors, effects)
+1. REAL FOREPLAY PATTERNS: Actual design specs extracted from winning ads via GPT-4V (THIS IS YOUR PRIMARY SOURCE)
+2. CUSTOMIZED SCHEMA: A template customized with real Foreplay data (use for psychology and fallbacks)
 3. DEEP ANALYSIS: Analysis of the user's product screenshot (visual anchors, empty spaces, content zones)
 4. PRODUCT ANALYSIS: Basic product info
 
-Your job: Create a SPECIFIC composition plan based on the WINNING SCHEMA, adapted to the user's product.
+Your job: Create a COMPLETELY INDIVIDUALIZED composition that:
+- PRIMARILY uses the REAL Foreplay patterns (they are extracted from actual winning ads!)
+- Adapts the patterns to the user's specific product screenshot
+- Uses the schema psychology for conversion optimization
 
 RULES:
-- FOLLOW THE SCHEMA: Use the schema's layout, element count, and psychology as your guide
-- Be MINIMAL: Respect the schema's callout/badge limits
+- FOREPLAY FIRST: Real patterns > schema defaults
+- Be UNIQUE: Don't just copy - adapt patterns to this specific product
 - Be PRECISE: Give exact positions as percentages
-- Be SMART: Use empty spaces for elements, don't overlap with content
-- USE SCHEMA PSYCHOLOGY: Apply the conversion tactics from the schema`
+- Use REAL VALUES: The Foreplay patterns have actual pixel values, colors, positions - USE THEM
+- ADAPT to PRODUCT: Use deepAnalysis empty spaces and visual anchors`
             }, {
                 role: 'user',
-                content: `Create a composition plan for this ad.
+                content: `Create a UNIQUE composition plan for this ad.
 
-WINNING AD SCHEMA (your template):
+REAL FOREPLAY PATTERNS (from ${foreplayPatterns.referenceCount || 0} winning ads - USE THESE FIRST!):
 ${JSON.stringify({
-                    name: selectedSchema.name,
-                    description: selectedSchema.description,
-                    layout: selectedSchema.layout,
-                    typography: selectedSchema.typography,
-                    elements: selectedSchema.elements,
-                    psychology: selectedSchema.psychology
-                }, null, 2)}
-
-FOREPLAY PATTERNS (from ${foreplayPatterns.referenceCount || 0} winning ads):
-${JSON.stringify({
-                    layout: foreplayPatterns.layout,
-                    typography: foreplayPatterns.typography,
+                    layout: {
+                        gridType: foreplayPatterns.layout?.gridType,
+                        productPlacement: foreplayPatterns.layout?.productPlacement,
+                        margins: foreplayPatterns.layout?.margins,
+                        spacing: foreplayPatterns.layout?.spacing
+                    },
+                    typography: {
+                        headline: foreplayPatterns.typography?.headline,
+                        tagline: foreplayPatterns.typography?.tagline,
+                        cta: foreplayPatterns.typography?.cta
+                    },
                     colors: foreplayPatterns.colors,
+                    visualElements: foreplayPatterns.visualElements,
+                    effects: foreplayPatterns.effects,
                     mood: foreplayPatterns.mood
                 }, null, 2)}
 
-PRODUCT DEEP ANALYSIS:
+CUSTOMIZED SCHEMA (for psychology and fallbacks):
+${JSON.stringify({
+                    name: customizedSchema.name,
+                    layout: customizedSchema.layout,
+                    typography: customizedSchema.typography,
+                    colors: customizedSchema.colors,
+                    elements: customizedSchema.elements,
+                    psychology: customizedSchema.psychology
+                }, null, 2)}
+
+PRODUCT DEEP ANALYSIS (adapt patterns to this):
 ${JSON.stringify({
                     productType: deepAnalysis?.productType,
                     contentZones: deepAnalysis?.contentZones,
                     visualAnchors: deepAnalysis?.visualAnchors?.slice(0, 3),
+                    emptySpaces: deepAnalysis?.emptySpaces,
                     designRecommendations: deepAnalysis?.designRecommendations,
                     excludeElements: deepAnalysis?.excludeElements,
+                    suggestedHeadline: deepAnalysis?.suggestedHeadline,
                     overallMood: deepAnalysis?.overallMood
                 }, null, 2)}
 
@@ -709,6 +766,8 @@ ${JSON.stringify({
                     type: productAnalysis?.productType,
                     keywords: productAnalysis?.keywords?.slice(0, 5)
                 }, null, 2)}
+
+USER PROMPT (if any): "${userPrompt}"
 
 Return JSON with this EXACT structure:
 {
