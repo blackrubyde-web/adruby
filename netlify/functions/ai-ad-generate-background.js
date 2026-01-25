@@ -268,6 +268,9 @@ export const handler = async (event) => {
 
         const openai = getOpenAiClient();
 
+        // ====== BUILD MARKER: 2026-01-25T15:28 ======
+        console.log('[AI Ad Generate] 🔥 BUILD: 2026-01-25T15:28 - NEW COMPOSITE LOGIC');
+
         // DEBUG: Log the actual value of useCompositePipeline
         console.log('[AI Ad Generate] 📦 useCompositePipeline value:', body.useCompositePipeline, typeof body.useCompositePipeline);
         // DEBUG: Log the actual values
