@@ -708,13 +708,17 @@ Your job: Create a COMPLETELY INDIVIDUALIZED composition that:
 - PRIMARILY uses the REAL Foreplay patterns (they are extracted from actual winning ads!)
 - Adapts the patterns to the user's specific product screenshot
 - Uses the schema psychology for conversion optimization
+- RESPECTS the pre-computed smartPlacements from product analysis
 
 RULES:
 - FOREPLAY FIRST: Real patterns > schema defaults
+- SMART PLACEMENTS: Use the pre-computed positions from PRODUCT_SMART_PLACEMENTS as your foundation
+- SAFE ZONES: NEVER place elements in noOverlay or noText areas
+- SPATIAL GRID: Check which zones are occupied before placing elements
 - Be UNIQUE: Don't just copy - adapt patterns to this specific product
 - Be PRECISE: Give exact positions as percentages
 - Use REAL VALUES: The Foreplay patterns have actual pixel values, colors, positions - USE THEM
-- ADAPT to PRODUCT: Use deepAnalysis empty spaces and visual anchors`
+- VALIDATE: Before finalizing, verify no elements overlap important content areas`
             }, {
                 role: 'user',
                 content: `Create a UNIQUE composition plan for this ad.
@@ -753,11 +757,27 @@ ${JSON.stringify({
                     productType: deepAnalysis?.productType,
                     contentZones: deepAnalysis?.contentZones,
                     visualAnchors: deepAnalysis?.visualAnchors?.slice(0, 3),
-                    emptySpaces: deepAnalysis?.emptySpaces,
+                    emptySpaces: deepAnalysis?.contentZones?.emptySpaces,
                     designRecommendations: deepAnalysis?.designRecommendations,
                     excludeElements: deepAnalysis?.excludeElements,
-                    suggestedHeadline: deepAnalysis?.suggestedHeadline,
                     overallMood: deepAnalysis?.overallMood
+                }, null, 2)}
+
+PRODUCT SMART PLACEMENTS (USE THESE EXACT POSITIONS - pre-computed from screenshot analysis):
+${JSON.stringify({
+                    headline: deepAnalysis?.smartPlacements?.headline,
+                    tagline: deepAnalysis?.smartPlacements?.tagline,
+                    cta: deepAnalysis?.smartPlacements?.cta,
+                    badges: deepAnalysis?.smartPlacements?.badges,
+                    callouts: deepAnalysis?.smartPlacements?.callouts,
+                    socialProof: deepAnalysis?.smartPlacements?.socialProof
+                }, null, 2)}
+
+SAFE ZONES (DO NOT PLACE ELEMENTS HERE):
+${JSON.stringify({
+                    noOverlay: deepAnalysis?.safeZones?.noOverlay,
+                    noText: deepAnalysis?.safeZones?.noText,
+                    spatialGrid: deepAnalysis?.spatialGrid?.zones
                 }, null, 2)}
 
 PRODUCT INFO:
