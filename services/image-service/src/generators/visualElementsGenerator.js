@@ -16,23 +16,31 @@ const CANVAS_HEIGHT = 1080;
 
 /**
  * Generate all visual elements as SVG layers
- * Now with intelligent filtering based on deepAnalysis
+ * Now with intelligent filtering based on deepAnalysis AND compositionPlan
  * 
  * @param {Object} designSpecs - Design specifications from reference analysis
  * @param {Object} productAnalysis - Basic product analysis
  * @param {string} accentColor - Accent color to use
- * @param {Object} deepAnalysis - NEW: Deep analysis with excludeElements, maxCallouts, visualAnchors
+ * @param {Object} deepAnalysis - Deep analysis with excludeElements, maxCallouts, visualAnchors
+ * @param {Object} compositionPlan - AI-planned composition (badges, callouts, etc. are in typography layer)
  */
-export async function generateVisualElements(designSpecs, productAnalysis, accentColor, deepAnalysis = null) {
+export async function generateVisualElements(designSpecs, productAnalysis, accentColor, deepAnalysis = null, compositionPlan = null) {
     console.log('[VisualElements] 🎨 Generating visual elements...');
 
     const elements = [];
     const specs = designSpecs.visualElements || {};
 
-    // NEW: Extract smart filtering rules from deepAnalysis
+    // Extract smart filtering rules from deepAnalysis
     const excludeElements = deepAnalysis?.excludeElements || [];
     const maxCallouts = deepAnalysis?.designRecommendations?.maxCallouts || 3;
     const visualAnchors = deepAnalysis?.visualAnchors || [];
+
+    // IMPORTANT: If compositionPlan exists, badges/callouts/socialProof are in TYPOGRAPHY layer
+    // Don't duplicate them here! Only generate decorative elements.
+    const aiPlanActive = compositionPlan !== null;
+    if (aiPlanActive) {
+        console.log('[VisualElements] 🧠 AI Plan Active - badges/callouts/social moved to typography layer');
+    }
 
     // NEW: Log smart filtering decisions
     if (deepAnalysis) {
@@ -42,29 +50,37 @@ export async function generateVisualElements(designSpecs, productAnalysis, accen
         console.log(`[VisualElements]   Visual anchors: ${visualAnchors.length}`);
     }
 
-    // Generate badges - SKIP if excluded
-    const shouldExcludeBadges = excludeElements.some(e =>
-        e.toLowerCase().includes('badge') || e.toLowerCase().includes('rating')
-    );
-    if (specs.badges && specs.badges.length > 0 && !shouldExcludeBadges) {
-        const badgesSvg = generateBadges(specs.badges, accentColor);
-        elements.push({ svg: badgesSvg, type: 'badges' });
-    } else if (shouldExcludeBadges) {
-        console.log('[VisualElements] ⏭️ Skipping badges (AI excluded)');
-    }
-
-    // Generate feature callouts - LIMIT to maxCallouts
-    if (specs.featureCallouts && specs.featureCallouts.length > 0) {
-        // Limit callouts based on AI recommendation
-        const limitedCallouts = specs.featureCallouts.slice(0, maxCallouts);
-        if (limitedCallouts.length < specs.featureCallouts.length) {
-            console.log(`[VisualElements] ✂️ Limited callouts: ${limitedCallouts.length} of ${specs.featureCallouts.length}`);
+    // BADGES: Skip if AI plan is active (badges are in typography layer)
+    // Also skip if explicitly excluded
+    if (!aiPlanActive) {
+        const shouldExcludeBadges = excludeElements.some(e =>
+            e.toLowerCase().includes('badge') || e.toLowerCase().includes('rating')
+        );
+        if (specs.badges && specs.badges.length > 0 && !shouldExcludeBadges) {
+            const badgesSvg = generateBadges(specs.badges, accentColor);
+            elements.push({ svg: badgesSvg, type: 'badges' });
+        } else if (shouldExcludeBadges) {
+            console.log('[VisualElements] ⏭️ Skipping badges (AI excluded)');
         }
-        const calloutsSvg = generateFeatureCallouts(limitedCallouts, accentColor);
-        elements.push({ svg: calloutsSvg, type: 'callouts' });
+    } else {
+        console.log('[VisualElements] ⏭️ Skipping badges (handled in typography layer)');
     }
 
-    // Generate decorative elements - Check for exclusions
+    // CALLOUTS: Skip if AI plan is active (callouts are in typography layer)
+    if (!aiPlanActive) {
+        if (specs.featureCallouts && specs.featureCallouts.length > 0) {
+            const limitedCallouts = specs.featureCallouts.slice(0, maxCallouts);
+            if (limitedCallouts.length < specs.featureCallouts.length) {
+                console.log(`[VisualElements] ✂️ Limited callouts: ${limitedCallouts.length} of ${specs.featureCallouts.length}`);
+            }
+            const calloutsSvg = generateFeatureCallouts(limitedCallouts, accentColor);
+            elements.push({ svg: calloutsSvg, type: 'callouts' });
+        }
+    } else {
+        console.log('[VisualElements] ⏭️ Skipping callouts (handled in typography layer)');
+    }
+
+    // DECORATIVE ELEMENTS: Keep generating - these are not in typography layer
     const shouldExcludeDecorative = excludeElements.some(e =>
         e.toLowerCase().includes('decorative') || e.toLowerCase().includes('shape')
     );
@@ -73,16 +89,20 @@ export async function generateVisualElements(designSpecs, productAnalysis, accen
         elements.push({ svg: decorativeSvg, type: 'decorative' });
     }
 
-    // Generate social proof - SKIP if excluded
-    const shouldExcludeSocial = excludeElements.some(e =>
-        e.toLowerCase().includes('social') || e.toLowerCase().includes('proof') ||
-        e.toLowerCase().includes('review') || e.toLowerCase().includes('star')
-    );
-    if (specs.socialProof?.show && !shouldExcludeSocial) {
-        const socialSvg = generateSocialProof(specs.socialProof, accentColor);
-        elements.push({ svg: socialSvg, type: 'social' });
-    } else if (shouldExcludeSocial) {
-        console.log('[VisualElements] ⏭️ Skipping social proof (AI excluded)');
+    // SOCIAL PROOF: Skip if AI plan is active (handled in typography layer)
+    if (!aiPlanActive) {
+        const shouldExcludeSocial = excludeElements.some(e =>
+            e.toLowerCase().includes('social') || e.toLowerCase().includes('proof') ||
+            e.toLowerCase().includes('review') || e.toLowerCase().includes('star')
+        );
+        if (specs.socialProof?.show && !shouldExcludeSocial) {
+            const socialSvg = generateSocialProof(specs.socialProof, accentColor);
+            elements.push({ svg: socialSvg, type: 'social' });
+        } else if (shouldExcludeSocial) {
+            console.log('[VisualElements] ⏭️ Skipping social proof (AI excluded)');
+        }
+    } else {
+        console.log('[VisualElements] ⏭️ Skipping social proof (handled in typography layer)');
     }
 
     // Auto-generate elements based on product analysis

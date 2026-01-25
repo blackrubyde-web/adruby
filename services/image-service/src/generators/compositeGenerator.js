@@ -374,12 +374,14 @@ export async function generateCompositeAd({
             // ════════════════════════════════════════════════════════════
             console.log('[MasterGen] ▶ PHASE 7: Visual Elements...');
 
-            // Generate and composite visual elements (now with smart filtering from deepAnalysis)
+            // Generate and composite visual elements (now with smart filtering from AI plans)
+            // Pass both deepAnalysis AND compositionPlan for maximum intelligence
             const visualElements = await generateVisualElements(
                 designSpecs,
                 productAnalysis,
                 finalAccentColor,
-                deepAnalysis  // NEW: Contains excludeElements, maxCallouts, visualAnchors
+                deepAnalysis,
+                compositionPlan  // NEW: AI-planned elements take priority
             );
             compositeBuffer = await compositeVisualElements(compositeBuffer, visualElements);
             console.log(`[MasterGen]   Elements: ${visualElements.length} layers ✓`);
