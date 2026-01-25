@@ -579,6 +579,10 @@ function escapeXml(str) {
 
 /**
  * Build complete typography layer
+ * Now with compositionPlan support for AI-driven exact positioning
+ * 
+ * @param {Object} params - Typography parameters
+ * @param {Object} params.compositionPlan - AI-planned composition with exact positions (optional)
  */
 export function buildTypographyLayer({
     headline,
@@ -588,108 +592,179 @@ export function buildTypographyLayer({
     socialProof,
     badges = [],
     designSpecs,
-    accentColor
+    accentColor,
+    compositionPlan = null  // NEW: AI-planned composition with exact positions
 }) {
     const typography = designSpecs?.typography || {};
     let allDefs = '';
     let allContent = '';
 
-    // Headline
+    // Log if using AI composition plan
+    if (compositionPlan) {
+        console.log('[Typography] 🧠 Using AI Composition Plan for positioning');
+    }
+
+    // HEADLINE - use compositionPlan position if available
     if (headline) {
+        const headlinePlan = compositionPlan?.headline;
+        const yPercent = headlinePlan?.position?.yPercent || typography.headline?.yPercent || 0.1;
+        const fontSize = headlinePlan?.sizePx || typography.headline?.sizePx || 56;
+        const fontWeight = headlinePlan?.weight || typography.headline?.weight || 800;
+
+        // Use gradient colors from plan if available
+        const useGradient = headlinePlan?.useGradient ?? typography.headline?.hasGradient ?? false;
+        const gradientColors = headlinePlan?.colors || ['#FFFFFF', accentColor];
+
         const h = createPremiumHeadline({
             text: headline,
-            y: Math.round(CANVAS_HEIGHT * (typography.headline?.yPercent || 0.1)) + (typography.headline?.sizePx || 56),
-            fontSize: typography.headline?.sizePx || 56,
-            fontWeight: typography.headline?.weight || 800,
+            y: Math.round(CANVAS_HEIGHT * yPercent) + fontSize,
+            fontSize,
+            fontWeight,
             effects: {
                 shadow: typography.headline?.hasShadow !== false ? {} : false,
-                gradient: typography.headline?.hasGradient ? { colors: ['#FFFFFF', accentColor] } : null
+                gradient: useGradient ? { colors: gradientColors } : null
             }
         });
         allDefs += h.defs;
         allContent += h.content;
     }
 
-    // Tagline
+    // TAGLINE - use compositionPlan position if available
     if (tagline && typography.tagline?.show !== false) {
+        const taglinePlan = compositionPlan?.subheadline;
+        const yPercent = taglinePlan?.position?.yPercent || typography.tagline?.yPercent || 0.18;
+        const fontSize = taglinePlan?.sizePx || typography.tagline?.sizePx || 24;
+
         const t = createPremiumTagline({
             text: tagline,
-            y: Math.round(CANVAS_HEIGHT * (typography.tagline?.yPercent || 0.18)) + (typography.tagline?.sizePx || 24),
-            fontSize: typography.tagline?.sizePx || 24,
+            y: Math.round(CANVAS_HEIGHT * yPercent) + fontSize,
+            fontSize,
             fontWeight: typography.tagline?.weight || 400
         });
         allDefs += t.defs;
         allContent += t.content;
     }
 
-    // CTA
+    // CTA - use compositionPlan position if available
     if (cta) {
+        const ctaPlan = compositionPlan?.cta;
+        const yPercent = ctaPlan?.position?.yPercent || typography.cta?.yPercent || 0.88;
+        const ctaColor = ctaPlan?.primaryColor || accentColor;
+        const ctaStyle = ctaPlan?.style || (typography.cta?.hasGlow ? 'gradient_glow' :
+            typography.cta?.hasGradient ? 'gradient' : 'solid');
+
         const c = createPremiumCTA({
             text: cta,
-            y: Math.round(CANVAS_HEIGHT * (typography.cta?.yPercent || 0.88)),
+            y: Math.round(CANVAS_HEIGHT * yPercent),
             width: typography.cta?.widthPx || 280,
             height: typography.cta?.heightPx || 64,
             borderRadius: typography.cta?.borderRadius || 32,
             fontSize: typography.cta?.textSizePx || 20,
             fontWeight: typography.cta?.textWeight || 700,
-            backgroundColor: accentColor,
-            style: typography.cta?.hasGlow ? 'gradient_glow' :
-                typography.cta?.hasGradient ? 'gradient' : 'solid'
+            backgroundColor: ctaColor,
+            style: ctaStyle
         });
         allDefs += c.defs;
         allContent += c.content;
     }
 
-    // Features
-    features.forEach((feature, i) => {
-        const positions = [
+    // FEATURES/CALLOUTS - use compositionPlan callouts with exact positions
+    const calloutPlan = compositionPlan?.callouts || [];
+
+    if (calloutPlan.length > 0) {
+        // Use AI-planned callout positions
+        calloutPlan.forEach((callout, i) => {
+            const x = Math.round(CANVAS_WIDTH * (callout.position?.xPercent || 0.1));
+            const y = Math.round(CANVAS_HEIGHT * (callout.position?.yPercent || 0.6 + i * 0.08));
+
+            const f = createFeatureText({
+                icon: callout.icon || '✓',
+                title: callout.text,
+                description: callout.description || '',
+                x,
+                y,
+                accentColor
+            });
+            allDefs += f.defs;
+            allContent += f.content;
+        });
+    } else if (features.length > 0) {
+        // Fallback to old feature positioning
+        const defaultPositions = [
             { x: 50, y: 650 },
             { x: 50, y: 730 },
             { x: CANVAS_WIDTH - 250, y: 650 },
             { x: CANVAS_WIDTH - 250, y: 730 }
         ];
-        const pos = positions[i % positions.length];
 
-        const f = createFeatureText({
-            icon: feature.icon,
-            title: feature.title,
-            description: feature.description,
-            x: pos.x,
-            y: pos.y,
-            accentColor
+        features.slice(0, 2).forEach((feature, i) => {  // Limit to 2 for cleaner design
+            const pos = defaultPositions[i % defaultPositions.length];
+            const f = createFeatureText({
+                icon: feature.icon,
+                title: feature.title || feature.text,
+                description: feature.description || '',
+                x: pos.x,
+                y: pos.y,
+                accentColor
+            });
+            allDefs += f.defs;
+            allContent += f.content;
         });
-        allDefs += f.defs;
-        allContent += f.content;
-    });
+    }
 
-    // Social proof
+    // SOCIAL PROOF - only if AI says to show it
     if (socialProof?.show) {
+        const socialY = compositionPlan?.cta?.position?.yPercent
+            ? Math.round(CANVAS_HEIGHT * compositionPlan.cta.position.yPercent) - 60
+            : Math.round(CANVAS_HEIGHT * (typography.cta?.yPercent || 0.88)) - 50;
+
         allContent += createSocialProof({
             type: socialProof.type || 'rating',
             rating: socialProof.rating || 4.9,
             count: socialProof.count || '2,500+',
-            y: Math.round(CANVAS_HEIGHT * (typography.cta?.yPercent || 0.88)) - 50
+            y: socialY
         });
     }
 
-    // Badges
-    badges.forEach((badge, i) => {
+    // BADGES - use compositionPlan badges with AI-planned positions
+    const badgePlan = compositionPlan?.badges || [];
+
+    if (badgePlan.length > 0) {
+        // Use AI-planned badge positions - ONLY render what AI planned
+        badgePlan.forEach((badge, i) => {
+            const x = Math.round(CANVAS_WIDTH * (badge.position?.xPercent || 0.9));
+            const y = Math.round(CANVAS_HEIGHT * (badge.position?.yPercent || 0.05 + i * 0.06));
+
+            allContent += createTrustBadge({
+                text: badge.text,
+                icon: badge.icon || '⭐',
+                x,
+                y,
+                style: badge.style || 'pill',
+                accentColor
+            });
+        });
+    } else if (badges.length > 0 && !compositionPlan) {
+        // Only use old badge logic if NO compositionPlan (backward compatibility)
         const badgePositions = {
             'top_left': { x: 40, y: 40 },
             'top_right': { x: CANVAS_WIDTH - 180, y: 40 },
             'near_cta': { x: CANVAS_WIDTH / 2 + 180, y: CANVAS_HEIGHT * 0.88 }
         };
-        const pos = badgePositions[badge.position] || { x: CANVAS_WIDTH - 180, y: 40 + i * 50 };
 
-        allContent += createTrustBadge({
-            text: badge.text,
-            icon: badge.icon || '✓',
-            x: pos.x,
-            y: pos.y,
-            style: badge.style || 'pill',
-            accentColor
+        badges.slice(0, 1).forEach((badge, i) => {  // Limit to 1 badge for cleaner design
+            const pos = badgePositions[badge.position] || { x: CANVAS_WIDTH - 180, y: 40 };
+            allContent += createTrustBadge({
+                text: badge.text,
+                icon: badge.icon || '✓',
+                x: pos.x,
+                y: pos.y,
+                style: badge.style || 'pill',
+                accentColor
+            });
         });
-    });
+    }
+    // If compositionPlan exists but has no badges, render NO badges (AI decided)
 
     return `
     <svg width="${CANVAS_WIDTH}" height="${CANVAS_HEIGHT}" xmlns="http://www.w3.org/2000/svg">
