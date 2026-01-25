@@ -643,93 +643,55 @@ function mostCommon(arr) {
  * - What to explicitly EXCLUDE
  */
 export async function planAdComposition(foreplayPatterns, deepAnalysis, productAnalysis, userPrompt = '', industry = '') {
-    console.log('[AdPlanner] 🧠 AI Creative Director planning final composition...');
+    console.log('[AdPlanner] 🧠 AI Creative Director - 100% DYNAMIC composition (no templates)...');
 
     try {
-        // Select base schema for psychology/fallback, but REAL patterns take priority
-        const schemaResult = selectWinningSchema(productAnalysis, industry, userPrompt);
-        const selectedSchema = schemaResult.schema;
-        console.log(`[AdPlanner] 📋 Base Schema: ${selectedSchema.name} (for psychology guidance)`);
-
-        // Count how many actual Foreplay references we have
+        // NO SCHEMAS - Everything is dynamically generated
         const hasRealPatterns = foreplayPatterns && foreplayPatterns.referenceCount > 0;
-        console.log(`[AdPlanner] 🎯 ${hasRealPatterns ? `Using ${foreplayPatterns.referenceCount} REAL Foreplay patterns` : 'No real patterns - using schema defaults'}`);
-
-        // Create CUSTOMIZED schema by merging real patterns with template
-        const customizedSchema = hasRealPatterns ? {
-            name: `Custom: ${selectedSchema.name}`,
-            // Use REAL patterns for layout, override schema
-            layout: {
-                ...selectedSchema.layout,
-                productPosition: foreplayPatterns.layout?.productPlacement ? {
-                    x: foreplayPatterns.layout.productPlacement.xPercent,
-                    y: foreplayPatterns.layout.productPlacement.yPercent
-                } : selectedSchema.layout.productPosition,
-                productScale: foreplayPatterns.layout?.productPlacement?.scalePercent || selectedSchema.layout.productScale
-            },
-            // Use REAL typography from Foreplay
-            typography: {
-                headline: foreplayPatterns.typography?.headline || selectedSchema.typography?.headline,
-                tagline: foreplayPatterns.typography?.tagline || selectedSchema.typography?.tagline,
-                cta: foreplayPatterns.typography?.cta || selectedSchema.typography?.cta
-            },
-            // Use REAL colors from Foreplay
-            colors: {
-                background: foreplayPatterns.colors?.backgroundType || 'dark_gradient',
-                accent: foreplayPatterns.colors?.accentColor || selectedSchema.colors?.accent,
-                primary: foreplayPatterns.colors?.backgroundPrimary,
-                secondary: foreplayPatterns.colors?.backgroundSecondary
-            },
-            // Keep schema elements limits but adapt to real patterns
-            elements: selectedSchema.elements,
-            // Use schema psychology
-            psychology: selectedSchema.psychology
-        } : selectedSchema;
-
-        console.log(`[AdPlanner] 🎨 Customized Schema Created:`);
-        console.log(`[AdPlanner]   Layout: ${JSON.stringify(customizedSchema.layout?.productPosition || {})}`);
-        console.log(`[AdPlanner]   Accent: ${customizedSchema.colors?.accent || 'default'}`);
+        console.log(`[AdPlanner] 🎯 ${hasRealPatterns ? `Analyzing ${foreplayPatterns.referenceCount} REAL Foreplay patterns` : 'No references - pure AI creativity'}`);
+        console.log(`[AdPlanner] 📊 Product: ${productAnalysis?.productType || 'unknown'}`);
+        console.log(`[AdPlanner] 🏭 Industry: ${industry || 'general'}`);
+        console.log(`[AdPlanner] 💡 User prompt: "${userPrompt?.substring(0, 30) || 'none'}..."`);
 
         const response = await openai.chat.completions.create({
             model: 'gpt-4o',
             messages: [{
                 role: 'system',
-                content: `You are an elite creative director who creates UNIQUE, individualized ad compositions.
+                content: `You are an elite creative director who creates 100% UNIQUE, INDIVIDUALIZED ad compositions.
 
-CRITICAL: You create CUSTOM designs, NOT from templates. Each ad must be unique to the product.
+CRITICAL: NO TEMPLATES, NO SCHEMAS. Every ad you create is COMPLETELY ORIGINAL and tailored to THIS specific product.
 
 You will receive:
-1. REAL FOREPLAY PATTERNS: Actual design specs extracted from winning ads via GPT-4V (THIS IS YOUR PRIMARY SOURCE)
-2. CUSTOMIZED SCHEMA: A template customized with real Foreplay data (use for psychology and fallbacks)
-3. DEEP ANALYSIS: Analysis of the user's product screenshot (visual anchors, empty spaces, content zones)
-4. PRODUCT ANALYSIS: Basic product info
+1. REAL FOREPLAY PATTERNS: Design specs extracted from winning ads (use as INSPIRATION, not copy)
+2. PRODUCT SMART PLACEMENTS: Pre-computed optimal positions based on screenshot analysis
+3. SAFE ZONES: Areas to AVOID placing elements
+4. DEEP ANALYSIS: Understanding of the product screenshot
+5. PRODUCT INFO: What the product is
 
-Your job: Create a COMPLETELY INDIVIDUALIZED composition that:
-- PRIMARILY uses the REAL Foreplay patterns (they are extracted from actual winning ads!)
-- Adapts the patterns to the user's specific product screenshot
-- Uses the schema psychology for conversion optimization
-- RESPECTS the pre-computed smartPlacements from product analysis
+Your job: Create a 100% ORIGINAL composition:
+- LEARN from Foreplay patterns but CREATE something NEW
+- Use the smart placements as your FOUNDATION (they're computed from the actual screenshot)
+- NEVER copy directly - adapt, improve, innovate
+- Each ad must feel CUSTOM MADE for this specific product
 
 RULES:
-- FOREPLAY FIRST: Real patterns > schema defaults
-- SMART PLACEMENTS: Use the pre-computed positions from PRODUCT_SMART_PLACEMENTS as your foundation
+- 100% INDIVIDUAL: No two ads should look the same
+- SMART PLACEMENTS FIRST: Use pre-computed positions as your starting point
 - SAFE ZONES: NEVER place elements in noOverlay or noText areas
-- SPATIAL GRID: Check which zones are occupied before placing elements
-- Be UNIQUE: Don't just copy - adapt patterns to this specific product
-- Be PRECISE: Give exact positions as percentages
-- Use REAL VALUES: The Foreplay patterns have actual pixel values, colors, positions - USE THEM
-- VALIDATE: Before finalizing, verify no elements overlap important content areas`
+- BE CREATIVE: Combine patterns in new ways
+- BE PRECISE: Give exact positions as percentages (0.0-1.0)
+- PRODUCT FOCUS: The product screenshot is the hero
+- MINIMAL BUT IMPACTFUL: Better to have fewer, perfect elements`
             }, {
                 role: 'user',
-                content: `Create a UNIQUE composition plan for this ad.
+                content: `Create a 100% ORIGINAL composition plan for this ad.
 
-REAL FOREPLAY PATTERNS (from ${foreplayPatterns.referenceCount || 0} winning ads - USE THESE FIRST!):
+FOREPLAY PATTERNS (INSPIRATION ONLY - do NOT copy, use as reference):
 ${JSON.stringify({
                     layout: {
                         gridType: foreplayPatterns.layout?.gridType,
                         productPlacement: foreplayPatterns.layout?.productPlacement,
-                        margins: foreplayPatterns.layout?.margins,
-                        spacing: foreplayPatterns.layout?.spacing
+                        margins: foreplayPatterns.layout?.margins
                     },
                     typography: {
                         headline: foreplayPatterns.typography?.headline,
@@ -737,33 +699,10 @@ ${JSON.stringify({
                         cta: foreplayPatterns.typography?.cta
                     },
                     colors: foreplayPatterns.colors,
-                    visualElements: foreplayPatterns.visualElements,
-                    effects: foreplayPatterns.effects,
                     mood: foreplayPatterns.mood
                 }, null, 2)}
 
-CUSTOMIZED SCHEMA (for psychology and fallbacks):
-${JSON.stringify({
-                    name: customizedSchema.name,
-                    layout: customizedSchema.layout,
-                    typography: customizedSchema.typography,
-                    colors: customizedSchema.colors,
-                    elements: customizedSchema.elements,
-                    psychology: customizedSchema.psychology
-                }, null, 2)}
-
-PRODUCT DEEP ANALYSIS (adapt patterns to this):
-${JSON.stringify({
-                    productType: deepAnalysis?.productType,
-                    contentZones: deepAnalysis?.contentZones,
-                    visualAnchors: deepAnalysis?.visualAnchors?.slice(0, 3),
-                    emptySpaces: deepAnalysis?.contentZones?.emptySpaces,
-                    designRecommendations: deepAnalysis?.designRecommendations,
-                    excludeElements: deepAnalysis?.excludeElements,
-                    overallMood: deepAnalysis?.overallMood
-                }, null, 2)}
-
-PRODUCT SMART PLACEMENTS (USE THESE EXACT POSITIONS - pre-computed from screenshot analysis):
+PRODUCT SMART PLACEMENTS (YOUR FOUNDATION - these are computed from the actual screenshot):
 ${JSON.stringify({
                     headline: deepAnalysis?.smartPlacements?.headline,
                     tagline: deepAnalysis?.smartPlacements?.tagline,
@@ -778,6 +717,16 @@ ${JSON.stringify({
                     noOverlay: deepAnalysis?.safeZones?.noOverlay,
                     noText: deepAnalysis?.safeZones?.noText,
                     spatialGrid: deepAnalysis?.spatialGrid?.zones
+                }, null, 2)}
+
+PRODUCT DEEP ANALYSIS:
+${JSON.stringify({
+                    productType: deepAnalysis?.productType,
+                    visualHierarchy: deepAnalysis?.visualHierarchy,
+                    semanticContent: deepAnalysis?.semanticContent,
+                    contentZones: deepAnalysis?.contentZones,
+                    designRecommendations: deepAnalysis?.designRecommendations,
+                    overallMood: deepAnalysis?.overallMood
                 }, null, 2)}
 
 PRODUCT INFO:
