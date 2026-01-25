@@ -426,11 +426,18 @@ export function createSocialProof({
 
     switch (type) {
         case 'rating':
-            const stars = '★'.repeat(Math.floor(rating)) + (rating % 1 >= 0.5 ? '½' : '');
+            // Use full stars only (avoid broken ½ character)
+            const fullStars = Math.round(rating);
+            const stars = '★'.repeat(fullStars);
+            // Center the entire rating display
             content = `
-            <text x="${x - 60}" y="${y}" fill="#FFD700" font-size="16">${stars}</text>
-            <text x="${x + 40}" y="${y}" fill="rgba(255,255,255,0.7)" font-size="14"
-                  font-family="${FONT_STACKS.body}">${rating} (${count} reviews)</text>`;
+            <g>
+                <text x="${x}" y="${y}" text-anchor="middle" fill="rgba(255,255,255,0.8)" 
+                      font-size="14" font-family="${FONT_STACKS.body}">
+                    <tspan fill="#FFD700">${stars}</tspan>
+                    <tspan dx="8">${rating} (${count} reviews)</tspan>
+                </text>
+            </g>`;
             break;
 
         case 'users':
@@ -645,8 +652,10 @@ export function buildTypographyLayer({
         allContent += t.content;
     }
 
-    // CTA - use compositionPlan position if available
-    if (cta) {
+    // CTA - OPTIONAL: only show if compositionPlan doesn't exclude it
+    // User can control via prompt (e.g. "no CTA" or "without button")
+    const showCTA = cta && !compositionPlan?.excludeFromDesign?.includes('cta');
+    if (showCTA) {
         const ctaPlan = compositionPlan?.cta;
         const yPercent = ctaPlan?.position?.yPercent || typography.cta?.yPercent || 0.88;
         const ctaColor = ctaPlan?.primaryColor || accentColor;
@@ -697,7 +706,7 @@ export function buildTypographyLayer({
             { x: CANVAS_WIDTH - 250, y: 730 }
         ];
 
-        features.slice(0, 2).forEach((feature, i) => {  // Limit to 2 for cleaner design
+        features.slice(0, 6).forEach((feature, i) => {  // Allow up to 6 features
             const pos = defaultPositions[i % defaultPositions.length];
             const f = createFeatureText({
                 icon: feature.icon,
