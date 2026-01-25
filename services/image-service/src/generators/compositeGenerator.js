@@ -217,17 +217,29 @@ export async function generateCompositeAd({
             let productAnalysis = null;
             let referenceAds = [];
             let extractedColors = { primary: '#0A0A1A', accent: accentColor || '#FF4757' };
+            let deepAnalysis = null;  // NEW: Deep analysis for smart element placement
 
             if (productImageBuffer) {
                 try {
                     const matchResult = await matchProduct(productImageBuffer);
                     productAnalysis = matchResult.analysis;
+                    deepAnalysis = matchResult.deepAnalysis;  // NEW: Contains visual anchors, content zones
                     referenceAds = matchResult.referenceAds || [];
                     extractedColors = await extractBrandColors(productImageBuffer, productAnalysis);
 
                     console.log(`[MasterGen]   Product: ${productAnalysis?.productName || 'Unknown'}`);
                     console.log(`[MasterGen]   Type: ${productAnalysis?.productType || 'unknown'}`);
                     console.log(`[MasterGen]   References: ${referenceAds.length} Foreplay ads`);
+
+                    // NEW: Log deep analysis insights
+                    if (deepAnalysis) {
+                        console.log(`[MasterGen] 🔬 Deep Analysis Results:`);
+                        console.log(`[MasterGen]   Visual Anchors: ${deepAnalysis.visualAnchors?.length || 0}`);
+                        console.log(`[MasterGen]   Empty Spaces: ${deepAnalysis.contentZones?.emptySpaces?.length || 0}`);
+                        console.log(`[MasterGen]   Max Callouts: ${deepAnalysis.designRecommendations?.maxCallouts || 2}`);
+                        console.log(`[MasterGen]   Suggested Headline: ${deepAnalysis.designRecommendations?.suggestedHeadline || 'N/A'}`);
+                        console.log(`[MasterGen]   Exclude: ${deepAnalysis.excludeElements?.join(', ') || 'none'}`);
+                    }
                 } catch (e) {
                     console.warn('[MasterGen]   Product analysis fallback:', e.message);
                 }
@@ -352,8 +364,13 @@ export async function generateCompositeAd({
             // ════════════════════════════════════════════════════════════
             console.log('[MasterGen] ▶ PHASE 7: Visual Elements...');
 
-            // Generate and composite visual elements
-            const visualElements = await generateVisualElements(designSpecs, productAnalysis, finalAccentColor);
+            // Generate and composite visual elements (now with smart filtering from deepAnalysis)
+            const visualElements = await generateVisualElements(
+                designSpecs,
+                productAnalysis,
+                finalAccentColor,
+                deepAnalysis  // NEW: Contains excludeElements, maxCallouts, visualAnchors
+            );
             compositeBuffer = await compositeVisualElements(compositeBuffer, visualElements);
             console.log(`[MasterGen]   Elements: ${visualElements.length} layers ✓`);
 
