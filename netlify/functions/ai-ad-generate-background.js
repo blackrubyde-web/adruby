@@ -290,7 +290,8 @@ export const handler = async (event) => {
             try {
                 const railwayAvailable = await isRailwayAvailable();
                 if (!railwayAvailable) {
-                    console.warn('[AI Ad Generate] Railway v6.0 unavailable, falling back to local engines');
+                    console.error('[AI Ad Generate] ❌ Railway v6.0 UNAVAILABLE - cannot composite');
+                    throw new Error('Railway image service is unavailable. Please try again in a moment.');
                 } else {
                     await updateProgress('composite_generating', 30, { compositeActive: true });
 
