@@ -397,29 +397,61 @@ export async function generateCompositeAd({
 
             const typographySpecs = buildTypographySpecs(designSpecs);
 
-            // Use AI-generated content if available
-            const finalHeadline = headline ||
-                contentPackage?.headlines?.primary ||
-                productAnalysis?.suggestedHeadlines?.[0] ||
-                'Premium Quality';
-            const finalTagline = tagline || contentPackage?.taglines?.primary;
-            const finalCTA = cta || contentPackage?.ctas?.primary || 'Shop Now';
+            // PRIORITY ORDER: User Input > AI compositionPlan > contentPackage > defaults
+            // compositionPlan contains AI-driven decisions based on Foreplay + deepAnalysis
+            const finalHeadline = headline ||  // 1. User provided
+                compositionPlan?.headline?.text ||  // 2. AI planned (NEW!)
+                contentPackage?.headlines?.primary ||  // 3. Content generator
+                productAnalysis?.suggestedHeadlines?.[0] ||  // 4. Product analysis
+                'Premium Quality';  // 5. Fallback
 
-            // Build complete typography layer
+            const finalTagline = tagline ||
+                compositionPlan?.subheadline?.text ||  // AI planned (NEW!)
+                contentPackage?.taglines?.primary;
+
+            const finalCTA = cta ||
+                compositionPlan?.cta?.text ||  // AI planned (NEW!)
+                contentPackage?.ctas?.primary ||
+                'Shop Now';
+
+            // Use AI-planned badges if available, otherwise smart filter from designSpecs
+            // compositionPlan.badges is curated by AI to prevent clutter
+            const finalBadges = compositionPlan?.badges?.length > 0
+                ? compositionPlan.badges
+                : [];  // Default to NO badges if AI didn't plan any
+
+            // Use AI-planned callouts with specific positions
+            const finalCallouts = compositionPlan?.callouts || [];
+
+            // Social proof only if AI planned it or it makes sense
+            const shouldShowSocialProof = compositionPlan?.badges?.some(b => b.type === 'rating') ||
+                (contentPackage?.trustIndicators?.rating && !compositionPlan?.excludeFromDesign?.includes('social_proof'));
+
+            console.log(`[MasterGen] 📋 Using AI Plan:`);
+            console.log(`[MasterGen]   Headline: "${finalHeadline.substring(0, 30)}..."`);
+            console.log(`[MasterGen]   CTA: "${finalCTA}"`);
+            console.log(`[MasterGen]   Badges: ${finalBadges.length}`);
+            console.log(`[MasterGen]   Callouts: ${finalCallouts.length}`);
+            console.log(`[MasterGen]   Social Proof: ${shouldShowSocialProof}`);
+
+            // Build complete typography layer with AI-planned elements
             const typographySvg = buildTypographyLayer({
                 headline: finalHeadline,
                 tagline: finalTagline,
                 cta: finalCTA,
-                features: contentPackage?.features?.slice(0, 4) || [],
-                socialProof: contentPackage?.trustIndicators?.rating ? {
+                features: finalCallouts.length > 0
+                    ? finalCallouts.map(c => ({ text: c.text, position: c.position }))
+                    : contentPackage?.features?.slice(0, compositionPlan?.designRecommendations?.maxCallouts || 2) || [],
+                socialProof: shouldShowSocialProof ? {
                     show: true,
                     type: 'rating',
-                    rating: contentPackage.trustIndicators.rating.score,
-                    count: contentPackage.trustIndicators.reviews?.count
-                } : designSpecs.visualElements?.socialProof,
-                badges: designSpecs.visualElements?.badges || [],
+                    rating: contentPackage?.trustIndicators?.rating?.score || 4.9,
+                    count: contentPackage?.trustIndicators?.reviews?.count || '2,500'
+                } : { show: false },
+                badges: finalBadges,
                 designSpecs,
-                accentColor: finalAccentColor
+                accentColor: compositionPlan?.cta?.primaryColor || finalAccentColor,
+                compositionPlan  // Pass full plan for advanced positioning
             });
 
             const typographyBuffer = await sharp(Buffer.from(typographySvg)).png().toBuffer();
