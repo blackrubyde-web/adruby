@@ -576,10 +576,16 @@ export function getDefaultDesignSpecs() {
             }
         },
         effects: {
-            productShadow: { show: true, type: 'drop', blur: 25, opacity: 0.5, offsetY: 15 },
-            productReflection: { show: false, opacity: 0.1 },
-            backgroundEffects: { hasBokeh: true, bokehCount: 4, hasNoiseTexture: true, noiseOpacity: 0.02 },
-            screenGlow: { show: true, intensity: 0.08 }
+            productShadow: { show: true, type: 'layered', blur: 30, opacity: 0.6, offsetY: 20 },
+            productReflection: { show: true, opacity: 0.15 },
+            backgroundEffects: {
+                hasBokeh: true,
+                bokehCount: 6,
+                hasParticles: true,
+                hasNoiseTexture: true,
+                noiseOpacity: 0.03
+            },
+            screenGlow: { show: true, intensity: 0.12 }
         },
         composition: {
             focalPoint: { xPercent: 0.5, yPercent: 0.45 },
