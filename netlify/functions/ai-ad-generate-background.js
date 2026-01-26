@@ -250,10 +250,21 @@ export const handler = async (event) => {
         }
 
         // Progress Update Helper
+        // HIGH 1 FIX: Preserve existing metrics fields (credits_deducted, started_at)
         const updateProgress = async (step, progress, details = {}) => {
             try {
+                // Fetch existing metrics to preserve important fields
+                const { data: existing } = await supabaseAdmin
+                    .from('generated_creatives')
+                    .select('metrics')
+                    .eq('id', jobId)
+                    .single();
+
+                const existingMetrics = existing?.metrics || {};
+
                 await supabaseAdmin.from('generated_creatives').update({
                     metrics: {
+                        ...existingMetrics,  // Preserve credits_deducted, started_at, etc.
                         status: 'processing',
                         step,
                         progress,
@@ -277,13 +288,18 @@ export const handler = async (event) => {
         console.log('[AI Ad Generate] 📦 useCompositePipeline:', body.useCompositePipeline);
         console.log('[AI Ad Generate] 📦 productImageUrl exists:', !!body.productImageUrl);
 
-        // FORCE: Always use composite pipeline when user uploaded a product image
-        const forceComposite = !!body.productImageUrl;
-        const useComposite = body.useCompositePipeline === true || forceComposite;
-        console.log('[AI Ad Generate] 📦 FINAL useComposite:', useComposite);
+        // BLOCKER 2 FIX: Only use composite if product image exists!
+        const hasProductImage = !!body.productImageUrl || !!body.productImageBase64;
+        const useComposite = hasProductImage && body.useCompositePipeline !== false;
+
+        if (body.useCompositePipeline && !hasProductImage) {
+            console.warn('[AI Ad Generate] ⚠️ Composite requested but no product image - falling back to standard pipeline');
+        }
+
+        console.log('[AI Ad Generate] 📦 FINAL useComposite:', useComposite, { hasProductImage });
 
         // ========================================
-        // RAILWAY v6.0: COMPOSITE PIPELINE (FORCED FOR PRODUCT IMAGES)
+        // RAILWAY v6.0: COMPOSITE PIPELINE (REQUIRES PRODUCT IMAGE)
         // Uses pixel-perfect screenshot preservation
         // ========================================
         if (useComposite) {
@@ -293,20 +309,56 @@ export const handler = async (event) => {
             try {
                 const railwayAvailable = await isRailwayAvailable();
                 if (!railwayAvailable) {
-                    console.error('[AI Ad Generate] ❌ Railway v6.0 UNAVAILABLE - cannot composite');
-                    throw new Error('Railway image service is unavailable. Please try again in a moment.');
+                    console.error('[AI Ad Generate] ❌ Railway v6.0 UNAVAILABLE - falling back to DALL-E');
+                    // BLOCKER 5 FIX: Fall through to standard pipeline instead of throwing
+                    console.log('[AI Ad Generate] 🔄 Railway fallback: continuing with standard pipeline');
                 } else {
                     await updateProgress('composite_generating', 30, { compositeActive: true });
+
+                    // BLOCKER 3 FIX: Generate copy if not provided!
+                    let compositeHeadline = body.headline;
+                    let compositeTagline = body.subheadline || body.usp;
+                    let compositeCta = body.cta || 'Jetzt entdecken';
+
+                    if (!compositeHeadline) {
+                        console.log('[AI Ad Generate] 📝 No headline provided - generating copy for composite...');
+                        try {
+                            const copyResponse = await openai.chat.completions.create({
+                                model: 'gpt-4o',
+                                messages: [{
+                                    role: 'system',
+                                    content: `Generate ad copy in ${language === 'de' ? 'German' : 'English'}. Return JSON: { "headline": "short catchy headline", "tagline": "supporting text", "cta": "call to action" }`
+                                }, {
+                                    role: 'user',
+                                    content: `Product: ${body.productName || 'Product'}\nDescription: ${body.text || body.usp || 'A great product'}\nIndustry: ${body.industry || 'tech'}\nTarget: ${body.targetAudience || 'everyone'}`
+                                }],
+                                response_format: { type: 'json_object' },
+                                max_tokens: 300,
+                                temperature: 0.7
+                            });
+
+                            const generatedCopy = JSON.parse(copyResponse.choices[0].message.content);
+                            compositeHeadline = generatedCopy.headline || body.productName || 'Discover More';
+                            compositeTagline = compositeTagline || generatedCopy.tagline || '';
+                            compositeCta = generatedCopy.cta || compositeCta;
+
+                            console.log('[AI Ad Generate] ✅ Generated copy:', { compositeHeadline, compositeTagline, compositeCta });
+                        } catch (copyErr) {
+                            console.warn('[AI Ad Generate] Copy generation failed, using fallback:', copyErr.message);
+                            compositeHeadline = body.productName || 'Your Product';
+                        }
+                        await updateProgress('copy_for_composite', 25, { copyGenerated: true });
+                    }
 
                     // Railway fetches the image from URL directly - no base64 needed
                     console.log('[AI Ad Generate] 🚂 Calling Railway with productImageUrl...');
 
                     const compositeResult = await generateWithComposite({
-                        productImageBase64: null,  // Railway will fetch from URL
+                        productImageBase64: body.productImageBase64 || null,
                         productImageUrl: body.productImageUrl,
-                        headline: body.headline,
-                        tagline: body.subheadline || body.usp,
-                        cta: body.cta || 'Jetzt entdecken',
+                        headline: compositeHeadline,
+                        tagline: compositeTagline,
+                        cta: compositeCta,
                         userPrompt: body.text || `${body.productName || 'Product'} advertisement`,
                         industry: body.industry || 'tech',
                         accentColor: body.accentColor || '#FF4757',
@@ -337,13 +389,33 @@ export const handler = async (event) => {
 
                     // CRITICAL: Update DB with outputs and metrics so polling detects success
                     // Note: No 'status' column exists - polling reads metrics.status
+                    // BLOCKER FIX: Include copy (headline, tagline, cta) in outputs!
                     console.log('[AI Ad Generate] ✅ Saving composite result to DB...');
+
+                    // Extract copy from compositionPlan if available, fallback to request body
+                    const composition = compositeResult.metadata?.compositionPlan;
+                    const finalHeadline = composition?.headline?.text || body.headline || 'Your Product';
+                    const finalTagline = composition?.subheadline?.text || body.subheadline || body.usp || '';
+                    const finalCta = composition?.cta?.text || body.cta || 'Jetzt entdecken';
+
+                    console.log('[AI Ad Generate] 📝 Copy to save:', { finalHeadline, finalTagline, finalCta });
+
                     const { error: dbError } = await supabaseAdmin.from('generated_creatives').update({
                         outputs: {
+                            // BLOCKER FIX: Save copy fields!
+                            headline: finalHeadline,
+                            slogan: finalTagline,
+                            tagline: finalTagline,
+                            cta: finalCta,
+                            description: body.text || body.usp || '',
+                            // Image fields
                             imageUrl: finalImageUrl || compositeResult.imageDataUrl,
                             imageDataUrl: compositeResult.imageDataUrl,
+                            thumbnailUrl: finalImageUrl || compositeResult.imageDataUrl,
+                            // Metadata
                             engine: 'railway_composite_v6',
                             quality: compositeResult.metadata?.qualityScore || 7.6,
+                            template: 'composite_v6',
                         },
                         thumbnail: finalImageUrl || compositeResult.imageDataUrl,
                         metrics: {
@@ -351,7 +423,9 @@ export const handler = async (event) => {
                             progress: 100,
                             engine: 'railway_composite_v6',
                             completed_at: new Date().toISOString(),
-                            duration_ms: Date.now() - (compositeResult.metadata?.startTime || Date.now()),
+                            duration_ms: Date.now() - startTime,
+                            credits_deducted: true,  // Preserve this field!
+                            copy_generated: true,
                         }
                     }).eq('id', jobId);
 
