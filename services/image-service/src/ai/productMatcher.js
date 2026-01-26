@@ -12,18 +12,75 @@ const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 const foreplay = createForeplayClient(process.env.FOREPLAY_API_KEY);
 
 /**
- * Product categories for Foreplay search
+ * VALID Foreplay API niches (verified from their API documentation)
+ * Using ONLY these values prevents 422 errors
  */
-const PRODUCT_CATEGORIES = {
-    figurine: ['collectibles', 'toys', 'gaming', 'anime'],
-    tech: ['electronics', 'gadgets', 'software', 'apps'],
-    beauty: ['skincare', 'cosmetics', 'beauty', 'wellness'],
-    fashion: ['clothing', 'apparel', 'accessories', 'jewelry'],
-    food: ['food', 'beverage', 'supplements', 'health'],
-    home: ['home decor', 'furniture', 'kitchen', 'garden'],
-    fitness: ['fitness', 'sports', 'gym', 'wellness'],
-    pet: ['pets', 'dog', 'cat', 'pet supplies']
+const VALID_FOREPLAY_NICHES = [
+    'app/software',
+    'fashion',
+    'beauty',
+    'food',
+    'travel',
+    'sports',
+    'technology',
+    'accessories',
+    'health/wellness',
+    'home/garden',
+    'jewelry/watches',
+    'pets',
+    'kids/baby',
+    'automotive',
+    'entertainment',
+    'education',
+    'finance',
+    'other'
+];
+
+/**
+ * Map product types to valid Foreplay niches
+ */
+const PRODUCT_TO_NICHE_MAP = {
+    figurine: ['accessories', 'entertainment'],
+    tech: ['app/software', 'technology'],
+    beauty: ['beauty', 'health/wellness'],
+    fashion: ['fashion', 'accessories'],
+    food: ['food', 'health/wellness'],
+    home: ['home/garden'],
+    fitness: ['health/wellness', 'sports'],
+    pet: ['pets'],
+    saas: ['app/software', 'technology'],
+    software: ['app/software'],
+    other: ['other']
 };
+
+/**
+ * Convert any niche string to a valid Foreplay niche
+ */
+function toValidNiche(niche) {
+    if (!niche) return 'other';
+    const lower = niche.toLowerCase().trim();
+
+    // Direct match
+    if (VALID_FOREPLAY_NICHES.includes(lower)) return lower;
+
+    // Map common variations
+    if (lower.includes('software') || lower.includes('app') || lower.includes('saas')) return 'app/software';
+    if (lower.includes('tech') || lower.includes('gadget') || lower.includes('electronic')) return 'technology';
+    if (lower.includes('beauty') || lower.includes('cosmetic') || lower.includes('skincare')) return 'beauty';
+    if (lower.includes('fashion') || lower.includes('clothing') || lower.includes('apparel')) return 'fashion';
+    if (lower.includes('food') || lower.includes('drink') || lower.includes('beverage')) return 'food';
+    if (lower.includes('health') || lower.includes('wellness') || lower.includes('fitness')) return 'health/wellness';
+    if (lower.includes('home') || lower.includes('garden') || lower.includes('furniture')) return 'home/garden';
+    if (lower.includes('pet') || lower.includes('dog') || lower.includes('cat')) return 'pets';
+    if (lower.includes('sport') || lower.includes('gym')) return 'sports';
+    if (lower.includes('jewelry') || lower.includes('watch') || lower.includes('accessori')) return 'accessories';
+    if (lower.includes('kid') || lower.includes('baby') || lower.includes('toy')) return 'kids/baby';
+    if (lower.includes('travel') || lower.includes('tourism')) return 'travel';
+    if (lower.includes('auto') || lower.includes('car') || lower.includes('vehicle')) return 'automotive';
+    if (lower.includes('game') || lower.includes('entertainment') || lower.includes('collectible')) return 'entertainment';
+
+    return 'other';
+}
 
 const MIN_REFERENCE_ADS = 5;
 const MAX_PLAN_CALLS = 6;
@@ -306,10 +363,21 @@ function buildSearchPlan(productAnalysis) {
     const productType = productAnalysis?.productType;
     const category = productAnalysis?.category;
 
-    if (productType) niches.add(productType);
-    (PRODUCT_CATEGORIES[productType] || []).forEach(niche => niches.add(niche));
-    if (category) niches.add(category);
-    if (niches.size === 0) niches.add('ecommerce');
+    // Use PRODUCT_TO_NICHE_MAP for known product types
+    if (productType && PRODUCT_TO_NICHE_MAP[productType]) {
+        PRODUCT_TO_NICHE_MAP[productType].forEach(niche => niches.add(niche));
+    } else if (productType) {
+        // Validate unknown product types through toValidNiche
+        niches.add(toValidNiche(productType));
+    }
+
+    // Validate category as well
+    if (category) {
+        niches.add(toValidNiche(category));
+    }
+
+    // Default fallback to 'other' instead of invalid 'ecommerce'
+    if (niches.size === 0) niches.add('other');
 
     const queries = new Set();
     if (productAnalysis?.productName) queries.add(productAnalysis.productName);
@@ -330,7 +398,8 @@ function buildSearchPlan(productAnalysis) {
         if (plan.length >= MAX_PLAN_CALLS) break;
     }
 
-    return plan.length > 0 ? plan : [{ niche: 'ecommerce', query: productAnalysis?.productName || 'product' }];
+    // Use 'other' as fallback niche (valid Foreplay niche)
+    return plan.length > 0 ? plan : [{ niche: 'other', query: productAnalysis?.productName || 'product' }];
 }
 
 async function executeSearchPlan(plan, options) {
