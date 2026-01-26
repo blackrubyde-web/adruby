@@ -401,11 +401,21 @@ export const INDUSTRY_DATABASE = {
             },
             gaming: {
                 name: 'Gaming',
-                productTypes: ['mobile_game', 'console', 'pc', 'esports', 'gaming_gear', 'streaming'],
+                productTypes: ['mobile_game', 'console', 'pc', 'esports', 'gaming_gear', 'streaming', 'vr', 'arcade'],
                 visualStyle: 'dark_intense',
-                mockupPreference: ['game_art', 'device', 'gameplay'],
-                colorMoods: ['intense', 'exciting', 'immersive'],
-                ctaStyles: ['glow', 'bold']
+                mockupPreference: ['game_art', 'device', 'gameplay', 'phone'],
+                colorMoods: ['intense', 'exciting', 'immersive', 'neon'],
+                ctaStyles: ['glow', 'bold', 'neon'],
+                emotionalTriggers: ['excitement', 'achievement', 'community', 'escape']
+            },
+            gaming_collectibles: {
+                name: 'Gaming Collectibles & Merchandise',
+                productTypes: ['figurine', 'statue', 'plush', 'lamp', 'poster', 'apparel', 'accessories', 'replica', 'pixel_art', 'minecraft', 'anime', 'funko'],
+                visualStyle: 'vibrant_playful',
+                mockupPreference: ['floating', 'product_hero', 'lifestyle', 'none'],  // NO device frames!
+                colorMoods: ['playful', 'nostalgic', 'vibrant', 'gaming'],
+                ctaStyles: ['bold', 'playful', 'gradient'],
+                emotionalTriggers: ['nostalgia', 'fandom', 'collection', 'identity', 'fun']
             },
             events_tickets: {
                 name: 'Events & Tickets',
@@ -695,7 +705,25 @@ function fuzzyMatchIndustry(keyword) {
         restaurant: ['food_restaurant', 'restaurants'],
         food: ['food_restaurant', 'food_delivery'],
         lawyer: ['professional_services', 'legal'],
-        charity: ['nonprofit', 'charity']
+        charity: ['nonprofit', 'charity'],
+        // Gaming collectibles and physical products (NO device frames!)
+        lamp: ['entertainment', 'gaming_collectibles'],
+        figurine: ['entertainment', 'gaming_collectibles'],
+        statue: ['entertainment', 'gaming_collectibles'],
+        plush: ['entertainment', 'gaming_collectibles'],
+        minecraft: ['entertainment', 'gaming_collectibles'],
+        pixel: ['entertainment', 'gaming_collectibles'],
+        anime: ['entertainment', 'gaming_collectibles'],
+        funko: ['entertainment', 'gaming_collectibles'],
+        collectible: ['entertainment', 'gaming_collectibles'],
+        merchandise: ['entertainment', 'gaming_collectibles'],
+        merch: ['entertainment', 'gaming_collectibles'],
+        toy: ['ecommerce', 'baby_kids'],
+        decor: ['ecommerce', 'home_decor'],
+        decoration: ['ecommerce', 'home_decor'],
+        furniture: ['ecommerce', 'home_decor'],
+        light: ['ecommerce', 'home_decor'],
+        poster: ['entertainment', 'gaming_collectibles']
     };
 
     for (const [key, [ind, subCat]] of Object.entries(keywordMap)) {
