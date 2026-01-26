@@ -482,15 +482,11 @@ export async function generateCompositeAd({
             console.log(`[MasterGen]   Headline: "${copyIntelligence.headline}"`);
             console.log(`[MasterGen]   CTA: "${copyIntelligence.cta}"`);
 
-            // Use AI-generated copy if not provided by user
-            const finalHeadline = headline || copyIntelligence.headline;
-            const finalTagline = tagline || copyIntelligence.subheadline;
-            const finalCta = cta || copyIntelligence.cta;
-
-            // Update texts with final copy
-            texts.headline = finalHeadline;
-            texts.subheadline = finalTagline;
-            texts.cta = finalCta;
+            // NOTE: Final copy (headline, tagline, CTA) is resolved in PHASE 8 with full priority chain
+            // Update texts with AI-generated copy for now
+            texts.headline = headline || copyIntelligence.headline;
+            texts.subheadline = tagline || copyIntelligence.subheadline;
+            texts.cta = cta || copyIntelligence.cta;
 
             // NEW: AI Creative Director - Plan final composition
             let compositionPlan = null;
