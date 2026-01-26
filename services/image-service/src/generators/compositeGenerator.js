@@ -78,6 +78,12 @@ import { generateAdContent, generateFeatureCallouts, generateSocialProof } from 
 import { buildColorIntelligence } from '../ai/colorIntelligence.js';
 import { buildTypographyIntelligence } from '../typography/fontMatcher.js';
 
+// NEW: Effects Matcher (Phase 4)
+import { buildEffectsIntelligence } from '../effects/effectsMatcher.js';
+
+// NEW: Copy Intelligence (Phase 7)
+import { buildCopyIntelligence } from '../copy/copyIntelligence.js';
+
 // NEW: Premium Post-Processing (Phase 8)
 import { applyAutoPolish } from '../post/premiumPostProcessor.js';
 
@@ -313,6 +319,44 @@ export async function generateCompositeAd({
                 colors: colorIntelligence
             };
 
+            // ════════════════════════════════════════════════════════════
+            // PHASE 1C: AI EFFECTS INTELLIGENCE (Reference-matched effects)
+            // ════════════════════════════════════════════════════════════
+            console.log('[MasterGen] ✨ Building Effects Intelligence...');
+            const effectsIntelligence = await buildEffectsIntelligence(
+                referenceAds,
+                colorIntelligence
+            );
+
+            console.log(`[MasterGen]   Effect Style: ${effectsIntelligence.overallStyle}`);
+            console.log(`[MasterGen]   Shadow: ${effectsIntelligence.shadow ? 'enabled' : 'none'}`);
+            console.log(`[MasterGen]   Glow: ${effectsIntelligence.glow ? 'enabled' : 'none'}`);
+
+            // Merge effects into designSpecs
+            designSpecs.effects = effectsIntelligence;
+
+            // ════════════════════════════════════════════════════════════
+            // PHASE 1D: AI COPY INTELLIGENCE (Reference-matched copy)
+            // ════════════════════════════════════════════════════════════
+            console.log('[MasterGen] ✍️ Building Copy Intelligence...');
+            const copyIntelligence = await buildCopyIntelligence(
+                productAnalysis,
+                referenceAds,
+                industry || productAnalysis?.productType || 'tech'
+            );
+
+            console.log(`[MasterGen]   Headline: "${copyIntelligence.headline}"`);
+            console.log(`[MasterGen]   CTA: "${copyIntelligence.cta}"`);
+
+            // Use AI-generated copy if not provided by user
+            const finalHeadline = headline || copyIntelligence.headline;
+            const finalTagline = tagline || copyIntelligence.subheadline;
+            const finalCta = cta || copyIntelligence.cta;
+
+            // Update texts with final copy
+            texts.headline = finalHeadline;
+            texts.subheadline = finalTagline;
+            texts.cta = finalCta;
 
             // NEW: AI Creative Director - Plan final composition
             let compositionPlan = null;
