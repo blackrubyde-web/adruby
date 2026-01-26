@@ -189,7 +189,7 @@ const handler: Handler = async (event: HandlerEvent) => {
 
         const copyPrompt = buildCopyPrompt(request);
         const copyModels = [
-            process.env.OPENAI_COPY_MODEL || 'gpt-4-turbo-preview',
+            process.env.OPENAI_COPY_MODEL || 'gpt-4o',
             'gpt-4o-mini',
             'gpt-3.5-turbo'
         ];

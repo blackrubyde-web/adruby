@@ -81,7 +81,7 @@ class OpenAIService {
      * Calculate cost based on token usage
      */
     private calculateCost(model: string, promptTokens: number, completionTokens: number): number {
-        const pricing = PRICING[model as keyof typeof PRICING] || PRICING['gpt-4-turbo-preview'];
+        const pricing = PRICING[model as keyof typeof PRICING] || PRICING['gpt-4o'];
         return (promptTokens * pricing.input) + (completionTokens * pricing.output);
     }
 
@@ -132,7 +132,7 @@ Return as JSON with structure:
 
         try {
             const response = await this.client.chat.completions.create({
-                model: 'gpt-4-turbo-preview',
+                model: 'gpt-4o',
                 messages: [
                     { role: 'system', content: systemPrompt },
                     { role: 'user', content: userPrompt }
@@ -152,7 +152,7 @@ Return as JSON with structure:
                     completionTokens: usage.completion_tokens,
                     totalTokens: usage.total_tokens
                 },
-                cost: this.calculateCost('gpt-4-turbo-preview', usage.prompt_tokens, usage.completion_tokens),
+                cost: this.calculateCost('gpt-4o', usage.prompt_tokens, usage.completion_tokens),
                 model: response.model,
                 latency: Date.now() - startTime
             };
@@ -181,7 +181,7 @@ Return ONLY the improved headline, nothing else.`;
 
         try {
             const response = await this.client.chat.completions.create({
-                model: 'gpt-4-turbo-preview',
+                model: 'gpt-4o',
                 messages: [{ role: 'user', content: prompt }],
                 temperature: 0.7,
                 max_tokens: 50
@@ -197,7 +197,7 @@ Return ONLY the improved headline, nothing else.`;
                     completionTokens: usage.completion_tokens,
                     totalTokens: usage.total_tokens
                 },
-                cost: this.calculateCost('gpt-4-turbo-preview', usage.prompt_tokens, usage.completion_tokens),
+                cost: this.calculateCost('gpt-4o', usage.prompt_tokens, usage.completion_tokens),
                 model: response.model,
                 latency: Date.now() - startTime
             };
