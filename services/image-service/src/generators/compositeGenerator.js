@@ -292,6 +292,41 @@ export async function generateCompositeAd({
             console.log(`[MasterGen]   Mood: ${designSpecs.mood?.primary || 'premium'}`);
 
             // ════════════════════════════════════════════════════════════
+            // PHASE 1-MASTER: DESIGN INTELLIGENCE INTEGRATOR (13 STEPS!)
+            // Unlocks ALL existing modules: colorScience, typography, 
+            // composition, elements, overlays, animation, copy, prompts
+            // ════════════════════════════════════════════════════════════
+            console.log('[MasterGen] 🧠 Running Full Design Intelligence Pipeline...');
+            const fullDesignIntelligence = await generateDesignIntelligence({
+                foreplayAnalysis: designSpecs,
+                productAnalysis: productAnalysis,
+                userPrompt: userPrompt,
+                industry: industry || productAnalysis?.productType,
+                targetEmotion: designSpecs?.mood?.primary,
+                format: 'square',
+                enableVariants: false // Enable later for A/B
+            });
+
+            console.log(`[MasterGen]   ✅ 13-Step Pipeline Complete`);
+            console.log(`[MasterGen]   Colors: ${fullDesignIntelligence.colors?.primary || 'N/A'}`);
+            console.log(`[MasterGen]   Typography: ${fullDesignIntelligence.typography?.fontFamily || 'N/A'}`);
+            console.log(`[MasterGen]   Elements: ${Object.keys(fullDesignIntelligence.elements || {}).length} types`);
+            console.log(`[MasterGen]   Copy: "${fullDesignIntelligence.copy?.headline?.substring(0, 30) || 'N/A'}..."`);
+
+            // Merge full intelligence into designSpecs
+            designSpecs.fullIntelligence = fullDesignIntelligence;
+            designSpecs.colors = fullDesignIntelligence.colors || designSpecs.colors;
+            designSpecs.typography = {
+                ...designSpecs.typography,
+                ...fullDesignIntelligence.typography
+            };
+            designSpecs.composition = fullDesignIntelligence.composition || designSpecs.composition;
+            designSpecs.overlays = fullDesignIntelligence.overlays;
+            designSpecs.animation = fullDesignIntelligence.animation;
+            designSpecs.prompts = fullDesignIntelligence.prompts;
+
+
+            // ════════════════════════════════════════════════════════════
             // PHASE 1B: AI TYPOGRAPHY INTELLIGENCE (No hardcoded fonts)
             // ════════════════════════════════════════════════════════════
             console.log('[MasterGen] 🔤 Building Typography Intelligence...');
