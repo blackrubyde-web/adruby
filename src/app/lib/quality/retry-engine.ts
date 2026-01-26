@@ -165,10 +165,24 @@ export async function assembleWithRetry(
     }
 
     // All retries exhausted
+    // HIGH 6-7 FIX: Only return success if score meets minimum AND no errors
     if (bestCandidate) {
+        const meetsMinimum = bestCandidate.score >= minQualityScore;
+        const hasNoErrors = !hasErrors(bestCandidate.issues);
+        const isSuccess = meetsMinimum && hasNoErrors;
+
+        if (!isSuccess) {
+            console.warn('[RetryEngine] Best candidate does not meet quality threshold:', {
+                score: bestCandidate.score,
+                minRequired: minQualityScore,
+                hasErrors: !hasNoErrors,
+                errorCount: bestCandidate.issues.filter(i => i.severity === 'error').length
+            });
+        }
+
         return {
             document: bestCandidate.document,
-            success: true,
+            success: isSuccess,  // FIX: Was always true, now properly validated
             retryContext,
             finalValidation: {
                 issues: bestCandidate.issues,
