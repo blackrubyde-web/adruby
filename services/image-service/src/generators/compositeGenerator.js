@@ -169,8 +169,17 @@ import { generateFeatureCallout, generateIconCallout } from '../elements/callout
 // Premium Prompt Builder
 import { buildBackgroundPrompt, buildTypographySpecs, buildProductSpecs } from './premiumPromptBuilder.js';
 
-// Visual Elements Generator
-import { generateVisualElements, compositeVisualElements } from './visualElementsGenerator.js';
+// Visual Elements Generator - with new element renderers
+import {
+    generateVisualElements,
+    compositeVisualElements,
+    generatePriceTag,
+    generateCountdown,
+    generateProgressBar,
+    generateTestimonial,
+    generateHighlights,
+    generateDecorations
+} from './visualElementsGenerator.js';
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
