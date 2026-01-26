@@ -228,7 +228,7 @@ export async function generateWithComposite({
             enableAdvancedEffects,
             strictReplica,
         }),
-        signal: AbortSignal.timeout(240000), // Extended for full pipeline + regen
+        signal: AbortSignal.timeout(300000), // 5 minutes for full 10-phase pipeline + regen
     });
 
     if (!response.ok) {
