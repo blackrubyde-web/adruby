@@ -149,7 +149,7 @@ import { solveCompositionPlan } from '../constraints/planSolver.js';
 import { getIndustryConfig, getVisualStyleForProduct } from '../data/industryDatabase.js';
 
 // NEW: Creative Variant Engine (A/B variants, batch generation)
-import { generateCreativeVariants, generateVariantBatch, predictVariantPerformance } from '../variants/creativeVariantEngine.js';
+import { generateCreativeVariants, generateVariantBatch, predictVariantPerformance, generateABTestPairs, VARIANT_STRATEGIES } from '../variants/creativeVariantEngine.js';
 
 // NEW: Emotion & Mood System (10 emotions, seasonal trends)
 import { getEmotionsForProduct, mapEmotionToDesign, generateEmotionBasedDesign, getCurrentSeasonalTrend, applySeasonalTrend } from '../data/emotionMoodSystem.js';
@@ -224,15 +224,6 @@ import {
     generateCornerAccent,
     generateFrame
 } from '../elements/shapeGenerator.js';
-
-// NEW: Creative Variant Engine (543 lines - A/B testing variants)
-import {
-    generateCreativeVariants,
-    generateABTestPairs,
-    generateVariantBatch,
-    predictVariantPerformance,
-    VARIANT_STRATEGIES
-} from '../variants/creativeVariantEngine.js';
 
 // NEW: Animation Layer (560 lines - CSS animations for web ads)
 import {
