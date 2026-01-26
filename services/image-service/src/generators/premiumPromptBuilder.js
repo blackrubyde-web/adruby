@@ -295,8 +295,9 @@ export function buildProductSpecs(designSpecs) {
         scale: layout.productPlacement?.scalePercent || 0.55,
         rotation: layout.productPlacement?.rotation || 0,
         device: {
-            hasFrame: layout.productPlacement?.hasDeviceFrame !== false,
-            type: layout.productPlacement?.deviceType || 'macbook'
+            // NO HARDCODES: frame and type come from Foreplay patterns or AI decision
+            hasFrame: layout.productPlacement?.hasDeviceFrame === true,  // Default: NO frame
+            type: layout.productPlacement?.deviceType || 'none'  // Default: no device mockup
         },
         shadow: {
             show: effects.productShadow?.show !== false,
