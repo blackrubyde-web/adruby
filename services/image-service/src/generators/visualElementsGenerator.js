@@ -488,4 +488,244 @@ function escapeXml(str) {
     return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 }
 
-export default { generateVisualElements, compositeVisualElements };
+// ========================================
+// NEW ELEMENT GENERATORS (Phase 12)
+// ========================================
+
+/**
+ * Generate Price Tag element
+ */
+export function generatePriceTag(priceTag, accentColor = '#FF4757') {
+    if (!priceTag?.price) return null;
+
+    const x = Math.round((priceTag.position?.xPercent || 0.85) * CANVAS_WIDTH);
+    const y = Math.round((priceTag.position?.yPercent || 0.12) * CANVAS_HEIGHT);
+    const style = priceTag.style || 'tag';
+
+    let svg = '';
+
+    if (style === 'burst') {
+        // Starburst style for discounts
+        svg = `
+        <g transform="translate(${x}, ${y})">
+            <polygon points="0,-50 15,-20 50,-30 25,0 50,30 15,20 0,50 -15,20 -50,30 -25,0 -50,-30 -15,-20" 
+                     fill="${accentColor}" opacity="0.95"/>
+            ${priceTag.originalPrice ? `
+            <text x="0" y="-10" text-anchor="middle" fill="rgba(255,255,255,0.6)" 
+                  font-size="14" font-family="system-ui" text-decoration="line-through">${escapeXml(priceTag.originalPrice)}</text>
+            ` : ''}
+            <text x="0" y="12" text-anchor="middle" fill="#FFFFFF" 
+                  font-size="24" font-weight="800" font-family="system-ui">${escapeXml(priceTag.price)}</text>
+            ${priceTag.discount ? `
+            <text x="0" y="30" text-anchor="middle" fill="#FFFFFF" 
+                  font-size="12" font-weight="600" font-family="system-ui">${escapeXml(priceTag.discount)}</text>
+            ` : ''}
+        </g>`;
+    } else if (style === 'corner') {
+        // Corner ribbon style
+        svg = `
+        <g transform="translate(${CANVAS_WIDTH}, 0)">
+            <polygon points="-120,0 0,0 0,120" fill="${accentColor}"/>
+            <text x="-60" y="40" text-anchor="middle" fill="#FFFFFF" 
+                  font-size="18" font-weight="700" font-family="system-ui" 
+                  transform="rotate(45, -60, 40)">${escapeXml(priceTag.price)}</text>
+        </g>`;
+    } else {
+        // Simple tag style (default)
+        svg = `
+        <g transform="translate(${x}, ${y})">
+            <rect x="-60" y="-25" width="120" height="50" rx="8" fill="${accentColor}" opacity="0.95"/>
+            ${priceTag.originalPrice ? `
+            <text x="0" y="-5" text-anchor="middle" fill="rgba(255,255,255,0.6)" 
+                  font-size="12" font-family="system-ui" text-decoration="line-through">${escapeXml(priceTag.originalPrice)}</text>
+            <text x="0" y="15" text-anchor="middle" fill="#FFFFFF" 
+                  font-size="20" font-weight="800" font-family="system-ui">${escapeXml(priceTag.price)}</text>
+            ` : `
+            <text x="0" y="8" text-anchor="middle" fill="#FFFFFF" 
+                  font-size="22" font-weight="800" font-family="system-ui">${escapeXml(priceTag.price)}</text>
+            `}
+        </g>`;
+    }
+
+    return `<svg width="${CANVAS_WIDTH}" height="${CANVAS_HEIGHT}" xmlns="http://www.w3.org/2000/svg">${svg}</svg>`;
+}
+
+/**
+ * Generate Countdown Timer element
+ */
+export function generateCountdown(countdown, accentColor = '#FF4757') {
+    if (!countdown?.text) return null;
+
+    const x = Math.round((countdown.position?.xPercent || 0.5) * CANVAS_WIDTH);
+    const y = Math.round((countdown.position?.yPercent || 0.94) * CANVAS_HEIGHT);
+    const style = countdown.style || 'text';
+
+    let svg = '';
+
+    if (style === 'urgent') {
+        svg = `
+        <g transform="translate(${x}, ${y})">
+            <rect x="-100" y="-18" width="200" height="36" rx="18" fill="${accentColor}" opacity="0.9"/>
+            <text x="-80" y="6" fill="#FFFFFF" font-size="18" font-family="system-ui">⏰</text>
+            <text x="0" y="6" text-anchor="middle" fill="#FFFFFF" 
+                  font-size="14" font-weight="700" font-family="system-ui">${escapeXml(countdown.text)}</text>
+        </g>`;
+    } else if (style === 'timer') {
+        svg = `
+        <g transform="translate(${x}, ${y})">
+            <rect x="-80" y="-22" width="160" height="44" rx="6" fill="rgba(0,0,0,0.7)" stroke="${accentColor}" stroke-width="2"/>
+            <text x="0" y="8" text-anchor="middle" fill="${accentColor}" 
+                  font-size="20" font-weight="700" font-family="monospace">${escapeXml(countdown.text)}</text>
+        </g>`;
+    } else {
+        svg = `
+        <g transform="translate(${x}, ${y})">
+            <text x="0" y="0" text-anchor="middle" fill="rgba(255,255,255,0.8)" 
+                  font-size="14" font-family="system-ui">⏰ ${escapeXml(countdown.text)}</text>
+        </g>`;
+    }
+
+    return `<svg width="${CANVAS_WIDTH}" height="${CANVAS_HEIGHT}" xmlns="http://www.w3.org/2000/svg">${svg}</svg>`;
+}
+
+/**
+ * Generate Progress Bar element
+ */
+export function generateProgressBar(progressBar, accentColor = '#10B981') {
+    if (progressBar?.value === undefined) return null;
+
+    const x = Math.round((progressBar.position?.xPercent || 0.5) * CANVAS_WIDTH);
+    const y = Math.round((progressBar.position?.yPercent || 0.78) * CANVAS_HEIGHT);
+    const value = Math.min(100, Math.max(0, progressBar.value));
+    const barWidth = 200;
+    const filledWidth = (value / 100) * barWidth;
+
+    const svg = `
+    <g transform="translate(${x - barWidth / 2}, ${y})">
+        ${progressBar.label ? `
+        <text x="${barWidth / 2}" y="-10" text-anchor="middle" fill="rgba(255,255,255,0.8)" 
+              font-size="13" font-family="system-ui">${escapeXml(progressBar.label)}</text>
+        ` : ''}
+        <rect x="0" y="0" width="${barWidth}" height="8" rx="4" fill="rgba(255,255,255,0.2)"/>
+        <rect x="0" y="0" width="${filledWidth}" height="8" rx="4" fill="${accentColor}"/>
+        <text x="${barWidth + 10}" y="7" fill="${accentColor}" 
+              font-size="12" font-weight="700" font-family="system-ui">${value}%</text>
+    </g>`;
+
+    return `<svg width="${CANVAS_WIDTH}" height="${CANVAS_HEIGHT}" xmlns="http://www.w3.org/2000/svg">${svg}</svg>`;
+}
+
+/**
+ * Generate Testimonial element
+ */
+export function generateTestimonial(testimonial, accentColor = '#3B82F6') {
+    if (!testimonial?.quote) return null;
+
+    const x = Math.round((testimonial.position?.xPercent || 0.5) * CANVAS_WIDTH);
+    const y = Math.round((testimonial.position?.yPercent || 0.82) * CANVAS_HEIGHT);
+
+    const svg = `
+    <g transform="translate(${x}, ${y})">
+        <rect x="-180" y="-50" width="360" height="100" rx="12" fill="rgba(255,255,255,0.08)" 
+              stroke="rgba(255,255,255,0.15)" stroke-width="1"/>
+        <text x="-160" y="-20" fill="${accentColor}" font-size="32" font-family="Georgia">"</text>
+        <text x="0" y="0" text-anchor="middle" fill="rgba(255,255,255,0.9)" 
+              font-size="14" font-style="italic" font-family="system-ui">${escapeXml(testimonial.quote?.substring(0, 50))}...</text>
+        ${testimonial.author ? `
+        <text x="0" y="30" text-anchor="middle" fill="rgba(255,255,255,0.6)" 
+              font-size="12" font-family="system-ui">— ${escapeXml(testimonial.author)}</text>
+        ` : ''}
+    </g>`;
+
+    return `<svg width="${CANVAS_WIDTH}" height="${CANVAS_HEIGHT}" xmlns="http://www.w3.org/2000/svg">${svg}</svg>`;
+}
+
+/**
+ * Generate Highlight Circles/Arrows element
+ */
+export function generateHighlights(highlights, accentColor = '#FF4757') {
+    if (!highlights || highlights.length === 0) return null;
+
+    let svg = '';
+
+    highlights.forEach((highlight, i) => {
+        const x = Math.round((highlight.targetArea?.xPercent || 0.5) * CANVAS_WIDTH);
+        const y = Math.round((highlight.targetArea?.yPercent || 0.5) * CANVAS_HEIGHT);
+        const type = highlight.type || 'circle';
+
+        if (type === 'circle') {
+            svg += `
+            <circle cx="${x}" cy="${y}" r="40" fill="none" stroke="${accentColor}" 
+                    stroke-width="3" stroke-dasharray="8,4" opacity="0.8"/>`;
+        } else if (type === 'arrow') {
+            svg += `
+            <g transform="translate(${x - 50}, ${y})">
+                <path d="M0,0 L40,0 M30,-10 L40,0 L30,10" fill="none" 
+                      stroke="${accentColor}" stroke-width="4" stroke-linecap="round"/>
+            </g>`;
+        } else if (type === 'glow') {
+            svg += `
+            <circle cx="${x}" cy="${y}" r="50" fill="${accentColor}" opacity="0.15"/>
+            <circle cx="${x}" cy="${y}" r="35" fill="${accentColor}" opacity="0.1"/>`;
+        } else if (type === 'underline') {
+            svg += `
+            <rect x="${x - 40}" y="${y + 5}" width="80" height="4" rx="2" fill="${accentColor}" opacity="0.8"/>`;
+        }
+    });
+
+    return `<svg width="${CANVAS_WIDTH}" height="${CANVAS_HEIGHT}" xmlns="http://www.w3.org/2000/svg">${svg}</svg>`;
+}
+
+/**
+ * Generate Decorations (sparkles, particles, patterns)
+ */
+export function generateDecorations(decorations, accentColor = '#FFD700') {
+    if (!decorations) return null;
+
+    let svg = '';
+
+    if (decorations.sparkles) {
+        // Add sparkle effects at random positions
+        const sparklePositions = [[100, 150], [950, 200], [150, 850], [900, 750], [500, 100]];
+        sparklePositions.forEach(([x, y]) => {
+            svg += `
+            <g transform="translate(${x}, ${y})">
+                <polygon points="0,-12 3,-3 12,0 3,3 0,12 -3,3 -12,0 -3,-3" fill="${accentColor}" opacity="0.7"/>
+            </g>`;
+        });
+    }
+
+    if (decorations.particles) {
+        // Add floating particles
+        for (let i = 0; i < 15; i++) {
+            const x = Math.random() * CANVAS_WIDTH;
+            const y = Math.random() * CANVAS_HEIGHT;
+            const r = 2 + Math.random() * 4;
+            const opacity = 0.1 + Math.random() * 0.2;
+            svg += `<circle cx="${x}" cy="${y}" r="${r}" fill="${accentColor}" opacity="${opacity}"/>`;
+        }
+    }
+
+    if (decorations.pattern === 'dots') {
+        // Dot pattern overlay
+        for (let x = 50; x < CANVAS_WIDTH; x += 40) {
+            for (let y = 50; y < CANVAS_HEIGHT; y += 40) {
+                svg += `<circle cx="${x}" cy="${y}" r="1.5" fill="rgba(255,255,255,0.05)"/>`;
+            }
+        }
+    }
+
+    if (!svg) return null;
+    return `<svg width="${CANVAS_WIDTH}" height="${CANVAS_HEIGHT}" xmlns="http://www.w3.org/2000/svg">${svg}</svg>`;
+}
+
+export default {
+    generateVisualElements,
+    compositeVisualElements,
+    generatePriceTag,
+    generateCountdown,
+    generateProgressBar,
+    generateTestimonial,
+    generateHighlights,
+    generateDecorations
+};
