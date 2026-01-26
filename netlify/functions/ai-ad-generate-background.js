@@ -56,7 +56,7 @@ import { checkRateLimit } from './_shared/rateLimiter.js';
 import { categorizeError, getUserMessage } from './_shared/errorCategorizer.js';
 // Railway v3.0 - AI Design Knowledge System (100M+ Foreplay References)
 // Railway v6.0 - Composite Pipeline (100% Product Preservation)
-import { generateWithAIDesign, generateWithComposite, isRailwayAvailable } from './_shared/railwayImageClient.js';
+import { generateWithAIDesign, generateWithComposite, isForeplayAvailable } from './_shared/railwayImageClient.js';
 
 const MAX_QUALITY_RETRIES = 2;
 
@@ -152,7 +152,7 @@ export const handler = async (event) => {
 
     try {
         const body = JSON.parse(event.body || '{}');
-        const { mode, language = 'de' } = body;
+        const { mode, language = 'de', strictReplica = true } = body;
 
         // Authenticate
         const authHeader = event.headers.authorization || event.headers.Authorization;
@@ -288,32 +288,29 @@ export const handler = async (event) => {
         console.log('[AI Ad Generate] 📦 useCompositePipeline:', body.useCompositePipeline);
         console.log('[AI Ad Generate] 📦 productImageUrl exists:', !!body.productImageUrl);
 
-        // BLOCKER 2 FIX: Only use composite if product image exists!
+        // Foreplay is required for ALL generations (no fallback paths).
         const hasProductImage = !!body.productImageUrl || !!body.productImageBase64;
-        const useComposite = hasProductImage && body.useCompositePipeline !== false;
-
-        if (body.useCompositePipeline && !hasProductImage) {
-            console.warn('[AI Ad Generate] ⚠️ Composite requested but no product image - falling back to standard pipeline');
+        if (body.useCompositePipeline === false && hasProductImage) {
+            console.warn('[AI Ad Generate] ⚠️ Composite disabled by client, overriding because Foreplay is mandatory');
         }
 
-        console.log('[AI Ad Generate] 📦 FINAL useComposite:', useComposite, { hasProductImage });
+        console.log('[AI Ad Generate] 📦 Foreplay-required generation', { hasProductImage });
 
         // ========================================
         // RAILWAY v6.0: COMPOSITE PIPELINE (REQUIRES PRODUCT IMAGE)
         // Uses pixel-perfect screenshot preservation
         // ========================================
-        if (useComposite) {
+        if (hasProductImage) {
             console.log('[AI Ad Generate] 🎨 COMPOSITE PIPELINE ACTIVATED!');
             await updateProgress('composite_v6', 10, { engine: 'composite_pipeline' });
 
             try {
-                const railwayAvailable = await isRailwayAvailable();
-                if (!railwayAvailable) {
-                    console.error('[AI Ad Generate] ❌ Railway v6.0 UNAVAILABLE - falling back to DALL-E');
-                    // BLOCKER 5 FIX: Fall through to standard pipeline instead of throwing
-                    console.log('[AI Ad Generate] 🔄 Railway fallback: continuing with standard pipeline');
-                } else {
-                    await updateProgress('composite_generating', 30, { compositeActive: true });
+                const foreplayAvailable = await isForeplayAvailable();
+                if (!foreplayAvailable) {
+                    throw new Error('Foreplay is required but not available on Railway');
+                }
+
+                await updateProgress('composite_generating', 30, { compositeActive: true });
 
                     // BLOCKER 3 FIX: Generate copy if not provided!
                     let compositeHeadline = body.headline;
@@ -362,6 +359,7 @@ export const handler = async (event) => {
                         userPrompt: body.text || `${body.productName || 'Product'} advertisement`,
                         industry: body.industry || 'tech',
                         accentColor: body.accentColor || '#FF4757',
+                        strictReplica,
                     });
 
                     console.log('[AI Ad Generate] ✅ Composite Pipeline complete!', {
@@ -446,136 +444,123 @@ export const handler = async (event) => {
                             metadata: compositeResult.metadata,
                         })
                     };
-                }
             } catch (compositeError) {
                 console.error('[AI Ad Generate] ❌ Composite error:', compositeError.message);
                 console.error('[AI Ad Generate] ❌ Full error:', compositeError.stack);
                 await updateProgress('composite_error', 25, { error: compositeError.message });
-                // Re-throw with context - don't silently fall through
-                throw new Error(`Composite pipeline failed: ${compositeError.message}`);
+                // Hard fail - Foreplay pipeline is mandatory.
+                throw new Error(`Composite pipeline failed (Foreplay required): ${compositeError.message}`);
             }
         }
 
         // ========================================
-        // RAILWAY v3.0: AI DESIGN KNOWLEDGE SYSTEM (PRIORITY)
-        // Uses 100M+ Foreplay reference ads for premium results
+        // RAILWAY v3.0: AI DESIGN KNOWLEDGE SYSTEM (FOREPLAY REQUIRED)
+        // Uses Foreplay references even without product image
         // ========================================
-        if (body.useAIDesignSystem) {
-            console.log('[AI Ad Generate] 🚀 Using Railway v3.0 AI Design System...');
+        if (!hasProductImage) {
+            console.log('[AI Ad Generate] 🚀 Using Railway v3.0 AI Design System (Foreplay required)...');
             await updateProgress('railway_v3', 10, { engine: 'ai_design_system' });
 
             try {
-                const railwayAvailable = await isRailwayAvailable();
-                if (!railwayAvailable) {
-                    console.warn('[AI Ad Generate] Railway v3.0 unavailable, falling back to local engines');
-                } else {
-                    await updateProgress('railway_generating', 30, { railwayActive: true });
-
-                    const railwayResult = await generateWithComposite({
-                        productImageBase64: body.productImageBase64,
-                        productImageUrl: body.productImageUrl,
-                        headline: body.headline,
-                        tagline: body.subheadline || body.usp,
-                        cta: body.cta || 'Jetzt entdecken',
-                        userPrompt: body.text || `${body.productName || 'Product'} advertisement for ${body.targetAudience || 'target audience'}`,
-                        industry: body.industry || 'tech',
-                        accentColor: body.accentColor || '#FF4757',
-                        enableQualityCheck: true,
-                        enableAIContent: true,
-                        enableAdvancedEffects: true,
-                    });
-
-                    console.log('[AI Ad Generate] ✅ Railway v3.0 generation complete!', {
-                        hasImage: !!railwayResult.imageBuffer,
-                        source: railwayResult.metadata?.source,
-                        referenceCount: railwayResult.metadata?.referenceCount,
-                    });
-
-                    // Check if we got an image
-                    if (!railwayResult.imageBuffer) {
-                        throw new Error('Railway returned no image');
-                    }
-
-                    // Upload buffer directly to Supabase
-                    let finalImageUrl = null;
-                    let thumbnailUrl = null;
-                    const filename = `creatives/${user.id}/${jobId}.png`;
-
-                    try {
-                        const { error: uploadError } = await supabaseAdmin.storage
-                            .from('creative-images')
-                            .upload(filename, railwayResult.imageBuffer, { contentType: 'image/png', upsert: true });
-
-                        if (!uploadError) {
-                            const { data: urlData } = supabaseAdmin.storage.from('creative-images').getPublicUrl(filename);
-                            finalImageUrl = urlData.publicUrl;
-                            thumbnailUrl = urlData.publicUrl;
-                            console.log('[AI Ad Generate] ✅ Image uploaded to Supabase:', finalImageUrl);
-                        } else {
-                            console.error('[AI Ad Generate] Upload error:', uploadError.message);
-                            throw new Error('Failed to upload to Supabase');
-                        }
-                    } catch (uploadErr) {
-                        console.error('[AI Ad Generate] Railway image upload failed:', uploadErr.message);
-                        // Use data URL as fallback
-                        finalImageUrl = railwayResult.imageDataUrl;
-                        thumbnailUrl = railwayResult.imageDataUrl;
-                    }
-
-                    // Save to database and return
-                    const outputData = {
-                        headline: body.headline || 'AI Generated',
-                        slogan: body.subheadline || '',
-                        description: body.text || body.usp || '',
-                        cta: body.cta || 'Jetzt entdecken',
-                        hook: '',
-                        imageUrl: finalImageUrl,
-                        imagePrompt: railwayResult.imagePrompt,
-                        template: 'ai_design_system_v3',
-                        thumbnailUrl: thumbnailUrl,
-                        qualityScore: 95,
-                        engagementScore: 90,
-                        metadata: {
-                            engine: 'railway_v3_ai_design',
-                            foreplayReferences: railwayResult.metadata?.referenceCount || 0,
-                            composition: railwayResult.metadata?.composition,
-                        },
-                    };
-
-                    const generationTime = Date.now() - startTime;
-                    await supabaseAdmin.from('generated_creatives').update({
-                        outputs: outputData,
-                        metrics: {
-                            status: 'complete',
-                            generationTime: generationTime,
-                            engine: 'railway_v3',
-                            completed_at: new Date().toISOString()
-                        }
-                    }).eq('id', jobId);
-
-                    return {
-                        statusCode: 200,
-                        headers,
-                        body: JSON.stringify({
-                            success: true,
-                            status: 'complete',
-                            data: {
-                                ...outputData,
-                                id: jobId,
-                                creditsUsed: CREDIT_COSTS.ai_ad_generate,
-                            },
-                            metadata: {
-                                model: 'railway-v3-ai-design',
-                                timestamp: Date.now(),
-                                generationTime: generationTime,
-                            },
-                        }),
-                    };
+                const foreplayAvailable = await isForeplayAvailable();
+                if (!foreplayAvailable) {
+                    throw new Error('Foreplay is required but not available on Railway');
                 }
+
+                await updateProgress('railway_generating', 30, { railwayActive: true });
+
+                const railwayResult = await generateWithAIDesign({
+                    productImageBase64: body.productImageBase64,
+                    productImageUrl: body.productImageUrl,
+                    headline: body.headline,
+                    tagline: body.subheadline || body.usp,
+                    cta: body.cta || 'Jetzt entdecken',
+                    userPrompt: body.text || `${body.productName || 'Product'} advertisement for ${body.targetAudience || 'target audience'}`,
+                    industry: body.industry || 'tech',
+                    accentColor: body.accentColor || '#FF4757',
+                    enableQualityCheck: true,
+                    enableAIContent: true,
+                    enableAdvancedEffects: true,
+                });
+
+                console.log('[AI Ad Generate] ✅ Railway v3.0 generation complete!', {
+                    hasImage: !!railwayResult.imageBuffer,
+                    source: railwayResult.metadata?.source,
+                    referenceCount: railwayResult.metadata?.referenceCount,
+                });
+
+                if (!railwayResult.imageBuffer) {
+                    throw new Error('Railway returned no image');
+                }
+
+                let finalImageUrl = null;
+                let thumbnailUrl = null;
+                const filename = `creatives/${user.id}/${jobId}.png`;
+
+                const { error: uploadError } = await supabaseAdmin.storage
+                    .from('creative-images')
+                    .upload(filename, railwayResult.imageBuffer, { contentType: 'image/png', upsert: true });
+
+                if (!uploadError) {
+                    const { data: urlData } = supabaseAdmin.storage.from('creative-images').getPublicUrl(filename);
+                    finalImageUrl = urlData.publicUrl;
+                    thumbnailUrl = urlData.publicUrl;
+                } else {
+                    throw new Error(`Failed to upload to Supabase: ${uploadError.message}`);
+                }
+
+                const outputData = {
+                    headline: body.headline || 'AI Generated',
+                    slogan: body.subheadline || '',
+                    description: body.text || body.usp || '',
+                    cta: body.cta || 'Jetzt entdecken',
+                    hook: '',
+                    imageUrl: finalImageUrl,
+                    imagePrompt: railwayResult.imagePrompt,
+                    template: 'ai_design_system_v3',
+                    thumbnailUrl: thumbnailUrl,
+                    qualityScore: 95,
+                    engagementScore: 90,
+                    metadata: {
+                        engine: 'railway_v3_ai_design',
+                        foreplayReferences: railwayResult.metadata?.referenceCount || 0,
+                        composition: railwayResult.metadata?.composition,
+                    },
+                };
+
+                const generationTime = Date.now() - startTime;
+                await supabaseAdmin.from('generated_creatives').update({
+                    outputs: outputData,
+                    metrics: {
+                        status: 'complete',
+                        generationTime: generationTime,
+                        engine: 'railway_v3',
+                        completed_at: new Date().toISOString()
+                    }
+                }).eq('id', jobId);
+
+                return {
+                    statusCode: 200,
+                    headers,
+                    body: JSON.stringify({
+                        success: true,
+                        status: 'complete',
+                        data: {
+                            ...outputData,
+                            id: jobId,
+                            creditsUsed: CREDIT_COSTS.ai_ad_generate,
+                        },
+                        metadata: {
+                            model: 'railway-v3-ai-design',
+                            timestamp: Date.now(),
+                            generationTime: generationTime,
+                        },
+                    }),
+                };
             } catch (railwayErr) {
                 console.error('[AI Ad Generate] Railway v3.0 failed:', railwayErr.message);
-                await updateProgress('railway_fallback', 15, { railwayError: railwayErr.message });
-                // Continue with local engines as fallback
+                await updateProgress('railway_error', 15, { railwayError: railwayErr.message });
+                throw new Error(`Railway v3.0 failed (Foreplay required): ${railwayErr.message}`);
             }
         }
 

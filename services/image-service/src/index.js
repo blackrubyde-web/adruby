@@ -175,7 +175,8 @@ app.post('/generate-composite', async (req, res) => {
             accentColor,
             enableQualityCheck = true,
             enableAIContent = true,
-            enableAdvancedEffects = true
+            enableAdvancedEffects = true,
+            strictReplica = true
         } = req.body;
 
         console.log('[ImageService] 🎨 MASTER PIPELINE v10.0 starting...');
@@ -199,7 +200,8 @@ app.post('/generate-composite', async (req, res) => {
             userPrompt,
             enableQualityCheck,
             enableAIContent,
-            enableAdvancedEffects
+            enableAdvancedEffects,
+            strictReplica
         });
 
         const duration = Date.now() - startTime;
@@ -216,6 +218,9 @@ app.post('/generate-composite', async (req, res) => {
                 qualityDetails: result.qualityDetails,
                 regenerationAttempts: result.regenerationAttempts,
                 referenceCount: result.referenceCount,
+                similarityScore: result.similarityScore,
+                similarityDetails: result.similarityDetails,
+                compositionPlan: result.compositionPlan,
                 dimensions: { width: 1080, height: 1080 },
                 version: '10.0',
                 mode: 'master_designer'

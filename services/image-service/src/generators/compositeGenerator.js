@@ -71,14 +71,18 @@ import { GoogleGenerativeAI } from '@google/generative-ai';
 
 // AI Modules
 import { matchProduct } from '../ai/productMatcher.js';
-import { analyzeReferenceAds, getDefaultDesignSpecs, planAdComposition } from '../ai/foreplayDesignAnalyzer.js';
+import { analyzeReferenceAds, planAdComposition } from '../ai/foreplayDesignAnalyzer.js';
 import { generateAdContent, generateFeatureCallouts, generateSocialProof } from '../ai/aiContentGenerator.js';
-import { detectCollisions, validateElementPlacements } from '../quality/qualityScoringEngine.js';
+
+// NEW: Color & Typography Intelligence (Phase 1-2)
+import { buildColorIntelligence } from '../ai/colorIntelligence.js';
+import { buildTypographyIntelligence } from '../typography/fontMatcher.js';
+
+// NEW: Premium Post-Processing (Phase 8)
+import { applyAutoPolish } from '../post/premiumPostProcessor.js';
 
 // Effects Modules
 import {
-    createGradientMesh,
-    createParticleField,
     createSparkles,
     createLightRays,
     createLensFlare,
@@ -106,6 +110,7 @@ import {
 import {
     LAYOUT_PRESETS,
     selectOptimalLayout,
+    buildLayoutFromPlan,
     calculatePositions,
     calculateVisualHierarchy,
     calculateMargins,
@@ -127,9 +132,12 @@ import {
 // Quality Scoring
 import {
     scoreAdQuality,
-    quickQualityCheck,
-    generateRegenerationGuidance
+    generateRegenerationGuidance,
+    scoreReferenceSimilarity,
+    detectCollisions,
+    validateElementPlacements
 } from '../quality/qualityScoringEngine.js';
+import { solveCompositionPlan } from '../constraints/planSolver.js';
 
 // NEW: Industry Database (1000+ industries)
 import { getIndustryConfig, getVisualStyleForProduct } from '../data/industryDatabase.js';
@@ -163,7 +171,6 @@ import { generateAtmosphereLayer } from '../elements/decorativeOverlays.js';
 import { generateGlassCard as generateGlassCardV2, generateGlassButton } from '../elements/glassmorphicComponents.js';
 import { createGradientText, createGlowText, create3DText } from '../elements/enhancedTextEffects.js';
 import { generateDiscountBadge, generateTrustBadge, generateFeatureBadge } from '../elements/badgeGenerator.js';
-import { generateProgressBar, generateStarRating, generateStatCounter } from '../elements/dataVisualization.js';
 import { generateFeatureCallout, generateIconCallout } from '../elements/calloutGenerator.js';
 
 // Premium Prompt Builder
@@ -187,9 +194,10 @@ const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 const CANVAS_WIDTH = 1080;
 const CANVAS_HEIGHT = 1080;
 
-// Quality settings
-const QUALITY_THRESHOLD = 7.0;
-const MAX_REGENERATION_ATTEMPTS = 2;
+// Quality settings - PREMIUM THRESHOLDS
+const QUALITY_THRESHOLD = 8.0;         // Was 7.0 - Raised for world-class output
+const MAX_REGENERATION_ATTEMPTS = 3;   // Was 2 - More attempts for perfection
+const SIMILARITY_THRESHOLD = 8.5;      // Was 7.5 - Must closely match top Foreplay ads
 
 /**
  * MASTER AD GENERATION FUNCTION
@@ -204,17 +212,30 @@ export async function generateCompositeAd({
     userPrompt,
     enableQualityCheck = true,
     enableAIContent = true,
-    enableAdvancedEffects = true
+    enableAdvancedEffects = true,
+    strictReplica = true
 }) {
     console.log('[MasterGen] 🎨 ═══════════════════════════════════════════════');
     console.log('[MasterGen] 🎨 MASTER COMPOSITE GENERATOR v10.0');
     console.log('[MasterGen] 🎨 ═══════════════════════════════════════════════');
     const startTime = Date.now();
 
+    if (!productImageBuffer) {
+        throw new Error('Product image is required for composite generation');
+    }
+
     let regenerationAttempt = 0;
     let finalBuffer = null;
     let qualityResult = null;
     let finalAccentColor = accentColor || '#FF4757';  // Declare outside loop for proper scope
+    let productAnalysis = null;
+    let referenceAds = [];
+    let extractedColors = { primary: '#0A0A1A', accent: accentColor || '#FF4757' };
+    let deepAnalysis = null;
+    let finalCompositionPlan = null;
+    let similarityResult = null;
+    const strictMode = strictReplica === true;
+    const qualityCheckActive = strictMode ? true : enableQualityCheck;
 
     while (regenerationAttempt <= MAX_REGENERATION_ATTEMPTS) {
         try {
@@ -224,48 +245,90 @@ export async function generateCompositeAd({
             console.log('[MasterGen] ▶ PHASE 1: Intelligence Gathering...');
 
             // Product Analysis & Foreplay Matching
-            let productAnalysis = null;
-            let referenceAds = [];
-            let extractedColors = { primary: '#0A0A1A', accent: accentColor || '#FF4757' };
-            let deepAnalysis = null;  // NEW: Deep analysis for smart element placement
+            const matchResult = await matchProduct(productImageBuffer);
+            productAnalysis = matchResult.analysis;
+            deepAnalysis = matchResult.deepAnalysis;  // NEW: Contains visual anchors, content zones
+            referenceAds = matchResult.referenceAds || [];
 
-            if (productImageBuffer) {
-                try {
-                    const matchResult = await matchProduct(productImageBuffer);
-                    productAnalysis = matchResult.analysis;
-                    deepAnalysis = matchResult.deepAnalysis;  // NEW: Contains visual anchors, content zones
-                    referenceAds = matchResult.referenceAds || [];
-                    extractedColors = await extractBrandColors(productImageBuffer, productAnalysis);
+            console.log(`[MasterGen]   Product: ${productAnalysis?.productName || 'Unknown'}`);
+            console.log(`[MasterGen]   Type: ${productAnalysis?.productType || 'unknown'}`);
+            console.log(`[MasterGen]   References: ${referenceAds.length} Foreplay ads`);
 
-                    console.log(`[MasterGen]   Product: ${productAnalysis?.productName || 'Unknown'}`);
-                    console.log(`[MasterGen]   Type: ${productAnalysis?.productType || 'unknown'}`);
-                    console.log(`[MasterGen]   References: ${referenceAds.length} Foreplay ads`);
-
-                    // NEW: Log deep analysis insights
-                    if (deepAnalysis) {
-                        console.log(`[MasterGen] 🔬 Deep Analysis Results:`);
-                        console.log(`[MasterGen]   Visual Anchors: ${deepAnalysis.visualAnchors?.length || 0}`);
-                        console.log(`[MasterGen]   Empty Spaces: ${deepAnalysis.contentZones?.emptySpaces?.length || 0}`);
-                        console.log(`[MasterGen]   Max Callouts: ${deepAnalysis.designRecommendations?.maxCallouts || 2}`);
-                        console.log(`[MasterGen]   Suggested Headline: ${deepAnalysis.designRecommendations?.suggestedHeadline || 'N/A'}`);
-                        console.log(`[MasterGen]   Exclude: ${deepAnalysis.excludeElements?.join(', ') || 'none'}`);
-                    }
-                } catch (e) {
-                    console.warn('[MasterGen]   Product analysis fallback:', e.message);
-                }
+            // NEW: Log deep analysis insights
+            if (deepAnalysis) {
+                console.log(`[MasterGen] 🔬 Deep Analysis Results:`);
+                console.log(`[MasterGen]   Visual Anchors: ${deepAnalysis.visualAnchors?.length || 0}`);
+                console.log(`[MasterGen]   Empty Spaces: ${deepAnalysis.contentZones?.emptySpaces?.length || 0}`);
+                console.log(`[MasterGen]   Max Callouts: ${deepAnalysis.designRecommendations?.maxCallouts || 2}`);
+                console.log(`[MasterGen]   Suggested Headline: ${deepAnalysis.designRecommendations?.suggestedHeadline || 'N/A'}`);
+                console.log(`[MasterGen]   Exclude: ${deepAnalysis.excludeElements?.join(', ') || 'none'}`);
             }
 
-            finalAccentColor = accentColor || extractedColors.accent || '#FF4757';  // Update with extracted colors
+            // ════════════════════════════════════════════════════════════
+            // PHASE 1A: AI COLOR INTELLIGENCE (No hardcoded colors)
+            // ════════════════════════════════════════════════════════════
+            console.log('[MasterGen] 🎨 Building Color Intelligence...');
+            const colorIntelligence = await buildColorIntelligence(
+                productImageBuffer,
+                referenceAds,
+                industry || productAnalysis?.productType || 'tech'
+            );
+            extractedColors = colorIntelligence;
+            finalAccentColor = accentColor || colorIntelligence.accent;
+
+            console.log(`[MasterGen]   Palette Mood: ${colorIntelligence.mood}`);
+            console.log(`[MasterGen]   Accent: ${colorIntelligence.accent}`);
+            console.log(`[MasterGen]   Dominant: ${colorIntelligence.dominant}`);
 
             // Deep Foreplay Design Analysis
             const designSpecs = await analyzeReferenceAds(referenceAds, productAnalysis);
             console.log(`[MasterGen]   Design Specs: ${designSpecs.layout?.gridType || 'centered'} layout`);
             console.log(`[MasterGen]   Mood: ${designSpecs.mood?.primary || 'premium'}`);
 
+            // ════════════════════════════════════════════════════════════
+            // PHASE 1B: AI TYPOGRAPHY INTELLIGENCE (No hardcoded fonts)
+            // ════════════════════════════════════════════════════════════
+            console.log('[MasterGen] 🔤 Building Typography Intelligence...');
+            const texts = {
+                headline: headline || deepAnalysis?.designRecommendations?.suggestedHeadline || 'Premium Quality',
+                subheadline: tagline || '',
+                cta: cta || 'Jetzt entdecken'
+            };
+            const typographyIntelligence = await buildTypographyIntelligence(
+                texts,
+                CANVAS_WIDTH,
+                industry || productAnalysis?.productType || 'tech',
+                referenceAds,
+                colorIntelligence
+            );
+
+            console.log(`[MasterGen]   Font Style: ${typographyIntelligence.fonts.style}`);
+            console.log(`[MasterGen]   Primary Font: ${typographyIntelligence.fonts.primary}`);
+            console.log(`[MasterGen]   Headline Size: ${typographyIntelligence.headline.fontSize}px`);
+
+            // Merge typography into designSpecs for downstream use
+            designSpecs.typography = {
+                ...designSpecs.typography,
+                ...typographyIntelligence,
+                colors: colorIntelligence
+            };
+
+
             // NEW: AI Creative Director - Plan final composition
             let compositionPlan = null;
             if (deepAnalysis && designSpecs) {
-                compositionPlan = await planAdComposition(designSpecs, deepAnalysis, productAnalysis, userPrompt, industry);
+                compositionPlan = await planAdComposition(
+                    designSpecs,
+                    deepAnalysis,
+                    productAnalysis,
+                    userPrompt,
+                    industry,
+                    { strictReplica: strictMode }
+                );
+                if (strictMode) {
+                    compositionPlan = solveCompositionPlan(compositionPlan, deepAnalysis);
+                }
+                finalCompositionPlan = compositionPlan;
                 console.log(`[MasterGen] 🧠 AI Composition Plan:`);
                 console.log(`[MasterGen]   Headline: "${compositionPlan?.headline?.text?.substring(0, 25) || 'N/A'}..."`);
                 console.log(`[MasterGen]   Callouts: ${compositionPlan?.callouts?.length || 0}`);
@@ -282,6 +345,9 @@ export async function generateCompositeAd({
                 } else {
                     console.log(`[MasterGen] ✅ Composition validated - no collisions or violations`);
                 }
+            }
+            if (strictMode && !compositionPlan) {
+                throw new Error('Composition plan required for strict replica mode');
             }
 
             // AI Content Generation
@@ -312,12 +378,17 @@ export async function generateCompositeAd({
             // ════════════════════════════════════════════════════════════
             console.log('[MasterGen] ▶ PHASE 2: Layout Composition...');
 
-            const layout = selectOptimalLayout({
-                productAnalysis,
-                designSpecs,
-                contentPackage,
-                referenceAds
-            });
+            const layout = strictMode && compositionPlan
+                ? buildLayoutFromPlan(compositionPlan, designSpecs)
+                : selectOptimalLayout({
+                    productAnalysis,
+                    designSpecs,
+                    contentPackage,
+                    referenceAds
+                });
+            if (!layout) {
+                throw new Error('Failed to resolve layout');
+            }
             console.log(`[MasterGen]   Selected: ${layout.name}`);
 
             const positions = calculatePositions(layout, {});
@@ -373,6 +444,9 @@ export async function generateCompositeAd({
             console.log('[MasterGen] ▶ PHASE 5: Device Mockup...');
 
             const productSpecs = buildProductSpecs(designSpecs);
+            if (strictMode && compositionPlan?.product) {
+                applyPlanToProductSpecs(productSpecs, compositionPlan.product);
+            }
             let mockupBuffer = null;
 
             if (productImageBuffer) {
@@ -413,7 +487,8 @@ export async function generateCompositeAd({
                 productAnalysis,
                 finalAccentColor,
                 deepAnalysis,
-                compositionPlan  // NEW: AI-planned elements take priority
+                compositionPlan,  // NEW: AI-planned elements take priority
+                strictMode
             );
             compositeBuffer = await compositeVisualElements(compositeBuffer, visualElements);
             console.log(`[MasterGen]   Elements: ${visualElements.length} layers ✓`);
@@ -537,7 +612,7 @@ export async function generateCompositeAd({
             // ════════════════════════════════════════════════════════════
             // PHASE 10: QUALITY VERIFICATION
             // ════════════════════════════════════════════════════════════
-            if (enableQualityCheck) {
+            if (qualityCheckActive) {
                 console.log('[MasterGen] ▶ PHASE 10: Quality Verification...');
 
                 qualityResult = await scoreAdQuality({
@@ -545,7 +620,8 @@ export async function generateCompositeAd({
                     designSpecs,
                     contentPackage,
                     productAnalysis,
-                    referenceAds
+                    referenceAds,
+                    strictReplica: strictMode
                 });
 
                 console.log(`[MasterGen]   Score: ${qualityResult.overallScore}/10 (${qualityResult.tier})`);
@@ -555,6 +631,23 @@ export async function generateCompositeAd({
                     console.log(`[MasterGen]   ⚠ Quality below threshold, regenerating (attempt ${regenerationAttempt + 2})...`);
                     regenerationAttempt++;
                     continue;
+                }
+
+                if (strictMode) {
+                    similarityResult = await scoreReferenceSimilarity({
+                        imageBuffer: finalBuffer,
+                        referenceAds
+                    });
+                    console.log(`[MasterGen]   Similarity: ${similarityResult.score}/10`);
+
+                    if (similarityResult.score < SIMILARITY_THRESHOLD && regenerationAttempt < MAX_REGENERATION_ATTEMPTS) {
+                        console.log(`[MasterGen]   ⚠ Similarity below threshold, regenerating (attempt ${regenerationAttempt + 2})...`);
+                        regenerationAttempt++;
+                        continue;
+                    }
+                    if (similarityResult.score < SIMILARITY_THRESHOLD) {
+                        throw new Error(`Reference similarity below threshold: ${similarityResult.score}`);
+                    }
                 }
             }
 
@@ -571,9 +664,23 @@ export async function generateCompositeAd({
     }
 
     const duration = Date.now() - startTime;
+
+    // ════════════════════════════════════════════════════════════
+    // FINAL PHASE: PREMIUM POST-PROCESSING (Agency-Quality Finish)
+    // ════════════════════════════════════════════════════════════
+    console.log('[MasterGen] ✨ Applying Premium Polish...');
+    const polishedBuffer = await applyAutoPolish(
+        finalBuffer,
+        extractedColors,
+        extractedColors?.mood || 'vibrant'
+    );
+    finalBuffer = polishedBuffer;
+    console.log('[MasterGen]   Premium polish applied ✓');
+
     console.log('[MasterGen] ═══════════════════════════════════════════════');
     console.log(`[MasterGen] ✅ COMPLETE in ${duration}ms`);
     console.log(`[MasterGen]   Quality: ${qualityResult?.overallScore || 'N/A'}/10`);
+    console.log(`[MasterGen]   Similarity: ${similarityResult?.score || 'N/A'}/10`);
     console.log('[MasterGen] ═══════════════════════════════════════════════');
 
     return {
@@ -583,7 +690,10 @@ export async function generateCompositeAd({
         qualityTier: qualityResult?.tier || 'unknown',
         qualityDetails: qualityResult,
         regenerationAttempts: regenerationAttempt,
-        referenceCount: 0, // This would come from matchProduct
+        referenceCount: referenceAds.length,
+        compositionPlan: finalCompositionPlan,
+        similarityScore: similarityResult?.score || 0,
+        similarityDetails: similarityResult,
         metadata: {
             version: '11.0',
             mode: 'foreplay_driven_designer'
@@ -621,79 +731,23 @@ export async function generateCompositeAd({
  * Generate premium background with Gemini
  */
 async function generatePremiumBackground(prompt, accentColor, designSpecs) {
-    try {
-        const model = genAI.getGenerativeModel({
-            model: 'gemini-2.0-flash-exp',
-            generationConfig: { responseModalities: ['image', 'text'] }
-        });
+    const model = genAI.getGenerativeModel({
+        model: 'gemini-2.0-flash-exp',
+        generationConfig: { responseModalities: ['image', 'text'] }
+    });
 
-        const result = await model.generateContent([{ text: prompt }]);
-        const candidates = result.response?.candidates;
+    const result = await model.generateContent([{ text: prompt }]);
+    const candidates = result.response?.candidates;
 
-        if (candidates?.[0]?.content?.parts) {
-            for (const part of candidates[0].content.parts) {
-                if (part.inlineData?.data) {
-                    const buffer = Buffer.from(part.inlineData.data, 'base64');
-                    return await sharp(buffer).resize(CANVAS_WIDTH, CANVAS_HEIGHT).png().toBuffer();
-                }
+    if (candidates?.[0]?.content?.parts) {
+        for (const part of candidates[0].content.parts) {
+            if (part.inlineData?.data) {
+                const buffer = Buffer.from(part.inlineData.data, 'base64');
+                return await sharp(buffer).resize(CANVAS_WIDTH, CANVAS_HEIGHT).png().toBuffer();
             }
         }
-        throw new Error('No image generated');
-    } catch (error) {
-        console.warn('[MasterGen] Gemini fallback:', error.message);
-        return await createFallbackBackground(accentColor, designSpecs);
     }
-}
-
-/**
- * Create fallback background
- */
-async function createFallbackBackground(accentColor, designSpecs) {
-    const colors = designSpecs?.colors || {};
-    const bgPrimary = colors.backgroundPrimary || '#0A0A1A';
-    const bgSecondary = colors.backgroundSecondary || '#1A1A3A';
-
-    // Build gradient mesh
-    const mesh = createGradientMesh({
-        colors: [accentColor, '#6C5CE7', '#00D2D3', accentColor],
-        complexity: 5,
-        softness: 0.35
-    });
-
-    // Build particles
-    const particles = createParticleField({
-        count: 30,
-        sizeRange: [1, 3],
-        opacityRange: [0.1, 0.25],
-        distribution: 'radial'
-    });
-
-    // Build bokeh
-    let bokeh = '';
-    for (let i = 0; i < 5; i++) {
-        const x = 100 + Math.random() * (CANVAS_WIDTH - 200);
-        const y = 100 + Math.random() * (CANVAS_HEIGHT - 200);
-        const r = 40 + Math.random() * 80;
-        bokeh += `<circle cx="${x}" cy="${y}" r="${r}" fill="${accentColor}" fill-opacity="0.04"/>`;
-    }
-
-    const svg = `
-    <svg width="${CANVAS_WIDTH}" height="${CANVAS_HEIGHT}" xmlns="http://www.w3.org/2000/svg">
-        <defs>
-            <radialGradient id="mainBg" cx="50%" cy="45%" r="90%">
-                <stop offset="0%" style="stop-color:${bgSecondary}"/>
-                <stop offset="100%" style="stop-color:${bgPrimary}"/>
-            </radialGradient>
-            ${mesh.defs}
-        </defs>
-        <rect width="100%" height="100%" fill="url(#mainBg)"/>
-        ${mesh.content}
-        ${bokeh}
-        ${particles}
-        ${createVignette({ intensity: 0.35 })}
-    </svg>`;
-
-    return await sharp(Buffer.from(svg)).png().toBuffer();
+    throw new Error('No image generated');
 }
 
 /**
@@ -869,9 +923,13 @@ async function applyPrecisionComposite({ backgroundBuffer, mockupBuffer, product
     const resizedMeta = await sharp(resizedMockup).metadata();
 
     // Use positions from layout
-    const productPos = positions?.product || { x: CANVAS_WIDTH / 2, y: CANVAS_HEIGHT * 0.48 };
-    const xPercent = productPos.x / CANVAS_WIDTH;
-    const yPercent = productPos.y / CANVAS_HEIGHT;
+    const fallbackPos = positions?.product || { x: CANVAS_WIDTH / 2, y: CANVAS_HEIGHT * 0.48 };
+    const xPercent = typeof productSpecs?.position?.xPercent === 'number'
+        ? productSpecs.position.xPercent
+        : fallbackPos.x / CANVAS_WIDTH;
+    const yPercent = typeof productSpecs?.position?.yPercent === 'number'
+        ? productSpecs.position.yPercent
+        : fallbackPos.y / CANVAS_HEIGHT;
 
     let left = Math.round(CANVAS_WIDTH * xPercent - resizedMeta.width / 2);
     let top = Math.round(CANVAS_HEIGHT * yPercent - resizedMeta.height / 2);
@@ -957,7 +1015,7 @@ async function extractBrandColors(imageBuffer, productAnalysis) {
 
         return { primary: '#0A0A1A', accent: accentColor, text: '#FFFFFF' };
     } catch (e) {
-        return { primary: '#0A0A1A', accent: '#FF4757', text: '#FFFFFF' };
+        throw new Error(`Failed to extract brand colors: ${e.message}`);
     }
 }
 
@@ -992,6 +1050,53 @@ function applyRegenerationGuidance(designSpecs, patternSet, guidance) {
                 break;
         }
     });
+}
+
+function applyPlanToProductSpecs(productSpecs, planProduct) {
+    if (planProduct?.position) {
+        if (Number.isFinite(planProduct.position.xPercent)) {
+            productSpecs.position.xPercent = planProduct.position.xPercent;
+        }
+        if (Number.isFinite(planProduct.position.yPercent)) {
+            productSpecs.position.yPercent = planProduct.position.yPercent;
+        }
+    }
+
+    if (Number.isFinite(planProduct?.scale)) {
+        productSpecs.scale = clamp(planProduct.scale, 0.2, 0.9);
+    }
+
+    if (Number.isFinite(planProduct?.rotation)) {
+        productSpecs.rotation = clamp(planProduct.rotation, -25, 25);
+    }
+
+    if (typeof planProduct?.addShadow === 'boolean') {
+        productSpecs.shadow.show = planProduct.addShadow;
+    }
+    if (typeof planProduct?.addReflection === 'boolean') {
+        productSpecs.reflection.show = planProduct.addReflection;
+    }
+    if (typeof planProduct?.addGlow === 'boolean') {
+        productSpecs.screenGlow.show = planProduct.addGlow;
+    }
+
+    if (planProduct?.mockupType) {
+        const mockupType = String(planProduct.mockupType);
+        const supported = new Set(['macbook_pro', 'macbook', 'phone', 'ipad', 'browser']);
+        if (mockupType === 'floating' || mockupType === 'none') {
+            productSpecs.device.type = 'none';
+            productSpecs.device.hasFrame = false;
+        } else if (supported.has(mockupType)) {
+            productSpecs.device.type = mockupType;
+            productSpecs.device.hasFrame = true;
+        } else {
+            throw new Error(`Unsupported mockupType in composition plan: ${mockupType}`);
+        }
+    }
+}
+
+function clamp(value, min, max) {
+    return Math.max(min, Math.min(max, value));
 }
 
 export default { generateCompositeAd };

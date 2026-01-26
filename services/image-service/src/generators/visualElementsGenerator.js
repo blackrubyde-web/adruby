@@ -23,8 +23,9 @@ const CANVAS_HEIGHT = 1080;
  * @param {string} accentColor - Accent color to use
  * @param {Object} deepAnalysis - Deep analysis with excludeElements, maxCallouts, visualAnchors
  * @param {Object} compositionPlan - AI-planned composition (badges, callouts, etc. are in typography layer)
+ * @param {boolean} strictReplica - Strict mode disables auto elements
  */
-export async function generateVisualElements(designSpecs, productAnalysis, accentColor, deepAnalysis = null, compositionPlan = null) {
+export async function generateVisualElements(designSpecs, productAnalysis, accentColor, deepAnalysis = null, compositionPlan = null, strictReplica = false) {
     console.log('[VisualElements] 🎨 Generating visual elements...');
 
     const elements = [];
@@ -107,7 +108,7 @@ export async function generateVisualElements(designSpecs, productAnalysis, accen
 
     // Auto-generate elements based on product analysis
     // ONLY if we have minimal elements and AI didn't exclude
-    if (productAnalysis && elements.length < 2) {
+    if (!strictReplica && productAnalysis && elements.length < 2) {
         const autoElements = generateAutoElements(productAnalysis, accentColor);
         if (autoElements) {
             elements.push({ svg: autoElements, type: 'auto' });

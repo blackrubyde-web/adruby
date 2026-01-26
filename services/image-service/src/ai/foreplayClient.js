@@ -116,19 +116,14 @@ export class ForeplayClient {
             limit: options.limit || 10
         };
 
-        try {
-            const result = await this.request('/api/discovery/ads', params);
+        const result = await this.request('/api/discovery/ads', params);
 
-            this.cache.set(cacheKey, {
-                data: result.data,
-                timestamp: Date.now()
-            });
+        this.cache.set(cacheKey, {
+            data: result.data,
+            timestamp: Date.now()
+        });
 
-            return result.data || [];
-        } catch (error) {
-            console.error('[Foreplay] searchByNiche error:', error.message);
-            return [];
-        }
+        return result.data || [];
     }
 
     /**
@@ -281,8 +276,7 @@ export class ForeplayClient {
  */
 export function createForeplayClient(apiKey) {
     if (!apiKey) {
-        console.warn('[Foreplay] No API key provided');
-        return null;
+        throw new Error('Foreplay API key is required');
     }
     return new ForeplayClient(apiKey);
 }

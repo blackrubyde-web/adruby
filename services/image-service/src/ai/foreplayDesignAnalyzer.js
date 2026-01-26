@@ -21,8 +21,7 @@ const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
  */
 export async function analyzeReferenceAds(referenceAds, productAnalysis) {
     if (!referenceAds || referenceAds.length === 0) {
-        console.log('[DesignAnalyzer] No references, using default patterns');
-        return getDefaultDesignSpecs();
+        throw new Error('Foreplay references are required for design analysis');
     }
 
     console.log(`[DesignAnalyzer] 🔍 Analyzing ${referenceAds.length} Foreplay references...`);
@@ -45,7 +44,7 @@ export async function analyzeReferenceAds(referenceAds, productAnalysis) {
 
     } catch (error) {
         console.error('[DesignAnalyzer] Analysis failed:', error.message);
-        return getDefaultDesignSpecs();
+        throw error;
     }
 }
 
@@ -245,7 +244,7 @@ function synthesizePatterns(analyses, productAnalysis) {
     const validAnalyses = analyses.filter(a => a !== null);
 
     if (validAnalyses.length === 0) {
-        return getDefaultDesignSpecs();
+        throw new Error('Foreplay analysis produced no usable references');
     }
 
     // Aggregate common patterns
@@ -642,8 +641,16 @@ function mostCommon(arr) {
  * - Which Foreplay patterns to apply
  * - What to explicitly EXCLUDE
  */
-export async function planAdComposition(foreplayPatterns, deepAnalysis, productAnalysis, userPrompt = '', industry = '') {
+export async function planAdComposition(
+    foreplayPatterns,
+    deepAnalysis,
+    productAnalysis,
+    userPrompt = '',
+    industry = '',
+    options = {}
+) {
     console.log('[AdPlanner] 🧠 AI Creative Director - 100% DYNAMIC composition (no templates)...');
+    const strictReplica = options?.strictReplica === true;
 
     try {
         // NO SCHEMAS - Everything is dynamically generated
@@ -886,6 +893,9 @@ Only include elements that make sense for THIS specific ad. You can omit any ele
         return compositionPlan;
     } catch (error) {
         console.error('[AdPlanner] GPT-4 planning failed:', error.message);
+        if (strictReplica) {
+            throw error;
+        }
         return getDefaultCompositionPlan(foreplayPatterns, deepAnalysis);
     }
 }

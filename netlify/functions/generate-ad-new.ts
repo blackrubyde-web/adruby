@@ -157,6 +157,16 @@ const handler: Handler = async (event: HandlerEvent) => {
         };
     }
 
+    return {
+        statusCode: 410,
+        headers,
+        body: JSON.stringify({
+            success: false,
+            error: 'Foreplay-only pipeline enabled',
+            message: 'Use ai-ad-generate-background (Foreplay pipeline) for ad generation.'
+        }),
+    };
+
     const pipelineStartTime = Date.now();
     const telemetry = createEmptyTelemetry();
     telemetry.meta = {

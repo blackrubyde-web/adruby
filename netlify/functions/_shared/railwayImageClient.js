@@ -167,6 +167,25 @@ export async function isRailwayAvailable() {
 }
 
 /**
+ * Check if Railway is up AND Foreplay is configured on the service.
+ * @returns {Promise<boolean>}
+ */
+export async function isForeplayAvailable() {
+    try {
+        const response = await fetch(`${RAILWAY_URL}/health`, {
+            method: 'GET',
+            signal: AbortSignal.timeout(5000),
+        });
+        if (!response.ok) return false;
+        const data = await response.json().catch(() => ({}));
+        const foreplayEnabled = data?.foreplay === true || data?.services?.foreplay === true;
+        return foreplayEnabled === true;
+    } catch {
+        return false;
+    }
+}
+
+/**
  * Generate ad using MASTER Pipeline v10.0
  * 10-Phase Designer-Level + Quality Verification + Regeneration
  * 
@@ -185,6 +204,7 @@ export async function generateWithComposite({
     enableQualityCheck = true,
     enableAIContent = true,
     enableAdvancedEffects = true,
+    strictReplica = true,
 }) {
     console.log('[Railway] 🎨 MASTER Pipeline v10.0 request...');
     console.log('[Railway] Mode: 10-Phase Designer-Level + Quality Verification');
@@ -206,6 +226,7 @@ export async function generateWithComposite({
             enableQualityCheck,
             enableAIContent,
             enableAdvancedEffects,
+            strictReplica,
         }),
         signal: AbortSignal.timeout(240000), // Extended for full pipeline + regen
     });
@@ -242,6 +263,9 @@ export async function generateWithComposite({
             regenerationAttempts: result.metadata?.regenerationAttempts,
             referenceCount: result.metadata?.referenceCount,
             duration: result.metadata?.duration,
+            similarityScore: result.metadata?.similarityScore,
+            similarityDetails: result.metadata?.similarityDetails,
+            compositionPlan: result.metadata?.compositionPlan,
             mode: 'master_designer'
         },
     };
@@ -256,4 +280,5 @@ export default {
     searchReferences,
     getForeplayUsage,
     isRailwayAvailable,
+    isForeplayAvailable,
 };

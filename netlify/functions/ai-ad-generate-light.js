@@ -25,6 +25,15 @@ export const handler = async (event) => {
         return { statusCode: 405, headers, body: JSON.stringify({ error: 'Method not allowed' }) };
     }
 
+    return {
+        statusCode: 410,
+        headers,
+        body: JSON.stringify({
+            error: 'Foreplay-only pipeline enabled',
+            message: 'Use ai-ad-generate-background (Foreplay pipeline) for ad generation.'
+        }),
+    };
+
     try {
         const body = JSON.parse(event.body || '{}');
         const { mode, language = 'de' } = body;

@@ -288,7 +288,8 @@ export async function scoreAdQuality({
     designSpecs,
     contentPackage,
     productAnalysis,
-    referenceAds = []
+    referenceAds = [],
+    strictReplica = false
 }) {
     console.log('[QualityScorer] 🔍 Starting comprehensive quality analysis...');
 
@@ -346,6 +347,9 @@ export async function scoreAdQuality({
 
     } catch (error) {
         console.error('[QualityScorer] Analysis failed:', error.message);
+        if (strictReplica) {
+            throw error;
+        }
         return {
             overallScore: 7.0,
             tier: 'good',
@@ -490,6 +494,158 @@ function calculateReferenceMatch(visualAnalysis, referenceAds) {
             headline: ad.headline,
             runningDays: ad.running_duration?.days
         }))
+    };
+}
+
+/**
+ * Score similarity to Foreplay reference ads using GPT-4V
+ * ENHANCED: Multi-aspect weighted scoring for 8.5+ threshold
+ */
+export async function scoreReferenceSimilarity({ imageBuffer, referenceAds = [] }) {
+    if (!referenceAds || referenceAds.length === 0) {
+        throw new Error('Reference similarity requires Foreplay references');
+    }
+
+    const referenceImages = referenceAds
+        .map(ad => ad.image || ad.thumbnail)
+        .filter(Boolean)
+        .slice(0, 3);
+
+    if (referenceImages.length === 0) {
+        throw new Error('Reference ads missing images for similarity check');
+    }
+
+    console.log('[QualityScorer] 🎯 Multi-aspect similarity scoring...');
+    const base64 = imageBuffer.toString('base64');
+
+    const response = await openai.chat.completions.create({
+        model: 'gpt-4o',
+        messages: [{
+            role: 'system',
+            content: `You are an elite Meta/Facebook ad creative director with 15+ years experience.
+Analyze ads with extreme precision. Generated ads must match the VISUAL QUALITY and DESIGN PATTERNS of top-performing reference ads.
+Score harshly - only truly matching ads should score 8.5+.`
+        }, {
+            role: 'user',
+            content: [
+                {
+                    type: 'text',
+                    text: `Compare the GENERATED AD (first image) against the TOP-PERFORMING REFERENCE ADS (remaining images).
+
+Score each aspect 1-10 with detailed feedback:
+
+1. LAYOUT_COMPOSITION (25% weight)
+   - Element positioning (headline, product, CTA locations)
+   - Visual hierarchy matches reference
+   - Whitespace and balance
+   - Grid alignment
+
+2. COLOR_HARMONY (20% weight)
+   - Color palette similarity
+   - Contrast levels
+   - Mood matches references
+   - Brand color usage
+
+3. TYPOGRAPHY_STYLE (20% weight)
+   - Font style matches (bold/elegant/playful)
+   - Size hierarchy appropriate
+   - Text effects (gradients, shadows)
+   - Readability
+
+4. VISUAL_EFFECTS (15% weight)
+   - Shadow quality
+   - Glow/lighting effects
+   - Background treatment
+   - Professional finish
+
+5. PRODUCT_PRESENTATION (10% weight)
+   - Product visibility
+   - Mockup quality
+   - Integration with design
+   - Scale appropriateness
+
+6. OVERALL_IMPRESSION (10% weight)
+   - Would this perform on Meta/Facebook?
+   - Professional agency quality?
+   - Scroll-stopping potential?
+
+Return JSON:
+{
+  "aspects": [
+    { "name": "layout_composition", "score": 1-10, "feedback": "specific issue or praise" },
+    { "name": "color_harmony", "score": 1-10, "feedback": "..." },
+    { "name": "typography_style", "score": 1-10, "feedback": "..." },
+    { "name": "visual_effects", "score": 1-10, "feedback": "..." },
+    { "name": "product_presentation", "score": 1-10, "feedback": "..." },
+    { "name": "overall_impression", "score": 1-10, "feedback": "..." }
+  ],
+  "weightedScore": 0-10,
+  "topStrengths": ["what matches references best"],
+  "criticalIssues": ["what needs fixing most"],
+  "regenerationFocus": "which aspect to prioritize if regenerating"
+}`
+                },
+                {
+                    type: 'image_url',
+                    image_url: { url: `data:image/png;base64,${base64}`, detail: 'high' }
+                },
+                ...referenceImages.map(url => ({
+                    type: 'image_url',
+                    image_url: { url, detail: 'high' }
+                }))
+            ]
+        }],
+        max_tokens: 800,
+        response_format: { type: 'json_object' }
+    });
+
+    const result = JSON.parse(response.choices[0].message.content || '{}');
+
+    // Calculate weighted score if not provided
+    const WEIGHTS = {
+        layout_composition: 0.25,
+        color_harmony: 0.20,
+        typography_style: 0.20,
+        visual_effects: 0.15,
+        product_presentation: 0.10,
+        overall_impression: 0.10
+    };
+
+    let calculatedScore = 0;
+    const aspects = result.aspects || [];
+
+    for (const aspect of aspects) {
+        const weight = WEIGHTS[aspect.name] || 0.1;
+        calculatedScore += (aspect.score || 5) * weight;
+    }
+
+    const finalScore = result.weightedScore || calculatedScore;
+
+    if (!Number.isFinite(finalScore)) {
+        throw new Error('Invalid similarity score');
+    }
+
+    // Log detailed results
+    console.log(`[QualityScorer]   Weighted Score: ${finalScore.toFixed(1)}/10`);
+    for (const aspect of aspects) {
+        const emoji = aspect.score >= 8 ? '✅' : aspect.score >= 6 ? '⚠️' : '❌';
+        console.log(`[QualityScorer]   ${emoji} ${aspect.name}: ${aspect.score}/10`);
+    }
+
+    if (result.criticalIssues?.length > 0) {
+        console.log(`[QualityScorer]   🔴 Critical: ${result.criticalIssues.join(', ')}`);
+    }
+
+    return {
+        score: finalScore,
+        aspects: aspects,
+        topStrengths: result.topStrengths || [],
+        criticalIssues: result.criticalIssues || [],
+        regenerationFocus: result.regenerationFocus || 'overall',
+        // Legacy compatibility
+        notes: result.criticalIssues?.join('; ') || '',
+        matchedAttributes: result.topStrengths || [],
+        mismatches: result.criticalIssues || []
     };
 }
 
@@ -735,5 +891,6 @@ export default {
     compareVariants,
     detectCollisions,
     validateElementPlacements,
+    scoreReferenceSimilarity,
     QUALITY_THRESHOLDS
 };

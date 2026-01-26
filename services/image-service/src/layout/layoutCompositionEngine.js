@@ -163,6 +163,147 @@ export const LAYOUT_PRESETS = {
 // LAYOUT SELECTION
 // ========================================
 
+function cloneLayoutPreset(layout) {
+    return JSON.parse(JSON.stringify(layout));
+}
+
+function resolveAlignedXPercent(alignment, widthPercent, margins = {}) {
+    const left = margins.leftPercent ?? 0.06;
+    const right = margins.rightPercent ?? 0.06;
+
+    if (alignment === 'left') {
+        return left + widthPercent / 2;
+    }
+    if (alignment === 'right') {
+        return 1 - right - widthPercent / 2;
+    }
+    return 0.5;
+}
+
+function pickForeplayPresetKey(layout) {
+    const zone = layout?.productPlacement?.zone || '';
+    const grid = layout?.gridType;
+    const xPercent = layout?.productPlacement?.xPercent;
+
+    if (zone.includes('left')) return 'hero_left';
+    if (zone.includes('right')) return 'hero_right';
+    if (zone.includes('top')) return 'hero_top';
+    if (zone.includes('bottom')) return 'hero_centered';
+
+    if (grid === 'asymmetric' && typeof xPercent === 'number') {
+        return xPercent < 0.5 ? 'hero_left' : 'hero_right';
+    }
+    if (grid === 'rule_of_thirds') return 'hero_top';
+    if (grid === 'diagonal') return 'split_screen';
+    if (grid === 'centered') return 'hero_centered';
+
+    return 'hero_centered';
+}
+
+function buildForeplayLayout(designSpecs) {
+    const layout = designSpecs?.layout;
+    if (!layout) return null;
+
+    const presetKey = pickForeplayPresetKey(layout);
+    const base = LAYOUT_PRESETS[presetKey] || LAYOUT_PRESETS.hero_centered;
+    const derived = cloneLayoutPreset(base);
+
+    derived.name = `Foreplay ${base.name}`;
+    derived.grid = layout.gridType || base.grid;
+    derived.whitespace = layout.spacing || base.whitespace;
+
+    const margins = layout.margins || {};
+    const typography = designSpecs?.typography || {};
+    const headlineAlign = typography.headline?.alignment || derived.zones?.headline?.anchor || 'center';
+
+    if (derived.zones?.product && layout.productPlacement) {
+        if (typeof layout.productPlacement.xPercent === 'number') {
+            derived.zones.product.x = layout.productPlacement.xPercent;
+        }
+        if (typeof layout.productPlacement.yPercent === 'number') {
+            derived.zones.product.y = layout.productPlacement.yPercent;
+        }
+        if (typeof layout.productPlacement.scalePercent === 'number') {
+            derived.zones.product.scale = layout.productPlacement.scalePercent;
+        }
+    }
+
+    if (derived.zones?.headline) {
+        derived.zones.headline.y = typography.headline?.yPercent ?? derived.zones.headline.y;
+        derived.zones.headline.anchor = headlineAlign;
+        const headlineWidth = derived.zones.headline.w || 0.9;
+        derived.zones.headline.x = resolveAlignedXPercent(headlineAlign, headlineWidth, margins);
+    }
+
+    if (derived.zones?.tagline) {
+        derived.zones.tagline.y = typography.tagline?.yPercent ?? derived.zones.tagline.y;
+        derived.zones.tagline.anchor = headlineAlign;
+        const taglineWidth = derived.zones.tagline.w || 0.75;
+        derived.zones.tagline.x = resolveAlignedXPercent(headlineAlign, taglineWidth, margins);
+    }
+
+    if (derived.zones?.cta) {
+        derived.zones.cta.y = typography.cta?.yPercent ?? derived.zones.cta.y;
+        const ctaAlign = typography.cta?.alignment || headlineAlign;
+        const ctaWidth = derived.zones.cta.w || 0.26;
+        derived.zones.cta.x = resolveAlignedXPercent(ctaAlign, ctaWidth, margins);
+    }
+
+    return derived;
+}
+
+export function buildLayoutFromPlan(compositionPlan, designSpecs = {}) {
+    if (!compositionPlan) return null;
+
+    const base = cloneLayoutPreset(LAYOUT_PRESETS.hero_centered);
+    const typography = designSpecs?.typography || {};
+    const layoutSpecs = designSpecs?.layout || {};
+
+    base.name = 'Plan Layout';
+    base.grid = layoutSpecs.gridType || base.grid;
+    base.whitespace = layoutSpecs.spacing || base.whitespace;
+
+    if (compositionPlan.headline?.position) {
+        base.zones.headline = {
+            x: compositionPlan.headline.position.xPercent,
+            y: compositionPlan.headline.position.yPercent,
+            w: base.zones?.headline?.w || 0.9,
+            anchor: compositionPlan.headline.alignment || typography.headline?.alignment || 'center'
+        };
+    }
+
+    if (compositionPlan.subheadline?.position) {
+        base.zones.tagline = {
+            x: compositionPlan.subheadline.position.xPercent,
+            y: compositionPlan.subheadline.position.yPercent,
+            w: base.zones?.tagline?.w || 0.75,
+            anchor: compositionPlan.subheadline.alignment || typography.headline?.alignment || 'center'
+        };
+    }
+
+    if (compositionPlan.product?.position) {
+        base.zones.product = {
+            x: compositionPlan.product.position.xPercent,
+            y: compositionPlan.product.position.yPercent,
+            scale: compositionPlan.product.scale || base.zones?.product?.scale || 0.55,
+            anchor: 'center'
+        };
+    }
+
+    if (compositionPlan.cta?.position) {
+        const ctaWidthPx = typography.cta?.widthPx || 280;
+        const ctaWidthPercent = ctaWidthPx / CANVAS_WIDTH;
+        base.zones.cta = {
+            x: compositionPlan.cta.position.xPercent,
+            y: compositionPlan.cta.position.yPercent,
+            w: ctaWidthPercent || base.zones?.cta?.w || 0.26,
+            anchor: compositionPlan.cta.alignment || 'center'
+        };
+    }
+
+    return base;
+}
+
 /**
  * Select optimal layout based on analysis
  */
@@ -172,6 +313,11 @@ export function selectOptimalLayout({
     contentPackage,
     referenceAds = []
 }) {
+    const foreplayLayout = buildForeplayLayout(designSpecs);
+    if (foreplayLayout) {
+        return foreplayLayout;
+    }
+
     // If design specs have layout recommendation
     if (designSpecs?.layout?.type && LAYOUT_PRESETS[designSpecs.layout.type]) {
         return LAYOUT_PRESETS[designSpecs.layout.type];

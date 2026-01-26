@@ -25,6 +25,10 @@ const PRODUCT_CATEGORIES = {
     pet: ['pets', 'dog', 'cat', 'pet supplies']
 };
 
+const MIN_REFERENCE_ADS = 5;
+const MAX_PLAN_CALLS = 6;
+const MAX_TOP_NICHES = 2;
+
 /**
  * Analyze product with GPT-4 Vision
  * Returns detailed product info for smart Foreplay search
@@ -74,18 +78,7 @@ export async function analyzeProduct(productBuffer) {
         return analysis;
     } catch (error) {
         console.error('[ProductMatcher] GPT-4V failed:', error.message);
-        return {
-            productName: 'Product',
-            productType: 'other',
-            category: 'general',
-            keywords: ['product', 'premium', 'quality'],
-            targetAudience: 'general consumers',
-            emotionalHook: 'quality and value',
-            colorPalette: ['#FF4757', '#2F3542', '#FFFFFF'],
-            suggestedHeadlines: ['Premium Quality', 'Discover More', 'Shop Now'],
-            keyFeatures: ['High Quality', 'Best Value', 'Fast Shipping'],
-            adStyle: 'bold'
-        };
+        throw error;
     }
 }
 
@@ -242,55 +235,8 @@ Return COMPREHENSIVE JSON:
         return analysis;
     } catch (error) {
         console.error('[DeepAnalysis] GPT-4V failed:', error.message);
-        return getDefaultDeepAnalysis();
+        throw error;
     }
-}
-
-
-/**
- * Default deep analysis when GPT-4V fails
- */
-function getDefaultDeepAnalysis() {
-    return {
-        productType: 'other',
-        contentZones: {
-            primaryFocus: {
-                description: 'Product image',
-                xPercent: 0.5,
-                yPercent: 0.5,
-                widthPercent: 0.6,
-                heightPercent: 0.6,
-                type: 'product'
-            },
-            emptySpaces: [
-                { xPercent: 0.1, yPercent: 0.9, suitableFor: 'badge', size: 'small' }
-            ],
-            dataDenseAreas: []
-        },
-        visualAnchors: [],
-        colorPalette: {
-            dominant: '#1a1a2e',
-            secondary: '#2f3542',
-            accent: '#e74c3c',
-            background: '#0f0f23',
-            textColor: '#ffffff'
-        },
-        designRecommendations: {
-            maxCallouts: 2,
-            suggestedHeadline: 'Premium Quality',
-            suggestedSubheadline: 'Discover the difference',
-            ctaText: 'Learn More',
-            mockupStyle: 'floating',
-            backgroundStyle: 'gradient_dark',
-            elementPlacement: {
-                headlinePosition: 'top_center',
-                productPosition: 'center',
-                ctaPosition: 'bottom_center'
-            }
-        },
-        excludeElements: [],
-        overallMood: 'professional'
-    };
 }
 
 /**
@@ -299,41 +245,107 @@ function getDefaultDeepAnalysis() {
  */
 export async function findMatchingAds(productAnalysis, limit = 5) {
     if (!foreplay) {
-        console.log('[ProductMatcher] No Foreplay client, using defaults');
-        return { ads: [], patterns: getDefaultPatterns() };
+        throw new Error('Foreplay is required but not configured');
     }
 
     console.log('[ProductMatcher] 🔎 Searching Foreplay for similar ads...');
 
     try {
-        // Build search query from product keywords
-        const searchQuery = productAnalysis.keywords?.slice(0, 3).join(' ') || productAnalysis.productName;
+        const searchPlan = buildSearchPlan(productAnalysis);
+        console.log('[ProductMatcher] Search plan:', searchPlan);
 
-        // Get niches based on product type
-        const niches = PRODUCT_CATEGORIES[productAnalysis.productType] || ['ecommerce'];
-
-        // Search with high-converting filter
-        const ads = await foreplay.searchByNiche(niches[0], {
-            query: searchQuery,
-            runningDurationMin: 30, // Only ads running 30+ days = proven winners
-            order: 'longest_running',
-            limit: limit
+        const perQueryLimit = Math.max(limit, 8);
+        let ads = await executeSearchPlan(searchPlan, {
+            limit: perQueryLimit,
+            runningDurationMin: 30
         });
 
-        if (ads.length === 0) {
-            console.log('[ProductMatcher] No exact matches, trying broader search...');
-            // Fallback to broader industry search
-            const broadAds = await foreplay.getTopPerformingAds(productAnalysis.productType, { limit });
-            return { ads: broadAds, patterns: extractPatterns(broadAds) };
+        if (ads.length < MIN_REFERENCE_ADS) {
+            console.log('[ProductMatcher] Low matches, expanding running duration...');
+            const expandedAds = await executeSearchPlan(searchPlan, {
+                limit: perQueryLimit,
+                runningDurationMin: 14
+            });
+            ads = dedupeAds([...ads, ...expandedAds]);
         }
 
-        console.log(`[ProductMatcher] ✅ Found ${ads.length} matching ads`);
-        return { ads, patterns: extractPatterns(ads) };
+        if (ads.length < MIN_REFERENCE_ADS) {
+            console.log('[ProductMatcher] Still low matches, fetching top-performing by niche...');
+            const fallbackNiches = [...new Set(searchPlan.map(item => item.niche))].slice(0, MAX_TOP_NICHES);
+            const topAds = await Promise.all(fallbackNiches.map(niche =>
+                foreplay.searchAdsByNiche(niche, { minRunDays: 30, order: 'longest_running', limit: perQueryLimit })
+            ));
+            ads = dedupeAds([...ads, ...topAds.flat()]);
+        }
+
+        if (ads.length < MIN_REFERENCE_ADS) {
+            throw new Error('Foreplay returned too few reference ads');
+        }
+
+        const rankedAds = ads
+            .sort((a, b) => (b.running_duration?.days || 0) - (a.running_duration?.days || 0))
+            .slice(0, Math.max(limit, MIN_REFERENCE_ADS));
+
+        console.log(`[ProductMatcher] ✅ Found ${rankedAds.length} matching ads`);
+        return { ads: rankedAds, patterns: extractPatterns(rankedAds), searchPlan };
 
     } catch (error) {
         console.error('[ProductMatcher] Foreplay search failed:', error.message);
-        return { ads: [], patterns: getDefaultPatterns() };
+        throw error;
     }
+}
+
+function buildSearchPlan(productAnalysis) {
+    const niches = new Set();
+    const productType = productAnalysis?.productType;
+    const category = productAnalysis?.category;
+
+    if (productType) niches.add(productType);
+    (PRODUCT_CATEGORIES[productType] || []).forEach(niche => niches.add(niche));
+    if (category) niches.add(category);
+    if (niches.size === 0) niches.add('ecommerce');
+
+    const queries = new Set();
+    if (productAnalysis?.productName) queries.add(productAnalysis.productName);
+    if (category) queries.add(category);
+
+    const keywords = (productAnalysis?.keywords || []).filter(Boolean);
+    if (keywords.length > 0) {
+        queries.add(keywords.slice(0, 3).join(' '));
+        keywords.slice(0, 2).forEach(keyword => queries.add(keyword));
+    }
+
+    const plan = [];
+    for (const niche of niches) {
+        for (const query of queries) {
+            plan.push({ niche, query });
+            if (plan.length >= MAX_PLAN_CALLS) break;
+        }
+        if (plan.length >= MAX_PLAN_CALLS) break;
+    }
+
+    return plan.length > 0 ? plan : [{ niche: 'ecommerce', query: productAnalysis?.productName || 'product' }];
+}
+
+async function executeSearchPlan(plan, options) {
+    const results = await Promise.all(plan.map(item =>
+        foreplay.searchByNiche(item.niche, {
+            query: item.query,
+            runningDurationMin: options.runningDurationMin,
+            order: 'longest_running',
+            limit: options.limit
+        })
+    ));
+    return dedupeAds(results.flat());
+}
+
+function dedupeAds(ads) {
+    const seen = new Set();
+    return (ads || []).filter(ad => {
+        if (!ad?.id || seen.has(ad.id)) return false;
+        seen.add(ad.id);
+        return true;
+    });
 }
 
 /**

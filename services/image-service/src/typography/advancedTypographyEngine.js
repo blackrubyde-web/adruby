@@ -603,6 +603,8 @@ export function buildTypographyLayer({
     compositionPlan = null  // NEW: AI-planned composition with exact positions
 }) {
     const typography = designSpecs?.typography || {};
+    const layout = designSpecs?.layout || {};
+    const margins = layout.margins || {};
     let allDefs = '';
     let allContent = '';
 
@@ -617,6 +619,11 @@ export function buildTypographyLayer({
         const yPercent = headlinePlan?.position?.yPercent || typography.headline?.yPercent || 0.1;
         const fontSize = headlinePlan?.sizePx || typography.headline?.sizePx || 56;
         const fontWeight = headlinePlan?.weight || typography.headline?.weight || 800;
+        const align = headlinePlan?.alignment || typography.headline?.alignment || 'center';
+        const headlineWidthPercent = 0.9;
+        const headlineXPercent = typeof headlinePlan?.position?.xPercent === 'number'
+            ? headlinePlan.position.xPercent
+            : resolveAlignedXPercent(align, headlineWidthPercent, margins);
 
         // Use gradient colors from plan if available
         const useGradient = headlinePlan?.useGradient ?? typography.headline?.hasGradient ?? false;
@@ -624,9 +631,12 @@ export function buildTypographyLayer({
 
         const h = createPremiumHeadline({
             text: headline,
+            x: Math.round(CANVAS_WIDTH * headlineXPercent),
             y: Math.round(CANVAS_HEIGHT * yPercent) + fontSize,
+            maxWidth: Math.round(CANVAS_WIDTH * headlineWidthPercent),
             fontSize,
             fontWeight,
+            align,
             effects: {
                 shadow: typography.headline?.hasShadow !== false ? {} : false,
                 gradient: useGradient ? { colors: gradientColors } : null
@@ -641,12 +651,20 @@ export function buildTypographyLayer({
         const taglinePlan = compositionPlan?.subheadline;
         const yPercent = taglinePlan?.position?.yPercent || typography.tagline?.yPercent || 0.18;
         const fontSize = taglinePlan?.sizePx || typography.tagline?.sizePx || 24;
+        const align = compositionPlan?.headline?.alignment || typography.headline?.alignment || 'center';
+        const taglineWidthPercent = 0.75;
+        const taglineXPercent = typeof taglinePlan?.position?.xPercent === 'number'
+            ? taglinePlan.position.xPercent
+            : resolveAlignedXPercent(align, taglineWidthPercent, margins);
 
         const t = createPremiumTagline({
             text: tagline,
+            x: Math.round(CANVAS_WIDTH * taglineXPercent),
             y: Math.round(CANVAS_HEIGHT * yPercent) + fontSize,
+            maxWidth: Math.round(CANVAS_WIDTH * taglineWidthPercent),
             fontSize,
-            fontWeight: typography.tagline?.weight || 400
+            fontWeight: typography.tagline?.weight || 400,
+            align
         });
         allDefs += t.defs;
         allContent += t.content;
@@ -659,18 +677,34 @@ export function buildTypographyLayer({
         const ctaPlan = compositionPlan?.cta;
         const yPercent = ctaPlan?.position?.yPercent || typography.cta?.yPercent || 0.88;
         const ctaColor = ctaPlan?.primaryColor || accentColor;
-        const ctaStyle = ctaPlan?.style || (typography.cta?.hasGlow ? 'gradient_glow' :
-            typography.cta?.hasGradient ? 'gradient' : 'solid');
+        const ctaStyle = normalizeCtaStyle(
+            ctaPlan?.style,
+            typography.cta?.hasGlow,
+            typography.cta?.hasGradient
+        );
+        const baseCtaWidth = typography.cta?.widthPx || 280;
+        const baseCtaHeight = typography.cta?.heightPx || 64;
+        const sizeScale = ctaPlan?.size === 'small' ? 0.85 : ctaPlan?.size === 'large' ? 1.2 : 1;
+        const wantsFullWidth = ctaPlan?.style === 'full_width';
+        const ctaWidthPx = wantsFullWidth ? Math.round(CANVAS_WIDTH * 0.7) : Math.round(baseCtaWidth * sizeScale);
+        const ctaHeightPx = Math.round(baseCtaHeight * sizeScale);
+        const ctaWidthPercent = ctaWidthPx / CANVAS_WIDTH;
+        const ctaAlign = ctaPlan?.alignment || typography.cta?.alignment || compositionPlan?.headline?.alignment || typography.headline?.alignment || 'center';
+        const ctaXPercent = typeof ctaPlan?.position?.xPercent === 'number'
+            ? ctaPlan.position.xPercent
+            : resolveAlignedXPercent(ctaAlign, ctaWidthPercent, margins);
 
         const c = createPremiumCTA({
             text: cta,
+            x: Math.round(CANVAS_WIDTH * ctaXPercent),
             y: Math.round(CANVAS_HEIGHT * yPercent),
-            width: typography.cta?.widthPx || 280,
-            height: typography.cta?.heightPx || 64,
+            width: ctaWidthPx,
+            height: ctaHeightPx,
             borderRadius: typography.cta?.borderRadius || 32,
             fontSize: typography.cta?.textSizePx || 20,
             fontWeight: typography.cta?.textWeight || 700,
             backgroundColor: ctaColor,
+            textColor: ctaPlan?.textColor || '#FFFFFF',
             style: ctaStyle
         });
         allDefs += c.defs;
@@ -678,17 +712,20 @@ export function buildTypographyLayer({
     }
 
     // FEATURES/CALLOUTS - use compositionPlan callouts with exact positions
-    const calloutPlan = compositionPlan?.callouts || [];
+    const calloutPlan = compositionPlan?.callouts?.length
+        ? compositionPlan.callouts
+        : (compositionPlan?.features || []);
 
     if (calloutPlan.length > 0) {
         // Use AI-planned callout positions
         calloutPlan.forEach((callout, i) => {
             const x = Math.round(CANVAS_WIDTH * (callout.position?.xPercent || 0.1));
             const y = Math.round(CANVAS_HEIGHT * (callout.position?.yPercent || 0.6 + i * 0.08));
+            const title = callout.text || callout.title || callout.label || '';
 
             const f = createFeatureText({
                 icon: callout.icon || '✓',
-                title: callout.text,
+                title: title,
                 description: callout.description || '',
                 x,
                 y,
@@ -780,6 +817,44 @@ export function buildTypographyLayer({
         <defs>${allDefs}</defs>
         ${allContent}
     </svg>`;
+}
+
+function resolveAlignedXPercent(alignment, widthPercent, margins = {}) {
+    const left = margins.leftPercent ?? 0.06;
+    const right = margins.rightPercent ?? 0.06;
+
+    if (alignment === 'left') {
+        return left + widthPercent / 2;
+    }
+    if (alignment === 'right') {
+        return 1 - right - widthPercent / 2;
+    }
+    return 0.5;
+}
+
+function normalizeCtaStyle(style, hasGlow, hasGradient) {
+    if (!style) {
+        return hasGlow ? 'gradient_glow' : hasGradient ? 'gradient' : 'solid';
+    }
+
+    const normalized = String(style).toLowerCase();
+    const map = {
+        gradient_pill: 'gradient_glow',
+        neon_glow: 'gradient_glow',
+        '3d_button': 'gradient_glow',
+        solid: 'solid',
+        outline: 'outline',
+        ghost: 'outline',
+        glass: 'glass',
+        full_width: 'gradient',
+        text_only: 'solid',
+        underline: 'solid',
+        arrow_right: 'solid',
+        rounded_square: 'solid',
+        gradient: 'gradient'
+    };
+
+    return map[normalized] || 'solid';
 }
 
 export default {

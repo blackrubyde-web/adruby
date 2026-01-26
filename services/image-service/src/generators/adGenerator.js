@@ -12,10 +12,10 @@
 
 import sharp from 'sharp';
 import { GoogleGenerativeAI } from '@google/generative-ai';
-import { matchProduct, analyzeProduct } from '../ai/productMatcher.js';
-import { extractPatternDNA, buildDNAPrompt, getDefaultDNA } from '../ai/visualDNA.js';
+import { matchProduct, findMatchingAds } from '../ai/productMatcher.js';
+import { extractPatternDNA, buildDNAPrompt } from '../ai/visualDNA.js';
 import { verifyAdQuality, buildImprovementPrompt, quickQualityCheck } from '../ai/qualityVerifier.js';
-import { getIndustryConfig, detectIndustry } from '../config/industries.js';
+import { detectIndustry } from '../config/industries.js';
 import { fetchProductImage } from '../utils/imageLoader.js';
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
@@ -46,6 +46,8 @@ export async function generateAd({
     console.log('[AdGenerator] 🚀 Starting PERFECTION-level generation v5.0...');
     const startTime = Date.now();
 
+    const detectedIndustry = industry || detectIndustry(userPrompt || '', headline || '');
+
     // ========================================
     // PHASE 1: Product Analysis
     // ========================================
@@ -60,44 +62,38 @@ export async function generateAd({
 
     let productAnalysis;
     let referenceAds = [];
-    let patterns;
 
     if (productBuffer) {
         const matchResult = await matchProduct(productBuffer);
         productAnalysis = matchResult.analysis;
         referenceAds = matchResult.referenceAds || [];
-        patterns = matchResult.patterns;
         console.log(`[AdGenerator] Product: ${productAnalysis.productName}`);
         console.log(`[AdGenerator] References found: ${referenceAds.length}`);
     } else {
-        productAnalysis = {
-            productName: 'Premium Product',
-            productType: industry || 'tech',
-            keywords: [userPrompt || 'premium'],
-            suggestedHeadlines: [headline || 'Shop Now'],
-            emotionalHook: 'Quality and Value',
-            adStyle: 'bold'
-        };
+        productAnalysis = buildTextProductAnalysis({
+            userPrompt,
+            headline,
+            tagline,
+            industry: detectedIndustry,
+            features
+        });
+        const matchResult = await findMatchingAds(productAnalysis, 5);
+        referenceAds = matchResult.ads || [];
+        console.log(`[AdGenerator] Text-only analysis: ${productAnalysis.productName}`);
+        console.log(`[AdGenerator] References found: ${referenceAds.length}`);
     }
 
     // Determine industry
-    const detectedIndustry = industry || productAnalysis.productType || detectIndustry(userPrompt || '', headline || '');
-    const industryConfig = getIndustryConfig(detectedIndustry);
+    const finalIndustry = industry || productAnalysis.productType || detectedIndustry;
 
     // ========================================
     // PHASE 2: Visual DNA Extraction
     // ========================================
     console.log('[AdGenerator] Phase 2: Visual DNA Extraction...');
 
-    let visualDNA;
-    if (referenceAds.length > 0) {
-        const dnaResult = await extractPatternDNA(referenceAds, 3);
-        visualDNA = dnaResult.pattern;
-        console.log(`[AdGenerator] DNA extracted from ${dnaResult.count} reference ads`);
-    } else {
-        console.log('[AdGenerator] No references, using default DNA');
-        visualDNA = getDefaultDNA();
-    }
+    const dnaResult = await extractPatternDNA(referenceAds, 3);
+    const visualDNA = dnaResult.pattern;
+    console.log(`[AdGenerator] DNA extracted from ${dnaResult.count} reference ads`);
 
     // Override accent color if provided
     if (accentColor) {
@@ -134,7 +130,15 @@ export async function generateAd({
         attempts++;
         console.log(`[AdGenerator] Generation attempt ${attempts}/${maxRetries + 1}...`);
 
-        adBuffer = await generateWithGemini(prompt, productBuffer);
+        try {
+            adBuffer = await generateWithGemini(prompt, productBuffer);
+        } catch (error) {
+            console.warn('[AdGenerator] Generation error:', error.message);
+            if (attempts > maxRetries) {
+                throw error;
+            }
+            continue;
+        }
 
         if (!adBuffer) {
             console.warn('[AdGenerator] Generation failed, retrying...');
@@ -161,10 +165,8 @@ export async function generateAd({
         }
     }
 
-    // Fallback if all attempts failed
     if (!adBuffer) {
-        console.log('[AdGenerator] All attempts failed, using fallback');
-        adBuffer = await createFallbackAd(visualDNA.colors, content);
+        throw new Error('Gemini generation failed after all retries');
     }
 
     const duration = Date.now() - startTime;
@@ -173,7 +175,7 @@ export async function generateAd({
     return {
         buffer: adBuffer,
         pattern: visualDNA.layout?.type || 'hero_centered',
-        industry: detectedIndustry,
+        industry: finalIndustry,
         referenceCount: referenceAds.length,
         confidence: visualDNA.confidence || 0.8,
         duration,
@@ -228,81 +230,39 @@ async function generateWithGemini(prompt, productBuffer) {
         return null;
     } catch (error) {
         console.error('[AdGenerator] Gemini error:', error.message);
-        return null;
+        throw error;
     }
 }
 
-/**
- * Create fallback ad when Gemini fails
- */
-async function createFallbackAd(colors, content) {
-    const bgColor = colors?.background?.primary || '#0A0A1A';
-    const textColor = colors?.text?.primary || '#FFFFFF';
-    const ctaColor = colors?.cta?.background || colors?.accent || '#FF4757';
+function buildTextProductAnalysis({ userPrompt, headline, tagline, industry, features }) {
+    const seed = [headline, tagline, userPrompt, industry].filter(Boolean).join(' ');
+    const keywords = extractKeywords(seed);
 
-    const svg = `
-    <svg width="1080" height="1080" xmlns="http://www.w3.org/2000/svg">
-        <defs>
-            <radialGradient id="glow" cx="50%" cy="40%" r="60%">
-                <stop offset="0%" style="stop-color:${ctaColor};stop-opacity:0.15"/>
-                <stop offset="100%" style="stop-color:${ctaColor};stop-opacity:0"/>
-            </radialGradient>
-            <linearGradient id="bg" x1="0%" y1="0%" x2="0%" y2="100%">
-                <stop offset="0%" style="stop-color:${bgColor}"/>
-                <stop offset="100%" style="stop-color:${adjustBrightness(bgColor, -30)}"/>
-            </linearGradient>
-        </defs>
-        <rect width="1080" height="1080" fill="url(#bg)"/>
-        <ellipse cx="540" cy="400" rx="500" ry="400" fill="url(#glow)"/>
-        
-        <!-- Headline -->
-        <text x="540" y="120" text-anchor="middle" fill="${textColor}" 
-              font-family="system-ui, -apple-system, sans-serif" font-size="72" font-weight="900"
-              style="text-shadow: 0 4px 30px rgba(0,0,0,0.8);">
-            ${escapeXml(content.headline || 'Premium Quality')}
-        </text>
-        
-        ${content.subline ? `
-        <text x="540" y="170" text-anchor="middle" fill="rgba(255,255,255,0.75)" 
-              font-family="system-ui, sans-serif" font-size="28" font-weight="400">
-            ${escapeXml(content.subline)}
-        </text>
-        ` : ''}
-        
-        <!-- CTA Button -->
-        <rect x="390" y="960" width="300" height="60" rx="30" fill="${ctaColor}"/>
-        <text x="540" y="1000" text-anchor="middle" fill="#FFFFFF" 
-              font-family="system-ui, sans-serif" font-size="22" font-weight="600">
-            ${escapeXml(content.cta || 'Shop Now')}
-        </text>
-    </svg>`;
-
-    return await sharp(Buffer.from(svg)).png().toBuffer();
+    return {
+        productName: headline || userPrompt || 'Product',
+        productType: industry || 'tech',
+        keywords: keywords.length > 0 ? keywords : [industry || 'tech'],
+        suggestedHeadlines: headline ? [headline] : [],
+        keyFeatures: features || [],
+        emotionalHook: 'Quality and Value',
+        adStyle: 'bold'
+    };
 }
 
-/**
- * Escape XML special characters
- */
-function escapeXml(str) {
-    if (!str) return '';
-    return str
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;')
-        .replace(/'/g, '&apos;');
-}
+function extractKeywords(text) {
+    if (!text) return [];
 
-/**
- * Adjust hex color brightness
- */
-function adjustBrightness(hex, percent) {
-    const num = parseInt(hex.replace('#', ''), 16);
-    const amt = Math.round(2.55 * percent);
-    const R = Math.max(0, Math.min(255, (num >> 16) + amt));
-    const G = Math.max(0, Math.min(255, ((num >> 8) & 0x00FF) + amt));
-    const B = Math.max(0, Math.min(255, (num & 0x0000FF) + amt));
-    return `#${(1 << 24 | R << 16 | G << 8 | B).toString(16).slice(1)}`;
+    const stopWords = new Set([
+        'a', 'an', 'the', 'for', 'and', 'or', 'but', 'in', 'on', 'at', 'to', 'of', 'with',
+        'create', 'make', 'generate', 'ad', 'advertisement', 'promo', 'campaign', 'brand'
+    ]);
+
+    return text
+        .toLowerCase()
+        .replace(/[^\w\s]/g, '')
+        .split(/\s+/)
+        .filter(word => word.length > 2 && !stopWords.has(word))
+        .slice(0, 6);
 }
 
 export default { generateAd };

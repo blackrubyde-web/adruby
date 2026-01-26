@@ -140,11 +140,7 @@ Return JSON with EXACT specifications:
     };
   } catch (error) {
     console.error('[VisualDNA] Failed to extract:', error.message);
-    return {
-      success: false,
-      dna: getDefaultDNA(),
-      error: error.message
-    };
+    throw error;
   }
 }
 
@@ -153,6 +149,10 @@ Return JSON with EXACT specifications:
  */
 export async function extractPatternDNA(referenceAds, limit = 3) {
   console.log(`[VisualDNA] 🔬 Analyzing ${Math.min(referenceAds.length, limit)} reference ads...`);
+
+  if (!referenceAds || referenceAds.length === 0) {
+    throw new Error('Foreplay references are required for Visual DNA extraction');
+  }
 
   const dnaResults = [];
   const adsToAnalyze = referenceAds
@@ -174,8 +174,7 @@ export async function extractPatternDNA(referenceAds, limit = 3) {
   }
 
   if (dnaResults.length === 0) {
-    console.log('[VisualDNA] No DNA extracted, using defaults');
-    return { pattern: getDefaultDNA(), count: 0 };
+    throw new Error('Visual DNA extraction returned no usable references');
   }
 
   // Find dominant pattern
