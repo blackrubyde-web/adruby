@@ -409,10 +409,11 @@ export async function generateCompositeAd({
                 industry: industry || productAnalysis?.productType || 'tech',
                 adType: productAnalysis?.productType || 'product_showcase',
                 mood: designSpecs.mood?.primary || 'premium',
-                hasDiscount: !!compositionPlan?.badges?.some(b => b.type === 'discount'),
-                hasSocialProof: !!compositionPlan?.socialProof,
-                hasFeatureList: !!compositionPlan?.features?.length,
-                hasComparison: !!compositionPlan?.comparison
+                // Note: compositionPlan is not yet available here - these will be refined after composition planning
+                hasDiscount: false,
+                hasSocialProof: false,
+                hasFeatureList: false,
+                hasComparison: false
             });
 
             console.log(`[MasterGen]   Background Elements: ${selectedElements.background?.overlays?.length || 0}`);
