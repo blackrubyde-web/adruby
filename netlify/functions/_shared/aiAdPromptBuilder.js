@@ -246,8 +246,15 @@ function buildStructuredUserPrompt({ industry, targetAudience, productName, usp,
 4. **Conversion-Barrier**: Was könnte die Zielgruppe vom Kauf abhalten?
 5. **Vertrauens-Elemente**: Welche Social Proofs oder Garantien sollten erwähnt werden?
 
+**⚠️ WICHTIG - KEINE HALLUZINATIONEN:**
+- Verwende NUR Fakten die im Briefing stehen
+- Wenn keine konkreten Zahlen gegeben: nutze Platzhalter wie "[X]%" oder "[ANZAHL]"
+- Erfinde NIEMALS: Kundenzahlen, Prozentwerte, Garantien, Studienergebnisse
+- Statt "12.000 Kunden" → "Tausende Kunden" (wenn keine Zahl gegeben)
+- Statt "43% weniger" → "[X]% weniger" oder beschreibe den Benefit ohne Zahl
+
 **Erstelle dann die perfekte Werbeanzeige als JSON.**
-Nutze konkrete Zahlen, emotionale Sprache und einen unwiderstehlichen CTA.`;
+Nutze emotionale Sprache und einen unwiderstehlichen CTA, aber NUR verifizierbare Fakten.`;
     }
 
     return `Create an agency-quality advertisement for:
@@ -267,8 +274,15 @@ Nutze konkrete Zahlen, emotionale Sprache und einen unwiderstehlichen CTA.`;
 4. **Conversion Barrier**: What might stop the audience from buying?
 5. **Trust Elements**: Which social proofs or guarantees should be mentioned?
 
+**⚠️ IMPORTANT - NO HALLUCINATIONS:**
+- Use ONLY facts provided in the briefing
+- If no specific numbers given: use placeholders like "[X]%" or "[NUMBER]"
+- NEVER invent: customer counts, percentages, guarantees, study results
+- Instead of "12,000 customers" → "thousands of customers" (if no number given)
+- Instead of "43% less" → "[X]% less" or describe benefit without number
+
 **Then create the perfect advertisement as JSON.**
-Use concrete numbers, emotional language, and an irresistible CTA.`;
+Use emotional language and an irresistible CTA, but ONLY verifiable facts.`;
 }
 
 /**

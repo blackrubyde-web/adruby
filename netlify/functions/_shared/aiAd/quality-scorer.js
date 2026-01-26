@@ -116,6 +116,8 @@ export function scoreAdQuality(adContent) {
         }
 
         // Social proof detection (numbers, percentages, testimonial indicators)
+        // HIGH 3 FIX: Detect placeholder patterns and warn about unverified claims
+        const hasPlaceholder = /\[X\]|\[ANZAHL\]|\[NUMBER\]|\[ZAHL\]/.test(description);
         const hasSocialProof = /\d+/.test(description) ||
             description.includes('%') ||
             description.includes('Kunden') ||
@@ -123,13 +125,22 @@ export function scoreAdQuality(adContent) {
             description.includes('users') ||
             description.includes('Nutzer');
 
-        if (hasSocialProof) {
-            score += 0.3;
+        if (hasPlaceholder) {
+            // Placeholder found - needs to be replaced with real data
+            score -= 0.3;
+            issues.push('Description contains unverified placeholders like [X]%');
+            suggestions.push('Replace placeholders with actual verified data before publishing');
+            metrics.description.hasPlaceholder = true;
+        } else if (hasSocialProof) {
+            // Has numbers but we can't verify them - neutral score (no bonus)
+            // The numbers should come from grounded facts, not AI hallucination
             metrics.description.hasSocialProof = true;
+            // Note: Removed +0.3 bonus since we can't verify if numbers are real
         } else {
-            score -= 0.5;
-            issues.push('Description lacks social proof');
-            suggestions.push('Add numbers, percentages, or customer counts for credibility');
+            // No social proof at all
+            score -= 0.3;
+            issues.push('Description lacks social proof (numbers, customer counts)');
+            suggestions.push('Add verified statistics or customer testimonials');
         }
 
         // Keyword stuffing check
