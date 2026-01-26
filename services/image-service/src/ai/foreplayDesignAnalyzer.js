@@ -657,40 +657,31 @@ export async function planAdComposition(foreplayPatterns, deepAnalysis, productA
             model: 'gpt-4o',
             messages: [{
                 role: 'system',
-                content: `You are an elite creative director who creates 100% DYNAMIC, INDIVIDUALIZED ad compositions.
+                content: `You are an elite creative director. Your job is to create 100% UNIQUE, INDIVIDUALIZED ad compositions.
 
-NO HARDCODES. Every decision is based on the inputs you receive.
+CRITICAL: YOU DECIDE EVERYTHING. There are NO preset rules.
 
-PRIORITY ORDER (most important first):
-1. USER PROMPT - This is the #1 priority! If user says "macbook mockup" -> use macbook. If user says "minimal" -> be minimal.
-2. PRODUCT SCREENSHOT - Analyze visual hierarchy, where elements are, what looks good
-3. FOREPLAY PATTERNS - Learn from winning ads but adapt, don't copy
-4. SMART PLACEMENTS - Use pre-computed positions as guidance
+Your inputs:
+1. FOREPLAY PATTERNS - Real winning ads. LEARN from them. What mockup types do they use? What layouts? What colors? EXTRACT the patterns.
+2. USER SCREENSHOT - The product image. Analyze it. What IS this product? How should it be displayed?
+3. USER PROMPT - Any specific instructions from the user.
 
-READING THE USER PROMPT:
-- If user mentions "macbook" or "laptop" -> mockupType = "macbook_pro"
-- If user mentions "phone" or "mobile" -> mockupType = "phone"
-- If user mentions "browser" -> mockupType = "browser"
-- If user mentions "floating" or "no frame" -> mockupType = "floating"
-- If user mentions "minimal" -> fewer elements, more whitespace
-- If user mentions "rich" or "full" or "more features" -> more callouts, badges, features
-- If no mockup mentioned -> decide based on product screenshot (dashboard = macbook, app = phone, etc)
+YOUR DECISIONS (based on your analysis, not preset rules):
+- mockupType: YOU decide based on Foreplay patterns. Options: "macbook_pro", "macbook", "phone", "ipad", "browser", "floating", "none"
+- layout: YOU decide based on what works for THIS product
+- colors: YOU extract from Foreplay patterns + product
+- elements: YOU decide how many callouts, badges, features
 
-READING THE PRODUCT SCREENSHOT:
-- Desktop/Dashboard screenshot -> recommend macbook_pro
-- Mobile app screenshot -> recommend phone
-- Wide interface -> recommend browser or macbook_pro
-- Just product/logo -> recommend floating
+NO HARDCODED RULES. Every decision is based on YOUR analysis of the inputs.
 
-CREATE 100% ORIGINAL compositions - every ad is unique!`
+OUTPUT: A complete composition plan that is 100% tailored to THIS specific ad.`
             }, {
                 role: 'user',
-                content: `Create a composition plan based on these inputs.
+                content: `Analyze these inputs and create a 100% UNIQUE composition plan.
 
-=== #1 PRIORITY: USER PROMPT ===
-"${userPrompt || 'No specific instructions'}"
+USER PROMPT (if any): "${userPrompt || 'No specific instructions'}"
 
-READ THIS CAREFULLY. If the user mentions mockup type, style, or elements - USE THEM!
+FOREPLAY WINNING AD PATTERNS (learn from these, adapt to this product):
 
 ${JSON.stringify({
                     layout: {
