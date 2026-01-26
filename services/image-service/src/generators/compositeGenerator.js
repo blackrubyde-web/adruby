@@ -166,6 +166,12 @@ import { deepAnalyzeForeplayPatterns } from '../patterns/deepForeplayMatcher.js'
 // NEW v12-v13: Design Intelligence Integration
 import { generateDesignIntelligence, quickForeplayAnalysis } from '../integration/designIntelligenceIntegrator.js';
 
+// NEW: AI Design Critic (572 lines - professional design review)
+import { critiqueDesign, quickQualityCheck } from '../design/aiDesignCritic.js';
+
+// NEW: Brand DNA Extractor (483 lines - complete brand identity extraction)
+import { extractBrandDNA, checkBrandConsistency } from '../design/brandDNAExtractor.js';
+
 // NEW: Multi-Format Export (Story, Reel, Portrait, etc.)
 import { exportToFormat, exportToAllFormats, getFormatLayout, AD_FORMATS } from '../export/multiFormatExporter.js';
 
@@ -269,6 +275,20 @@ export async function generateCompositeAd({
                 console.log(`[MasterGen]   Suggested Headline: ${deepAnalysis.designRecommendations?.suggestedHeadline || 'N/A'}`);
                 console.log(`[MasterGen]   Exclude: ${deepAnalysis.excludeElements?.join(', ') || 'none'}`);
             }
+
+            // ════════════════════════════════════════════════════════════
+            // PHASE 0: BRAND DNA EXTRACTION (483 lines of intelligence)
+            // Extracts: colors, typography, personality, visual style
+            // ════════════════════════════════════════════════════════════
+            console.log('[MasterGen] 🧬 Extracting Brand DNA...');
+            const brandDNA = await extractBrandDNA(productImageBuffer, {
+                industry: industry || productAnalysis?.productType,
+                productType: productAnalysis?.productType
+            });
+
+            console.log(`[MasterGen]   Brand Personality: ${brandDNA.personality?.primary || 'N/A'}`);
+            console.log(`[MasterGen]   Typography Style: ${brandDNA.typography?.style || 'N/A'}`);
+            console.log(`[MasterGen]   Visual Style: ${brandDNA.visualStyle?.aesthetic || 'N/A'}`);
 
             // ════════════════════════════════════════════════════════════
             // PHASE 1A: AI COLOR INTELLIGENCE (No hardcoded colors)
@@ -705,6 +725,28 @@ export async function generateCompositeAd({
 
                 console.log(`[MasterGen]   Score: ${qualityResult.overallScore}/10 (${qualityResult.tier})`);
                 console.log(`[MasterGen]   Strengths: ${qualityResult.strengths?.slice(0, 2).join(', ') || 'N/A'}`);
+
+                // ════════════════════════════════════════════════════════════
+                // PHASE 10B: AI DESIGN CRITIQUE (572 lines - professional review)
+                // Multi-dimensional: hierarchy, typography, color, composition
+                // ════════════════════════════════════════════════════════════
+                console.log('[MasterGen] 🎨 Running AI Design Critique...');
+                const designCritique = await critiqueDesign(finalBuffer, designSpecs, brandDNA);
+
+                console.log(`[MasterGen]   Critique Score: ${designCritique.overallScore}/10`);
+                console.log(`[MasterGen]   Grade: ${designCritique.grade || 'N/A'}`);
+                if (designCritique.improvements?.length > 0) {
+                    console.log(`[MasterGen]   Top Fix: ${designCritique.improvements[0]?.suggestion || 'N/A'}`);
+                }
+
+                // Check brand consistency
+                const brandCheck = checkBrandConsistency(designSpecs, brandDNA);
+                console.log(`[MasterGen]   Brand Consistency: ${brandCheck.isConsistent ? '✅' : '⚠️'} ${Math.round(brandCheck.score * 100)}%`);
+
+                // Merge critique into quality result
+                qualityResult.critique = designCritique;
+                qualityResult.brandConsistency = brandCheck;
+
 
                 if (qualityResult.needsRegeneration && regenerationAttempt < MAX_REGENERATION_ATTEMPTS) {
                     console.log(`[MasterGen]   ⚠ Quality below threshold, regenerating (attempt ${regenerationAttempt + 2})...`);
