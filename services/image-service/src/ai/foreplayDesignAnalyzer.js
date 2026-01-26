@@ -734,107 +734,140 @@ ${JSON.stringify({
 
 USER PROMPT (if any): "${userPrompt}"
 
-Return JSON with this EXACT structure:
+Return JSON with this structure. YOU DECIDE what to include based on your analysis.
+
+ALL AVAILABLE OPTIONS (choose what works for THIS specific ad):
+
 {
+    "layout": {
+        "type": "centered|split_left|split_right|split_top|split_bottom|asymmetric|z_pattern|f_pattern|minimalist|maximalist|grid",
+        "productPosition": "center|left|right|top|bottom|floating"
+    },
     "headline": {
-        "text": "compelling headline",
-        "position": { "xPercent": 0.5, "yPercent": 0.08 },
-        "sizePx": 48,
-        "weight": 800,
-        "alignment": "center",
-        "useGradient": true,
-        "colors": ["#FFFFFF", "#FF4757"]
+        "text": "your compelling headline",
+        "position": { "xPercent": 0.0-1.0, "yPercent": 0.0-1.0 },
+        "sizePx": 32-72,
+        "weight": 400-900,
+        "alignment": "left|center|right",
+        "style": "normal|gradient|3d|outlined|neon|handwritten|glitch",
+        "colors": ["#HEX", "#HEX"]
     },
     "subheadline": {
-        "text": "supporting text or null if not needed",
-        "position": { "xPercent": 0.5, "yPercent": 0.16 },
-        "sizePx": 20
+        "text": "supporting text or null",
+        "position": { "xPercent": 0.0-1.0, "yPercent": 0.0-1.0 },
+        "sizePx": 16-28
     },
     "product": {
-        "position": { "xPercent": 0.5, "yPercent": 0.48 },
-        "scale": 0.58,
-        "rotation": -2,
-        "mockupType": "macbook_pro",
-        "addShadow": true,
-        "addGlow": true
+        "position": { "xPercent": 0.0-1.0, "yPercent": 0.0-1.0 },
+        "scale": 0.3-0.9,
+        "rotation": -15 to 15,
+        "mockupType": "floating|macbook_pro|macbook|phone|ipad|browser|monitor|tv|watch|3d_perspective|hand_held|desk_scene|lifestyle|comparison|none",
+        "addShadow": true|false,
+        "addGlow": true|false,
+        "addReflection": true|false
     },
     "cta": {
-        "text": "Action Text",
-        "position": { "xPercent": 0.5, "yPercent": 0.92 },
-        "style": "gradient_pill",
-        "primaryColor": "#FF4757",
-        "textColor": "#FFFFFF"
+        "text": "Action Text or null for no CTA",
+        "position": { "xPercent": 0.0-1.0, "yPercent": 0.0-1.0 },
+        "style": "gradient_pill|solid|outline|ghost|neon_glow|3d_button|underline|arrow_right|rounded_square|full_width|text_only",
+        "size": "small|medium|large",
+        "primaryColor": "#HEX",
+        "textColor": "#HEX"
     },
     "features": [
         {
-            "text": "Feature 1 with short text",
-            "icon": "checkmark",
-            "position": { "xPercent": 0.12, "yPercent": 0.6 }
-        },
-        {
-            "text": "Feature 2 with benefit",
-            "icon": "checkmark",
-            "position": { "xPercent": 0.12, "yPercent": 0.66 }
-        },
-        {
-            "text": "Feature 3 value prop",
-            "icon": "checkmark",
-            "position": { "xPercent": 0.12, "yPercent": 0.72 }
-        },
-        {
-            "text": "Feature 4 unique selling point",
-            "icon": "checkmark",
-            "position": { "xPercent": 0.12, "yPercent": 0.78 }
+            "text": "feature text",
+            "icon": "checkmark|star|arrow|heart|shield|lightning|clock|chart|trophy|custom",
+            "position": { "xPercent": 0.0-1.0, "yPercent": 0.0-1.0 },
+            "style": "bullet|card|badge|minimal"
         }
     ],
     "callouts": [
         {
-            "text": "Key insight",
-            "pointTo": { "xPercent": 0.4, "yPercent": 0.35 },
-            "position": { "xPercent": 0.15, "yPercent": 0.35 },
-            "style": "glass_card"
-        },
-        {
-            "text": "Another benefit",
-            "pointTo": { "xPercent": 0.6, "yPercent": 0.55 },
-            "position": { "xPercent": 0.85, "yPercent": 0.55 },
-            "style": "glass_card"
+            "text": "callout text",
+            "pointTo": { "xPercent": 0.0-1.0, "yPercent": 0.0-1.0 },
+            "position": { "xPercent": 0.0-1.0, "yPercent": 0.0-1.0 },
+            "style": "glass_card|arrow|circle|line|bubble",
+            "hasArrow": true|false
         }
     ],
     "badges": [
         {
-            "type": "rating",
-            "text": "⭐ 4.9",
-            "position": { "xPercent": 0.92, "yPercent": 0.06 }
-        },
-        {
-            "type": "social_proof",
-            "text": "10K+ Users",
-            "position": { "xPercent": 0.08, "yPercent": 0.06 }
+            "type": "rating|social_proof|discount|new|bestseller|limited|verified|award|custom",
+            "text": "badge text",
+            "position": { "xPercent": 0.0-1.0, "yPercent": 0.0-1.0 },
+            "style": "pill|ribbon|circle|flag|corner"
         }
     ],
+    "priceTag": {
+        "price": "$XX.XX or null",
+        "originalPrice": "$XX.XX or null for strikethrough",
+        "discount": "XX% OFF or null",
+        "position": { "xPercent": 0.0-1.0, "yPercent": 0.0-1.0 },
+        "style": "simple|tag|burst|corner"
+    },
+    "countdown": {
+        "text": "Ends in 24h or null",
+        "position": { "xPercent": 0.0-1.0, "yPercent": 0.0-1.0 },
+        "style": "timer|text|urgent"
+    },
+    "progressBar": {
+        "value": 0-100,
+        "label": "87% satisfaction or null",
+        "position": { "xPercent": 0.0-1.0, "yPercent": 0.0-1.0 }
+    },
+    "testimonial": {
+        "quote": "testimonial text or null",
+        "author": "Name or null",
+        "avatar": true|false,
+        "position": { "xPercent": 0.0-1.0, "yPercent": 0.0-1.0 }
+    },
+    "logos": {
+        "show": true|false,
+        "type": "trust_badges|partner_logos|press_logos",
+        "position": { "xPercent": 0.0-1.0, "yPercent": 0.0-1.0 }
+    },
+    "highlights": [
+        {
+            "type": "circle|arrow|underline|glow",
+            "targetArea": { "xPercent": 0.0-1.0, "yPercent": 0.0-1.0 }
+        }
+    ],
+    "decorations": {
+        "sparkles": true|false,
+        "particles": true|false,
+        "lines": true|false,
+        "shapes": true|false,
+        "pattern": "none|dots|grid|waves|geometric"
+    },
     "socialProof": {
-        "text": "Trusted by 10,000+ users",
-        "position": { "xPercent": 0.5, "yPercent": 0.85 },
-        "stars": true
+        "text": "Trusted by X users or null",
+        "position": { "xPercent": 0.0-1.0, "yPercent": 0.0-1.0 },
+        "stars": true|false,
+        "avatarStack": true|false
+    },
+    "background": {
+        "style": "gradient_dark|gradient_light|gradient_radial|gradient_angular|solid|mesh_gradient|noise_texture|geometric|contextual|transparent|image_blur",
+        "primaryColor": "#HEX",
+        "secondaryColor": "#HEX",
+        "tertiaryColor": "#HEX or null",
+        "addBokeh": true|false,
+        "addVignette": true|false,
+        "addNoise": true|false
+    },
+    "effects": {
+        "lensFlare": true|false,
+        "filmGrain": true|false,
+        "glitch": true|false,
+        "holographic": true|false,
+        "neonEdges": true|false,
+        "motionBlur": true|false
     },
     "excludeFromDesign": [],
-    "background": {
-        "style": "gradient_dark",
-        "primaryColor": "#0A0A1A",
-        "secondaryColor": "#1A1A3A",
-        "addBokeh": true,
-        "addVignette": true
-    },
-    "designRationale": "Brief explanation of design choices"
+    "designRationale": "Brief explanation of your design choices"
 }
 
-IMPORTANT REQUIREMENTS:
-- Include EXACTLY 4-6 features/bullet points (short, impactful text)
-- Include 2-3 callouts pointing to key UI elements
-- Include 2 badges (rating + social proof)
-- Product mockupType MUST be "macbook_pro" for dashboards
-- Make ads visually RICH, not minimal`
+Only include elements that make sense for THIS specific ad. You can omit any element by not including it or setting it to null.`
             }],
             max_tokens: 2000,
             response_format: { type: 'json_object' }
