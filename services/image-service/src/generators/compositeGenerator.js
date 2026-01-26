@@ -225,6 +225,34 @@ import {
     generateFrame
 } from '../elements/shapeGenerator.js';
 
+// NEW: Creative Variant Engine (543 lines - A/B testing variants)
+import {
+    generateCreativeVariants,
+    generateABTestPairs,
+    generateVariantBatch,
+    predictVariantPerformance,
+    VARIANT_STRATEGIES
+} from '../variants/creativeVariantEngine.js';
+
+// NEW: Animation Layer (560 lines - CSS animations for web ads)
+import {
+    generateAdAnimationCSS,
+    createStaggeredAnimation,
+    generateAnimatedSparkleSVG,
+    generateFloatingParticlesSVG,
+    getAnimationPreset,
+    AD_ANIMATION_PRESETS
+} from '../animation/animationLayer.js';
+
+// NEW: Multi-Format Exporter (357 lines - Story/Reel/Pinterest export)
+import {
+    exportToFormat,
+    exportToAllFormats,
+    getFormatLayout,
+    getFormatsForPlatform,
+    AD_FORMATS as EXPORT_FORMATS
+} from '../export/multiFormatExporter.js';
+
 // Premium Prompt Builder
 import { buildBackgroundPrompt, buildTypographySpecs, buildProductSpecs } from './premiumPromptBuilder.js';
 
