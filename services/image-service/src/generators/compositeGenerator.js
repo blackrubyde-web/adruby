@@ -185,6 +185,46 @@ import { createGradientText, createGlowText, create3DText } from '../elements/en
 import { generateDiscountBadge, generateTrustBadge, generateFeatureBadge } from '../elements/badgeGenerator.js';
 import { generateFeatureCallout, generateIconCallout } from '../elements/calloutGenerator.js';
 
+// NEW: Master Element Orchestrator (367 lines - intelligent element selection + composition)
+import {
+    selectElementsForAd,
+    composeElementLayers,
+    generateQuickAtmosphere,
+    generateQuickBadge,
+    generateQuickDataViz,
+    ELEMENT_PRESETS
+} from '../elements/masterElementOrchestrator.js';
+
+// NEW: Data Visualization (620 lines - charts, progress, stats, ratings)
+import {
+    generateProgressBar as generateDataProgressBar,
+    generateCircularProgress,
+    generateBarChart,
+    generateDonutChart,
+    generateStatCounter,
+    generateStatComparison,
+    generateComparisonTable,
+    generateFeatureList,
+    generateStarRating,
+    generateTimeline
+} from '../elements/dataVisualization.js';
+
+// NEW: Shape Generator (702 lines - decorative shapes, patterns, frames)
+import {
+    generateCircle,
+    generateRectangle,
+    generatePolygon,
+    generateBlob,
+    generateWave,
+    generateCloud,
+    generateLinePattern,
+    generateGrid,
+    generateDotPattern,
+    generateDivider,
+    generateCornerAccent,
+    generateFrame
+} from '../elements/shapeGenerator.js';
+
 // Premium Prompt Builder
 import { buildBackgroundPrompt, buildTypographySpecs, buildProductSpecs } from './premiumPromptBuilder.js';
 
@@ -344,6 +384,30 @@ export async function generateCompositeAd({
             designSpecs.overlays = fullDesignIntelligence.overlays;
             designSpecs.animation = fullDesignIntelligence.animation;
             designSpecs.prompts = fullDesignIntelligence.prompts;
+
+            // ════════════════════════════════════════════════════════════
+            // PHASE 1E: INTELLIGENT ELEMENT SELECTION (367 lines)
+            // Auto-selects best elements based on industry, type, mood
+            // ════════════════════════════════════════════════════════════
+            console.log('[MasterGen] 🎨 Selecting Optimal Elements...');
+            const selectedElements = selectElementsForAd({
+                industry: industry || productAnalysis?.productType || 'tech',
+                adType: productAnalysis?.productType || 'product_showcase',
+                mood: designSpecs.mood?.primary || 'premium',
+                hasDiscount: !!compositionPlan?.badges?.some(b => b.type === 'discount'),
+                hasSocialProof: !!compositionPlan?.socialProof,
+                hasFeatureList: !!compositionPlan?.features?.length,
+                hasComparison: !!compositionPlan?.comparison
+            });
+
+            console.log(`[MasterGen]   Background Elements: ${selectedElements.background?.overlays?.length || 0}`);
+            console.log(`[MasterGen]   Decorative: ${selectedElements.decorative?.length || 0}`);
+            console.log(`[MasterGen]   Data Viz: ${selectedElements.dataViz?.length || 0}`);
+            console.log(`[MasterGen]   Badges: ${selectedElements.badges?.length || 0}`);
+
+            // Merge selected elements into designSpecs
+            designSpecs.selectedElements = selectedElements;
+            designSpecs.elementPreset = ELEMENT_PRESETS[productAnalysis?.productType] || ELEMENT_PRESETS.product_showcase;
 
 
             // ════════════════════════════════════════════════════════════
