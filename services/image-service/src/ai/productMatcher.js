@@ -242,10 +242,13 @@ Return COMPREHENSIVE JSON:
 /**
  * Find matching reference ads from Foreplay
  * Uses smart search based on product analysis
+ * Now with graceful fallback when Foreplay is unavailable or returns errors
  */
 export async function findMatchingAds(productAnalysis, limit = 5) {
+    // Graceful fallback when Foreplay is not configured
     if (!foreplay) {
-        throw new Error('Foreplay is required but not configured');
+        console.warn('[ProductMatcher] ⚠️ Foreplay not configured - using default patterns');
+        return { ads: [], patterns: getDefaultPatterns(), searchPlan: [] };
     }
 
     console.log('[ProductMatcher] 🔎 Searching Foreplay for similar ads...');
@@ -278,8 +281,9 @@ export async function findMatchingAds(productAnalysis, limit = 5) {
             ads = dedupeAds([...ads, ...topAds.flat()]);
         }
 
+        // Graceful degradation: use whatever ads we have instead of failing
         if (ads.length < MIN_REFERENCE_ADS) {
-            throw new Error('Foreplay returned too few reference ads');
+            console.warn(`[ProductMatcher] ⚠️ Only ${ads.length} reference ads found (less than ${MIN_REFERENCE_ADS}) - continuing with available references`);
         }
 
         const rankedAds = ads
@@ -290,8 +294,10 @@ export async function findMatchingAds(productAnalysis, limit = 5) {
         return { ads: rankedAds, patterns: extractPatterns(rankedAds), searchPlan };
 
     } catch (error) {
-        console.error('[ProductMatcher] Foreplay search failed:', error.message);
-        throw error;
+        // GRACEFUL FALLBACK: Don't kill the pipeline on Foreplay errors
+        console.error('[ProductMatcher] ⚠️ Foreplay search failed:', error.message);
+        console.log('[ProductMatcher] 🔄 Falling back to default patterns (AI-only mode)');
+        return { ads: [], patterns: getDefaultPatterns(), searchPlan: [] };
     }
 }
 
