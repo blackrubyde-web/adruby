@@ -172,11 +172,7 @@ import { critiqueDesign, quickQualityCheck } from '../design/aiDesignCritic.js';
 // NEW: Brand DNA Extractor (483 lines - complete brand identity extraction)
 import { extractBrandDNA, checkBrandConsistency } from '../design/brandDNAExtractor.js';
 
-// NEW: Multi-Format Export (Story, Reel, Portrait, etc.)
-import { exportToFormat, exportToAllFormats, getFormatLayout, AD_FORMATS } from '../export/multiFormatExporter.js';
-
-// NEW: Animation Layer (CSS animations for web ads)
-import { generateAdAnimationCSS, getAnimationPreset, generateAnimatedSparkleSVG } from '../animation/animationLayer.js';
+// NOTE: Multi-Format Export and Animation Layer are imported below with more complete exports
 
 // NEW v13: Element Generators
 import { generateAtmosphereLayer } from '../elements/decorativeOverlays.js';
