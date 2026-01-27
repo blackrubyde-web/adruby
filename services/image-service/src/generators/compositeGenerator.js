@@ -318,11 +318,37 @@ export async function generateCompositeAd({
     const normalizedTagline = strictMode && isPlaceholderCopy(tagline) ? null : tagline;
     const normalizedCta = strictMode && isPlaceholderCopy(cta) ? null : cta;
 
+    // ═══════════════════════════════════════════════════════════════
+    // PERFORMANCE METRICS (Phase 7.2)
+    // ═══════════════════════════════════════════════════════════════
+    const phaseTimings = {};
+    const startPhase = (name) => { phaseTimings[name] = { start: Date.now() }; };
+    const endPhase = (name) => {
+        if (phaseTimings[name]) {
+            phaseTimings[name].end = Date.now();
+            phaseTimings[name].durationMs = phaseTimings[name].end - phaseTimings[name].start;
+        }
+    };
+    const logTimingSummary = () => {
+        console.log('[MasterGen] ═══════════════════════════════════════');
+        console.log('[MasterGen] ⏱️  PHASE TIMING SUMMARY:');
+        let total = 0;
+        for (const [phase, timing] of Object.entries(phaseTimings)) {
+            if (timing.durationMs) {
+                console.log(`[MasterGen]   ${phase}: ${timing.durationMs}ms`);
+                total += timing.durationMs;
+            }
+        }
+        console.log(`[MasterGen]   TOTAL: ${total}ms (${(total / 1000).toFixed(1)}s)`);
+        console.log('[MasterGen] ═══════════════════════════════════════');
+    };
+
     while (regenerationAttempt <= maxRegenerationAttempts) {
         try {
             // ════════════════════════════════════════════════════════════
             // PHASE 1: INTELLIGENCE GATHERING
             // ════════════════════════════════════════════════════════════
+            startPhase('PHASE_1_INTELLIGENCE');
             console.log('[MasterGen] ▶ PHASE 1: Intelligence Gathering...');
 
             // Product Analysis & Foreplay Matching (cached across regeneration attempts)
@@ -612,6 +638,8 @@ export async function generateCompositeAd({
             // ════════════════════════════════════════════════════════════
             // PHASE 2: LAYOUT COMPOSITION
             // ════════════════════════════════════════════════════════════
+            endPhase('PHASE_1_INTELLIGENCE');
+            startPhase('PHASE_2_LAYOUT');
             console.log('[MasterGen] ▶ PHASE 2: Layout Composition...');
 
             const layout = strictMode && compositionPlan
@@ -660,7 +688,7 @@ export async function generateCompositeAd({
                 console.log(`[MasterGen]   Background style: ${compositionPlan.background.style}`);
             }
 
-            const backgroundPrompt = buildBackgroundPrompt(designSpecs, productAnalysis, enhancedAccentColor);
+            const backgroundPrompt = buildBackgroundPrompt(designSpecs, productAnalysis, enhancedAccentColor, compositionPlan);
             console.log(`[MasterGen]   Prompt: ${backgroundPrompt.length} characters`);
 
             let backgroundBuffer = await generatePremiumBackground(backgroundPrompt, enhancedAccentColor, designSpecs);

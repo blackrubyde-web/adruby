@@ -17,11 +17,32 @@ const CANVAS_HEIGHT = 1080;
 
 /**
  * Build premium background prompt from design specs
+ * @param {Object} designSpecs - Design specifications from Foreplay analysis
+ * @param {Object} productAnalysis - Product analysis data
+ * @param {string} accentColor - Primary accent color
+ * @param {Object} compositionPlan - Optional AI composition plan with background override
  */
-export function buildBackgroundPrompt(designSpecs, productAnalysis, accentColor) {
+export function buildBackgroundPrompt(designSpecs, productAnalysis, accentColor, compositionPlan = null) {
     const layout = designSpecs.layout || {};
-    const colors = designSpecs.colors || {};
-    const effects = designSpecs.effects || {};
+    // Merge compositionPlan.background into colors (plan takes priority)
+    const planBg = compositionPlan?.background || {};
+    const colors = {
+        ...(designSpecs.colors || {}),
+        backgroundPrimary: planBg.primaryColor || designSpecs.colors?.backgroundPrimary || '#0A0A1A',
+        backgroundSecondary: planBg.secondaryColor || designSpecs.colors?.backgroundSecondary || '#1A1A3A',
+        gradientDirection: planBg.style?.includes('radial') ? 'radial' :
+            planBg.style?.includes('angular') ? 'angular' :
+                designSpecs.colors?.gradientDirection || 'radial',
+        hasVignette: planBg.addVignette ?? designSpecs.colors?.hasVignette ?? true
+    };
+    const effects = {
+        ...(designSpecs.effects || {}),
+        backgroundEffects: {
+            ...(designSpecs.effects?.backgroundEffects || {}),
+            hasBokeh: planBg.addBokeh ?? designSpecs.effects?.backgroundEffects?.hasBokeh ?? true,
+            hasNoiseTexture: planBg.addNoise ?? designSpecs.effects?.backgroundEffects?.hasNoiseTexture ?? true
+        }
+    };
     const composition = designSpecs.composition || {};
     const mood = designSpecs.mood || {};
 
