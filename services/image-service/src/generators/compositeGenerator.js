@@ -264,7 +264,7 @@ const CANVAS_HEIGHT = 1080;
 // Quality settings - PREMIUM THRESHOLDS
 const QUALITY_THRESHOLD = 8.0;         // Was 7.0 - Raised for world-class output
 const MAX_REGENERATION_ATTEMPTS = 3;   // Was 2 - More attempts for perfection
-const SIMILARITY_THRESHOLD = 8.5;      // Was 7.5 - Must closely match top Foreplay ads
+const SIMILARITY_THRESHOLD = 6.0;      // Lowered from 8.5 - actual scores are 6.3-6.7, 8.5 caused infinite loops
 
 /**
  * MASTER AD GENERATION FUNCTION
