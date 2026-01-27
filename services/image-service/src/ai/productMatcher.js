@@ -325,44 +325,117 @@ function buildSearchPlan(productAnalysis) {
     const niches = new Set();
     const productType = productAnalysis?.productType;
     const category = productAnalysis?.category;
+    const productName = productAnalysis?.productName || '';
+
+    // Filter out irrelevant business terms from product name/keywords
+    const irrelevantTerms = ['dropshipping', 'affiliate', 'marketing', 'business', 'money', 'profit', 'ecommerce', 'amazon', 'shopify'];
+    const cleanName = productName.split(/[,\s]+/)
+        .filter(word => !irrelevantTerms.includes(word.toLowerCase()))
+        .join(' ')
+        .trim();
+
+    // Detect physical product keywords for better niche mapping
+    const physicalProductKeywords = {
+        'led': 'home/garden',
+        'lampe': 'home/garden',
+        'lamp': 'home/garden',
+        'light': 'home/garden',
+        'deko': 'home/garden',
+        'decor': 'home/garden',
+        'figur': 'accessories',
+        'figure': 'accessories',
+        'spielzeug': 'kids/baby',
+        'toy': 'kids/baby',
+        'plush': 'kids/baby',
+        'shirt': 'fashion',
+        'clothing': 'fashion',
+        'schmuck': 'jewelry/watches',
+        'jewelry': 'jewelry/watches',
+        'watch': 'jewelry/watches',
+        'uhr': 'jewelry/watches',
+        'beauty': 'beauty',
+        'skincare': 'beauty',
+        'makeup': 'beauty',
+        'food': 'food',
+        'supplement': 'health/wellness',
+        'fitness': 'sports',
+        'pet': 'pets',
+        'hund': 'pets',
+        'katze': 'pets',
+        'dog': 'pets',
+        'cat': 'pets'
+    };
+
+    // Check product name for physical product indicators
+    const lowerName = cleanName.toLowerCase();
+    for (const [keyword, niche] of Object.entries(physicalProductKeywords)) {
+        if (lowerName.includes(keyword)) {
+            niches.add(niche);
+        }
+    }
 
     // Use PRODUCT_TO_NICHE_MAP for known product types
     if (productType && PRODUCT_TO_NICHE_MAP[productType]) {
         PRODUCT_TO_NICHE_MAP[productType].forEach(niche => niches.add(niche));
     } else if (productType) {
-        // Validate unknown product types through toValidNiche
         niches.add(toValidNiche(productType));
     }
 
-    // Validate category as well
+    // Validate category
     if (category) {
         niches.add(toValidNiche(category));
     }
 
-    // Default fallback to 'other' instead of invalid 'ecommerce'
-    if (niches.size === 0) niches.add('other');
-
-    const queries = new Set();
-    if (productAnalysis?.productName) queries.add(productAnalysis.productName);
-    if (category) queries.add(category);
-
-    const keywords = (productAnalysis?.keywords || []).filter(Boolean);
-    if (keywords.length > 0) {
-        queries.add(keywords.slice(0, 3).join(' '));
-        keywords.slice(0, 2).forEach(keyword => queries.add(keyword));
+    // Add broad fallback niches for physical products
+    if (niches.size === 0 || niches.has('other')) {
+        // Default fallbacks for physical products
+        niches.add('home/garden');
+        niches.add('accessories');
     }
 
+    const queries = new Set();
+
+    // Add cleaned product name
+    if (cleanName) queries.add(cleanName);
+
+    // Add individual clean words (min 3 chars) as separate queries
+    const words = cleanName.split(/\s+/).filter(w => w.length >= 3);
+    words.forEach(word => queries.add(word));
+
+    // Add category if clean
+    if (category && !irrelevantTerms.includes(category.toLowerCase())) {
+        queries.add(category);
+    }
+
+    // Add clean keywords
+    const keywords = (productAnalysis?.keywords || [])
+        .filter(k => k && !irrelevantTerms.includes(k.toLowerCase()));
+    keywords.slice(0, 3).forEach(keyword => queries.add(keyword));
+
+    // Build search plan
     const plan = [];
-    for (const niche of niches) {
-        for (const query of queries) {
+    const nicheList = Array.from(niches);
+    const queryList = Array.from(queries);
+
+    // First: specific searches
+    for (const niche of nicheList.slice(0, 2)) {
+        for (const query of queryList.slice(0, 3)) {
             plan.push({ niche, query });
             if (plan.length >= MAX_PLAN_CALLS) break;
         }
         if (plan.length >= MAX_PLAN_CALLS) break;
     }
 
-    // Use 'other' as fallback niche (valid Foreplay niche)
-    return plan.length > 0 ? plan : [{ niche: 'other', query: productAnalysis?.productName || 'product' }];
+    // Add broad niche searches as fallback (no query = top performing)
+    if (plan.length < MAX_PLAN_CALLS) {
+        nicheList.slice(0, 2).forEach(niche => {
+            if (plan.length < MAX_PLAN_CALLS) {
+                plan.push({ niche, query: '' });
+            }
+        });
+    }
+
+    return plan.length > 0 ? plan : [{ niche: 'home/garden', query: '' }, { niche: 'accessories', query: '' }];
 }
 
 async function executeSearchPlan(plan, options) {
