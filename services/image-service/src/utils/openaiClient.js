@@ -1,110 +1,141 @@
 /**
- * OpenAI Client with Rate Limit Retry + Request Queue
- * Centralized client that:
- * 1. Queues requests to prevent parallel rate limit hits
- * 2. Handles 429 errors with exponential backoff
+ * OpenAI Client - NOW USING GEMINI AS BACKEND
+ * This is a drop-in wrapper that routes all "OpenAI" calls to Gemini
+ * to avoid OpenAI's restrictive rate limits
  */
 
-import OpenAI from 'openai';
+import { GoogleGenerativeAI } from '@google/generative-ai';
 
-const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
 const MAX_RETRIES = 5;
-const INITIAL_DELAY_MS = 2000;  // 2 seconds (increased)
-const MAX_DELAY_MS = 60000;     // 60 seconds
-const MIN_REQUEST_INTERVAL_MS = 200; // Minimum 200ms between requests
+const INITIAL_DELAY_MS = 1000;
+const MAX_DELAY_MS = 30000;
 
-// Request queue to serialize API calls
-let requestQueue = Promise.resolve();
-let lastRequestTime = 0;
-
-/**
- * Sleep for specified milliseconds
- */
 function sleep(ms) {
     return new Promise(resolve => setTimeout(resolve, ms));
 }
 
 /**
- * OpenAI API call with automatic retry on rate limits (429)
- * Uses exponential backoff with jitter + request serialization
+ * OpenAI-compatible call that uses Gemini backend
+ * Maintains same interface for easy migration
  */
-export async function callOpenAI(config, context = 'OpenAI') {
-    // Add to queue to serialize requests
-    const result = requestQueue.then(async () => {
-        // Ensure minimum interval between requests
-        const timeSinceLastRequest = Date.now() - lastRequestTime;
-        if (timeSinceLastRequest < MIN_REQUEST_INTERVAL_MS) {
-            await sleep(MIN_REQUEST_INTERVAL_MS - timeSinceLastRequest);
-        }
-
-        return executeWithRetry(config, context);
-    });
-
-    // Update queue for next request
-    requestQueue = result.catch(() => { }).then(() => {
-        lastRequestTime = Date.now();
-    });
-
-    return result;
-}
-
-/**
- * Execute request with retry logic
- */
-async function executeWithRetry(config, context) {
+export async function callOpenAI(config, context = 'Gemini') {
     let lastError = null;
 
     for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
         try {
-            const response = await openai.chat.completions.create(config);
-            return response;
+            const model = genAI.getGenerativeModel({
+                model: 'gemini-2.0-flash-exp',
+                generationConfig: {
+                    responseMimeType: 'application/json'
+                }
+            });
+
+            // Extract prompt from OpenAI format
+            const messages = config.messages || [];
+            const parts = [];
+
+            for (const msg of messages) {
+                if (typeof msg.content === 'string') {
+                    parts.push({ text: `${msg.role}: ${msg.content}` });
+                } else if (Array.isArray(msg.content)) {
+                    for (const item of msg.content) {
+                        if (item.type === 'text') {
+                            parts.push({ text: item.text });
+                        } else if (item.type === 'image_url') {
+                            // Handle image URLs - fetch and convert to base64
+                            const imageUrl = item.image_url?.url;
+                            if (imageUrl) {
+                                if (imageUrl.startsWith('data:')) {
+                                    // Already base64
+                                    const base64Match = imageUrl.match(/base64,(.+)/);
+                                    if (base64Match) {
+                                        parts.push({
+                                            inlineData: {
+                                                mimeType: 'image/png',
+                                                data: base64Match[1]
+                                            }
+                                        });
+                                    }
+                                } else {
+                                    // HTTP URL - fetch it
+                                    try {
+                                        const response = await fetch(imageUrl);
+                                        const buffer = await response.arrayBuffer();
+                                        const base64 = Buffer.from(buffer).toString('base64');
+                                        parts.push({
+                                            inlineData: {
+                                                mimeType: 'image/png',
+                                                data: base64
+                                            }
+                                        });
+                                    } catch (fetchError) {
+                                        console.warn(`[${context}] Could not fetch image: ${fetchError.message}`);
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            const result = await model.generateContent(parts);
+            const response = await result.response;
+            const text = response.text();
+
+            // Parse JSON and return in OpenAI-compatible format
+            let parsedContent = text;
+            try {
+                parsedContent = JSON.parse(text);
+            } catch {
+                // Try to extract JSON
+                const jsonMatch = text.match(/\{[\s\S]*\}/);
+                if (jsonMatch) {
+                    parsedContent = JSON.parse(jsonMatch[0]);
+                }
+            }
+
+            // Return in OpenAI-compatible format
+            return {
+                choices: [{
+                    message: {
+                        content: JSON.stringify(parsedContent)
+                    }
+                }]
+            };
+
         } catch (error) {
             lastError = error;
 
-            // Check if it's a rate limit error (429)
-            if (error.status === 429 || error.message?.includes('429')) {
-                // Parse retry-after header if available
-                const retryAfter = error.headers?.['retry-after'];
-                const baseDelay = retryAfter ? parseInt(retryAfter) * 1000 : INITIAL_DELAY_MS * Math.pow(2, attempt);
-                const delay = Math.min(baseDelay + Math.random() * 1000, MAX_DELAY_MS);
-
-                console.warn(`[${context}] Rate limited (429), retrying in ${Math.round(delay / 1000)}s (attempt ${attempt + 1}/${MAX_RETRIES})`);
+            if (error.status === 429 || error.message?.includes('429') || error.message?.includes('quota')) {
+                const delay = Math.min(INITIAL_DELAY_MS * Math.pow(2, attempt) + Math.random() * 1000, MAX_DELAY_MS);
+                console.warn(`[${context}] Rate limited, retrying in ${Math.round(delay / 1000)}s (attempt ${attempt + 1}/${MAX_RETRIES})`);
                 await sleep(delay);
                 continue;
             }
 
-            // Check for other retryable errors (500, 502, 503, 504)
-            if ([500, 502, 503, 504].includes(error.status)) {
-                const delay = Math.min(
-                    INITIAL_DELAY_MS * Math.pow(2, attempt) + Math.random() * 1000,
-                    MAX_DELAY_MS
-                );
-
-                console.warn(`[${context}] Server error (${error.status}), retrying in ${Math.round(delay / 1000)}s (attempt ${attempt + 1}/${MAX_RETRIES})`);
+            if (error.status >= 500 || error.message?.includes('INTERNAL')) {
+                const delay = Math.min(INITIAL_DELAY_MS * Math.pow(2, attempt) + Math.random() * 1000, MAX_DELAY_MS);
+                console.warn(`[${context}] Server error, retrying in ${Math.round(delay / 1000)}s (attempt ${attempt + 1}/${MAX_RETRIES})`);
                 await sleep(delay);
                 continue;
             }
 
-            // Non-retryable error, throw immediately
             throw error;
         }
     }
 
-    // All retries exhausted
     console.error(`[${context}] All ${MAX_RETRIES} retries exhausted`);
     throw lastError;
 }
 
-/**
- * Get the raw OpenAI client (for special cases)
- */
 export function getOpenAIClient() {
-    return openai;
+    // Return null - OpenAI client no longer used
+    return null;
 }
 
 export default {
     callOpenAI,
     getOpenAIClient
 };
-
