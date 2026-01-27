@@ -376,7 +376,7 @@ export async function generateCompositeAd({
                     colorIntelligence = await buildColorIntelligence(
                         productImageBuffer,
                         referenceAds,
-                        industry || productAnalysis?.productType || 'tech'
+                        industry || productAnalysis?.industry || 'general'
                     );
                 }
                 extractedColors = colorIntelligence;
@@ -450,7 +450,7 @@ export async function generateCompositeAd({
             if (!strictMode && !designSpecs.selectedElements) {
                 console.log('[MasterGen] 🎨 Selecting Optimal Elements...');
                 const selectedElements = selectElementsForAd({
-                    industry: industry || productAnalysis?.productType || 'tech',
+                    industry: industry || productAnalysis?.industry || 'general',
                     adType: productAnalysis?.productType || 'product_showcase',
                     mood: designSpecs.mood?.primary || 'premium',
                     // Note: compositionPlan is not yet available here - these will be refined after composition planning
@@ -487,7 +487,7 @@ export async function generateCompositeAd({
                 typographyIntelligence = await buildTypographyIntelligence(
                     texts,
                     CANVAS_WIDTH,
-                    industry || productAnalysis?.productType || 'tech',
+                    industry || productAnalysis?.industry || 'general',
                     referenceAds,
                     colorIntelligence
                 );
@@ -530,7 +530,7 @@ export async function generateCompositeAd({
                 copyIntelligence = await buildCopyIntelligence(
                     productAnalysis,
                     referenceAds,
-                    industry || productAnalysis?.productType || 'tech'
+                    industry || productAnalysis?.industry || 'general'
                 );
 
                 console.log(`[MasterGen]   Headline: "${copyIntelligence.headline}"`);
@@ -572,6 +572,12 @@ export async function generateCompositeAd({
                     violations.forEach(v => console.log(`[MasterGen]   Violation: ${v.element} in ${v.zone} - ${v.reason}`));
                 } else {
                     console.log(`[MasterGen] ✅ Composition validated - no collisions or violations`);
+                }
+
+                // Validate plan content (no placeholders in strict mode)
+                const planValidation = validateCompositionPlan(compositionPlan, strictMode);
+                if (!planValidation.valid && strictMode) {
+                    throw new Error(`Composition plan has placeholder content: ${planValidation.issues.join(', ')}`);
                 }
             }
             if (strictMode && !compositionPlan) {
@@ -873,7 +879,7 @@ export async function generateCompositeAd({
 
                     // Check brand consistency
                     const brandCheck = checkBrandConsistency(designSpecs, brandDNA);
-                    console.log(`[MasterGen]   Brand Consistency: ${brandCheck.isConsistent ? '✅' : '⚠️'} ${Math.round(brandCheck.score * 100)}%`);
+                    console.log(`[MasterGen]   Brand Consistency: ${brandCheck.consistent ? '✅' : '⚠️'} ${Math.round(brandCheck.score)}%`);
 
                     // Merge critique into quality result
                     qualityResult.critique = designCritique;
@@ -890,17 +896,21 @@ export async function generateCompositeAd({
                 if (strictMode) {
                     similarityResult = await scoreReferenceSimilarity({
                         imageBuffer: finalBuffer,
-                        referenceAds
+                        referenceAds: referenceAds.slice(0, 5) // Use all available references
                     });
                     console.log(`[MasterGen]   Similarity: ${similarityResult.score}/10`);
 
-                    if (similarityResult.score < SIMILARITY_THRESHOLD && regenerationAttempt < maxRegenerationAttempts) {
-                        console.log(`[MasterGen]   ⚠ Similarity below threshold, regenerating (attempt ${regenerationAttempt + 2})...`);
-                        regenerationAttempt++;
-                        continue;
-                    }
                     if (similarityResult.score < SIMILARITY_THRESHOLD) {
-                        throw new Error(`Reference similarity below threshold: ${similarityResult.score}`);
+                        // Structured error with details for client
+                        const error = new Error(`Reference similarity below threshold: ${similarityResult.score}/${SIMILARITY_THRESHOLD}`);
+                        error.code = 'SIMILARITY_BELOW_THRESHOLD';
+                        error.details = {
+                            score: similarityResult.score,
+                            threshold: SIMILARITY_THRESHOLD,
+                            suggestion: 'Try with different product image or reference ads',
+                            referenceCount: referenceAds.length
+                        };
+                        throw error;
                     }
                 }
             }
@@ -1364,12 +1374,65 @@ const PLACEHOLDER_COPY = new Set([
     'Buy Now',
     'Get Started',
     'Jetzt entdecken',
-    'Jetzt kaufen'
+    'Jetzt kaufen',
+    // Common fallbacks
+    'N/A',
+    'undefined',
+    'null',
+    '',
+    // English placeholders
+    'Click Here',
+    'Order Now',
+    'Get Yours',
+    'Try Now',
+    'Sign Up',
+    'Subscribe',
+    'Download',
+    'Start Free Trial',
+    // German placeholders
+    'Mehr erfahren',
+    'Hier klicken',
+    'Bestellen',
+    'Kostenlos testen'
 ]);
 
 function isPlaceholderCopy(value) {
-    if (!value || typeof value !== 'string') return false;
-    return PLACEHOLDER_COPY.has(value.trim());
+    if (!value || typeof value !== 'string') return true; // null/undefined is placeholder
+    const trimmed = value.trim();
+    if (trimmed.length < 3) return true; // Too short
+    return PLACEHOLDER_COPY.has(trimmed);
+}
+
+/**
+ * Validate composition plan has real content, not placeholders
+ * Used in strict mode to ensure Foreplay-quality output
+ */
+function validateCompositionPlan(plan, strictMode) {
+    if (!strictMode) return { valid: true, issues: [] };
+
+    const issues = [];
+
+    // Check headline
+    if (!plan?.headline?.text || isPlaceholderCopy(plan.headline.text)) {
+        issues.push('headline is placeholder or missing');
+    }
+
+    // Check CTA
+    if (!plan?.cta?.text || isPlaceholderCopy(plan.cta.text)) {
+        issues.push('CTA is placeholder or missing');
+    }
+
+    // Check product position
+    if (!plan?.product?.position) {
+        issues.push('product position not defined');
+    }
+
+    if (issues.length > 0) {
+        console.warn('[ValidatePlan] ⚠️ Plan validation issues:', issues.join(', '));
+        return { valid: false, issues };
+    }
+
+    return { valid: true, issues: [] };
 }
 
 export default { generateCompositeAd };

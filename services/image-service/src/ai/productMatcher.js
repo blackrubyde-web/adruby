@@ -52,6 +52,40 @@ const PRODUCT_TO_NICHE_MAP = {
 };
 
 /**
+ * Map productType to industry for ColorPsychology and other modules
+ * Prevents defaulting to 'tech' for non-tech products
+ */
+const PRODUCT_TYPE_TO_INDUSTRY = {
+    figurine: 'toys',
+    tech: 'technology',
+    beauty: 'beauty',
+    fashion: 'fashion',
+    food: 'food_beverage',
+    home: 'home_garden',
+    fitness: 'health_wellness',
+    pet: 'pets',
+    saas: 'technology',
+    software: 'technology',
+    gaming: 'gaming',
+    toy: 'toys',
+    collectible: 'entertainment',
+    lamp: 'home_garden',
+    light: 'home_garden',
+    decor: 'home_garden',
+    jewelry: 'jewelry',
+    watch: 'accessories',
+    other: 'general'
+};
+
+function mapProductTypeToIndustry(productType) {
+    if (!productType) return 'general';
+    const normalized = productType.toLowerCase().trim();
+    return PRODUCT_TYPE_TO_INDUSTRY[normalized] || 'general';
+}
+
+export { mapProductTypeToIndustry };
+
+/**
  * Convert any niche string to a valid Foreplay niche
  */
 function toValidNiche(niche) {
@@ -96,6 +130,7 @@ export async function analyzeProduct(productBuffer) {
 {
     "productName": "specific product name",
     "productType": "figurine|tech|beauty|fashion|food|home|fitness|pet|other",
+    "industry": "toys|technology|beauty|fashion|food_beverage|home_garden|health_wellness|pets|entertainment|gaming|sports|automotive|jewelry|accessories|general",
     "category": "specific category",
     "keywords": ["search", "keywords", "for", "finding", "similar", "ads"],
     "targetAudience": "who would buy this",
@@ -109,8 +144,14 @@ export async function analyzeProduct(productBuffer) {
         const result = await callGeminiVision(productBuffer, prompt, 'ProductMatcher');
         const analysis = result.content;
 
+        // Fallback industry mapping if Gemini didn't provide it
+        if (!analysis.industry) {
+            analysis.industry = mapProductTypeToIndustry(analysis.productType);
+        }
+
         console.log('[ProductMatcher] ✅ Product:', analysis.productName);
         console.log('[ProductMatcher] Type:', analysis.productType);
+        console.log('[ProductMatcher] Industry:', analysis.industry);
         console.log('[ProductMatcher] Keywords:', analysis.keywords?.slice(0, 3).join(', '));
 
         return analysis;
