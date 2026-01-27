@@ -5,9 +5,8 @@
  * top-performing Foreplay ads. This is the key to perfect recreation.
  */
 
-import OpenAI from 'openai';
+import { callOpenAI } from '../utils/openaiClient.js';
 
-const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
 /**
  * Extract complete visual DNA from an ad image
@@ -17,7 +16,7 @@ export async function extractVisualDNA(imageUrl) {
   console.log('[VisualDNA] 🧬 Extracting visual DNA from reference ad...');
 
   try {
-    const response = await openai.chat.completions.create({
+    const response = await callOpenAI({
       model: 'gpt-4o-mini',
       messages: [{
         role: 'system',

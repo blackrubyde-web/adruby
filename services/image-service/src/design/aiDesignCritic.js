@@ -11,12 +11,11 @@
  * - Iterative refinement guidance
  */
 
-import OpenAI from 'openai';
+import { callOpenAI } from '../utils/openaiClient.js';
 import { checkWCAGCompliance, getContrastRatio } from './colorScience.js';
 import { scoreReadability } from './typographyMastery.js';
 import { analyzeNegativeSpace, calculateVisualTension } from './compositionIntelligence.js';
 
-const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
 // ========================================
 // SCORING DIMENSIONS
@@ -179,7 +178,7 @@ async function analyzeWithAI(imageBuffer, designSpecs) {
     const base64 = imageBuffer.toString('base64');
 
     try {
-        const response = await openai.chat.completions.create({
+        const response = await callOpenAI({
             model: 'gpt-4o-mini',
             messages: [{
                 role: 'system',

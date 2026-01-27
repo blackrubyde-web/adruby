@@ -9,12 +9,11 @@
  * - Best practice extraction
  */
 
-import OpenAI from 'openai';
+import { callOpenAI } from '../utils/openaiClient.js';
 import { getIndustryConfig } from '../data/industryDatabase.js';
 import { getEmotionsForProduct } from '../data/emotionMoodSystem.js';
 import { getProductVisualRules } from '../rules/productVisualRules.js';
 
-const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
 // ========================================
 // PATTERN CATEGORIES
@@ -118,7 +117,7 @@ async function analyzeIndividualAd(ad) {
 
     if (imageUrl) {
         try {
-            const response = await openai.chat.completions.create({
+            const response = await callOpenAI({
                 model: 'gpt-4o-mini',
                 messages: [{
                     role: 'system',

@@ -11,9 +11,8 @@
  * - A/B variant suggestions
  */
 
-import OpenAI from 'openai';
+import { callOpenAI } from '../utils/openaiClient.js';
 
-const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
 /**
  * Generate complete ad content package
@@ -29,7 +28,7 @@ export async function generateAdContent({
     console.log('[AIContent] 🎨 Generating AI content package...');
 
     try {
-        const response = await openai.chat.completions.create({
+        const response = await callOpenAI({
             model: 'gpt-4o-mini',
             messages: [{
                 role: 'system',
@@ -156,7 +155,7 @@ Generate a COMPREHENSIVE content package with JSON response:
  */
 export async function generateFeatureCallouts(productAnalysis, count = 4) {
     try {
-        const response = await openai.chat.completions.create({
+        const response = await callOpenAI({
             model: 'gpt-4o-mini',
             messages: [{
                 role: 'user',
@@ -197,7 +196,7 @@ Focus on:
  */
 export async function generateSocialProof(productAnalysis, style = 'premium') {
     try {
-        const response = await openai.chat.completions.create({
+        const response = await callOpenAI({
             model: 'gpt-4o-mini',
             messages: [{
                 role: 'user',
@@ -259,7 +258,7 @@ export async function generateUrgencyElements(productAnalysis, urgencyLevel = 'm
     };
 
     try {
-        const response = await openai.chat.completions.create({
+        const response = await callOpenAI({
             model: 'gpt-4o-mini',
             messages: [{
                 role: 'user',
@@ -299,7 +298,7 @@ Return JSON:
  */
 export async function generateHeadlineVariants(productAnalysis, count = 10) {
     try {
-        const response = await openai.chat.completions.create({
+        const response = await callOpenAI({
             model: 'gpt-4o-mini',
             messages: [{
                 role: 'user',
@@ -344,7 +343,7 @@ Requirements:
  */
 export async function analyzeCopy(headline, tagline, cta) {
     try {
-        const response = await openai.chat.completions.create({
+        const response = await callOpenAI({
             model: 'gpt-4o-mini',
             messages: [{
                 role: 'user',

@@ -8,11 +8,10 @@
  * - User prompt hints
  */
 
-import OpenAI from 'openai';
+import { callOpenAI } from '../utils/openaiClient.js';
 import { listTemplates, getTemplatesForIndustry } from '../templates/index.js';
 import { detectIndustry } from '../config/industries.js';
 
-const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
 /**
  * Select optimal template using AI analysis
@@ -195,7 +194,7 @@ Respond with JSON:
     "reasoning": "Brief explanation of why this template is optimal"
 }`;
 
-    const response = await openai.chat.completions.create({
+    const response = await callOpenAI({
         model: 'gpt-4o-mini',
         messages: [{ role: 'user', content: prompt }],
         response_format: { type: 'json_object' },

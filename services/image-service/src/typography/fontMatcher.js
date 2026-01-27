@@ -8,9 +8,8 @@
  * 4. Optimal sizing based on text length
  */
 
-import OpenAI from 'openai';
+import { callOpenAI } from '../utils/openaiClient.js';
 
-const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
 // Premium font library organized by category
 // All fonts available in Google Fonts for universal support
@@ -135,7 +134,7 @@ export async function analyzeReferenceFonts(referenceAds) {
     }
 
     try {
-        const response = await openai.chat.completions.create({
+        const response = await callOpenAI({
             model: 'gpt-4o-mini',
             messages: [{
                 role: 'system',

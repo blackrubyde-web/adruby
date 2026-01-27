@@ -9,9 +9,8 @@
  * - Background treatments
  */
 
-import OpenAI from 'openai';
+import { callOpenAI } from '../utils/openaiClient.js';
 
-const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
 // Effect intensity levels
 const INTENSITY_LEVELS = {
@@ -144,7 +143,7 @@ export async function analyzeReferenceEffects(referenceAds) {
     }
 
     try {
-        const response = await openai.chat.completions.create({
+        const response = await callOpenAI({
             model: 'gpt-4o-mini',
             messages: [{
                 role: 'system',

@@ -9,9 +9,8 @@
  * - Score history and tracking
  */
 
-import OpenAI from 'openai';
+import { callOpenAI } from '../utils/openaiClient.js';
 
-const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
 // Quality thresholds
 const QUALITY_THRESHOLDS = {
@@ -369,7 +368,7 @@ async function performVisualAnalysis(imageBuffer, designSpecs) {
     const mood = designSpecs?.mood || {};
     const expectedLayout = designSpecs?.layout?.type || 'hero_centered';
 
-    const response = await openai.chat.completions.create({
+    const response = await callOpenAI({
         model: 'gpt-4o-mini',
         messages: [{
             role: 'system',
@@ -518,7 +517,7 @@ export async function scoreReferenceSimilarity({ imageBuffer, referenceAds = [] 
     console.log('[QualityScorer] 🎯 Multi-aspect similarity scoring...');
     const base64 = imageBuffer.toString('base64');
 
-    const response = await openai.chat.completions.create({
+    const response = await callOpenAI({
         model: 'gpt-4o-mini',
         messages: [{
             role: 'system',
@@ -799,7 +798,7 @@ export async function quickQualityCheck(imageBuffer) {
     try {
         const base64 = imageBuffer.toString('base64');
 
-        const response = await openai.chat.completions.create({
+        const response = await callOpenAI({
             model: 'gpt-4o-mini',
             messages: [{
                 role: 'user',
@@ -842,7 +841,7 @@ export async function compareVariants(variantA, variantB) {
         const base64A = variantA.toString('base64');
         const base64B = variantB.toString('base64');
 
-        const response = await openai.chat.completions.create({
+        const response = await callOpenAI({
             model: 'gpt-4o-mini',
             messages: [{
                 role: 'user',

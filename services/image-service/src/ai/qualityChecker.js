@@ -5,9 +5,8 @@
  * Ensures generated ads meet quality standards before returning.
  */
 
-import OpenAI from 'openai';
+import { callOpenAI } from '../utils/openaiClient.js';
 
-const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
 /**
  * Check ad quality using GPT-4 Vision
@@ -24,7 +23,7 @@ export async function checkQuality(imageBuffer, expectedElements = {}) {
     try {
         const base64Image = imageBuffer.toString('base64');
 
-        const response = await openai.chat.completions.create({
+        const response = await callOpenAI({
             model: 'gpt-4o-mini',
             messages: [
                 {
@@ -118,7 +117,7 @@ export async function quickCheck(imageBuffer) {
     try {
         const base64Image = imageBuffer.toString('base64');
 
-        const response = await openai.chat.completions.create({
+        const response = await callOpenAI({
             model: 'gpt-4o-mini',
             messages: [
                 {

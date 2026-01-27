@@ -10,10 +10,9 @@
  * - Composition rules (rule of thirds, focal points)
  */
 
-import OpenAI from 'openai';
+import { callOpenAI } from '../utils/openaiClient.js';
 import { selectWinningSchema, WINNING_AD_SCHEMAS } from '../patterns/foreplayPatternLibrary.js';
 
-const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
 /**
  * Deep analyze multiple Foreplay reference ads
@@ -56,7 +55,7 @@ async function analyzeSingleAd(ad) {
     if (!imageUrl) return null;
 
     try {
-        const response = await openai.chat.completions.create({
+        const response = await callOpenAI({
             model: 'gpt-4o-mini',
             messages: [{
                 role: 'user',
@@ -660,7 +659,7 @@ export async function planAdComposition(
         console.log(`[AdPlanner] 🏭 Industry: ${industry || 'general'}`);
         console.log(`[AdPlanner] 💡 User prompt: "${userPrompt?.substring(0, 30) || 'none'}..."`);
 
-        const response = await openai.chat.completions.create({
+        const response = await callOpenAI({
             model: 'gpt-4o-mini',
             messages: [{
                 role: 'system',

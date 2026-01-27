@@ -6,9 +6,8 @@
  * Provides feedback for regeneration if quality is insufficient.
  */
 
-import OpenAI from 'openai';
+import { callOpenAI } from '../utils/openaiClient.js';
 
-const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
 /**
  * Verify generated ad quality against expected DNA
@@ -19,7 +18,7 @@ export async function verifyAdQuality(imageBuffer, expectedDNA, content) {
     try {
         const base64 = imageBuffer.toString('base64');
 
-        const response = await openai.chat.completions.create({
+        const response = await callOpenAI({
             model: 'gpt-4o-mini',
             messages: [{
                 role: 'system',
@@ -125,7 +124,7 @@ export async function quickQualityCheck(imageBuffer) {
     try {
         const base64 = imageBuffer.toString('base64');
 
-        const response = await openai.chat.completions.create({
+        const response = await callOpenAI({
             model: 'gpt-4o-mini',
             messages: [{
                 role: 'user',

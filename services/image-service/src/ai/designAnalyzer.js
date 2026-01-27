@@ -5,9 +5,8 @@
  * Extracts design patterns, layout rules, and style information.
  */
 
-import OpenAI from 'openai';
+import { callOpenAI } from '../utils/openaiClient.js';
 
-const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
 /**
  * Analyze an ad image to extract design patterns
@@ -16,7 +15,7 @@ export async function analyzeAdDesign(imageUrl, adMetadata = {}) {
     console.log('[DesignAnalyzer] Analyzing ad design...');
 
     try {
-        const response = await openai.chat.completions.create({
+        const response = await callOpenAI({
             model: 'gpt-4o-mini',
             messages: [
                 {
@@ -134,7 +133,7 @@ export async function analyzeBackgroundForText(imageBuffer) {
     try {
         const base64Image = imageBuffer.toString('base64');
 
-        const response = await openai.chat.completions.create({
+        const response = await callOpenAI({
             model: 'gpt-4o-mini',
             messages: [
                 {
