@@ -120,7 +120,8 @@ export async function analyzeReferenceFonts(referenceAds) {
     console.log(`[FontMatcher] 🔤 Analyzing fonts in ${referenceAds.length} references...`);
 
     if (!referenceAds || referenceAds.length === 0) {
-        throw new Error('Reference ads required for font analysis');
+        console.warn('[FontMatcher] No reference ads, using defaults');
+        return getDefaultFontAnalysis();
     }
 
     const referenceImages = referenceAds
@@ -129,7 +130,8 @@ export async function analyzeReferenceFonts(referenceAds) {
         .slice(0, 4);
 
     if (referenceImages.length === 0) {
-        throw new Error('Reference ads have no images for font analysis');
+        console.warn('[FontMatcher] No reference images, using defaults');
+        return getDefaultFontAnalysis();
     }
 
     try {
@@ -137,7 +139,7 @@ export async function analyzeReferenceFonts(referenceAds) {
             model: 'gpt-4o',
             messages: [{
                 role: 'system',
-                content: 'You are an expert typographer analyzing ad typography. Identify font characteristics precisely.'
+                content: 'You are an expert typographer analyzing ad typography. Identify font characteristics precisely. Always return valid JSON.'
             }, {
                 role: 'user',
                 content: [
@@ -183,20 +185,87 @@ Return JSON:
                     }))
                 ]
             }],
-            max_tokens: 600,
+            max_tokens: 800,
             response_format: { type: 'json_object' }
         });
 
-        const result = JSON.parse(response.choices[0].message.content || '{}');
+        // Robust JSON parsing
+        let result;
+        const content = response.choices[0].message.content || '{}';
+
+        try {
+            result = JSON.parse(content);
+        } catch (parseError) {
+            console.warn('[FontMatcher] JSON parse failed, attempting repair...');
+
+            // Try to extract JSON from markdown code blocks
+            const jsonMatch = content.match(/```(?:json)?\s*([\s\S]*?)```/) ||
+                content.match(/\{[\s\S]*\}/);
+
+            if (jsonMatch) {
+                try {
+                    const cleanJson = (jsonMatch[1] || jsonMatch[0]).trim();
+                    result = JSON.parse(cleanJson);
+                } catch (e) {
+                    console.warn('[FontMatcher] JSON repair failed, using defaults');
+                    return getDefaultFontAnalysis();
+                }
+            } else {
+                console.warn('[FontMatcher] No JSON found, using defaults');
+                return getDefaultFontAnalysis();
+            }
+        }
+
         console.log(`[FontMatcher]   Style: ${result.dominantStyle || 'unknown'}`);
         console.log(`[FontMatcher]   Primary: ${result.recommendations?.primaryFont || 'N/A'}`);
 
         return result;
     } catch (error) {
         console.error('[FontMatcher] Analysis failed:', error.message);
-        throw error;
+        console.warn('[FontMatcher] Returning defaults due to error');
+        return getDefaultFontAnalysis();
     }
 }
+
+/**
+ * Get default font analysis when GPT-4V fails
+ */
+function getDefaultFontAnalysis() {
+    return {
+        dominantStyle: 'bold_modern',
+        characteristics: {
+            headline: {
+                type: 'sans-serif',
+                weight: 'bold',
+                style: 'normal',
+                hasEffects: true
+            },
+            subheadline: {
+                type: 'sans-serif',
+                weight: 'medium',
+                style: 'normal',
+                hasEffects: false
+            },
+            cta: {
+                type: 'sans-serif',
+                weight: 'bold',
+                style: 'normal',
+                hasEffects: false
+            }
+        },
+        sizeRatios: {
+            headlineToSubheadline: 2.2,
+            headlineToCta: 1.8
+        },
+        recommendations: {
+            primaryFont: 'Inter',
+            secondaryFont: 'DM Sans',
+            headlineWeight: 700,
+            bodyWeight: 400
+        }
+    };
+}
+
 
 /**
  * Match font to mood and industry
