@@ -5,7 +5,7 @@
  * Uses GPT-4V for product analysis and intelligent Foreplay search.
  */
 
-import { callOpenAI } from '../utils/openaiClient.js';
+import { callGeminiVision } from '../utils/geminiClient.js';
 import { createForeplayClient } from './foreplayClient.js';
 const foreplay = createForeplayClient(process.env.FOREPLAY_API_KEY);
 
@@ -89,19 +89,10 @@ const MAX_TOP_NICHES = 2;
  * Returns detailed product info for smart Foreplay search
  */
 export async function analyzeProduct(productBuffer) {
-    console.log('[ProductMatcher] 🔍 Analyzing product with GPT-4V...');
+    console.log('[ProductMatcher] 🔍 Analyzing product with Gemini Vision...');
 
     try {
-        const base64 = productBuffer.toString('base64');
-
-        const response = await callOpenAI({
-            model: 'gpt-4o-mini',
-            messages: [{
-                role: 'user',
-                content: [
-                    {
-                        type: 'text',
-                        text: `Analyze this product image for ad creation. Return JSON:
+        const prompt = `Analyze this product image for ad creation. Return JSON:
 {
     "productName": "specific product name",
     "productType": "figurine|tech|beauty|fashion|food|home|fitness|pet|other",
@@ -113,26 +104,18 @@ export async function analyzeProduct(productBuffer) {
     "suggestedHeadlines": ["Option 1", "Option 2", "Option 3"],
     "keyFeatures": ["Feature 1", "Feature 2", "Feature 3"],
     "adStyle": "minimal|bold|playful|luxury|techy|natural"
-}`
-                    },
-                    {
-                        type: 'image_url',
-                        image_url: { url: `data:image/png;base64,${base64}`, detail: 'high' }
-                    }
-                ]
-            }],
-            max_tokens: 800,
-            response_format: { type: 'json_object' }
-        });
+}`;
 
-        const analysis = JSON.parse(response.choices[0].message.content);
+        const result = await callGeminiVision(productBuffer, prompt, 'ProductMatcher');
+        const analysis = result.content;
+
         console.log('[ProductMatcher] ✅ Product:', analysis.productName);
         console.log('[ProductMatcher] Type:', analysis.productType);
         console.log('[ProductMatcher] Keywords:', analysis.keywords?.slice(0, 3).join(', '));
 
         return analysis;
     } catch (error) {
-        console.error('[ProductMatcher] GPT-4V failed:', error.message);
+        console.error('[ProductMatcher] Gemini Vision failed:', error.message);
         throw error;
     }
 }
@@ -148,19 +131,10 @@ export async function analyzeProduct(productBuffer) {
  * - Smart Placement Recommendations with exact coordinates
  */
 export async function deepProductAnalysis(productBuffer) {
-    console.log('[DeepAnalysis] 🔬 Starting ADVANCED deep analysis with GPT-4V...');
+    console.log('[DeepAnalysis] 🔬 Starting ADVANCED deep analysis with Gemini Vision...');
 
     try {
-        const base64 = productBuffer.toString('base64');
-
-        const response = await callOpenAI({
-            model: 'gpt-4o-mini',
-            messages: [{
-                role: 'user',
-                content: [
-                    {
-                        type: 'text',
-                        text: `You are an ELITE creative director analyzing a product screenshot.
+        const prompt = `You are an ELITE creative director analyzing a product screenshot.
 
 Return COMPREHENSIVE JSON:
 
@@ -248,8 +222,8 @@ Return COMPREHENSIVE JSON:
     },
     
     "designRecommendations": {
-        "maxCallouts": 0-3,
-        "maxBadges": 0-2,
+        "maxCallouts": 2,
+        "maxBadges": 1,
         "showSocialProof": true,
         "suggestedHeadline": "headline based on content",
         "suggestedSubheadline": "supporting text",
@@ -261,19 +235,10 @@ Return COMPREHENSIVE JSON:
     
     "excludeElements": ["what NOT to include and why"],
     "overallMood": "professional|playful|luxury|tech|minimal|bold"
-}`
-                    },
-                    {
-                        type: 'image_url',
-                        image_url: { url: `data:image/png;base64,${base64}`, detail: 'high' }
-                    }
-                ]
-            }],
-            max_tokens: 4000,
-            response_format: { type: 'json_object' }
-        });
+}`;
 
-        const analysis = JSON.parse(response.choices[0].message.content);
+        const result = await callGeminiVision(productBuffer, prompt, 'DeepAnalysis');
+        const analysis = result.content;
 
         console.log('[DeepAnalysis] ✅ ADVANCED Analysis complete:');
         console.log(`[DeepAnalysis]   Product: ${analysis.productType}`);
@@ -289,7 +254,7 @@ Return COMPREHENSIVE JSON:
 
         return analysis;
     } catch (error) {
-        console.error('[DeepAnalysis] GPT-4V failed:', error.message);
+        console.error('[DeepAnalysis] Gemini Vision failed:', error.message);
         throw error;
     }
 }
