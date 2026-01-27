@@ -26,7 +26,7 @@ export async function callOpenAI(config, context = 'Gemini') {
     for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
         try {
             const model = genAI.getGenerativeModel({
-                model: 'gemini-2.0-flash-exp',
+                model: 'gemini-2.0-flash',
                 generationConfig: {
                     responseMimeType: 'application/json'
                 }

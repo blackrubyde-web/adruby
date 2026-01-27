@@ -25,7 +25,7 @@ function sleep(ms) {
  * @param {string} context - Logging context
  */
 export async function callGemini(config, context = 'Gemini') {
-    const { prompt, systemPrompt, jsonMode = true, imageBase64 = null, model = 'gemini-2.0-flash-exp' } = config;
+    const { prompt, systemPrompt, jsonMode = true, imageBase64 = null, model = 'gemini-2.0-flash' } = config;
 
     let lastError = null;
 
@@ -126,7 +126,7 @@ export async function callGeminiVision(imageBuffer, prompt, context = 'GeminiVis
         prompt,
         imageBase64: base64,
         jsonMode: true,
-        model: 'gemini-2.0-flash-exp'
+        model: 'gemini-2.0-flash'
     }, context);
 }
 
