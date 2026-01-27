@@ -95,7 +95,7 @@ export async function analyzeProduct(productBuffer) {
         const base64 = productBuffer.toString('base64');
 
         const response = await callOpenAI({
-            model: 'gpt-4o',
+            model: 'gpt-4o-mini',
             messages: [{
                 role: 'user',
                 content: [
@@ -154,7 +154,7 @@ export async function deepProductAnalysis(productBuffer) {
         const base64 = productBuffer.toString('base64');
 
         const response = await callOpenAI({
-            model: 'gpt-4o',
+            model: 'gpt-4o-mini',
             messages: [{
                 role: 'user',
                 content: [

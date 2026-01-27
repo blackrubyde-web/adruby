@@ -163,7 +163,7 @@ async function analyzeVisualIdentity(imageBuffer, context) {
 
     try {
         const response = await callOpenAI({
-            model: 'gpt-4o',
+            model: 'gpt-4o-mini',
             messages: [{
                 role: 'system',
                 content: `You are an expert brand strategist and visual identity designer. 

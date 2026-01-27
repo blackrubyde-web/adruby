@@ -18,7 +18,7 @@ export async function extractVisualDNA(imageUrl) {
 
   try {
     const response = await openai.chat.completions.create({
-      model: 'gpt-4o',
+      model: 'gpt-4o-mini',
       messages: [{
         role: 'system',
         content: `You are an EXPERT visual designer analyzing Meta/Facebook ads.

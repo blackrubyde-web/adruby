@@ -145,7 +145,7 @@ export async function analyzeReferenceEffects(referenceAds) {
 
     try {
         const response = await openai.chat.completions.create({
-            model: 'gpt-4o',
+            model: 'gpt-4o-mini',
             messages: [{
                 role: 'system',
                 content: 'You are an expert visual designer analyzing ad effects and treatments with extreme precision. Always return valid JSON.'

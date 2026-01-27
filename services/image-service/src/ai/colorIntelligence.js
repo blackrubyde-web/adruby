@@ -131,7 +131,7 @@ export async function analyzeReferencePalettes(referenceAds) {
 
     try {
         const response = await callOpenAI({
-            model: 'gpt-4o',
+            model: 'gpt-4o-mini',
             messages: [{
                 role: 'system',
                 content: 'You are an expert color analyst. Extract precise color palettes from ad images.'

@@ -30,7 +30,7 @@ export async function generateAdContent({
 
     try {
         const response = await openai.chat.completions.create({
-            model: 'gpt-4o',
+            model: 'gpt-4o-mini',
             messages: [{
                 role: 'system',
                 content: `You are an elite advertising copywriter and creative strategist with 15+ years at top agencies (Wieden+Kennedy, Droga5, BBDO). You create high-converting ad copy that combines emotional resonance with clear value propositions.
@@ -157,7 +157,7 @@ Generate a COMPREHENSIVE content package with JSON response:
 export async function generateFeatureCallouts(productAnalysis, count = 4) {
     try {
         const response = await openai.chat.completions.create({
-            model: 'gpt-4o',
+            model: 'gpt-4o-mini',
             messages: [{
                 role: 'user',
                 content: `Generate ${count} compelling feature callouts for this product:
@@ -198,7 +198,7 @@ Focus on:
 export async function generateSocialProof(productAnalysis, style = 'premium') {
     try {
         const response = await openai.chat.completions.create({
-            model: 'gpt-4o',
+            model: 'gpt-4o-mini',
             messages: [{
                 role: 'user',
                 content: `Generate compelling social proof elements for this ${style} product:
@@ -260,7 +260,7 @@ export async function generateUrgencyElements(productAnalysis, urgencyLevel = 'm
 
     try {
         const response = await openai.chat.completions.create({
-            model: 'gpt-4o',
+            model: 'gpt-4o-mini',
             messages: [{
                 role: 'user',
                 content: `Generate appropriate urgency elements (${urgencyLevel} level) for:
@@ -300,7 +300,7 @@ Return JSON:
 export async function generateHeadlineVariants(productAnalysis, count = 10) {
     try {
         const response = await openai.chat.completions.create({
-            model: 'gpt-4o',
+            model: 'gpt-4o-mini',
             messages: [{
                 role: 'user',
                 content: `Generate ${count} diverse, high-converting headline variants for:
@@ -345,7 +345,7 @@ Requirements:
 export async function analyzeCopy(headline, tagline, cta) {
     try {
         const response = await openai.chat.completions.create({
-            model: 'gpt-4o',
+            model: 'gpt-4o-mini',
             messages: [{
                 role: 'user',
                 content: `Analyze this ad copy and provide improvements:

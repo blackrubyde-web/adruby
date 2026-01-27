@@ -20,7 +20,7 @@ export async function verifyAdQuality(imageBuffer, expectedDNA, content) {
         const base64 = imageBuffer.toString('base64');
 
         const response = await openai.chat.completions.create({
-            model: 'gpt-4o',
+            model: 'gpt-4o-mini',
             messages: [{
                 role: 'system',
                 content: 'You are a quality control expert for Meta advertisements. Analyze the generated ad and score it against expectations.'
@@ -126,7 +126,7 @@ export async function quickQualityCheck(imageBuffer) {
         const base64 = imageBuffer.toString('base64');
 
         const response = await openai.chat.completions.create({
-            model: 'gpt-4o',
+            model: 'gpt-4o-mini',
             messages: [{
                 role: 'user',
                 content: [

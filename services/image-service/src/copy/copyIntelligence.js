@@ -137,7 +137,7 @@ export async function analyzeReferenceCopy(referenceAds) {
 
     try {
         const response = await callOpenAI({
-            model: 'gpt-4o',
+            model: 'gpt-4o-mini',
             messages: [{
                 role: 'system',
                 content: 'You are an elite copywriter analyzing high-performing ad copy. Extract patterns precisely.'
@@ -238,7 +238,7 @@ export async function generateHeadline(productAnalysis, referencePatterns, indus
 
     try {
         const response = await callOpenAI({
-            model: 'gpt-4o',
+            model: 'gpt-4o-mini',
             messages: [{
                 role: 'system',
                 content: `You are an elite German copywriter for Meta/Facebook ads.
@@ -308,7 +308,7 @@ export async function generateSubheadline(headline, productAnalysis, referencePa
 
     try {
         const response = await callOpenAI({
-            model: 'gpt-4o',
+            model: 'gpt-4o-mini',
             messages: [{
                 role: 'system',
                 content: 'You are an elite German copywriter. Write concise, compelling subheadlines.'

@@ -370,7 +370,7 @@ async function performVisualAnalysis(imageBuffer, designSpecs) {
     const expectedLayout = designSpecs?.layout?.type || 'hero_centered';
 
     const response = await openai.chat.completions.create({
-        model: 'gpt-4o',
+        model: 'gpt-4o-mini',
         messages: [{
             role: 'system',
             content: `You are an elite creative director at a Fortune 500 advertising agency, scoring ad creatives with decades of experience. Be precise and critical.`
@@ -519,7 +519,7 @@ export async function scoreReferenceSimilarity({ imageBuffer, referenceAds = [] 
     const base64 = imageBuffer.toString('base64');
 
     const response = await openai.chat.completions.create({
-        model: 'gpt-4o',
+        model: 'gpt-4o-mini',
         messages: [{
             role: 'system',
             content: `You are an elite Meta/Facebook ad creative director with 15+ years experience.
@@ -800,7 +800,7 @@ export async function quickQualityCheck(imageBuffer) {
         const base64 = imageBuffer.toString('base64');
 
         const response = await openai.chat.completions.create({
-            model: 'gpt-4o',
+            model: 'gpt-4o-mini',
             messages: [{
                 role: 'user',
                 content: [
@@ -843,7 +843,7 @@ export async function compareVariants(variantA, variantB) {
         const base64B = variantB.toString('base64');
 
         const response = await openai.chat.completions.create({
-            model: 'gpt-4o',
+            model: 'gpt-4o-mini',
             messages: [{
                 role: 'user',
                 content: [

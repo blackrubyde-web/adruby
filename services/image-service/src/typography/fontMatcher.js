@@ -136,7 +136,7 @@ export async function analyzeReferenceFonts(referenceAds) {
 
     try {
         const response = await openai.chat.completions.create({
-            model: 'gpt-4o',
+            model: 'gpt-4o-mini',
             messages: [{
                 role: 'system',
                 content: 'You are an expert typographer analyzing ad typography. Identify font characteristics precisely. Always return valid JSON.'

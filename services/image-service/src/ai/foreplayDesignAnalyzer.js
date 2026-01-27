@@ -57,7 +57,7 @@ async function analyzeSingleAd(ad) {
 
     try {
         const response = await openai.chat.completions.create({
-            model: 'gpt-4o',
+            model: 'gpt-4o-mini',
             messages: [{
                 role: 'user',
                 content: [
@@ -661,7 +661,7 @@ export async function planAdComposition(
         console.log(`[AdPlanner] 💡 User prompt: "${userPrompt?.substring(0, 30) || 'none'}..."`);
 
         const response = await openai.chat.completions.create({
-            model: 'gpt-4o',
+            model: 'gpt-4o-mini',
             messages: [{
                 role: 'system',
                 content: `You are an elite creative director. Your job is to create 100% UNIQUE, INDIVIDUALIZED ad compositions.

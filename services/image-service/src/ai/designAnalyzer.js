@@ -17,7 +17,7 @@ export async function analyzeAdDesign(imageUrl, adMetadata = {}) {
 
     try {
         const response = await openai.chat.completions.create({
-            model: 'gpt-4o',
+            model: 'gpt-4o-mini',
             messages: [
                 {
                     role: 'user',
@@ -135,7 +135,7 @@ export async function analyzeBackgroundForText(imageBuffer) {
         const base64Image = imageBuffer.toString('base64');
 
         const response = await openai.chat.completions.create({
-            model: 'gpt-4o',
+            model: 'gpt-4o-mini',
             messages: [
                 {
                     role: 'user',

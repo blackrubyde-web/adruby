@@ -180,7 +180,7 @@ async function analyzeWithAI(imageBuffer, designSpecs) {
 
     try {
         const response = await openai.chat.completions.create({
-            model: 'gpt-4o',
+            model: 'gpt-4o-mini',
             messages: [{
                 role: 'system',
                 content: `You are a senior creative director with 20 years of experience in advertising.

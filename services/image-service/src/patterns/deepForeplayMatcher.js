@@ -119,7 +119,7 @@ async function analyzeIndividualAd(ad) {
     if (imageUrl) {
         try {
             const response = await openai.chat.completions.create({
-                model: 'gpt-4o',
+                model: 'gpt-4o-mini',
                 messages: [{
                     role: 'system',
                     content: 'You are an expert ad creative analyst. Extract precise design patterns from ads.'
