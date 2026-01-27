@@ -129,7 +129,8 @@ export async function analyzeReferenceEffects(referenceAds) {
     console.log(`[EffectsMatcher] 🔍 Analyzing effects in ${referenceAds.length} references...`);
 
     if (!referenceAds || referenceAds.length === 0) {
-        throw new Error('Reference ads required for effects analysis');
+        console.warn('[EffectsMatcher] No reference ads, using defaults');
+        return getDefaultEffectsAnalysis();
     }
 
     const referenceImages = referenceAds
@@ -138,7 +139,8 @@ export async function analyzeReferenceEffects(referenceAds) {
         .slice(0, 4);
 
     if (referenceImages.length === 0) {
-        throw new Error('Reference ads have no images for effects analysis');
+        console.warn('[EffectsMatcher] No reference images, using defaults');
+        return getDefaultEffectsAnalysis();
     }
 
     try {
@@ -146,7 +148,7 @@ export async function analyzeReferenceEffects(referenceAds) {
             model: 'gpt-4o',
             messages: [{
                 role: 'system',
-                content: 'You are an expert visual designer analyzing ad effects and treatments with extreme precision.'
+                content: 'You are an expert visual designer analyzing ad effects and treatments with extreme precision. Always return valid JSON.'
             }, {
                 role: 'user',
                 content: [
@@ -220,11 +222,36 @@ Return JSON:
                     }))
                 ]
             }],
-            max_tokens: 700,
+            max_tokens: 1000,
             response_format: { type: 'json_object' }
         });
 
-        const result = JSON.parse(response.choices[0].message.content || '{}');
+        // Robust JSON parsing
+        let result;
+        const content = response.choices[0].message.content || '{}';
+
+        try {
+            result = JSON.parse(content);
+        } catch (parseError) {
+            console.warn('[EffectsMatcher] JSON parse failed, attempting repair...');
+
+            // Try to extract JSON from markdown code blocks
+            const jsonMatch = content.match(/```(?:json)?\s*([\s\S]*?)```/) ||
+                content.match(/\{[\s\S]*\}/);
+
+            if (jsonMatch) {
+                try {
+                    const cleanJson = (jsonMatch[1] || jsonMatch[0]).trim();
+                    result = JSON.parse(cleanJson);
+                } catch (e) {
+                    console.warn('[EffectsMatcher] JSON repair failed, using defaults');
+                    return getDefaultEffectsAnalysis();
+                }
+            } else {
+                console.warn('[EffectsMatcher] No JSON found, using defaults');
+                return getDefaultEffectsAnalysis();
+            }
+        }
 
         console.log(`[EffectsMatcher]   Style: ${result.overallStyle || 'balanced'}`);
         console.log(`[EffectsMatcher]   Shadow: ${result.dominantEffects?.shadow?.type || 'unknown'}`);
@@ -234,9 +261,49 @@ Return JSON:
         return result;
     } catch (error) {
         console.error('[EffectsMatcher] Analysis failed:', error.message);
-        throw error;
+        console.warn('[EffectsMatcher] Returning defaults due to error');
+        return getDefaultEffectsAnalysis();
     }
 }
+
+/**
+ * Get default effects analysis when GPT-4V fails
+ */
+function getDefaultEffectsAnalysis() {
+    return {
+        dominantEffects: {
+            shadow: {
+                type: 'soft_diffuse',
+                intensity: 0.5,
+                color: '#000000'
+            },
+            glow: {
+                type: 'soft_accent',
+                intensity: 0.4,
+                color: 'accent'
+            },
+            background: {
+                type: 'gradient_dark',
+                noisePercent: 2,
+                hasVignette: true,
+                vignetteIntensity: 0.15
+            },
+            lighting: {
+                direction: 'center',
+                hasLensFlare: false,
+                hasLightRays: false,
+                intensity: 0.5
+            }
+        },
+        overallStyle: 'balanced',
+        recommendations: {
+            shadowPreset: 'soft_diffuse',
+            glowPreset: 'soft_accent',
+            backgroundPreset: 'gradient_dark'
+        }
+    };
+}
+
 
 /**
  * Build effects configuration from reference analysis
