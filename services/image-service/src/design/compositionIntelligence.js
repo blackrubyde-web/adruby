@@ -629,6 +629,114 @@ export function getDepthEffects(depth) {
     return effects[depth] || effects[3];
 }
 
+// ========================================
+// COMPOSITION GENERATOR
+// ========================================
+
+/**
+ * Generate complete composition specification for ad design
+ * Called by designIntelligenceIntegrator
+ */
+export function generateComposition({
+    layout = 'center_hero',
+    canvasWidth = 1080,
+    canvasHeight = 1080,
+    elements = [],
+    contentType = 'product_focus',
+    industry = 'tech'
+} = {}) {
+    // Calculate focal point based on layout
+    const focalStrategy = layout.includes('center') ? 'center' :
+        layout.includes('left') ? 'left_heavy' :
+            layout.includes('right') ? 'right_heavy' : 'rule_of_thirds';
+
+    const focalPoint = calculateFocalPoint(canvasWidth, canvasHeight, focalStrategy);
+
+    // Get recommended flow pattern
+    const flowPattern = getRecommendedFlowPattern(contentType, elements.length);
+
+    // Analyze negative space if elements provided
+    const negativeSpace = elements.length > 0
+        ? analyzeNegativeSpace(elements, canvasWidth, canvasHeight)
+        : { ratio: 0.5, assessment: 'balanced' };
+
+    // Calculate visual tension
+    const tension = elements.length > 1
+        ? calculateVisualTension(elements, canvasWidth, canvasHeight)
+        : { tension: 0, assessment: 'neutral' };
+
+    // Assign depth layers
+    const layeredElements = elements.length > 0
+        ? assignDepthLayers(elements, canvasWidth, canvasHeight)
+        : [];
+
+    // Define composition zones based on layout
+    const zones = generateLayoutZones(layout, canvasWidth, canvasHeight);
+
+    return {
+        layout,
+        canvas: { width: canvasWidth, height: canvasHeight },
+        focalPoint,
+        flowPattern: {
+            name: flowPattern.name,
+            path: flowPattern.path(canvasWidth, canvasHeight)
+        },
+        negativeSpace,
+        tension,
+        elements: layeredElements,
+        zones,
+        guidelines: {
+            margin: Math.round(canvasWidth * 0.05),
+            padding: Math.round(canvasWidth * 0.03),
+            safeZone: {
+                x: Math.round(canvasWidth * 0.1),
+                y: Math.round(canvasHeight * 0.1),
+                width: Math.round(canvasWidth * 0.8),
+                height: Math.round(canvasHeight * 0.8)
+            }
+        }
+    };
+}
+
+/**
+ * Generate layout zones for different layouts
+ */
+function generateLayoutZones(layout, width, height) {
+    const zones = {
+        center_hero: [
+            { name: 'headline', x: width * 0.1, y: height * 0.08, width: width * 0.8, height: height * 0.12 },
+            { name: 'product', x: width * 0.15, y: height * 0.22, width: width * 0.7, height: height * 0.5 },
+            { name: 'tagline', x: width * 0.1, y: height * 0.74, width: width * 0.8, height: height * 0.08 },
+            { name: 'cta', x: width * 0.3, y: height * 0.84, width: width * 0.4, height: height * 0.1 }
+        ],
+        left_product: [
+            { name: 'product', x: width * 0.05, y: height * 0.2, width: width * 0.45, height: height * 0.6 },
+            { name: 'headline', x: width * 0.52, y: height * 0.15, width: width * 0.43, height: height * 0.2 },
+            { name: 'tagline', x: width * 0.52, y: height * 0.38, width: width * 0.43, height: height * 0.2 },
+            { name: 'cta', x: width * 0.52, y: height * 0.7, width: width * 0.35, height: height * 0.12 }
+        ],
+        right_product: [
+            { name: 'product', x: width * 0.5, y: height * 0.2, width: width * 0.45, height: height * 0.6 },
+            { name: 'headline', x: width * 0.05, y: height * 0.15, width: width * 0.43, height: height * 0.2 },
+            { name: 'tagline', x: width * 0.05, y: height * 0.38, width: width * 0.43, height: height * 0.2 },
+            { name: 'cta', x: width * 0.05, y: height * 0.7, width: width * 0.35, height: height * 0.12 }
+        ],
+        split_horizontal: [
+            { name: 'product', x: width * 0.1, y: height * 0.05, width: width * 0.8, height: height * 0.45 },
+            { name: 'headline', x: width * 0.1, y: height * 0.52, width: width * 0.8, height: height * 0.12 },
+            { name: 'tagline', x: width * 0.1, y: height * 0.66, width: width * 0.8, height: height * 0.1 },
+            { name: 'cta', x: width * 0.3, y: height * 0.82, width: width * 0.4, height: height * 0.1 }
+        ],
+        full_bleed: [
+            { name: 'product', x: 0, y: 0, width: width, height: height },
+            { name: 'headline', x: width * 0.08, y: height * 0.1, width: width * 0.6, height: height * 0.15 },
+            { name: 'cta', x: width * 0.08, y: height * 0.8, width: width * 0.35, height: height * 0.1 }
+        ]
+    };
+
+    return zones[layout] || zones.center_hero;
+}
+
 export default {
     calculateFocalPoint,
     EYE_MOVEMENT_PATTERNS,
@@ -638,5 +746,6 @@ export default {
     analyzeNegativeSpace,
     calculateVisualTension,
     assignDepthLayers,
-    getDepthEffects
+    getDepthEffects,
+    generateComposition
 };
