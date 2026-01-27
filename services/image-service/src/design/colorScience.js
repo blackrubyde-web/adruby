@@ -539,6 +539,111 @@ export function suggestColorsForEmotion(targetEmotion) {
     return suggestions;
 }
 
+// ========================================
+// INDUSTRY & ADVANCED PALETTE FUNCTIONS
+// ========================================
+
+/**
+ * Industry color palettes based on common conventions
+ */
+const INDUSTRY_PALETTES = {
+    tech: { primary: '#3B82F6', secondary: '#10B981', accent: '#8B5CF6', background: '#0F172A' },
+    saas: { primary: '#6366F1', secondary: '#22D3EE', accent: '#F59E0B', background: '#1E1B4B' },
+    finance: { primary: '#1E40AF', secondary: '#059669', accent: '#F59E0B', background: '#0F172A' },
+    healthcare: { primary: '#0891B2', secondary: '#10B981', accent: '#F97316', background: '#F0FDFA' },
+    beauty: { primary: '#EC4899', secondary: '#F472B6', accent: '#8B5CF6', background: '#FDF2F8' },
+    fashion: { primary: '#1F2937', secondary: '#F9FAFB', accent: '#EF4444', background: '#FFFFFF' },
+    food: { primary: '#EF4444', secondary: '#F59E0B', accent: '#22C55E', background: '#FEF2F2' },
+    fitness: { primary: '#EF4444', secondary: '#1F2937', accent: '#22C55E', background: '#0F172A' },
+    eco: { primary: '#22C55E', secondary: '#86EFAC', accent: '#0EA5E9', background: '#F0FDF4' },
+    luxury: { primary: '#1F2937', secondary: '#D4AF37', accent: '#FFFFFF', background: '#0A0A0A' },
+    home: { primary: '#78716C', secondary: '#F5F5F4', accent: '#22C55E', background: '#FAFAF9' },
+    other: { primary: '#6366F1', secondary: '#22D3EE', accent: '#F59E0B', background: '#1E1B4B' }
+};
+
+/**
+ * Generate industry-specific color palette
+ */
+export function generateIndustryPalette(industry) {
+    const base = INDUSTRY_PALETTES[industry] || INDUSTRY_PALETTES.other;
+
+    return {
+        primary: base.primary,
+        secondary: base.secondary,
+        accent: base.accent,
+        background: base.background,
+        text: getContrastRatio(base.background, '#FFFFFF') > 4.5 ? '#FFFFFF' : '#1F2937',
+        textSecondary: getContrastRatio(base.background, '#9CA3AF') > 3 ? '#9CA3AF' : '#6B7280',
+        // Generate full palette from primary
+        ...generatePalette(base.primary, { includeNeutrals: true })
+    };
+}
+
+/**
+ * Enhance existing palette with accessibility and variants
+ */
+export function enhancePalette({ primary, secondary, accent }) {
+    const primaryHsl = hexToHsl(primary);
+    const secondaryHsl = secondary ? hexToHsl(secondary) : null;
+
+    return {
+        primary,
+        primaryLight: primaryHsl ? hslToHex(primaryHsl.h, primaryHsl.s, Math.min(primaryHsl.l + 20, 90)) : primary,
+        primaryDark: primaryHsl ? hslToHex(primaryHsl.h, primaryHsl.s, Math.max(primaryHsl.l - 20, 10)) : primary,
+        secondary: secondary || generateHarmony(primary, 'complementary')?.[1] || primary,
+        secondaryLight: secondaryHsl ? hslToHex(secondaryHsl.h, secondaryHsl.s, Math.min(secondaryHsl.l + 20, 90)) : secondary,
+        accent: accent || generateHarmony(primary, 'triadic')?.[1] || primary,
+        text: '#FFFFFF',
+        textSecondary: '#9CA3AF',
+        background: primaryHsl ? hslToHex(primaryHsl.h, 30, 8) : '#0F172A',
+        surface: primaryHsl ? hslToHex(primaryHsl.h, 25, 12) : '#1E293B'
+    };
+}
+
+/**
+ * Generate palette from product's dominant colors
+ */
+export function generatePaletteFromProduct(dominantColors) {
+    if (!dominantColors || dominantColors.length === 0) {
+        return generateIndustryPalette('tech');
+    }
+
+    const primary = dominantColors[0];
+    const secondary = dominantColors[1] || generateHarmony(primary, 'complementary')?.[1];
+    const accent = dominantColors[2] || generateHarmony(primary, 'triadic')?.[1];
+
+    return enhancePalette({ primary, secondary, accent });
+}
+
+/**
+ * Blend two palettes together
+ */
+export function blendPalettes(palette1, palette2, ratio = 0.5) {
+    if (!palette1) return palette2;
+    if (!palette2) return palette1;
+
+    const blendColor = (c1, c2) => {
+        const rgb1 = hexToRgb(c1);
+        const rgb2 = hexToRgb(c2);
+        if (!rgb1 || !rgb2) return c1;
+
+        return rgbToHex(
+            Math.round(rgb1.r * (1 - ratio) + rgb2.r * ratio),
+            Math.round(rgb1.g * (1 - ratio) + rgb2.g * ratio),
+            Math.round(rgb1.b * (1 - ratio) + rgb2.b * ratio)
+        );
+    };
+
+    return {
+        primary: blendColor(palette1.primary, palette2.primary),
+        secondary: blendColor(palette1.secondary || palette1.primary, palette2.secondary || palette2.primary),
+        accent: blendColor(palette1.accent || palette1.primary, palette2.accent || palette2.primary),
+        background: palette1.background || palette2.background,
+        text: palette1.text || palette2.text,
+        textSecondary: palette1.textSecondary || palette2.textSecondary
+    };
+}
+
 export default {
     hexToRgb,
     rgbToHex,
@@ -558,5 +663,11 @@ export default {
     generateGradient,
     COLOR_PSYCHOLOGY,
     getColorPsychology,
-    suggestColorsForEmotion
+    suggestColorsForEmotion,
+    // New functions
+    generateIndustryPalette,
+    enhancePalette,
+    generatePaletteFromProduct,
+    blendPalettes,
+    INDUSTRY_PALETTES
 };
