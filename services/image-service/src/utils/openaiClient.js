@@ -37,15 +37,15 @@ export async function callOpenAI(config, context = 'OpenAI') {
         if (timeSinceLastRequest < MIN_REQUEST_INTERVAL_MS) {
             await sleep(MIN_REQUEST_INTERVAL_MS - timeSinceLastRequest);
         }
-        
+
         return executeWithRetry(config, context);
     });
-    
+
     // Update queue for next request
-    requestQueue = result.catch(() => {}).then(() => {
+    requestQueue = result.catch(() => { }).then(() => {
         lastRequestTime = Date.now();
     });
-    
+
     return result;
 }
 
@@ -108,28 +108,3 @@ export default {
     getOpenAIClient
 };
 
-                await sleep(delay);
-                continue;
-            }
-
-            // Non-retryable error, throw immediately
-            throw error;
-        }
-    }
-
-    // All retries exhausted
-    console.error(`[${context}] All ${MAX_RETRIES} retries exhausted`);
-    throw lastError;
-}
-
-/**
- * Get the raw OpenAI client (for special cases)
- */
-export function getOpenAIClient() {
-    return openai;
-}
-
-export default {
-    callOpenAI,
-    getOpenAIClient
-};
