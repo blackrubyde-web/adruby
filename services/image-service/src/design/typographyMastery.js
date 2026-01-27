@@ -586,6 +586,57 @@ function escapeXml(text) {
         .replace(/'/g, '&apos;');
 }
 
+// ========================================
+// TYPOGRAPHY SPEC GENERATOR
+// ========================================
+
+/**
+ * Generate complete typography specification for ad design
+ * Called by designIntelligenceIntegrator
+ */
+export function generateTypographySpec({
+    industry = 'tech',
+    mood = 'professional',
+    hierarchy = 'ad_standard',
+    canvasWidth = 1080,
+    canvasHeight = 1080
+} = {}) {
+    // Get font pairing based on context
+    const fontPairing = getFontPairingForContext(industry, mood);
+
+    // Get type hierarchy
+    const baseHierarchy = TYPE_HIERARCHIES[hierarchy] || TYPE_HIERARCHIES.ad_standard;
+
+    // Scale for canvas
+    const scaledHierarchy = scaleTypographyForCanvas(baseHierarchy, canvasWidth, canvasHeight);
+
+    // Build complete spec
+    return {
+        fontPairing,
+        hierarchy: scaledHierarchy,
+        fonts: {
+            headline: fontPairing.headline,
+            subheadline: fontPairing.subheadline,
+            body: fontPairing.body,
+            accent: fontPairing.accent
+        },
+        cssImport: fontPairing.cssImport,
+        levels: scaledHierarchy.levels.reduce((acc, level) => {
+            acc[level.name] = {
+                fontFamily: fontPairing[level.name]?.family || fontPairing.body.family,
+                fontSize: level.baseSize,
+                fontWeight: level.weight || fontPairing[level.name]?.weight || 400,
+                lineHeight: level.lineHeight,
+                letterSpacing: level.letterSpacing,
+                textTransform: level.transform || 'none'
+            };
+            return acc;
+        }, {}),
+        mood: fontPairing.mood,
+        industry
+    };
+}
+
 export default {
     FONT_PAIRINGS,
     TYPE_HIERARCHIES,
@@ -599,5 +650,6 @@ export default {
     createTextWithShadow,
     createOutlineText,
     scoreReadability,
-    getFontPairingForContext
+    getFontPairingForContext,
+    generateTypographySpec
 };
