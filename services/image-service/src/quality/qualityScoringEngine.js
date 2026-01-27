@@ -219,16 +219,19 @@ function calculateTextBounds(position, sizePx, charCount, canvasSize) {
 
 function calculateProductBounds(product, canvasSize) {
     const scale = product.scale || 0.6;
+    // Use aspect ratio from plan if available (default to square-ish 0.8)
+    const aspectRatio = product.aspectRatio || 0.8;
     const width = canvasSize.width * scale;
-    const height = canvasSize.height * scale * 0.8;
+    const height = canvasSize.height * scale * aspectRatio;
     const x = product.position.xPercent * canvasSize.width - width / 2;
     const y = product.position.yPercent * canvasSize.height - height / 2;
     return { x, y, width, height };
 }
 
 function calculateCTABounds(cta, canvasSize) {
-    const width = 280;
-    const height = 56;
+    // Use width/height from plan if available (default to standard CTA size)
+    const width = cta.widthPx || cta.width || 280;
+    const height = cta.heightPx || cta.height || 56;
     const x = cta.position.xPercent * canvasSize.width - width / 2;
     const y = cta.position.yPercent * canvasSize.height - height / 2;
     return { x, y, width, height };

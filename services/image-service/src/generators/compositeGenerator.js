@@ -143,7 +143,7 @@ import {
     detectCollisions,
     validateElementPlacements
 } from '../quality/qualityScoringEngine.js';
-import { solveCompositionPlan } from '../constraints/planSolver.js';
+import { solveCompositionPlan, applyMetaSafeZones } from '../constraints/planSolver.js';
 
 // NEW: Industry Database (1000+ industries)
 import { getIndustryConfig, getVisualStyleForProduct } from '../data/industryDatabase.js';
@@ -555,6 +555,9 @@ export async function generateCompositeAd({
                 );
                 if (strictMode) {
                     compositionPlan = solveCompositionPlan(compositionPlan, deepAnalysis, { strict: strictMode });
+                    // Apply Meta/Facebook safe zone constraints
+                    compositionPlan = applyMetaSafeZones(compositionPlan, 'feed');
+                    console.log('[MasterGen]   Meta Safe Zones: ✓');
                 }
                 finalCompositionPlan = compositionPlan;
                 console.log(`[MasterGen] 🧠 AI Composition Plan:`);
