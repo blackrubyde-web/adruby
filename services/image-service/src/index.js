@@ -185,9 +185,29 @@ app.post('/generate-composite', async (req, res) => {
         let productBuffer = null;
         if (productImageBase64) {
             productBuffer = Buffer.from(productImageBase64, 'base64');
+            console.log('[ImageService] Using base64 product image:', productBuffer.length, 'bytes');
         } else if (productImageUrl) {
-            const response = await fetch(productImageUrl);
-            productBuffer = Buffer.from(await response.arrayBuffer());
+            console.log('[ImageService] Fetching product image from:', productImageUrl);
+            try {
+                const response = await fetch(productImageUrl, {
+                    signal: AbortSignal.timeout(30000), // 30 second timeout
+                    headers: {
+                        'User-Agent': 'AdRuby-ImageService/1.0'
+                    }
+                });
+                if (!response.ok) {
+                    throw new Error(`Image fetch failed: ${response.status} ${response.statusText}`);
+                }
+                productBuffer = Buffer.from(await response.arrayBuffer());
+                console.log('[ImageService] Product image fetched:', productBuffer.length, 'bytes');
+            } catch (fetchError) {
+                console.error('[ImageService] Failed to fetch product image:', fetchError.message);
+                throw new Error(`Could not fetch product image: ${fetchError.message}`);
+            }
+        }
+
+        if (!productBuffer) {
+            throw new Error('No product image provided (base64 or URL required)');
         }
 
         const result = await generateCompositeAd({
