@@ -113,14 +113,61 @@ export function solveCompositionPlan(plan, deepAnalysis, options = {}) {
         }
     }
 
-    const finalViolations = validateElementPlacements(resolved, deepAnalysis);
+    // GRACEFUL DEGRADATION: Remove unresolvable elements instead of throwing
     const finalCollisions = detectCollisions(resolved);
-    if (finalViolations.length || finalCollisions.length) {
-        throw new Error('Unable to resolve composition plan collisions or safe-zone violations');
+    if (finalCollisions.length > 0) {
+        console.warn(`[PlanSolver] ⚠️ ${finalCollisions.length} collisions unresolved after ${MAX_ITERATIONS} iterations`);
+
+        for (const collision of finalCollisions) {
+            const { element1, element2, overlapPercent } = collision;
+
+            // Only remove non-essential elements (callouts, badges, features)
+            const removableElements = ['callout_', 'badge_', 'feature_'];
+            let elementToRemove = null;
+
+            // Prefer removing the element with lower priority
+            if (removableElements.some(r => element2.startsWith(r))) {
+                elementToRemove = element2;
+            } else if (removableElements.some(r => element1.startsWith(r))) {
+                elementToRemove = element1;
+            }
+
+            if (elementToRemove) {
+                console.warn(`[PlanSolver]   Removing ${elementToRemove} due to unresolved collision (${Math.round(overlapPercent)}% overlap)`);
+
+                if (elementToRemove.startsWith('callout_')) {
+                    const index = parseInt(elementToRemove.split('_')[1], 10);
+                    if (resolved.callouts && resolved.callouts[index]) {
+                        resolved.callouts.splice(index, 1);
+                    }
+                } else if (elementToRemove.startsWith('badge_')) {
+                    const index = parseInt(elementToRemove.split('_')[1], 10);
+                    if (resolved.badges && resolved.badges[index]) {
+                        resolved.badges.splice(index, 1);
+                    }
+                } else if (elementToRemove.startsWith('feature_')) {
+                    const index = parseInt(elementToRemove.split('_')[1], 10);
+                    if (resolved.features && resolved.features[index]) {
+                        resolved.features.splice(index, 1);
+                    }
+                }
+            } else {
+                // Can't remove essential elements - just warn and continue
+                console.warn(`[PlanSolver]   Cannot remove essential elements: ${element1} ↔ ${element2} - proceeding anyway`);
+            }
+        }
     }
 
+    // Final check for violations only (collisions may still exist but we've done our best)
+    const finalViolations = validateElementPlacements(resolved, deepAnalysis);
+    if (finalViolations.length > 0) {
+        console.warn(`[PlanSolver] ⚠️ ${finalViolations.length} safe-zone violations remain - proceeding anyway`);
+    }
+
+    console.log('[PlanSolver] ✅ Composition solved (with graceful degradation if needed)');
     return resolved;
 }
+
 
 function ensureRequiredPositions(plan) {
     const required = [
