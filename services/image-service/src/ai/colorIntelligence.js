@@ -10,9 +10,7 @@
  */
 
 import sharp from 'sharp';
-import OpenAI from 'openai';
-
-const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+import { callOpenAI } from '../utils/openaiClient.js';
 
 // Color harmony ratios (degrees on color wheel)
 const HARMONY_RULES = {
@@ -132,7 +130,7 @@ export async function analyzeReferencePalettes(referenceAds) {
     }
 
     try {
-        const response = await openai.chat.completions.create({
+        const response = await callOpenAI({
             model: 'gpt-4o',
             messages: [{
                 role: 'system',

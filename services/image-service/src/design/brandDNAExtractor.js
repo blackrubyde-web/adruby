@@ -16,12 +16,10 @@
  * - Photography style
  */
 
-import OpenAI from 'openai';
+import { callOpenAI } from '../utils/openaiClient.js';
 import sharp from 'sharp';
 import { hexToHsl, generatePalette, getColorPsychology } from './colorScience.js';
 import { getFontPairingForContext } from './typographyMastery.js';
-
-const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
 // ========================================
 // MAIN BRAND EXTRACTION
@@ -164,7 +162,7 @@ async function analyzeVisualIdentity(imageBuffer, context) {
     const base64 = imageBuffer.toString('base64');
 
     try {
-        const response = await openai.chat.completions.create({
+        const response = await callOpenAI({
             model: 'gpt-4o',
             messages: [{
                 role: 'system',

@@ -8,9 +8,7 @@
  * 4. A/B tested copy structures
  */
 
-import OpenAI from 'openai';
-
-const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+import { callOpenAI } from '../utils/openaiClient.js';
 
 // Proven headline formulas
 const HEADLINE_FORMULAS = {
@@ -138,7 +136,7 @@ export async function analyzeReferenceCopy(referenceAds) {
     }
 
     try {
-        const response = await openai.chat.completions.create({
+        const response = await callOpenAI({
             model: 'gpt-4o',
             messages: [{
                 role: 'system',
@@ -239,7 +237,7 @@ export async function generateHeadline(productAnalysis, referencePatterns, indus
     const industryTone = INDUSTRY_TONES[industry] || INDUSTRY_TONES.tech;
 
     try {
-        const response = await openai.chat.completions.create({
+        const response = await callOpenAI({
             model: 'gpt-4o',
             messages: [{
                 role: 'system',
@@ -309,7 +307,7 @@ export async function generateSubheadline(headline, productAnalysis, referencePa
     const relationship = referencePatterns?.subheadlinePattern?.relationship || 'elaborates';
 
     try {
-        const response = await openai.chat.completions.create({
+        const response = await callOpenAI({
             model: 'gpt-4o',
             messages: [{
                 role: 'system',

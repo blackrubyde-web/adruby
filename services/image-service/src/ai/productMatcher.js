@@ -5,10 +5,8 @@
  * Uses GPT-4V for product analysis and intelligent Foreplay search.
  */
 
-import OpenAI from 'openai';
+import { callOpenAI } from '../utils/openaiClient.js';
 import { createForeplayClient } from './foreplayClient.js';
-
-const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 const foreplay = createForeplayClient(process.env.FOREPLAY_API_KEY);
 
 /**
@@ -96,7 +94,7 @@ export async function analyzeProduct(productBuffer) {
     try {
         const base64 = productBuffer.toString('base64');
 
-        const response = await openai.chat.completions.create({
+        const response = await callOpenAI({
             model: 'gpt-4o',
             messages: [{
                 role: 'user',
@@ -155,7 +153,7 @@ export async function deepProductAnalysis(productBuffer) {
     try {
         const base64 = productBuffer.toString('base64');
 
-        const response = await openai.chat.completions.create({
+        const response = await callOpenAI({
             model: 'gpt-4o',
             messages: [{
                 role: 'user',
