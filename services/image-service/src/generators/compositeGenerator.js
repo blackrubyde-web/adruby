@@ -826,6 +826,72 @@ export async function generateCompositeAd({
                 compositeBuffer = await compositeBuffers(compositeBuffer, vignetteBuffer);
             }
 
+            // ════════════════════════════════════════════════════════════
+            // PHASE 9B: PLAN-DRIVEN ELEMENTS (NEW)
+            // Render optional elements from AI composition plan
+            // ════════════════════════════════════════════════════════════
+            const planAccentColor = compositionPlan?.cta?.primaryColor || finalAccentColor;
+
+            // Price Tag (if plan includes it)
+            if (compositionPlan?.priceTag?.price) {
+                const priceTagSvg = generatePriceTag(compositionPlan.priceTag, planAccentColor);
+                if (priceTagSvg) {
+                    const priceTagBuffer = await sharp(Buffer.from(priceTagSvg)).png().toBuffer();
+                    compositeBuffer = await compositeBuffers(compositeBuffer, priceTagBuffer);
+                    console.log('[MasterGen]   PriceTag: ✓');
+                }
+            }
+
+            // Countdown Timer (if plan includes it)
+            if (compositionPlan?.countdown?.text) {
+                const countdownSvg = generateCountdown(compositionPlan.countdown, planAccentColor);
+                if (countdownSvg) {
+                    const countdownBuffer = await sharp(Buffer.from(countdownSvg)).png().toBuffer();
+                    compositeBuffer = await compositeBuffers(compositeBuffer, countdownBuffer);
+                    console.log('[MasterGen]   Countdown: ✓');
+                }
+            }
+
+            // Progress Bar (if plan includes it)
+            if (compositionPlan?.progressBar?.value != null) {
+                const progressSvg = generateProgressBar(compositionPlan.progressBar, planAccentColor);
+                if (progressSvg) {
+                    const progressBuffer = await sharp(Buffer.from(progressSvg)).png().toBuffer();
+                    compositeBuffer = await compositeBuffers(compositeBuffer, progressBuffer);
+                    console.log('[MasterGen]   ProgressBar: ✓');
+                }
+            }
+
+            // Testimonial (if plan includes it)
+            if (compositionPlan?.testimonial?.quote) {
+                const testimonialSvg = generateTestimonial(compositionPlan.testimonial, planAccentColor);
+                if (testimonialSvg) {
+                    const testimonialBuffer = await sharp(Buffer.from(testimonialSvg)).png().toBuffer();
+                    compositeBuffer = await compositeBuffers(compositeBuffer, testimonialBuffer);
+                    console.log('[MasterGen]   Testimonial: ✓');
+                }
+            }
+
+            // Highlights (circles, arrows focusing on product areas)
+            if (compositionPlan?.highlights?.length > 0) {
+                const highlightsSvg = generateHighlights(compositionPlan.highlights, planAccentColor);
+                if (highlightsSvg) {
+                    const highlightsBuffer = await sharp(Buffer.from(highlightsSvg)).png().toBuffer();
+                    compositeBuffer = await compositeBuffers(compositeBuffer, highlightsBuffer);
+                    console.log('[MasterGen]   Highlights: ✓');
+                }
+            }
+
+            // Decorations (sparkles, particles, patterns)
+            if (compositionPlan?.decorations && Object.values(compositionPlan.decorations).some(v => v === true)) {
+                const decorationsSvg = generateDecorations(compositionPlan.decorations, planAccentColor);
+                if (decorationsSvg) {
+                    const decorationsBuffer = await sharp(Buffer.from(decorationsSvg)).png().toBuffer();
+                    compositeBuffer = await compositeBuffers(compositeBuffer, decorationsBuffer);
+                    console.log('[MasterGen]   Decorations: ✓');
+                }
+            }
+
             console.log('[MasterGen]   Final effects: ✓');
 
             finalBuffer = compositeBuffer;

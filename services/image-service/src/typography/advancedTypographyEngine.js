@@ -306,6 +306,88 @@ export function createPremiumCTA({
             </g>`;
             break;
 
+        case 'text_only':
+            // No background, just text with subtle glow
+            defs = `
+            <filter id="cta_text_glow" x="-50%" y="-50%" width="200%" height="200%">
+                <feGaussianBlur in="SourceAlpha" stdDeviation="3" result="blur"/>
+                <feFlood flood-color="${backgroundColor}" flood-opacity="0.3"/>
+                <feComposite in2="blur" operator="in"/>
+                <feMerge>
+                    <feMergeNode/>
+                    <feMergeNode in="SourceGraphic"/>
+                </feMerge>
+            </filter>`;
+            content = ''; // No background rect
+            textColor = backgroundColor; // Use accent color for text
+            break;
+
+        case 'underline':
+            // Text with underline accent
+            defs = '';
+            content = `
+            <line x1="${x - width / 3}" y1="${y + height / 2 + fontSize * 0.6}" 
+                  x2="${x + width / 3}" y2="${y + height / 2 + fontSize * 0.6}"
+                  stroke="${backgroundColor}" stroke-width="3" stroke-linecap="round"/>`;
+            textColor = '#FFFFFF';
+            break;
+
+        case 'arrow_right':
+            // Text with arrow indicator
+            defs = `
+            <filter id="cta_shadow" x="-30%" y="-30%" width="160%" height="160%">
+                <feDropShadow dx="0" dy="4" stdDeviation="8" flood-color="#000" flood-opacity="0.2"/>
+            </filter>`;
+            content = `
+            <g filter="url(#cta_shadow)">
+                <rect x="${left}" y="${y}" width="${width}" height="${height}" 
+                      rx="${borderRadius}" fill="${backgroundColor}"/>
+            </g>`;
+            // Arrow will be added as icon
+            icon = '→';
+            iconPosition = 'right';
+            break;
+
+        case 'neon_glow':
+            // Intense neon glow effect
+            defs = `
+            <linearGradient id="cta_gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" style="stop-color:${lighterBg}"/>
+                <stop offset="100%" style="stop-color:${backgroundColor}"/>
+            </linearGradient>
+            <filter id="cta_neon" x="-100%" y="-100%" width="300%" height="300%">
+                <feDropShadow dx="0" dy="0" stdDeviation="15" flood-color="${backgroundColor}" flood-opacity="0.8"/>
+                <feDropShadow dx="0" dy="0" stdDeviation="30" flood-color="${backgroundColor}" flood-opacity="0.5"/>
+                <feDropShadow dx="0" dy="5" stdDeviation="10" flood-color="#000" flood-opacity="0.3"/>
+            </filter>`;
+
+            content = `
+            <g filter="url(#cta_neon)">
+                <rect x="${left}" y="${y}" width="${width}" height="${height}" 
+                      rx="${borderRadius}" fill="url(#cta_gradient)"/>
+            </g>`;
+            break;
+
+        case 'full_width':
+            // Full width button with gradient
+            const fullLeft = CANVAS_WIDTH * 0.15;
+            const fullWidth = CANVAS_WIDTH * 0.7;
+            defs = `
+            <linearGradient id="cta_gradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                <stop offset="0%" style="stop-color:${lighterBg}"/>
+                <stop offset="100%" style="stop-color:${backgroundColor}"/>
+            </linearGradient>
+            <filter id="cta_shadow" x="-10%" y="-30%" width="120%" height="160%">
+                <feDropShadow dx="0" dy="8" stdDeviation="15" flood-color="#000" flood-opacity="0.3"/>
+            </filter>`;
+
+            content = `
+            <g filter="url(#cta_shadow)">
+                <rect x="${fullLeft}" y="${y}" width="${fullWidth}" height="${height}" 
+                      rx="${borderRadius}" fill="url(#cta_gradient)"/>
+            </g>`;
+            break;
+
         default: // solid
             defs = `
             <filter id="cta_shadow" x="-30%" y="-30%" width="160%" height="160%">
@@ -840,18 +922,19 @@ function normalizeCtaStyle(style, hasGlow, hasGradient) {
     const normalized = String(style).toLowerCase();
     const map = {
         gradient_pill: 'gradient_glow',
-        neon_glow: 'gradient_glow',
         '3d_button': 'gradient_glow',
         solid: 'solid',
         outline: 'outline',
         ghost: 'outline',
         glass: 'glass',
-        full_width: 'gradient',
-        text_only: 'solid',
-        underline: 'solid',
-        arrow_right: 'solid',
-        rounded_square: 'solid',
-        gradient: 'gradient'
+        gradient: 'gradient',
+        // NEW: Pass through new styles to dedicated switch cases
+        text_only: 'text_only',
+        underline: 'underline',
+        arrow_right: 'arrow_right',
+        neon_glow: 'neon_glow',
+        full_width: 'full_width',
+        rounded_square: 'solid' // No dedicated case yet
     };
 
     return map[normalized] || 'solid';
