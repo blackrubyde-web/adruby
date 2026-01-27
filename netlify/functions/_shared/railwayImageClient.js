@@ -228,7 +228,7 @@ export async function generateWithComposite({
             enableAdvancedEffects,
             strictReplica,
         }),
-        signal: AbortSignal.timeout(300000), // 5 minutes for full 10-phase pipeline + regen
+        signal: AbortSignal.timeout(600000), // 10 minutes for full 10-phase pipeline + quality gates + regen
     });
 
     if (!response.ok) {
@@ -273,9 +273,118 @@ export async function generateWithComposite({
 
 
 
+/**
+ * Start async composite job - returns immediately with jobId
+ */
+export async function startCompositeJobAsync(params) {
+    console.log('[Railway] 🚀 Starting ASYNC composite job...');
+
+    const response = await fetch(`${RAILWAY_URL}/generate-composite-async`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(params),
+        signal: AbortSignal.timeout(30000), // Quick timeout - just starting the job
+    });
+
+    if (!response.ok) {
+        const error = await response.json().catch(() => ({}));
+        throw new Error(error.error || `Failed to start async job: ${response.status}`);
+    }
+
+    const result = await response.json();
+    console.log('[Railway] ✅ Async job started:', result.jobId);
+    return result;
+}
+
+/**
+ * Poll job status until complete or failed
+ */
+export async function pollJobStatus(jobId, intervalMs = 5000, maxWaitMs = 900000) {
+    console.log(`[Railway] 📊 Polling job ${jobId}...`);
+    const startTime = Date.now();
+
+    while (Date.now() - startTime < maxWaitMs) {
+        try {
+            const response = await fetch(`${RAILWAY_URL}/job/${jobId}/status`, {
+                signal: AbortSignal.timeout(10000),
+            });
+
+            if (!response.ok) {
+                throw new Error(`Status check failed: ${response.status}`);
+            }
+
+            const status = await response.json();
+            console.log(`[Railway] Job ${jobId}: ${status.status} (${status.progress}%)`);
+
+            if (status.status === 'complete') {
+                return status;
+            }
+            if (status.status === 'failed') {
+                throw new Error(status.error || 'Job failed');
+            }
+
+            // Wait before next poll
+            await new Promise(resolve => setTimeout(resolve, intervalMs));
+        } catch (error) {
+            console.error(`[Railway] Poll error:`, error.message);
+            // Continue polling on transient errors
+            await new Promise(resolve => setTimeout(resolve, intervalMs));
+        }
+    }
+
+    throw new Error(`Job ${jobId} timed out after ${maxWaitMs}ms`);
+}
+
+/**
+ * Get completed job result
+ */
+export async function getJobResult(jobId) {
+    console.log(`[Railway] 📥 Fetching result for job ${jobId}...`);
+
+    const response = await fetch(`${RAILWAY_URL}/job/${jobId}/result`, {
+        signal: AbortSignal.timeout(30000),
+    });
+
+    if (response.status === 202) {
+        throw new Error('Job still processing');
+    }
+    if (!response.ok) {
+        const error = await response.json().catch(() => ({}));
+        throw new Error(error.error || `Failed to get result: ${response.status}`);
+    }
+
+    const result = await response.json();
+
+    return {
+        imageBuffer: result.imageBase64 ? Buffer.from(result.imageBase64, 'base64') : null,
+        imageDataUrl: result.imageBase64 ? `data:image/png;base64,${result.imageBase64}` : null,
+        imageBase64: result.imageBase64,
+        metadata: result.metadata,
+    };
+}
+
+/**
+ * Generate with async pattern - starts job, polls, returns result
+ */
+export async function generateWithCompositeAsync(params) {
+    // Start the job
+    const { jobId } = await startCompositeJobAsync(params);
+
+    // Poll until complete
+    await pollJobStatus(jobId);
+
+    // Get the result
+    return await getJobResult(jobId);
+}
+
+
 export default {
     generateWithAIDesign,
     generateWithComposite,
+    generateWithCompositeAsync,
+    startCompositeJobAsync,
+    pollJobStatus,
+    getJobResult,
     getReferences,
     searchReferences,
     getForeplayUsage,

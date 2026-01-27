@@ -23,6 +23,22 @@ const PORT = process.env.PORT || 3001;
 // Initialize Foreplay client
 const foreplay = createForeplayClient(process.env.FOREPLAY_API_KEY);
 
+// ═══════════════════════════════════════════════════════════════════
+// ASYNC JOB STORE - For long-running composite generation
+// ═══════════════════════════════════════════════════════════════════
+const jobStore = new Map(); // { jobId: { status, result, error, createdAt, completedAt } }
+
+// Auto-cleanup old jobs (1 hour TTL)
+setInterval(() => {
+    const oneHourAgo = Date.now() - 60 * 60 * 1000;
+    for (const [jobId, job] of jobStore.entries()) {
+        if (job.createdAt < oneHourAgo) {
+            jobStore.delete(jobId);
+            console.log(`[JobStore] Cleaned up old job: ${jobId}`);
+        }
+    }
+}, 60 * 1000); // Check every minute
+
 // Middleware
 app.use(cors({
     origin: [
@@ -256,6 +272,169 @@ app.post('/generate-composite', async (req, res) => {
     }
 });
 
+// ═══════════════════════════════════════════════════════════════════
+// ASYNC COMPOSITE GENERATION - Returns immediately, processes in background
+// ═══════════════════════════════════════════════════════════════════
+app.post('/generate-composite-async', async (req, res) => {
+    const jobId = `job_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+
+    const {
+        productImageUrl,
+        productImageBase64,
+        headline,
+        tagline,
+        cta,
+        userPrompt,
+        industry,
+        accentColor,
+        enableQualityCheck = true,
+        enableAIContent = true,
+        enableAdvancedEffects = true,
+        strictReplica = true
+    } = req.body;
+
+    // Initialize job in store
+    jobStore.set(jobId, {
+        status: 'processing',
+        progress: 0,
+        result: null,
+        error: null,
+        createdAt: Date.now(),
+        completedAt: null
+    });
+
+    console.log(`[ImageService] 🚀 ASYNC Job ${jobId} started`);
+
+    // Return immediately with jobId
+    res.json({
+        success: true,
+        jobId,
+        status: 'processing',
+        message: 'Generation started. Poll /job/:id/status for progress.'
+    });
+
+    // Process in background (don't await!)
+    (async () => {
+        const startTime = Date.now();
+        try {
+            // Fetch product image
+            let productBuffer = null;
+            if (productImageBase64) {
+                productBuffer = Buffer.from(productImageBase64, 'base64');
+            } else if (productImageUrl) {
+                const response = await fetch(productImageUrl, {
+                    signal: AbortSignal.timeout(30000),
+                    headers: { 'User-Agent': 'AdRuby-ImageService/1.0' }
+                });
+                if (!response.ok) throw new Error(`Image fetch failed: ${response.status}`);
+                productBuffer = Buffer.from(await response.arrayBuffer());
+            }
+
+            if (!productBuffer) {
+                throw new Error('No product image provided');
+            }
+
+            // Update progress
+            jobStore.get(jobId).progress = 10;
+
+            // Generate
+            const result = await generateCompositeAd({
+                productImageBuffer: productBuffer,
+                headline,
+                tagline,
+                cta,
+                accentColor: accentColor || '#FF4757',
+                industry,
+                userPrompt,
+                enableQualityCheck,
+                enableAIContent,
+                enableAdvancedEffects,
+                strictReplica
+            });
+
+            const duration = Date.now() - startTime;
+            console.log(`[ImageService] ✅ ASYNC Job ${jobId} complete in ${duration}ms`);
+
+            // Store result
+            jobStore.set(jobId, {
+                status: 'complete',
+                progress: 100,
+                result: {
+                    imageBase64: result.buffer.toString('base64'),
+                    metadata: {
+                        duration,
+                        qualityScore: result.qualityScore,
+                        qualityTier: result.qualityTier,
+                        qualityDetails: result.qualityDetails,
+                        regenerationAttempts: result.regenerationAttempts,
+                        referenceCount: result.referenceCount,
+                        compositionPlan: result.compositionPlan,
+                        dimensions: { width: 1080, height: 1080 },
+                        version: '10.0',
+                        mode: 'master_designer_async'
+                    }
+                },
+                error: null,
+                createdAt: jobStore.get(jobId).createdAt,
+                completedAt: Date.now()
+            });
+
+        } catch (error) {
+            console.error(`[ImageService] ❌ ASYNC Job ${jobId} failed:`, error.message);
+            jobStore.set(jobId, {
+                status: 'failed',
+                progress: 0,
+                result: null,
+                error: error.message,
+                createdAt: jobStore.get(jobId).createdAt,
+                completedAt: Date.now()
+            });
+        }
+    })();
+});
+
+// Job status endpoint
+app.get('/job/:id/status', (req, res) => {
+    const job = jobStore.get(req.params.id);
+    if (!job) {
+        return res.status(404).json({ error: 'Job not found' });
+    }
+    res.json({
+        jobId: req.params.id,
+        status: job.status,
+        progress: job.progress,
+        error: job.error,
+        createdAt: job.createdAt,
+        completedAt: job.completedAt,
+        hasResult: !!job.result
+    });
+});
+
+// Job result endpoint
+app.get('/job/:id/result', (req, res) => {
+    const job = jobStore.get(req.params.id);
+    if (!job) {
+        return res.status(404).json({ error: 'Job not found' });
+    }
+    if (job.status === 'processing') {
+        return res.status(202).json({
+            status: 'processing',
+            progress: job.progress,
+            message: 'Job still in progress'
+        });
+    }
+    if (job.status === 'failed') {
+        return res.status(500).json({
+            status: 'failed',
+            error: job.error
+        });
+    }
+    res.json({
+        success: true,
+        status: 'complete',
+        ...job.result
+    });
+});
 
 // Search similar ads endpoint
 app.post('/search-references', async (req, res) => {

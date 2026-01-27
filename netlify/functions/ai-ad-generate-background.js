@@ -56,7 +56,8 @@ import { checkRateLimit } from './_shared/rateLimiter.js';
 import { categorizeError, getUserMessage } from './_shared/errorCategorizer.js';
 // Railway v3.0 - AI Design Knowledge System (100M+ Foreplay References)
 // Railway v6.0 - Composite Pipeline (100% Product Preservation)
-import { generateWithAIDesign, generateWithComposite, isForeplayAvailable } from './_shared/railwayImageClient.js';
+// Railway v10.0 - Async Job Pattern (No Timeout Issues)
+import { generateWithAIDesign, generateWithComposite, generateWithCompositeAsync, isForeplayAvailable } from './_shared/railwayImageClient.js';
 
 const MAX_QUALITY_RETRIES = 2;
 
@@ -312,138 +313,139 @@ export const handler = async (event) => {
 
                 await updateProgress('composite_generating', 30, { compositeActive: true });
 
-                    // BLOCKER 3 FIX: Generate copy if not provided!
-                    let compositeHeadline = body.headline;
-                    let compositeTagline = body.subheadline || body.usp;
-                    let compositeCta = body.cta || 'Jetzt entdecken';
+                // BLOCKER 3 FIX: Generate copy if not provided!
+                let compositeHeadline = body.headline;
+                let compositeTagline = body.subheadline || body.usp;
+                let compositeCta = body.cta || 'Jetzt entdecken';
 
-                    if (!compositeHeadline) {
-                        console.log('[AI Ad Generate] 📝 No headline provided - generating copy for composite...');
-                        try {
-                            const copyResponse = await openai.chat.completions.create({
-                                model: 'gpt-4o',
-                                messages: [{
-                                    role: 'system',
-                                    content: `Generate ad copy in ${language === 'de' ? 'German' : 'English'}. Return JSON: { "headline": "short catchy headline", "tagline": "supporting text", "cta": "call to action" }`
-                                }, {
-                                    role: 'user',
-                                    content: `Product: ${body.productName || 'Product'}\nDescription: ${body.text || body.usp || 'A great product'}\nIndustry: ${body.industry || 'tech'}\nTarget: ${body.targetAudience || 'everyone'}`
-                                }],
-                                response_format: { type: 'json_object' },
-                                max_tokens: 300,
-                                temperature: 0.7
-                            });
+                if (!compositeHeadline) {
+                    console.log('[AI Ad Generate] 📝 No headline provided - generating copy for composite...');
+                    try {
+                        const copyResponse = await openai.chat.completions.create({
+                            model: 'gpt-4o',
+                            messages: [{
+                                role: 'system',
+                                content: `Generate ad copy in ${language === 'de' ? 'German' : 'English'}. Return JSON: { "headline": "short catchy headline", "tagline": "supporting text", "cta": "call to action" }`
+                            }, {
+                                role: 'user',
+                                content: `Product: ${body.productName || 'Product'}\nDescription: ${body.text || body.usp || 'A great product'}\nIndustry: ${body.industry || 'tech'}\nTarget: ${body.targetAudience || 'everyone'}`
+                            }],
+                            response_format: { type: 'json_object' },
+                            max_tokens: 300,
+                            temperature: 0.7
+                        });
 
-                            const generatedCopy = JSON.parse(copyResponse.choices[0].message.content);
-                            compositeHeadline = generatedCopy.headline || body.productName || 'Discover More';
-                            compositeTagline = compositeTagline || generatedCopy.tagline || '';
-                            compositeCta = generatedCopy.cta || compositeCta;
+                        const generatedCopy = JSON.parse(copyResponse.choices[0].message.content);
+                        compositeHeadline = generatedCopy.headline || body.productName || 'Discover More';
+                        compositeTagline = compositeTagline || generatedCopy.tagline || '';
+                        compositeCta = generatedCopy.cta || compositeCta;
 
-                            console.log('[AI Ad Generate] ✅ Generated copy:', { compositeHeadline, compositeTagline, compositeCta });
-                        } catch (copyErr) {
-                            console.warn('[AI Ad Generate] Copy generation failed, using fallback:', copyErr.message);
-                            compositeHeadline = body.productName || 'Your Product';
-                        }
-                        await updateProgress('copy_for_composite', 25, { copyGenerated: true });
+                        console.log('[AI Ad Generate] ✅ Generated copy:', { compositeHeadline, compositeTagline, compositeCta });
+                    } catch (copyErr) {
+                        console.warn('[AI Ad Generate] Copy generation failed, using fallback:', copyErr.message);
+                        compositeHeadline = body.productName || 'Your Product';
                     }
+                    await updateProgress('copy_for_composite', 25, { copyGenerated: true });
+                }
 
-                    // Railway fetches the image from URL directly - no base64 needed
-                    console.log('[AI Ad Generate] 🚂 Calling Railway with productImageUrl...');
+                // Railway fetches the image from URL directly - no base64 needed
+                // Using ASYNC pattern to prevent timeout issues
+                console.log('[AI Ad Generate] 🚂 Starting ASYNC Railway job (no timeout risk)...');
 
-                    const compositeResult = await generateWithComposite({
-                        productImageBase64: body.productImageBase64 || null,
-                        productImageUrl: body.productImageUrl,
-                        headline: compositeHeadline,
-                        tagline: compositeTagline,
-                        cta: compositeCta,
-                        userPrompt: body.text || `${body.productName || 'Product'} advertisement`,
-                        industry: body.industry || 'tech',
-                        accentColor: body.accentColor || '#FF4757',
-                        strictReplica,
-                    });
+                const compositeResult = await generateWithCompositeAsync({
+                    productImageBase64: body.productImageBase64 || null,
+                    productImageUrl: body.productImageUrl,
+                    headline: compositeHeadline,
+                    tagline: compositeTagline,
+                    cta: compositeCta,
+                    userPrompt: body.text || `${body.productName || 'Product'} advertisement`,
+                    industry: body.industry || 'tech',
+                    accentColor: body.accentColor || '#FF4757',
+                    strictReplica,
+                });
 
-                    console.log('[AI Ad Generate] ✅ Composite Pipeline complete!', {
-                        hasImage: !!compositeResult.imageBuffer,
-                        source: compositeResult.metadata?.source,
-                        isSaaSProduct: compositeResult.metadata?.isSaaSProduct,
-                    });
+                console.log('[AI Ad Generate] ✅ Composite Pipeline complete!', {
+                    hasImage: !!compositeResult.imageBuffer,
+                    source: compositeResult.metadata?.source,
+                    isSaaSProduct: compositeResult.metadata?.isSaaSProduct,
+                });
 
-                    if (!compositeResult.imageBuffer) {
-                        throw new Error('Composite returned no image');
+                if (!compositeResult.imageBuffer) {
+                    throw new Error('Composite returned no image');
+                }
+
+                // Upload to Supabase
+                let finalImageUrl = null;
+                const filename = `creatives/${user.id}/${jobId}.png`;
+
+                const { error: uploadError } = await supabaseAdmin.storage
+                    .from('creative-images')
+                    .upload(filename, compositeResult.imageBuffer, { contentType: 'image/png', upsert: true });
+
+                if (!uploadError) {
+                    const { data: urlData } = supabaseAdmin.storage.from('creative-images').getPublicUrl(filename);
+                    finalImageUrl = urlData.publicUrl;
+                }
+
+                // CRITICAL: Update DB with outputs and metrics so polling detects success
+                // Note: No 'status' column exists - polling reads metrics.status
+                // BLOCKER FIX: Include copy (headline, tagline, cta) in outputs!
+                console.log('[AI Ad Generate] ✅ Saving composite result to DB...');
+
+                // Extract copy from compositionPlan if available, fallback to request body
+                const composition = compositeResult.metadata?.compositionPlan;
+                const finalHeadline = composition?.headline?.text || body.headline || 'Your Product';
+                const finalTagline = composition?.subheadline?.text || body.subheadline || body.usp || '';
+                const finalCta = composition?.cta?.text || body.cta || 'Jetzt entdecken';
+
+                console.log('[AI Ad Generate] 📝 Copy to save:', { finalHeadline, finalTagline, finalCta });
+
+                const { error: dbError } = await supabaseAdmin.from('generated_creatives').update({
+                    outputs: {
+                        // BLOCKER FIX: Save copy fields!
+                        headline: finalHeadline,
+                        slogan: finalTagline,
+                        tagline: finalTagline,
+                        cta: finalCta,
+                        description: body.text || body.usp || '',
+                        // Image fields
+                        imageUrl: finalImageUrl || compositeResult.imageDataUrl,
+                        imageDataUrl: compositeResult.imageDataUrl,
+                        thumbnailUrl: finalImageUrl || compositeResult.imageDataUrl,
+                        // Metadata
+                        engine: 'railway_composite_v6',
+                        quality: compositeResult.metadata?.qualityScore || 7.6,
+                        template: 'composite_v6',
+                    },
+                    thumbnail: finalImageUrl || compositeResult.imageDataUrl,
+                    metrics: {
+                        status: 'complete',  // This is what ai-ad-status reads!
+                        progress: 100,
+                        engine: 'railway_composite_v6',
+                        completed_at: new Date().toISOString(),
+                        duration_ms: Date.now() - startTime,
+                        credits_deducted: true,  // Preserve this field!
+                        copy_generated: true,
                     }
+                }).eq('id', jobId);
 
-                    // Upload to Supabase
-                    let finalImageUrl = null;
-                    const filename = `creatives/${user.id}/${jobId}.png`;
+                if (dbError) {
+                    console.error('[AI Ad Generate] ❌ DB update error:', dbError);
+                } else {
+                    console.log('[AI Ad Generate] ✅ DB updated: status=complete, outputs saved');
+                }
 
-                    const { error: uploadError } = await supabaseAdmin.storage
-                        .from('creative-images')
-                        .upload(filename, compositeResult.imageBuffer, { contentType: 'image/png', upsert: true });
-
-                    if (!uploadError) {
-                        const { data: urlData } = supabaseAdmin.storage.from('creative-images').getPublicUrl(filename);
-                        finalImageUrl = urlData.publicUrl;
-                    }
-
-                    // CRITICAL: Update DB with outputs and metrics so polling detects success
-                    // Note: No 'status' column exists - polling reads metrics.status
-                    // BLOCKER FIX: Include copy (headline, tagline, cta) in outputs!
-                    console.log('[AI Ad Generate] ✅ Saving composite result to DB...');
-
-                    // Extract copy from compositionPlan if available, fallback to request body
-                    const composition = compositeResult.metadata?.compositionPlan;
-                    const finalHeadline = composition?.headline?.text || body.headline || 'Your Product';
-                    const finalTagline = composition?.subheadline?.text || body.subheadline || body.usp || '';
-                    const finalCta = composition?.cta?.text || body.cta || 'Jetzt entdecken';
-
-                    console.log('[AI Ad Generate] 📝 Copy to save:', { finalHeadline, finalTagline, finalCta });
-
-                    const { error: dbError } = await supabaseAdmin.from('generated_creatives').update({
-                        outputs: {
-                            // BLOCKER FIX: Save copy fields!
-                            headline: finalHeadline,
-                            slogan: finalTagline,
-                            tagline: finalTagline,
-                            cta: finalCta,
-                            description: body.text || body.usp || '',
-                            // Image fields
-                            imageUrl: finalImageUrl || compositeResult.imageDataUrl,
-                            imageDataUrl: compositeResult.imageDataUrl,
-                            thumbnailUrl: finalImageUrl || compositeResult.imageDataUrl,
-                            // Metadata
-                            engine: 'railway_composite_v6',
-                            quality: compositeResult.metadata?.qualityScore || 7.6,
-                            template: 'composite_v6',
-                        },
-                        thumbnail: finalImageUrl || compositeResult.imageDataUrl,
-                        metrics: {
-                            status: 'complete',  // This is what ai-ad-status reads!
-                            progress: 100,
-                            engine: 'railway_composite_v6',
-                            completed_at: new Date().toISOString(),
-                            duration_ms: Date.now() - startTime,
-                            credits_deducted: true,  // Preserve this field!
-                            copy_generated: true,
-                        }
-                    }).eq('id', jobId);
-
-                    if (dbError) {
-                        console.error('[AI Ad Generate] ❌ DB update error:', dbError);
-                    } else {
-                        console.log('[AI Ad Generate] ✅ DB updated: status=complete, outputs saved');
-                    }
-
-                    return {
-                        statusCode: 200,
-                        headers,
-                        body: JSON.stringify({
-                            success: true,
-                            imageUrl: finalImageUrl || compositeResult.imageDataUrl,
-                            imageDataUrl: compositeResult.imageDataUrl,
-                            engine: 'railway_composite_v6',
-                            metadata: compositeResult.metadata,
-                        })
-                    };
+                return {
+                    statusCode: 200,
+                    headers,
+                    body: JSON.stringify({
+                        success: true,
+                        imageUrl: finalImageUrl || compositeResult.imageDataUrl,
+                        imageDataUrl: compositeResult.imageDataUrl,
+                        engine: 'railway_composite_v6',
+                        metadata: compositeResult.metadata,
+                    })
+                };
             } catch (compositeError) {
                 console.error('[AI Ad Generate] ❌ Composite error:', compositeError.message);
                 console.error('[AI Ad Generate] ❌ Full error:', compositeError.stack);
