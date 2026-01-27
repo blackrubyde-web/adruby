@@ -90,6 +90,7 @@ export function solveCompositionPlan(plan, deepAnalysis, options = {}) {
         max: options.maxBound ?? DEFAULT_BOUNDS.max
     };
     const step = options.step ?? DEFAULT_STEP;
+    const strict = options.strict === true;
     const resolved = structuredClone(plan);
 
     ensureRequiredPositions(resolved);
@@ -113,8 +114,26 @@ export function solveCompositionPlan(plan, deepAnalysis, options = {}) {
         }
     }
 
-    // GRACEFUL DEGRADATION: Remove unresolvable elements instead of throwing
     const finalCollisions = detectCollisions(resolved);
+    const finalViolations = validateElementPlacements(resolved, deepAnalysis);
+
+    if (strict) {
+        if (finalCollisions.length || finalViolations.length) {
+            const adjusted = resolveCriticalCollisions(resolved, finalCollisions, deepAnalysis, bounds);
+            if (adjusted) {
+                const postCollisions = detectCollisions(resolved);
+                const postViolations = validateElementPlacements(resolved, deepAnalysis);
+                if (postCollisions.length === 0 && postViolations.length === 0) {
+                    return resolved;
+                }
+                throw new Error(buildUnresolvedMessage(postCollisions, postViolations));
+            }
+            throw new Error(buildUnresolvedMessage(finalCollisions, finalViolations));
+        }
+        return resolved;
+    }
+
+    // GRACEFUL DEGRADATION: Remove unresolvable elements instead of throwing
     if (finalCollisions.length > 0) {
         console.warn(`[PlanSolver] ⚠️ ${finalCollisions.length} collisions unresolved after ${MAX_ITERATIONS} iterations`);
 
@@ -158,14 +177,74 @@ export function solveCompositionPlan(plan, deepAnalysis, options = {}) {
         }
     }
 
-    // Final check for violations only (collisions may still exist but we've done our best)
-    const finalViolations = validateElementPlacements(resolved, deepAnalysis);
     if (finalViolations.length > 0) {
         console.warn(`[PlanSolver] ⚠️ ${finalViolations.length} safe-zone violations remain - proceeding anyway`);
     }
 
     console.log('[PlanSolver] ✅ Composition solved (with graceful degradation if needed)');
     return resolved;
+}
+
+function resolveCriticalCollisions(plan, collisions, deepAnalysis, bounds) {
+    if (!collisions || collisions.length === 0) return false;
+    let adjusted = false;
+
+    for (const collision of collisions) {
+        const pair = [collision.element1, collision.element2];
+        if (pair.includes('product') && pair.includes('cta')) {
+            adjusted = relocateCTA(plan, deepAnalysis, bounds) || adjusted;
+            if (plan.product?.scale && plan.product.scale > 0.7) {
+                plan.product.scale = clamp(plan.product.scale - 0.08, 0.35, 0.9);
+                adjusted = true;
+            }
+        }
+    }
+
+    return adjusted;
+}
+
+function relocateCTA(plan, deepAnalysis, bounds) {
+    if (!plan?.cta?.position) return false;
+
+    const emptySpaces = deepAnalysis?.contentZones?.emptySpaces || [];
+    const candidate = emptySpaces.find(zone => {
+        if (!zone) return false;
+        const suitableFor = Array.isArray(zone.suitableFor) ? zone.suitableFor : [];
+        return suitableFor.some(item => String(item).includes('cta') || String(item).includes('text'));
+    });
+
+    if (candidate && Number.isFinite(candidate.xPercent) && Number.isFinite(candidate.yPercent)) {
+        plan.cta.position.xPercent = candidate.xPercent;
+        plan.cta.position.yPercent = candidate.yPercent;
+        clampPosition(plan.cta.position, bounds);
+        return true;
+    }
+
+    const productY = plan.product?.position?.yPercent ?? 0.5;
+    const fallbackY = productY > 0.55 ? 0.18 : 0.88;
+    plan.cta.position.yPercent = clamp(fallbackY, bounds.min, bounds.max);
+    if (!Number.isFinite(plan.cta.position.xPercent)) {
+        plan.cta.position.xPercent = 0.5;
+    }
+    clampPosition(plan.cta.position, bounds);
+    return true;
+}
+
+function buildUnresolvedMessage(collisions, violations) {
+    const parts = [];
+    if (collisions?.length) {
+        const collisionSummary = collisions
+            .map(c => `${c.element1} ↔ ${c.element2} (${Math.round(c.overlapPercent)}%)`)
+            .join('; ');
+        parts.push(`collisions: ${collisionSummary}`);
+    }
+    if (violations?.length) {
+        const violationSummary = violations
+            .map(v => `${v.element} in ${v.zone}`)
+            .join('; ');
+        parts.push(`violations: ${violationSummary}`);
+    }
+    return `Composition plan unresolved (${parts.join(' | ')})`;
 }
 
 

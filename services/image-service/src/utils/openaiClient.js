@@ -15,7 +15,7 @@ const INITIAL_DELAY_MS = 2000;
 const MAX_DELAY_MS = 60000;
 
 // THROTTLING: Space out requests to avoid rate limits
-const MIN_REQUEST_INTERVAL_MS = 10000; // 10 seconds between requests = 6 RPM
+const MIN_REQUEST_INTERVAL_MS = 4000; // 4 seconds between requests = 15 RPM
 let lastRequestTime = 0;
 let requestQueue = Promise.resolve();
 

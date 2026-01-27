@@ -164,10 +164,10 @@ import { generateHeadlineFromTemplate, generateTaglineFromTemplate, getCTAOption
 import { deepAnalyzeForeplayPatterns } from '../patterns/deepForeplayMatcher.js';
 
 // NEW v12-v13: Design Intelligence Integration
-import { generateDesignIntelligence, quickForeplayAnalysis } from '../integration/designIntelligenceIntegrator.js';
+import { generateDesignIntelligence } from '../integration/designIntelligenceIntegrator.js';
 
 // NEW: AI Design Critic (572 lines - professional design review)
-import { critiqueDesign, quickQualityCheck } from '../design/aiDesignCritic.js';
+import { critiqueDesign } from '../design/aiDesignCritic.js';
 
 // NEW: Brand DNA Extractor (483 lines - complete brand identity extraction)
 import { extractBrandDNA, checkBrandConsistency } from '../design/brandDNAExtractor.js';
@@ -301,197 +301,250 @@ export async function generateCompositeAd({
     let deepAnalysis = null;
     let finalCompositionPlan = null;
     let similarityResult = null;
+    let designSpecs = null;
+    let brandDNA = null;
+    let colorIntelligence = null;
+    let fullDesignIntelligence = null;
+    let typographyIntelligence = null;
+    let effectsIntelligence = null;
+    let copyIntelligence = null;
+    let contentPackage = null;
+    let compositionPlan = null;
+    let texts = null;
     const strictMode = strictReplica === true;
     const qualityCheckActive = strictMode ? true : enableQualityCheck;
+    const maxRegenerationAttempts = strictMode ? 0 : MAX_REGENERATION_ATTEMPTS;
+    const normalizedHeadline = strictMode && isPlaceholderCopy(headline) ? null : headline;
+    const normalizedTagline = strictMode && isPlaceholderCopy(tagline) ? null : tagline;
+    const normalizedCta = strictMode && isPlaceholderCopy(cta) ? null : cta;
 
-    while (regenerationAttempt <= MAX_REGENERATION_ATTEMPTS) {
+    while (regenerationAttempt <= maxRegenerationAttempts) {
         try {
             // ════════════════════════════════════════════════════════════
             // PHASE 1: INTELLIGENCE GATHERING
             // ════════════════════════════════════════════════════════════
             console.log('[MasterGen] ▶ PHASE 1: Intelligence Gathering...');
 
-            // Product Analysis & Foreplay Matching
-            const matchResult = await matchProduct(productImageBuffer);
-            productAnalysis = matchResult.analysis;
-            deepAnalysis = matchResult.deepAnalysis;  // NEW: Contains visual anchors, content zones
-            referenceAds = matchResult.referenceAds || [];
+            // Product Analysis & Foreplay Matching (cached across regeneration attempts)
+            if (!productAnalysis) {
+                const matchResult = await matchProduct(productImageBuffer);
+                productAnalysis = matchResult.analysis;
+                deepAnalysis = matchResult.deepAnalysis;  // NEW: Contains visual anchors, content zones
+                referenceAds = matchResult.referenceAds || [];
 
-            console.log(`[MasterGen]   Product: ${productAnalysis?.productName || 'Unknown'}`);
-            console.log(`[MasterGen]   Type: ${productAnalysis?.productType || 'unknown'}`);
-            console.log(`[MasterGen]   References: ${referenceAds.length} Foreplay ads`);
+                console.log(`[MasterGen]   Product: ${productAnalysis?.productName || 'Unknown'}`);
+                console.log(`[MasterGen]   Type: ${productAnalysis?.productType || 'unknown'}`);
+                console.log(`[MasterGen]   References: ${referenceAds.length} Foreplay ads`);
 
-            // NEW: Log deep analysis insights
-            if (deepAnalysis) {
-                console.log(`[MasterGen] 🔬 Deep Analysis Results:`);
-                console.log(`[MasterGen]   Visual Anchors: ${deepAnalysis.visualAnchors?.length || 0}`);
-                console.log(`[MasterGen]   Empty Spaces: ${deepAnalysis.contentZones?.emptySpaces?.length || 0}`);
-                console.log(`[MasterGen]   Max Callouts: ${deepAnalysis.designRecommendations?.maxCallouts || 2}`);
-                console.log(`[MasterGen]   Suggested Headline: ${deepAnalysis.designRecommendations?.suggestedHeadline || 'N/A'}`);
-                console.log(`[MasterGen]   Exclude: ${deepAnalysis.excludeElements?.join(', ') || 'none'}`);
+                // NEW: Log deep analysis insights
+                if (deepAnalysis) {
+                    console.log(`[MasterGen] 🔬 Deep Analysis Results:`);
+                    console.log(`[MasterGen]   Visual Anchors: ${deepAnalysis.visualAnchors?.length || 0}`);
+                    console.log(`[MasterGen]   Empty Spaces: ${deepAnalysis.contentZones?.emptySpaces?.length || 0}`);
+                    console.log(`[MasterGen]   Max Callouts: ${deepAnalysis.designRecommendations?.maxCallouts || 2}`);
+                    console.log(`[MasterGen]   Suggested Headline: ${deepAnalysis.designRecommendations?.suggestedHeadline || 'N/A'}`);
+                    console.log(`[MasterGen]   Exclude: ${deepAnalysis.excludeElements?.join(', ') || 'none'}`);
+                }
+            } else {
+                console.log(`[MasterGen]   Product: ${productAnalysis?.productName || 'Unknown'}`);
+                console.log(`[MasterGen]   Type: ${productAnalysis?.productType || 'unknown'}`);
+                console.log(`[MasterGen]   References: ${referenceAds.length} Foreplay ads`);
             }
 
             // ════════════════════════════════════════════════════════════
             // PHASE 0: BRAND DNA EXTRACTION (483 lines of intelligence)
             // Extracts: colors, typography, personality, visual style
             // ════════════════════════════════════════════════════════════
-            console.log('[MasterGen] 🧬 Extracting Brand DNA...');
-            const brandDNA = await extractBrandDNA(productImageBuffer, {
-                industry: industry || productAnalysis?.productType,
-                productType: productAnalysis?.productType
-            });
+            if (!strictMode && !brandDNA) {
+                console.log('[MasterGen] 🧬 Extracting Brand DNA...');
+                brandDNA = await extractBrandDNA(productImageBuffer, {
+                    industry: industry || productAnalysis?.productType,
+                    productType: productAnalysis?.productType
+                });
 
-            console.log(`[MasterGen]   Brand Personality: ${brandDNA.personality?.primary || 'N/A'}`);
-            console.log(`[MasterGen]   Typography Style: ${brandDNA.typography?.style || 'N/A'}`);
-            console.log(`[MasterGen]   Visual Style: ${brandDNA.visualStyle?.aesthetic || 'N/A'}`);
+                console.log(`[MasterGen]   Brand Personality: ${brandDNA.personality?.primary || 'N/A'}`);
+                console.log(`[MasterGen]   Typography Style: ${brandDNA.typography?.style || 'N/A'}`);
+                console.log(`[MasterGen]   Visual Style: ${brandDNA.visualStyle?.aesthetic || 'N/A'}`);
+            }
 
             // ════════════════════════════════════════════════════════════
             // PHASE 1A: AI COLOR INTELLIGENCE (No hardcoded colors)
             // ════════════════════════════════════════════════════════════
-            console.log('[MasterGen] 🎨 Building Color Intelligence...');
-            const colorIntelligence = await buildColorIntelligence(
-                productImageBuffer,
-                referenceAds,
-                industry || productAnalysis?.productType || 'tech'
-            );
-            extractedColors = colorIntelligence;
-            finalAccentColor = accentColor || colorIntelligence.accent;
+            if (!strictMode) {
+                if (!colorIntelligence) {
+                    console.log('[MasterGen] 🎨 Building Color Intelligence...');
+                    colorIntelligence = await buildColorIntelligence(
+                        productImageBuffer,
+                        referenceAds,
+                        industry || productAnalysis?.productType || 'tech'
+                    );
+                }
+                extractedColors = colorIntelligence;
+                finalAccentColor = accentColor || colorIntelligence.accent;
 
-            console.log(`[MasterGen]   Palette Mood: ${colorIntelligence.mood}`);
-            console.log(`[MasterGen]   Accent: ${colorIntelligence.accent}`);
-            console.log(`[MasterGen]   Dominant: ${colorIntelligence.dominant}`);
+                console.log(`[MasterGen]   Palette Mood: ${colorIntelligence.mood}`);
+                console.log(`[MasterGen]   Accent: ${colorIntelligence.accent}`);
+                console.log(`[MasterGen]   Dominant: ${colorIntelligence.dominant}`);
+            } else {
+                if (!accentColor && !extractedColors?.fromProduct) {
+                    extractedColors = await extractBrandColors(productImageBuffer, productAnalysis);
+                    extractedColors.fromProduct = true;
+                }
+                finalAccentColor = accentColor || deepAnalysis?.colorPalette?.accent || extractedColors.accent || '#FF4757';
+                console.log(`[MasterGen]   Accent (strict): ${finalAccentColor}`);
+            }
 
             // Deep Foreplay Design Analysis
-            const designSpecs = await analyzeReferenceAds(referenceAds, productAnalysis);
-            console.log(`[MasterGen]   Design Specs: ${designSpecs.layout?.gridType || 'centered'} layout`);
-            console.log(`[MasterGen]   Mood: ${designSpecs.mood?.primary || 'premium'}`);
+            if (!designSpecs) {
+                designSpecs = await analyzeReferenceAds(referenceAds, productAnalysis);
+                console.log(`[MasterGen]   Design Specs: ${designSpecs.layout?.gridType || 'centered'} layout`);
+                console.log(`[MasterGen]   Mood: ${designSpecs.mood?.primary || 'premium'}`);
+            }
+            if (strictMode && designSpecs?.colors && finalAccentColor) {
+                designSpecs.colors = {
+                    ...designSpecs.colors,
+                    accentColor: finalAccentColor
+                };
+            }
 
             // ════════════════════════════════════════════════════════════
             // PHASE 1-MASTER: DESIGN INTELLIGENCE INTEGRATOR (13 STEPS!)
             // Unlocks ALL existing modules: colorScience, typography, 
             // composition, elements, overlays, animation, copy, prompts
             // ════════════════════════════════════════════════════════════
-            console.log('[MasterGen] 🧠 Running Full Design Intelligence Pipeline...');
-            const fullDesignIntelligence = await generateDesignIntelligence({
-                foreplayAnalysis: designSpecs,
-                productAnalysis: productAnalysis,
-                userPrompt: userPrompt,
-                industry: industry || productAnalysis?.productType,
-                targetEmotion: designSpecs?.mood?.primary,
-                format: 'square',
-                enableVariants: false // Enable later for A/B
-            });
+            if (!strictMode && !fullDesignIntelligence) {
+                console.log('[MasterGen] 🧠 Running Full Design Intelligence Pipeline...');
+                fullDesignIntelligence = await generateDesignIntelligence({
+                    foreplayAnalysis: designSpecs,
+                    productAnalysis: productAnalysis,
+                    userPrompt: userPrompt,
+                    industry: industry || productAnalysis?.productType,
+                    targetEmotion: designSpecs?.mood?.primary,
+                    format: 'square',
+                    enableVariants: false // Enable later for A/B
+                });
 
-            console.log(`[MasterGen]   ✅ 13-Step Pipeline Complete`);
-            console.log(`[MasterGen]   Colors: ${fullDesignIntelligence.colors?.primary || 'N/A'}`);
-            console.log(`[MasterGen]   Typography: ${fullDesignIntelligence.typography?.fontFamily || 'N/A'}`);
-            console.log(`[MasterGen]   Elements: ${Object.keys(fullDesignIntelligence.elements || {}).length} types`);
-            console.log(`[MasterGen]   Copy: "${fullDesignIntelligence.copy?.headline?.substring(0, 30) || 'N/A'}..."`);
+                console.log(`[MasterGen]   ✅ 13-Step Pipeline Complete`);
+                console.log(`[MasterGen]   Colors: ${fullDesignIntelligence.colors?.primary || 'N/A'}`);
+                console.log(`[MasterGen]   Typography: ${fullDesignIntelligence.typography?.fontFamily || 'N/A'}`);
+                console.log(`[MasterGen]   Elements: ${Object.keys(fullDesignIntelligence.elements || {}).length} types`);
+                console.log(`[MasterGen]   Copy: "${fullDesignIntelligence.copy?.headline?.substring(0, 30) || 'N/A'}..."`);
 
-            // Merge full intelligence into designSpecs
-            designSpecs.fullIntelligence = fullDesignIntelligence;
-            designSpecs.colors = fullDesignIntelligence.colors || designSpecs.colors;
-            designSpecs.typography = {
-                ...designSpecs.typography,
-                ...fullDesignIntelligence.typography
-            };
-            designSpecs.composition = fullDesignIntelligence.composition || designSpecs.composition;
-            designSpecs.overlays = fullDesignIntelligence.overlays;
-            designSpecs.animation = fullDesignIntelligence.animation;
-            designSpecs.prompts = fullDesignIntelligence.prompts;
+                // Merge full intelligence into designSpecs
+                designSpecs.fullIntelligence = fullDesignIntelligence;
+                designSpecs.colors = fullDesignIntelligence.colors || designSpecs.colors;
+                designSpecs.typography = {
+                    ...designSpecs.typography,
+                    ...fullDesignIntelligence.typography
+                };
+                designSpecs.composition = fullDesignIntelligence.composition || designSpecs.composition;
+                designSpecs.overlays = fullDesignIntelligence.overlays;
+                designSpecs.animation = fullDesignIntelligence.animation;
+                designSpecs.prompts = fullDesignIntelligence.prompts;
+            }
 
             // ════════════════════════════════════════════════════════════
             // PHASE 1E: INTELLIGENT ELEMENT SELECTION (367 lines)
             // Auto-selects best elements based on industry, type, mood
             // ════════════════════════════════════════════════════════════
-            console.log('[MasterGen] 🎨 Selecting Optimal Elements...');
-            const selectedElements = selectElementsForAd({
-                industry: industry || productAnalysis?.productType || 'tech',
-                adType: productAnalysis?.productType || 'product_showcase',
-                mood: designSpecs.mood?.primary || 'premium',
-                // Note: compositionPlan is not yet available here - these will be refined after composition planning
-                hasDiscount: false,
-                hasSocialProof: false,
-                hasFeatureList: false,
-                hasComparison: false
-            });
+            if (!strictMode && !designSpecs.selectedElements) {
+                console.log('[MasterGen] 🎨 Selecting Optimal Elements...');
+                const selectedElements = selectElementsForAd({
+                    industry: industry || productAnalysis?.productType || 'tech',
+                    adType: productAnalysis?.productType || 'product_showcase',
+                    mood: designSpecs.mood?.primary || 'premium',
+                    // Note: compositionPlan is not yet available here - these will be refined after composition planning
+                    hasDiscount: false,
+                    hasSocialProof: false,
+                    hasFeatureList: false,
+                    hasComparison: false
+                });
 
-            console.log(`[MasterGen]   Background Elements: ${selectedElements.background?.overlays?.length || 0}`);
-            console.log(`[MasterGen]   Decorative: ${selectedElements.decorative?.length || 0}`);
-            console.log(`[MasterGen]   Data Viz: ${selectedElements.dataViz?.length || 0}`);
-            console.log(`[MasterGen]   Badges: ${selectedElements.badges?.length || 0}`);
+                console.log(`[MasterGen]   Background Elements: ${selectedElements.background?.overlays?.length || 0}`);
+                console.log(`[MasterGen]   Decorative: ${selectedElements.decorative?.length || 0}`);
+                console.log(`[MasterGen]   Data Viz: ${selectedElements.dataViz?.length || 0}`);
+                console.log(`[MasterGen]   Badges: ${selectedElements.badges?.length || 0}`);
 
-            // Merge selected elements into designSpecs
-            designSpecs.selectedElements = selectedElements;
-            designSpecs.elementPreset = ELEMENT_PRESETS[productAnalysis?.productType] || ELEMENT_PRESETS.product_showcase;
+                // Merge selected elements into designSpecs
+                designSpecs.selectedElements = selectedElements;
+                designSpecs.elementPreset = ELEMENT_PRESETS[productAnalysis?.productType] || ELEMENT_PRESETS.product_showcase;
+            }
 
 
             // ════════════════════════════════════════════════════════════
             // PHASE 1B: AI TYPOGRAPHY INTELLIGENCE (No hardcoded fonts)
             // ════════════════════════════════════════════════════════════
-            console.log('[MasterGen] 🔤 Building Typography Intelligence...');
-            const texts = {
-                headline: headline || deepAnalysis?.designRecommendations?.suggestedHeadline || 'Premium Quality',
-                subheadline: tagline || '',
-                cta: cta || 'Jetzt entdecken'
-            };
-            const typographyIntelligence = await buildTypographyIntelligence(
-                texts,
-                CANVAS_WIDTH,
-                industry || productAnalysis?.productType || 'tech',
-                referenceAds,
-                colorIntelligence
-            );
+            if (!texts) {
+                texts = {
+                    headline: normalizedHeadline || deepAnalysis?.designRecommendations?.suggestedHeadline || productAnalysis?.suggestedHeadlines?.[0] || 'Premium Quality',
+                    subheadline: normalizedTagline || '',
+                    cta: normalizedCta || deepAnalysis?.designRecommendations?.ctaText || 'Jetzt entdecken'
+                };
+            }
 
-            console.log(`[MasterGen]   Font Style: ${typographyIntelligence.fonts.style}`);
-            console.log(`[MasterGen]   Primary Font: ${typographyIntelligence.fonts.primary}`);
-            console.log(`[MasterGen]   Headline Size: ${typographyIntelligence.headline.fontSize}px`);
+            if (!strictMode && !typographyIntelligence) {
+                console.log('[MasterGen] 🔤 Building Typography Intelligence...');
+                typographyIntelligence = await buildTypographyIntelligence(
+                    texts,
+                    CANVAS_WIDTH,
+                    industry || productAnalysis?.productType || 'tech',
+                    referenceAds,
+                    colorIntelligence
+                );
 
-            // Merge typography into designSpecs for downstream use
-            designSpecs.typography = {
-                ...designSpecs.typography,
-                ...typographyIntelligence,
-                colors: colorIntelligence
-            };
+                console.log(`[MasterGen]   Font Style: ${typographyIntelligence.fonts.style}`);
+                console.log(`[MasterGen]   Primary Font: ${typographyIntelligence.fonts.primary}`);
+                console.log(`[MasterGen]   Headline Size: ${typographyIntelligence.headline.fontSize}px`);
+
+                // Merge typography into designSpecs for downstream use
+                designSpecs.typography = {
+                    ...designSpecs.typography,
+                    ...typographyIntelligence,
+                    colors: colorIntelligence
+                };
+            }
 
             // ════════════════════════════════════════════════════════════
             // PHASE 1C: AI EFFECTS INTELLIGENCE (Reference-matched effects)
             // ════════════════════════════════════════════════════════════
-            console.log('[MasterGen] ✨ Building Effects Intelligence...');
-            const effectsIntelligence = await buildEffectsIntelligence(
-                referenceAds,
-                colorIntelligence
-            );
+            if (!strictMode && !effectsIntelligence) {
+                console.log('[MasterGen] ✨ Building Effects Intelligence...');
+                effectsIntelligence = await buildEffectsIntelligence(
+                    referenceAds,
+                    colorIntelligence
+                );
 
-            console.log(`[MasterGen]   Effect Style: ${effectsIntelligence.overallStyle}`);
-            console.log(`[MasterGen]   Shadow: ${effectsIntelligence.shadow ? 'enabled' : 'none'}`);
-            console.log(`[MasterGen]   Glow: ${effectsIntelligence.glow ? 'enabled' : 'none'}`);
+                console.log(`[MasterGen]   Effect Style: ${effectsIntelligence.overallStyle}`);
+                console.log(`[MasterGen]   Shadow: ${effectsIntelligence.shadow ? 'enabled' : 'none'}`);
+                console.log(`[MasterGen]   Glow: ${effectsIntelligence.glow ? 'enabled' : 'none'}`);
 
-            // Merge effects into designSpecs
-            designSpecs.effects = effectsIntelligence;
+                // Merge effects into designSpecs
+                designSpecs.effects = effectsIntelligence;
+            }
 
             // ════════════════════════════════════════════════════════════
             // PHASE 1D: AI COPY INTELLIGENCE (Reference-matched copy)
             // ════════════════════════════════════════════════════════════
-            console.log('[MasterGen] ✍️ Building Copy Intelligence...');
-            const copyIntelligence = await buildCopyIntelligence(
-                productAnalysis,
-                referenceAds,
-                industry || productAnalysis?.productType || 'tech'
-            );
+            if (!strictMode && !copyIntelligence) {
+                console.log('[MasterGen] ✍️ Building Copy Intelligence...');
+                copyIntelligence = await buildCopyIntelligence(
+                    productAnalysis,
+                    referenceAds,
+                    industry || productAnalysis?.productType || 'tech'
+                );
 
-            console.log(`[MasterGen]   Headline: "${copyIntelligence.headline}"`);
-            console.log(`[MasterGen]   CTA: "${copyIntelligence.cta}"`);
+                console.log(`[MasterGen]   Headline: "${copyIntelligence.headline}"`);
+                console.log(`[MasterGen]   CTA: "${copyIntelligence.cta}"`);
 
-            // NOTE: Final copy (headline, tagline, CTA) is resolved in PHASE 8 with full priority chain
-            // Update texts with AI-generated copy for now
-            texts.headline = headline || copyIntelligence.headline;
-            texts.subheadline = tagline || copyIntelligence.subheadline;
-            texts.cta = cta || copyIntelligence.cta;
+                // NOTE: Final copy (headline, tagline, CTA) is resolved in PHASE 8 with full priority chain
+                // Update texts with AI-generated copy for now
+                texts.headline = texts.headline || copyIntelligence.headline;
+                texts.subheadline = texts.subheadline || copyIntelligence.subheadline;
+                texts.cta = texts.cta || copyIntelligence.cta;
+            }
 
             // NEW: AI Creative Director - Plan final composition
-            let compositionPlan = null;
-            if (deepAnalysis && designSpecs) {
+            if (!compositionPlan && deepAnalysis && designSpecs) {
                 compositionPlan = await planAdComposition(
                     designSpecs,
                     deepAnalysis,
@@ -501,7 +554,7 @@ export async function generateCompositeAd({
                     { strictReplica: strictMode }
                 );
                 if (strictMode) {
-                    compositionPlan = solveCompositionPlan(compositionPlan, deepAnalysis);
+                    compositionPlan = solveCompositionPlan(compositionPlan, deepAnalysis, { strict: strictMode });
                 }
                 finalCompositionPlan = compositionPlan;
                 console.log(`[MasterGen] 🧠 AI Composition Plan:`);
@@ -525,9 +578,8 @@ export async function generateCompositeAd({
                 throw new Error('Composition plan required for strict replica mode');
             }
 
-            // AI Content Generation
-            let contentPackage = null;
-            if (enableAIContent) {
+            // AI Content Generation (skipped in strict mode, cached across attempts)
+            if (enableAIContent && !strictMode && !contentPackage) {
                 contentPackage = await generateAdContent({
                     productAnalysis,
                     referenceAds,
@@ -588,9 +640,12 @@ export async function generateCompositeAd({
 
             // NEW: Use colors from AI analysis if available
             let enhancedAccentColor = finalAccentColor;
-            if (deepAnalysis?.colorPalette?.accent) {
+            if (!strictMode && deepAnalysis?.colorPalette?.accent) {
                 enhancedAccentColor = deepAnalysis.colorPalette.accent;
                 console.log(`[MasterGen]   Using screenshot accent: ${enhancedAccentColor}`);
+            } else if (strictMode && compositionPlan?.cta?.primaryColor) {
+                enhancedAccentColor = compositionPlan.cta.primaryColor;
+                console.log(`[MasterGen]   Using plan CTA accent: ${enhancedAccentColor}`);
             }
             if (compositionPlan?.background?.primaryColor) {
                 console.log(`[MasterGen]   Background style: ${compositionPlan.background.style}`);
@@ -683,17 +738,17 @@ export async function generateCompositeAd({
 
             // PRIORITY ORDER: User Input > AI compositionPlan > contentPackage > defaults
             // compositionPlan contains AI-driven decisions based on Foreplay + deepAnalysis
-            const finalHeadline = headline ||  // 1. User provided
+            const finalHeadline = normalizedHeadline ||  // 1. User provided
                 compositionPlan?.headline?.text ||  // 2. AI planned (NEW!)
                 contentPackage?.headlines?.primary ||  // 3. Content generator
                 productAnalysis?.suggestedHeadlines?.[0] ||  // 4. Product analysis
                 'Premium Quality';  // 5. Fallback
 
-            const finalTagline = tagline ||
+            const finalTagline = normalizedTagline ||
                 compositionPlan?.subheadline?.text ||  // AI planned (NEW!)
                 contentPackage?.taglines?.primary;
 
-            const finalCTA = cta ||
+            const finalCTA = normalizedCta ||
                 compositionPlan?.cta?.text ||  // AI planned (NEW!)
                 contentPackage?.ctas?.primary ||
                 'Shop Now';
@@ -802,29 +857,31 @@ export async function generateCompositeAd({
                 console.log(`[MasterGen]   Score: ${qualityResult.overallScore}/10 (${qualityResult.tier})`);
                 console.log(`[MasterGen]   Strengths: ${qualityResult.strengths?.slice(0, 2).join(', ') || 'N/A'}`);
 
-                // ════════════════════════════════════════════════════════════
-                // PHASE 10B: AI DESIGN CRITIQUE (572 lines - professional review)
-                // Multi-dimensional: hierarchy, typography, color, composition
-                // ════════════════════════════════════════════════════════════
-                console.log('[MasterGen] 🎨 Running AI Design Critique...');
-                const designCritique = await critiqueDesign(finalBuffer, designSpecs, brandDNA);
+                if (!strictMode && brandDNA) {
+                    // ════════════════════════════════════════════════════════════
+                    // PHASE 10B: AI DESIGN CRITIQUE (572 lines - professional review)
+                    // Multi-dimensional: hierarchy, typography, color, composition
+                    // ════════════════════════════════════════════════════════════
+                    console.log('[MasterGen] 🎨 Running AI Design Critique...');
+                    const designCritique = await critiqueDesign(finalBuffer, designSpecs, brandDNA);
 
-                console.log(`[MasterGen]   Critique Score: ${designCritique.overallScore}/10`);
-                console.log(`[MasterGen]   Grade: ${designCritique.grade || 'N/A'}`);
-                if (designCritique.improvements?.length > 0) {
-                    console.log(`[MasterGen]   Top Fix: ${designCritique.improvements[0]?.suggestion || 'N/A'}`);
+                    console.log(`[MasterGen]   Critique Score: ${designCritique.overallScore}/10`);
+                    console.log(`[MasterGen]   Grade: ${designCritique.grade || 'N/A'}`);
+                    if (designCritique.improvements?.length > 0) {
+                        console.log(`[MasterGen]   Top Fix: ${designCritique.improvements[0]?.suggestion || 'N/A'}`);
+                    }
+
+                    // Check brand consistency
+                    const brandCheck = checkBrandConsistency(designSpecs, brandDNA);
+                    console.log(`[MasterGen]   Brand Consistency: ${brandCheck.isConsistent ? '✅' : '⚠️'} ${Math.round(brandCheck.score * 100)}%`);
+
+                    // Merge critique into quality result
+                    qualityResult.critique = designCritique;
+                    qualityResult.brandConsistency = brandCheck;
                 }
 
-                // Check brand consistency
-                const brandCheck = checkBrandConsistency(designSpecs, brandDNA);
-                console.log(`[MasterGen]   Brand Consistency: ${brandCheck.isConsistent ? '✅' : '⚠️'} ${Math.round(brandCheck.score * 100)}%`);
 
-                // Merge critique into quality result
-                qualityResult.critique = designCritique;
-                qualityResult.brandConsistency = brandCheck;
-
-
-                if (qualityResult.needsRegeneration && regenerationAttempt < MAX_REGENERATION_ATTEMPTS) {
+                if (qualityResult.needsRegeneration && regenerationAttempt < maxRegenerationAttempts) {
                     console.log(`[MasterGen]   ⚠ Quality below threshold, regenerating (attempt ${regenerationAttempt + 2})...`);
                     regenerationAttempt++;
                     continue;
@@ -837,7 +894,7 @@ export async function generateCompositeAd({
                     });
                     console.log(`[MasterGen]   Similarity: ${similarityResult.score}/10`);
 
-                    if (similarityResult.score < SIMILARITY_THRESHOLD && regenerationAttempt < MAX_REGENERATION_ATTEMPTS) {
+                    if (similarityResult.score < SIMILARITY_THRESHOLD && regenerationAttempt < maxRegenerationAttempts) {
                         console.log(`[MasterGen]   ⚠ Similarity below threshold, regenerating (attempt ${regenerationAttempt + 2})...`);
                         regenerationAttempt++;
                         continue;
@@ -853,7 +910,7 @@ export async function generateCompositeAd({
 
         } catch (error) {
             console.error(`[MasterGen] ❌ Generation error (attempt ${regenerationAttempt + 1}):`, error.message);
-            if (regenerationAttempt >= MAX_REGENERATION_ATTEMPTS) {
+            if (regenerationAttempt >= maxRegenerationAttempts) {
                 throw error;
             }
             regenerationAttempt++;
@@ -865,14 +922,16 @@ export async function generateCompositeAd({
     // ════════════════════════════════════════════════════════════
     // FINAL PHASE: PREMIUM POST-PROCESSING (Agency-Quality Finish)
     // ════════════════════════════════════════════════════════════
-    console.log('[MasterGen] ✨ Applying Premium Polish...');
-    const polishedBuffer = await applyAutoPolish(
-        finalBuffer,
-        extractedColors,
-        extractedColors?.mood || 'vibrant'
-    );
-    finalBuffer = polishedBuffer;
-    console.log('[MasterGen]   Premium polish applied ✓');
+    if (!strictMode) {
+        console.log('[MasterGen] ✨ Applying Premium Polish...');
+        const polishedBuffer = await applyAutoPolish(
+            finalBuffer,
+            extractedColors,
+            extractedColors?.mood || 'vibrant'
+        );
+        finalBuffer = polishedBuffer;
+        console.log('[MasterGen]   Premium polish applied ✓');
+    }
 
     console.log('[MasterGen] ═══════════════════════════════════════════════');
     console.log(`[MasterGen] ✅ COMPLETE in ${duration}ms`);
@@ -1294,6 +1353,23 @@ function applyPlanToProductSpecs(productSpecs, planProduct) {
 
 function clamp(value, min, max) {
     return Math.max(min, Math.min(max, value));
+}
+
+const PLACEHOLDER_COPY = new Set([
+    'Your Product',
+    'Premium Quality',
+    'Discover More',
+    'Shop Now',
+    'Learn More',
+    'Buy Now',
+    'Get Started',
+    'Jetzt entdecken',
+    'Jetzt kaufen'
+]);
+
+function isPlaceholderCopy(value) {
+    if (!value || typeof value !== 'string') return false;
+    return PLACEHOLDER_COPY.has(value.trim());
 }
 
 export default { generateCompositeAd };
