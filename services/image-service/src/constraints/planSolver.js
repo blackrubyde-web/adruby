@@ -304,7 +304,22 @@ function resolveCollisions(plan, collisions, bounds, step, iteration) {
     const elementMap = buildElementMap(plan);
 
     for (const collision of collisions) {
-        const { element1, element2 } = collision;
+        const { element1, element2, overlapPercent } = collision;
+
+        // CRITICAL FIX: For product↔cta with high overlap, use aggressive relocation
+        const pair = [element1, element2];
+        if (pair.includes('product') && pair.includes('cta') && overlapPercent >= 50) {
+            // Move CTA to opposite vertical region from product
+            const productY = plan.product?.position?.yPercent ?? 0.5;
+            const ctaNewY = productY > 0.5 ? 0.12 : 0.88; // Top if product bottom, vice versa
+            if (plan.cta?.position) {
+                plan.cta.position.yPercent = ctaNewY;
+                console.log(`[PlanSolver] 🔄 Aggressive CTA relocation: ${productY.toFixed(2)} → ${ctaNewY.toFixed(2)}`);
+                clampPosition(plan.cta.position, bounds);
+            }
+            continue; // Skip normal nudge for this collision
+        }
+
         const target = pickCollisionTarget(element1, element2);
         const position = elementMap[target];
         if (!position) continue;
