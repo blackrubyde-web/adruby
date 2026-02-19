@@ -1,15 +1,14 @@
 import { lazy, Suspense, useEffect, useMemo, useRef, useState } from 'react';
-import { motion } from 'motion/react';
 import {
   TrendingUp,
   DollarSign,
   Target,
   Zap,
-  ShieldCheck,
+
   ListChecks,
   Wand2,
   ArrowRight,
-  X,
+
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from './ui/card';
@@ -20,7 +19,7 @@ import { DashboardShell } from './layout/DashboardShell';
 import { useOverview } from '../hooks/useOverview';
 import { useAuthState } from '../contexts/AuthContext';
 import { ReferralServicesWidget } from './referral/ReferralServicesWidget';
-import { stagger, fadeUp, viewport } from '../lib/motion';
+
 import { MetricCardSkeleton, ChartSkeleton } from '../lib/skeletons';
 import { formatCurrency, formatCompact, formatDeltaRaw as formatDelta } from '../utils/formatters';
 
@@ -60,7 +59,7 @@ function KpiSkeleton() {
 export function OverviewPage({ onNavigate }: OverviewPageProps) {
   const [dateFilter, setDateFilter] = useState<DateFilter>('7d');
   const [channelFilter, setChannelFilter] = useState<ChannelFilter>('meta');
-  const { user, profile } = useAuthState();
+  useAuthState();
 
   // Fetch data with hook
   const { data, loading, error } = useOverview(dateFilter, channelFilter);

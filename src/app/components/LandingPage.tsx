@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import {
   ArrowRight,
@@ -20,7 +20,7 @@ import {
   Heart,
 } from 'lucide-react';
 import { Card } from './ui/card';
-import { PageContainer, SectionHeader, SecondaryButton } from './design-system';
+import { PageContainer, SecondaryButton } from './design-system';
 import { PricingCard } from './landing/MarketingComponents';
 import { TryItLiveSection } from './landing/TryItLiveSection';
 import { BeforeAfterSection } from './landing/BeforeAfterSection';

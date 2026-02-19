@@ -1,15 +1,21 @@
 import { render, screen } from '@testing-library/react';
 import { RegisterPage } from '../app/components/auth/RegisterPage';
 
+/* eslint-disable @typescript-eslint/no-require-imports */
 // Mock motion/react so framer-motion doesn't interfere with tests
 jest.mock('motion/react', () => {
+  // eslint-disable-next-line @typescript-eslint/no-var-requires
   const React = require('react');
-  const motion = new Proxy({}, {
-    get: (_target: unknown, prop: string) =>
-      React.forwardRef((props: Record<string, unknown>, ref: React.Ref<HTMLElement>) =>
-        React.createElement(prop, { ...props, ref })
-      ),
-  });
+  const handler = {
+    get(_target: Record<string, unknown>, prop: string) {
+      const Comp = React.forwardRef(function MotionProxy(props: Record<string, unknown>, ref: React.Ref<HTMLElement>) {
+        return React.createElement(prop, { ...props, ref });
+      });
+      Comp.displayName = `motion.${prop}`;
+      return Comp;
+    },
+  };
+  const motion = new Proxy({}, handler);
   return { __esModule: true, motion, AnimatePresence: ({ children }: { children: React.ReactNode }) => children };
 });
 
