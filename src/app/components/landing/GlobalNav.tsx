@@ -130,7 +130,7 @@ export function GlobalNav({ currentPage = 'home', onNavigate, onSignIn, onGetSta
   };
 
   const navItems = [
-    { id: 'home', label: 'Home', hasDropdown: false },
+    { id: 'landing', label: 'Home', hasDropdown: false },
     { id: 'features', label: 'Features', hasDropdown: true },
     { id: 'pricing', label: 'Pricing', hasDropdown: false },
     { id: 'affiliate', label: 'Affiliate', hasDropdown: false },
@@ -143,8 +143,8 @@ export function GlobalNav({ currentPage = 'home', onNavigate, onSignIn, onGetSta
       {/* ── TOP NAV BAR ─────────────────────────────── */}
       <nav
         className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ${isScrolled
-            ? 'bg-card/95 backdrop-blur-xl border-b border-border/50 shadow-lg'
-            : 'bg-card/60 backdrop-blur-md'
+          ? 'bg-card/95 backdrop-blur-xl border-b border-border/50 shadow-lg'
+          : 'bg-card/60 backdrop-blur-md'
           }`}
         style={{ paddingTop: 'env(safe-area-inset-top, 0px)' }}
       >

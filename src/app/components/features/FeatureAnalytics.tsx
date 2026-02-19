@@ -1,6 +1,5 @@
-import { GlobalNav } from '../landing/GlobalNav';
-import { Footer } from '../Footer';
-import { BarChart3, TrendingUp, PieChart, Clock, Bell, Download, CheckCircle, ArrowRight } from 'lucide-react';
+import { BarChart3, TrendingUp, Eye, DollarSign, PieChart, LineChart } from 'lucide-react';
+import { FeaturePageTemplate } from './FeaturePageTemplate';
 
 interface FeatureAnalyticsProps {
     onNavigate: (page: string) => void;
@@ -9,77 +8,32 @@ interface FeatureAnalyticsProps {
 }
 
 export function FeatureAnalytics({ onNavigate, onSignIn, onGetStarted }: FeatureAnalyticsProps) {
-    const features = [
-        { icon: TrendingUp, title: 'Echtzeit-Tracking', desc: 'Sieh Performance-Daten in Echtzeit.' },
-        { icon: PieChart, title: 'Detaillierte Aufschlüsselung', desc: 'Analysiere nach Kampagne, Zielgruppe, Creative.' },
-        { icon: Clock, title: 'Historische Daten', desc: 'Vergleiche Performance über Zeiträume.' },
-        { icon: Bell, title: 'Smart Alerts', desc: 'Werde benachrichtigt bei wichtigen Änderungen.' },
-        { icon: Download, title: 'Custom Reports', desc: 'Erstelle und exportiere individuelle Berichte.' },
-        { icon: BarChart3, title: 'KPI Dashboard', desc: 'Alle wichtigen Kennzahlen auf einen Blick.' },
-    ];
-
     return (
-        <div className="landing-theme-root min-h-screen bg-black text-white">
-            <GlobalNav currentPage="feature-analytics" onNavigate={onNavigate} onSignIn={onSignIn} onGetStarted={onGetStarted} />
-
-            <section className="pt-32 pb-20 px-4">
-                <div className="max-w-6xl mx-auto text-center">
-                    <div className="inline-flex items-center gap-2 px-4 py-2 bg-green-500/10 rounded-full mb-6">
-                        <BarChart3 className="w-4 h-4 text-green-500" />
-                        <span className="text-sm font-semibold text-green-500">Analytics Dashboard</span>
-                    </div>
-
-                    <h1 className="text-4xl md:text-6xl font-black tracking-tight mb-6">
-                        Datengetriebene
-                        <span className="block bg-gradient-to-r from-green-500 to-emerald-500 bg-clip-text text-transparent">Entscheidungen treffen</span>
-                    </h1>
-
-                    <p className="text-lg md:text-xl text-white/60 max-w-2xl mx-auto mb-10">
-                        Verstehe was funktioniert und was nicht. Unser Analytics Dashboard
-                        zeigt dir alle wichtigen Metriken auf einen Blick.
-                    </p>
-
-                    <button onClick={onGetStarted} className="px-8 py-4 bg-gradient-to-r from-green-500 to-emerald-500 text-white rounded-xl font-bold text-lg hover:shadow-2xl hover:shadow-green-500/25 transition-all">
-                        Jetzt kostenlos testen <ArrowRight className="inline-block ml-2 w-5 h-5" />
-                    </button>
-                </div>
-            </section>
-
-            <section className="py-20 px-4 bg-zinc-900">
-                <div className="max-w-6xl mx-auto">
-                    <h2 className="text-3xl md:text-4xl font-black text-center mb-12">Alle Daten die du brauchst</h2>
-                    <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-                        {features.map((f, i) => {
-                            const Icon = f.icon;
-                            return (
-                                <div key={i} className="p-6 bg-white/5 rounded-2xl border border-white/10 hover:border-green-500/50 transition-all group">
-                                    <div className="w-12 h-12 rounded-xl bg-green-500/10 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
-                                        <Icon className="w-6 h-6 text-green-500" />
-                                    </div>
-                                    <h3 className="text-lg font-bold mb-2">{f.title}</h3>
-                                    <p className="text-white/60 text-sm">{f.desc}</p>
-                                </div>
-                            );
-                        })}
-                    </div>
-                </div>
-            </section>
-
-            <section className="py-20 px-4 bg-gradient-to-br from-green-500/10 to-emerald-500/10">
-                <div className="max-w-4xl mx-auto text-center">
-                    <h2 className="text-3xl md:text-4xl font-black mb-6">Starte mit datengetriebenen Entscheidungen</h2>
-                    <button onClick={onGetStarted} className="px-10 py-5 bg-gradient-to-r from-green-500 to-emerald-500 text-white rounded-xl font-bold text-lg hover:shadow-2xl transition-all">
-                        Kostenlos starten
-                    </button>
-                    <div className="flex flex-wrap justify-center gap-6 mt-8 text-sm text-white/60">
-                        {['Meta Ads Integration', 'Automatische Reports', 'Trend-Erkennung'].map((item) => (
-                            <div key={item} className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-green-500" />{item}</div>
-                        ))}
-                    </div>
-                </div>
-            </section>
-
-            <Footer />
-        </div>
+        <FeaturePageTemplate
+            currentPage="feature-analytics"
+            badge="Analytics Dashboard"
+            badgeIcon={BarChart3}
+            headlineTop="Performance"
+            headlineGradient="in Echtzeit."
+            subtitle="Tracke ROAS, CTR, CPA und mehr in einem übersichtlichen Dashboard. Alle Kampagnen-Daten an einem Ort."
+            accentGradient="from-emerald-500 to-green-400"
+            accentColor="#10B981"
+            capabilities={[
+                { icon: TrendingUp, title: 'Echtzeit-Metriken', description: 'ROAS, CTR, CPA und alle relevanten KPIs live überwachen.' },
+                { icon: Eye, title: 'Kampagnen-Übersicht', description: 'Alle Kampagnen auf einen Blick mit Performance-Bewertung.' },
+                { icon: DollarSign, title: 'Cost Tracking', description: 'Verfolge Ausgaben und ROI über alle Kampagnen hinweg.' },
+                { icon: PieChart, title: 'Audience Insights', description: 'Verstehe deine Zielgruppe mit demografischen Daten.' },
+                { icon: LineChart, title: 'Trend-Analyse', description: 'Erkenne Trends und reagiere bevor es zu spät ist.' },
+                { icon: BarChart3, title: 'Custom Reports', description: 'Erstelle individuelle Reports für Stakeholder.' },
+            ]}
+            steps={[
+                { step: '01', title: 'Kampagnen verbinden', desc: 'Verbinde deinen Meta Ads Account mit einem Klick.' },
+                { step: '02', title: 'Daten sync', desc: 'Alle Kampagnen-Daten werden automatisch synchronisiert.' },
+                { step: '03', title: 'Insights erhalten', desc: 'Dein Dashboard zeigt die wichtigsten Metriken und Trends.' },
+            ]}
+            onNavigate={onNavigate}
+            onSignIn={onSignIn}
+            onGetStarted={onGetStarted}
+        />
     );
 }

@@ -2,17 +2,18 @@
  * Font System — AdRuby 2026
  * 
  * Primary fonts loaded via <link> in index.html (Fontshare CDN):
- *   - Satoshi: Display / Headings (400, 500, 700, 900)
- *   - General Sans: Body / UI (400, 500, 600, 700)
+ *   - Clash Display: Display / Headings (400, 500, 600, 700)
+ *   - Satoshi: Body / UI (400, 500, 700, 900)
+ *   - General Sans: Secondary body (400, 500, 600, 700)
  *
  * Fallback: system-ui stack
  */
 
 /* Font utility classes */
 .font-display {
-  font-family: 'Satoshi', system-ui, -apple-system, sans-serif;
+  font-family: 'Clash Display', 'Satoshi', system-ui, -apple-system, sans-serif;
 }
 
 .font-body {
-  font-family: 'General Sans', system-ui, -apple-system, sans-serif;
+  font-family: 'Satoshi', 'General Sans', system-ui, -apple-system, sans-serif;
 }

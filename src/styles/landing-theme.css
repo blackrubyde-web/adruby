@@ -33,9 +33,9 @@
     --gradient-ruby: linear-gradient(135deg, #E63946 0%, #c01830 100%);
     --gradient-dark-glass: linear-gradient(180deg, rgba(20, 20, 20, 0.8) 0%, rgba(10, 10, 10, 0.9) 100%);
 
-    /* Font Families — Satoshi + General Sans */
-    --font-display: 'Satoshi', system-ui, sans-serif;
-    --font-body: 'General Sans', system-ui, sans-serif;
+    /* Font Families — Clash Display + Satoshi */
+    --font-display: 'Clash Display', 'Satoshi', system-ui, sans-serif;
+    --font-body: 'Satoshi', 'General Sans', system-ui, sans-serif;
 
     /* Scoped Base Styles */
     color: var(--foreground);
