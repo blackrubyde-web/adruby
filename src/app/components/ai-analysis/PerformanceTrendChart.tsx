@@ -26,14 +26,20 @@ interface PerformanceTrendChartProps {
 
 type TimeRange = '7d' | '14d' | '30d';
 
-const CustomTooltip = ({ active, payload, label }: any) => {
+interface TooltipPayloadEntry {
+    color: string;
+    name: string;
+    value: number;
+}
+
+const CustomTooltip = ({ active, payload, label }: { active?: boolean; payload?: TooltipPayloadEntry[]; label?: string }) => {
     if (!active || !payload?.length) return null;
 
     return (
         <div className="bg-zinc-900/95 backdrop-blur-xl border border-white/10 rounded-xl p-4 shadow-2xl">
             <p className="text-xs text-white/50 mb-2">{label}</p>
             <div className="space-y-2">
-                {payload.map((entry: any, index: number) => (
+                {payload.map((entry: TooltipPayloadEntry, index: number) => (
                     <div key={index} className="flex items-center justify-between gap-4">
                         <div className="flex items-center gap-2">
                             <div
@@ -130,8 +136,8 @@ export const PerformanceTrendChart = memo(function PerformanceTrendChart({
                                     key={metric}
                                     onClick={() => setActiveMetric(metric)}
                                     className={`px-3 py-1.5 text-xs font-medium rounded-md transition-all ${activeMetric === metric
-                                            ? 'bg-violet-600 text-white shadow-lg'
-                                            : 'text-white/50 hover:text-white'
+                                        ? 'bg-violet-600 text-white shadow-lg'
+                                        : 'text-white/50 hover:text-white'
                                         }`}
                                 >
                                     {metric.toUpperCase()}
@@ -146,8 +152,8 @@ export const PerformanceTrendChart = memo(function PerformanceTrendChart({
                                     key={range}
                                     onClick={() => setTimeRange(range)}
                                     className={`px-3 py-1.5 text-xs font-medium rounded-md transition-all ${timeRange === range
-                                            ? 'bg-white/10 text-white'
-                                            : 'text-white/50 hover:text-white'
+                                        ? 'bg-white/10 text-white'
+                                        : 'text-white/50 hover:text-white'
                                         }`}
                                 >
                                     {range}

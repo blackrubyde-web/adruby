@@ -34,8 +34,8 @@ interface InsightCard {
 export const InsightSummaryCards = memo(function InsightSummaryCards({
     campaigns,
     totalSpend: _totalSpend,
-    totalRevenue,
-    totalRoas,
+    totalRevenue: _totalRevenue,
+    totalRoas: _totalRoas,
 }: InsightSummaryCardsProps) {
     const insights = useMemo<InsightCard[]>(() => {
         if (!campaigns.length) {

@@ -3,7 +3,6 @@ import { Button } from '../../ui/button';
 import { Card } from '../../ui/card';
 import { Badge } from '../../ui/badge';
 import { Rocket, Target, Megaphone, MapPin, Users, Zap, DollarSign, Eye, CheckCircle2, Loader2, AlertTriangle, Sparkles, ExternalLink } from 'lucide-react';
-import { cn } from '../../../lib/utils';
 import { useState } from 'react';
 
 export const Step5_Review = () => {

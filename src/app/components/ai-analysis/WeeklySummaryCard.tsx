@@ -13,7 +13,6 @@ import {
 } from 'lucide-react';
 import { Card } from '../ui/card';
 import { Badge } from '../ui/badge';
-import { Progress } from '../ui/progress';
 
 interface Campaign {
     id: string;

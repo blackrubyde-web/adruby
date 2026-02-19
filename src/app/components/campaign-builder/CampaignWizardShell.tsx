@@ -115,7 +115,7 @@ export const CampaignWizardShell = ({ children }: { children: ReactNode }) => {
 
                         {/* Steps */}
                         <div className="flex justify-between items-start">
-                            {STEPS.map((step, index) => {
+                            {STEPS.map((step, _index) => {
                                 const isCompleted = currentStep > step.id;
                                 const isActive = currentStep === step.id;
                                 const isPending = currentStep < step.id;

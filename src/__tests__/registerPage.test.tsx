@@ -1,6 +1,7 @@
 import { render, screen } from '@testing-library/react';
 import { RegisterPage } from '../app/components/auth/RegisterPage';
 import React from 'react';
+import { vi } from 'vitest';
 
 // Mock motion/react so framer-motion doesn't interfere with tests
 vi.mock('motion/react', () => {

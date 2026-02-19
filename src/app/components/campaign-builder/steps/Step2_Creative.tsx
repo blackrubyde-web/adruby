@@ -1,7 +1,7 @@
 import { useCampaignBuilder } from '../CampaignBuilderContext';
 import { Card } from '../../ui/card';
 import { Badge } from '../../ui/badge';
-import { CheckCircle2, Sparkles, Filter, TrendingUp, Star, Search, ImageIcon, Plus } from 'lucide-react';
+import { CheckCircle2, Sparkles, Filter, TrendingUp, Search, ImageIcon, Plus } from 'lucide-react';
 import { cn } from '../../../lib/utils';
 import { useState, useMemo } from 'react';
 

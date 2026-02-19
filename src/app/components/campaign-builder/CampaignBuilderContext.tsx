@@ -254,7 +254,7 @@ export function CampaignBuilderProvider({ children }: { children: ReactNode }) {
 
     const [currentStep, setCurrentStep] = useState(savedProgress?.currentStep || 1);
     const [isLoading, setIsLoading] = useState(true);
-    const [isSaving, setIsSaving] = useState(false);
+    const [isSaving, _setIsSaving] = useState(false);
     const [isPublishing, setIsPublishing] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
