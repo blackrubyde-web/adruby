@@ -1,5 +1,5 @@
 import { memo, useMemo } from 'react';
-import { TrendingUp, TrendingDown, Minus, AlertTriangle, Zap, RefreshCw } from 'lucide-react';
+import { AlertTriangle, Zap, RefreshCw } from 'lucide-react';
 import { Card } from '../ui/card';
 import { Badge } from '../ui/badge';
 import { Progress } from '../ui/progress';
@@ -182,10 +182,10 @@ export const CreativeScoreCard = memo(function CreativeScoreCard({
                             <div
                                 key={i}
                                 className={`p-3 rounded-lg border ${imp.priority === 'high'
-                                        ? 'bg-red-500/5 border-red-500/20'
-                                        : imp.priority === 'medium'
-                                            ? 'bg-amber-500/5 border-amber-500/20'
-                                            : 'bg-blue-500/5 border-blue-500/20'
+                                    ? 'bg-red-500/5 border-red-500/20'
+                                    : imp.priority === 'medium'
+                                        ? 'bg-amber-500/5 border-amber-500/20'
+                                        : 'bg-blue-500/5 border-blue-500/20'
                                     }`}
                             >
                                 <div className="flex items-start gap-2">

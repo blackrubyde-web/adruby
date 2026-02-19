@@ -37,7 +37,7 @@ export function SettingsPage() {
   const [isSaving, setIsSaving] = useState(false);
   const { user, profile } = useAuthState();
   const { refreshProfile } = useAuthActions();
-  const { theme } = useTheme();
+  useTheme();
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);

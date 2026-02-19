@@ -7,7 +7,7 @@ import {
 } from 'lucide-react';
 import { Card } from '../ui/card';
 import { SelectField } from '../ui/select-field';
-import type { Campaign, Ad, RecommendationStyle } from './types';
+import type { Campaign, RecommendationStyle } from './types';
 import { getStatusColor, getPerformanceColor } from './types';
 
 interface Strategy {

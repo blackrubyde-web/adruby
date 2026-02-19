@@ -3,10 +3,7 @@ import {
     Brain,
     Trophy,
     AlertTriangle,
-    TrendingUp,
-    TrendingDown,
     Zap,
-    RefreshCw,
     ChevronRight,
     Sparkles,
     Target,
@@ -229,7 +226,7 @@ export const CreativeIntelligencePanel = memo(function CreativeIntelligencePanel
                                 return (
                                     <button
                                         key={tab.id}
-                                        onClick={() => setActiveTab(tab.id as any)}
+                                        onClick={() => setActiveTab(tab.id as typeof activeTab)}
                                         className={`flex-1 min-w-[100px] flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium transition-all ${activeTab === tab.id
                                             ? 'bg-violet-600 text-white shadow-lg'
                                             : 'text-white/50 hover:text-white hover:bg-white/5'

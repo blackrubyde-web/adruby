@@ -33,7 +33,7 @@ interface InsightCard {
 
 export const InsightSummaryCards = memo(function InsightSummaryCards({
     campaigns,
-    totalSpend,
+    totalSpend: _totalSpend,
     totalRevenue,
     totalRoas,
 }: InsightSummaryCardsProps) {
@@ -159,7 +159,7 @@ export const InsightSummaryCards = memo(function InsightSummaryCards({
                             </div>
                             {insight.trend && (
                                 <div className={`flex items-center gap-1 text-xs ${insight.trend === 'up' ? 'text-emerald-400' :
-                                        insight.trend === 'down' ? 'text-red-400' : 'text-white/40'
+                                    insight.trend === 'down' ? 'text-red-400' : 'text-white/40'
                                     }`}>
                                     <TrendIcon trend={insight.trend} />
                                     <span>{insight.trendValue}</span>
