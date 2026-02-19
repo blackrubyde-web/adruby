@@ -84,7 +84,7 @@ export const Header = memo(function Header({
         {isTrialUser && onUpgrade && (
           <button
             onClick={onUpgrade}
-            className="group px-3 sm:px-4 py-2 bg-gradient-to-r from-[#FF1F1F] via-rose-500 to-red-600 text-white rounded-xl font-bold text-sm flex items-center gap-2 hover:shadow-[0_0_20px_rgba(255,31,31,0.4)] transition-all hover:scale-105 active:scale-95 shrink-0"
+            className="group px-3 sm:px-4 py-2 bg-gradient-to-r from-[#E63946] via-rose-500 to-red-600 text-white rounded-xl font-bold text-sm flex items-center gap-2 hover:shadow-[0_0_20px_rgba(255,31,31,0.4)] transition-all hover:scale-105 active:scale-95 shrink-0"
           >
             <Crown className="w-4 h-4" />
             <span className="hidden sm:inline">Upgraden</span>
@@ -123,7 +123,7 @@ export const Header = memo(function Header({
             {isTrialUser && onUpgrade && (
               <>
                 <DropdownMenuItem
-                  className="cursor-pointer text-[#FF1F1F] focus:text-[#FF1F1F] focus:bg-[#FF1F1F]/10"
+                  className="cursor-pointer text-[#E63946] focus:text-[#E63946] focus:bg-[#E63946]/10"
                   onClick={onUpgrade}
                 >
                   <Crown className="mr-2 h-4 w-4" />

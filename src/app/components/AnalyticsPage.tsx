@@ -10,6 +10,7 @@ import { DashboardShell } from './layout/DashboardShell';
 import { Card, CardContent } from './ui/card';
 import { SelectField } from './ui/select-field';
 import { useAnalyticsData } from '../hooks/useAnalyticsData';
+import { formatCurrency, formatCompact } from '../utils/formatters';
 
 const LazyNotificationBanner = lazy(() =>
   import('./NotificationBanner').then((mod) => ({ default: mod.NotificationBanner }))
@@ -194,15 +195,7 @@ export function AnalyticsPage() {
   }, [warningMessage]);
 
 
-  const formatCurrency = (value: number) =>
-    new Intl.NumberFormat('de-DE', {
-      style: 'currency',
-      currency: 'EUR',
-      maximumFractionDigits: 0,
-    }).format(value);
 
-  const formatCompact = (value: number) =>
-    new Intl.NumberFormat('de-DE', { notation: 'compact', maximumFractionDigits: 1 }).format(value);
 
   const formatDeltaPct = (value?: number) => {
     if (value === undefined || value === null || Number.isNaN(value)) return 0;

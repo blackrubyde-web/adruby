@@ -81,7 +81,7 @@ export function TryItLiveSection({ onGetStarted }: TryItLiveSectionProps) {
             Live Demo
           </div>
           <h2 className="text-4xl sm:text-5xl font-black text-white mb-6">
-            Probier's <span className="text-[#FF1F1F]">live</span> aus.
+            Probier's <span className="text-[#E63946]">live</span> aus.
           </h2>
           <p className="text-lg text-white/50 max-w-xl mx-auto">
             Beschreibe dein Angebot und sieh zu, wie AdRuby in Sekunden eine High-Converting Ad generiert.
@@ -90,7 +90,7 @@ export function TryItLiveSection({ onGetStarted }: TryItLiveSectionProps) {
 
         <div className="relative group">
           {/* Glowing Border Gradient */}
-          <div className="absolute -inset-0.5 bg-gradient-to-br from-[#FF1F1F] via-purple-600 to-blue-600 rounded-3xl opacity-30 blur-lg group-hover:opacity-60 transition-opacity duration-500" />
+          <div className="absolute -inset-0.5 bg-gradient-to-br from-[#E63946] via-purple-600 to-blue-600 rounded-3xl opacity-30 blur-lg group-hover:opacity-60 transition-opacity duration-500" />
 
           <div className="relative bg-[#0A0A0A] border border-white/10 rounded-3xl p-6 sm:p-10 shadow-2xl overflow-hidden">
 
@@ -101,7 +101,7 @@ export function TryItLiveSection({ onGetStarted }: TryItLiveSectionProps) {
                 <textarea
                   value={livePrompt}
                   onChange={(e) => setLivePrompt(e.target.value)}
-                  className="w-full px-5 py-4 rounded-2xl bg-white/5 border border-white/10 text-white placeholder:text-white/20 focus:outline-none focus:border-[#FF1F1F]/50 focus:bg-white/10 transition-all min-h-[120px] resize-none text-lg"
+                  className="w-full px-5 py-4 rounded-2xl bg-white/5 border border-white/10 text-white placeholder:text-white/20 focus:outline-none focus:border-[#E63946]/50 focus:bg-white/10 transition-all min-h-[120px] resize-none text-lg"
                   placeholder="z.B. Online Fitness Coaching für vielbeschäftigte Väter. 20 Minuten Workouts ohne Equipment."
                 />
               </div>
@@ -112,7 +112,7 @@ export function TryItLiveSection({ onGetStarted }: TryItLiveSectionProps) {
                   <SelectField
                     value={livePlatform}
                     onChange={(e) => setLivePlatform(e.target.value)}
-                    className="bg-white/5 border-white/10 text-white hover:border-[#FF1F1F]/50 focus:ring-[#FF1F1F]/40"
+                    className="bg-white/5 border-white/10 text-white hover:border-[#E63946]/50 focus:ring-[#E63946]/40"
                     iconClassName="text-white/60"
                   >
                     <option className="bg-black">Facebook Ads</option>
@@ -126,7 +126,7 @@ export function TryItLiveSection({ onGetStarted }: TryItLiveSectionProps) {
                   <SelectField
                     value={liveGoal}
                     onChange={(e) => setLiveGoal(e.target.value)}
-                    className="bg-white/5 border-white/10 text-white hover:border-[#FF1F1F]/50 focus:ring-[#FF1F1F]/40"
+                    className="bg-white/5 border-white/10 text-white hover:border-[#E63946]/50 focus:ring-[#E63946]/40"
                     iconClassName="text-white/60"
                   >
                     <option className="bg-black">Sales (Conversions)</option>
@@ -141,7 +141,7 @@ export function TryItLiveSection({ onGetStarted }: TryItLiveSectionProps) {
                 <button
                   onClick={handleLiveGenerate}
                   disabled={!livePrompt.trim() || isLiveGenerating}
-                  className="w-full py-4 mt-4 bg-[#FF1F1F] text-white rounded-xl font-bold text-lg hover:shadow-[0_0_30px_rgba(255,31,31,0.4)] transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-3 group/btn"
+                  className="w-full py-4 mt-4 bg-[#E63946] text-white rounded-xl font-bold text-lg hover:shadow-[0_0_30px_rgba(255,31,31,0.4)] transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-3 group/btn"
                 >
                   {isLiveGenerating ? (
                     <>
@@ -176,7 +176,7 @@ export function TryItLiveSection({ onGetStarted }: TryItLiveSectionProps) {
                       </p>
                     </div>
 
-                    <PrimaryButton onClick={onGetStarted} className="w-full sm:w-auto px-8 mx-auto shadow-xl shadow-primary/20 bg-[#FF1F1F] hover:bg-[#D41919] text-white">
+                    <PrimaryButton onClick={onGetStarted} className="w-full sm:w-auto px-8 mx-auto shadow-xl shadow-primary/20 bg-[#E63946] hover:bg-[#D41919] text-white">
                       Start 7-Day Free Trial
                       <ArrowRight className="w-4 h-4 ml-2" />
                     </PrimaryButton>
@@ -209,8 +209,8 @@ export function TryItLiveSection({ onGetStarted }: TryItLiveSectionProps) {
                       >
                         <div className={`
                             w-5 h-5 rounded-full flex items-center justify-center border transition-colors
-                            ${isCompleted ? 'bg-[#FF1F1F] border-[#FF1F1F] text-white' : ''}
-                            ${isActive ? 'border-[#FF1F1F] text-[#FF1F1F] animate-pulse' : ''}
+                            ${isCompleted ? 'bg-[#E63946] border-[#E63946] text-white' : ''}
+                            ${isActive ? 'border-[#E63946] text-[#E63946] animate-pulse' : ''}
                             ${isPending ? 'border-white/20 text-white/20' : ''}
                           `}>
                           {isCompleted && <CheckCircle2 className="w-3 h-3" />}

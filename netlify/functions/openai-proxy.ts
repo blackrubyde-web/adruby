@@ -8,7 +8,7 @@ import { isIP } from 'node:net';
  */
 export const handler: Handler = async (event: HandlerEvent) => {
     const corsHeaders = {
-        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Origin': process.env.FRONTEND_URL || 'https://adruby.de',
         'Access-Control-Allow-Headers': 'Content-Type, Authorization',
         'Access-Control-Allow-Methods': 'POST, OPTIONS'
     };
@@ -37,7 +37,6 @@ export const handler: Handler = async (event: HandlerEvent) => {
     const SUPABASE_URL = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
     const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY || process.env.VITE_SUPABASE_ANON_KEY;
     const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
-    const allowAnonymous = process.env.ALLOW_ANON_OPENAI_PROXY === 'true';
 
     // Check OpenAI Key
     if (!OPENAI_API_KEY) {
@@ -49,34 +48,33 @@ export const handler: Handler = async (event: HandlerEvent) => {
     }
 
     try {
+        // Auth is always required
         const authHeader = event.headers.authorization || event.headers.Authorization;
-        if (!allowAnonymous) {
-            if (!authHeader) {
-                return {
-                    statusCode: 401,
-                    headers: corsHeaders,
-                    body: JSON.stringify({ error: 'Unauthorized' })
-                };
-            }
-            if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
-                return {
-                    statusCode: 500,
-                    headers: corsHeaders,
-                    body: JSON.stringify({ error: 'Server configuration error: Supabase auth misconfigured' })
-                };
-            }
-            const authClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
-                global: { headers: { Authorization: authHeader } }
-            });
-            const { data: { user }, error: authError } = await authClient.auth.getUser();
-            if (authError || !user) {
-                console.error('❌ Auth failed:', authError);
-                return {
-                    statusCode: 401,
-                    headers: corsHeaders,
-                    body: JSON.stringify({ error: 'Unauthorized' })
-                };
-            }
+        if (!authHeader) {
+            return {
+                statusCode: 401,
+                headers: corsHeaders,
+                body: JSON.stringify({ error: 'Unauthorized' })
+            };
+        }
+        if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
+            return {
+                statusCode: 500,
+                headers: corsHeaders,
+                body: JSON.stringify({ error: 'Server configuration error: Supabase auth misconfigured' })
+            };
+        }
+        const authClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+            global: { headers: { Authorization: authHeader } }
+        });
+        const { data: { user }, error: authError } = await authClient.auth.getUser();
+        if (authError || !user) {
+            console.error('❌ Auth failed:', authError);
+            return {
+                statusCode: 401,
+                headers: corsHeaders,
+                body: JSON.stringify({ error: 'Unauthorized' })
+            };
         }
 
         // Parse request body

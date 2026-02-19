@@ -435,6 +435,28 @@ export async function handler(event) {
 
   console.log('[Webhook] Event received', { type, eventId: stripeEvent.id });
 
+  // Idempotency: check if event already processed
+  try {
+    const { data: existingEvent } = await supabaseAdmin
+      .from('webhook_events')
+      .select('id')
+      .eq('stripe_event_id', stripeEvent.id)
+      .maybeSingle();
+
+    if (existingEvent) {
+      console.log('[Webhook] Event already processed, skipping', { eventId: stripeEvent.id });
+      return withCors({ statusCode: 200, body: JSON.stringify({ received: true, duplicate: true }) });
+    }
+
+    await supabaseAdmin.from('webhook_events').insert({
+      stripe_event_id: stripeEvent.id,
+      event_type: type,
+      processed_at: new Date().toISOString()
+    });
+  } catch (idempotencyErr) {
+    console.warn('[Webhook] Idempotency check failed, processing anyway', idempotencyErr?.message);
+  }
+
   try {
     if (type === 'checkout.session.completed') {
       console.log('[Webhook] checkout.session.completed payload', {
@@ -500,9 +522,9 @@ export async function handler(event) {
         orderId
           ? { id: orderId }
           : {
-              stripe_invoice_id: obj.id,
-              stripe_subscription_id: obj.subscription || null
-            },
+            stripe_invoice_id: obj.id,
+            stripe_subscription_id: obj.subscription || null
+          },
         {
           status: 'paid',
           stripe_invoice_id: obj.id,
@@ -530,9 +552,9 @@ export async function handler(event) {
         orderId
           ? { id: orderId }
           : {
-              stripe_invoice_id: obj.id,
-              stripe_subscription_id: obj.subscription || null
-            },
+            stripe_invoice_id: obj.id,
+            stripe_subscription_id: obj.subscription || null
+          },
         {
           status: 'invoice_failed',
           stripe_invoice_id: obj.id,

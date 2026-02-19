@@ -1,5 +1,7 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+import { motion } from 'motion/react';
 import { Mail, Lock, User, Eye, EyeOff, ArrowRight, Sparkles, Check, AlertCircle } from 'lucide-react';
+import { stagger, fadeUp } from '../../lib/motion';
 
 const DRAFT_KEY = 'ad_ruby_registration_draft';
 const AUTH_HOLD_KEY = 'adruby_hold_auth_redirect';
@@ -131,13 +133,27 @@ export function RegisterPage({
   };
 
   const benefits = [
-    'Unlimited AI ad creatives',
-    '1,000 credits to start',
-    'Real-time analytics',
-    'Multi-platform support',
-    'Advanced targeting',
-    'Priority support',
+    'Unbegrenzte KI Ad Creatives',
+    '1.000 Credits zum Start',
+    'Echtzeit-Analytics',
+    'Multi-Plattform Support',
+    'Erweiterte Zielgruppen',
+    'Prioritäts-Support',
   ];
+
+  const passwordStrength = useMemo(() => {
+    if (!password) return { score: 0, label: '', color: '' };
+    let score = 0;
+    if (password.length >= 8) score++;
+    if (password.length >= 12) score++;
+    if (/[A-Z]/.test(password) && /[a-z]/.test(password)) score++;
+    if (/\d/.test(password)) score++;
+    if (/[^A-Za-z0-9]/.test(password)) score++;
+    if (score <= 1) return { score: 1, label: 'Schwach', color: 'bg-red-500' };
+    if (score <= 2) return { score: 2, label: 'Mittel', color: 'bg-amber-500' };
+    if (score <= 3) return { score: 3, label: 'Gut', color: 'bg-emerald-400' };
+    return { score: 4, label: 'Stark', color: 'bg-emerald-500' };
+  }, [password]);
 
   const resumeDraft = () => {
     if (!draft) return;
@@ -164,7 +180,12 @@ export function RegisterPage({
       <div className="w-full max-w-6xl">
         <div className="grid lg:grid-cols-2 gap-8 items-center">
           {/* Left: Benefits Panel */}
-          <div className="hidden lg:block">
+          <motion.div
+            className="hidden lg:block"
+            variants={stagger}
+            initial="hidden"
+            animate="visible"
+          >
             <div className="max-w-md">
               {/* Logo */}
               <div className="flex items-center gap-2 mb-8">
@@ -174,42 +195,46 @@ export function RegisterPage({
                 <span className="font-bold text-2xl">AdRuby</span>
               </div>
 
-              <h1 className="text-4xl font-bold mb-4">
-                Start your
+              <motion.h1 className="text-4xl font-bold mb-4" variants={fadeUp}>
+                Starte deine
                 <br />
-                <span className="text-primary">7-day free trial</span>
-              </h1>
-              <p className="text-lg text-muted-foreground mb-8">
-                Join 50,000+ marketing professionals creating high-converting Facebook Ads with AI.
-              </p>
+                <span className="text-primary">7-Tage Testphase</span>
+              </motion.h1>
+              <motion.p className="text-lg text-muted-foreground mb-8" variants={fadeUp}>
+                Schließe dich 50.000+ Marketing-Profis an, die hochkonvertierende Ads mit KI erstellen.
+              </motion.p>
 
               {/* Benefits List */}
               <div className="space-y-4">
                 {benefits.map((benefit, index) => (
-                  <div key={index} className="flex items-center gap-3">
+                  <motion.div key={index} className="flex items-center gap-3" variants={fadeUp}>
                     <div className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
                       <Check className="w-4 h-4 text-primary" />
                     </div>
                     <span className="text-foreground">{benefit}</span>
-                  </div>
+                  </motion.div>
                 ))}
               </div>
 
               {/* Trust Badge */}
-              <div className="mt-8 p-4 bg-muted/50 border border-border rounded-xl">
+              <motion.div className="mt-8 p-4 bg-muted/50 border border-border rounded-xl" variants={fadeUp}>
                 <p className="text-sm text-muted-foreground">
-                  💳 No credit card required for trial
+                  💳 Keine Kreditkarte für die Testphase nötig
                   <br />
-                  🔒 Enterprise-grade security
+                  🔒 Enterprise-Grade Sicherheit
                   <br />
-                  ✨ Cancel anytime, no questions asked
+                  ✨ Jederzeit kündbar, ohne Fragen
                 </p>
-              </div>
+              </motion.div>
             </div>
-          </div>
+          </motion.div>
 
           {/* Right: Registration Form */}
-          <div>
+          <motion.div
+            initial={{ opacity: 0, y: 24 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.15, ease: [0.25, 0.46, 0.45, 0.94] as [number, number, number, number] }}
+          >
             <div className="bg-card border border-border rounded-2xl p-8 shadow-xl">
               {/* Mobile Logo */}
               <div className="lg:hidden flex items-center justify-center gap-2 mb-6">
@@ -221,8 +246,8 @@ export function RegisterPage({
 
               {/* Header */}
               <div className="text-center mb-8">
-                <h2 className="text-3xl font-bold mb-2">Create your account</h2>
-                <p className="text-muted-foreground">Start your free trial today</p>
+                <h2 className="text-3xl font-bold mb-2">Konto erstellen</h2>
+                <p className="text-muted-foreground">Starte deine kostenlose Testphase</p>
               </div>
 
               {/* Progress Cluster */}
@@ -231,11 +256,10 @@ export function RegisterPage({
                   {steps.map((step, index) => (
                     <div key={step.id} className="flex items-center gap-3">
                       <div
-                        className={`w-9 h-9 rounded-full border-2 flex items-center justify-center text-sm font-semibold ${
-                          step.id === 1
-                            ? 'bg-primary text-primary-foreground border-primary'
+                        className={`w-9 h-9 rounded-full border-2 flex items-center justify-center text-sm font-semibold transition-all duration-300 ${step.id === 1
+                            ? 'bg-primary text-primary-foreground border-primary shadow-sm shadow-primary/20'
                             : 'border-border text-muted-foreground'
-                        }`}
+                          }`}
                       >
                         {step.id}
                       </div>
@@ -244,7 +268,7 @@ export function RegisterPage({
                     </div>
                   ))}
                 </div>
-                <p className="mt-3 text-xs text-muted-foreground text-center">Step 1 of 3</p>
+                <p className="mt-3 text-xs text-muted-foreground text-center">Schritt 1 von 3</p>
               </div>
 
               {submissionState === 'success' && (
@@ -254,27 +278,27 @@ export function RegisterPage({
                       <Check className="w-5 h-5 text-green-600" />
                     </div>
                     <div className="flex-1">
-                      <h3 className="font-semibold text-foreground">Account created</h3>
+                      <h3 className="font-semibold text-foreground">Konto erstellt</h3>
                       <p className="text-sm text-muted-foreground">
-                        Your account is ready. Continue to checkout to activate your plan.
+                        Dein Konto ist bereit. Fahre mit der Zahlung fort, um deinen Plan zu aktivieren.
                       </p>
                       <div className="mt-4 flex flex-col sm:flex-row gap-3">
                         <button
                           onClick={onProceedToPayment}
                           className="px-4 py-2.5 bg-primary text-primary-foreground rounded-xl font-semibold"
                         >
-                          Continue to payment
+                          Weiter zur Zahlung
                         </button>
                         <button
                           onClick={() => setRedirectCancelled(true)}
                           className="px-4 py-2.5 bg-muted hover:bg-muted/80 rounded-xl font-semibold"
                         >
-                          {redirectCancelled ? 'Auto-redirect cancelled' : 'Cancel auto-redirect'}
+                          {redirectCancelled ? 'Auto-Weiterleitung abgebrochen' : 'Auto-Weiterleitung abbrechen'}
                         </button>
                       </div>
                       {!redirectCancelled && (
                         <p className="mt-3 text-xs text-muted-foreground">
-                          Redirecting in {redirectCountdown}s...
+                          Weiterleitung in {redirectCountdown}s...
                         </p>
                       )}
                     </div>
@@ -289,16 +313,15 @@ export function RegisterPage({
                       <Mail className="w-5 h-5 text-primary" />
                     </div>
                     <div className="flex-1">
-                      <h3 className="font-semibold text-foreground">Confirm your email</h3>
+                      <h3 className="font-semibold text-foreground">E-Mail bestätigen</h3>
                       <p className="text-sm text-muted-foreground">
-                        We sent a confirmation link to {email || 'your email'}. Please verify, then
-                        sign in.
+                        Wir haben einen Bestätigungslink an {email || 'deine E-Mail'} gesendet. Bitte bestätige und melde dich dann an.
                       </p>
                       <button
                         onClick={onNavigateToLogin}
                         className="mt-4 px-4 py-2.5 bg-primary text-primary-foreground rounded-xl font-semibold"
                       >
-                        Go to login
+                        Zum Login
                       </button>
                     </div>
                   </div>
@@ -310,7 +333,7 @@ export function RegisterPage({
                 <div className="mb-6 p-4 bg-red-500/10 border border-red-500/20 rounded-xl flex items-start gap-3">
                   <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
                   <div>
-                    <p className="font-medium text-red-600">Error</p>
+                    <p className="font-medium text-red-600">Fehler</p>
                     <p className="text-sm text-red-600/80">{error}</p>
                   </div>
                 </div>
@@ -322,22 +345,22 @@ export function RegisterPage({
                     <Sparkles className="w-5 h-5 text-primary" />
                   </div>
                   <div className="flex-1">
-                    <div className="font-semibold text-foreground">Resume your draft?</div>
+                    <div className="font-semibold text-foreground">Entwurf fortsetzen?</div>
                     <p className="text-sm text-muted-foreground">
-                      We found an unfinished signup. Pick up where you left off.
+                      Wir haben eine unfertige Registrierung gefunden. Mach weiter, wo du aufgehört hast.
                     </p>
                     <div className="mt-3 flex flex-col sm:flex-row gap-2">
                       <button
                         onClick={resumeDraft}
                         className="px-3 py-2 bg-primary text-primary-foreground rounded-lg text-sm font-semibold"
                       >
-                        Resume draft
+                        Fortsetzen
                       </button>
                       <button
                         onClick={discardDraft}
                         className="px-3 py-2 bg-muted hover:bg-muted/80 rounded-lg text-sm font-semibold"
                       >
-                        Start fresh
+                        Neu beginnen
                       </button>
                     </div>
                   </div>
@@ -369,7 +392,7 @@ export function RegisterPage({
                       d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
                     />
                   </svg>
-                  Sign up with Google
+                  Mit Google registrieren
                 </button>
               )}
 
@@ -380,7 +403,7 @@ export function RegisterPage({
                     <div className="w-full border-t border-border"></div>
                   </div>
                   <div className="relative flex justify-center text-sm">
-                    <span className="px-4 bg-card text-muted-foreground">Or sign up with email</span>
+                    <span className="px-4 bg-card text-muted-foreground">Oder mit E-Mail registrieren</span>
                   </div>
                 </div>
               )}
@@ -388,121 +411,139 @@ export function RegisterPage({
               {/* Email Registration Form */}
               {submissionState === 'idle' && (
                 <form onSubmit={handleSubmit} className="space-y-4">
-                {/* Name */}
-                <div>
-                  <label htmlFor="name" className="block text-sm font-medium mb-2">
-                    Full Name
-                  </label>
-                  <div className="relative">
-                    <User className="w-5 h-5 text-muted-foreground absolute left-3 top-1/2 -translate-y-1/2" />
-                    <input
-                      id="name"
-                      type="text"
-                      value={name}
-                      onChange={(e) => setName(e.target.value)}
-                      placeholder="John Doe"
-                      disabled={isLoading}
-                      className="w-full pl-11 pr-4 py-3 bg-background border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all disabled:opacity-50"
-                    />
+                  {/* Name */}
+                  <div>
+                    <label htmlFor="name" className="block text-sm font-medium mb-2">
+                      Vollständiger Name
+                    </label>
+                    <div className="relative">
+                      <User className="w-5 h-5 text-muted-foreground absolute left-3 top-1/2 -translate-y-1/2" />
+                      <input
+                        id="name"
+                        type="text"
+                        value={name}
+                        onChange={(e) => setName(e.target.value)}
+                        placeholder="Max Mustermann"
+                        disabled={isLoading}
+                        aria-label="Vollständiger Name"
+                        className="w-full pl-11 pr-4 py-3 bg-background border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary/50 transition-all disabled:opacity-50"
+                      />
+                    </div>
                   </div>
-                </div>
 
-                {/* Email */}
-                <div>
-                  <label htmlFor="email" className="block text-sm font-medium mb-2">
-                    Email Address
-                  </label>
-                  <div className="relative">
-                    <Mail className="w-5 h-5 text-muted-foreground absolute left-3 top-1/2 -translate-y-1/2" />
-                    <input
-                      id="email"
-                      type="email"
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      placeholder="you@example.com"
-                      disabled={isLoading}
-                      className="w-full pl-11 pr-4 py-3 bg-background border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all disabled:opacity-50"
-                    />
+                  {/* Email */}
+                  <div>
+                    <label htmlFor="email" className="block text-sm font-medium mb-2">
+                      E-Mail-Adresse
+                    </label>
+                    <div className="relative">
+                      <Mail className="w-5 h-5 text-muted-foreground absolute left-3 top-1/2 -translate-y-1/2" />
+                      <input
+                        id="email"
+                        type="email"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        placeholder="du@beispiel.de"
+                        disabled={isLoading}
+                        aria-label="E-Mail-Adresse"
+                        className="w-full pl-11 pr-4 py-3 bg-background border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary/50 transition-all disabled:opacity-50"
+                      />
+                    </div>
                   </div>
-                </div>
 
-                {/* Password */}
-                <div>
-                  <label htmlFor="password" className="block text-sm font-medium mb-2">
-                    Password
-                  </label>
-                  <div className="relative">
-                    <Lock className="w-5 h-5 text-muted-foreground absolute left-3 top-1/2 -translate-y-1/2" />
-                    <input
-                      id="password"
-                      type={showPassword ? 'text' : 'password'}
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      placeholder="At least 8 characters"
-                      disabled={isLoading}
-                      className="w-full pl-11 pr-12 py-3 bg-background border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all disabled:opacity-50"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setShowPassword(!showPassword)}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
-                    >
-                      {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
-                    </button>
+                  {/* Password */}
+                  <div>
+                    <label htmlFor="password" className="block text-sm font-medium mb-2">
+                      Passwort
+                    </label>
+                    <div className="relative">
+                      <Lock className="w-5 h-5 text-muted-foreground absolute left-3 top-1/2 -translate-y-1/2" />
+                      <input
+                        id="password"
+                        type={showPassword ? 'text' : 'password'}
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        placeholder="Mindestens 8 Zeichen"
+                        disabled={isLoading}
+                        aria-label="Passwort"
+                        className="w-full pl-11 pr-12 py-3 bg-background border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary/50 transition-all disabled:opacity-50"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword(!showPassword)}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                      >
+                        {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                      </button>
+                    </div>
+                    {/* Password Strength Indicator */}
+                    {password && (
+                      <div className="mt-2 space-y-1">
+                        <div className="flex gap-1">
+                          {Array.from({ length: 4 }).map((_, i) => (
+                            <div
+                              key={i}
+                              className={`h-1 flex-1 rounded-full transition-all duration-300 ${i < passwordStrength.score ? passwordStrength.color : 'bg-muted'}`}
+                            />
+                          ))}
+                        </div>
+                        <p className="text-xs text-muted-foreground">{passwordStrength.label}</p>
+                      </div>
+                    )}
                   </div>
-                </div>
 
-                {/* Terms Checkbox */}
-                <div className="flex items-start gap-3">
-                  <input
-                    id="terms"
-                    type="checkbox"
-                    checked={acceptTerms}
-                    onChange={(e) => setAcceptTerms(e.target.checked)}
-                    className="mt-1 w-4 h-4 rounded border-border text-primary focus:ring-2 focus:ring-primary/50"
-                  />
-                  <label htmlFor="terms" className="text-sm text-muted-foreground">
-                    I agree to the{' '}
-                    <a href="#" className="text-primary hover:underline">
-                      Terms of Service
-                    </a>{' '}
-                    and{' '}
-                    <a href="#" className="text-primary hover:underline">
-                      Privacy Policy
-                    </a>
-                  </label>
-                </div>
+                  {/* Terms Checkbox */}
+                  <div className="flex items-start gap-3">
+                    <input
+                      id="terms"
+                      type="checkbox"
+                      checked={acceptTerms}
+                      onChange={(e) => setAcceptTerms(e.target.checked)}
+                      className="mt-1 w-4 h-4 rounded border-border text-primary focus:ring-2 focus:ring-primary/50"
+                    />
+                    <label htmlFor="terms" className="text-sm text-muted-foreground">
+                      Ich stimme den{' '}
+                      <a href="#" className="text-primary hover:underline">
+                        Nutzungsbedingungen
+                      </a>{' '}
+                      und der{' '}
+                      <a href="#" className="text-primary hover:underline">
+                        Datenschutzerklärung
+                      </a>{' '}
+                      zu
+                    </label>
+                  </div>
 
-                {/* Submit Button */}
-                <button
-                  type="submit"
-                  disabled={isLoading}
-                  className="w-full py-3 bg-primary text-white rounded-xl font-semibold hover:bg-primary/90 transition-all hover:scale-[1.02] flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
-                >
-                  {isLoading ? (
-                    <>
-                      <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                      Creating account...
-                    </>
-                  ) : (
-                    <>
-                      Start Free Trial
-                      <ArrowRight className="w-5 h-5" />
-                    </>
-                  )}
-                </button>
+                  {/* Submit Button */}
+                  <button
+                    type="submit"
+                    disabled={isLoading}
+                    className="w-full py-3 bg-primary text-white rounded-xl font-semibold hover:bg-primary/90 transition-all hover:scale-[1.02] flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
+                  >
+                    {isLoading ? (
+                      <>
+                        <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                        Konto wird erstellt...
+                      </>
+                    ) : (
+                      <>
+                        Kostenlos starten
+                        <ArrowRight className="w-5 h-5" />
+                      </>
+                    )}
+                  </button>
                 </form>
               )}
 
               {/* Login Link */}
               <div className="mt-6 text-center text-sm text-muted-foreground">
-                Already have an account?{' '}
+                Bereits ein Konto?{' '}
                 <button onClick={onNavigateToLogin} className="text-primary font-medium hover:underline">
-                  Sign in
+                  Anmelden
                 </button>
               </div>
             </div>
-          </div>
+          </motion.div>
         </div>
       </div>
     </div>

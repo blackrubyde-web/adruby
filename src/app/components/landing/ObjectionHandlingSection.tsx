@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { motion, AnimatePresence } from 'motion/react';
 import { ChevronDown, Sparkles, Users, Zap, Shield, TrendingUp } from 'lucide-react';
 
 export function ObjectionHandlingSection() {
@@ -40,27 +41,37 @@ export function ObjectionHandlingSection() {
     return (
         <section className="py-24 sm:py-32 bg-gradient-to-b from-muted/20 via-background to-muted/20 relative">
             {/* Ambient Glow */}
-            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-[#FF1F1F]/3 blur-[150px] rounded-full pointer-events-none" />
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-[#E63946]/3 blur-[150px] rounded-full pointer-events-none" />
 
             <div className="max-w-4xl mx-auto px-4 sm:px-6 relative z-10">
                 {/* Header */}
-                <div className="text-center mb-16 sm:mb-20">
-                    <h2 className="text-4xl sm:text-5xl md:text-6xl font-black text-foreground mb-6 tracking-tight">
-                        Noch <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#FF1F1F] to-rose-600">Fragen?</span>
+                <motion.div
+                    className="text-center mb-16 sm:mb-20"
+                    initial={{ opacity: 0, y: 24 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    viewport={{ once: true, margin: '-80px' }}
+                    transition={{ duration: 0.6, ease: [0.23, 1, 0.32, 1] }}
+                >
+                    <h2 className="text-4xl sm:text-5xl md:text-6xl font-black text-foreground mb-6 tracking-tight font-display">
+                        Noch <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#E63946] to-rose-600">Fragen?</span>
                     </h2>
                     <p className="text-lg sm:text-xl text-muted-foreground max-w-2xl mx-auto">
                         Wir beantworten die häufigsten Bedenken unserer Kunden
                     </p>
-                </div>
+                </motion.div>
 
-                {/* Objections Accordion */}
+                {/* Objections Accordion — Motion AnimatePresence */}
                 <div className="space-y-4">
                     {objections.map((objection, index) => (
-                        <div
+                        <motion.div
                             key={index}
+                            initial={{ opacity: 0, y: 16 }}
+                            whileInView={{ opacity: 1, y: 0 }}
+                            viewport={{ once: true, margin: '-40px' }}
+                            transition={{ delay: index * 0.06, duration: 0.5 }}
                             className={`bg-card border rounded-2xl overflow-hidden transition-all duration-300 ${openIndex === index
-                                    ? 'border-primary shadow-[0_8px_32px_rgba(255,31,31,0.15)]'
-                                    : 'border-border hover:border-border/80 hover:shadow-[0_4px_16px_rgba(0,0,0,0.08)]'
+                                ? 'border-primary/50 shadow-[0_8px_32px_rgba(230,57,70,0.12)]'
+                                : 'border-border hover:border-border/80 hover:shadow-[0_4px_16px_rgba(0,0,0,0.08)]'
                                 }`}
                         >
                             {/* Question */}
@@ -70,8 +81,8 @@ export function ObjectionHandlingSection() {
                             >
                                 <div className="flex items-center gap-4 flex-1">
                                     <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${openIndex === index
-                                            ? 'from-[#FF1F1F] to-rose-600'
-                                            : 'from-muted to-muted-foreground/20'
+                                        ? 'from-[#E63946] to-rose-600'
+                                        : 'from-muted to-muted-foreground/20'
                                         } flex items-center justify-center flex-shrink-0 transition-all duration-300`}>
                                         <objection.icon className="w-6 h-6 text-white" />
                                     </div>
@@ -79,54 +90,80 @@ export function ObjectionHandlingSection() {
                                         {objection.question}
                                     </h3>
                                 </div>
-                                <ChevronDown
-                                    className={`w-5 h-5 text-muted-foreground transition-transform duration-300 flex-shrink-0 ${openIndex === index ? 'rotate-180' : ''
-                                        }`}
-                                />
+                                <motion.div
+                                    animate={{ rotate: openIndex === index ? 180 : 0 }}
+                                    transition={{ duration: 0.3, ease: 'easeInOut' }}
+                                    className="flex-shrink-0"
+                                >
+                                    <ChevronDown className="w-5 h-5 text-muted-foreground" />
+                                </motion.div>
                             </button>
 
-                            {/* Answer */}
-                            <div
-                                className={`overflow-hidden transition-all duration-300 ${openIndex === index ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0'
-                                    }`}
-                            >
-                                <div className="px-6 sm:px-8 pb-6 sm:pb-8 pt-0">
-                                    <div className="pl-16">
-                                        <p className="text-base text-muted-foreground leading-relaxed mb-4">
-                                            {objection.answer}
-                                        </p>
+                            {/* Answer — AnimatePresence height animation */}
+                            <AnimatePresence initial={false}>
+                                {openIndex === index && (
+                                    <motion.div
+                                        initial={{ height: 0, opacity: 0 }}
+                                        animate={{ height: 'auto', opacity: 1 }}
+                                        exit={{ height: 0, opacity: 0 }}
+                                        transition={{ duration: 0.35, ease: [0.23, 1, 0.32, 1] }}
+                                        className="overflow-hidden"
+                                    >
+                                        <div className="px-6 sm:px-8 pb-6 sm:pb-8 pt-0">
+                                            <div className="pl-16">
+                                                <p className="text-base text-muted-foreground leading-relaxed mb-4">
+                                                    {objection.answer}
+                                                </p>
 
-                                        {/* Stat Badge */}
-                                        <div className="inline-flex items-center gap-3 px-4 py-2 bg-muted/50 border border-border rounded-lg">
-                                            <span className="text-sm font-medium text-muted-foreground">
-                                                {objection.stats.label}:
-                                            </span>
-                                            <span className={`text-lg font-bold ${objection.stats.color}`}>
-                                                {objection.stats.value}
-                                            </span>
+                                                {/* Stat Badge — slides in */}
+                                                <motion.div
+                                                    initial={{ opacity: 0, x: -16 }}
+                                                    animate={{ opacity: 1, x: 0 }}
+                                                    transition={{ delay: 0.15, duration: 0.4 }}
+                                                    className="inline-flex items-center gap-3 px-4 py-2 bg-muted/50 border border-border rounded-lg"
+                                                >
+                                                    <span className="text-sm font-medium text-muted-foreground">
+                                                        {objection.stats.label}:
+                                                    </span>
+                                                    <span className={`text-lg font-bold ${objection.stats.color}`}>
+                                                        {objection.stats.value}
+                                                    </span>
+                                                </motion.div>
+                                            </div>
                                         </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
+                                    </motion.div>
+                                )}
+                            </AnimatePresence>
+                        </motion.div>
                     ))}
                 </div>
 
-                {/* Trust Indicators */}
-                <div className="mt-16 grid sm:grid-cols-3 gap-6">
-                    <div className="text-center p-6 bg-card border border-border rounded-xl">
-                        <div className="text-3xl font-black text-green-500 mb-2">30 Tage</div>
-                        <p className="text-sm text-muted-foreground">Geld-zurück-Garantie</p>
-                    </div>
-                    <div className="text-center p-6 bg-card border border-border rounded-xl">
-                        <div className="text-3xl font-black text-blue-500 mb-2">DSGVO</div>
-                        <p className="text-sm text-muted-foreground">100% konform</p>
-                    </div>
-                    <div className="text-center p-6 bg-card border border-border rounded-xl">
-                        <div className="text-3xl font-black text-purple-500 mb-2">24/7</div>
-                        <p className="text-sm text-muted-foreground">Support verfügbar</p>
-                    </div>
-                </div>
+                {/* Trust Indicators — staggered entrance */}
+                <motion.div
+                    className="mt-16 grid sm:grid-cols-3 gap-6"
+                    initial="hidden"
+                    whileInView="visible"
+                    viewport={{ once: true, margin: '-60px' }}
+                    variants={{ visible: { transition: { staggerChildren: 0.1 } } }}
+                >
+                    {[
+                        { value: '30 Tage', label: 'Geld-zurück-Garantie', color: 'text-green-500' },
+                        { value: 'DSGVO', label: '100% konform', color: 'text-blue-500' },
+                        { value: '24/7', label: 'Support verfügbar', color: 'text-purple-500' },
+                    ].map((item, i) => (
+                        <motion.div
+                            key={i}
+                            variants={{
+                                hidden: { opacity: 0, y: 16 },
+                                visible: { opacity: 1, y: 0, transition: { duration: 0.5 } },
+                            }}
+                            className="text-center p-6 bg-card border border-border rounded-xl"
+                        >
+                            <div className={`text-3xl font-black ${item.color} mb-2 font-display`}>{item.value}</div>
+                            <p className="text-sm text-muted-foreground">{item.label}</p>
+                        </motion.div>
+                    ))}
+                </motion.div>
             </div>
         </section>
     );

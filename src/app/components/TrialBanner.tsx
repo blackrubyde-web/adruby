@@ -46,7 +46,7 @@ export const TrialBanner = memo(function TrialBanner({
                 ? 'bg-gradient-to-r from-red-600 via-rose-600 to-red-600 text-white'
                 : isUrgent
                     ? 'bg-gradient-to-r from-amber-500 via-orange-500 to-amber-500 text-white'
-                    : 'bg-gradient-to-r from-[#FF1F1F] via-rose-500 to-[#FF1F1F] text-white'
+                    : 'bg-gradient-to-r from-[#E63946] via-rose-500 to-[#E63946] text-white'
                 }`}
         >
             <div className="flex items-center gap-2">

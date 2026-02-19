@@ -12,6 +12,10 @@ const RATE_LIMITS = {
     ai_ad_generate: { maxRequests: 10, windowMinutes: 60 },   // 10 per hour
     ai_ad_generate_light: { maxRequests: 30, windowMinutes: 60 }, // 30 per hour (lighter)
     creative_analyze: { maxRequests: 20, windowMinutes: 60 },
+    ai_copilot_chat: { maxRequests: 30, windowMinutes: 60 },
+    openai_proxy: { maxRequests: 20, windowMinutes: 60 },
+    send_email: { maxRequests: 10, windowMinutes: 60 },
+    creative_generate: { maxRequests: 15, windowMinutes: 60 },
     default: { maxRequests: 100, windowMinutes: 60 }
 };
 
@@ -36,8 +40,8 @@ export async function checkRateLimit(userId, action = 'default') {
 
         if (error) {
             console.error('[RateLimiter] Count error:', error.message);
-            // Fail open - allow request if we can't check
-            return { allowed: true, remaining: config.maxRequests, resetAt: new Date() };
+            // Fail closed - deny request if we can't verify rate limit
+            return { allowed: false, remaining: 0, resetAt: new Date(Date.now() + 60_000) };
         }
 
         const currentCount = count || 0;
@@ -59,8 +63,8 @@ export async function checkRateLimit(userId, action = 'default') {
         return { allowed, remaining, resetAt };
     } catch (err) {
         console.error('[RateLimiter] Error:', err.message);
-        // Fail open
-        return { allowed: true, remaining: config.maxRequests, resetAt: new Date() };
+        // Fail closed - deny request if we can't verify rate limit
+        return { allowed: false, remaining: 0, resetAt: new Date(Date.now() + 60_000) };
     }
 }
 

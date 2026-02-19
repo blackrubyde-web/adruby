@@ -13,9 +13,9 @@ export const CanvasPreview = () => {
                 <svg className="absolute inset-0 w-full h-full pointer-events-none overflow-visible">
                     <defs>
                         <linearGradient id="line-gradient" x1="0%" y1="0%" x2="100%" y2="0%">
-                            <stop offset="0%" stopColor="#C80000" stopOpacity="0.2" />
+                            <stop offset="0%" stopColor="#c01830" stopOpacity="0.2" />
                             <stop offset="50%" stopColor="#ef4444" stopOpacity="1" />
-                            <stop offset="100%" stopColor="#C80000" stopOpacity="0.2" />
+                            <stop offset="100%" stopColor="#c01830" stopOpacity="0.2" />
                         </linearGradient>
                         <filter id="glow">
                             <feGaussianBlur stdDeviation="2" result="coloredBlur" />

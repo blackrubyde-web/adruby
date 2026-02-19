@@ -1,5 +1,33 @@
 import type { SummaryKey, AnalyticsData } from '../types/analytics';
 
+/* ──────── Pre-instantiated Intl formatters (perf) ──────── */
+const _currency = new Intl.NumberFormat('de-DE', {
+  style: 'currency',
+  currency: 'EUR',
+  maximumFractionDigits: 0,
+});
+
+const _currencyPrecise = new Intl.NumberFormat('de-DE', {
+  style: 'currency',
+  currency: 'EUR',
+  maximumFractionDigits: 2,
+});
+
+const _number = new Intl.NumberFormat('de-DE');
+
+/* ──────── Standalone helpers (import these!) ──────── */
+
+/** Format EUR currency — e.g. "1.234 €" */
+export const formatCurrency = (value: number): string => _currency.format(value);
+
+/** Format EUR with decimals — e.g. "1.234,56 €" */
+export const formatCurrencyPrecise = (value: number): string => _currencyPrecise.format(value);
+
+/** Format ROAS multiplier — e.g. "3.50x" */
+export const formatRoas = (value: number): string => `${value.toFixed(2)}x`;
+
+/* ──────── Summary formatter (widget-level) ──────── */
+
 /**
  * Format summary values consistently across all widgets
  */
@@ -7,29 +35,21 @@ export function formatSummaryValue(key: SummaryKey, value: number): string {
   switch (key) {
     case 'spend':
     case 'revenue':
-      return new Intl.NumberFormat('de-DE', {
-        style: 'currency',
-        currency: 'EUR',
-        maximumFractionDigits: 0,
-      }).format(value);
+      return formatCurrency(value);
 
     case 'ctr':
       return `${value.toFixed(2)}%`; // ctr is 0..100
 
     case 'roas':
-      return `${value.toFixed(2)}x`;
+      return formatRoas(value);
 
     case 'clicks':
     case 'impressions':
     case 'conversions':
-      return new Intl.NumberFormat('de-DE').format(value);
+      return _number.format(value);
 
     case 'cpa':
-      return new Intl.NumberFormat('de-DE', {
-        style: 'currency',
-        currency: 'EUR',
-        maximumFractionDigits: 2,
-      }).format(value);
+      return formatCurrencyPrecise(value);
 
     default:
       return String(value);
@@ -43,6 +63,17 @@ export function formatDelta(delta?: number): string | null {
   if (delta == null) return null;
   const pct = Math.round(delta * 100);
   return `${pct >= 0 ? '+' : ''}${pct}%`;
+}
+
+/**
+ * Format a raw delta value with sign and optional suffix.
+ * Unlike `formatDelta`, this does NOT multiply by 100.
+ * Returns "—" for null/undefined/NaN.
+ */
+export function formatDeltaRaw(value?: number | null, suffix = '%'): string {
+  if (value === undefined || value === null || Number.isNaN(value)) return '—';
+  const sign = value > 0 ? '+' : '';
+  return `${sign}${value.toFixed(1)}${suffix}`;
 }
 
 /**

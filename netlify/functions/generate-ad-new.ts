@@ -139,7 +139,7 @@ function normalizeImageForVision(input?: string): string | undefined {
 
 const handler: Handler = async (event: HandlerEvent) => {
     const headers = {
-        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Origin': process.env.FRONTEND_URL || 'https://adruby.de',
         'Access-Control-Allow-Headers': 'Content-Type',
         'Access-Control-Allow-Methods': 'POST, OPTIONS',
         'Content-Type': 'application/json',

@@ -7,6 +7,7 @@ import { MiniSparkline } from './MiniSparkline';
 import { Search, Play, Pause, Trash2, MoreVertical } from 'lucide-react';
 import { useState } from 'react';
 import { toast } from 'sonner';
+import { formatCurrency, formatCompact } from '../utils/formatters';
 
 export interface CampaignRowInput {
   id: string;
@@ -130,32 +131,24 @@ export function CampaignsTable({
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const now = new Date();
 
-  const formatCurrency = (value: number) =>
-    new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-      maximumFractionDigits: 0,
-    }).format(value);
 
-  const formatCompact = (value: number) =>
-    new Intl.NumberFormat('en-US', { notation: 'compact', maximumFractionDigits: 1 }).format(value);
 
   const mappedExternal: Campaign[] = (externalCampaigns || []).map((row) => {
     const spend = row.spend ?? 0;
     const status = String(row.status || '').toLowerCase();
     const normalizedStatus =
       status === 'ended' ||
-      status === 'completed' ||
-      status === 'deleted' ||
-      status === 'archived'
+        status === 'completed' ||
+        status === 'deleted' ||
+        status === 'archived'
         ? 'completed'
         : status === 'active'
-        ? 'live'
-        : status === 'paused'
-        ? 'paused'
-        : status === 'scheduled'
-        ? 'scheduled'
-        : 'paused';
+          ? 'live'
+          : status === 'paused'
+            ? 'paused'
+            : status === 'scheduled'
+              ? 'scheduled'
+              : 'paused';
     return {
       id: row.id,
       name: row.name,
@@ -216,7 +209,7 @@ export function CampaignsTable({
       scheduled: 'bg-blue-500/20 text-blue-500 border-blue-500/50',
       completed: 'bg-gray-500/20 text-gray-500 border-gray-500/50'
     };
-    
+
     const icons = {
       live: '● ',
       paused: '❚❚ ',
@@ -233,7 +226,7 @@ export function CampaignsTable({
 
   const filteredCampaigns = activeCampaigns.filter(campaign => {
     const matchesSearch = campaign.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         campaign.id.includes(searchQuery);
+      campaign.id.includes(searchQuery);
     const matchesStatus = statusFilter === 'all' || campaign.status === statusFilter;
     return matchesSearch && matchesStatus;
   });

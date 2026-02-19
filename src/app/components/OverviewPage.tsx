@@ -1,28 +1,33 @@
 import { lazy, Suspense, useEffect, useMemo, useRef, useState } from 'react';
+import { motion } from 'motion/react';
 import {
   TrendingUp,
-  TrendingDown,
   DollarSign,
   Target,
-  CheckCircle2,
-  Circle,
-  ArrowRight,
   Zap,
   ShieldCheck,
   ListChecks,
   Wand2,
+  ArrowRight,
   X,
 } from 'lucide-react';
 import { toast } from 'sonner';
-import { useOverview } from '../hooks/useOverview';
-import { DashboardShell } from './layout/DashboardShell';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from './ui/card';
-import { Button } from './ui/button';
 import { Badge } from './ui/badge';
+import { Button } from './ui/button';
 import { SelectField } from './ui/select-field';
-import { useAuthActions, useAuthState } from '../contexts/AuthContext';
-import { supabase } from '../lib/supabaseClient';
+import { DashboardShell } from './layout/DashboardShell';
+import { useOverview } from '../hooks/useOverview';
+import { useAuthState } from '../contexts/AuthContext';
 import { ReferralServicesWidget } from './referral/ReferralServicesWidget';
+import { stagger, fadeUp, viewport } from '../lib/motion';
+import { MetricCardSkeleton, ChartSkeleton } from '../lib/skeletons';
+import { formatCurrency, formatCompact, formatDeltaRaw as formatDelta } from '../utils/formatters';
+
+// Extracted overview widgets
+import { KpiCardGrid, type KpiItem } from './overview/KpiCardGrid';
+import { GettingStartedChecklist, type ChecklistStep } from './overview/GettingStartedChecklist';
+import { GoalsPanel } from './overview/GoalsPanel';
 
 const LazySpendRevenueChart = lazy(() =>
   import('./SpendRevenueChart').then((mod) => ({ default: mod.SpendRevenueChart }))
@@ -31,15 +36,6 @@ const LazyRoasMiniChart = lazy(() =>
   import('./RoasMiniChart').then((mod) => ({ default: mod.RoasMiniChart }))
 );
 
-interface ChecklistStep {
-  id: string;
-  title: string;
-  description: string;
-  completed: boolean;
-  actionLabel: string;
-  onAction: () => void;
-}
-
 interface OverviewPageProps {
   onNavigate: (page: string, query?: Record<string, string>) => void;
 }
@@ -47,10 +43,16 @@ interface OverviewPageProps {
 type DateFilter = 'today' | '7d' | '30d';
 type ChannelFilter = 'meta' | 'google' | 'tiktok';
 
-function ChartPlaceholder({ title }: { title: string }) {
+function ChartPlaceholder() {
+  return <ChartSkeleton />;
+}
+
+function KpiSkeleton() {
   return (
-    <div className="h-[280px] rounded-2xl border border-border/60 bg-muted/10 animate-pulse flex items-center justify-center">
-      <span className="text-sm text-muted-foreground">{title}</span>
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5">
+      {Array.from({ length: 4 }).map((_, i) => (
+        <MetricCardSkeleton key={i} />
+      ))}
     </div>
   );
 }
@@ -59,14 +61,11 @@ export function OverviewPage({ onNavigate }: OverviewPageProps) {
   const [dateFilter, setDateFilter] = useState<DateFilter>('7d');
   const [channelFilter, setChannelFilter] = useState<ChannelFilter>('meta');
   const { user, profile } = useAuthState();
-  const { refreshProfile } = useAuthActions();
-  const [isEditingGoals, setIsEditingGoals] = useState(false);
-  const [isSavingGoals, setIsSavingGoals] = useState(false);
 
   // Fetch data with hook
   const { data, loading, error } = useOverview(dateFilter, channelFilter);
 
-  // Checklist State - will be synced with API data when available
+  // Checklist State
   const [checklistSteps, setChecklistSteps] = useState<ChecklistStep[]>([
     {
       id: 'connect-meta',
@@ -74,9 +73,7 @@ export function OverviewPage({ onNavigate }: OverviewPageProps) {
       description: 'Verknüpfe dein Facebook Business Konto um Kampagnen zu importieren',
       completed: false,
       actionLabel: 'Verbinden',
-      onAction: () => {
-        onNavigate('settings', { tab: 'integrations' });
-      },
+      onAction: () => { onNavigate('settings', { tab: 'integrations' }); },
     },
     {
       id: 'create-campaign',
@@ -84,9 +81,7 @@ export function OverviewPage({ onNavigate }: OverviewPageProps) {
       description: 'Starte eine Kampagne um Ergebnisse zu erzielen',
       completed: false,
       actionLabel: 'Erstellen',
-      onAction: () => {
-        onNavigate('studio');
-      },
+      onAction: () => { onNavigate('studio'); },
     },
     {
       id: 'generate-creatives',
@@ -94,9 +89,7 @@ export function OverviewPage({ onNavigate }: OverviewPageProps) {
       description: 'Nutze KI für hochperformante Ad-Varianten',
       completed: false,
       actionLabel: 'Generieren',
-      onAction: () => {
-        onNavigate('studio');
-      },
+      onAction: () => { onNavigate('studio'); },
     },
     {
       id: 'enable-optimization',
@@ -104,9 +97,7 @@ export function OverviewPage({ onNavigate }: OverviewPageProps) {
       description: 'Lass KI deine Kampagnen automatisch optimieren',
       completed: false,
       actionLabel: 'Aktivieren',
-      onAction: () => {
-        onNavigate('aianalysis');
-      },
+      onAction: () => { onNavigate('aianalysis'); },
     },
   ]);
 
@@ -120,57 +111,27 @@ export function OverviewPage({ onNavigate }: OverviewPageProps) {
     );
   }, [data?.onboarding?.steps]);
 
-  const completedSteps = checklistSteps.filter(s => s.completed).length;
-  const totalSteps = checklistSteps.length;
-  const progressPercentage = (completedSteps / totalSteps) * 100;
-
-  const profileSettings = useMemo(() => {
-    const raw = profile?.settings;
-    if (raw && typeof raw === 'object') return raw as Record<string, unknown>;
-    return {};
-  }, [profile?.settings]);
-
-  const goalDefaults = useMemo(() => {
-    const goals = profileSettings.goals as { roasTarget?: number; spendCap?: number; revenueGoal?: number } | undefined;
-    return {
-      roasTarget: goals?.roasTarget ?? 3.5,
-      spendCap: goals?.spendCap ?? 6000,
-      revenueGoal: goals?.revenueGoal ?? 18000,
-    };
-  }, [profileSettings]);
-
-  const [goalDraft, setGoalDraft] = useState({
-    roasTarget: goalDefaults.roasTarget.toString(),
-    spendCap: goalDefaults.spendCap.toString(),
-    revenueGoal: goalDefaults.revenueGoal.toString(),
-  });
+  const metaStep = data?.onboarding?.steps?.find((step) => step.id === 'connect-meta');
+  const metaConnected = Boolean(metaStep?.completed);
+  const warning = data?.warning || null;
+  const warningMessage = useMemo(() => {
+    if (!warning) return null;
+    if (warning === 'meta_not_connected') return 'Meta ist noch nicht verbunden. Verbinde dein Konto, um Live-Daten und Scores zu sehen.';
+    if (warning === 'meta_no_data') return 'Keine Meta-Daten gefunden. Bitte Sync starten, sobald Meta verbunden ist.';
+    if (warning === 'meta_insights_daily_missing') return 'Meta-Datenbank-Tabellen fehlen. Bitte Migration ausführen (meta_insights_daily).';
+    return 'Daten sind aktuell unvollständig. Bitte später erneut versuchen.';
+  }, [warning]);
+  const warningToastRef = useRef<string | null>(null);
 
   useEffect(() => {
-    setGoalDraft({
-      roasTarget: goalDefaults.roasTarget.toString(),
-      spendCap: goalDefaults.spendCap.toString(),
-      revenueGoal: goalDefaults.revenueGoal.toString(),
-    });
-  }, [goalDefaults]);
-
-  const formatCurrency = (value: number) =>
-    new Intl.NumberFormat('de-DE', {
-      style: 'currency',
-      currency: 'EUR',
-      maximumFractionDigits: 0,
-    }).format(value);
-
-  const formatCompact = (value: number) =>
-    new Intl.NumberFormat('de-DE', { notation: 'compact', maximumFractionDigits: 1 }).format(value);
-
-  const formatDelta = (value?: number | null, suffix = '%') => {
-    if (value === undefined || value === null || Number.isNaN(value)) return '—';
-    const sign = value > 0 ? '+' : '';
-    return `${sign}${value.toFixed(1)}${suffix}`;
-  };
+    if (!warningMessage) { warningToastRef.current = null; return; }
+    if (warningToastRef.current === warningMessage) return;
+    toast.info(warningMessage);
+    warningToastRef.current = warningMessage;
+  }, [warningMessage]);
 
   // KPI Data
-  const kpis = [
+  const kpis: KpiItem[] = [
     {
       label: 'Ausgaben gesamt',
       value: formatCurrency(data?.kpis.spend ?? 0),
@@ -205,47 +166,8 @@ export function OverviewPage({ onNavigate }: OverviewPageProps) {
     },
   ];
 
-  const topCampaign = data?.topCampaign ?? {
-    name: 'Noch keine Kampagnen',
-    roas: 0,
-    spend: 0,
-    revenue: 0,
-  };
-
-  const bestCreative = data?.bestCreative ?? {
-    name: 'Verbinde Meta um Creatives zu generieren',
-    aiScore: 0,
-    ctr: 0,
-    conversions: 0,
-  };
-
-  const metaStep = data?.onboarding?.steps?.find((step) => step.id === 'connect-meta');
-  const metaConnected = Boolean(metaStep?.completed);
-  const warning = data?.warning || null;
-  const warningMessage = useMemo(() => {
-    if (!warning) return null;
-    if (warning === 'meta_not_connected') {
-      return 'Meta ist noch nicht verbunden. Verbinde dein Konto, um Live-Daten und Scores zu sehen.';
-    }
-    if (warning === 'meta_no_data') {
-      return 'Keine Meta-Daten gefunden. Bitte Sync starten, sobald Meta verbunden ist.';
-    }
-    if (warning === 'meta_insights_daily_missing') {
-      return 'Meta-Datenbank-Tabellen fehlen. Bitte Migration ausführen (meta_insights_daily).';
-    }
-    return 'Daten sind aktuell unvollständig. Bitte später erneut versuchen.';
-  }, [warning]);
-  const warningToastRef = useRef<string | null>(null);
-
-  useEffect(() => {
-    if (!warningMessage) {
-      warningToastRef.current = null;
-      return;
-    }
-    if (warningToastRef.current === warningMessage) return;
-    toast.info(warningMessage);
-    warningToastRef.current = warningMessage;
-  }, [warningMessage]);
+  const topCampaign = data?.topCampaign ?? { name: 'Noch keine Kampagnen', roas: 0, spend: 0, revenue: 0 };
+  const bestCreative = data?.bestCreative ?? { name: 'Verbinde Meta um Creatives zu generieren', aiScore: 0, ctr: 0, conversions: 0 };
 
   const actions = [
     {
@@ -257,10 +179,7 @@ export function OverviewPage({ onNavigate }: OverviewPageProps) {
       priority: metaConnected ? 'low' : 'high',
       cta: metaConnected ? 'Jetzt synchronisieren' : 'Verbinden',
       icon: <Zap className="w-5 h-5 text-primary" />,
-      onClick: () =>
-        metaConnected
-          ? onNavigate('settings', { tab: 'integrations' })
-          : onNavigate('settings', { tab: 'integrations' }),
+      onClick: () => onNavigate('settings', { tab: 'integrations' }),
     },
     {
       id: 'creative-run',
@@ -282,61 +201,6 @@ export function OverviewPage({ onNavigate }: OverviewPageProps) {
     },
   ];
 
-  const roasTarget = goalDefaults.roasTarget;
-  const spendCap = goalDefaults.spendCap;
-  const revenueGoal = goalDefaults.revenueGoal;
-
-  const spendProgress = Math.min(100, ((data?.kpis.spend ?? 0) / spendCap) * 100);
-  const revenueProgress = Math.min(100, ((data?.kpis.revenue ?? 0) / revenueGoal) * 100);
-  const roasProgress = Math.min(100, ((data?.kpis.roas ?? 0) / roasTarget) * 100);
-
-  const handleOpenGoals = () => {
-    setGoalDraft({
-      roasTarget: roasTarget.toString(),
-      spendCap: spendCap.toString(),
-      revenueGoal: revenueGoal.toString(),
-    });
-    setIsEditingGoals(true);
-  };
-
-  const handleSaveGoals = async () => {
-    if (!user?.id) {
-      toast.error('Bitte zuerst anmelden.');
-      return;
-    }
-    const toNumber = (value: string, fallback: number) => {
-      const parsed = Number(value.replace(',', '.'));
-      return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback;
-    };
-    const nextGoals = {
-      roasTarget: toNumber(goalDraft.roasTarget, roasTarget),
-      spendCap: toNumber(goalDraft.spendCap, spendCap),
-      revenueGoal: toNumber(goalDraft.revenueGoal, revenueGoal),
-    };
-
-    setIsSavingGoals(true);
-    try {
-      const { error } = await supabase
-        .from('user_profiles')
-        .update({
-          settings: {
-            ...profileSettings,
-            goals: nextGoals,
-          },
-        })
-        .eq('id', user.id);
-      if (error) throw error;
-      await refreshProfile();
-      setIsEditingGoals(false);
-      toast.success('Ziele gespeichert');
-    } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : 'Ziele konnten nicht gespeichert werden.';
-      toast.error(message);
-    } finally {
-      setIsSavingGoals(false);
-    }
-  };
-
   return (
     <DashboardShell
       title="Übersicht"
@@ -353,7 +217,6 @@ export function OverviewPage({ onNavigate }: OverviewPageProps) {
     >
       {/* Filters */}
       <div className="flex items-center gap-3">
-        {/* Date Filter */}
         <SelectField
           value={dateFilter}
           onChange={(e) => setDateFilter(e.target.value as DateFilter)}
@@ -364,8 +227,6 @@ export function OverviewPage({ onNavigate }: OverviewPageProps) {
           <option value="7d">Letzte 7 Tage</option>
           <option value="30d">Letzte 30 Tage</option>
         </SelectField>
-
-        {/* Channel Filter */}
         <SelectField
           value={channelFilter}
           onChange={(e) => setChannelFilter(e.target.value as ChannelFilter)}
@@ -379,51 +240,13 @@ export function OverviewPage({ onNavigate }: OverviewPageProps) {
       </div>
 
       {/* KPI Cards Row */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5">
-        {kpis.map((kpi, index) => (
-          <Card key={index} variant="glass" className="hover:-translate-y-0.5 transition-all duration-300">
-            {/* Accent Line - replaced with simpler border-t highlight via class if needed, or keep the div */}
-            <div className="absolute inset-x-0 top-0 h-[3px] rounded-t-xl bg-gradient-to-r from-primary/40 to-primary/10" />
+      {loading ? <KpiSkeleton /> : <KpiCardGrid kpis={kpis} />}
 
-            <CardContent className="p-5 pt-6">
-              <div className="flex items-start justify-between">
-                <div className="flex-1">
-                  <div className="text-body-sm text-muted-foreground mb-2 font-medium">{kpi.label}</div>
-                  <div className="text-h3 text-foreground mb-2">
-                    {kpi.value}
-                  </div>
-                  <div className="flex items-center gap-2 text-xs">
-                    <span
-                      className={`flex items-center gap-1 font-medium px-1.5 py-0.5 rounded-md ${kpi.isPositive
-                        ? 'text-green-600 bg-green-500/10'
-                        : 'text-muted-foreground bg-muted/50'
-                        }`}
-                    >
-                      {kpi.isPositive ? (
-                        <TrendingUp className="w-3 h-3" />
-                      ) : (
-                        <TrendingDown className="w-3 h-3" />
-                      )}
-                      {kpi.change}
-                    </span>
-                    <span className="text-muted-foreground">{kpi.comparison}</span>
-                  </div>
-                </div>
-
-                <div className="h-10 w-10 rounded-xl bg-primary/10 border border-primary/10 flex items-center justify-center shrink-0 shadow-sm">
-                  {kpi.icon}
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
-
-      {/* Charts Section - Shopify Style (KPIs → Charts → Tasks) */}
+      {/* Charts Section */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
-        {/* Spend vs Revenue - 2/3 width */}
+        {/* Left: Charts + Checklist */}
         <div className="lg:col-span-2 space-y-6">
-          <Suspense fallback={<ChartPlaceholder title="Loading spend vs revenue" />}>
+          <Suspense fallback={<ChartPlaceholder />}>
             <LazySpendRevenueChart
               points={data?.timeseries ?? []}
               range={dateFilter}
@@ -432,84 +255,12 @@ export function OverviewPage({ onNavigate }: OverviewPageProps) {
               metaConnected={metaConnected}
             />
           </Suspense>
-
-          {/* Getting Started Card */}
-          <Card variant="glass" className="group">
-            <CardContent className="p-6 sm:p-8">
-              <div className="flex items-center justify-between gap-4 mb-6">
-                <div>
-                  <h2 className="text-h5 text-foreground mb-1">
-                    Erste Schritte
-                  </h2>
-                  <p className="text-body-sm text-muted-foreground">
-                    Schalte die volle Power in 5 Minuten frei
-                  </p>
-                </div>
-                <Badge variant="secondary" className="text-sm px-3 py-1">
-                  {completedSteps}/{totalSteps}
-                </Badge>
-              </div>
-
-              {/* Progress Bar */}
-              <div className="h-2 bg-muted rounded-full overflow-hidden mb-6">
-                <div
-                  className="h-full bg-gradient-to-r from-primary to-rose-500 transition-all duration-500"
-                  style={{ width: `${progressPercentage}%` }}
-                />
-              </div>
-
-              {/* Checklist Steps */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {checklistSteps.map((step) => (
-                  <div
-                    key={step.id}
-                    className={`flex items-start gap-3 p-4 rounded-xl border transition-all duration-200 ${step.completed
-                      ? 'bg-muted/30 border-border/50'
-                      : 'bg-background/50 border-border hover:border-primary/30 hover:shadow-sm'
-                      }`}
-                  >
-                    <div className="pt-0.5 shrink-0">
-                      {step.completed ? (
-                        <CheckCircle2 className="w-5 h-5 text-green-600" />
-                      ) : (
-                        <Circle className="w-5 h-5 text-muted-foreground" />
-                      )}
-                    </div>
-
-                    <div className="flex-1 min-w-0">
-                      <div
-                        className={`font-semibold text-sm mb-0.5 ${step.completed
-                          ? 'text-muted-foreground line-through'
-                          : 'text-foreground'
-                          }`}
-                      >
-                        {step.title}
-                      </div>
-                      <div className="text-xs text-muted-foreground mb-3 leading-relaxed">
-                        {step.description}
-                      </div>
-
-                      {!step.completed && (
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={step.onAction}
-                          className="w-full h-8 text-xs"
-                        >
-                          {step.actionLabel}
-                        </Button>
-                      )}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
+          <GettingStartedChecklist steps={checklistSteps} />
         </div>
 
-        {/* Right Column: ROAS, Referral, Actions */}
+        {/* Right Column */}
         <div className="lg:col-span-1 space-y-6">
-          <Suspense fallback={<ChartPlaceholder title="Loading ROAS trend" />}>
+          <Suspense fallback={<ChartPlaceholder />}>
             <LazyRoasMiniChart
               points={(data?.timeseries ?? []).map(p => ({ ts: p.ts, roas: p.roas }))}
               range={dateFilter}
@@ -570,65 +321,14 @@ export function OverviewPage({ onNavigate }: OverviewPageProps) {
             </CardContent>
           </Card>
 
-          {/* Goals */}
-          <Card variant="glass">
-            <CardHeader className="pb-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <CardTitle className="text-base">Ziele</CardTitle>
-                  <CardDescription>Budget & ROAS-Ziele</CardDescription>
-                </div>
-                <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center">
-                  <ShieldCheck className="w-4 h-4 text-primary" />
-                </div>
-              </div>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              {/* ROAS */}
-              <div className="space-y-2">
-                <div className="flex justify-between text-xs">
-                  <span className="text-muted-foreground font-medium">ROAS Target</span>
-                  <span className="font-bold">{(data?.kpis.roas ?? 0).toFixed(2)}x / {roasTarget.toFixed(1)}x</span>
-                </div>
-                <div className="h-2 rounded-full bg-muted overflow-hidden">
-                  <div className="h-full bg-primary" style={{ width: `${roasProgress}%` }} />
-                </div>
-              </div>
-
-              {/* Spend */}
-              <div className="space-y-2">
-                <div className="flex justify-between text-xs">
-                  <span className="text-muted-foreground font-medium">Spend Cap</span>
-                  <span className="font-bold">{formatCurrency(data?.kpis.spend ?? 0)} / {formatCurrency(spendCap)}</span>
-                </div>
-                <div className="h-2 rounded-full bg-muted overflow-hidden">
-                  <div className="h-full bg-amber-500" style={{ width: `${spendProgress}%` }} />
-                </div>
-              </div>
-
-              {/* Revenue */}
-              <div className="space-y-2">
-                <div className="flex justify-between text-xs">
-                  <span className="text-muted-foreground font-medium">Revenue Goal</span>
-                  <span className="font-bold">{formatCurrency(data?.kpis.revenue ?? 0)} / {formatCurrency(revenueGoal)}</span>
-                </div>
-                <div className="h-2 rounded-full bg-muted overflow-hidden">
-                  <div className="h-full bg-green-500" style={{ width: `${revenueProgress}%` }} />
-                </div>
-              </div>
-
-              <Button variant="outline" size="sm" className="w-full text-xs" onClick={handleOpenGoals}>
-                Ziele bearbeiten
-              </Button>
-            </CardContent>
-          </Card>
+          <GoalsPanel kpis={{ roas: data?.kpis.roas ?? 0, spend: data?.kpis.spend ?? 0, revenue: data?.kpis.revenue ?? 0 }} />
         </div>
       </div>
 
       {/* Insights Section */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 mt-6">
         {/* Top Campaign */}
-        <Card variant="glass" className="hover:border-primary/20 transition-colors">
+        <Card variant="glass" className="hover:border-primary/20 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-primary/5 transition-all duration-300">
           <CardContent className="p-6">
             <div className="flex items-start justify-between mb-4">
               <div>
@@ -639,7 +339,6 @@ export function OverviewPage({ onNavigate }: OverviewPageProps) {
                 Top Performer
               </Badge>
             </div>
-
             <div className="space-y-4">
               <div className="text-xl font-bold text-foreground">{topCampaign.name}</div>
               <div className="grid grid-cols-3 gap-4">
@@ -668,7 +367,7 @@ export function OverviewPage({ onNavigate }: OverviewPageProps) {
         </Card>
 
         {/* Best Creative */}
-        <Card variant="glass" className="hover:border-primary/20 transition-colors">
+        <Card variant="glass" className="hover:border-primary/20 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-primary/5 transition-all duration-300">
           <CardContent className="p-6">
             <div className="flex items-start justify-between mb-4">
               <div>
@@ -679,10 +378,8 @@ export function OverviewPage({ onNavigate }: OverviewPageProps) {
                 AI Insight
               </Badge>
             </div>
-
             <div className="space-y-4">
               <div className="text-xl font-bold text-foreground">{bestCreative.name}</div>
-
               <div className="space-y-2">
                 <div className="flex justify-between text-xs font-medium">
                   <span>Performance Score</span>
@@ -692,7 +389,6 @@ export function OverviewPage({ onNavigate }: OverviewPageProps) {
                   <div className="h-full bg-primary" style={{ width: `${bestCreative.aiScore}%` }} />
                 </div>
               </div>
-
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <div className="text-xs text-muted-foreground mb-1">CTR</div>
@@ -703,7 +399,6 @@ export function OverviewPage({ onNavigate }: OverviewPageProps) {
                   <div className="text-lg font-bold">{bestCreative.conversions}</div>
                 </div>
               </div>
-
               <Button
                 variant="ghost"
                 className="w-full justify-between text-primary hover:text-primary hover:bg-primary/5 group"
@@ -715,59 +410,6 @@ export function OverviewPage({ onNavigate }: OverviewPageProps) {
           </CardContent>
         </Card>
       </div>
-
-      {isEditingGoals && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4 backdrop-blur-sm animate-in fade-in duration-200">
-          <Card className="w-full max-w-lg shadow-2xl border-primary/20">
-            <CardHeader>
-              <div className="flex items-start justify-between">
-                <div>
-                  <CardTitle>Ziele bearbeiten</CardTitle>
-                  <CardDescription>Aktualisiere deine Ziele für diesen Workspace</CardDescription>
-                </div>
-                <Button variant="ghost" size="icon" onClick={() => setIsEditingGoals(false)}>
-                  <X className="w-4 h-4" />
-                </Button>
-              </div>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-2">
-                <label className="text-sm font-medium">ROAS Target</label>
-                <input
-                  type="number"
-                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                  value={goalDraft.roasTarget}
-                  onChange={(e) => setGoalDraft({ ...goalDraft, roasTarget: e.target.value })}
-                />
-              </div>
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Spend Cap</label>
-                <input
-                  type="number"
-                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                  value={goalDraft.spendCap}
-                  onChange={(e) => setGoalDraft({ ...goalDraft, spendCap: e.target.value })}
-                />
-              </div>
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Revenue Goal</label>
-                <input
-                  type="number"
-                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                  value={goalDraft.revenueGoal}
-                  onChange={(e) => setGoalDraft({ ...goalDraft, revenueGoal: e.target.value })}
-                />
-              </div>
-              <div className="flex justify-end gap-3 pt-4">
-                <Button variant="outline" onClick={() => setIsEditingGoals(false)}>Abbrechen</Button>
-                <Button onClick={handleSaveGoals} disabled={isSavingGoals}>
-                  {isSavingGoals ? 'Speichern...' : 'Speichern'}
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      )}
     </DashboardShell>
   );
 }

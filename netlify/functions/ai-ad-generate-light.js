@@ -11,7 +11,7 @@ export const handler = async (event) => {
     const startTime = Date.now();
 
     const headers = {
-        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Origin': process.env.FRONTEND_URL || 'https://adruby.de',
         'Access-Control-Allow-Headers': 'Content-Type, Authorization',
         'Access-Control-Allow-Methods': 'POST, OPTIONS',
         'Content-Type': 'application/json',

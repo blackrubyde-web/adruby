@@ -1,4 +1,5 @@
 import { memo, useCallback, useState } from 'react';
+import { motion } from 'motion/react';
 import { BarChart3, Layers, Brain, LogOut, X, BarChart2, Gift, BookOpen, Palette, Shield, Wand2, type LucideIcon } from 'lucide-react';
 import { PageType } from '../App';
 import { useAdmin } from '../contexts/AdminContext';
@@ -83,10 +84,14 @@ export const Sidebar = memo(function Sidebar({
       >
         {/* Active Indicator Bar - Left */}
         {isActive && (
-          <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-5 bg-primary rounded-r-full" />
+          <motion.div
+            className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-5 bg-primary rounded-r-full"
+            layoutId="sidebar-active-indicator"
+            transition={{ type: 'spring', stiffness: 400, damping: 25 }}
+          />
         )}
 
-        <item.icon className={cn("w-5 h-5 flex-shrink-0 transition-colors", isActive ? "text-primary" : "text-muted-foreground group-hover:text-foreground")} />
+        <item.icon className={cn("w-5 h-5 flex-shrink-0 transition-all duration-200", isActive ? "text-primary" : "text-muted-foreground group-hover:text-foreground group-hover:scale-110")} />
 
         <span
           className={cn(
@@ -165,7 +170,7 @@ export const Sidebar = memo(function Sidebar({
         </div>
 
         {/* Scrollable Nav Area */}
-        <nav className="flex-1 overflow-y-auto overflow-x-hidden p-3 space-y-6 scrollbar-thin scrollbar-thumb-muted scrollbar-track-transparent">
+        <nav aria-label="Hauptnavigation" className="flex-1 overflow-y-auto overflow-x-hidden p-3 space-y-6 scrollbar-thin scrollbar-thumb-muted scrollbar-track-transparent">
 
           {/* Section: Workflow */}
           <div className="space-y-1">
@@ -219,6 +224,7 @@ export const Sidebar = memo(function Sidebar({
               showLabels ? "gap-3 justify-start" : "gap-0 justify-center"
             )}
             title={(!showLabels && !isMobileOpen) ? 'Logout' : undefined}
+            aria-label="Abmelden"
             onClick={onLogout}
           >
             <LogOut className="w-5 h-5 flex-shrink-0 group-hover:scale-110 transition-transform" />

@@ -17,7 +17,7 @@ export function AIAdBuilderFeaturePage({ onGetStarted, onLogin, onNavigateHome }
         { id: 5, title: 'Szene Komposition', desc: 'KI generiert perfekte Hintergründe', icon: Zap, color: 'from-yellow-500 to-orange-500' },
         { id: 6, title: 'Stil-Varianten', desc: 'Mehrere Designs für A/B Testing', icon: Rocket, color: 'from-green-500 to-emerald-500' },
         { id: 7, title: 'ROAS Prognose', desc: 'Vorhersage der Performance vor Launch', icon: LineChart, color: 'from-teal-500 to-cyan-500' },
-        { id: 8, title: 'Export & Publish', desc: 'Direkt in Meta Ads Manager pushen', icon: ArrowRight, color: 'from-[#FF1F1F] to-rose-600' },
+        { id: 8, title: 'Export & Publish', desc: 'Direkt in Meta Ads Manager pushen', icon: ArrowRight, color: 'from-[#E63946] to-rose-600' },
     ];
 
     return (
@@ -34,13 +34,13 @@ export function AIAdBuilderFeaturePage({ onGetStarted, onLogin, onNavigateHome }
             <section className="pt-32 pb-20 px-6 relative overflow-hidden">
                 {/* Background Effects */}
                 <div className="absolute inset-0 pointer-events-none">
-                    <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[600px] bg-gradient-to-b from-[#FF1F1F]/20 to-transparent blur-[100px]" />
+                    <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[600px] bg-gradient-to-b from-[#E63946]/20 to-transparent blur-[100px]" />
                 </div>
 
                 <div className="max-w-5xl mx-auto text-center relative z-10">
-                    <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[#FF1F1F]/10 border border-[#FF1F1F]/20 mb-6">
-                        <Sparkles className="w-4 h-4 text-[#FF1F1F]" />
-                        <span className="text-sm font-semibold text-[#FF1F1F]">KI-Power Feature</span>
+                    <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[#E63946]/10 border border-[#E63946]/20 mb-6">
+                        <Sparkles className="w-4 h-4 text-[#E63946]" />
+                        <span className="text-sm font-semibold text-[#E63946]">KI-Power Feature</span>
                     </div>
 
                     <h1 className="text-4xl sm:text-6xl lg:text-7xl font-black tracking-tight mb-6">
@@ -54,7 +54,7 @@ export function AIAdBuilderFeaturePage({ onGetStarted, onLogin, onNavigateHome }
                     <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
                         <button
                             onClick={onGetStarted}
-                            className="group px-8 py-4 bg-gradient-to-r from-[#FF1F1F] to-rose-600 text-white rounded-full font-bold text-lg hover:shadow-[0_0_30px_rgba(255,31,31,0.5)] transition-all flex items-center gap-3"
+                            className="group px-8 py-4 bg-gradient-to-r from-[#E63946] to-rose-600 text-white rounded-full font-bold text-lg hover:shadow-[0_0_30px_rgba(255,31,31,0.5)] transition-all flex items-center gap-3"
                         >
                             <Rocket className="w-5 h-5" />
                             Jetzt kostenlos testen
@@ -73,7 +73,7 @@ export function AIAdBuilderFeaturePage({ onGetStarted, onLogin, onNavigateHome }
                 <div className="max-w-6xl mx-auto">
                     <div className="text-center mb-16">
                         <h2 className="text-3xl sm:text-5xl font-black mb-4">
-                            Die 8-Schritte <span className="text-[#FF1F1F]">KI-Pipeline</span>
+                            Die 8-Schritte <span className="text-[#E63946]">KI-Pipeline</span>
                         </h2>
                         <p className="text-lg text-white/50">
                             Jeder Schritt ist für maximale Performance optimiert
@@ -128,7 +128,7 @@ export function AIAdBuilderFeaturePage({ onGetStarted, onLogin, onNavigateHome }
                             },
                         ].map((benefit, i) => (
                             <div key={i} className="text-center">
-                                <div className="text-5xl font-black text-[#FF1F1F] mb-4">{benefit.stat}</div>
+                                <div className="text-5xl font-black text-[#E63946] mb-4">{benefit.stat}</div>
                                 <h3 className="text-xl font-bold mb-2">{benefit.title}</h3>
                                 <p className="text-white/50">{benefit.desc}</p>
                             </div>
@@ -158,7 +158,7 @@ export function AIAdBuilderFeaturePage({ onGetStarted, onLogin, onNavigateHome }
 
                     <button
                         onClick={onGetStarted}
-                        className="px-10 py-5 bg-gradient-to-r from-[#FF1F1F] to-rose-600 text-white rounded-full font-bold text-xl hover:shadow-[0_0_40px_rgba(255,31,31,0.5)] transition-all"
+                        className="px-10 py-5 bg-gradient-to-r from-[#E63946] to-rose-600 text-white rounded-full font-bold text-xl hover:shadow-[0_0_40px_rgba(255,31,31,0.5)] transition-all"
                     >
                         Kostenlos starten →
                     </button>

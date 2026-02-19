@@ -28,9 +28,8 @@ export async function assertAndConsumeCredits(userId, action) {
 
   // Fallback to manual approach if RPC doesn't exist
   if (rpcError?.code === "42883") { // Function not found
-    console.warn("[Credits] RPC not found, using fallback (less safe)");
+    console.warn("[Credits] RPC not found, using optimistic lock fallback");
 
-    // Get current credits
     const { data: profile, error: fetchError } = await supabaseAdmin
       .from("user_profiles")
       .select("credits")
@@ -47,22 +46,22 @@ export async function assertAndConsumeCredits(userId, action) {
       throw new Error(`Insufficient credits. You have ${currentCredits}, need ${creditCost}.`);
     }
 
-    // Update with optimistic locking (check credits again in WHERE)
-    const { data: updated, error: updateError } = await supabaseAdmin
+    // Atomic update with optimistic locking (only succeeds if credits unchanged)
+    const { data: locked, error: lockError } = await supabaseAdmin
       .from("user_profiles")
       .update({ credits: currentCredits - creditCost })
       .eq("id", userId)
-      .eq("credits", currentCredits) // Optimistic lock: only if credits unchanged
+      .eq("credits", currentCredits) // Optimistic lock
       .select("credits")
       .single();
 
-    if (updateError || !updated) {
-      console.error("[Credits] Concurrent modification detected, retrying...");
-      throw new Error("Credits were modified. Please try again.");
+    if (lockError || !locked) {
+      console.error("[Credits] Concurrent modification detected");
+      throw new Error("Credits were modified concurrently. Please try again.");
     }
 
-    console.log(`[Credits] Deducted ${creditCost} from user ${userId}. Remaining: ${updated.credits}`);
-    return { ok: true, cost: creditCost, before: currentCredits, after: updated.credits };
+    console.log(`[Credits] Deducted ${creditCost} from user ${userId}. Remaining: ${locked.credits}`);
+    return { ok: true, cost: creditCost, before: currentCredits, after: locked.credits };
   }
 
   if (rpcError) {
@@ -80,7 +79,7 @@ export async function assertAndConsumeCredits(userId, action) {
 
 /**
  * Refund credits to user when generation fails
- * This resolves the race condition where users lose credits without getting a result
+ * Uses atomic RPC. Falls back to optimistic locking with manual review logging.
  */
 export async function refundCredits(userId, action) {
   const cost = CREDIT_COSTS[action];
@@ -98,9 +97,8 @@ export async function refundCredits(userId, action) {
 
     // Fallback if RPC doesn't exist
     if (rpcError?.code === "42883") {
-      console.warn("[Credits] Refund RPC not found, using fallback");
+      console.warn("[Credits] Refund RPC not found, using optimistic lock fallback");
 
-      // Get current credits
       const { data: profile, error: fetchError } = await supabaseAdmin
         .from("user_profiles")
         .select("credits")
@@ -109,46 +107,37 @@ export async function refundCredits(userId, action) {
 
       if (fetchError) {
         console.error("[Credits] Failed to fetch profile for refund:", fetchError.message);
-        throw new Error("Failed to refund credits");
+        console.error(`[Credits] MANUAL_REFUND_NEEDED: user=${userId} amount=${creditCost} action=${action}`);
+        return { ok: false, error: "Failed to refund credits" };
       }
 
       const currentCredits = profile?.credits || 0;
       const newCredits = currentCredits + creditCost;
 
-      const { error: updateError } = await supabaseAdmin
+      // Use optimistic locking for refund too
+      const { data: updated, error: updateError } = await supabaseAdmin
         .from("user_profiles")
         .update({ credits: newCredits })
-        .eq("id", userId);
+        .eq("id", userId)
+        .eq("credits", currentCredits)
+        .select("credits")
+        .single();
 
-      if (updateError) {
-        console.error("[Credits] Failed to refund credits:", updateError.message);
-        throw new Error("Failed to refund credits");
+      if (updateError || !updated) {
+        console.error("[Credits] Refund concurrent modification, logging for manual review");
+        console.error(`[Credits] MANUAL_REFUND_NEEDED: user=${userId} amount=${creditCost} action=${action}`);
+        return { ok: false, error: "Concurrent modification during refund" };
       }
 
-      console.log(`[Credits] ✅ Refunded ${creditCost} to user ${userId}. New balance: ${newCredits}`);
-      return { ok: true, refunded: creditCost, newBalance: newCredits };
+      console.log(`[Credits] ✅ Refunded ${creditCost} to user ${userId}. New balance: ${updated.credits}`);
+      return { ok: true, refunded: creditCost, newBalance: updated.credits };
     }
 
     if (rpcError) {
-      // If RPC exists but failed, try manual fallback
-      console.warn("[Credits] RPC refund failed, trying fallback:", rpcError.message);
-
-      const { data: profile } = await supabaseAdmin
-        .from("user_profiles")
-        .select("credits")
-        .eq("id", userId)
-        .single();
-
-      const currentCredits = profile?.credits || 0;
-      const newCredits = currentCredits + creditCost;
-
-      await supabaseAdmin
-        .from("user_profiles")
-        .update({ credits: newCredits })
-        .eq("id", userId);
-
-      console.log(`[Credits] ✅ Refunded ${creditCost} to user ${userId}. New balance: ${newCredits}`);
-      return { ok: true, refunded: creditCost, newBalance: newCredits };
+      // RPC exists but failed — log for manual intervention
+      console.error("[Credits] RPC refund failed:", rpcError.message);
+      console.error(`[Credits] MANUAL_REFUND_NEEDED: user=${userId} amount=${creditCost} action=${action}`);
+      return { ok: false, error: rpcError.message };
     }
 
     console.log(`[Credits] ✅ Refunded ${creditCost} to user ${userId}. New balance: ${result}`);
@@ -156,7 +145,7 @@ export async function refundCredits(userId, action) {
 
   } catch (error) {
     console.error("[Credits] Refund failed:", error.message);
-    // Log for manual intervention but don't throw - we don't want to hide the original error
+    console.error(`[Credits] MANUAL_REFUND_NEEDED: user=${userId} amount=${creditCost} action=${action}`);
     return { ok: false, error: error.message };
   }
 }

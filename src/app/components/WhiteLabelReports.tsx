@@ -28,7 +28,7 @@ export function WhiteLabelReports() {
   const [brandingSettings, setBrandingSettings] = useState({
     companyName: 'Your Agency Name',
     logo: null as string | null,
-    primaryColor: '#C80000',
+    primaryColor: '#c01830',
     secondaryColor: '#000000',
     reportFooter: '© 2024 Your Agency. All rights reserved.'
   });
@@ -94,7 +94,7 @@ export function WhiteLabelReports() {
   const handleGenerateReport = (templateId: string) => {
     const template = templates.find(t => t.id === templateId);
     toast.success(`🎉 Generating "${template?.name}"...`);
-    
+
     setTimeout(() => {
       toast.success(`📄 Report ready for download!`);
     }, 2000);
@@ -195,7 +195,7 @@ export function WhiteLabelReports() {
           {/* Report Templates */}
           <div className="bg-card border border-border rounded-xl p-6">
             <h3 className="text-lg font-bold text-foreground mb-4">Report Templates</h3>
-            
+
             <div className="space-y-3">
               {templates.map((template) => {
                 const FormatIcon = formatIcons[template.format];
@@ -212,7 +212,7 @@ export function WhiteLabelReports() {
                         <div className="flex-1">
                           <h4 className="font-semibold text-foreground mb-1">{template.name}</h4>
                           <p className="text-sm text-muted-foreground mb-2">{template.description}</p>
-                          
+
                           {/* Sections */}
                           <div className="flex flex-wrap gap-1">
                             {template.sections.slice(0, 3).map((section) => (
@@ -288,19 +288,17 @@ export function WhiteLabelReports() {
               {scheduledReports.map((report) => (
                 <div
                   key={report.id}
-                  className={`border rounded-lg p-4 transition-all ${
-                    report.isActive ? 'border-primary/30 bg-primary/5' : 'border-border bg-muted/30'
-                  }`}
+                  className={`border rounded-lg p-4 transition-all ${report.isActive ? 'border-primary/30 bg-primary/5' : 'border-border bg-muted/30'
+                    }`}
                 >
                   <div className="flex items-start justify-between mb-3">
                     <div className="flex-1">
                       <div className="flex items-center gap-2 mb-1">
                         <h4 className="font-semibold text-foreground">{report.templateName}</h4>
-                        <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${
-                          report.isActive
+                        <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${report.isActive
                             ? 'bg-green-500/20 text-green-500'
                             : 'bg-gray-500/20 text-gray-500'
-                        }`}>
+                          }`}>
                           {report.isActive ? 'Active' : 'Paused'}
                         </span>
                       </div>
@@ -422,7 +420,7 @@ export function WhiteLabelReports() {
           {/* Report Stats */}
           <div className="bg-card border border-border rounded-xl p-6">
             <h3 className="font-bold text-foreground mb-4">Report Statistics</h3>
-            
+
             <div className="space-y-4">
               <div className="p-3 bg-gradient-to-br from-blue-500/10 to-transparent rounded-lg border border-border/30">
                 <div className="text-2xl font-bold text-foreground mb-1">24</div>
@@ -449,7 +447,7 @@ export function WhiteLabelReports() {
           {/* Recent Activity */}
           <div className="bg-card border border-border rounded-xl p-6">
             <h3 className="font-bold text-foreground mb-4">Recent Activity</h3>
-            
+
             <div className="space-y-3">
               {[
                 { action: 'Report sent', detail: 'Executive Summary', time: '2 hours ago' },

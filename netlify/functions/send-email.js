@@ -2,20 +2,20 @@ const nodemailer = require('nodemailer');
 
 // Strato SMTP Configuration
 const createTransporter = () => {
-    return nodemailer.createTransport({
-        host: 'smtp.strato.de',
-        port: 465,
-        secure: true, // SSL
-        auth: {
-            user: process.env.STRATO_EMAIL,
-            pass: process.env.STRATO_PASSWORD,
-        },
-    });
+  return nodemailer.createTransport({
+    host: 'smtp.strato.de',
+    port: 465,
+    secure: true, // SSL
+    auth: {
+      user: process.env.STRATO_EMAIL,
+      pass: process.env.STRATO_PASSWORD,
+    },
+  });
 };
 
 // Premium Welcome Email Template (German)
 const getWelcomeEmailTemplate = (userName) => {
-    return `
+  return `
 <!DOCTYPE html>
 <html lang="de">
 <head>
@@ -145,117 +145,117 @@ const getWelcomeEmailTemplate = (userName) => {
 };
 
 exports.handler = async (event) => {
-    // CORS headers
-    const headers = {
-        'Access-Control-Allow-Origin': '*',
-        'Access-Control-Allow-Headers': 'Content-Type, Authorization',
-        'Access-Control-Allow-Methods': 'POST, OPTIONS',
-        'Content-Type': 'application/json',
-    };
+  // CORS headers
+  const headers = {
+    'Access-Control-Allow-Origin': process.env.FRONTEND_URL || 'https://adruby.de',
+    'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+    'Access-Control-Allow-Methods': 'POST, OPTIONS',
+    'Content-Type': 'application/json',
+  };
 
-    if (event.httpMethod === 'OPTIONS') {
-        return { statusCode: 200, headers, body: '' };
+  if (event.httpMethod === 'OPTIONS') {
+    return { statusCode: 200, headers, body: '' };
+  }
+
+  if (event.httpMethod !== 'POST') {
+    return { statusCode: 405, headers, body: JSON.stringify({ error: 'Method not allowed' }) };
+  }
+
+  try {
+    const body = JSON.parse(event.body || '{}');
+    const { type, to, subject, html, userName, recipients } = body;
+
+    // Validate required env vars
+    if (!process.env.STRATO_EMAIL || !process.env.STRATO_PASSWORD) {
+      console.error('[Email] Missing STRATO_EMAIL or STRATO_PASSWORD env vars');
+      return {
+        statusCode: 500,
+        headers,
+        body: JSON.stringify({ error: 'Email configuration missing' }),
+      };
     }
 
-    if (event.httpMethod !== 'POST') {
-        return { statusCode: 405, headers, body: JSON.stringify({ error: 'Method not allowed' }) };
-    }
+    const transporter = createTransporter();
 
-    try {
-        const body = JSON.parse(event.body || '{}');
-        const { type, to, subject, html, userName, recipients } = body;
+    // Handle different email types
+    let emailConfig;
 
-        // Validate required env vars
-        if (!process.env.STRATO_EMAIL || !process.env.STRATO_PASSWORD) {
-            console.error('[Email] Missing STRATO_EMAIL or STRATO_PASSWORD env vars');
-            return {
-                statusCode: 500,
-                headers,
-                body: JSON.stringify({ error: 'Email configuration missing' }),
-            };
+    switch (type) {
+      case 'welcome':
+        // Welcome email after trial start
+        emailConfig = {
+          from: `"AdRuby" <${process.env.STRATO_EMAIL}>`,
+          to: to,
+          subject: '🚀 Willkommen bei AdRuby - Deine Testversion ist aktiv!',
+          html: getWelcomeEmailTemplate(userName),
+        };
+        break;
+
+      case 'custom':
+        // Custom email from admin panel
+        if (!subject || !html) {
+          return {
+            statusCode: 400,
+            headers,
+            body: JSON.stringify({ error: 'Subject and HTML required for custom emails' }),
+          };
         }
 
-        const transporter = createTransporter();
-
-        // Handle different email types
-        let emailConfig;
-
-        switch (type) {
-            case 'welcome':
-                // Welcome email after trial start
-                emailConfig = {
-                    from: `"AdRuby" <${process.env.STRATO_EMAIL}>`,
-                    to: to,
-                    subject: '🚀 Willkommen bei AdRuby - Deine Testversion ist aktiv!',
-                    html: getWelcomeEmailTemplate(userName),
-                };
-                break;
-
-            case 'custom':
-                // Custom email from admin panel
-                if (!subject || !html) {
-                    return {
-                        statusCode: 400,
-                        headers,
-                        body: JSON.stringify({ error: 'Subject and HTML required for custom emails' }),
-                    };
-                }
-
-                // If recipients is an array, send to multiple
-                if (Array.isArray(recipients) && recipients.length > 0) {
-                    const results = [];
-                    for (const recipient of recipients) {
-                        try {
-                            await transporter.sendMail({
-                                from: `"AdRuby" <${process.env.STRATO_EMAIL}>`,
-                                to: recipient,
-                                subject: subject,
-                                html: html,
-                            });
-                            results.push({ email: recipient, success: true });
-                        } catch (err) {
-                            results.push({ email: recipient, success: false, error: err.message });
-                        }
-                    }
-                    return {
-                        statusCode: 200,
-                        headers,
-                        body: JSON.stringify({ success: true, results, sent: results.filter(r => r.success).length }),
-                    };
-                }
-
-                emailConfig = {
-                    from: `"AdRuby" <${process.env.STRATO_EMAIL}>`,
-                    to: to,
-                    subject: subject,
-                    html: html,
-                };
-                break;
-
-            default:
-                return {
-                    statusCode: 400,
-                    headers,
-                    body: JSON.stringify({ error: 'Invalid email type. Use: welcome, custom' }),
-                };
-        }
-
-        // Send single email
-        const result = await transporter.sendMail(emailConfig);
-        console.log('[Email] Sent successfully:', result.messageId);
-
-        return {
+        // If recipients is an array, send to multiple
+        if (Array.isArray(recipients) && recipients.length > 0) {
+          const results = [];
+          for (const recipient of recipients) {
+            try {
+              await transporter.sendMail({
+                from: `"AdRuby" <${process.env.STRATO_EMAIL}>`,
+                to: recipient,
+                subject: subject,
+                html: html,
+              });
+              results.push({ email: recipient, success: true });
+            } catch (err) {
+              results.push({ email: recipient, success: false, error: err.message });
+            }
+          }
+          return {
             statusCode: 200,
             headers,
-            body: JSON.stringify({ success: true, messageId: result.messageId }),
-        };
+            body: JSON.stringify({ success: true, results, sent: results.filter(r => r.success).length }),
+          };
+        }
 
-    } catch (error) {
-        console.error('[Email] Send failed:', error);
+        emailConfig = {
+          from: `"AdRuby" <${process.env.STRATO_EMAIL}>`,
+          to: to,
+          subject: subject,
+          html: html,
+        };
+        break;
+
+      default:
         return {
-            statusCode: 500,
-            headers,
-            body: JSON.stringify({ error: 'Failed to send email', details: error.message }),
+          statusCode: 400,
+          headers,
+          body: JSON.stringify({ error: 'Invalid email type. Use: welcome, custom' }),
         };
     }
+
+    // Send single email
+    const result = await transporter.sendMail(emailConfig);
+    console.log('[Email] Sent successfully:', result.messageId);
+
+    return {
+      statusCode: 200,
+      headers,
+      body: JSON.stringify({ success: true, messageId: result.messageId }),
+    };
+
+  } catch (error) {
+    console.error('[Email] Send failed:', error);
+    return {
+      statusCode: 500,
+      headers,
+      body: JSON.stringify({ error: 'Failed to send email', details: error.message }),
+    };
+  }
 };

@@ -21,10 +21,21 @@ body,
   outline-color: var(--ring);
 }
 
+/* Keyboard-only focus ring — visible on Tab, hidden on click */
+:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
+  border-radius: inherit;
+}
+
+:focus:not(:focus-visible) {
+  outline: none;
+}
+
 :root {
   /* 
    * CORE PALETTE: "Digital Luxury" Identity
-   * Rich Ruby (#E11D48 -> #be123c), deep blacks, and crisp whites.
+   * Warm Ruby (#E63946), deep blacks, crisp whites.
    */
   --background: #ffffff;
   --background-gradient: radial-gradient(circle at 50% 0%, #fff1f2 0%, #ffffff 60%, #ffffff 100%);
@@ -35,9 +46,9 @@ body,
   --popover: #ffffff;
   --popover-foreground: #09090b;
 
-  /* Primary: Ruby Red */
-  --primary: #be123c;
-  /* Rose 700 - Deeper, more premium than std red */
+  /* Primary: Warm Ruby */
+  --primary: #c01830;
+  /* Warm ruby — premium, less neon */
   --primary-foreground: #ffffff;
 
   /* Secondary: Soft Gray/Rose Mix */
@@ -62,11 +73,11 @@ body,
   --border: #e4e4e7;
   /* Zinc 200 */
   --input: #e4e4e7;
-  --ring: #be123c;
+  --ring: #c01830;
 
   /* Charts */
-  --chart-1: #be123c;
-  --chart-2: #e11d48;
+  --chart-1: #E63946;
+  --chart-2: #c01830;
   --chart-3: #fb7185;
   --chart-4: #000000;
   --chart-5: #e5e5e5;
@@ -88,7 +99,7 @@ body,
   /* Sidebar (Light Mode) */
   --sidebar: #ffffff;
   --sidebar-foreground: #09090b;
-  --sidebar-primary: #be123c;
+  --sidebar-primary: #c01830;
   --sidebar-primary-foreground: #ffffff;
   --sidebar-accent: #f4f4f5;
   --sidebar-accent-foreground: #09090b;
@@ -114,9 +125,9 @@ body,
   --popover: #09090b;
   --popover-foreground: #fafafa;
 
-  /* Primary: Brighter Ruby for dark mode contrast */
-  --primary: #e11d48;
-  /* Rose 600 */
+  /* Primary: Warm Ruby — brighter for dark contrast */
+  --primary: #E63946;
+  /* Warm ruby, high contrast on dark */
   --primary-foreground: #ffffff;
 
   --secondary: #27272a;
@@ -135,10 +146,10 @@ body,
 
   --border: #27272a;
   --input: #27272a;
-  --ring: #e11d48;
+  --ring: #E63946;
 
-  --chart-1: #e11d48;
-  --chart-2: #be123c;
+  --chart-1: #E63946;
+  --chart-2: #c01830;
   --chart-3: #fb7185;
   --chart-4: #ffffff;
   --chart-5: #525252;
@@ -146,12 +157,12 @@ body,
   /* Sidebar (Dark Mode) */
   --sidebar: #09090b;
   --sidebar-foreground: #fafafa;
-  --sidebar-primary: #e11d48;
+  --sidebar-primary: #E63946;
   --sidebar-primary-foreground: #ffffff;
   --sidebar-accent: #27272a;
   --sidebar-accent-foreground: #fafafa;
   --sidebar-border: #27272a;
-  --sidebar-ring: #e11d48;
+  --sidebar-ring: #E63946;
 }
 
 /* ═══════════════════════════════════════════════════════════
@@ -159,7 +170,8 @@ body,
    ═══════════════════════════════════════════════════════════ */
 
 @theme inline {
-  --font-sans: "Inter", "system-ui", "sans-serif";
+  --font-sans: "General Sans", "system-ui", "sans-serif";
+  --font-display: "Satoshi", "system-ui", "sans-serif";
 
   --color-background: var(--background);
   --color-foreground: var(--foreground);
@@ -258,7 +270,7 @@ body,
     z-index: 1000;
   }
 
-  .toaster > * {
+  .toaster>* {
     pointer-events: auto;
   }
 }

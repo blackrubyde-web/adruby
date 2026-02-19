@@ -1,4 +1,4 @@
-const defaultOrigin = process.env.FRONTEND_URL || '*';
+const defaultOrigin = process.env.FRONTEND_URL || 'https://adruby.de';
 
 const baseCors = {
   'Content-Type': 'application/json',

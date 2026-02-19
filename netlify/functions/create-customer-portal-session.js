@@ -1,26 +1,7 @@
 import { stripe, supabaseAdmin, SUBSCRIPTION_TABLE } from './_shared/clients.js';
 import { ok, badRequest, serverError, methodNotAllowed, unauthorized, withCors } from './utils/response.js';
 import { initTelemetry, captureException } from './utils/telemetry.js';
-
-async function resolveUserFromAuthHeader(event) {
-  const authHeader = event?.headers?.authorization || event?.headers?.Authorization || null;
-  if (!authHeader?.startsWith('Bearer ')) return { userId: null, userEmail: null, source: 'none' };
-
-  const token = authHeader.slice('Bearer '.length).trim();
-  if (!token) return { userId: null, userEmail: null, source: 'empty' };
-
-  try {
-    const { data, error } = await supabaseAdmin.auth.getUser(token);
-    if (error) {
-      console.warn('[Portal] Invalid bearer token', { message: error.message });
-      return { userId: null, userEmail: null, source: 'invalid' };
-    }
-    return { userId: data?.user?.id || null, userEmail: data?.user?.email || null, source: 'supabase' };
-  } catch (err) {
-    console.error('[Portal] auth.getUser crashed', err);
-    return { userId: null, userEmail: null, source: 'crash' };
-  }
-}
+import { resolveUserFromAuthHeader } from './_shared/auth.js';
 
 export async function handler(event) {
   if (event.httpMethod === 'OPTIONS') {

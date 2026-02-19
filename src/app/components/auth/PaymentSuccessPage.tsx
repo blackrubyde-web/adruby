@@ -28,7 +28,7 @@ export function PaymentSuccessPage({ onGoToDashboard }: PaymentSuccessPageProps)
                 style={{
                   left: `${Math.random() * 100}%`,
                   top: `-${Math.random() * 20}%`,
-                  backgroundColor: ['#C80000', '#FF6B6B', '#4ECDC4', '#FFD93D', '#A8E6CF'][
+                  backgroundColor: ['#c01830', '#FF6B6B', '#4ECDC4', '#FFD93D', '#A8E6CF'][
                     Math.floor(Math.random() * 5)
                   ],
                   animationDelay: `${Math.random() * 2}s`,

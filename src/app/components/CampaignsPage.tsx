@@ -9,18 +9,13 @@ import { useMetaCampaigns, type MetaCampaign } from '../hooks/useMetaCampaigns';
 import { useMetaConnection } from '../hooks/useMetaConnection';
 import type { MetaApplyAction } from '../lib/api/meta';
 import { applyMetaAction } from '../lib/api/meta';
+import { formatCurrency, formatCompact } from '../utils/formatters';
 
 type StatusFilter = 'all' | 'active' | 'paused' | 'completed';
 
-// Helper functions (mock implementations or moved from utils)
-const formatCurrency = (amount: number) =>
-  new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(amount);
-
-const formatCompact = (num: number) =>
-  new Intl.NumberFormat('en-US', { notation: 'compact', compactDisplay: 'short' }).format(num);
-
+// Helper functions
 const formatPct = (num: number) =>
-  new Intl.NumberFormat('en-US', { style: 'percent', minimumFractionDigits: 2 }).format(num);
+  new Intl.NumberFormat('de-DE', { style: 'percent', minimumFractionDigits: 2 }).format(num);
 
 const normalizeStatus = (status: string) => status.toLowerCase();
 

@@ -52,8 +52,8 @@ export const TrialExpiredPaywall = memo(function TrialExpiredPaywall({
                             { icon: Lock, text: 'Voller Dashboard Zugang' },
                         ].map((item, i) => (
                             <div key={i} className="flex items-center gap-3 p-3 rounded-xl bg-white/5 border border-white/5">
-                                <div className="w-8 h-8 rounded-lg bg-[#FF1F1F]/20 flex items-center justify-center">
-                                    <item.icon className="w-4 h-4 text-[#FF1F1F]" />
+                                <div className="w-8 h-8 rounded-lg bg-[#E63946]/20 flex items-center justify-center">
+                                    <item.icon className="w-4 h-4 text-[#E63946]" />
                                 </div>
                                 <span className="text-white/80 text-sm font-medium">{item.text}</span>
                             </div>
@@ -61,7 +61,7 @@ export const TrialExpiredPaywall = memo(function TrialExpiredPaywall({
                     </div>
 
                     {/* Pricing Teaser */}
-                    <div className="mb-8 p-4 rounded-2xl bg-gradient-to-r from-[#FF1F1F]/10 to-rose-500/10 border border-[#FF1F1F]/20">
+                    <div className="mb-8 p-4 rounded-2xl bg-gradient-to-r from-[#E63946]/10 to-rose-500/10 border border-[#E63946]/20">
                         <div className="flex items-center justify-center gap-2 mb-2">
                             <span className="text-4xl font-black text-white">€49</span>
                             <span className="text-white/60">/Monat</span>
@@ -73,7 +73,7 @@ export const TrialExpiredPaywall = memo(function TrialExpiredPaywall({
                     <div className="flex flex-col gap-4">
                         <button
                             onClick={onUpgrade}
-                            className="w-full py-4 bg-gradient-to-r from-[#C80000] via-rose-600 to-red-600 text-white rounded-2xl font-bold text-lg flex items-center justify-center gap-3 hover:shadow-[0_0_40px_rgba(255,31,31,0.4)] transition-all hover:scale-[1.02] active:scale-[0.98]"
+                            className="w-full py-4 bg-gradient-to-r from-[#c01830] via-rose-600 to-red-600 text-white rounded-2xl font-bold text-lg flex items-center justify-center gap-3 hover:shadow-[0_0_40px_rgba(255,31,31,0.4)] transition-all hover:scale-[1.02] active:scale-[0.98]"
                         >
                             <Crown className="w-5 h-5" />
                             Jetzt auf Pro upgraden

@@ -73,8 +73,8 @@ export interface AdminStats {
 
 export async function checkAdminRole(): Promise<boolean> {
     try {
-        await apiClient.get('/api/admin-stats');
-        return true;
+        const result = await apiClient.get<{ isAdmin: boolean }>('/api/admin-check');
+        return result?.isAdmin === true;
     } catch {
         return false;
     }

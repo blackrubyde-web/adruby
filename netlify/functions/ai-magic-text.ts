@@ -26,7 +26,7 @@ interface AIMagicResponse {
 export const handler: Handler = async (event: HandlerEvent) => {
     // CORS headers
     const headers = {
-        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Origin': process.env.FRONTEND_URL || 'https://adruby.de',
         'Access-Control-Allow-Headers': 'Content-Type',
         'Access-Control-Allow-Methods': 'POST, OPTIONS',
     };

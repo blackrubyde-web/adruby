@@ -23,9 +23,8 @@ export async function requireActiveSubscription(userId) {
   const trialEndsAt = data.trial_expires_at || data.trial_ends_at || null;
   const trialOk = data.trial_status === "active" && isTrialActive(trialEndsAt);
   const paid = Boolean(data.payment_verified);
-  const onboardingComplete = Boolean(data.onboarding_completed);
 
-  if (!paid && !trialOk && !onboardingComplete) {
+  if (!paid && !trialOk) {
     return { ok: false, response: badRequest("Subscription required", 402) };
   }
 
