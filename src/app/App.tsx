@@ -48,14 +48,15 @@ import { AdminProvider, useAdmin } from './contexts/AdminContext';
 /* ------------------------------------------------------------------ */
 /*  Feature page definitions to reduce JSX repetition                  */
 /* ------------------------------------------------------------------ */
-const FEATURE_PAGES: Array<{ page: PageType; Component: React.LazyExoticComponent<React.ComponentType<{ onNavigate: (p: string) => void; onSignIn: () => void; onGetStarted: () => void }>> }> = [
-  { page: 'features', Component: FeaturesPage as any },
-  { page: 'feature-ai-generator', Component: FeatureAIGenerator as any },
-  { page: 'feature-creative-library', Component: FeatureCreativeLibrary as any },
-  { page: 'feature-campaign-builder', Component: FeatureCampaignBuilder as any },
-  { page: 'feature-analytics', Component: FeatureAnalytics as any },
-  { page: 'feature-ai-analysis', Component: FeatureAIAnalysis as any },
-  { page: 'pricing', Component: PricingPage as any },
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const FEATURE_PAGES: Array<{ page: PageType; Component: React.LazyExoticComponent<React.ComponentType<any>> }> = [
+  { page: 'features', Component: FeaturesPage },
+  { page: 'feature-ai-generator', Component: FeatureAIGenerator },
+  { page: 'feature-creative-library', Component: FeatureCreativeLibrary },
+  { page: 'feature-campaign-builder', Component: FeatureCampaignBuilder },
+  { page: 'feature-analytics', Component: FeatureAnalytics },
+  { page: 'feature-ai-analysis', Component: FeatureAIAnalysis },
+  { page: 'pricing', Component: PricingPage },
 ];
 
 function AppContent() {
@@ -245,7 +246,7 @@ function AppContent() {
             currentPage === page ? (
               <Component
                 key={page}
-                onNavigate={(p) => go(p as PageType)}
+                onNavigate={(p: string) => go(p as PageType)}
                 onSignIn={() => go('login')}
                 onGetStarted={() => go('register')}
               />

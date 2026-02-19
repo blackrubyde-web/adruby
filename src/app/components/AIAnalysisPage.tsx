@@ -42,7 +42,7 @@ import { PredictiveInsightsSection } from './ai-analysis/PredictiveInsightsSecti
 
 // Shared types
 import type { AIRecommendation, AIAnalysis, Ad, AdSet, Campaign, RecommendationStyle } from './ai-analysis/types';
-import { getStatusColor, getPerformanceColor } from './ai-analysis/types';
+// getStatusColor and getPerformanceColor are used by sub-components directly
 
 export function AIAnalysisPage() {
   const [searchQuery, setSearchQuery] = useState('');

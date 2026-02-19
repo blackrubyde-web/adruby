@@ -138,7 +138,7 @@ export function AIAdBuilderPage() {
                     .from('creative-images')
                     .getPublicUrl(filename);
                 productImageUrl = urlData.publicUrl;
-                console.log('[AIAdBuilder] Product image uploaded:', productImageUrl);
+                // Product image uploaded successfully
             }
 
             // Note: Railway fetches image from URL directly - no base64 needed
