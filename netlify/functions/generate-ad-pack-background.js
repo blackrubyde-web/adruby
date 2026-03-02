@@ -19,36 +19,17 @@ import { supabaseAdmin } from './_shared/clients.js';
 import { checkRateLimit } from './_shared/rateLimiter.js';
 import { categorizeError, getUserMessage } from './_shared/errorCategorizer.js';
 import { runPipeline } from './_shared/adPack/adPipelineOrchestrator.js';
+import { getCorsHeaders } from './_shared/cors.js';
 import crypto from 'crypto';
 
 // Credit cost for ad pack generation
 const AD_PACK_CREDIT_COST = parseInt(process.env.AD_PACK_CREDIT_COST || '40', 10);
 const CREDIT_FEATURE_NAME = 'generate_ad_pack';
 
-// CORS
-const ALLOWED_ORIGINS = [
-    'https://adruby.com',
-    'https://www.adruby.com',
-    'https://app.adruby.com',
-    'http://localhost:5173',
-    'http://localhost:3000',
-];
-
-function getCorsOrigin(requestOrigin) {
-    if (process.env.NODE_ENV === 'development') return '*';
-    return ALLOWED_ORIGINS.includes(requestOrigin) ? requestOrigin : 'https://adruby.com';
-}
-
 export const handler = async (event) => {
     const startTime = Date.now();
-    const requestOrigin = event.headers.origin || event.headers.Origin || '';
 
-    const headers = {
-        'Access-Control-Allow-Origin': getCorsOrigin(requestOrigin),
-        'Access-Control-Allow-Headers': 'Content-Type, Authorization',
-        'Access-Control-Allow-Methods': 'POST, OPTIONS',
-        'Content-Type': 'application/json',
-    };
+    const headers = getCorsHeaders(event);
 
     // CORS preflight
     if (event.httpMethod === 'OPTIONS') {

@@ -154,20 +154,19 @@ async function recordGeminiSuccess() {
         // Invalidate cache
         quotaCache.data = null;
 
-        const { data, error } = await supabaseAdmin
-            .from('gemini_quota')
-            .update({
-                requests_this_minute: supabaseAdmin.sql`requests_this_minute + 1`,
-                requests_this_day: supabaseAdmin.sql`requests_this_day + 1`,
-                consecutive_errors: 0,
-                updated_at: new Date().toISOString()
-            })
-            .eq('id', 'global');
-
-        // Fallback: use RPC or direct increment
+        const { data, error } = await supabaseAdmin.rpc('increment_gemini_quota_success');
+        // If RPC doesn't exist, try raw update (consecutive_errors reset)
         if (error) {
-            await supabaseAdmin.rpc('increment_gemini_quota');
+            await supabaseAdmin
+                .from('gemini_quota')
+                .update({
+                    consecutive_errors: 0,
+                    updated_at: new Date().toISOString()
+                })
+                .eq('id', 'global');
         }
+
+
 
         console.log(`[Gemini] 📊 Request recorded successfully`);
     } catch (err) {
@@ -190,8 +189,10 @@ async function recordGeminiError(error) {
             errorMessage.includes('resource_exhausted') ||
             errorMessage.includes('429');
 
+        // Fetch current state to increment
+        const currentState = await getQuotaState();
         const updates = {
-            consecutive_errors: supabaseAdmin.sql`consecutive_errors + 1`,
+            consecutive_errors: (currentState.consecutive_errors || 0) + 1,
             updated_at: new Date().toISOString()
         };
 
@@ -235,7 +236,7 @@ export function getGeminiClient() {
  */
 export async function analyzeProductWithGemini(productImageBuffer) {
     const genAI = getGeminiClient();
-    const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash-exp" });
+    const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
 
     console.log("[Gemini] 🔍 Analyzing product image with elite prompt...");
 
@@ -324,7 +325,7 @@ export async function generateAdWithGemini({
 
     // Use the image generation model
     const model = genAI.getGenerativeModel({
-        model: "gemini-2.0-flash-exp",
+        model: "gemini-2.0-flash",
         generationConfig: {
             responseModalities: ["image", "text"]
         }
@@ -369,7 +370,7 @@ export async function generateAdWithGemini({
                     return {
                         success: true,
                         buffer: Buffer.from(part.inlineData.data, "base64"),
-                        model: "gemini-2.0-flash-exp"
+                        model: "gemini-2.0-flash"
                     };
                 }
             }
@@ -471,65 +472,6 @@ The product in the input image must look IDENTICAL in the output.
 Only the background, lighting, and text overlay should change.
 
 OUTPUT: A clean, professional product ad with minimal enhancements.`;
-
-    // Fallback to original style-based prompt
-    const styleConfigs = {
-        premium_dark: {
-            background: "Eleganter schwarzer/dunkler Hintergrund mit subtilen Lichteffekten",
-            lighting: "Cinematische Drei-Punkt-Beleuchtung, Hauptlicht von links",
-            effects: "Subtiler Glow, professionelle Schatten, Bokeh im Hintergrund"
-        },
-        minimal_light: {
-            background: "Sauberer weißer/heller Hintergrund mit weichen Schatten",
-            lighting: "Diffuses, gleichmäßiges Licht, keine harten Schatten",
-            effects: "Minimalistisch, clean, luftig"
-        },
-        vibrant: {
-            background: "Lebhafter farbiger Hintergrund mit Gradient",
-            lighting: "Dynamische Beleuchtung mit farbigen Akzenten",
-            effects: "Energetisch, modern, Gen-Z Appeal"
-        }
-    };
-
-    const styleConfig = styleConfigs[style] || styleConfigs.premium_dark;
-
-    return `GENERIERE EINE KOMPLETTE META-WERBEANZEIGE (1080x1080px):
-
-Du siehst ein Produktbild. Erstelle eine KOMPLETT NEUE, PROFESSIONELLE Werbeanzeige.
-
-🎯 WICHTIG - NAHTLOSE INTEGRATION:
-- Das Produkt muss NATÜRLICH in die Szene eingebettet sein
-- KEINE sichtbaren Ränder oder Rechteck-Rahmen um das Produkt!
-- Das Produkt soll aussehen als wäre es FOTOGRAFIERT in der Szene
-- Gleiche Beleuchtung, Schatten, Perspektive wie die Umgebung
-
-📸 SZENE ERSTELLEN:
-- ${styleConfig.background}
-- ${styleConfig.lighting}
-- ${styleConfig.effects}
-- Das Produkt (${productDesc}) steht/liegt natürlich in der Szene
-- Stimmung: ${mood}
-- Farbpalette: ${colors}
-
-🖼️ KOMPOSITION:
-- Produkt im oberen/mittleren Bereich (ca. 40-60% der Bildhöhe)
-- Natürliche Schatten UNTER dem Produkt (kein Rechteck-Schatten!)
-- Professionelle Beleuchtung die zum Hintergrund passt
-- Das Produkt sieht aus als gehöre es in diese Szene
-
-✍️ TEXT IM BILD (unterer Bereich):
-${headline ? `- HEADLINE: "${headline}" - Große, fette, weiße Schrift` : ''}
-${subheadline ? `- SUBHEADLINE: "${subheadline}" - Kleinere weiße Schrift` : ''}
-${cta ? `- CTA-BUTTON: Roter Pill-Button mit "${cta}"` : ''}
-
-⭐ QUALITÄT:
-- Professionelle Meta/Instagram Ad Qualität
-- Keine sichtbaren Kanten oder Compositing-Artefakte
-- Das finale Bild muss aussehen wie EIN zusammenhängendes Foto
-- Magazin-Cover Niveau
-
-KRITISCH: Das Produkt darf NICHT wie draufgeklebt aussehen!
-Es muss NATÜRLICH in die Szene integriert sein.`;
 }
 
 /**
@@ -619,7 +561,7 @@ export async function generateWithStyleReference({
 
     const genAI = getGeminiClient();
     const model = genAI.getGenerativeModel({
-        model: "gemini-2.0-flash-exp",
+        model: "gemini-2.0-flash",
         generationConfig: {
             responseModalities: ["image", "text"]
         }
@@ -716,7 +658,7 @@ Produkt natürlich integrieren, nicht aufgeklebt.`
                     return {
                         success: true,
                         buffer: Buffer.from(part.inlineData.data, "base64"),
-                        model: "gemini-2.0-flash-exp",
+                        model: "gemini-2.0-flash",
                         usedReference: !!referenceImageBuffer
                     };
                 }

@@ -1,45 +1,30 @@
 /**
- * Nano Banana Creative Engine v1.0
+ * Nano Banana Creative Engine v2.0
  * 
- * Generates ad creative images using Gemini 3 Pro Image (Nano Banana Pro)
- * via the skill scripts: create_image.py, edit_image.py
+ * Generates ad creative images using Gemini 2.0 Flash via @google/generative-ai npm SDK.
+ * Falls back to OpenAI gpt-image-1 if Gemini is unavailable.
  * 
  * Produces 3 creative concept directions, each in 3 Meta formats:
  *   1. UGC/Lifestyle — warm, natural, relatable
  *   2. Clean Product — studio, premium, minimal
  *   3. Bold Offer — bright, urgent, high-contrast
  * 
- * Falls back to OpenAI gpt-image-1 if Gemini is unavailable.
+ * v2.0: Replaced Python subprocess with direct Gemini API calls (Netlify-compatible).
  */
 
-import { exec } from 'child_process';
-import { promises as fs } from 'fs';
-import path from 'path';
-import os from 'os';
-import crypto from 'crypto';
+import { GoogleGenerativeAI } from '@google/generative-ai';
 import { generateHeroImage } from '../openai.js';
+import crypto from 'crypto';
 
 // ═══════════════════════════════════════════════════════════════
 // CONFIG
 // ═══════════════════════════════════════════════════════════════
 
-const SKILL_ROOT = process.env.NANO_BANANA_SCRIPTS ||
-    path.resolve(process.cwd(), 'skills/nano-banana-image-editor/scripts');
-
-const VENV_PYTHON = process.env.NANO_BANANA_VENV
-    ? path.join(process.env.NANO_BANANA_VENV, 'bin/python3')
-    : path.resolve(process.cwd(), 'skills/nano-banana-image-editor/.venv/bin/python3');
-
-const CREATE_SCRIPT = path.join(SKILL_ROOT, 'create_image.py');
-const EDIT_SCRIPT = path.join(SKILL_ROOT, 'edit_image.py');
-
-const TEMP_DIR = path.join(os.tmpdir(), 'adruby-creatives');
-
 // Meta format specs
 const META_FORMATS = {
-    square: { ratio: '1:1', width: 1080, height: 1080 },
-    portrait: { ratio: '4:5', width: 1080, height: 1350 },
-    story: { ratio: '9:16', width: 1080, height: 1920 },
+    square: { ratio: '1:1', width: 1080, height: 1080, openaiSize: '1024x1024' },
+    portrait: { ratio: '4:5', width: 1080, height: 1350, openaiSize: '1024x1536' },
+    story: { ratio: '9:16', width: 1080, height: 1920, openaiSize: '1024x1536' },
 };
 
 // ═══════════════════════════════════════════════════════════════
@@ -73,7 +58,6 @@ const CONCEPT_DIRECTIONS = {
 
 /**
  * Build a hyper-specific Gemini prompt for ad creative generation.
- * Follows nano-banana best_practices.md guidelines.
  */
 function buildCreativePrompt(config) {
     const { concept, format, adSpec, brandKit } = config;
@@ -127,100 +111,87 @@ Generate a single, stunning ad creative image that would make a user stop scroll
 }
 
 // ═══════════════════════════════════════════════════════════════
-// IMAGE GENERATION
+// IMAGE GENERATION — GEMINI (via npm SDK)
+// ═══════════════════════════════════════════════════════════════
+
+let _geminiClient = null;
+
+/**
+ * Check if Gemini is available (API key set).
+ */
+function isGeminiAvailable() {
+    return !!process.env.GEMINI_API_KEY;
+}
+
+/**
+ * Get or create Gemini client.
+ */
+function getGeminiClient() {
+    if (_geminiClient) return _geminiClient;
+    const apiKey = process.env.GEMINI_API_KEY;
+    if (!apiKey) throw new Error('GEMINI_API_KEY not set');
+    _geminiClient = new GoogleGenerativeAI(apiKey);
+    return _geminiClient;
+}
+
+/**
+ * Generate an image using Gemini 2.0 Flash via @google/generative-ai SDK.
+ * Returns a Buffer of the generated image.
+ */
+async function generateWithGemini(prompt, format) {
+    const genAI = getGeminiClient();
+
+    const model = genAI.getGenerativeModel({
+        model: 'gemini-2.0-flash',
+        generationConfig: {
+            responseModalities: ['image', 'text'],
+        },
+    });
+
+    console.log(`[NanoBanana] 🎨 Generating ${format} image with Gemini 2.0 Flash...`);
+
+    const result = await model.generateContent([{ text: prompt }]);
+    const response = result.response;
+
+    // Extract image from response
+    if (response.candidates && response.candidates[0]?.content?.parts) {
+        for (const part of response.candidates[0].content.parts) {
+            if (part.inlineData && part.inlineData.data) {
+                const buffer = Buffer.from(part.inlineData.data, 'base64');
+                if (buffer.length < 1000) {
+                    throw new Error('Generated image too small (likely failed)');
+                }
+                console.log(`[NanoBanana] ✅ Gemini generated ${format}: ${(buffer.length / 1024).toFixed(0)}KB`);
+                return buffer;
+            }
+        }
+    }
+
+    // No image in response
+    const textResponse = response.text?.() || '';
+    throw new Error(`Gemini returned no image. Text: ${textResponse.substring(0, 200)}`);
+}
+
+// ═══════════════════════════════════════════════════════════════
+// IMAGE GENERATION — OPENAI FALLBACK
 // ═══════════════════════════════════════════════════════════════
 
 /**
- * Check if Nano Banana (Gemini 3 Pro Image) is available.
- */
-async function isNanoBananaAvailable() {
-    // Check for API key
-    if (!process.env.GEMINI_API_KEY) return false;
-
-    // Check if scripts exist
-    try {
-        await fs.access(CREATE_SCRIPT);
-        await fs.access(VENV_PYTHON);
-        return true;
-    } catch {
-        return false;
-    }
-}
-
-/**
- * Generate an image using Nano Banana (create_image.py).
- */
-function generateWithNanoBanana(outputPath, prompt, format, referenceImage = null) {
-    return new Promise((resolve, reject) => {
-        const formatSpec = META_FORMATS[format];
-
-        // Build command arguments
-        const args = [
-            VENV_PYTHON,
-            CREATE_SCRIPT,
-            `'${outputPath}'`,
-            // Use single quotes to avoid bash special char issues (per best_practices.md)
-            `'${prompt.replace(/'/g, "'\\''")}'`,
-            '--resolution', '2K',
-            '--aspect-ratio', formatSpec.ratio,
-        ];
-
-        // Add reference image if provided
-        if (referenceImage) {
-            args.push('--reference', `'${referenceImage}'`);
-        }
-
-        const cmd = args.join(' ');
-        console.log(`[NanoBanana] Executing: ${cmd.substring(0, 200)}...`);
-
-        exec(cmd, {
-            timeout: 120000, // 2 min timeout per image
-            env: { ...process.env },
-            maxBuffer: 1024 * 1024 * 10, // 10MB buffer
-        }, async (error, stdout, stderr) => {
-            if (error) {
-                console.error(`[NanoBanana] Error:`, error.message);
-                console.error(`[NanoBanana] Stderr:`, stderr);
-                reject(new Error(`Nano Banana generation failed: ${error.message}`));
-                return;
-            }
-
-            // Check if output file was created
-            try {
-                const stat = await fs.stat(outputPath);
-                if (stat.size < 1000) {
-                    reject(new Error('Generated image too small (likely failed)'));
-                    return;
-                }
-                console.log(`[NanoBanana] ✅ Generated: ${outputPath} (${(stat.size / 1024).toFixed(0)}KB)`);
-                resolve(outputPath);
-            } catch {
-                reject(new Error(`Output file not created: ${outputPath}`));
-            }
-        });
-    });
-}
-
-/**
  * Generate an image using OpenAI gpt-image-1 (fallback).
+ * Uses mapped sizes that gpt-image-1 actually accepts.
  */
 async function generateWithOpenAI(prompt, format) {
     const formatSpec = META_FORMATS[format];
 
     console.log(`[NanoBanana] ⚠️ Falling back to OpenAI gpt-image-1 for ${format}`);
 
-    try {
-        const result = await generateHeroImage({
-            prompt,
-            size: `${formatSpec.width}x${formatSpec.height}`,
-            quality: 'high',
-        });
+    const result = await generateHeroImage({
+        prompt,
+        size: formatSpec.openaiSize,
+        quality: 'high',
+    });
 
-        return result;
-    } catch (err) {
-        console.error(`[NanoBanana] OpenAI fallback also failed:`, err.message);
-        throw err;
-    }
+    return result;
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -246,11 +217,8 @@ export async function generateCreativePack(adSpec, options = {}) {
         onProgress = () => { },
     } = options;
 
-    const nanoBananaReady = await isNanoBananaAvailable();
-    console.log(`[NanoBanana] Engine: ${nanoBananaReady ? 'Gemini 3 Pro Image' : 'OpenAI Fallback'}`);
-
-    // Ensure temp directory exists
-    await fs.mkdir(TEMP_DIR, { recursive: true });
+    const geminiReady = isGeminiAvailable();
+    console.log(`[NanoBanana] Engine: ${geminiReady ? 'Gemini 2.0 Flash (npm SDK)' : 'OpenAI Fallback'}`);
 
     const brandKit = adSpec.brandKit || {};
     const totalImages = concepts.length * formats.length;
@@ -259,7 +227,7 @@ export async function generateCreativePack(adSpec, options = {}) {
 
     const creativePack = {
         concepts: [],
-        engine: nanoBananaReady ? 'gemini_3_pro' : 'openai_gpt_image_1',
+        engine: geminiReady ? 'gemini_2_flash' : 'openai_gpt_image_1',
         stats: { total: totalImages, generated: 0, failed: 0 },
     };
 
@@ -302,35 +270,21 @@ export async function generateCreativePack(adSpec, options = {}) {
 
             for (let attempt = 0; attempt <= maxRetries; attempt++) {
                 try {
-                    if (nanoBananaReady) {
-                        // Nano Banana path
-                        const hash = crypto.createHash('sha256')
-                            .update(`${conceptKey}_${formatKey}_${adSpec.offer}`)
-                            .digest('hex')
-                            .substring(0, 12);
-                        const outputPath = path.join(TEMP_DIR, `${hash}_${formatKey}.png`);
-
-                        await generateWithNanoBanana(
-                            outputPath,
-                            prompt,
-                            formatKey,
-                            adSpec.productImageUrl || null,
-                        );
-
-                        const buffer = await fs.readFile(outputPath);
+                    if (geminiReady) {
+                        // Gemini path (direct API call — no Python, no exec)
+                        const buffer = await generateWithGemini(prompt, formatKey);
                         imageResult = {
                             buffer,
-                            filePath: outputPath,
                             width: formatSpec.width,
                             height: formatSpec.height,
                             format: 'png',
-                            engine: 'gemini_3_pro',
+                            engine: 'gemini_2_flash',
                         };
                     } else {
                         // OpenAI fallback
                         const result = await generateWithOpenAI(prompt, formatKey);
                         imageResult = {
-                            buffer: result.imageBuffer || Buffer.from(result.imageBase64 || '', 'base64'),
+                            buffer: result.imageBuffer || Buffer.from(result.b64 || '', 'base64'),
                             dataUrl: result.imageDataUrl,
                             width: formatSpec.width,
                             height: formatSpec.height,
@@ -344,13 +298,13 @@ export async function generateCreativePack(adSpec, options = {}) {
                     lastError = err;
                     console.warn(`[NanoBanana] ${direction.name}/${formatKey} attempt ${attempt + 1} failed: ${err.message}`);
 
-                    // On retry, try OpenAI fallback even if Nano Banana was primary
-                    if (attempt === maxRetries - 1 && nanoBananaReady) {
+                    // On last retry with Gemini, switch to OpenAI fallback
+                    if (attempt === maxRetries - 1 && geminiReady) {
                         console.log(`[NanoBanana] Last retry: switching to OpenAI fallback`);
                         try {
                             const result = await generateWithOpenAI(prompt, formatKey);
                             imageResult = {
-                                buffer: result.imageBuffer || Buffer.from(result.imageBase64 || '', 'base64'),
+                                buffer: result.imageBuffer || Buffer.from(result.b64 || '', 'base64'),
                                 dataUrl: result.imageDataUrl,
                                 width: formatSpec.width,
                                 height: formatSpec.height,
@@ -396,28 +350,23 @@ export async function generateCreativePack(adSpec, options = {}) {
 }
 
 /**
- * Clean up temporary files.
+ * No-op cleanup (no temp files when using API directly).
  */
 export async function cleanupTempFiles() {
-    try {
-        await fs.rm(TEMP_DIR, { recursive: true, force: true });
-        console.log('[NanoBanana] Cleaned up temp directory');
-    } catch {
-        // Ignored
-    }
+    // No temp files to clean — Gemini API returns buffers directly
 }
 
 export {
     CONCEPT_DIRECTIONS,
     META_FORMATS,
     buildCreativePrompt,
-    isNanoBananaAvailable as checkAvailability,
+    isGeminiAvailable as checkAvailability,
 };
 
 export default {
     generateCreativePack,
     cleanupTempFiles,
-    isNanoBananaAvailable,
+    isGeminiAvailable,
     CONCEPT_DIRECTIONS,
     META_FORMATS,
 };

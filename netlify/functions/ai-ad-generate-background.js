@@ -521,8 +521,8 @@ export const handler = async (event) => {
                     imagePrompt: railwayResult.imagePrompt,
                     template: 'ai_design_system_v3',
                     thumbnailUrl: thumbnailUrl,
-                    qualityScore: 95,
-                    engagementScore: 90,
+                    qualityScore: null,
+                    engagementScore: null,
                     metadata: {
                         engine: 'railway_v3_ai_design',
                         foreplayReferences: railwayResult.metadata?.referenceCount || 0,
