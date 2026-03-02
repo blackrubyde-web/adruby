@@ -2,75 +2,26 @@
  * AI Ad Builder - Background Function
  * Netlify automatically handles this as background due to -background suffix
  * The entire handler runs with 15min timeout, returns 202 on completion
+ *
+ * ARCHITECTURE (v3.0 — NanoBanana v5):
+ *   1. Railway Composite v6 (product image) or Railway v3 (no product image)
+ *   2. NanoBanana v5 AI Creative Director (individualized prompts via Gemini)
+ *   3. OpenAI Raw last resort
+ *   4. Error → refund credits
  */
 
-import { getOpenAiClient, getOpenAiModel, generateHeroImage } from './_shared/openai.js';
-import { enhanceImagePrompt } from './_shared/aiAdPromptBuilder.js';
-import { buildCreativeBrief, buildPromptFromBrief, qualityGate } from './_shared/creativeBriefBuilder.js';
-import { autoComposeAdPrompt, getLayoutOptions } from './_shared/compositionEngine.js';
-import { masterCreativeEngine, getAllLayouts } from './_shared/masterCreativeEngine.js';
-// Phase 8: Ultimate Master Engine with 30+ vertical modules
-import { ultimateMasterEngine, AVAILABLE_VERTICALS, SYSTEM_STATS } from './_shared/verticals/index.js';
-// Product Preservation & Dynamic Text
-import { buildHardenedProductPrompt, buildBackgroundOnlyPrompt } from './_shared/productPreservationEngine.js';
-import { generateProductCopy, generateFallbackHeadline } from './_shared/dynamicProductTextGenerator.js';
-// 2026 Elite Creative System (100% Professional)
-import {
-    createEliteAd,
-    detectOptimalConfig,
-    generateEliteBackgroundPrompt,
-    generateCustomBackgroundPrompt,
-    isDetailedCreativePrompt,
-    PALETTES,
-    LAYOUTS,
-    CANVAS,
-} from './_shared/eliteCreativeSystem.js';
+import { getOpenAiClient, generateHeroImage } from './_shared/openai.js';
 import { getUserProfile } from './_shared/auth.js';
 import { assertAndConsumeCredits, refundCredits, CREDIT_COSTS } from './_shared/credits.js';
 import { supabaseAdmin } from './_shared/clients.js';
 import { withRetry } from './_shared/aiAd/retry.js';
-import { scoreAdQuality, validateAdContent, predictEngagement } from './_shared/aiAd/quality-scorer.js';
-// Full Creative Engine for complete ad generation from detailed prompts
-import {
-    buildFullCreativePrompt,
-    createFullCreativeAd,
-    detectTextPosition,
-} from './_shared/fullCreativeEngine.js';
-// Product Integration Engine - integrates products INTO AI scenes
-import {
-    analyzeProductImage,
-    buildIntegratedPrompt,
-    compositeIntoDevice,
-    compositeIntoScene,
-    applyGlowEffect,
-    applyTextOverlay as applyIntegratedTextOverlay,
-} from './_shared/productIntegrationEngine.js';
-// AI Creative Director - Chain-of-Thought reasoning for ANY product
-// Now with GEMINI support for 100% product preservation!
-import { createAdWithCreativeDirector, createAdWithGeminiDirector, createAdWithLayerPipeline } from './_shared/aiCreativeDirector.js';
-
-// Check if Gemini is available
-const USE_GEMINI = !!process.env.GEMINI_API_KEY;
-// Rate Limiting & Error Handling
 import { checkRateLimit } from './_shared/rateLimiter.js';
 import { categorizeError, getUserMessage } from './_shared/errorCategorizer.js';
-// Railway v3.0 - AI Design Knowledge System (100M+ Foreplay References)
-// Railway v6.0 - Composite Pipeline (100% Product Preservation)
-// Railway v10.0 - Async Job Pattern (No Timeout Issues)
-import { generateWithAIDesign, generateWithComposite, generateWithCompositeAsync, isForeplayAvailable } from './_shared/railwayImageClient.js';
+import { generateWithAIDesign, generateWithCompositeAsync, isForeplayAvailable } from './_shared/railwayImageClient.js';
+import { getCorsHeaders } from './_shared/cors.js';
+import { generateSingleAd as nanoBananaGenerateSingleAd } from './_shared/adPack/nanoBananaCreativeEngine.js';
+import crypto from 'crypto';
 
-const MAX_QUALITY_RETRIES = 2;
-
-// Allowed origins for CORS (production security)
-const ALLOWED_ORIGINS = [
-    'https://adruby.com',
-    'https://www.adruby.com',
-    'https://app.adruby.com',
-    'http://localhost:5173',  // Dev
-    'http://localhost:3000',  // Dev
-];
-
-// Allowed hosts for product image URLs (SSRF protection)
 const ALLOWED_IMAGE_HOSTS = [
     'res.cloudinary.com',
     'cdn.shopify.com',
@@ -81,67 +32,26 @@ const ALLOWED_IMAGE_HOSTS = [
     'i.imgur.com',
 ];
 
-/**
- * Validate image URL to prevent SSRF attacks
- */
+// Validate image URL to prevent SSRF attacks
 function validateImageUrl(urlString) {
-    if (!urlString) return { valid: false, error: 'No URL provided' };
-
     try {
         const url = new URL(urlString);
-
-        // Must be HTTPS (except localhost for dev)
-        if (url.protocol !== 'https:' && !url.hostname.includes('localhost')) {
-            return { valid: false, error: 'URL must use HTTPS' };
+        if (url.protocol !== 'https:') {
+            return { valid: false, error: 'Only HTTPS URLs allowed' };
         }
-
-        // Check against allowed hosts
-        const isAllowedHost = ALLOWED_IMAGE_HOSTS.some(host =>
-            url.hostname.includes(host) || url.hostname === host
-        );
-
-        // Also allow Supabase storage URLs
-        if (url.hostname.includes('supabase')) {
-            return { valid: true };
+        const isAllowed = ALLOWED_IMAGE_HOSTS.some(host => url.hostname.endsWith(host));
+        if (!isAllowed) {
+            return { valid: false, error: `Host ${url.hostname} not in allowlist` };
         }
-
-        if (!isAllowedHost) {
-            console.warn(`[Security] Blocked image URL from disallowed host: ${url.hostname}`);
-            return { valid: false, error: `Image host not allowed: ${url.hostname}` };
-        }
-
         return { valid: true };
-    } catch (err) {
+    } catch {
         return { valid: false, error: 'Invalid URL format' };
     }
 }
 
-/**
- * Get CORS origin based on request
- */
-function getCorsOrigin(requestOrigin) {
-    if (process.env.NODE_ENV === 'development') {
-        return '*';  // Allow all in dev
-    }
-
-    if (ALLOWED_ORIGINS.includes(requestOrigin)) {
-        return requestOrigin;
-    }
-
-    // Default to main domain
-    return 'https://adruby.com';
-}
-
 export const handler = async (event) => {
     const startTime = Date.now();
-    const requestOrigin = event.headers.origin || event.headers.Origin || '';
-
-    const headers = {
-        'Access-Control-Allow-Origin': getCorsOrigin(requestOrigin),
-        'Access-Control-Allow-Headers': 'Content-Type, Authorization',
-        'Access-Control-Allow-Methods': 'POST, OPTIONS',
-        'Content-Type': 'application/json',
-    };
+    const headers = getCorsHeaders(event);
 
     if (event.httpMethod === 'OPTIONS') {
         return { statusCode: 200, headers, body: '' };
@@ -151,19 +61,22 @@ export const handler = async (event) => {
         return { statusCode: 405, headers, body: JSON.stringify({ error: 'Method not allowed' }) };
     }
 
+    let userId = null;
+    let jobId = null;
+
     try {
         const body = JSON.parse(event.body || '{}');
         const { mode, language = 'de', strictReplica = true } = body;
 
-        // Authenticate
+        // ─── AUTH ───
         const authHeader = event.headers.authorization || event.headers.Authorization;
         const user = await getUserProfile(authHeader);
-
         if (!user) {
             return { statusCode: 401, headers, body: JSON.stringify({ error: 'Unauthorized' }) };
         }
+        userId = user.id;
 
-        // Validate
+        // ─── VALIDATION ───
         if (mode !== 'form' && mode !== 'free') {
             return { statusCode: 400, headers, body: JSON.stringify({ error: 'Invalid mode' }) };
         }
@@ -171,45 +84,28 @@ export const handler = async (event) => {
             return { statusCode: 400, headers, body: JSON.stringify({ error: 'Missing text' }) };
         }
 
-        // SECURITY: Validate product image URL (SSRF protection)
+        // SSRF protection
         if (body.productImageUrl) {
             const urlValidation = validateImageUrl(body.productImageUrl);
             if (!urlValidation.valid) {
-                return {
-                    statusCode: 400,
-                    headers,
-                    body: JSON.stringify({
-                        error: 'Invalid image URL',
-                        message: urlValidation.error
-                    }),
-                };
+                return { statusCode: 400, headers, body: JSON.stringify({ error: 'Invalid image URL', message: urlValidation.error }) };
             }
         }
 
         console.log('[AI Ad Generate] User:', user.id.substring(0, 8) + '...', 'Mode:', mode);
 
-        // Rate Limiting Check
+        // ─── RATE LIMITING ───
         const rateLimitResult = await checkRateLimit(user.id, 'ai_ad_generate');
         if (!rateLimitResult.allowed) {
-            console.log('[AI Ad Generate] Rate limit exceeded');
             return {
                 statusCode: 429,
-                headers: {
-                    ...headers,
-                    'X-RateLimit-Remaining': '0',
-                    'X-RateLimit-Reset': rateLimitResult.resetAt.toISOString()
-                },
-                body: JSON.stringify({
-                    error: 'Rate limit exceeded',
-                    message: 'Zu viele Anfragen. Bitte warte einen Moment.',
-                    resetAt: rateLimitResult.resetAt.toISOString()
-                }),
+                headers: { ...headers, 'X-RateLimit-Remaining': '0', 'X-RateLimit-Reset': rateLimitResult.resetAt.toISOString() },
+                body: JSON.stringify({ error: 'Rate limit exceeded', message: 'Zu viele Anfragen. Bitte warte einen Moment.', resetAt: rateLimitResult.resetAt.toISOString() }),
             };
         }
 
-        // Create job record FIRST (before credit deduction to avoid race condition)
-        // If this fails, user doesn't lose credits
-        const jobId = body.jobId || crypto.randomUUID();
+        // ─── CREATE JOB RECORD ───
+        jobId = body.jobId || crypto.randomUUID();
         try {
             await supabaseAdmin.from('generated_creatives').insert({
                 id: jobId,
@@ -217,1012 +113,288 @@ export const handler = async (event) => {
                 saved: false,
                 inputs: { mode, language, ...body },
                 outputs: null,
-                metrics: { status: 'pending', started_at: new Date().toISOString() }
+                metrics: { status: 'pending', started_at: new Date().toISOString() },
             });
         } catch (jobError) {
             console.error('[AI Ad Generate] Failed to create job:', jobError.message);
-            return {
-                statusCode: 500,
-                headers,
-                body: JSON.stringify({ error: 'Failed to create job', message: 'Please try again' }),
-            };
+            return { statusCode: 500, headers, body: JSON.stringify({ error: 'Failed to create job' }) };
         }
 
-        console.log('[AI Ad Generate] Job created:', jobId);
-
-        // Deduct credits AFTER job creation (no race condition)
+        // ─── DEDUCT CREDITS ───
         try {
             await assertAndConsumeCredits(user.id, 'ai_ad_generate');
-
-            // Update job status to processing
             await supabaseAdmin.from('generated_creatives').update({
-                metrics: { status: 'processing', credits_deducted: true, started_at: new Date().toISOString() }
+                metrics: { status: 'processing', credits_deducted: true, started_at: new Date().toISOString() },
             }).eq('id', jobId);
-
         } catch (creditError) {
-            // Clean up the job record since we couldn't charge
             await supabaseAdmin.from('generated_creatives').delete().eq('id', jobId);
-
-            return {
-                statusCode: 402,
-                headers,
-                body: JSON.stringify({ error: 'Insufficient credits', message: creditError.message }),
-            };
+            return { statusCode: 402, headers, body: JSON.stringify({ error: 'Insufficient credits', message: creditError.message }) };
         }
 
-        // Progress Update Helper
-        // HIGH 1 FIX: Preserve existing metrics fields (credits_deducted, started_at)
+        // ─── PROGRESS HELPER ───
         const updateProgress = async (step, progress, details = {}) => {
             try {
-                // Fetch existing metrics to preserve important fields
                 const { data: existing } = await supabaseAdmin
                     .from('generated_creatives')
                     .select('metrics')
                     .eq('id', jobId)
                     .single();
 
-                const existingMetrics = existing?.metrics || {};
-
                 await supabaseAdmin.from('generated_creatives').update({
                     metrics: {
-                        ...existingMetrics,  // Preserve credits_deducted, started_at, etc.
+                        ...(existing?.metrics || {}),
                         status: 'processing',
                         step,
                         progress,
                         ...details,
-                        last_update: new Date().toISOString()
-                    }
+                        last_update: new Date().toISOString(),
+                    },
                 }).eq('id', jobId);
             } catch (err) {
                 console.warn('[AI Ad Generate] Progress update failed:', err.message);
             }
         };
 
-        const openai = getOpenAiClient();
-
-        // ====== BUILD MARKER: 2026-01-25T15:28 ======
-        console.log('[AI Ad Generate] 🔥 BUILD: 2026-01-25T15:28 - NEW COMPOSITE LOGIC');
-
-        // DEBUG: Log the actual value of useCompositePipeline
-        console.log('[AI Ad Generate] 📦 useCompositePipeline value:', body.useCompositePipeline, typeof body.useCompositePipeline);
-        // DEBUG: Log the actual values
-        console.log('[AI Ad Generate] 📦 useCompositePipeline:', body.useCompositePipeline);
-        console.log('[AI Ad Generate] 📦 productImageUrl exists:', !!body.productImageUrl);
-
-        // Foreplay is required for ALL generations (no fallback paths).
         const hasProductImage = !!body.productImageUrl || !!body.productImageBase64;
-        if (body.useCompositePipeline === false && hasProductImage) {
-            console.warn('[AI Ad Generate] ⚠️ Composite disabled by client, overriding because Foreplay is mandatory');
-        }
 
-        console.log('[AI Ad Generate] 📦 Foreplay-required generation', { hasProductImage });
+        // ═══════════════════════════════════════════════════════════════
+        // PIPELINE: Try Railway → Gemini Fallback → OpenAI Fallback
+        // ═══════════════════════════════════════════════════════════════
 
-        // ========================================
-        // RAILWAY v6.0: COMPOSITE PIPELINE (REQUIRES PRODUCT IMAGE)
-        // Uses pixel-perfect screenshot preservation
-        // ========================================
-        if (hasProductImage) {
-            console.log('[AI Ad Generate] 🎨 COMPOSITE PIPELINE ACTIVATED!');
-            await updateProgress('composite_v6', 10, { engine: 'composite_pipeline' });
+        let finalImageBuffer = null;
+        let outputData = null;
+        let engine = 'unknown';
 
+        // ─── ATTEMPT 1: RAILWAY ───
+        const foreplayAvailable = await isForeplayAvailable();
+
+        if (foreplayAvailable) {
             try {
-                const foreplayAvailable = await isForeplayAvailable();
-                if (!foreplayAvailable) {
-                    throw new Error('Foreplay is required but not available on Railway');
-                }
+                if (hasProductImage) {
+                    // Railway Composite v6 (product image)
+                    console.log('[AI Ad Generate] 🎨 RAILWAY COMPOSITE v6');
+                    await updateProgress('composite_v6', 10, { engine: 'railway_composite_v6' });
 
-                await updateProgress('composite_generating', 30, { compositeActive: true });
+                    // Generate copy if not provided
+                    let compositeHeadline = body.headline;
+                    let compositeTagline = body.subheadline || body.usp;
+                    let compositeCta = body.cta || 'Jetzt entdecken';
 
-                // BLOCKER 3 FIX: Generate copy if not provided!
-                let compositeHeadline = body.headline;
-                let compositeTagline = body.subheadline || body.usp;
-                let compositeCta = body.cta || 'Jetzt entdecken';
-
-                if (!compositeHeadline) {
-                    console.log('[AI Ad Generate] 📝 No headline provided - generating copy for composite...');
-                    try {
-                        const copyResponse = await openai.chat.completions.create({
-                            model: 'gpt-4o',
-                            messages: [{
-                                role: 'system',
-                                content: `Generate ad copy in ${language === 'de' ? 'German' : 'English'}. Return JSON: { "headline": "short catchy headline", "tagline": "supporting text", "cta": "call to action" }`
-                            }, {
-                                role: 'user',
-                                content: `Product: ${body.productName || 'Product'}\nDescription: ${body.text || body.usp || 'A great product'}\nIndustry: ${body.industry || 'tech'}\nTarget: ${body.targetAudience || 'everyone'}`
-                            }],
-                            response_format: { type: 'json_object' },
-                            max_tokens: 300,
-                            temperature: 0.7
-                        });
-
-                        const generatedCopy = JSON.parse(copyResponse.choices[0].message.content);
-                        compositeHeadline = generatedCopy.headline || body.productName || 'Discover More';
-                        compositeTagline = compositeTagline || generatedCopy.tagline || '';
-                        compositeCta = generatedCopy.cta || compositeCta;
-
-                        console.log('[AI Ad Generate] ✅ Generated copy:', { compositeHeadline, compositeTagline, compositeCta });
-                    } catch (copyErr) {
-                        console.warn('[AI Ad Generate] Copy generation failed, using fallback:', copyErr.message);
-                        compositeHeadline = body.productName || 'Your Product';
-                    }
-                    await updateProgress('copy_for_composite', 25, { copyGenerated: true });
-                }
-
-                // Railway fetches the image from URL directly - no base64 needed
-                // Using ASYNC pattern to prevent timeout issues
-                console.log('[AI Ad Generate] 🚂 Starting ASYNC Railway job (no timeout risk)...');
-
-                const compositeResult = await generateWithCompositeAsync({
-                    productImageBase64: body.productImageBase64 || null,
-                    productImageUrl: body.productImageUrl,
-                    headline: compositeHeadline,
-                    tagline: compositeTagline,
-                    cta: compositeCta,
-                    userPrompt: body.text || `${body.productName || 'Product'} advertisement`,
-                    industry: body.industry || 'tech',
-                    accentColor: body.accentColor || '#FF4757',
-                    strictReplica,
-                });
-
-                console.log('[AI Ad Generate] ✅ Composite Pipeline complete!', {
-                    hasImage: !!compositeResult.imageBuffer,
-                    source: compositeResult.metadata?.source,
-                    isSaaSProduct: compositeResult.metadata?.isSaaSProduct,
-                });
-
-                if (!compositeResult.imageBuffer) {
-                    throw new Error('Composite returned no image');
-                }
-
-                // Upload to Supabase
-                let finalImageUrl = null;
-                const filename = `creatives/${user.id}/${jobId}.png`;
-
-                const { error: uploadError } = await supabaseAdmin.storage
-                    .from('creative-images')
-                    .upload(filename, compositeResult.imageBuffer, { contentType: 'image/png', upsert: true });
-
-                if (!uploadError) {
-                    const { data: urlData } = supabaseAdmin.storage.from('creative-images').getPublicUrl(filename);
-                    finalImageUrl = urlData.publicUrl;
-                }
-
-                // CRITICAL: Update DB with outputs and metrics so polling detects success
-                // Note: No 'status' column exists - polling reads metrics.status
-                // BLOCKER FIX: Include copy (headline, tagline, cta) in outputs!
-                console.log('[AI Ad Generate] ✅ Saving composite result to DB...');
-
-                // Extract copy from compositionPlan if available, fallback to request body
-                const composition = compositeResult.metadata?.compositionPlan;
-                const finalHeadline = composition?.headline?.text || body.headline || 'Your Product';
-                const finalTagline = composition?.subheadline?.text || body.subheadline || body.usp || '';
-                const finalCta = composition?.cta?.text || body.cta || 'Jetzt entdecken';
-
-                console.log('[AI Ad Generate] 📝 Copy to save:', { finalHeadline, finalTagline, finalCta });
-
-                const { error: dbError } = await supabaseAdmin.from('generated_creatives').update({
-                    outputs: {
-                        // BLOCKER FIX: Save copy fields!
-                        headline: finalHeadline,
-                        slogan: finalTagline,
-                        tagline: finalTagline,
-                        cta: finalCta,
-                        description: body.text || body.usp || '',
-                        // Image fields
-                        imageUrl: finalImageUrl || compositeResult.imageDataUrl,
-                        imageDataUrl: compositeResult.imageDataUrl,
-                        thumbnailUrl: finalImageUrl || compositeResult.imageDataUrl,
-                        // Metadata
-                        engine: 'railway_composite_v6',
-                        quality: compositeResult.metadata?.qualityScore || 7.6,
-                        template: 'composite_v6',
-                    },
-                    thumbnail: finalImageUrl || compositeResult.imageDataUrl,
-                    metrics: {
-                        status: 'complete',  // This is what ai-ad-status reads!
-                        progress: 100,
-                        engine: 'railway_composite_v6',
-                        completed_at: new Date().toISOString(),
-                        duration_ms: Date.now() - startTime,
-                        credits_deducted: true,  // Preserve this field!
-                        copy_generated: true,
-                    }
-                }).eq('id', jobId);
-
-                if (dbError) {
-                    console.error('[AI Ad Generate] ❌ DB update error:', dbError);
-                } else {
-                    console.log('[AI Ad Generate] ✅ DB updated: status=complete, outputs saved');
-                }
-
-                return {
-                    statusCode: 200,
-                    headers,
-                    body: JSON.stringify({
-                        success: true,
-                        imageUrl: finalImageUrl || compositeResult.imageDataUrl,
-                        imageDataUrl: compositeResult.imageDataUrl,
-                        engine: 'railway_composite_v6',
-                        metadata: compositeResult.metadata,
-                    })
-                };
-            } catch (compositeError) {
-                console.error('[AI Ad Generate] ❌ Composite error:', compositeError.message);
-                console.error('[AI Ad Generate] ❌ Full error:', compositeError.stack);
-                await updateProgress('composite_error', 25, { error: compositeError.message });
-                // Hard fail - Foreplay pipeline is mandatory.
-                throw new Error(`Composite pipeline failed (Foreplay required): ${compositeError.message}`);
-            }
-        }
-
-        // ========================================
-        // RAILWAY v3.0: AI DESIGN KNOWLEDGE SYSTEM (FOREPLAY REQUIRED)
-        // Uses Foreplay references even without product image
-        // ========================================
-        if (!hasProductImage) {
-            console.log('[AI Ad Generate] 🚀 Using Railway v3.0 AI Design System (Foreplay required)...');
-            await updateProgress('railway_v3', 10, { engine: 'ai_design_system' });
-
-            try {
-                const foreplayAvailable = await isForeplayAvailable();
-                if (!foreplayAvailable) {
-                    throw new Error('Foreplay is required but not available on Railway');
-                }
-
-                await updateProgress('railway_generating', 30, { railwayActive: true });
-
-                const railwayResult = await generateWithAIDesign({
-                    productImageBase64: body.productImageBase64,
-                    productImageUrl: body.productImageUrl,
-                    headline: body.headline,
-                    tagline: body.subheadline || body.usp,
-                    cta: body.cta || 'Jetzt entdecken',
-                    userPrompt: body.text || `${body.productName || 'Product'} advertisement for ${body.targetAudience || 'target audience'}`,
-                    industry: body.industry || 'tech',
-                    accentColor: body.accentColor || '#FF4757',
-                    enableQualityCheck: true,
-                    enableAIContent: true,
-                    enableAdvancedEffects: true,
-                });
-
-                console.log('[AI Ad Generate] ✅ Railway v3.0 generation complete!', {
-                    hasImage: !!railwayResult.imageBuffer,
-                    source: railwayResult.metadata?.source,
-                    referenceCount: railwayResult.metadata?.referenceCount,
-                });
-
-                if (!railwayResult.imageBuffer) {
-                    throw new Error('Railway returned no image');
-                }
-
-                let finalImageUrl = null;
-                let thumbnailUrl = null;
-                const filename = `creatives/${user.id}/${jobId}.png`;
-
-                const { error: uploadError } = await supabaseAdmin.storage
-                    .from('creative-images')
-                    .upload(filename, railwayResult.imageBuffer, { contentType: 'image/png', upsert: true });
-
-                if (!uploadError) {
-                    const { data: urlData } = supabaseAdmin.storage.from('creative-images').getPublicUrl(filename);
-                    finalImageUrl = urlData.publicUrl;
-                    thumbnailUrl = urlData.publicUrl;
-                } else {
-                    throw new Error(`Failed to upload to Supabase: ${uploadError.message}`);
-                }
-
-                const outputData = {
-                    headline: body.headline || 'AI Generated',
-                    slogan: body.subheadline || '',
-                    description: body.text || body.usp || '',
-                    cta: body.cta || 'Jetzt entdecken',
-                    hook: '',
-                    imageUrl: finalImageUrl,
-                    imagePrompt: railwayResult.imagePrompt,
-                    template: 'ai_design_system_v3',
-                    thumbnailUrl: thumbnailUrl,
-                    qualityScore: null,
-                    engagementScore: null,
-                    metadata: {
-                        engine: 'railway_v3_ai_design',
-                        foreplayReferences: railwayResult.metadata?.referenceCount || 0,
-                        composition: railwayResult.metadata?.composition,
-                    },
-                };
-
-                const generationTime = Date.now() - startTime;
-                await supabaseAdmin.from('generated_creatives').update({
-                    outputs: outputData,
-                    metrics: {
-                        status: 'complete',
-                        generationTime: generationTime,
-                        engine: 'railway_v3',
-                        completed_at: new Date().toISOString()
-                    }
-                }).eq('id', jobId);
-
-                return {
-                    statusCode: 200,
-                    headers,
-                    body: JSON.stringify({
-                        success: true,
-                        status: 'complete',
-                        data: {
-                            ...outputData,
-                            id: jobId,
-                            creditsUsed: CREDIT_COSTS.ai_ad_generate,
-                        },
-                        metadata: {
-                            model: 'railway-v3-ai-design',
-                            timestamp: Date.now(),
-                            generationTime: generationTime,
-                        },
-                    }),
-                };
-            } catch (railwayErr) {
-                console.error('[AI Ad Generate] Railway v3.0 failed:', railwayErr.message);
-                await updateProgress('railway_error', 15, { railwayError: railwayErr.message });
-                throw new Error(`Railway v3.0 failed (Foreplay required): ${railwayErr.message}`);
-            }
-        }
-
-        // ========================================
-        // STEP 1: VISION ANALYSIS - Product Preservation (CRITICAL)
-        // Analyzes the EXACT product to ensure 1:1 preservation
-        // ========================================
-        let visionDescription = '';
-        if (body.productImageUrl) {
-            console.log('[AI Ad Generate] 🔍 Analyzing product image for EXACT preservation...');
-            try {
-                const visionResponse = await openai.chat.completions.create({
-                    model: 'gpt-4o',
-                    messages: [
-                        {
-                            role: 'system',
-                            content: `Du bist ein forensischer Produktanalyst. Deine Aufgabe ist es, das Produkt im Bild mit 100% Genauigkeit zu beschreiben.
-
-EXTREM WICHTIG: Die Beschreibung muss so präzise sein, dass das Produkt EXAKT rekonstruiert werden kann.
-
-Beschreibe in dieser Reihenfolge:
-1. FORM: Exakte geometrische Form, Proportionen, Dimensionen
-2. FARBEN: Exakte Farben mit HEX-Codes wenn möglich
-3. MATERIAL: Oberfläche (matt/glänzend), Textur, Material-Look
-4. DETAILS: Alle sichtbaren Details - Augen, Ohren, Muster, Logos, Text
-5. STIL: Design-Stil (z.B. "Minecraft-Pixel-Style", "Cartoon", "Realistisch")
-6. BESONDERHEITEN: Was macht dieses Produkt einzigartig?
-
-Beginne mit: "PRÄZISE PRODUKTBESCHREIBUNG:"`
-                        },
-                        {
-                            role: 'user',
-                            content: [
-                                { type: 'text', text: 'Analysiere dieses Produkt mit forensischer Präzision. Jedes Detail zählt für die exakte Reproduktion.' },
-                                { type: 'image_url', image_url: { url: body.productImageUrl, detail: 'high' } }
-                            ]
+                    if (!compositeHeadline) {
+                        try {
+                            const openai = getOpenAiClient();
+                            const copyResponse = await openai.chat.completions.create({
+                                model: 'gpt-4o',
+                                messages: [{
+                                    role: 'system',
+                                    content: `Generate ad copy in ${language === 'de' ? 'German' : 'English'}. Return JSON: { "headline": "short catchy headline", "tagline": "supporting text", "cta": "call to action" }`,
+                                }, {
+                                    role: 'user',
+                                    content: `Product: ${body.productName || 'Product'}\nDescription: ${body.text || body.usp || 'A great product'}\nIndustry: ${body.industry || 'tech'}\nTarget: ${body.targetAudience || 'everyone'}`,
+                                }],
+                                response_format: { type: 'json_object' },
+                                max_tokens: 300,
+                                temperature: 0.7,
+                            });
+                            const generatedCopy = JSON.parse(copyResponse.choices[0].message.content);
+                            compositeHeadline = generatedCopy.headline || body.productName || 'Discover More';
+                            compositeTagline = compositeTagline || generatedCopy.tagline || '';
+                            compositeCta = generatedCopy.cta || compositeCta;
+                        } catch (copyErr) {
+                            console.warn('[AI Ad Generate] Copy generation failed:', copyErr.message);
+                            compositeHeadline = body.productName || 'Your Product';
                         }
-                    ],
-                    max_tokens: 500
-                });
-                visionDescription = visionResponse.choices[0].message.content;
-                console.log('[AI Ad Generate] ✓ Vision description:', visionDescription.substring(0, 100) + '...');
-                await updateProgress('vision_analysis', 20, { visionComplete: true });
-            } catch (err) {
-                console.error('[AI Ad Generate] ✗ Vision analysis failed:', err);
-                await updateProgress('vision_analysis', 20, { visionComplete: false, visionError: err.message });
-            }
-        }
-
-        // ========================================
-        // STEP 2: DYNAMIC TEXT GENERATION
-        // Generate product-specific headlines, CTAs, features
-        // ========================================
-        let dynamicText = {
-            headline: body.headline,
-            subheadline: body.subheadline,
-            cta: body.cta || 'Jetzt entdecken',
-            badge: body.badge,
-            features: body.features || [],
-        };
-
-        // Only generate if not provided by user
-        if (!body.headline || !body.cta || (body.features || []).length === 0) {
-            console.log('[AI Ad Generate] 📝 Generating product-specific ad copy...');
-            try {
-                const generatedCopy = await generateProductCopy(openai, {
-                    productName: body.productName,
-                    productDescription: body.text || body.usp,
-                    visionDescription: visionDescription,
-                    targetAudience: body.targetAudience,
-                    tone: body.tone || 'professional',
-                    language: language,
-                    goal: body.goal || 'conversion',
-                    industry: body.industry,
-                });
-
-                // Merge generated with user-provided (user-provided takes priority)
-                dynamicText = {
-                    headline: body.headline || generatedCopy.headline,
-                    subheadline: body.subheadline || generatedCopy.subheadline,
-                    cta: body.cta || generatedCopy.cta,
-                    badge: body.badge || generatedCopy.badge,
-                    features: (body.features && body.features.length > 0) ? body.features : generatedCopy.features,
-                    hook: generatedCopy.hook,
-                };
-
-                console.log('[AI Ad Generate] ✓ Generated dynamic text:', {
-                    headline: dynamicText.headline,
-                    cta: dynamicText.cta,
-                    featureCount: dynamicText.features.length,
-                });
-            } catch (err) {
-                console.error('[AI Ad Generate] ✗ Dynamic text generation failed:', err);
-                // Fallback
-                dynamicText.headline = dynamicText.headline || generateFallbackHeadline(body.productName, body.text, language);
-            }
-            await updateProgress('copy_generation', 35, { copyComplete: true });
-        }
-
-        // ========================================
-        // STEP 3: BUILD HARDENED PRODUCT PROMPT
-        // Ensures product is NEVER modified
-        // ========================================
-        const hardenedProductPrompt = visionDescription
-            ? buildHardenedProductPrompt(visionDescription, body.productName)
-            : '';
-
-        console.log('[AI Ad Generate] 🔒 Product preservation:', visionDescription ? 'ACTIVE' : 'No image provided');
-
-        // Build Creative Brief (Enterprise Creative Engine v2)
-        console.log('[AI Ad Generate] Building Creative Brief...');
-        const creativeBrief = buildCreativeBrief({
-            mode,
-            language,
-            productName: body.productName,
-            productDescription: body.text || body.usp,
-            industry: body.industry,
-            targetAudience: body.targetAudience,
-            usp: body.usp,
-            tone: body.tone,
-            goal: body.goal,
-            template: body.template,
-            text: body.text,
-            productImageUrl: body.productImageUrl,
-            visionDescription: visionDescription,
-        });
-
-        const promptData = buildPromptFromBrief(creativeBrief);
-        console.log('[AI Ad Generate] Using style:', promptData.style?.name);
-
-        // ========================================
-        // ULTIMATE MASTER ENGINE (Enterprise Phase 8)
-        // Complete 30+ module system with vertical intelligence
-        // ========================================
-        let ultimateOutput = null;
-        try {
-            ultimateOutput = ultimateMasterEngine({
-                // Product info
-                productName: body.productName || 'Product',
-                productDescription: body.text || body.usp,
-                productImageUrl: body.productImageUrl,
-                visionDescription: visionDescription,
-
-                // Business context
-                industry: body.industry,
-                vertical: body.vertical, // e-commerce, saas, coaching, course, dropshipping, agency, etc.
-                businessModel: body.businessModel, // freemium, free_trial, signature_course, etc.
-
-                // Target audience
-                targetAudience: body.targetAudience,
-                persona: body.persona, // busy_professional, health_conscious, gen_z_trendy, etc.
-
-                // Goals
-                goal: body.goal || 'conversion',
-                objective: body.objective || 'purchase',
-
-                // Preferences
-                tone: body.tone || 'professional',
-                language: language,
-                platform: body.platform || 'instagram_feed',
-
-                // Content - USE DYNAMICALLY GENERATED TEXT
-                headline: dynamicText.headline,
-                subheadline: dynamicText.subheadline,
-                features: dynamicText.features,
-                cta: dynamicText.cta,
-                badge: body.badge,
-                testimonial: body.testimonial,
-                price: body.price,
-                originalPrice: body.originalPrice,
-
-                // Special modes
-                isRetargeting: body.isRetargeting || false,
-                retargetingSegment: body.retargetingSegment, // cart_abandon, product_view, etc.
-                isSeasonalCampaign: body.isSeasonalCampaign || false,
-
-                // Overrides
-                layoutId: body.layoutId,
-                colorOverride: body.brandColor,
-                fontPairingId: body.fontPairingId,
-                conversionFramework: body.conversionFramework,
-                archetypeId: body.archetypeId,
-                visualPattern: body.visualPattern,
-            });
-
-            console.log('[AI Ad Generate] Ultimate Engine output:', {
-                vertical: ultimateOutput.metadata?.vertical,
-                industry: ultimateOutput.metadata?.industry,
-                persona: ultimateOutput.metadata?.persona,
-                layout: ultimateOutput.metadata?.layout,
-                performanceScore: ultimateOutput.performance?.overallScore,
-                performanceGrade: ultimateOutput.performance?.grade,
-            });
-        } catch (ultimateErr) {
-            console.warn('[AI Ad Generate] Ultimate Engine failed, falling back:', ultimateErr.message);
-        }
-
-        // ========================================
-        // MASTER CREATIVE ENGINE v2 (Fallback)
-        // ========================================
-        const masterOutput = masterCreativeEngine({
-            // Product info
-            productName: body.productName || 'Product',
-            productDescription: body.text || body.usp,
-            productImageUrl: body.productImageUrl,
-            visionDescription: visionDescription,
-
-            // User preferences
-            industry: body.industry,
-            targetAudience: body.targetAudience,
-            goal: body.goal || 'conversion',
-            tone: body.tone || 'professional',
-            language: language,
-
-            // Optional overrides
-            layoutId: body.layoutId,
-            colorOverride: body.brandColor,
-            fontPairingId: body.fontPairingId,
-
-            // Content
-            headline: body.headline,
-            subheadline: body.subheadline,
-            features: body.features || [],
-            cta: body.cta,
-            badge: body.badge,
-            testimonial: body.testimonial,
-        });
-
-        console.log('[AI Ad Generate] Master Engine output:', {
-            industry: masterOutput.metadata?.industry,
-            layout: masterOutput.metadata?.layout,
-            colorPalette: masterOutput.metadata?.colorPalette?.primary,
-            creativeScore: masterOutput.creativeScore?.score,
-            variationsCount: masterOutput.variations?.length,
-        });
-
-        // Build layout-based composition for designer-level graphics (fallback/hybrid)
-        const layoutComposition = autoComposeAdPrompt({
-            layoutId: body.layoutId, // Optional: user-selected layout
-            product: {
-                name: body.productName || 'Product',
-                description: body.text || body.usp,
-            },
-            features: body.features || [], // Array of feature strings
-            headline: body.headline,
-            subheadline: body.subheadline,
-            cta: body.cta || 'Jetzt entdecken',
-            badge: body.badge,
-            visionDescription: visionDescription,
-            brandColor: body.brandColor,
-            language: language,
-            tone: body.tone,
-            // Auto-detect layout type based on content
-            hasMultipleFeatures: (body.features?.length || 0) >= 3,
-            isSale: body.goal === 'sale' || body.template === 'urgency_sale',
-            isAnnouncement: body.goal === 'announcement',
-            isMinimal: body.template === 'minimalist_elegant',
-        });
-
-        console.log('[AI Ad Generate] Using layout:', masterOutput.metadata?.layoutName || layoutComposition.metadata?.layoutName || 'auto-selected');
-
-        // openai already declared at top of function (line 89)
-        const model = getOpenAiModel();
-
-        // Quality loop for copy generation
-        let adCopy;
-        let qualityScore;
-        let attempt = 0;
-
-        while (attempt < MAX_QUALITY_RETRIES) {
-            attempt++;
-            console.log(`[AI Ad Generate] Quality attempt ${attempt}/${MAX_QUALITY_RETRIES}`);
-
-            const copyResponse = await withRetry(
-                async () => openai.chat.completions.create({
-                    model,
-                    messages: [
-                        { role: 'system', content: promptData.system },
-                        { role: 'user', content: promptData.user },
-                    ],
-                    response_format: { type: 'json_object' },
-                    temperature: 0.7 + (attempt * 0.1),
-                    max_tokens: 2500, // Increased from 1000 to prevent truncated JSON
-                }),
-                { maxRetries: 3, initialDelay: 1000 }
-            );
-
-            // Safely parse JSON response (OpenAI sometimes returns truncated JSON)
-            const rawContent = copyResponse.choices[0].message.content;
-            try {
-                adCopy = JSON.parse(rawContent);
-            } catch (parseErr) {
-                console.error('[AI Ad Generate] JSON parse failed, attempting recovery:', parseErr.message);
-                console.error('[AI Ad Generate] Raw content length:', rawContent?.length);
-
-                // Try to extract usable JSON by finding complete object
-                const jsonMatch = rawContent?.match(/\{[\s\S]*\}/);
-                if (jsonMatch) {
-                    try {
-                        adCopy = JSON.parse(jsonMatch[0]);
-                        console.log('[AI Ad Generate] ✓ Recovered JSON from partial response');
-                    } catch (retryErr) {
-                        // Complete fallback with dynamic text
-                        console.log('[AI Ad Generate] Using fallback copy from dynamic text');
-                        adCopy = {
-                            headline: dynamicText.headline || body.productName || 'Entdecke jetzt',
-                            slogan: dynamicText.subheadline || body.text?.substring(0, 100) || '',
-                            description: body.text || dynamicText.hook || '',
-                            cta: dynamicText.cta || 'Jetzt entdecken',
-                            imagePrompt: `Premium product ad for ${body.productName || 'product'}, professional studio lighting, clean background`,
-                            variants: [],
-                        };
                     }
+
+                    await updateProgress('composite_generating', 30);
+
+                    const compositeResult = await generateWithCompositeAsync({
+                        productImageBase64: body.productImageBase64 || null,
+                        productImageUrl: body.productImageUrl,
+                        headline: compositeHeadline,
+                        tagline: compositeTagline,
+                        cta: compositeCta,
+                        userPrompt: body.text || `${body.productName || 'Product'} advertisement`,
+                        industry: body.industry || 'tech',
+                        accentColor: body.accentColor || '#FF4757',
+                        strictReplica,
+                    });
+
+                    if (!compositeResult.imageBuffer) throw new Error('Composite returned no image');
+
+                    finalImageBuffer = compositeResult.imageBuffer;
+                    engine = 'railway_composite_v6';
+
+                    const composition = compositeResult.metadata?.compositionPlan;
+                    outputData = {
+                        headline: composition?.headline?.text || body.headline || compositeHeadline,
+                        slogan: composition?.subheadline?.text || body.subheadline || compositeTagline || '',
+                        tagline: composition?.subheadline?.text || body.subheadline || compositeTagline || '',
+                        cta: composition?.cta?.text || body.cta || compositeCta,
+                        description: body.text || body.usp || '',
+                        template: 'composite_v6',
+                        quality: compositeResult.metadata?.qualityScore || null,
+                        metadata: compositeResult.metadata || {},
+                    };
+
                 } else {
-                    // Complete fallback
-                    adCopy = {
-                        headline: dynamicText.headline || body.productName || 'Entdecke jetzt',
-                        slogan: dynamicText.subheadline || '',
-                        description: body.text || '',
-                        cta: dynamicText.cta || 'Jetzt entdecken',
-                        imagePrompt: `Premium product ad for ${body.productName || 'product'}, professional studio lighting, clean background`,
-                        variants: [],
+                    // Railway v3 AI Design (no product image)
+                    console.log('[AI Ad Generate] 🚀 RAILWAY v3 AI DESIGN');
+                    await updateProgress('railway_v3', 10, { engine: 'railway_v3' });
+
+                    const railwayResult = await generateWithAIDesign({
+                        productImageBase64: body.productImageBase64,
+                        productImageUrl: body.productImageUrl,
+                        headline: body.headline,
+                        tagline: body.subheadline || body.usp,
+                        cta: body.cta || 'Jetzt entdecken',
+                        userPrompt: body.text || `${body.productName || 'Product'} advertisement`,
+                        industry: body.industry || 'tech',
+                        accentColor: body.accentColor || '#FF4757',
+                        enableQualityCheck: true,
+                        enableAIContent: true,
+                        enableAdvancedEffects: true,
+                    });
+
+                    if (!railwayResult.imageBuffer) throw new Error('Railway returned no image');
+
+                    finalImageBuffer = railwayResult.imageBuffer;
+                    engine = 'railway_v3_ai_design';
+                    outputData = {
+                        headline: body.headline || 'AI Generated',
+                        slogan: body.subheadline || '',
+                        description: body.text || body.usp || '',
+                        cta: body.cta || 'Jetzt entdecken',
+                        imagePrompt: railwayResult.imagePrompt,
+                        template: 'ai_design_system_v3',
+                        metadata: {
+                            foreplayReferences: railwayResult.metadata?.referenceCount || 0,
+                            composition: railwayResult.metadata?.composition,
+                        },
                     };
                 }
+
+                console.log(`[AI Ad Generate] ✅ Railway success (${engine})`);
+            } catch (railwayErr) {
+                console.warn(`[AI Ad Generate] ⚠️ Railway failed: ${railwayErr.message}`);
+                await updateProgress('railway_failed', 20, { error: railwayErr.message });
+                // Fall through to Gemini/OpenAI fallback
             }
-
-            try {
-                validateAdContent(adCopy);
-            } catch (err) {
-                if (attempt === MAX_QUALITY_RETRIES) throw err;
-                continue;
-            }
-
-            const quality = scoreAdQuality(adCopy);
-            qualityScore = quality.score;
-            console.log('[AI Ad Generate] Quality:', qualityScore, quality.grade);
-
-            if (quality.passed || attempt === MAX_QUALITY_RETRIES) break;
+        } else {
+            console.log('[AI Ad Generate] ⚠️ Railway/Foreplay unavailable, using fallback pipeline');
         }
 
-        // Generate image with intelligent prompt selection
-        // Priority: 1) Ultimate Engine (full verticals), 2) Master Engine, 3) Layout composition, 4) Enhanced AI prompt
-        let imagePrompt;
-        let promptSource;
+        // ─── ATTEMPT 2: NANOBANANA (AI Creative Director) ───
+        if (!finalImageBuffer) {
+            console.log('[AI Ad Generate] 🍌 NANOBANANA: AI Creative Director');
+            await updateProgress('nanoBanana', 40, { engine: 'nanoBanana_v5' });
 
-        if (ultimateOutput?.imagePrompt) {
-            // Use Ultimate Master Engine output (full vertical intelligence)
-            imagePrompt = ultimateOutput.imagePrompt;
-            promptSource = 'ultimate-engine';
-            console.log('[AI Ad Generate] Using Ultimate Engine prompt (vertical:', ultimateOutput.metadata?.vertical, ', score:', ultimateOutput.performance?.overallScore, ')');
-        } else if (masterOutput?.imagePrompt) {
-            // Use Master Creative Engine output (full intelligence: industry, color, typography)
-            imagePrompt = masterOutput.imagePrompt;
-            promptSource = 'master-engine';
-            console.log('[AI Ad Generate] Using Master Engine prompt (industry:', masterOutput.metadata?.industry, ')');
-        } else if (layoutComposition?.prompt && (body.features?.length > 0 || body.layoutId)) {
-            // Use layout composition for structured ads with features
-            imagePrompt = layoutComposition.prompt;
-            promptSource = 'layout-composition';
-            console.log('[AI Ad Generate] Using layout-based prompt');
-        } else {
-            // Fall back to enhanced AI-generated prompt
-            imagePrompt = enhanceImagePrompt(
-                adCopy.imagePrompt || promptData.user,
-                promptData.template
+            try {
+                const nbResult = await nanoBananaGenerateSingleAd({
+                    productImageUrl: hasProductImage ? body.productImageUrl : null,
+                    headline: body.headline || body.productName || 'Discover',
+                    subheadline: body.subheadline || body.usp || '',
+                    cta: body.cta,
+                    productName: body.productName,
+                    offer: body.text || body.usp || body.productName || 'Premium Product',
+                    audience: body.audience || 'quality-conscious consumers',
+                    industry: body.industry || 'ecommerce_general',
+                    angle: body.angle || '',
+                    language: body.language || 'de',
+                    usp: body.usp || '',
+                    description: body.description || '',
+                    text: body.text || '',
+                    brandKit: body.brandKit,
+                    format: 'square',
+                });
+
+                finalImageBuffer = nbResult.buffer;
+                engine = `nanoBanana_v5_${nbResult.engine}`;
+                outputData = {
+                    headline: body.headline || body.productName || 'AI Generated',
+                    slogan: body.subheadline || '',
+                    description: body.text || body.usp || '',
+                    cta: body.cta || (body.language === 'en' ? 'Discover Now' : 'Jetzt entdecken'),
+                    imagePrompt: 'NanoBanana v5 AI Creative Director',
+                    template: 'nanoBanana_v5',
+                    metadata: nbResult.metadata,
+                };
+
+                console.log(`[AI Ad Generate] ✅ NanoBanana success (${nbResult.engine}, AI brief: ${nbResult.usedAiBrief})`);
+            } catch (nbErr) {
+                console.warn(`[AI Ad Generate] ⚠️ NanoBanana failed: ${nbErr.message}`);
+                await updateProgress('nanoBanana_failed', 60, { error: nbErr.message });
+            }
+        }
+
+        // ─── ATTEMPT 3: RAW OPENAI LAST RESORT ───
+        if (!finalImageBuffer) {
+            console.log('[AI Ad Generate] 📷 OPENAI LAST RESORT');
+            await updateProgress('openai_last_resort', 70, { engine: 'openai_raw' });
+
+            const prompt = `Professional Meta ad for ${body.productName || 'product'}. ${body.industry || 'Premium'} industry style. Headline: "${body.headline || body.productName || 'Discover'}". CTA: "${body.cta || 'Shop Now'}". Professional commercial quality, 2026 design standards.`;
+
+            const imageResult = await withRetry(
+                async () => generateHeroImage({ prompt, size: '1024x1024', quality: 'high' }),
+                { maxRetries: 2, initialDelay: 2000 }
             );
-            promptSource = 'enhanced-ai';
-            console.log('[AI Ad Generate] Using enhanced AI prompt');
+
+            finalImageBuffer = Buffer.from(imageResult.b64, 'base64');
+            engine = 'openai_last_resort';
+            outputData = {
+                headline: body.headline || body.productName || 'AI Generated',
+                slogan: body.subheadline || '',
+                description: body.text || body.usp || '',
+                cta: body.cta || 'Jetzt entdecken',
+                imagePrompt: prompt,
+                template: 'openai_raw',
+            };
+
+            console.log('[AI Ad Generate] ✅ OpenAI last resort success');
         }
 
-        // ========================================
-        // CRITICAL: APPEND HARDENED PRODUCT PRESERVATION
-        // This ensures the product is NEVER altered by AI
-        // ========================================
-        if (hardenedProductPrompt) {
-            imagePrompt = imagePrompt + '\n\n' + hardenedProductPrompt;
-            console.log('[AI Ad Generate] 🔒 Hardened product preservation appended to prompt');
-        }
+        // ═══════════════════════════════════════════════════════════════
+        // UPLOAD & SAVE
+        // ═══════════════════════════════════════════════════════════════
 
-        // ========================================
-        // IMAGE GENERATION WITH REAL COMPOSITING
-        // If product image exists: Generate background only, composite exact product
-        // ========================================
-        let finalImageBuffer;
-        let imageUrl;
-        const timestamp = Date.now();
-        const filename = `ai-ad-${user.id}-${timestamp}.png`;
-        const storagePath = `ai-ads/${filename}`;
-
-        // DEBUG: Log incoming product image URL
-        console.log('[AI Ad Generate] 📦 Request body keys:', Object.keys(body));
-        console.log('[AI Ad Generate] 📦 productImageUrl:', body.productImageUrl ? 'PRESENT' : 'MISSING');
-        if (body.productImageUrl) {
-            console.log('[AI Ad Generate] 📦 URL preview:', body.productImageUrl.substring(0, 80) + '...');
-        }
-
-        if (body.productImageUrl) {
-            // SKIP if composite was intended (this means composite failed but we should NOT fallback to Gemini)
-            if (useComposite) {
-                console.log('[AI Ad Generate] ⚠️ Composite was intended but failed - NOT falling back to Gemini 4-LAYER');
-                console.log('[AI Ad Generate] ⚠️ This preserves user screenshot integrity - retry or check Railway');
-                throw new Error('Composite pipeline failed and fallback is disabled for product images');
-            }
-
-            // ===== AI CREATIVE DIRECTOR MODE =====
-            // ONLY runs if composite was NOT intended (legacy mode)
-            // This ensures products are properly composited INTO AI-generated backgrounds
-            console.log('[AI Ad Generate] 🧠 AI CREATIVE DIRECTOR MODE: Intelligent ad creation (NO COMPOSITE)');
-
-            const userCreativeText = body.text || body.productDescription || '';
-            await updateProgress('creative_director', 50, { mode: USE_GEMINI ? 'gemini_creative_director' : 'ai_creative_director' });
-
-            try {
-                let creativeResult;
-
-                // Use Gemini when available for 100% product preservation
-                if (USE_GEMINI) {
-                    console.log('[AI Ad Generate] 🏗️ Starting 4-LAYER PIPELINE (Professional Mode)...');
-
-                    creativeResult = await createAdWithLayerPipeline(openai, {
-                        productImageUrl: body.productImageUrl,
-                        userPrompt: userCreativeText || `Premium advertisement for ${body.productName || 'this product'}. Professional quality, Meta 2026 level.`,
-                        headline: dynamicText.headline,
-                        subheadline: dynamicText.subheadline,
-                        cta: dynamicText.cta,
-                        generateHeroImage: (params) => withRetry(
-                            async () => generateHeroImage(params),
-                            { maxRetries: 2, initialDelay: 2000 }
-                        )
-                    });
-
-                    console.log(`[AI Ad Generate] ✅ GEMINI AD COMPLETE (source: ${creativeResult.source})`);
-                } else {
-                    // Fallback to OpenAI-based Creative Director
-                    console.log('[AI Ad Generate] 🎯 Starting AI Creative Director with Chain-of-Thought...');
-
-                    creativeResult = await createAdWithCreativeDirector(openai, {
-                        productImageUrl: body.productImageUrl,
-                        userPrompt: userCreativeText || `Premium advertisement for ${body.productName || 'this product'}. Professional quality, Meta 2026 level.`,
-                        headline: dynamicText.headline,
-                        subheadline: dynamicText.subheadline,
-                        cta: dynamicText.cta,
-                        generateHeroImage: (params) => withRetry(
-                            async () => generateHeroImage(params),
-                            { maxRetries: 2, initialDelay: 2000 }
-                        )
-                    });
-
-                    console.log('[AI Ad Generate] ✅ AI CREATIVE DIRECTOR COMPLETE');
-                }
-
-                finalImageBuffer = creativeResult.imageBuffer || creativeResult.buffer;
-
-                // Log strategy reasoning for debugging
-                if (creativeResult.strategy?.reasoning) {
-                    console.log('[AI Ad Generate] Creative Strategy Reasoning:',
-                        creativeResult.strategy.reasoning.substring(0, 300) + '...');
-                }
-                if (creativeResult.strategy?.productBounds) {
-                    console.log('[AI Ad Generate] Product Bounds:', creativeResult.strategy.productBounds);
-                }
-                await updateProgress('creative_director_done', 75, {
-                    mode: 'ai_creative_director',
-                    hasProductBounds: !!creativeResult.strategy?.productBounds
-                });
-
-            } catch (error) {
-                console.error('[AI Ad Generate] Creative Director failed, using elite fallback:', error.message);
-                await updateProgress('creative_director_fallback', 60, { error: error.message });
-
-                // Fallback to Elite Creative System (still better than simple overlay)
-                try {
-                    const { palette, layout } = detectOptimalConfig({
-                        industry: body.industry,
-                        tone: body.tone,
-                        features: dynamicText.features,
-                        isMinimal: body.template === 'minimalist_elegant' || body.template === 'ai_automatic',
-                    });
-
-                    const backgroundPrompt = generateEliteBackgroundPrompt(palette, layout, {
-                        industry: body.industry,
-                    });
-
-                    const backgroundResult = await withRetry(
-                        async () => generateHeroImage({
-                            prompt: backgroundPrompt,
-                            size: '1024x1024',
-                            quality: 'hd',
-                        }),
-                        { maxRetries: 2, initialDelay: 2000 }
-                    );
-
-                    const backgroundBuffer = Buffer.from(backgroundResult.b64, 'base64');
-                    const badgeText = (dynamicText.badge || body.badge || '').trim();
-
-                    const eliteAd = await createEliteAd({
-                        backgroundBuffer: backgroundBuffer,
-                        productImageUrl: body.productImageUrl,
-                        palette: palette,
-                        layout: layout,
-                        headline: dynamicText.headline,
-                        subheadline: dynamicText.subheadline,
-                        features: dynamicText.features.slice(0, 4),
-                        cta: dynamicText.cta,
-                        badge: badgeText.length > 0 ? badgeText : null,
-                    });
-
-                    finalImageBuffer = eliteAd.buffer;
-                    console.log('[AI Ad Generate] ✅ Elite fallback ad complete');
-
-                } catch (fallbackError) {
-                    console.error('[AI Ad Generate] Elite fallback also failed:', fallbackError.message);
-
-                    // Ultimate fallback - generate basic background with product overlay text
-                    const basicResult = await withRetry(
-                        async () => generateHeroImage({
-                            prompt: `Premium advertisement image. Dark sophisticated background. Product showcase with ${dynamicText.headline ? `text \"${dynamicText.headline}\" at bottom` : 'elegant composition'}. Ultra-premium quality.`,
-                            size: '1024x1024',
-                            quality: 'high',
-                        }),
-                        { maxRetries: 2, initialDelay: 2000 }
-                    );
-
-                    finalImageBuffer = Buffer.from(basicResult.b64, 'base64');
-                }
-            }
-
-            console.log('[AI Ad Generate] ✅ PRODUCT INTEGRATION COMPLETE');
-
-        } else {
-            // ===== FULL CREATIVE MODE (no product image → generate COMPLETE ad) =====
-            // User's detailed prompt creates the ENTIRE scene including products/mockups
-            const userCreativeText = body.text || '';
-            const isDetailedPrompt = isDetailedCreativePrompt(userCreativeText);
-
-            if (isDetailedPrompt) {
-                console.log('[AI Ad Generate] 🎨 FULL CREATIVE MODE: Generating complete ad from user vision');
-
-                // Detect where to position text
-                const textPosition = detectTextPosition(userCreativeText);
-
-                // Build optimized prompt from user's vision
-                const fullCreativePrompt = buildFullCreativePrompt(userCreativeText, {
-                    headline: dynamicText.headline,
-                    subheadline: dynamicText.subheadline,
-                    cta: dynamicText.cta,
-                    textPosition,
-                });
-
-                console.log('[AI Ad Generate] Full Creative Prompt length:', fullCreativePrompt.length);
-
-                // Generate complete ad image with DALL-E
-                const imageResult = await withRetry(
-                    async () => generateHeroImage({
-                        prompt: fullCreativePrompt,
-                        size: '1024x1024',
-                        quality: 'hd',
-                    }),
-                    { maxRetries: 2, initialDelay: 2000 }
-                );
-
-                const rawImageBuffer = Buffer.from(imageResult.b64, 'base64');
-                console.log('[AI Ad Generate] ✓ Full creative image generated');
-
-                // Apply text overlay (headline, subheadline, CTA)
-                const fullCreativeAd = await createFullCreativeAd({
-                    imageBuffer: rawImageBuffer,
-                    headline: dynamicText.headline,
-                    subheadline: dynamicText.subheadline,
-                    cta: dynamicText.cta,
-                    textPosition,
-                });
-
-                finalImageBuffer = fullCreativeAd.buffer;
-                console.log('[AI Ad Generate] ✅ FULL CREATIVE AD COMPLETE');
-
-            } else {
-                // Simple mode - basic prompt, use standard generation
-                console.log('[AI Ad Generate] 📷 SIMPLE MODE: Generating from basic prompt');
-
-                const imageResult = await withRetry(
-                    async () => generateHeroImage({
-                        prompt: imagePrompt,
-                        size: '1024x1024',
-                        quality: 'hd',
-                    }),
-                    { maxRetries: 2, initialDelay: 2000 }
-                );
-
-                finalImageBuffer = Buffer.from(imageResult.b64, 'base64');
-            }
-        }
-
-        // Upload to Storage
+        const filename = `creatives/${user.id}/${jobId}.png`;
         const { error: uploadError } = await supabaseAdmin.storage
             .from('creative-images')
-            .upload(storagePath, finalImageBuffer, {
-                contentType: 'image/png',
-                upsert: false,
-            });
+            .upload(filename, finalImageBuffer, { contentType: 'image/png', upsert: true });
 
-        if (uploadError) {
-            throw new Error('Image upload failed: ' + uploadError.message);
+        let imageUrl = null;
+        if (!uploadError) {
+            const { data: urlData } = supabaseAdmin.storage.from('creative-images').getPublicUrl(filename);
+            imageUrl = urlData.publicUrl;
+        } else {
+            console.error('[AI Ad Generate] Upload error:', uploadError.message);
         }
 
-        const { data: urlData } = supabaseAdmin.storage
-            .from('creative-images')
-            .getPublicUrl(storagePath);
+        const generationTime = Date.now() - startTime;
 
-        imageUrl = urlData?.publicUrl;
-        console.log('[AI Ad Generate] Image uploaded:', imageUrl);
-
-        // Engagement prediction
-        const engagement = predictEngagement(adCopy, body.targetAudience);
-
-        // Build variants array with shared imageUrl
-        const variants = (adCopy.variants || []).map((v, i) => ({
-            id: v.id || `variant_${i + 1}`,
-            hook: v.hook || '',
-            headline: v.headline || adCopy.headline,
-            slogan: v.slogan || adCopy.slogan,
-            description: v.description || adCopy.description,
-            cta: v.cta || adCopy.cta,
-            imageUrl: imageUrl, // All variants share the same image
-            imagePrompt: adCopy.imagePrompt,
-            template: adCopy.styleUsed || 'default',
-            qualityScore: qualityScore,
-            engagementScore: engagement.score,
-        }));
-
-        // Update job with results
+        // Save to DB
         await supabaseAdmin.from('generated_creatives').update({
-            thumbnail: imageUrl,
+            thumbnail: imageUrl || null,
             outputs: {
-                headline: adCopy.headline,
-                slogan: adCopy.slogan,
-                description: adCopy.description,
-                cta: adCopy.cta,
-                imageUrl,
-                imagePrompt: adCopy.imagePrompt,
-                qualityScore,
-                engagementScore: engagement.score,
-                variants: variants,
-                source: 'ai_ad_builder'
+                ...outputData,
+                imageUrl: imageUrl,
+                imageDataUrl: imageUrl,
+                thumbnailUrl: imageUrl,
+                engine,
             },
             saved: true,
             metrics: {
                 status: 'complete',
-                qualityScore,
-                engagementScore: engagement.score,
-                generationTime: Date.now() - startTime,
-                completed_at: new Date().toISOString()
-            }
+                progress: 100,
+                engine,
+                generationTime,
+                credits_deducted: true,
+                completed_at: new Date().toISOString(),
+            },
         }).eq('id', jobId);
 
-        const generationTime = Date.now() - startTime;
-        console.log('[AI Ad Generate] SUCCESS in', generationTime, 'ms');
+        console.log(`[AI Ad Generate] ✅ SUCCESS in ${generationTime}ms (engine: ${engine})`);
 
-        // Background functions return 202 automatically
-        // But we still return the result for the status endpoint
         return {
             statusCode: 200,
             headers,
@@ -1232,76 +404,44 @@ Beginne mit: "PRÄZISE PRODUKTBESCHREIBUNG:"`
                 status: 'complete',
                 data: {
                     id: jobId,
-                    headline: adCopy.headline,
-                    slogan: adCopy.slogan,
-                    description: adCopy.description,
-                    cta: adCopy.cta,
+                    ...outputData,
                     imageUrl,
-                    imagePrompt: adCopy.imagePrompt,
-                    template: adCopy.styleUsed || 'default',
-                    creditsUsed: 1,
-                    qualityScore,
-                    engagementScore: engagement.score,
-                    variants: variants.length > 0 ? variants : undefined,
+                    creditsUsed: CREDIT_COSTS.ai_ad_generate,
                 },
-                metadata: {
-                    model,
-                    timestamp,
-                    generationTime,
-                    savedToLibrary: true,
-                }
+                metadata: { engine, generationTime, timestamp: Date.now() },
             }),
         };
 
     } catch (error) {
         console.error('[AI Ad Generate] Error:', error);
-
-        // Categorize the error for better user messaging
         const categorized = categorizeError(error);
-        console.error('[AI Ad Generate] Error category:', categorized.code);
 
-        // Get user ID and jobId for refund and status update
-        let userId = null;
-        let jobId = null;
-        try {
-            const body = JSON.parse(event.body || '{}');
-            jobId = body.jobId;
-
-            // Get user for refund
-            const authHeader = event.headers.authorization || event.headers.Authorization;
-            const user = await getUserProfile(authHeader);
-            userId = user?.id;
-        } catch (parseErr) {
-            console.error('[AI Ad Generate] Failed to parse request for refund:', parseErr.message);
-        }
-
-        // CRITICAL: Refund credits on failure
+        // Refund credits
         if (userId) {
-            console.log('[AI Ad Generate] 💰 Refunding credits due to generation failure...');
+            console.log('[AI Ad Generate] 💰 Refunding credits...');
             const refundResult = await refundCredits(userId, 'ai_ad_generate');
             if (refundResult.ok) {
-                console.log(`[AI Ad Generate] ✅ Credits refunded successfully. New balance: ${refundResult.newBalance}`);
+                console.log(`[AI Ad Generate] ✅ Refunded. New balance: ${refundResult.newBalance}`);
             } else {
-                console.error('[AI Ad Generate] ⚠️ Credit refund failed:', refundResult.error);
-                // Log for manual intervention - this is a critical issue
+                console.error('[AI Ad Generate] ⚠️ Refund failed:', refundResult.error);
             }
         }
 
-        // Update job status in database if jobId exists
-        try {
-            if (jobId) {
+        // Update job status
+        if (jobId) {
+            try {
                 await supabaseAdmin.from('generated_creatives').update({
                     metrics: {
                         status: 'error',
                         errorCode: categorized.code,
                         errorMessage: categorized.originalMessage,
-                        creditsRefunded: userId ? true : false,
-                        failed_at: new Date().toISOString()
-                    }
+                        creditsRefunded: !!userId,
+                        failed_at: new Date().toISOString(),
+                    },
                 }).eq('id', jobId);
+            } catch (dbErr) {
+                console.error('[AI Ad Generate] DB error update failed:', dbErr.message);
             }
-        } catch (dbErr) {
-            console.error('[AI Ad Generate] Failed to update error status in DB:', dbErr.message);
         }
 
         return {
@@ -1311,7 +451,7 @@ Beginne mit: "PRÄZISE PRODUKTBESCHREIBUNG:"`
                 error: 'Ad generation failed',
                 code: categorized.code,
                 message: categorized.userMessage,
-                recoverable: categorized.recoverable
+                recoverable: categorized.recoverable,
             }),
         };
     }

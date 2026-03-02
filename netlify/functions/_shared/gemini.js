@@ -236,7 +236,7 @@ export function getGeminiClient() {
  */
 export async function analyzeProductWithGemini(productImageBuffer) {
     const genAI = getGeminiClient();
-    const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
+    const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
 
     console.log("[Gemini] 🔍 Analyzing product image with elite prompt...");
 
@@ -325,7 +325,7 @@ export async function generateAdWithGemini({
 
     // Use the image generation model
     const model = genAI.getGenerativeModel({
-        model: "gemini-2.0-flash",
+        model: "gemini-2.5-flash",
         generationConfig: {
             responseModalities: ["image", "text"]
         }
@@ -370,7 +370,7 @@ export async function generateAdWithGemini({
                     return {
                         success: true,
                         buffer: Buffer.from(part.inlineData.data, "base64"),
-                        model: "gemini-2.0-flash"
+                        model: "gemini-2.5-flash"
                     };
                 }
             }
@@ -400,78 +400,151 @@ export async function generateAdWithGemini({
 }
 
 /**
- * Build the ad generation prompt with reference pattern support
+ * Build the ad generation prompt with reference pattern support.
+ * Industry-adaptive: uses product analysis to drive visual decisions.
  */
 function buildAdPrompt({ headline, subheadline, cta, productAnalysis, style, referencePattern, enhancedPrompt }) {
     const productDesc = productAnalysis?.productDescription || "premium product";
     const productName = productAnalysis?.productName || "Product";
     const mood = productAnalysis?.suggestedMood || "premium";
     const colors = productAnalysis?.colorPalette?.join(", ") || "elegant colors";
-
-    // Gemini generates the COMPLETE ad including text
-    // No SVG overlay - everything in one generation
-    // PHASE 1: Elite Prompt Engineering for 10/10 quality
-    // PHASE 4: Layout variations for diverse outputs
+    const industry = productAnalysis?.industry || "retail";
+    const isSaaS = productAnalysis?.isSaaSProduct || false;
 
     const headlineText = headline || productName;
     const ctaText = cta || 'Shop Now';
 
-    // Phase 4: Random layout variation for diverse outputs
-    const layouts = ['centered', 'hero-bottom', 'hero-top'];
-    const selectedLayout = layouts[Math.floor(Math.random() * layouts.length)];
-    console.log(`[Gemini] Using layout variation: ${selectedLayout}`);
+    // Industry-adaptive visual settings
+    const visualStyle = getIndustryVisualStyle(industry, productAnalysis);
 
     // Use enhanced prompt from Marketing Expert if available
     const creativeDirection = enhancedPrompt
-        ? `\n═══════════════════════════════════════\nMARKETING EXPERT CREATIVE DIRECTION\n═══════════════════════════════════════\n${enhancedPrompt}\n`
+        ? `\nMARKETING EXPERT DIRECTION:\n${enhancedPrompt}\n`
         : '';
 
-    return `PRODUCT PHOTO ENHANCEMENT - MINIMAL CHANGES ONLY
+    return `A professional Meta ad (1080×1080) featuring this product image.
 
-CRITICAL: Keep the product EXACTLY as it appears in the input image.
-Do NOT change the product's pose, angle, position, or add other objects.
+TASK: Transform this product photo into a scroll-stopping Meta advertisement.
+Keep the product 100% unchanged — only enhance the environment around it.
 
-TASK: Enhance this product photo for a Meta advertisement (1080x1080px).
+SCENE:
+1. The product stays exactly as it appears: same angle, pose, proportions
+2. Background: ${visualStyle.background}
+3. Surface: ${visualStyle.surface}
 
-═══════════════════════════════════════
-WHAT TO DO (Simple Changes Only)
-═══════════════════════════════════════
-1. BACKGROUND: Replace with clean dark gradient
-2. LIGHTING: Add professional studio lighting to product
-3. SURFACE: Add subtle reflection under product
-4. THAT'S IT - No other changes to the scene
+CAMERA:
+- ${visualStyle.camera}
+- 1:1 square composition, product as hero element
+- Product occupies 40-60% of the frame
 
-═══════════════════════════════════════
-TEXT OVERLAY (Clean Typography)
-═══════════════════════════════════════
-HEADLINE at top: "${headlineText}"
-- White, bold, sans-serif font
-- Clean and simple, no effects
+LIGHTING:
+- ${visualStyle.lighting}
+- ${visualStyle.colorTemp}
+- The product must look natural in this lighting, not composited
+${creativeDirection}
+TEXT IN IMAGE (render sharply):
+- HEADLINE at top: "${headlineText}"
+  Typography: Bold modern sans-serif, high contrast against background
+  Size: Large, instantly readable on mobile
 
-${subheadline ? `SUBHEADLINE: "${subheadline}"
-- Smaller, gray, below headline` : ''}
+${subheadline ? `- SUBHEADLINE: "${subheadline}"
+  Typography: Regular weight, 60% of headline size, below headline` : ''}
 
-CTA at bottom: "${ctaText}"
-- Simple rounded rectangle button
-- Solid red/coral color (#FF4757)
-- White text, no gradients, no shadows
-- Like a real iOS/web button
+- CTA BUTTON at bottom center: "${ctaText}"
+  Style: Rounded pill button, ${visualStyle.ctaColor}
+  Typography: White bold text, tappable-looking
 
-═══════════════════════════════════════
-STRICT RULES - VERY IMPORTANT
-═══════════════════════════════════════
-✗ Do NOT change the product's appearance
-✗ Do NOT change the product's pose or angle
-✗ Do NOT add other products or characters
-✗ Do NOT add busy backgrounds
-✗ Do NOT add gradients or shadows to text/buttons
-✗ Do NOT make it look "AI-generated"
-✗ Keep it SIMPLE and CLEAN
+MOOD: ${visualStyle.mood}
 
-The product in the input image must look IDENTICAL in the output.
-Only the background, lighting, and text overlay should change.
+QUALITY: This must look like a $10,000 agency production.
+Professional, polished, and indistinguishable from a real commercial ad.
+The product in the input image must appear IDENTICAL in the output.`;
+}
 
-OUTPUT: A clean, professional product ad with minimal enhancements.`;
+/**
+ * Get industry-specific visual settings for ad generation.
+ */
+function getIndustryVisualStyle(industry, productAnalysis) {
+    const industryLower = (industry || '').toLowerCase();
+    const pricePoint = productAnalysis?.pricePoint || 'midrange';
+
+    // Food & Beverage
+    if (['food', 'beverage', 'restaurant', 'cooking', 'drink'].some(k => industryLower.includes(k))) {
+        return {
+            background: 'Warm rustic wooden table or marble surface, soft natural textures',
+            surface: 'Natural surface texture, no artificial reflections',
+            camera: 'Shot with 50mm lens at f/2.8, 45-degree angle, food photography composition',
+            lighting: 'Warm side-lighting from left (window light quality), golden fill from right. Visible warmth and depth.',
+            colorTemp: 'Color temperature: 5800K warm, rich saturation, appetizing tones',
+            ctaColor: 'warm terracotta (#E07A5F) or deep green (#2D6A4F)',
+            mood: 'Appetizing, warm, inviting. The viewer should almost taste the product.',
+        };
+    }
+
+    // Fashion & Beauty
+    if (['fashion', 'beauty', 'cosmetic', 'jewelry', 'clothing', 'apparel'].some(k => industryLower.includes(k))) {
+        return {
+            background: pricePoint === 'luxury' ? 'Rich dark velvet or marble surface' : 'Clean white or soft blush gradient',
+            surface: 'Elegant surface with subtle shadow play',
+            camera: 'Shot with 85mm lens at f/1.8, editorial composition with generous negative space',
+            lighting: 'Soft diffused beauty lighting from large overhead softbox, subtle fill from below',
+            colorTemp: 'Color temperature: 5200K neutral-warm, flattering tones, subtle warmth',
+            ctaColor: pricePoint === 'luxury' ? 'matte black (#1A1A1A) or gold (#B8860B)' : 'brand accent color or soft pink (#E91E8C)',
+            mood: 'Aspirational, luxurious, desirable. The viewer wants this in their life.',
+        };
+    }
+
+    // Tech & Electronics
+    if (['tech', 'electronic', 'gadget', 'device', 'hardware', 'phone', 'computer'].some(k => industryLower.includes(k)) || productAnalysis?.isSaaSProduct) {
+        return {
+            background: 'Matte dark gradient (near-black to dark gray) with subtle blue-purple ambient glow',
+            surface: 'Clean dark surface with subtle reflection underneath the product',
+            camera: 'Shot with 85mm lens at f/2.0, eye-level, centered with product as hero',
+            lighting: 'Dramatic rim-light from behind highlighting product edges, subtle cool fill from front',
+            colorTemp: 'Color temperature: 4500K cool-neutral, slightly desaturated, premium tech feel',
+            ctaColor: 'electric blue (#2563EB) or product accent color',
+            mood: 'Premium, innovative, cutting-edge. This is the future.',
+        };
+    }
+
+    // Fitness & Health
+    if (['fitness', 'health', 'wellness', 'sport', 'supplement', 'gym', 'nutrition'].some(k => industryLower.includes(k))) {
+        return {
+            background: 'Clean, bright setting with natural light feel, or modern gym environment',
+            surface: 'Clean surface with energetic, bright atmosphere',
+            camera: 'Shot with 50mm lens at f/2.8, slightly dynamic angle suggesting energy and motion',
+            lighting: 'Bright natural light (golden hour quality), high clarity, vibrant shadows',
+            colorTemp: 'Color temperature: 5500K warm-neutral, high clarity, vibrant saturation',
+            ctaColor: 'vibrant coral (#FF6B6B) or energetic green (#10B981)',
+            mood: 'Motivating, empowering, energetic. The viewer feels "I can do this."',
+        };
+    }
+
+    // Home & Interior
+    if (['home', 'interior', 'furniture', 'decor', 'living', 'garden'].some(k => industryLower.includes(k))) {
+        return {
+            background: 'Styled living space with complementary decor, warm and inviting',
+            surface: 'Natural wood or textile surface, cozy atmosphere',
+            camera: 'Shot with 35mm lens at f/4.0, room context visible, product as focal point',
+            lighting: 'Warm natural window light with golden hour feel, soft bounce from walls',
+            colorTemp: 'Color temperature: 5800K warm, lifted shadows, cozy feel',
+            ctaColor: 'warm sage (#6B8E6B) or neutral clay (#C4A882)',
+            mood: 'Cozy, aspirational, serene. "I want my home to look like this."',
+        };
+    }
+
+    // Default: Clean E-Commerce
+    return {
+        background: pricePoint === 'luxury' || pricePoint === 'premium'
+            ? 'Clean dark gradient with elegant atmosphere'
+            : 'Clean white-to-light-gray gradient, bright and trustworthy',
+        surface: 'Subtle shadow or reflection that grounds the product naturally',
+        camera: 'Shot with 50mm lens at f/3.5, clean product photography composition',
+        lighting: 'Bright, even, professional studio lighting with soft shadows',
+        colorTemp: 'Color temperature: 5000K neutral, balanced saturation, clean whites',
+        ctaColor: 'warm orange (#F97316) or brand accent color',
+        mood: 'Clean, trustworthy, shoppable. The viewer is ready to buy.',
+    };
 }
 
 /**
@@ -561,7 +634,7 @@ export async function generateWithStyleReference({
 
     const genAI = getGeminiClient();
     const model = genAI.getGenerativeModel({
-        model: "gemini-2.0-flash",
+        model: "gemini-2.5-flash",
         generationConfig: {
             responseModalities: ["image", "text"]
         }
@@ -658,7 +731,7 @@ Produkt natürlich integrieren, nicht aufgeklebt.`
                     return {
                         success: true,
                         buffer: Buffer.from(part.inlineData.data, "base64"),
-                        model: "gemini-2.0-flash",
+                        model: "gemini-2.5-flash",
                         usedReference: !!referenceImageBuffer
                     };
                 }

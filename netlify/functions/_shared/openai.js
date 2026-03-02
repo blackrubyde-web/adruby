@@ -187,7 +187,8 @@ export async function generateImageWithReference({
         image: imageBuffer, // Buffer is accepted
         prompt: prompt,
         n: 1,
-        size: size === "1024x1024" ? "1024x1024" : "1024x1024", // gpt-image-1 edit sizes
+        // gpt-image-1 edit supports: 1024x1024, 1536x1024, 1024x1536, auto
+        size: ["1024x1024", "1536x1024", "1024x1536"].includes(size) ? size : "1024x1024",
       }),
       timeoutMs,
       "openai_image_edit_timeout"

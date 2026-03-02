@@ -3,8 +3,18 @@
  * Connects to the v3.0 AI Design Knowledge System
  */
 
-// Railway service URL from environment
+// Railway service URL and auth from environment
 const RAILWAY_URL = process.env.RAILWAY_IMAGE_SERVICE_URL || 'https://adruby-production.up.railway.app';
+const RAILWAY_API_KEY = process.env.RAILWAY_API_KEY || '';
+
+// Auth headers for all Railway requests
+function getAuthHeaders() {
+    const headers = { 'Content-Type': 'application/json' };
+    if (RAILWAY_API_KEY) {
+        headers['Authorization'] = `Bearer ${RAILWAY_API_KEY}`;
+    }
+    return headers;
+}
 
 /**
  * Generate ad using AI Design Knowledge System
@@ -28,9 +38,7 @@ export async function generateWithAIDesign(params) {
 
     const response = await fetch(`${RAILWAY_URL}/generate`, {
         method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-        },
+        headers: getAuthHeaders(),
         body: JSON.stringify({
             userPrompt: userPrompt || `${industry} product advertisement`,
             industry: industry || 'tech',
@@ -92,7 +100,7 @@ export async function getReferences(industry, count = 5) {
 
     const response = await fetch(`${RAILWAY_URL}/references/${industry}?count=${count}`, {
         method: 'GET',
-        headers: { 'Content-Type': 'application/json' },
+        headers: getAuthHeaders(),
         signal: AbortSignal.timeout(30000),
     });
 
@@ -119,7 +127,7 @@ export async function searchReferences(prompt, industry = null) {
 
     const response = await fetch(`${RAILWAY_URL}/search-references?${params}`, {
         method: 'GET',
-        headers: { 'Content-Type': 'application/json' },
+        headers: getAuthHeaders(),
         signal: AbortSignal.timeout(30000),
     });
 
@@ -139,7 +147,7 @@ export async function searchReferences(prompt, industry = null) {
 export async function getForeplayUsage() {
     const response = await fetch(`${RAILWAY_URL}/foreplay/usage`, {
         method: 'GET',
-        headers: { 'Content-Type': 'application/json' },
+        headers: getAuthHeaders(),
         signal: AbortSignal.timeout(10000),
     });
 
@@ -213,7 +221,7 @@ export async function generateWithComposite({
 
     const response = await fetch(`${RAILWAY_URL}/generate-composite`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: getAuthHeaders(),
         body: JSON.stringify({
             productImageBase64,
             productImageUrl,
@@ -281,7 +289,7 @@ export async function startCompositeJobAsync(params) {
 
     const response = await fetch(`${RAILWAY_URL}/generate-composite-async`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: getAuthHeaders(),
         body: JSON.stringify(params),
         signal: AbortSignal.timeout(30000), // Quick timeout - just starting the job
     });
@@ -299,13 +307,16 @@ export async function startCompositeJobAsync(params) {
 /**
  * Poll job status until complete or failed
  */
-export async function pollJobStatus(jobId, intervalMs = 5000, maxWaitMs = 900000) {
+export async function pollJobStatus(jobId, intervalMs = 5000, maxWaitMs = 600000) {
     console.log(`[Railway] 📊 Polling job ${jobId}...`);
     const startTime = Date.now();
+    let consecutiveErrors = 0;
+    const MAX_CONSECUTIVE_ERRORS = 10;
 
     while (Date.now() - startTime < maxWaitMs) {
         try {
             const response = await fetch(`${RAILWAY_URL}/job/${jobId}/status`, {
+                headers: getAuthHeaders(),
                 signal: AbortSignal.timeout(10000),
             });
 
@@ -313,6 +324,7 @@ export async function pollJobStatus(jobId, intervalMs = 5000, maxWaitMs = 900000
                 throw new Error(`Status check failed: ${response.status}`);
             }
 
+            consecutiveErrors = 0; // Reset on success
             const status = await response.json();
             console.log(`[Railway] Job ${jobId}: ${status.status} (${status.progress}%)`);
 
@@ -326,8 +338,11 @@ export async function pollJobStatus(jobId, intervalMs = 5000, maxWaitMs = 900000
             // Wait before next poll
             await new Promise(resolve => setTimeout(resolve, intervalMs));
         } catch (error) {
-            console.error(`[Railway] Poll error:`, error.message);
-            // Continue polling on transient errors
+            consecutiveErrors++;
+            console.error(`[Railway] Poll error (${consecutiveErrors}/${MAX_CONSECUTIVE_ERRORS}):`, error.message);
+            if (consecutiveErrors >= MAX_CONSECUTIVE_ERRORS) {
+                throw new Error(`Polling aborted after ${MAX_CONSECUTIVE_ERRORS} consecutive errors: ${error.message}`);
+            }
             await new Promise(resolve => setTimeout(resolve, intervalMs));
         }
     }

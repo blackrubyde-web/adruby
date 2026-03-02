@@ -6,14 +6,13 @@ export async function handler(event) {
     const { ok, response } = await requireUserId(event);
     if (!ok) return response;
 
-    if (event.httpMethod !== 'POST') return { statusCode: 405, headers: withCors().headers, body: 'Make a POST request' };
-
-    console.log('[ModelTraining] Received training data', event.body);
-
-    // TODO: Forward to Python/Training pipeline
     return {
-        statusCode: 200,
+        statusCode: 501,
         headers: withCors().headers,
-        body: JSON.stringify({ success: true, queued: true })
+        body: JSON.stringify({
+            success: false,
+            error: 'Not Implemented',
+            message: 'Model training is not yet available.',
+        }),
     };
 }

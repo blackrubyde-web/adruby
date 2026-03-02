@@ -78,9 +78,14 @@ export const handler = async (event) => {
         const adSpec = {
             offer: body.offer,
             audience: body.audience,
-            angle: body.angle,
+            angle: body.angle || '',
             brandKit: body.brandKit || {},
             proof: body.proof || '',
+            industry: body.industry || body.constraints?.industry || 'general',
+            language: body.constraints?.language || body.language || 'de',
+            usp: body.usp || '',
+            description: body.description || '',
+            text: body.text || '',
             constraints: {
                 niche: body.constraints?.niche || body.niche || 'general',
                 language: body.constraints?.language || body.language || 'de',

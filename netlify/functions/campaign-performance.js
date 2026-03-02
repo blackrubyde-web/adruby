@@ -6,14 +6,13 @@ export async function handler(event) {
     const { ok, response } = await requireUserId(event);
     if (!ok) return response;
 
-    if (event.httpMethod !== 'POST') return { statusCode: 405, headers: withCors().headers, body: 'Make a POST request' };
-
-    console.log('[CampaignPerformance] Received performance data', event.body);
-
-    // TODO: Store in Supabase
     return {
-        statusCode: 200,
+        statusCode: 501,
         headers: withCors().headers,
-        body: JSON.stringify({ success: true, saved: true })
+        body: JSON.stringify({
+            success: false,
+            error: 'Not Implemented',
+            message: 'Campaign performance tracking is not yet available.',
+        }),
     };
 }
