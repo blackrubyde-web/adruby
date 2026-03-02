@@ -27,7 +27,8 @@ import { supabaseAdmin } from '../clients.js';
 // ═══════════════════════════════════════════════════════════════
 
 /**
- * Validate an AdSpec input.
+ * Validate and normalize an AdSpec input.
+ * Ensures all fields the AI Creative Director needs are present.
  */
 function validateAdSpec(adSpec) {
     const errors = [];
@@ -38,8 +39,23 @@ function validateAdSpec(adSpec) {
     if (!adSpec.audience || typeof adSpec.audience !== 'string' || adSpec.audience.trim().length < 3) {
         errors.push('audience: required, minimum 3 characters');
     }
-    if (!adSpec.angle || typeof adSpec.angle !== 'string' || adSpec.angle.trim().length < 3) {
-        errors.push('angle: required, minimum 3 characters');
+
+    // angle is optional — default to 'premium quality' if missing
+    if (!adSpec.angle || typeof adSpec.angle !== 'string' || adSpec.angle.trim().length < 2) {
+        adSpec.angle = 'premium quality';
+    }
+
+    // language: normalize to 'de' or 'en'
+    const lang = adSpec.language || adSpec.constraints?.language || 'de';
+    if (!['de', 'en'].includes(lang)) {
+        adSpec.language = 'de';
+    } else {
+        adSpec.language = lang;
+    }
+
+    // industry: normalize (empty → 'general')
+    if (!adSpec.industry || typeof adSpec.industry !== 'string' || adSpec.industry.trim().length < 2) {
+        adSpec.industry = 'general';
     }
 
     // Optional fields validation
