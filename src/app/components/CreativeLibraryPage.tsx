@@ -715,7 +715,7 @@ export function CreativeLibraryPage() {
   const gridGap = 24;
   const isNarrowGrid = gridWidth < 640;
   const cardWidth = isNarrowGrid ? Math.min(gridWidth, Math.max(220, gridWidth - gridGap * 2)) : 360;
-  const cardHeight = isNarrowGrid ? 340 : 320;
+  const cardHeight = isNarrowGrid ? 360 : 380;
   const gridColumnCount = Math.max(1, Math.floor((gridWidth + gridGap) / (cardWidth + gridGap)));
   const gridRowCount = Math.ceil(filteredCreatives.length / gridColumnCount);
   const gridHeight = Math.max(360, Math.min(isNarrowGrid ? 720 : 900, viewportHeight - (isNarrowGrid ? 220 : 260)));
@@ -737,7 +737,8 @@ export function CreativeLibraryPage() {
     return (
       <div style={{ ...style, left: Number(style.left) + gridGap / 2, top: Number(style.top) + gridGap / 2 }}>
         <div className="creative-card stagger-reveal" style={{ width: cardWidth, height: cardHeight, animationDelay: `${index * 50}ms` }}>
-          <div className="creative-card-image" style={{ aspectRatio: '16/9' }}>
+          {/* Image — fixed height, no aspect-ratio to prevent overflow */}
+          <div className="creative-card-image" style={{ height: '200px' }}>
             {creative.thumbnail ? (
               <img
                 src={creative.thumbnail}
@@ -745,7 +746,7 @@ export function CreativeLibraryPage() {
                 loading="lazy"
                 decoding="async"
                 width={320}
-                height={180}
+                height={200}
                 className="w-full h-full object-cover"
               />
             ) : (
@@ -791,36 +792,16 @@ export function CreativeLibraryPage() {
             )}
           </div>
 
-          <div className="creative-card-body flex flex-col" style={{ height: `calc(100% - ${cardHeight > 300 ? '180px' : '160px'})` }}>
+          {/* Card body — fixed remaining height, no overflow */}
+          <div className="creative-card-body flex flex-col overflow-hidden" style={{ flex: 1 }}>
             <h3 className="creative-card-name">{creative.name}</h3>
 
-            <div className="flex flex-wrap gap-1 mt-2 mb-2">
+            <div className="flex flex-wrap gap-1 mt-1.5 mb-auto">
               {creative.tags.slice(0, 3).map((tag) => (
                 <span key={tag} className="creative-card-tag">
                   {tag}
                 </span>
               ))}
-            </div>
-
-            {/* Content Preview (Hooks) */}
-            <div className="flex-1 overflow-y-auto mb-2 space-y-1.5 pr-1">
-              {creative.hooks && creative.hooks.length > 0 ? (
-                <div className="space-y-1">
-                  <span className="creative-card-tag" style={{ fontSize: '0.5625rem' }}>HOOKS</span>
-                  {creative.hooks.slice(0, 2).map((hook, i) => (
-                    <div key={i} className="text-[11px] p-1.5 rounded-md text-foreground/80 line-clamp-2 bg-muted/50 border border-border">
-                      "{hook}"
-                    </div>
-                  ))}
-                </div>
-              ) : creative.primaryText ? (
-                <div className="space-y-1">
-                  <span className="creative-card-tag" style={{ fontSize: '0.5625rem' }}>TEXT</span>
-                  <div className="text-[11px] p-1.5 rounded-md text-foreground/80 line-clamp-3 bg-muted/50 border border-border">
-                    {creative.primaryText}
-                  </div>
-                </div>
-              ) : null}
             </div>
 
             <div className="creative-card-stats mt-auto shrink-0">

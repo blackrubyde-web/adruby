@@ -547,6 +547,8 @@
 /* ── Creative Library Cards ───────────────────────── */
 .creative-card {
     position: relative;
+    display: flex;
+    flex-direction: column;
     background: var(--card);
     border: 1px solid var(--border);
     border-radius: 0.875rem;
