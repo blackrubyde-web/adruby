@@ -1,14 +1,15 @@
 /**
- * AI Ad Builder — Main Page (Visual Overhaul V4)
- * Premium header, pill mode tabs, dark canvas preview panel,
- * theater generating mode, depth everywhere.
+ * AI Ad Builder — Dark Editorial Studio v6
+ * Syne + DM Sans typography, obsidian surfaces, grain canvas,
+ * filter-chip tabs, editorial header.
  */
 
 import { useState, useCallback, useEffect } from 'react';
 import {
     Download, Save, Upload, FileText, MessageSquare,
     Sparkles, Image, Loader2, RefreshCw,
-    AlertCircle, Store, Zap, CheckCircle2, X
+    AlertCircle, Store, Zap, CheckCircle2, X,
+    Search, Target, PenTool, Palette, Frame
 } from 'lucide-react';
 import { generateAd } from '../lib/api/aibuilder';
 import { t } from '../lib/aibuilder/translations';
@@ -38,11 +39,11 @@ const MODE_TABS = [
 
 /* ── Theater Pipeline Steps ────────────────────────── */
 const PIPELINE_STEPS = [
-    { label: 'Produkt analysieren', icon: '🔍', delay: 0 },
-    { label: 'Zielgruppe definieren', icon: '🎯', delay: 2500 },
-    { label: 'Texte generieren', icon: '✍️', delay: 5500 },
-    { label: 'Design auswählen', icon: '🎨', delay: 8000 },
-    { label: 'Bild rendern', icon: '🖼️', delay: 11000 },
+    { label: 'Produkt analysieren', Icon: Search, delay: 0 },
+    { label: 'Zielgruppe definieren', Icon: Target, delay: 2500 },
+    { label: 'Texte generieren', Icon: PenTool, delay: 5500 },
+    { label: 'Design auswählen', Icon: Palette, delay: 8000 },
+    { label: 'Bild rendern', Icon: Frame, delay: 11000 },
 ];
 
 export function AIAdBuilderPage() {
@@ -274,44 +275,46 @@ export function AIAdBuilderPage() {
 
     return (
         <DashboardShell hideHero>
-            {/* ═══ Premium Header ═══════════════════════════════ */}
-            <div className="builder-header">
-                <div>
-                    <h1 className="builder-header-title">AI Ad Builder</h1>
-                    <p className="builder-header-subtitle">
-                        Erstelle hochkonvertierende Ads in Sekunden
-                    </p>
+            {/* ═══ Editorial Header ═══════════════════════════════ */}
+            <div className="page-header-editorial">
+                <div className="flex items-center justify-between">
+                    <div>
+                        <h1 className="page-title">Ad Builder</h1>
+                        <p className="page-subtitle">
+                            Erstelle hochkonvertierende Meta Ads mit KI
+                        </p>
+                    </div>
+                    <div className="flex items-center gap-3">
+                        {step === 'result' && (
+                            <span className="stat-pill stat-pill-accent">
+                                <CheckCircle2 className="w-3 h-3" />
+                                Fertig
+                            </span>
+                        )}
+                    </div>
                 </div>
-                <div className="flex items-center gap-3">
-                    {step === 'result' && (
-                        <Badge className="px-3 py-1.5 bg-emerald-500/10 text-emerald-600 border-emerald-500/20 gap-1.5 text-xs font-medium">
-                            <CheckCircle2 className="w-3.5 h-3.5" />
-                            Fertig
-                        </Badge>
-                    )}
-                </div>
-            </div>
 
-            {/* ═══ Mode Tabs — Pill Style ═══════════════════════ */}
-            <div className="mode-tab-bar">
-                {MODE_TABS.map((tab) => {
-                    const Icon = tab.icon;
-                    const isActive = mode === tab.id;
-                    return (
-                        <button
-                            key={tab.id}
-                            onClick={() => setMode(tab.id)}
-                            className={cn("mode-tab", isActive && "mode-tab-active")}
-                        >
-                            <Icon className="w-4 h-4" />
-                            {tab.label}
-                        </button>
-                    );
-                })}
+                {/* ═══ Filter Chip Tabs ═══════════════════════════ */}
+                <div className="filter-chip-bar mt-5">
+                    {MODE_TABS.map((tab) => {
+                        const Icon = tab.icon;
+                        const isActive = mode === tab.id;
+                        return (
+                            <button
+                                key={tab.id}
+                                onClick={() => setMode(tab.id)}
+                                className={cn("filter-chip", isActive && "filter-chip-active")}
+                            >
+                                <Icon className="w-3.5 h-3.5" />
+                                {tab.label}
+                            </button>
+                        );
+                    })}
+                </div>
             </div>
 
             {/* ═══ Main Grid — Input + Canvas ═══════════════════ */}
-            <div className="grid grid-cols-1 lg:grid-cols-5 gap-6 items-start">
+            <div className="grid grid-cols-1 lg:grid-cols-5 gap-8 items-start">
 
                 {/* ── LEFT: Input Column (2/5) ─────────────── */}
                 <div className="lg:col-span-2 input-panel">
@@ -451,7 +454,7 @@ export function AIAdBuilderPage() {
 
                 {/* ── RIGHT: Canvas Preview (3/5) ──────────── */}
                 <div className="lg:col-span-3">
-                    <div className="ad-builder-canvas">
+                    <div className="ad-builder-canvas grain-overlay">
                         <div className="relative z-10 p-6">
                             {step === 'generating' ? (
                                 /* ── Theater Mode ──────────────────── */
@@ -478,62 +481,62 @@ export function AIAdBuilderPage() {
 
                                     {/* Animated icon */}
                                     <div className="relative">
-                                        <div className="absolute inset-0 bg-primary/20 rounded-2xl blur-2xl animate-pulse" />
-                                        <div className="relative w-20 h-20 bg-gradient-to-br from-primary via-red-500 to-orange-500 rounded-2xl flex items-center justify-center shadow-2xl shadow-primary/25">
+                                        <div className="absolute inset-0 rounded-2xl blur-2xl empty-state-breathe" style={{ background: 'var(--accent-gradient)' }} />
+                                        <div className="relative w-20 h-20 rounded-2xl flex items-center justify-center shadow-2xl" style={{ background: 'var(--accent-gradient)' }}>
                                             <Sparkles className="w-9 h-9 text-white animate-pulse" />
                                         </div>
                                     </div>
 
                                     {/* Title */}
                                     <div>
-                                        <h3 className="font-bold text-xl bg-gradient-to-r from-foreground to-foreground/60 bg-clip-text text-transparent">
+                                        <h3 className="text-xl" style={{ fontFamily: 'var(--font-display)', fontWeight: 800, letterSpacing: '-0.02em', color: 'hsl(var(--foreground))' }}>
                                             KI generiert deine Ad…
                                         </h3>
-                                        <p className="text-sm text-muted-foreground mt-2">
+                                        <p className="text-sm text-muted-foreground mt-2" style={{ fontFamily: 'var(--font-body)' }}>
                                             Dauert ca. 10–15 Sekunden
                                         </p>
                                     </div>
 
                                     {/* Progress bar */}
                                     <div className="w-full max-w-sm">
-                                        <div className="h-1.5 bg-muted/20 rounded-full overflow-hidden">
-                                            <div className="h-full bg-gradient-to-r from-primary via-red-500 to-orange-500 rounded-full theater-progress-bar" />
+                                        <div className="h-1 bg-muted/20 rounded-full overflow-hidden">
+                                            <div className="h-full rounded-full theater-progress-bar" style={{ background: 'var(--accent-gradient)' }} />
                                         </div>
                                     </div>
 
                                     {/* Step checklist */}
                                     <div className="space-y-3 w-full max-w-xs text-left">
-                                        {PIPELINE_STEPS.map((pStep, i) => (
-                                            <div
-                                                key={i}
-                                                className="stagger-in flex items-center gap-3 text-sm"
-                                                style={{ animationDelay: `${pStep.delay}ms` }}
-                                            >
-                                                <div className={cn(
-                                                    "w-6 h-6 rounded-full flex items-center justify-center text-xs shrink-0 transition-all duration-500",
-                                                    completedSteps.includes(i)
-                                                        ? "bg-green-500/20 text-green-500"
-                                                        : "bg-muted/20 text-muted-foreground"
-                                                )}>
-                                                    {completedSteps.includes(i) ? (
-                                                        <CheckCircle2 className="w-3.5 h-3.5" />
-                                                    ) : (
-                                                        <Loader2 className="w-3 h-3 animate-spin" />
-                                                    )}
+                                        {PIPELINE_STEPS.map((pStep, i) => {
+                                            const StepIcon = pStep.Icon;
+                                            return (
+                                                <div
+                                                    key={i}
+                                                    className="stagger-in flex items-center gap-3 text-sm"
+                                                    style={{ animationDelay: `${pStep.delay}ms`, fontFamily: 'var(--font-body)' }}
+                                                >
+                                                    <div className={cn(
+                                                        "w-7 h-7 rounded-lg flex items-center justify-center shrink-0 transition-all duration-500",
+                                                        completedSteps.includes(i)
+                                                            ? "text-emerald-400"
+                                                            : "text-muted-foreground"
+                                                    )} style={completedSteps.includes(i) ? { background: 'rgba(52, 211, 153, 0.1)', border: '1px solid rgba(52, 211, 153, 0.15)' } : { background: 'hsl(var(--muted) / 0.15)', border: '1px solid var(--glass-border)' }}>
+                                                        {completedSteps.includes(i) ? (
+                                                            <CheckCircle2 className="w-3.5 h-3.5" />
+                                                        ) : (
+                                                            <StepIcon className="w-3.5 h-3.5" />
+                                                        )}
+                                                    </div>
+                                                    <span className={cn(
+                                                        "transition-colors duration-300 font-medium",
+                                                        completedSteps.includes(i)
+                                                            ? "text-foreground"
+                                                            : "text-muted-foreground"
+                                                    )}>
+                                                        {pStep.label}
+                                                    </span>
                                                 </div>
-                                                <span className={cn(
-                                                    "transition-colors duration-300",
-                                                    completedSteps.includes(i)
-                                                        ? "text-foreground"
-                                                        : "text-muted-foreground"
-                                                )}>
-                                                    {pStep.icon} {pStep.label}
-                                                </span>
-                                                {completedSteps.includes(i) && (
-                                                    <span className="ml-auto text-[10px] text-green-500/70">✓</span>
-                                                )}
-                                            </div>
-                                        ))}
+                                            );
+                                        })}
                                     </div>
                                 </div>
                             ) : (
@@ -550,19 +553,19 @@ export function AIAdBuilderPage() {
 
                                     {/* Action Buttons */}
                                     {result && !loading && step === 'result' && (
-                                        <div className="flex flex-wrap gap-3 mt-6 pt-6 border-t border-border/20">
+                                        <div className="flex flex-wrap gap-3 mt-6 pt-6" style={{ borderTop: '1px solid var(--glass-border)' }}>
                                             <Button
                                                 onClick={handleDownload}
-                                                className="flex-1 gap-2 bg-gradient-to-r from-primary to-red-600 hover:from-primary/90 hover:to-red-600/90 shadow-lg shadow-primary/15 h-11"
+                                                className="generate-btn flex-1 gap-2 h-11 rounded-xl text-white border-0"
                                             >
                                                 <Download className="w-4 h-4" />
                                                 Herunterladen
                                             </Button>
-                                            <Button onClick={handleSaveToLibrary} variant="outline" className="flex-1 gap-2 h-11">
+                                            <Button onClick={handleSaveToLibrary} variant="outline" className="flex-1 gap-2 h-11 rounded-xl" style={{ borderColor: 'var(--glass-border-hover)', fontFamily: 'var(--font-body)' }}>
                                                 <Save className="w-4 h-4" />
                                                 In Bibliothek
                                             </Button>
-                                            <Button onClick={handleReset} variant="ghost" className="gap-2 h-11 text-muted-foreground hover:text-foreground">
+                                            <Button onClick={handleReset} variant="ghost" className="gap-2 h-11 rounded-xl text-muted-foreground hover:text-foreground" style={{ fontFamily: 'var(--font-body)' }}>
                                                 <RefreshCw className="w-4 h-4" />
                                                 Neu
                                             </Button>

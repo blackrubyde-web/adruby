@@ -1,7 +1,7 @@
 /**
- * AI Ad Builder – Freitext-Modus (Visual Overhaul V4)
- * Uses input-section CSS classes, context-dependent chips, voice recording,
- * character progress bar, generate-btn-glow.
+ * AI Ad Builder – Freitext-Modus (Dark Editorial Studio v6)
+ * Syne typography, scarlet accents, frosted glass chips,
+ * voice recording, character progress bar.
  */
 
 import { useState } from 'react';
@@ -98,11 +98,11 @@ export function FreeTextInputMode({ language, onGenerate, loading }: AIAdBuilder
             <div className="input-section">
                 {/* Header + Voice Button */}
                 <div className="input-section-header justify-between">
-                    <div className="flex items-center gap-2.5">
-                        <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-primary/15 to-red-500/10 flex items-center justify-center">
-                            <Sparkles className="w-3.5 h-3.5 text-primary" />
+                    <div className="flex items-center gap-2">
+                        <div className="w-6 h-6 rounded-md flex items-center justify-center" style={{ background: 'rgba(230, 57, 70, 0.08)', border: '1px solid rgba(230, 57, 70, 0.1)' }}>
+                            <Sparkles className="w-3 h-3" style={{ color: 'var(--accent-scarlet)' }} />
                         </div>
-                        <span className="text-xs font-semibold tracking-wide uppercase">Freitext-Briefing</span>
+                        <span className="text-xs font-medium tracking-wide uppercase" style={{ fontFamily: 'var(--font-body)', letterSpacing: '0.06em', color: 'hsl(var(--muted-foreground))' }}>Freitext-Briefing</span>
                     </div>
 
                     {/* Voice button */}
@@ -134,10 +134,14 @@ export function FreeTextInputMode({ language, onGenerate, loading }: AIAdBuilder
                                     key={i}
                                     type="button"
                                     onClick={() => setText(prompt.text)}
-                                    className={`px-3 py-1.5 rounded-lg text-xs transition-all duration-300 border cursor-pointer ${text.trim()
-                                        ? 'bg-muted/15 text-muted-foreground/50 border-border/15 hover:bg-muted/30 hover:text-muted-foreground'
-                                        : 'bg-gradient-to-br from-primary/8 to-red-500/4 text-foreground/80 border-primary/15 hover:border-primary/30 hover:from-primary/12 hover:to-red-500/8'
+                                    className={`px-3 py-1.5 rounded-full text-xs transition-all duration-300 border cursor-pointer ${text.trim()
+                                        ? 'text-muted-foreground/50 hover:text-muted-foreground'
+                                        : 'text-foreground/80 hover:text-foreground'
                                         }`}
+                                    style={text.trim()
+                                        ? { background: 'hsl(var(--muted) / 0.1)', borderColor: 'var(--glass-border)' }
+                                        : { background: 'rgba(230, 57, 70, 0.04)', borderColor: 'rgba(230, 57, 70, 0.12)' }
+                                    }
                                 >
                                     {prompt.label}
                                 </button>
@@ -184,11 +188,11 @@ export function FreeTextInputMode({ language, onGenerate, loading }: AIAdBuilder
             </div>
 
             {/* ── Generate Button ──────────────────────────────── */}
-            <div className="generate-btn-glow">
+            <div>
                 <Button
                     type="submit"
                     disabled={loading || isTranscribing || !isValid}
-                    className="w-full gap-2 bg-gradient-to-r from-primary to-red-600 hover:from-primary/90 hover:to-red-600/90 h-12 text-sm font-semibold shadow-lg shadow-primary/15"
+                    className="generate-btn w-full gap-2 h-12 text-sm rounded-xl text-white border-0"
                     size="lg"
                 >
                     {loading ? (
@@ -200,7 +204,7 @@ export function FreeTextInputMode({ language, onGenerate, loading }: AIAdBuilder
                         <>
                             <Zap className="w-4 h-4" />
                             Ad generieren
-                            <span className="ml-1.5 px-2 py-0.5 rounded-full bg-white/15 text-white/80 text-[10px] font-medium">
+                            <span className="ml-1.5 px-2 py-0.5 rounded-full bg-white/15 text-white/80 text-[10px]" style={{ fontFamily: 'var(--font-body)', fontWeight: 500 }}>
                                 1 Credit
                             </span>
                         </>

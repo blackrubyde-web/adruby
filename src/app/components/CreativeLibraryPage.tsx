@@ -736,8 +736,8 @@ export function CreativeLibraryPage() {
 
     return (
       <div style={{ ...style, left: Number(style.left) + gridGap / 2, top: Number(style.top) + gridGap / 2 }}>
-        <div className="bg-card border border-border rounded-xl overflow-hidden hover:shadow-xl transition-all group" style={{ width: cardWidth, height: cardHeight }}>
-          <div className="relative aspect-video bg-muted overflow-hidden">
+        <div className="creative-card stagger-reveal" style={{ width: cardWidth, height: cardHeight, animationDelay: `${index * 50}ms` }}>
+          <div className="creative-card-image" style={{ aspectRatio: '16/9' }}>
             {creative.thumbnail ? (
               <img
                 src={creative.thumbnail}
@@ -749,117 +749,99 @@ export function CreativeLibraryPage() {
                 className="w-full h-full object-cover"
               />
             ) : (
-              <div className="w-full h-full bg-gradient-to-br from-muted to-muted/40 flex items-center justify-center text-muted-foreground text-sm">
+              <div className="w-full h-full flex items-center justify-center text-muted-foreground text-sm" style={{ background: 'var(--surface-obsidian)' }}>
                 AI Creative
               </div>
             )}
 
-            <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
+            <div className="creative-card-overlay">
               <button
                 onClick={() => handleToggleFavorite(creative.id)}
-                className="p-2 bg-card rounded-lg hover:bg-card/90 transition-colors"
+                className="creative-card-action"
                 title="Favorit"
               >
-                <Star className={`w-4 h-4 ${creative.isFavorite ? 'fill-yellow-500 text-yellow-500' : 'text-foreground'}`} />
+                <Star className={`w-4 h-4 ${creative.isFavorite ? 'fill-yellow-500 text-yellow-500' : ''}`} />
               </button>
               <button
                 onClick={() => handleDownload(creative.id)}
-                className="p-2 bg-card rounded-lg hover:bg-card/90 transition-colors"
+                className="creative-card-action"
                 title="Herunterladen"
               >
-                <Download className="w-4 h-4 text-foreground" />
+                <Download className="w-4 h-4" />
               </button>
               <button
                 onClick={() => handleDelete(creative.id)}
-                className="p-2 bg-red-500/20 rounded-lg hover:bg-red-500/30 transition-colors"
+                className="creative-card-action"
                 title="Löschen"
+                style={{ borderColor: 'rgba(239, 68, 68, 0.2)' }}
               >
-                <Trash2 className="w-4 h-4 text-red-500" />
+                <Trash2 className="w-4 h-4" style={{ color: 'var(--accent-scarlet)' }} />
               </button>
             </div>
 
-            <div className="absolute top-3 left-3 px-2 py-1 bg-black/80 rounded-lg flex items-center gap-1">
+            <div className="absolute top-3 left-3 px-2 py-0.5 rounded-full flex items-center gap-1" style={{ background: 'rgba(0,0,0,0.65)', backdropFilter: 'blur(8px)', border: '1px solid rgba(255,255,255,0.06)' }}>
               <TypeIcon className="w-3 h-3 text-white" />
-              <span className="text-xs text-white font-medium capitalize">{creative.type}</span>
+              <span className="text-[10px] text-white font-medium capitalize" style={{ fontFamily: 'var(--font-body)' }}>{creative.type}</span>
             </div>
 
             {creative.isFavorite && (
               <div className="absolute top-3 right-3">
-                <Star className="w-5 h-5 fill-yellow-500 text-yellow-500" />
+                <Star className="w-4 h-4 fill-yellow-500 text-yellow-500" />
               </div>
             )}
           </div>
 
-          <div className="p-4 flex flex-col h-[calc(100%-180px)]">
-            <h3 className="font-semibold text-foreground mb-2 line-clamp-1">{creative.name}</h3>
+          <div className="creative-card-body flex flex-col" style={{ height: `calc(100% - ${cardHeight > 300 ? '180px' : '160px'})` }}>
+            <h3 className="creative-card-name">{creative.name}</h3>
 
-            <div className="flex flex-wrap gap-1 mb-3">
+            <div className="flex flex-wrap gap-1 mt-2 mb-2">
               {creative.tags.slice(0, 3).map((tag) => (
-                <span key={tag} className="px-2 py-0.5 bg-muted rounded text-xs text-muted-foreground">
-                  #{tag}
+                <span key={tag} className="creative-card-tag">
+                  {tag}
                 </span>
               ))}
             </div>
 
             {/* Content Preview (Hooks) */}
-            <div className="flex-1 overflow-y-auto mb-3 space-y-2 pr-1">
+            <div className="flex-1 overflow-y-auto mb-2 space-y-1.5 pr-1">
               {creative.hooks && creative.hooks.length > 0 ? (
-                <div className="space-y-1.5">
-                  <span className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Hooks</span>
+                <div className="space-y-1">
+                  <span className="creative-card-tag" style={{ fontSize: '0.5625rem' }}>HOOKS</span>
                   {creative.hooks.slice(0, 2).map((hook, i) => (
-                    <div key={i} className="text-xs bg-muted/30 p-2 rounded-md border border-border/50 text-foreground/90 line-clamp-2">
+                    <div key={i} className="text-[11px] p-1.5 rounded-md text-foreground/80 line-clamp-2" style={{ background: 'hsl(var(--muted) / 0.1)', border: '1px solid var(--glass-border)', fontFamily: 'var(--font-body)' }}>
                       "{hook}"
                     </div>
                   ))}
                 </div>
               ) : creative.primaryText ? (
-                <div className="space-y-1.5">
-                  <span className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Primary Text</span>
-                  <div className="text-xs bg-muted/30 p-2 rounded-md border border-border/50 text-foreground/90 line-clamp-3">
+                <div className="space-y-1">
+                  <span className="creative-card-tag" style={{ fontSize: '0.5625rem' }}>TEXT</span>
+                  <div className="text-[11px] p-1.5 rounded-md text-foreground/80 line-clamp-3" style={{ background: 'hsl(var(--muted) / 0.1)', border: '1px solid var(--glass-border)', fontFamily: 'var(--font-body)' }}>
                     {creative.primaryText}
                   </div>
                 </div>
-              ) : (
-                <div className="h-full flex items-center justify-center text-xs text-muted-foreground italic">
-                  Keine Hooks verfügbar
-                </div>
-              )}
+              ) : null}
             </div>
 
-
-            <div className="grid grid-cols-3 gap-2 pt-3 border-t border-border mt-auto shrink-0">
+            <div className="creative-card-stats mt-auto shrink-0">
               <div>
-                <div className="flex items-center gap-1 text-muted-foreground mb-1">
-                  <Eye className="w-3 h-3" />
-                  <span className="text-xs">Views</span>
-                </div>
-                <div className="text-sm font-bold text-foreground">
+                <div className="creative-card-stat-label">Views</div>
+                <div className="creative-card-stat-value">
                   {(creative.performance.impressions / 1000).toFixed(1)}K
                 </div>
               </div>
               <div>
-                <div className="flex items-center gap-1 text-muted-foreground mb-1">
-                  <MousePointerClick className="w-3 h-3" />
-                  <span className="text-xs">CTR</span>
-                </div>
-                <div className="text-sm font-bold text-foreground">
+                <div className="creative-card-stat-label">CTR</div>
+                <div className="creative-card-stat-value">
                   {creative.performance.ctr}%
                 </div>
               </div>
               <div>
-                <div className="flex items-center gap-1 text-muted-foreground mb-1">
-                  <TrendingUp className="w-3 h-3" />
-                  <span className="text-xs">ROAS</span>
-                </div>
-                <div className="text-sm font-bold text-green-500">
+                <div className="creative-card-stat-label">ROAS</div>
+                <div className="creative-card-stat-value" style={{ color: 'var(--accent-scarlet)' }}>
                   {creative.performance.roas}x
                 </div>
               </div>
-            </div>
-
-            <div className="flex items-center justify-between mt-3 pt-3 border-t border-border text-xs text-muted-foreground shrink-0">
-              <span>In {creative.usedInCampaigns} Kampagnen</span>
-              <span>{creative.uploadedAt}</span>
             </div>
           </div>
         </div>
@@ -872,17 +854,17 @@ export function CreativeLibraryPage() {
       hideHero
       headerChips={
         <div className="flex flex-wrap gap-2 items-center">
-          <Badge variant="outline" className="text-xs">{stats.total} Gesamt</Badge>
-          <Badge variant="outline" className="text-xs">{stats.images} Bilder</Badge>
-          <Badge variant="outline" className="text-xs">{stats.videos} Videos</Badge>
-          <Badge variant="outline" className="text-xs">{stats.avgROAS}x Ø ROAS</Badge>
+          <span className="stat-pill">{stats.total} Gesamt</span>
+          <span className="stat-pill">{stats.images} Bilder</span>
+          <span className="stat-pill">{stats.videos} Videos</span>
+          <span className="stat-pill stat-pill-accent">{stats.avgROAS}x Ø ROAS</span>
         </div>
       }
       headerActions={
         <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
           <Button
             onClick={handleCreateAd}
-            className="bg-gradient-to-r from-primary to-red-600 text-white hover:opacity-90 gap-2"
+            className="generate-btn gap-2 text-white border-0 rounded-xl"
           >
             <Sparkles className="w-4 h-4" />
             Neue Ad erstellen
@@ -891,7 +873,8 @@ export function CreativeLibraryPage() {
             onClick={handleUploadClick}
             disabled={isUploading}
             variant="outline"
-            className="border-border/60 gap-2"
+            className="gap-2 rounded-xl"
+            style={{ borderColor: 'var(--glass-border-hover)', fontFamily: 'var(--font-body)' }}
           >
             <Upload className="w-4 h-4" />
             {isUploading ? 'Hochladen…' : 'Hochladen'}
@@ -934,7 +917,7 @@ export function CreativeLibraryPage() {
       )}
 
       {/* Filters & Search */}
-      <div className="bg-card border border-border rounded-xl p-4">
+      <div className="card-obsidian p-4">
         <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
           {/* Search */}
           <div className="flex-1 relative min-w-0">
@@ -943,7 +926,8 @@ export function CreativeLibraryPage() {
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Creatives nach Name oder Tags suchen..."
-              className="pl-10 bg-input border-border text-foreground"
+              className="pl-10 bg-transparent border-0 text-foreground rounded-full"
+              style={{ background: 'hsl(var(--muted) / 0.1)', fontFamily: 'var(--font-body)' }}
             />
           </div>
 
@@ -953,10 +937,7 @@ export function CreativeLibraryPage() {
               <button
                 key={type}
                 onClick={() => setSelectedType(type)}
-                className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${selectedType === type
-                  ? 'bg-primary text-primary-foreground'
-                  : 'bg-muted text-muted-foreground hover:bg-muted/80'
-                  }`}
+                className={`filter-chip ${selectedType === type ? 'filter-chip-active' : ''}`}
               >
                 {type === 'all' ? 'Alle' : type === 'image' ? 'Bilder' : type === 'video' ? 'Videos' : 'Karussells'}
               </button>
@@ -1085,44 +1066,48 @@ export function CreativeLibraryPage() {
 
       {editingCreative && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-md"
           onClick={() => setEditingCreative(null)}
         >
           <div
-            className="w-full max-w-lg rounded-2xl bg-card border border-border p-6 shadow-2xl"
+            className="w-full max-w-lg rounded-2xl p-6 shadow-2xl"
+            style={{ background: 'var(--surface-obsidian)', backdropFilter: 'blur(24px) saturate(1.2)', border: '1px solid var(--glass-border-hover)' }}
             onClick={(event) => event.stopPropagation()}
           >
-            <h3 className="text-lg font-semibold text-foreground mb-4">Creative bearbeiten</h3>
+            <h3 style={{ fontFamily: 'var(--font-display)', fontWeight: 800, fontSize: '1.125rem', letterSpacing: '-0.02em', color: 'hsl(var(--foreground))' }} className="mb-4">Creative bearbeiten</h3>
             <div className="space-y-4">
               <div>
-                <label className="text-sm font-medium text-muted-foreground">Name</label>
+                <label className="text-sm font-medium text-muted-foreground" style={{ fontFamily: 'var(--font-body)' }}>Name</label>
                 <input
                   value={editName}
                   onChange={(event) => setEditName(event.target.value)}
-                  className="mt-2 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/40"
+                  className="mt-2 w-full rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2"
+                  style={{ background: 'hsl(var(--muted) / 0.15)', border: '1px solid var(--glass-border)', fontFamily: 'var(--font-body)' }}
                 />
               </div>
               <div>
-                <label className="text-sm font-medium text-muted-foreground">Tags</label>
+                <label className="text-sm font-medium text-muted-foreground" style={{ fontFamily: 'var(--font-body)' }}>Tags</label>
                 <input
                   value={editTags}
                   onChange={(event) => setEditTags(event.target.value)}
                   placeholder="z.B. performance, fitness"
-                  className="mt-2 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/40"
+                  className="mt-2 w-full rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2"
+                  style={{ background: 'hsl(var(--muted) / 0.15)', border: '1px solid var(--glass-border)', fontFamily: 'var(--font-body)' }}
                 />
               </div>
             </div>
             <div className="mt-6 flex justify-end gap-3">
               <button
                 onClick={() => setEditingCreative(null)}
-                className="px-4 py-2 rounded-lg border border-border text-sm font-medium text-foreground hover:bg-muted"
+                className="px-4 py-2 rounded-xl text-sm font-medium text-foreground hover:bg-muted/20 transition-colors"
+                style={{ border: '1px solid var(--glass-border)', fontFamily: 'var(--font-body)' }}
               >
                 Abbrechen
               </button>
               <button
                 onClick={handleEditSave}
                 disabled={isSavingEdit}
-                className="px-4 py-2 rounded-lg bg-primary text-primary-foreground text-sm font-semibold hover:bg-primary/90 disabled:opacity-50"
+                className="generate-btn px-4 py-2 rounded-xl text-sm text-white disabled:opacity-50"
               >
                 {isSavingEdit ? 'Speichern…' : 'Speichern'}
               </button>

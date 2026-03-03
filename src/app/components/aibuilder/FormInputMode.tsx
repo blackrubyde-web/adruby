@@ -1,6 +1,6 @@
 /**
- * AI Ad Builder – Form Input Mode (Visual Overhaul V4)
- * Uses input-section CSS classes, subtle field backgrounds, validation feedback.
+ * AI Ad Builder – Form Input Mode (Dark Editorial Studio v6)
+ * Syne typography, scarlet accents, editorial input sections.
  */
 
 import { useState, useMemo } from 'react';
@@ -54,11 +54,11 @@ export function FormInputMode({ language, onGenerate, loading }: AIAdBuilderComp
             {/* ── Section 1: Produkt ───────────────────────────── */}
             <div className="input-section">
                 <div className="input-section-header">
-                    <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-primary/15 to-red-500/10 flex items-center justify-center">
-                        <Package className="w-3.5 h-3.5 text-primary" />
+                    <div className="w-6 h-6 rounded-md flex items-center justify-center" style={{ background: 'rgba(230, 57, 70, 0.08)', border: '1px solid rgba(230, 57, 70, 0.1)' }}>
+                        <Package className="w-3 h-3" style={{ color: 'var(--accent-scarlet)' }} />
                     </div>
-                    <span className="text-xs font-semibold tracking-wide uppercase">Produkt</span>
-                    <span className="ml-auto text-[10px] text-muted-foreground/50">2 Pflichtfelder</span>
+                    <span className="text-xs font-medium tracking-wide uppercase" style={{ fontFamily: 'var(--font-body)', letterSpacing: '0.06em', color: 'hsl(var(--muted-foreground))' }}>Produkt</span>
+                    <span className="ml-auto text-[10px] text-muted-foreground/40" style={{ fontFamily: 'var(--font-body)' }}>2 Pflichtfelder</span>
                 </div>
                 <div className="input-section-body">
                     {/* Product Name */}
@@ -132,11 +132,11 @@ export function FormInputMode({ language, onGenerate, loading }: AIAdBuilderComp
             {/* ── Section 2: Zielgruppe & Stil ─────────────────── */}
             <div className="input-section">
                 <div className="input-section-header">
-                    <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-violet-500/15 to-fuchsia-500/10 flex items-center justify-center">
-                        <Target className="w-3.5 h-3.5 text-violet-500" />
+                    <div className="w-6 h-6 rounded-md flex items-center justify-center" style={{ background: 'rgba(244, 162, 97, 0.08)', border: '1px solid rgba(244, 162, 97, 0.1)' }}>
+                        <Target className="w-3 h-3" style={{ color: 'var(--accent-amber)' }} />
                     </div>
-                    <span className="text-xs font-semibold tracking-wide uppercase">Zielgruppe & Stil</span>
-                    <span className="ml-auto text-[10px] text-muted-foreground/50">optional</span>
+                    <span className="text-xs font-medium tracking-wide uppercase" style={{ fontFamily: 'var(--font-body)', letterSpacing: '0.06em', color: 'hsl(var(--muted-foreground))' }}>Zielgruppe & Stil</span>
+                    <span className="ml-auto text-[10px] text-muted-foreground/40" style={{ fontFamily: 'var(--font-body)' }}>optional</span>
                 </div>
                 <div className="input-section-body">
                     {/* Target Audience */}
@@ -187,11 +187,11 @@ export function FormInputMode({ language, onGenerate, loading }: AIAdBuilderComp
             </div>
 
             {/* ── Generate Button ──────────────────────────────── */}
-            <div className="generate-btn-glow">
+            <div>
                 <Button
                     type="submit"
                     disabled={loading}
-                    className="w-full gap-2 bg-gradient-to-r from-primary to-red-600 hover:from-primary/90 hover:to-red-600/90 h-12 text-sm font-semibold shadow-lg shadow-primary/15"
+                    className="generate-btn w-full gap-2 h-12 text-sm rounded-xl text-white border-0"
                     size="lg"
                 >
                     {loading ? (
@@ -203,7 +203,7 @@ export function FormInputMode({ language, onGenerate, loading }: AIAdBuilderComp
                         <>
                             <Zap className="w-4 h-4" />
                             Ad generieren
-                            <span className="ml-1.5 px-2 py-0.5 rounded-full bg-white/15 text-white/80 text-[10px] font-medium">
+                            <span className="ml-1.5 px-2 py-0.5 rounded-full bg-white/15 text-white/80 text-[10px]" style={{ fontFamily: 'var(--font-body)', fontWeight: 500 }}>
                                 1 Credit
                             </span>
                         </>

@@ -1,7 +1,7 @@
 /**
- * AI Ad Builder – Preview Area (Visual Overhaul V4)
- * Rich empty state with orbit animation, dark canvas-aware styling,
- * floating Meta mockup, score rings with context, premium hook callout.
+ * AI Ad Builder – Preview Area (Dark Editorial Studio v6)
+ * Editorial empty state, Syne typography, scarlet accents,
+ * floating Meta mockup, score rings, hook callout.
  */
 
 import { useState } from 'react';
@@ -97,50 +97,54 @@ export function PreviewArea({
         );
     }
 
-    /* ── Empty State — Rich visual inside canvas ── */
+    /* ── Empty State — Editorial visual inside canvas ── */
     if (!result || !displayData) {
         return (
             <div className="flex flex-col items-center justify-center text-center min-h-[400px] py-12">
                 {/* Animated orbit icon */}
                 <div className="relative w-28 h-28 mb-8">
                     {/* Glow */}
-                    <div className="absolute inset-2 bg-gradient-to-br from-primary/10 to-violet-500/10 rounded-full blur-xl empty-state-glow" />
+                    <div className="absolute inset-2 rounded-full blur-xl empty-state-breathe" style={{ background: 'linear-gradient(135deg, rgba(230,57,70,0.1), rgba(244,162,97,0.08))' }} />
 
                     {/* Center icon */}
                     <div className="absolute inset-0 flex items-center justify-center">
-                        <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-muted/50 to-muted/20 border border-border/20 flex items-center justify-center shadow-inner">
-                            <Layers className="w-7 h-7 text-muted-foreground/30" />
+                        <div className="w-16 h-16 rounded-2xl flex items-center justify-center shadow-inner" style={{ background: 'var(--surface-obsidian)', border: '1px solid var(--glass-border)' }}>
+                            <Layers className="w-7 h-7 text-muted-foreground/25" />
                         </div>
                     </div>
 
                     {/* Orbiting dots */}
                     <div className="absolute inset-0 flex items-center justify-center">
-                        <div className="orbit-dot bg-primary/40" />
-                        <div className="orbit-dot bg-violet-500/40" />
-                        <div className="orbit-dot bg-orange-500/40" />
+                        <div className="orbit-dot" style={{ background: 'var(--accent-scarlet)', opacity: 0.5 }} />
+                        <div className="orbit-dot" style={{ background: 'var(--accent-amber)', opacity: 0.4 }} />
+                        <div className="orbit-dot" style={{ background: 'hsl(var(--muted-foreground))', opacity: 0.3 }} />
                     </div>
                 </div>
 
-                <h3 className="font-semibold text-lg text-foreground/80">Deine Ad-Vorschau</h3>
-                <p className="text-sm text-muted-foreground/60 mt-2 max-w-[280px] leading-relaxed">
-                    Fülle das Formular links aus und generiere deine erste Ad — das Ergebnis erscheint hier als Meta-Vorschau.
+                <h3 style={{ fontFamily: 'var(--font-display)', fontWeight: 800, fontSize: '1.125rem', letterSpacing: '-0.02em', color: 'hsl(var(--foreground) / 0.8)' }}>Dein Creative wartet</h3>
+                <p className="text-sm text-muted-foreground/50 mt-2 max-w-[280px] leading-relaxed" style={{ fontFamily: 'var(--font-body)' }}>
+                    Fülle das Formular aus und generiere deine erste Ad — das Ergebnis erscheint hier.
                 </p>
 
                 {/* Feature chips */}
-                <div className="flex items-center gap-3 mt-8">
+                <div className="flex items-center gap-2.5 mt-8">
                     {[
-                        { icon: '📱', label: 'Meta-Vorschau' },
-                        { icon: '📊', label: 'Score-Analyse' },
-                        { icon: '🎯', label: '3 Varianten' },
-                    ].map((feat, i) => (
-                        <div
-                            key={i}
-                            className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-muted/20 border border-border/15 text-[11px] text-muted-foreground/60"
-                        >
-                            <span>{feat.icon}</span>
-                            {feat.label}
-                        </div>
-                    ))}
+                        { icon: Sparkles, label: 'KI-Generiert' },
+                        { icon: Layers, label: 'Meta-Vorschau' },
+                        { icon: Wand2, label: 'Score-Analyse' },
+                    ].map((feat, i) => {
+                        const FeatIcon = feat.icon;
+                        return (
+                            <div
+                                key={i}
+                                className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px]"
+                                style={{ background: 'hsl(var(--muted) / 0.15)', border: '1px solid var(--glass-border)', color: 'hsl(var(--muted-foreground) / 0.5)', fontFamily: 'var(--font-body)' }}
+                            >
+                                <FeatIcon className="w-3 h-3" />
+                                {feat.label}
+                            </div>
+                        );
+                    })}
                 </div>
             </div>
         );
