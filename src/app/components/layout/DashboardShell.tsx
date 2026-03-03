@@ -9,7 +9,8 @@ interface DashboardShellProps {
     subtitle?: string;
     headerActions?: React.ReactNode;
     headerChips?: React.ReactNode;
-    hero?: React.ReactNode; // Custom hero content overrides default HeroHeader
+    hero?: React.ReactNode;
+    hideHero?: boolean;
 }
 
 export function DashboardShell({
@@ -20,6 +21,7 @@ export function DashboardShell({
     headerActions,
     headerChips,
     hero,
+    hideHero,
 }: DashboardShellProps) {
     return (
         <>
@@ -39,7 +41,7 @@ export function DashboardShell({
         If a custom hero is provided, render it.
         Otherwise, if title is provided, render the standard HeroHeader.
       */}
-                {hero ? (
+                {hideHero ? null : hero ? (
                     hero
                 ) : title ? (
                     <HeroHeader

@@ -18,7 +18,6 @@ import { SelectField } from './ui/select-field';
 import { DashboardShell } from './layout/DashboardShell';
 import { useOverview } from '../hooks/useOverview';
 import { useAuthState } from '../contexts/AuthContext';
-import { ReferralServicesWidget } from './referral/ReferralServicesWidget';
 
 import { MetricCardSkeleton, ChartSkeleton } from '../lib/skeletons';
 import { formatCurrency, formatCompact, formatDeltaRaw as formatDelta } from '../utils/formatters';
@@ -137,7 +136,8 @@ export function OverviewPage({ onNavigate }: OverviewPageProps) {
       change: formatDelta(data?.kpis.spendChangePct),
       isPositive: (data?.kpis.spendChangePct ?? 0) <= 0,
       comparison: `vs. letzte ${dateFilter === 'today' ? 'Tag' : dateFilter}`,
-      icon: <DollarSign className="w-5 h-5 text-primary" />,
+      icon: <DollarSign className="w-5 h-5" />,
+      accentColor: '#3b82f6',
     },
     {
       label: 'Umsatz gesamt',
@@ -145,7 +145,8 @@ export function OverviewPage({ onNavigate }: OverviewPageProps) {
       change: formatDelta(data?.kpis.revenueChangePct),
       isPositive: (data?.kpis.revenueChangePct ?? 0) >= 0,
       comparison: `vs. letzte ${dateFilter === 'today' ? 'Tag' : dateFilter}`,
-      icon: <TrendingUp className="w-5 h-5 text-primary" />,
+      icon: <TrendingUp className="w-5 h-5" />,
+      accentColor: '#10b981',
     },
     {
       label: 'Ø ROAS',
@@ -153,7 +154,8 @@ export function OverviewPage({ onNavigate }: OverviewPageProps) {
       change: formatDelta(data?.kpis.roasChangePct, '%'),
       isPositive: (data?.kpis.roasChangePct ?? 0) >= 0,
       comparison: `vs. letzte ${dateFilter === 'today' ? 'Tag' : dateFilter}`,
-      icon: <Target className="w-5 h-5 text-primary" />,
+      icon: <Target className="w-5 h-5" />,
+      accentColor: '#8b5cf6',
     },
     {
       label: 'Aktive Kampagnen',
@@ -161,7 +163,8 @@ export function OverviewPage({ onNavigate }: OverviewPageProps) {
       change: data?.kpis.activeCampaigns ? `+${data.kpis.activeCampaigns}` : '—',
       isPositive: true,
       comparison: `vs. letzte ${dateFilter === 'today' ? 'Tag' : dateFilter}`,
-      icon: <Zap className="w-5 h-5 text-primary" />,
+      icon: <Zap className="w-5 h-5" />,
+      accentColor: '#f59e0b',
     },
   ];
 
@@ -213,6 +216,7 @@ export function OverviewPage({ onNavigate }: OverviewPageProps) {
           <Badge variant="outline" className="px-3 py-1">Kanal: {channelFilter}</Badge>
         </div>
       }
+      hideHero
     >
       {/* Filters */}
       <div className="flex items-center gap-3">
@@ -269,15 +273,15 @@ export function OverviewPage({ onNavigate }: OverviewPageProps) {
             />
           </Suspense>
 
-          <ReferralServicesWidget />
+
 
           {/* Action Center */}
           <Card variant="glass">
             <CardHeader className="pb-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <CardTitle className="text-base">Action Center</CardTitle>
-                  <CardDescription>Deine nächsten Schritte</CardDescription>
+                  <CardTitle className="text-base">Nächste Schritte</CardTitle>
+                  <CardDescription>Deine wichtigsten Aufgaben</CardDescription>
                 </div>
                 <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center">
                   <ListChecks className="w-4 h-4 text-primary" />
@@ -297,12 +301,7 @@ export function OverviewPage({ onNavigate }: OverviewPageProps) {
                     <div>
                       <div className="flex items-center gap-2 mb-1 flex-wrap">
                         <span className="text-sm font-semibold text-foreground">{item.title}</span>
-                        <Badge
-                          variant={item.priority === 'high' ? 'destructive' : item.priority === 'medium' ? 'secondary' : 'default'}
-                          className="text-[10px] h-5 px-1.5"
-                        >
-                          {item.priority}
-                        </Badge>
+
                       </div>
                       <p className="text-xs text-muted-foreground leading-relaxed">{item.description}</p>
                     </div>
@@ -346,11 +345,11 @@ export function OverviewPage({ onNavigate }: OverviewPageProps) {
                   <div className="text-lg font-bold text-primary">{topCampaign.roas}x</div>
                 </div>
                 <div>
-                  <div className="text-xs text-muted-foreground mb-1">Spend</div>
+                  <div className="text-xs text-muted-foreground mb-1">Ausgaben</div>
                   <div className="text-lg font-bold">€{(topCampaign.spend / 1000).toFixed(1)}K</div>
                 </div>
                 <div>
-                  <div className="text-xs text-muted-foreground mb-1">Revenue</div>
+                  <div className="text-xs text-muted-foreground mb-1">Umsatz</div>
                   <div className="text-lg font-bold">€{(topCampaign.revenue / 1000).toFixed(1)}K</div>
                 </div>
               </div>

@@ -1,6 +1,6 @@
 import { memo, useMemo } from 'react';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
-import { Sun, Moon, User, Settings, HelpCircle, Coins, Menu, Crown } from 'lucide-react';
+import { Sun, Moon, User, Settings, HelpCircle, Zap, Menu, Crown } from 'lucide-react';
 import { useTheme } from './ThemeProvider';
 import type { PageType } from '../App';
 import {
@@ -12,6 +12,22 @@ import {
   DropdownMenuTrigger,
 } from './ui/dropdown-menu';
 
+/** Map page keys → German page titles */
+const PAGE_TITLES: Record<string, string> = {
+  dashboard: 'Dashboard',
+  analytics: 'Analyse',
+  studio: 'Creative Studio',
+  aibuilder: 'AI Ad Builder',
+  campaigns: 'Kampagnen',
+  aianalysis: 'AI Analyse',
+  library: 'Creative Bibliothek',
+  profile: 'Profil',
+  settings: 'Einstellungen',
+  affiliate: 'Affiliate',
+  help: 'Hilfe & Support',
+  admin: 'Admin',
+};
+
 interface HeaderProps {
   sidebarWidth?: number;
   onToggleMobileSidebar?: () => void;
@@ -22,17 +38,23 @@ interface HeaderProps {
   avatarUrl?: string | null;
   displayName?: string | null;
   email?: string | null;
-  // Trial props
   isTrialUser?: boolean;
   onUpgrade?: () => void;
+}
+
+function getGreeting(): string {
+  const h = new Date().getHours();
+  if (h < 12) return 'Guten Morgen';
+  if (h < 18) return 'Guten Tag';
+  return 'Guten Abend';
 }
 
 export const Header = memo(function Header({
   sidebarWidth = 0,
   onToggleMobileSidebar,
   onNavigate,
+  currentPage,
   currentCredits,
-  maxCredits,
   avatarUrl,
   displayName,
   email,
@@ -42,9 +64,7 @@ export const Header = memo(function Header({
   const { theme, toggleTheme } = useTheme();
   const creditsLoading = currentCredits === undefined || currentCredits === null;
   const credits = currentCredits ?? 0;
-  const creditsLabel = maxCredits
-    ? `${credits.toLocaleString()} / ${maxCredits.toLocaleString()}`
-    : credits.toLocaleString();
+
   const initials = useMemo(() => {
     const base = displayName || email || 'U';
     const parts = base.split(' ').filter(Boolean);
@@ -52,71 +72,74 @@ export const Header = memo(function Header({
     return `${parts[0][0] || ''}${parts[1][0] || ''}`.toUpperCase();
   }, [displayName, email]);
 
+  const pageTitle = PAGE_TITLES[currentPage || 'dashboard'] || 'Dashboard';
+  const firstName = displayName?.split(' ')[0] || null;
+  const isDashboard = currentPage === 'dashboard';
+
   return (
     <div
-      className="bg-card/90 border-b border-border/50 flex items-center justify-between px-3 sm:px-4 md:px-8 sticky top-0 z-40 transition-[left] duration-200 shadow-sm md:fixed md:top-0 md:right-0"
+      className="bg-card/95 backdrop-blur-sm border-b border-border/40 flex items-center justify-between px-4 sm:px-6 md:px-8 sticky top-0 z-40 transition-[left] duration-200 md:fixed md:top-0 md:right-0"
       style={{
-        height: 'var(--header-height)',
+        height: '64px',
         left: sidebarWidth > 0 ? `${sidebarWidth}px` : '0'
       }}
     >
-      {/* Left Side */}
-      <div className="flex items-center gap-2 sm:gap-3">
-        {/* Mobile Burger Menu */}
+      {/* Left: Burger + Page Title */}
+      <div className="flex items-center gap-3 min-w-0">
+        {/* Mobile Burger */}
         <button
           onClick={onToggleMobileSidebar}
-          className="md:hidden w-10 h-10 rounded-xl border border-border/60 bg-muted/50 hover:bg-muted flex items-center justify-center transition-all cursor-pointer shadow-sm shrink-0"
+          className="md:hidden w-9 h-9 rounded-lg border border-border/50 bg-muted/40 hover:bg-muted flex items-center justify-center transition-all shrink-0"
           aria-label="Menü öffnen"
         >
-          <Menu className="w-5 h-5 text-foreground" style={{ width: 20, height: 20, minWidth: 20, minHeight: 20 }} />
+          <Menu className="w-4.5 h-4.5 text-foreground" />
         </button>
 
-        {/* Credits Display - Visible on all devices */}
-        <div className="flex items-center gap-1.5 sm:gap-2 px-2 sm:px-3 py-1.5 bg-card border border-border/50 rounded-lg hover:border-border transition-colors">
-          <Coins className="w-4 h-4 text-muted-foreground shrink-0" />
-          {creditsLoading ? (
-            <div className="w-12 h-4 bg-muted/60 rounded animate-pulse" />
-          ) : (
-            <span className="text-sm text-foreground font-medium">{creditsLabel}</span>
+        {/* Page Title + Greeting */}
+        <div className="min-w-0">
+          <h1 className="text-base sm:text-lg font-bold text-foreground leading-tight truncate">
+            {pageTitle}
+          </h1>
+          {isDashboard && firstName && (
+            <p className="text-xs text-muted-foreground leading-tight truncate hidden sm:block">
+              {getGreeting()}, {firstName} 👋
+            </p>
           )}
-          <span className="text-xs text-muted-foreground hidden sm:inline">Credits</span>
         </div>
       </div>
 
-      {/* Right Side */}
-      <div className="flex items-center gap-2 sm:gap-3 md:gap-4">
-        {/* Upgrade Button - Only for Trial Users */}
+      {/* Right: Credits + Upgrade + Avatar */}
+      <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+        {/* Credits Pill — always visible */}
+        <div className="flex items-center gap-1.5 px-2.5 py-1.5 bg-primary/10 rounded-full transition-colors hover:bg-primary/15 cursor-default">
+          <Zap className="w-3.5 h-3.5 text-primary shrink-0" />
+          {creditsLoading ? (
+            <div className="w-8 h-3.5 bg-primary/20 rounded-full animate-pulse" />
+          ) : (
+            <span className="text-xs sm:text-sm font-semibold text-primary tabular-nums">
+              {credits.toLocaleString()}
+            </span>
+          )}
+        </div>
+
+        {/* Upgrade — Trial Users */}
         {isTrialUser && onUpgrade && (
           <button
             onClick={onUpgrade}
-            className="group px-3 sm:px-4 py-2 bg-gradient-to-r from-[#E63946] via-rose-500 to-red-600 text-white rounded-xl font-bold text-sm flex items-center gap-2 hover:shadow-[0_0_20px_rgba(255,31,31,0.4)] transition-all hover:scale-105 active:scale-95 shrink-0"
+            className="group px-3 py-1.5 bg-gradient-to-r from-primary to-primary/80 text-primary-foreground rounded-full font-semibold text-xs flex items-center gap-1.5 hover:shadow-lg hover:shadow-primary/25 transition-all active:scale-95 shrink-0"
           >
-            <Crown className="w-4 h-4" />
+            <Crown className="w-3.5 h-3.5" />
             <span className="hidden sm:inline">Upgraden</span>
           </button>
         )}
 
-        {/* Theme Toggle - Always visible */}
-        <button
-          onClick={toggleTheme}
-          className="w-10 h-10 rounded-xl border border-border/60 bg-muted/50 hover:bg-muted flex items-center justify-center transition-all cursor-pointer shadow-sm shrink-0"
-          title={theme === 'dark' ? 'Zu Hell wechseln' : 'Zu Dunkel wechseln'}
-          aria-label={theme === 'dark' ? 'Zu Hell wechseln' : 'Zu Dunkel wechseln'}
-        >
-          {theme === 'dark' ? (
-            <Sun className="w-5 h-5 text-yellow-500" style={{ width: 20, height: 20, minWidth: 20, minHeight: 20 }} />
-          ) : (
-            <Moon className="w-5 h-5 text-slate-700 dark:text-slate-300" style={{ width: 20, height: 20, minWidth: 20, minHeight: 20 }} />
-          )}
-        </button>
-
-        {/* Profile Dropdown */}
+        {/* Profile Dropdown (includes Theme Toggle) */}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <button className="hover:opacity-80 transition-opacity cursor-pointer">
-              <Avatar className="cursor-pointer w-10 h-10">
+              <Avatar className="cursor-pointer w-9 h-9">
                 <AvatarImage src={avatarUrl || ''} />
-                <AvatarFallback className="bg-primary text-primary-foreground">{initials}</AvatarFallback>
+                <AvatarFallback className="bg-primary text-primary-foreground text-xs">{initials}</AvatarFallback>
               </Avatar>
             </button>
           </DropdownMenuTrigger>
@@ -124,11 +147,11 @@ export const Header = memo(function Header({
             <DropdownMenuLabel>Mein Account</DropdownMenuLabel>
             <DropdownMenuSeparator />
 
-            {/* Upgrade Option in Dropdown for Trial Users */}
+            {/* Upgrade in Dropdown for Trial Users */}
             {isTrialUser && onUpgrade && (
               <>
                 <DropdownMenuItem
-                  className="cursor-pointer text-[#E63946] focus:text-[#E63946] focus:bg-[#E63946]/10"
+                  className="cursor-pointer text-primary focus:text-primary focus:bg-primary/10"
                   onClick={onUpgrade}
                 >
                   <Crown className="mr-2 h-4 w-4" />
@@ -146,6 +169,18 @@ export const Header = memo(function Header({
               <Settings className="mr-2 h-4 w-4" />
               <span>Einstellungen</span>
             </DropdownMenuItem>
+            <DropdownMenuSeparator />
+
+            {/* Theme Toggle — inside dropdown */}
+            <DropdownMenuItem className="cursor-pointer" onClick={toggleTheme}>
+              {theme === 'dark' ? (
+                <Sun className="mr-2 h-4 w-4 text-yellow-500" />
+              ) : (
+                <Moon className="mr-2 h-4 w-4 text-slate-600" />
+              )}
+              <span>{theme === 'dark' ? 'Helles Design' : 'Dunkles Design'}</span>
+            </DropdownMenuItem>
+
             <DropdownMenuSeparator />
             <DropdownMenuItem className="cursor-pointer" onClick={() => onNavigate?.('help')}>
               <HelpCircle className="mr-2 h-4 w-4" />

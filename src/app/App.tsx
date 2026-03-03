@@ -369,6 +369,8 @@ function AppContent() {
             isMobileOpen={isMobileSidebarOpen}
             onMobileClose={() => setIsMobileSidebarOpen(false)}
             onLogout={async () => { await signOut().catch(() => undefined); go('landing', { replace: true }); }}
+            displayName={profile?.full_name ?? null}
+            planLabel={billing.statusLabel || null}
           />
 
           <div
@@ -385,6 +387,7 @@ function AppContent() {
               sidebarWidth={isDesktop ? sidebarWidth : 0}
               onToggleMobileSidebar={handleToggleMobileSidebar}
               onNavigate={go}
+              currentPage={currentPage}
               currentCredits={profile?.credits ?? undefined}
               avatarUrl={profile?.avatar_url ?? null}
               displayName={profile?.full_name ?? null}
