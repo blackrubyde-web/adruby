@@ -9,6 +9,8 @@ import {
   ArrowRight,
   Trophy,
   Palette,
+  Crown,
+  X,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from './ui/card';
@@ -38,7 +40,6 @@ interface OverviewPageProps {
 }
 
 type DateFilter = 'today' | '7d' | '30d';
-type ChannelFilter = 'meta' | 'google' | 'tiktok';
 
 function ChartPlaceholder() {
   return <ChartSkeleton />;
@@ -60,18 +61,17 @@ const DATE_OPTIONS: { value: DateFilter; label: string }[] = [
   { value: '30d', label: '30 Tage' },
 ];
 
-const CHANNEL_OPTIONS: { value: ChannelFilter; label: string }[] = [
-  { value: 'meta', label: 'Meta' },
-  { value: 'google', label: 'Google' },
-  { value: 'tiktok', label: 'TikTok' },
-];
 
 export function OverviewPage({ onNavigate }: OverviewPageProps) {
   const [dateFilter, setDateFilter] = useState<DateFilter>('7d');
-  const [channelFilter, setChannelFilter] = useState<ChannelFilter>('meta');
   useAuthState();
 
-  const { data, loading, error } = useOverview(dateFilter, channelFilter);
+  const { data, loading, error } = useOverview(dateFilter, 'meta');
+
+  // Trial banner dismiss
+  const [trialDismissed, setTrialDismissed] = useState(() => {
+    try { return localStorage.getItem('adruby_trial_dismissed') === '1'; } catch { return false; }
+  });
 
   // Checklist State
   const [checklistSteps, setChecklistSteps] = useState<ChecklistStep[]>([
@@ -231,36 +231,56 @@ export function OverviewPage({ onNavigate }: OverviewPageProps) {
               key={opt.value}
               onClick={() => setDateFilter(opt.value)}
               className={`px-3 py-1.5 rounded-md text-xs font-medium transition-all ${dateFilter === opt.value
-                  ? 'bg-background text-foreground shadow-sm'
-                  : 'text-muted-foreground hover:text-foreground'
+                ? 'bg-background text-foreground shadow-sm'
+                : 'text-muted-foreground hover:text-foreground'
                 }`}
             >
               {opt.label}
             </button>
           ))}
         </div>
-
-        {/* Channel Filter — Segmented Control */}
-        <div className="flex items-center bg-muted/50 rounded-lg p-1 border border-border/50">
-          {CHANNEL_OPTIONS.map(opt => (
-            <button
-              key={opt.value}
-              onClick={() => setChannelFilter(opt.value)}
-              className={`px-3 py-1.5 rounded-md text-xs font-medium transition-all ${channelFilter === opt.value
-                  ? 'bg-background text-foreground shadow-sm'
-                  : 'text-muted-foreground hover:text-foreground'
-                }`}
-            >
-              {opt.label}
-            </button>
-          ))}
-        </div>
-
         {/* Meta Status Pill */}
         <Badge variant={metaConnected ? 'secondary' : 'default'} className="px-2.5 py-1 text-xs">
           {metaConnected ? '● Meta verbunden' : '○ Meta nicht verbunden'}
         </Badge>
       </div>
+
+      {/* ── Trial Upgrade Banner ─────────────────────────── */}
+      {!trialDismissed && (
+        <div className="relative overflow-hidden rounded-xl border border-amber-500/30 bg-gradient-to-r from-amber-500/10 via-orange-500/5 to-transparent animate-in fade-in slide-in-from-top-2 duration-500">
+          <div className="flex items-center gap-4 px-5 py-3.5">
+            <div className="h-9 w-9 rounded-xl bg-amber-500/15 border border-amber-500/20 flex items-center justify-center shrink-0">
+              <Crown className="w-4.5 h-4.5 text-amber-600" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-semibold text-foreground">
+                Du bist im Testabo
+              </p>
+              <p className="text-xs text-muted-foreground">
+                Upgrade für unbegrenzte AI-Generierungen, erweiterte Analytics und Priority-Support.
+              </p>
+            </div>
+            <Button
+              size="sm"
+              className="bg-amber-500 hover:bg-amber-600 text-white shrink-0 gap-1.5 text-xs"
+              onClick={() => onNavigate('settings', { tab: 'billing' })}
+            >
+              <Crown className="w-3.5 h-3.5" />
+              Upgraden
+            </Button>
+            <button
+              onClick={() => {
+                setTrialDismissed(true);
+                try { localStorage.setItem('adruby_trial_dismissed', '1'); } catch { /* */ }
+              }}
+              className="p-1 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors shrink-0"
+              aria-label="Schließen"
+            >
+              <X className="w-3.5 h-3.5" />
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* ── KPI Cards ────────────────────────────────────── */}
       {loading ? <KpiSkeleton /> : <KpiCardGrid kpis={kpis} />}
