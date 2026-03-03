@@ -7,17 +7,20 @@
 import { useState, useCallback, useEffect } from 'react';
 import {
     Download, Save, Upload, FileText, MessageSquare,
-    Sparkles, Image, Loader2, RefreshCw,
+    Sparkles, Image, Loader2, RefreshCw, Film,
     Store, CheckCircle2, X,
     Search, Target, PenTool, Palette, Frame, Wand2, Send,
     RectangleVertical, Square, Smartphone
 } from 'lucide-react';
 import { generateAd, refineAd } from '../lib/api/aibuilder';
+import { generateVideoAd, calculateVideoCreditCost } from '../lib/api/videoApi';
 import { t } from '../lib/aibuilder/translations';
 import { toast } from 'sonner';
 import { FormInputMode } from './aibuilder/FormInputMode';
 import { FreeTextInputMode } from './aibuilder/FreeTextInputMode';
 import { PreviewArea } from './aibuilder/PreviewArea';
+import VideoSettingsPanel from './aibuilder/VideoSettingsPanel';
+import VideoPreviewArea from './aibuilder/VideoPreviewArea';
 import { StoreImporter, CarouselBuilder } from './store-importer';
 import type { ScrapedProduct, ProductCopy } from './store-importer/types';
 import { Button } from './ui/button';
@@ -26,7 +29,8 @@ import { DashboardShell } from './layout/DashboardShell';
 import { cn } from '../lib/utils';
 import { useAuthState, useAuthActions } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabaseClient';
-import type { Language, InputMode, AdGenerationResult, FormInputData, FreeTextInputData } from '../types/aibuilder';
+import type { Language, InputMode, OutputType, VideoSettings, VideoGenerationResult, AdGenerationResult, FormInputData, FreeTextInputData } from '../types/aibuilder';
+import '../../styles/video-builder.css';
 
 type Step = 'input' | 'generating' | 'result';
 
@@ -78,6 +82,22 @@ export function AIAdBuilderPage() {
 
     // Funnel stage state
     const [funnelStage, setFunnelStage] = useState<'tof' | 'mof' | 'bof'>('tof');
+
+    // ── VIDEO STATE ──
+    const [outputType, setOutputType] = useState<OutputType>('image');
+    const [videoSettings, setVideoSettings] = useState<VideoSettings>({
+        archetype: 'product_reveal',
+        durationSeconds: 6,
+        includeAudio: true,
+        quality: 'fast',
+        aspectRatio: '9:16',
+        resolution: '1080p',
+        personGeneration: 'dont_allow',
+    });
+    const [videoResult, setVideoResult] = useState<VideoGenerationResult | null>(null);
+    const [videoProgress, setVideoProgress] = useState(0);
+    const [videoStep, setVideoStep] = useState('');
+    const [videoProgressMessage, setVideoProgressMessage] = useState('');
 
     // Theater mode completed steps
     const [completedSteps, setCompletedSteps] = useState<number[]>([]);
@@ -249,8 +269,80 @@ export function AIAdBuilderPage() {
         }
     };
 
+    // ── VIDEO GENERATE HANDLER ──
+    const handleVideoGenerate = async (inputData: FormInputData | FreeTextInputData) => {
+        const videoCreditCost = calculateVideoCreditCost(videoSettings.quality, videoSettings.durationSeconds);
+        if (credits < videoCreditCost) {
+            toast.error(`Nicht genug Credits — ${videoCreditCost} benötigt`);
+            return;
+        }
+        setLoading(true);
+        setError(null);
+        setStep('generating');
+        setVideoResult(null);
+        setVideoProgress(0);
+        setVideoStep('pending');
+        setVideoProgressMessage('Video wird vorbereitet...');
+
+        try {
+            let productImageUrl: string | undefined;
+            if (productImage) {
+                const filename = `temp/product-${profile?.id}-${Date.now()}.png`;
+                const { error: uploadError } = await supabase.storage
+                    .from('creative-images')
+                    .upload(filename, productImage);
+                if (uploadError) throw new Error('Product image upload failed: ' + uploadError.message);
+                const { data: urlData } = supabase.storage.from('creative-images').getPublicUrl(filename);
+                productImageUrl = urlData.publicUrl;
+            }
+
+            const formData = 'text' in inputData ? inputData : inputData as FormInputData;
+            const response = await generateVideoAd({
+                outputType: 'video',
+                mode: (mode === 'store' ? 'form' : mode) as 'form' | 'free',
+                language,
+                archetypeId: videoSettings.archetype,
+                durationSeconds: videoSettings.durationSeconds,
+                quality: videoSettings.quality,
+                aspectRatio: videoSettings.aspectRatio,
+                resolution: videoSettings.resolution,
+                includeAudio: videoSettings.includeAudio,
+                personGeneration: videoSettings.personGeneration,
+                productImageUrl,
+                productName: 'productName' in formData ? (formData as FormInputData).productName : undefined,
+                industry: 'industry' in formData ? (formData as FormInputData).industry : undefined,
+                targetAudience: 'targetAudience' in formData ? (formData as FormInputData).targetAudience : undefined,
+                usp: 'usp' in formData ? (formData as FormInputData).usp : undefined,
+                text: 'text' in formData ? (formData as { text: string }).text : undefined,
+            }, {
+                onProgress: (progress, step, message) => {
+                    setVideoProgress(progress);
+                    setVideoStep(step);
+                    setVideoProgressMessage(message);
+                },
+            });
+
+            if (response.success && response.data) {
+                setVideoResult(response.data);
+                setStep('result');
+                toast.success('🎬 Video-Ad erstellt!');
+            } else {
+                throw new Error(response.error || 'Video generation failed');
+            }
+        } catch (err) {
+            console.error('Video generation error:', err);
+            const errorMessage = err instanceof Error ? err.message : 'Unknown error';
+            setError(errorMessage);
+            setStep('input');
+            toast.error('Video-Generierung fehlgeschlagen: ' + errorMessage);
+        } finally {
+            setLoading(false);
+        }
+    };
+
     const handleReset = () => {
         setResult(null);
+        setVideoResult(null);
         setError(null);
         setStep('input');
         localStorage.removeItem(STORAGE_KEY);
@@ -276,10 +368,12 @@ export function AIAdBuilderPage() {
     };
 
     const handleDownload = () => {
-        if (!result?.imageUrl) return;
+        const url = outputType === 'video' ? videoResult?.videoUrl : result?.imageUrl;
+        if (!url) return;
+        const ext = outputType === 'video' ? 'mp4' : 'png';
         const link = document.createElement('a');
-        link.href = result.imageUrl;
-        link.download = `ai-ad-${Date.now()}.png`;
+        link.href = url;
+        link.download = `ai-ad-${Date.now()}.${ext}`;
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
@@ -334,6 +428,22 @@ export function AIAdBuilderPage() {
                         </Badge>
                     )}
                 </div>
+            </div>
+
+            {/* ── Output Type Toggle (Bild ↔ Video) ──── */}
+            <div className="output-type-toggle" style={{ maxWidth: '280px' }}>
+                <button
+                    className={cn('output-type-btn', outputType === 'image' && 'output-type-btn--active')}
+                    onClick={() => setOutputType('image')}
+                >
+                    <Image className="w-4 h-4" /> 🖼️ Bild
+                </button>
+                <button
+                    className={cn('output-type-btn', outputType === 'video' && 'output-type-btn--active')}
+                    onClick={() => setOutputType('video')}
+                >
+                    <Film className="w-4 h-4" /> 🎬 Video
+                </button>
             </div>
 
             {/* ── Mode Tabs ────────────────────────────── */}
@@ -489,17 +599,27 @@ export function AIAdBuilderPage() {
                         </div>
                     </div>
 
+                    {/* ── Video Settings Panel (below format/funnel) ── */}
+                    {outputType === 'video' && (
+                        <VideoSettingsPanel
+                            language={language}
+                            settings={videoSettings}
+                            onSettingsChange={setVideoSettings}
+                            disabled={loading}
+                        />
+                    )}
+
                     {/* Form / Free / Store Content */}
                     {mode === 'form' ? (
                         <FormInputMode
                             language={language}
-                            onGenerate={handleGenerate}
+                            onGenerate={outputType === 'video' ? handleVideoGenerate : handleGenerate}
                             loading={loading}
                         />
                     ) : mode === 'free' ? (
                         <FreeTextInputMode
                             language={language}
-                            onGenerate={handleGenerate}
+                            onGenerate={outputType === 'video' ? handleVideoGenerate : handleGenerate}
                             loading={loading}
                         />
                     ) : mode === 'store' && !showCarouselBuilder ? (
@@ -654,14 +774,29 @@ export function AIAdBuilderPage() {
                             ) : (
                                 /* ── Preview / Empty State ──────────── */
                                 <div className="min-h-[440px]">
-                                    <PreviewArea
-                                        language={language}
-                                        result={result}
-                                        loading={loading}
-                                        error={error}
-                                        selectedVariantIndex={selectedVariantIndex}
-                                        onSelectVariant={setSelectedVariantIndex}
-                                    />
+                                    {outputType === 'video' ? (
+                                        <VideoPreviewArea
+                                            language={language}
+                                            result={videoResult}
+                                            loading={loading}
+                                            error={error}
+                                            progress={videoProgress}
+                                            currentStep={videoStep}
+                                            progressMessage={videoProgressMessage}
+                                            onDownload={handleDownload}
+                                            onSaveToLibrary={handleSaveToLibrary}
+                                            onRegenerate={handleReset}
+                                        />
+                                    ) : (
+                                        <PreviewArea
+                                            language={language}
+                                            result={result}
+                                            loading={loading}
+                                            error={error}
+                                            selectedVariantIndex={selectedVariantIndex}
+                                            onSelectVariant={setSelectedVariantIndex}
+                                        />
+                                    )}
 
                                     {/* Action Buttons */}
                                     {result && !loading && step === 'result' && (

@@ -114,5 +114,71 @@ export interface PreviewAreaProps {
     error: string | null;
     selectedVariantIndex?: number;
     onSelectVariant?: (index: number) => void;
+    mediaType?: OutputType;
+    videoResult?: VideoGenerationResult | null;
 }
 
+// ============================================================
+// VIDEO AD TYPES
+// ============================================================
+
+export type OutputType = 'image' | 'video';
+
+export type VideoArchetype = 'product_reveal' | 'before_after' | 'dynamic_showcase' | 'lifestyle_scene' | 'social_proof';
+
+export type VideoQuality = 'fast' | 'premium';
+
+export interface VideoSettings {
+    archetype: VideoArchetype;
+    durationSeconds: 4 | 5 | 6 | 8;
+    includeAudio: boolean;
+    quality: VideoQuality;
+    aspectRatio: '16:9' | '9:16';
+    resolution: '720p' | '1080p' | '4k';
+    personGeneration: 'allow_all' | 'allow_adult' | 'dont_allow';
+}
+
+export interface VideoGenerationResult {
+    id: string;
+    videoUrl: string;
+    mediaType: 'video';
+    durationMs: number;
+    aspectRatio: string;
+    resolution: string;
+    hasAudio: boolean;
+    archetype: VideoArchetype;
+    script?: Record<string, unknown>;
+    headline?: string;
+    slogan?: string;
+    description?: string;
+    cta?: string;
+    creditsUsed: number;
+    qualityScore?: number;
+    engagementScore?: number;
+}
+
+export interface VideoAdParams extends AdGenerationParams {
+    outputType: 'video';
+    archetypeId: VideoArchetype;
+    durationSeconds: number;
+    quality: VideoQuality;
+    aspectRatio: string;
+    resolution: string;
+    includeAudio: boolean;
+    personGeneration?: string;
+}
+
+export interface VideoStatusResponse {
+    success: boolean;
+    status: 'processing' | 'complete' | 'error';
+    data?: VideoGenerationResult;
+    progress?: number;
+    step?: string;
+    message?: string;
+    error?: string;
+    metadata?: {
+        generationTime?: number;
+        engine?: string;
+        savedToLibrary?: boolean;
+    };
+}

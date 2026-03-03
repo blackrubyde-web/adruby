@@ -7,6 +7,12 @@ export const CREDIT_COSTS = {
   ai_ad_generate: 10,
   creative_analyze: 1,
   creative_generate: 5,
+  // Video ad tiers (quality × duration)
+  video_ad_fast_short: 8,     // Fast, 4-6s
+  video_ad_fast_long: 10,     // Fast, 8s
+  video_ad_premium_short: 12, // Premium, 4-6s
+  video_ad_premium_long: 15,  // Premium, 8s
+  video_ad_refine: 8,         // Re-generation
 };
 
 /**
