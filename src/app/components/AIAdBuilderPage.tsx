@@ -1,13 +1,13 @@
 /**
  * AI Ad Builder - Main Page Component (Enhanced V2)
- * Premium design with product upload, beautiful mode switcher
+ * Uses DashboardShell, compact mode tabs, 2/5+3/5 layout
  */
 
 import { useState, useCallback, useEffect } from 'react';
 import {
-    Wand2, Download, Save, Upload, FileText, MessageSquare,
-    Sparkles, Image, Loader2, RefreshCw, ChevronRight,
-    CheckCircle2, AlertCircle, Store
+    Download, Save, Upload, FileText, MessageSquare,
+    Sparkles, Image, Loader2, RefreshCw,
+    AlertCircle, Store
 } from 'lucide-react';
 import { generateAd } from '../lib/api/aibuilder';
 import { t } from '../lib/aibuilder/translations';
@@ -18,6 +18,9 @@ import { PreviewArea } from './aibuilder/PreviewArea';
 import { StoreImporter, CarouselBuilder } from './store-importer';
 import type { ScrapedProduct, ProductCopy } from './store-importer/types';
 import { Button } from './ui/button';
+import { Badge } from './ui/badge';
+import { Card, CardContent } from './ui/card';
+import { DashboardShell } from './layout/DashboardShell';
 import { cn } from '../lib/utils';
 import { useAuthState, useAuthActions } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabaseClient';
@@ -207,195 +210,91 @@ export function AIAdBuilderPage() {
     };
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-background via-background to-primary/5">
-            {/* Premium Header */}
-            <div className="sticky top-0 z-10 border-b border-border/40 bg-background/80 backdrop-blur-xl">
-                <div className="container mx-auto px-4 py-4">
-                    <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-4">
-                            {/* Logo */}
-                            <div className="relative group">
-                                <div className="absolute -inset-1 bg-gradient-to-r from-primary via-red-500 to-orange-500 rounded-xl blur opacity-30 group-hover:opacity-50 transition"></div>
-                                <div className="relative w-12 h-12 rounded-xl bg-gradient-to-br from-primary to-red-600 flex items-center justify-center shadow-lg">
-                                    <Wand2 className="w-6 h-6 text-white" />
-                                </div>
-                            </div>
-                            <div>
-                                <h1 className="text-xl font-bold tracking-tight">{t('pageTitle', language)}</h1>
-                                <p className="text-xs text-muted-foreground">{t('pageSubtitle', language)}</p>
-                            </div>
-                        </div>
-
-                        {/* Clean header — no tech toggles, no duplicated controls */}
-                        <div className="flex items-center gap-3" />
-                    </div>
+        <DashboardShell hideHero>
+            {/* ── Compact Mode Tabs ─────────────────────────────── */}
+            <div className="flex items-center gap-2">
+                <div className="flex items-center bg-muted/50 rounded-lg p-1 border border-border/50">
+                    <button
+                        onClick={() => setMode('form')}
+                        className={cn(
+                            "flex items-center gap-2 px-3 py-1.5 rounded-md text-xs font-medium transition-all",
+                            mode === 'form'
+                                ? "bg-background text-foreground shadow-sm"
+                                : "text-muted-foreground hover:text-foreground"
+                        )}
+                    >
+                        <FileText className="w-3.5 h-3.5" />
+                        Formular
+                    </button>
+                    <button
+                        onClick={() => setMode('free')}
+                        className={cn(
+                            "flex items-center gap-2 px-3 py-1.5 rounded-md text-xs font-medium transition-all",
+                            mode === 'free'
+                                ? "bg-background text-foreground shadow-sm"
+                                : "text-muted-foreground hover:text-foreground"
+                        )}
+                    >
+                        <MessageSquare className="w-3.5 h-3.5" />
+                        Freitext
+                    </button>
+                    <button
+                        onClick={() => setMode('store')}
+                        className={cn(
+                            "flex items-center gap-2 px-3 py-1.5 rounded-md text-xs font-medium transition-all",
+                            mode === 'store'
+                                ? "bg-background text-foreground shadow-sm"
+                                : "text-muted-foreground hover:text-foreground"
+                        )}
+                    >
+                        <Store className="w-3.5 h-3.5" />
+                        Produkte importieren
+                    </button>
                 </div>
+
+                {step === 'result' && (
+                    <Badge variant="secondary" className="px-2.5 py-1 text-xs bg-green-500/10 text-green-600 border-green-500/20">
+                        ✓ Fertig
+                    </Badge>
+                )}
             </div>
 
-            {/* Progress Steps */}
-            <div className="container mx-auto px-4 py-6">
-                <div className="flex items-center justify-center gap-2 text-sm">
-                    <div className={cn(
-                        "flex items-center gap-2 px-4 py-2 rounded-full transition-all",
-                        step === 'input' ? "bg-primary text-white" : "bg-muted text-muted-foreground"
-                    )}>
-                        <span className="w-5 h-5 rounded-full bg-white/20 flex items-center justify-center text-xs">1</span>
-                        <span className="hidden sm:inline">{language === 'de' ? 'Eingabe' : 'Input'}</span>
-                    </div>
-                    <ChevronRight className="w-4 h-4 text-muted-foreground" />
-                    <div className={cn(
-                        "flex items-center gap-2 px-4 py-2 rounded-full transition-all",
-                        step === 'generating' ? "bg-primary text-white" : "bg-muted text-muted-foreground"
-                    )}>
-                        <span className="w-5 h-5 rounded-full bg-white/20 flex items-center justify-center text-xs">2</span>
-                        <span className="hidden sm:inline">{language === 'de' ? 'Generierung' : 'Generating'}</span>
-                    </div>
-                    <ChevronRight className="w-4 h-4 text-muted-foreground" />
-                    <div className={cn(
-                        "flex items-center gap-2 px-4 py-2 rounded-full transition-all",
-                        step === 'result' ? "bg-primary text-white" : "bg-muted text-muted-foreground"
-                    )}>
-                        <span className="w-5 h-5 rounded-full bg-white/20 flex items-center justify-center text-xs">3</span>
-                        <span className="hidden sm:inline">{language === 'de' ? 'Ergebnis' : 'Result'}</span>
-                    </div>
-                </div>
-            </div>
+            {/* ── Main Content — 2/5 Input + 3/5 Preview ─────── */}
+            <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
 
-            {/* Main Content */}
-            <div className="container mx-auto px-4 pb-12">
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                {/* LEFT: Input Column (2/5) */}
+                <div className="lg:col-span-2 space-y-4">
 
-                    {/* Left Column - Input */}
-                    <div className="space-y-6">
-
-                        {/* Premium Mode Switcher */}
-                        <div className="rounded-2xl border border-border/40 bg-card/50 backdrop-blur-sm p-2">
-                            <div className="grid grid-cols-3 gap-2">
-                                <button
-                                    onClick={() => setMode('form')}
-                                    className={cn(
-                                        "relative flex items-center gap-3 p-3 rounded-xl transition-all duration-300",
-                                        mode === 'form'
-                                            ? "bg-gradient-to-br from-primary to-red-600 text-white shadow-lg shadow-primary/25"
-                                            : "hover:bg-muted/50"
-                                    )}
-                                >
-                                    <div className={cn(
-                                        "w-9 h-9 rounded-lg flex items-center justify-center shrink-0 transition-colors",
-                                        mode === 'form' ? "bg-white/20" : "bg-muted"
-                                    )}>
-                                        <FileText className="w-4 h-4" />
-                                    </div>
-                                    <div className="text-left">
-                                        <div className="font-semibold text-sm">{t('modeFormLabel', language)}</div>
-                                        <div className={cn(
-                                            "text-xs hidden sm:block",
-                                            mode === 'form' ? "text-white/70" : "text-muted-foreground"
-                                        )}>
-                                            {t('modeFormDesc', language)}
-                                        </div>
-                                    </div>
-                                    {mode === 'form' && (
-                                        <CheckCircle2 className="absolute top-2 right-2 w-4 h-4" />
-                                    )}
-                                </button>
-
-                                <button
-                                    onClick={() => setMode('free')}
-                                    className={cn(
-                                        "relative flex items-center gap-3 p-3 rounded-xl transition-all duration-300",
-                                        mode === 'free'
-                                            ? "bg-gradient-to-br from-primary to-red-600 text-white shadow-lg shadow-primary/25"
-                                            : "hover:bg-muted/50"
-                                    )}
-                                >
-                                    <div className={cn(
-                                        "w-9 h-9 rounded-lg flex items-center justify-center shrink-0 transition-colors",
-                                        mode === 'free' ? "bg-white/20" : "bg-muted"
-                                    )}>
-                                        <MessageSquare className="w-4 h-4" />
-                                    </div>
-                                    <div className="text-left">
-                                        <div className="font-semibold text-sm">{t('modeFreeLabel', language)}</div>
-                                        <div className={cn(
-                                            "text-xs hidden sm:block",
-                                            mode === 'free' ? "text-white/70" : "text-muted-foreground"
-                                        )}>
-                                            {t('modeFreeDesc', language)}
-                                        </div>
-                                    </div>
-                                    {mode === 'free' && (
-                                        <CheckCircle2 className="absolute top-2 right-2 w-4 h-4" />
-                                    )}
-                                </button>
-
-                                <button
-                                    onClick={() => setMode('store')}
-                                    className={cn(
-                                        "relative flex items-center gap-3 p-3 rounded-xl transition-all duration-300",
-                                        mode === 'store'
-                                            ? "bg-gradient-to-br from-emerald-500 to-teal-600 text-white shadow-lg shadow-emerald-500/25"
-                                            : "hover:bg-muted/50"
-                                    )}
-                                >
-                                    <div className={cn(
-                                        "w-9 h-9 rounded-lg flex items-center justify-center shrink-0 transition-colors",
-                                        mode === 'store' ? "bg-white/20" : "bg-muted"
-                                    )}>
-                                        <Store className="w-4 h-4" />
-                                    </div>
-                                    <div className="text-left">
-                                        <div className="font-semibold text-sm">
-                                            {language === 'de' ? 'Store Import' : 'Store Import'}
-                                        </div>
-                                        <div className={cn(
-                                            "text-xs hidden sm:block",
-                                            mode === 'store' ? "text-white/70" : "text-muted-foreground"
-                                        )}>
-                                            {language === 'de' ? 'Produkte importieren' : 'Import products'}
-                                        </div>
-                                    </div>
-                                    {mode === 'store' && (
-                                        <CheckCircle2 className="absolute top-2 right-2 w-4 h-4" />
-                                    )}
-                                </button>
-                            </div>
-                        </div>
-
-                        {/* Product Image Upload - only for form/free modes */}
-                        {mode !== 'store' && (
-                            <div className="rounded-2xl border-2 border-primary/30 bg-card/50 backdrop-blur-sm p-6">
-                                <div className="flex items-center gap-2 mb-4">
-                                    <Image className="w-5 h-5 text-primary" />
-                                    <h3 className="font-semibold">
-                                        {language === 'de' ? 'Produktbild' : 'Product Image'}
-                                    </h3>
-                                    <span className="text-xs px-2 py-0.5 bg-primary/10 text-primary rounded-full">
-                                        {language === 'de' ? '⭐ Empfohlen für beste Ergebnisse' : '⭐ Recommended for best results'}
+                    {/* Product Image Upload */}
+                    {mode !== 'store' && (
+                        <Card variant="glass">
+                            <CardContent className="p-4">
+                                <div className="flex items-center gap-2 mb-3">
+                                    <Image className="w-4 h-4 text-primary" />
+                                    <h3 className="text-sm font-semibold">Produktbild</h3>
+                                    <span className="text-[10px] px-1.5 py-0.5 bg-primary/10 text-primary rounded-full">
+                                        Empfohlen
                                     </span>
                                 </div>
-
                                 {productImagePreview ? (
                                     <div className="relative group">
                                         <img
                                             src={productImagePreview}
-                                            alt="Product"
-                                            className="w-full h-40 object-contain rounded-lg bg-muted/50"
+                                            alt="Produkt"
+                                            className="w-full h-32 object-contain rounded-lg bg-muted/50"
                                         />
                                         <button
                                             onClick={removeImage}
                                             className="absolute top-2 right-2 p-1.5 bg-destructive text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
                                         >
-                                            <AlertCircle className="w-4 h-4" />
+                                            <AlertCircle className="w-3.5 h-3.5" />
                                         </button>
                                     </div>
                                 ) : (
-                                    <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-border/60 rounded-xl cursor-pointer hover:border-primary/60 hover:bg-primary/5 transition-all">
-                                        <Upload className="w-8 h-8 text-muted-foreground mb-2" />
-                                        <span className="text-sm text-muted-foreground">
-                                            {language === 'de' ? 'Bild hierher ziehen oder klicken' : 'Drag image here or click'}
-                                        </span>
-                                        <span className="text-xs text-muted-foreground/60 mt-1">PNG, JPG bis 5MB</span>
+                                    <label className="flex flex-col items-center justify-center w-full h-24 border-2 border-dashed border-border/60 rounded-xl cursor-pointer hover:border-primary/60 hover:bg-primary/5 transition-all">
+                                        <Upload className="w-6 h-6 text-muted-foreground mb-1" />
+                                        <span className="text-xs text-muted-foreground">Bild hochladen oder ziehen</span>
+                                        <span className="text-[10px] text-muted-foreground/60 mt-0.5">PNG, JPG bis 5MB</span>
                                         <input
                                             type="file"
                                             className="hidden"
@@ -404,31 +303,32 @@ export function AIAdBuilderPage() {
                                         />
                                     </label>
                                 )}
-                            </div>
-                        )}
+                            </CardContent>
+                        </Card>
+                    )}
 
-                        {/* Form/Free/Store Content */}
-                        {mode === 'form' ? (
-                            <FormInputMode
-                                language={language}
-                                onGenerate={handleGenerate}
-                                loading={loading}
-                            />
-                        ) : mode === 'free' ? (
-                            <FreeTextInputMode
-                                language={language}
-                                onGenerate={handleGenerate}
-                                loading={loading}
-                            />
-                        ) : mode === 'store' && !showCarouselBuilder ? (
-                            <div className="rounded-2xl border border-border/40 bg-card/50 backdrop-blur-sm p-6">
+                    {/* Form/Free/Store Content */}
+                    {mode === 'form' ? (
+                        <FormInputMode
+                            language={language}
+                            onGenerate={handleGenerate}
+                            loading={loading}
+                        />
+                    ) : mode === 'free' ? (
+                        <FreeTextInputMode
+                            language={language}
+                            onGenerate={handleGenerate}
+                            loading={loading}
+                        />
+                    ) : mode === 'store' && !showCarouselBuilder ? (
+                        <Card variant="glass">
+                            <CardContent className="p-4">
                                 <StoreImporter
                                     onProductsSelected={(products, copies) => {
                                         setImportedProducts(products);
                                         setImportedCopies(copies);
                                     }}
-                                    onCreateSingleAds={(products, _copies) => {
-                                        // TODO: Integrate with existing ad generation
+                                    onCreateSingleAds={(products) => {
                                         toast.success(`${products.length} Ads werden generiert...`);
                                     }}
                                     onCreateCarousel={(products, copies) => {
@@ -437,14 +337,17 @@ export function AIAdBuilderPage() {
                                         setShowCarouselBuilder(true);
                                     }}
                                 />
-                            </div>
-                        ) : mode === 'store' && showCarouselBuilder ? (
-                            <div className="rounded-2xl border border-border/40 bg-card/50 backdrop-blur-sm p-6">
-                                <div className="mb-4 flex items-center justify-between">
-                                    <h3 className="font-semibold text-foreground">Carousel Builder</h3>
+                            </CardContent>
+                        </Card>
+                    ) : mode === 'store' && showCarouselBuilder ? (
+                        <Card variant="glass">
+                            <CardContent className="p-4">
+                                <div className="mb-3 flex items-center justify-between">
+                                    <h3 className="text-sm font-semibold text-foreground">Carousel Builder</h3>
                                     <Button
                                         variant="outline"
                                         size="sm"
+                                        className="text-xs h-7"
                                         onClick={() => setShowCarouselBuilder(false)}
                                     >
                                         ← Zurück
@@ -453,78 +356,75 @@ export function AIAdBuilderPage() {
                                 <CarouselBuilder
                                     products={importedProducts}
                                     copies={importedCopies}
-                                    onSave={(_carousel) => {
-                                        toast.success('Carousel gespeichert!');
-                                    }}
-                                    onExport={(_carousel) => {
-                                        toast.success('Carousel exportiert!');
-                                    }}
+                                    onSave={() => { toast.success('Carousel gespeichert!'); }}
+                                    onExport={() => { toast.success('Carousel exportiert!'); }}
                                 />
-                            </div>
-                        ) : null}
-                    </div>
+                            </CardContent>
+                        </Card>
+                    ) : null}
+                </div>
 
-                    {/* Right Column - Preview */}
-                    <div className="space-y-6">
-                        {step === 'generating' ? (
-                            <div className="rounded-2xl border border-border/40 bg-card/50 backdrop-blur-sm p-8">
-                                <div className="flex flex-col items-center justify-center space-y-6 text-center min-h-[400px]">
+                {/* RIGHT: Preview Column (3/5) */}
+                <div className="lg:col-span-3 space-y-4">
+                    {step === 'generating' ? (
+                        <Card variant="glass">
+                            <CardContent className="p-8">
+                                <div className="flex flex-col items-center justify-center space-y-6 text-center min-h-[380px]">
                                     <div className="relative">
-                                        <div className="absolute inset-0 bg-primary/20 rounded-full blur-xl animate-pulse"></div>
-                                        <div className="relative w-20 h-20 bg-gradient-to-br from-primary to-red-600 rounded-full flex items-center justify-center">
-                                            <Loader2 className="w-10 h-10 text-white animate-spin" />
+                                        <div className="absolute inset-0 bg-primary/20 rounded-full blur-xl animate-pulse" />
+                                        <div className="relative w-16 h-16 bg-gradient-to-br from-primary to-red-600 rounded-full flex items-center justify-center">
+                                            <Loader2 className="w-8 h-8 text-white animate-spin" />
                                         </div>
                                     </div>
                                     <div>
-                                        <h3 className="font-bold text-xl">{t('generating', language)}</h3>
-                                        <p className="text-sm text-muted-foreground mt-2">
-                                            {language === 'de'
-                                                ? 'KI erstellt Ihre professionelle Werbeanzeige...'
-                                                : 'AI is creating your professional ad...'}
-                                        </p>
+                                        <h3 className="font-bold text-lg">KI generiert deine Ad...</h3>
+                                        <p className="text-sm text-muted-foreground mt-1.5">Dauert ca. 10–15 Sekunden</p>
                                     </div>
-                                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                                        <Sparkles className="w-4 h-4" />
-                                        {language === 'de' ? 'Dauert ca. 10-15 Sekunden' : 'Takes about 10-15 seconds'}
+                                    {/* Animated Progress Steps */}
+                                    <div className="space-y-2 w-full max-w-xs">
+                                        {['🔍 Produkt analysieren', '🎨 Design auswählen', '✍️ Texte generieren', '🖼️ Bild rendern'].map((label, i) => (
+                                            <div key={i} className="flex items-center gap-2 text-xs text-muted-foreground animate-in fade-in slide-in-from-left-2" style={{ animationDelay: `${i * 1.5}s`, animationFillMode: 'both' }}>
+                                                <div className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
+                                                {label}
+                                            </div>
+                                        ))}
                                     </div>
                                 </div>
-                            </div>
-                        ) : (
-                            <PreviewArea
-                                language={language}
-                                result={result}
-                                loading={loading}
-                                error={error}
-                                selectedVariantIndex={selectedVariantIndex}
-                                onSelectVariant={setSelectedVariantIndex}
-                            />
-                        )}
+                            </CardContent>
+                        </Card>
+                    ) : (
+                        <PreviewArea
+                            language={language}
+                            result={result}
+                            loading={loading}
+                            error={error}
+                            selectedVariantIndex={selectedVariantIndex}
+                            onSelectVariant={setSelectedVariantIndex}
+                        />
+                    )}
 
-                        {/* Action Buttons */}
-                        {result && !loading && step === 'result' && (
-                            <div className="flex flex-wrap gap-3">
-                                <Button
-                                    onClick={handleDownload}
-                                    className="flex-1 gap-2 bg-gradient-to-r from-primary to-red-600 hover:from-primary/90 hover:to-red-600/90"
-                                >
-                                    <Download className="w-4 h-4" />
-                                    {t('downloadButton', language)}
-                                </Button>
-
-                                <Button onClick={handleSaveToLibrary} variant="outline" className="flex-1 gap-2">
-                                    <Save className="w-4 h-4" />
-                                    {t('saveToLibraryButton', language)}
-                                </Button>
-
-                                <Button onClick={handleReset} variant="ghost" className="gap-2">
-                                    <RefreshCw className="w-4 h-4" />
-                                    {t('resetButton', language)}
-                                </Button>
-                            </div>
-                        )}
-                    </div>
+                    {/* Action Buttons */}
+                    {result && !loading && step === 'result' && (
+                        <div className="flex flex-wrap gap-3">
+                            <Button
+                                onClick={handleDownload}
+                                className="flex-1 gap-2 bg-gradient-to-r from-primary to-red-600 hover:from-primary/90 hover:to-red-600/90"
+                            >
+                                <Download className="w-4 h-4" />
+                                Herunterladen
+                            </Button>
+                            <Button onClick={handleSaveToLibrary} variant="outline" className="flex-1 gap-2">
+                                <Save className="w-4 h-4" />
+                                In Bibliothek speichern
+                            </Button>
+                            <Button onClick={handleReset} variant="ghost" className="gap-2">
+                                <RefreshCw className="w-4 h-4" />
+                                Neu starten
+                            </Button>
+                        </div>
+                    )}
                 </div>
             </div>
-        </div >
+        </DashboardShell>
     );
 }

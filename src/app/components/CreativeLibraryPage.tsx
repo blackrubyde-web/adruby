@@ -758,29 +758,16 @@ export function CreativeLibraryPage() {
               <button
                 onClick={() => handleToggleFavorite(creative.id)}
                 className="p-2 bg-card rounded-lg hover:bg-card/90 transition-colors"
+                title="Favorit"
               >
                 <Star className={`w-4 h-4 ${creative.isFavorite ? 'fill-yellow-500 text-yellow-500' : 'text-foreground'}`} />
               </button>
               <button
                 onClick={() => handleDownload(creative.id)}
                 className="p-2 bg-card rounded-lg hover:bg-card/90 transition-colors"
-                title="Download"
+                title="Herunterladen"
               >
                 <Download className="w-4 h-4 text-foreground" />
-              </button>
-              <button
-                onClick={() => handleDuplicate(creative.id)}
-                className="p-2 bg-card rounded-lg hover:bg-card/90 transition-colors"
-                title="Duplizieren"
-              >
-                <Copy className="w-4 h-4 text-foreground" />
-              </button>
-              <button
-                onClick={() => window.location.href = `/studio?id=${creative.id}`} // Edit in Studio
-                className="p-2 bg-card rounded-lg hover:bg-card/90 transition-colors"
-                title="Im Canvas Bearbeiten"
-              >
-                <Edit2 className="w-4 h-4 text-foreground" />
               </button>
               <button
                 onClick={() => handleDelete(creative.id)}
@@ -882,8 +869,7 @@ export function CreativeLibraryPage() {
 
   return (
     <DashboardShell
-      title="Creative Bibliothek"
-      subtitle="Verwalte und analysiere alle deine Werbemittel"
+      hideHero
       headerChips={
         <div className="flex flex-wrap gap-2 items-center">
           <Badge variant="outline" className="text-xs">{stats.total} Gesamt</Badge>
@@ -896,7 +882,7 @@ export function CreativeLibraryPage() {
         <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
           <Button
             onClick={handleCreateAd}
-            className="bg-gradient-to-r from-rose-500 to-red-600 text-white hover:opacity-90 gap-2"
+            className="bg-gradient-to-r from-primary to-red-600 text-white hover:opacity-90 gap-2"
           >
             <Sparkles className="w-4 h-4" />
             Neue Ad erstellen
@@ -934,8 +920,16 @@ export function CreativeLibraryPage() {
       )}
 
       {isLoading && (
-        <div className="p-4 rounded-xl border border-border bg-card text-sm text-muted-foreground">
-          Lade Creative Library…
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+          {Array.from({ length: 8 }).map((_, i) => (
+            <div key={i} className="bg-card border border-border rounded-xl overflow-hidden animate-pulse">
+              <div className="aspect-video bg-muted" />
+              <div className="p-4 space-y-2">
+                <div className="h-4 bg-muted rounded w-3/4" />
+                <div className="h-3 bg-muted rounded w-1/2" />
+              </div>
+            </div>
+          ))}
         </div>
       )}
 
@@ -1063,12 +1057,12 @@ export function CreativeLibraryPage() {
             <thead className="bg-muted border-b border-border">
               <tr>
                 <th className="text-left p-4 text-sm font-semibold text-foreground">Creative</th>
-                <th className="text-left p-4 text-sm font-semibold text-foreground">Type</th>
+                <th className="text-left p-4 text-sm font-semibold text-foreground">Typ</th>
                 <th className="text-left p-4 text-sm font-semibold text-foreground">Tags</th>
-                <th className="text-right p-4 text-sm font-semibold text-foreground">Impressions</th>
+                <th className="text-right p-4 text-sm font-semibold text-foreground">Impressionen</th>
                 <th className="text-right p-4 text-sm font-semibold text-foreground">CTR</th>
                 <th className="text-right p-4 text-sm font-semibold text-foreground">ROAS</th>
-                <th className="text-right p-4 text-sm font-semibold text-foreground">Actions</th>
+                <th className="text-right p-4 text-sm font-semibold text-foreground">Aktionen</th>
               </tr>
             </thead>
             <tbody>
@@ -1084,7 +1078,7 @@ export function CreativeLibraryPage() {
       {!isLoading && filteredCreatives.length === 0 && (
         <EmptyState
           icon={ImageIcon}
-          title="No creatives found"
+          title="Keine Creatives gefunden"
           description="Speichere Creatives aus dem Ad Builder, damit sie hier erscheinen."
         />
       )}

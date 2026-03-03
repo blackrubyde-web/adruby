@@ -42,7 +42,6 @@ const NAV_GROUPS: NavGroup[] = [
     items: [
       { icon: Wand2, label: 'AI Ad Builder', page: 'aibuilder' },
       { icon: BookOpen, label: 'Creative Library', page: 'library' },
-      { icon: Palette, label: 'Creative Studio', page: 'studio' },
     ],
   },
   {
