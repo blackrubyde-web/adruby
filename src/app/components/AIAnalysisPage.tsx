@@ -543,14 +543,31 @@ export function AIAnalysisPage() {
         <div className="mb-6">
           <PerformanceTrendChart
             data={(() => {
+              // Use real timeseries data from analytics API
+              const ts = analyticsData?.timeseries?.current;
+              if (ts && ts.length > 0) {
+                return ts.map(day => ({
+                  date: new Date(day.ts).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit' }),
+                  roas: day.roas ?? 0,
+                  ctr: day.ctr ?? 0,
+                  spend: day.spend ?? 0,
+                  revenue: day.revenue ?? 0,
+                }));
+              }
+              // Fallback: derive from campaign-level aggregates if no daily data
               const days = 30;
               const baseRoas = totalRoas || 2;
               const baseCtr = campaigns.reduce((sum, c) => sum + c.ctr, 0) / (campaigns.length || 1);
               const baseSpend = totalSpend / days;
               return Array.from({ length: days }, (_, i) => {
                 const date = new Date(); date.setDate(date.getDate() - (days - 1 - i));
-                const variance = 0.85 + Math.random() * 0.3;
-                return { date: date.toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit' }), roas: Math.max(0.5, baseRoas * variance), ctr: Math.max(0.5, baseCtr * variance), spend: baseSpend * variance, revenue: baseSpend * variance * baseRoas * variance };
+                return {
+                  date: date.toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit' }),
+                  roas: baseRoas,
+                  ctr: baseCtr,
+                  spend: baseSpend,
+                  revenue: baseSpend * baseRoas,
+                };
               });
             })()}
             title="Performance Trend"
@@ -571,8 +588,37 @@ export function AIAnalysisPage() {
         killCount={killAds.length}
         duplicateCount={duplicateAds.length}
         fatigueCount={decreaseAds.length}
-        onScaleWinners={async () => { toast.promise(new Promise(resolve => setTimeout(resolve, 2000)), { loading: 'Analysiere Top Performer für Skalierung...', success: `${duplicateAds.length} Kampagnen markiert für +20% Budget!`, error: 'Skalierung fehlgeschlagen' }); }}
-        onPauseLosers={async () => { toast.promise(new Promise(resolve => setTimeout(resolve, 2000)), { loading: 'Pausiere unprofitable Ads...', success: `${killAds.length} Ads wurden pausiert!`, error: 'Pausierung fehlgeschlagen' }); }}
+        onScaleWinners={async () => {
+          if (!duplicateAds.length) { toast.info('Keine Top Performer gefunden.'); return; }
+          const targets = duplicateAds.filter(r => isMetaLinkedCampaignId(r.ad.campaignId));
+          if (!targets.length) { toast.info('Keine mit Meta verknüpften Top-Kampagnen gefunden.'); return; }
+          toast.loading(`Skaliere ${targets.length} Top Performer...`);
+          let ok = 0;
+          for (const r of targets) {
+            try {
+              await applyMetaAction({ campaignId: r.ad.campaignId, action: 'increase', scalePct: 0.2 });
+              ok++;
+            } catch { /* individual fail is ok */ }
+          }
+          toast.dismiss();
+          toast.success(`${ok}/${targets.length} Kampagnen: Budget +20%!`);
+        }}
+        onPauseLosers={async () => {
+          if (!killAds.length) { toast.info('Keine unprofitablen Ads gefunden.'); return; }
+          const targets = killAds.filter(r => isMetaLinkedCampaignId(r.ad.campaignId));
+          if (!targets.length) { toast.info('Keine mit Meta verknüpften Kampagnen zu pausieren.'); return; }
+          toast.loading(`Pausiere ${targets.length} unprofitable Ads...`);
+          let ok = 0;
+          for (const r of targets) {
+            try {
+              await applyMetaAction({ campaignId: r.ad.campaignId, action: 'pause' });
+              updateCampaignStatus(r.ad.campaignId, 'paused');
+              ok++;
+            } catch { /* individual fail is ok */ }
+          }
+          toast.dismiss();
+          toast.success(`${ok}/${targets.length} Ads pausiert!`);
+        }}
       />
 
       {campaigns.length > 0 && (

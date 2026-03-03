@@ -447,8 +447,28 @@ export function AIAdBuilderPage() {
                                         setImportedProducts(products);
                                         setImportedCopies(copies);
                                     }}
-                                    onCreateSingleAds={(_products) => {
-                                        toast.info('Einzel-Ads aus Shop-Import — Coming Soon! Nutze den Carousel Builder.');
+                                    onCreateSingleAds={(products) => {
+                                        if (!products.length) {
+                                            toast.error('Keine Produkte ausgewählt');
+                                            return;
+                                        }
+                                        // Feed first product into form mode and trigger generation
+                                        const p = products[0];
+                                        const formData: FormInputData = {
+                                            productName: p.title,
+                                            usp: p.description?.slice(0, 200) || p.title,
+                                            targetAudience: p.tags?.join(', ') || '',
+                                            industry: p.productType || '',
+                                            tone: 'professional',
+                                            goal: 'sales',
+                                            template: 'default',
+                                        };
+                                        // If product has an image, set it as preview
+                                        if (p.images?.[0]?.src) {
+                                            setProductImagePreview(p.images[0].src);
+                                        }
+                                        toast.info(`Ad wird generiert für: ${p.title}`);
+                                        handleGenerate(formData);
                                     }}
                                     onCreateCarousel={(products, copies) => {
                                         setImportedProducts(products);
