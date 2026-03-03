@@ -43,6 +43,7 @@ export interface AdGenerationParams {
     // Railway v6.0 Composite Pipeline (100% screenshot preservation)
     useCompositePipeline?: boolean;
     format?: string;
+    funnelStage?: 'tof' | 'mof' | 'bof';
     stats?: Array<{ label: string; value: string }>;
 }
 

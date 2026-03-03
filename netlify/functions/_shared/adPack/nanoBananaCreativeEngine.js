@@ -16,6 +16,9 @@ import crypto from 'crypto';
 import { EXTENDED_LAYOUTS } from '../extendedLayouts.js';
 import { REFERENCE_PATTERNS } from '../referencePatterns.js';
 import { ARROW_STYLES, BADGE_STYLES, ICON_STYLES, LINE_STYLES, SHAPE_STYLES, buildElementPrompt } from '../designElementLibrary.js';
+import { AD_ARCHETYPES, ARCHETYPE_BY_KEY } from './adArchetypes.js';
+import { HOOK_BY_KEY } from './hookTypes.js';
+import { selectAdaptiveTriple, resolveIndustryForSelector } from './adaptiveSelector.js';
 
 // ═══════════════════════════════════════════════════════════════
 // CONFIG
@@ -178,88 +181,11 @@ function pickRandomLayout() {
 }
 
 // ═══════════════════════════════════════════════════════════════
-// CONCEPT TYPES — 15 diverse creative concepts
+// CONCEPT TYPES — 72 Archetypes from adArchetypes.js
+// Backward-compatible: CONCEPT_TYPES is now an alias for AD_ARCHETYPES
 // ═══════════════════════════════════════════════════════════════
 
-const CONCEPT_TYPES = [
-    // ── ORIGINAL 5 ──
-    {
-        key: 'lifestyle_in_use',
-        name: 'Lifestyle In-Use',
-        briefDirection: 'Show the product being used by a real person in a natural, aspirational setting. The scene tells a story about the lifestyle this product enables.',
-    },
-    {
-        key: 'product_hero',
-        name: 'Product Hero',
-        briefDirection: 'Dramatic, stunning product showcase that highlights the product\'s most impressive feature or design element. The product is the undeniable star.',
-    },
-    {
-        key: 'emotional_context',
-        name: 'Emotional Context',
-        briefDirection: 'Create a scene that captures the EMOTIONAL BENEFIT of owning this product. Focus on the feeling, the result, the transformation — not just the object.',
-    },
-    {
-        key: 'social_proof',
-        name: 'Social Proof',
-        briefDirection: 'Show the product being enjoyed by multiple people, or in a setting that implies popularity and trust. Think: testimonial style, community, or "everyone has it" vibe.',
-    },
-    {
-        key: 'problem_solution',
-        name: 'Problem → Solution',
-        briefDirection: 'Visualize the BEFORE/AFTER or the PROBLEM this product solves. The image should make the viewer feel the pain point and see the product as the obvious solution.',
-    },
-    // ── NEW 10 ──
-    {
-        key: 'feature_callout',
-        name: 'Feature Callout',
-        briefDirection: 'Product centered with 3-5 curved arrows pointing FROM feature labels TO specific product parts. Each label has a small circle origin point (○). Arrows are smooth bezier curves, NOT straight. Feature text is short (2-3 words per label). This is an EDUCATIONAL ad that shows exactly what makes the product special.',
-    },
-    {
-        key: 'before_after',
-        name: 'Before / After',
-        briefDirection: 'Perfect 50/50 split showing BEFORE (the problem — muted colors, negative) and AFTER (with the product — vibrant, positive). Clear labels "Vorher" / "Nachher" or "Ohne" / "Mit". The contrast should be dramatic and instantly understandable. Think: transformation visual.',
-    },
-    {
-        key: 'ugc_authentic',
-        name: 'UGC Authentic',
-        briefDirection: 'Make it look like a real user-generated Instagram post, NOT a studio ad. Natural lighting, slightly imperfect, real person using the product. Add Instagram-style UI: username "@satisfied_customer", engagement numbers, comment text. Authentic, relatable, trustworthy. This is NOT an ad — it\'s a real recommendation.',
-    },
-    {
-        key: 'testimonial_quote',
-        name: 'Testimonial Quote',
-        briefDirection: 'Large customer quote in elegant quotation marks „...". Customer name + title below. 5 filled gold stars ⭐⭐⭐⭐⭐ prominently displayed. Product image on one side, quote card on the other. Trust, social proof, credibility. Think: Amazon review meets premium design.',
-    },
-    {
-        key: 'infographic_stat',
-        name: 'Infographic Stat',
-        briefDirection: 'A LARGE BOLD NUMBER is the hero element (like "73%" or "2.340+" or "3x"). Supporting context text explains what the number means. Product shown alongside. Clean infographic style, data-driven trust. The number should be the first thing the eye sees. Think: data visualization meets ad.',
-    },
-    {
-        key: 'comparison_grid',
-        name: 'Us vs. Them',
-        briefDirection: 'Perfect 50/50 split: LEFT side is OUR product (bright, positive, green checkmarks ✅) / RIGHT side is competitor/old way (muted, negative, red X marks ❌). 3-4 comparison points stacked vertically. Clear visual hierarchy — our product WINS. Think: comparison chart meets visual ad.',
-    },
-    {
-        key: 'step_by_step',
-        name: 'Step by Step',
-        briefDirection: 'Show "Schritt 1 → Schritt 2 → Schritt 3" with forward-progressing arrows between steps. Each step has a number in a circle, a short label, and a small visual. Final step shows the RESULT. Clear progression flow from left to right (or top to bottom in story). Educational, friction-removing.',
-    },
-    {
-        key: 'unboxing_reveal',
-        name: 'Unboxing Reveal',
-        briefDirection: 'Product being REVEALED from packaging. Hands opening a premium box. Confetti, sparkles, or light rays suggesting surprise and delight. The unboxing moment captures anticipation and excitement. Think: Apple unboxing experience, gift reveal, surprise moment.',
-    },
-    {
-        key: 'job_recruiting',
-        name: 'Job / Recruiting',
-        briefDirection: '"Wir suchen dich!" or "Join Our Team" style ad. Bold headline, team photo in background. Benefits listed with green checkmarks ✅. Location pin 📍, salary badge, or perks highlighted. Professional but approachable. Think: modern startup recruiting post.',
-    },
-    {
-        key: 'flash_sale',
-        name: 'Flash Sale',
-        briefDirection: 'URGENT flash sale advertisement. MASSIVE discount displayed in starburst/explosion shape. Product centered dramatically. Countdown timer visual. Old price struck through, new price bold and large. CTA is urgent and action-driving. FOMO, urgency, limited time, ACT NOW energy.',
-    },
-];
+const CONCEPT_TYPES = AD_ARCHETYPES;
 
 function pickRandomConcept() {
     return CONCEPT_TYPES[Math.floor(Math.random() * CONCEPT_TYPES.length)];
@@ -267,16 +193,19 @@ function pickRandomConcept() {
 
 // ═══════════════════════════════════════════════════════════════
 // CONCEPT → REFERENCE PATTERN MAP
-// Links concept types to precise prompt snippets from referencePatterns.js
+// Auto-mapped: archetype keys → reference patterns where available
 // ═══════════════════════════════════════════════════════════════
 
 const CONCEPT_PATTERN_MAP = {
     feature_callout: REFERENCE_PATTERNS.feature_callouts?.promptSnippet || '',
+    us_vs_them_grid: REFERENCE_PATTERNS.us_vs_them?.promptSnippet || '',
     comparison_grid: REFERENCE_PATTERNS.us_vs_them?.promptSnippet || '',
-    before_after: REFERENCE_PATTERNS.before_after?.promptSnippet || '',
-    lifestyle_in_use: REFERENCE_PATTERNS.lifestyle_action?.promptSnippet || '',
-    step_by_step: REFERENCE_PATTERNS.benefit_checkmarks?.promptSnippet || '',
-    social_proof: REFERENCE_PATTERNS.collage_grid?.promptSnippet || '',
+    before_after_split: REFERENCE_PATTERNS.before_after?.promptSnippet || '',
+    aspirational_lifestyle: REFERENCE_PATTERNS.lifestyle_action?.promptSnippet || '',
+    step_by_step_guide: REFERENCE_PATTERNS.benefit_checkmarks?.promptSnippet || '',
+    benefit_checklist: REFERENCE_PATTERNS.benefit_checkmarks?.promptSnippet || '',
+    community_wall: REFERENCE_PATTERNS.collage_grid?.promptSnippet || '',
+    user_gallery: REFERENCE_PATTERNS.collage_grid?.promptSnippet || '',
 };
 
 // ═══════════════════════════════════════════════════════════════
@@ -382,13 +311,14 @@ function getGeminiClient() {
  * Every product gets a UNIQUE scene, camera, lighting, mood, AND layout style.
  * 
  * @param {Object} adSpec - Product info (productName, offer, audience, industry, angle)
- * @param {Object} conceptType - What kind of ad (lifestyle, hero, emotional, etc.)
+ * @param {Object} conceptType - Archetype (key, name, briefDirection, category)
  * @param {string} format - Ad format (square, portrait, story)
  * @param {Object} variation - Variation seeds for diversity
  * @param {Object} [layoutStyle] - Optional layout style override; random if not provided
+ * @param {Object} [hookType] - Optional hook type with promptInjection for tone/angle
  * @returns {Promise<Object>} Creative brief JSON
  */
-async function generateCreativeBrief(adSpec, conceptType, format, variation, layoutStyle) {
+async function generateCreativeBrief(adSpec, conceptType, format, variation, layoutStyle, hookType) {
     const client = getGeminiClient();
     const formatSpec = META_FORMATS[format];
     const lang = adSpec.language === 'en' ? 'English' : 'German';
@@ -418,6 +348,8 @@ LANGUAGE: All text MUST be in ${lang}.
 CREATIVE CONCEPT: ${conceptType.briefDirection}
 
 ${layout.instruction}
+
+${hookType?.promptInjection ? `═══ HOOK DIRECTION ═══\n${hookType.promptInjection}` : ''}
 
 ${CONCEPT_PATTERN_MAP[conceptType.key] ? `═══ REFERENCE PATTERN (follow this precisely) ═══\n${CONCEPT_PATTERN_MAP[conceptType.key]}` : ''}
 
@@ -949,6 +881,8 @@ export async function generateSingleAd(params) {
         productName, offer, audience, industry, angle,
         brandKit, format = 'square',
         _forceConceptIndex, _forceLayoutIndex,
+        _adaptiveConfig, // { archetype, layout (key), hook, meta }
+        funnelStage, goal,
     } = params;
 
     const adSpec = {
@@ -971,19 +905,32 @@ export async function generateSingleAd(params) {
         throw new Error('GEMINI_API_KEY not configured — cannot generate images');
     }
 
-    // Concept + Layout: use forced indices if provided (variant diversity), else random
-    const conceptType = typeof _forceConceptIndex === 'number'
-        ? CONCEPT_TYPES[_forceConceptIndex % CONCEPT_TYPES.length]
-        : pickRandomConcept();
-    const layout = typeof _forceLayoutIndex === 'number'
-        ? LAYOUT_STYLES[_forceLayoutIndex % LAYOUT_STYLES.length]
-        : pickRandomLayout();
+    // ── Archetype + Layout + Hook Selection ──
+    let conceptType, layout, hookType;
+
+    if (_adaptiveConfig) {
+        // Adaptive selector provided complete config
+        conceptType = _adaptiveConfig.archetype;
+        const layoutKey = _adaptiveConfig.layout;
+        layout = LAYOUT_STYLES.find(l => l.key === layoutKey) || pickRandomLayout();
+        hookType = _adaptiveConfig.hook;
+    } else if (typeof _forceConceptIndex === 'number') {
+        // Legacy forced indices
+        conceptType = CONCEPT_TYPES[_forceConceptIndex % CONCEPT_TYPES.length];
+        layout = typeof _forceLayoutIndex === 'number'
+            ? LAYOUT_STYLES[_forceLayoutIndex % LAYOUT_STYLES.length]
+            : pickRandomLayout();
+    } else {
+        conceptType = pickRandomConcept();
+        layout = pickRandomLayout();
+    }
+
     const variation = getVariationSeeds(0);
 
-    console.log(`[NanoBanana] 🎲 concept=${conceptType.key}, layout=${layout.key}${typeof _forceConceptIndex === 'number' ? ' (forced)' : ''}`);
+    console.log(`[NanoBanana] 🎲 archetype=${conceptType.key} (${conceptType.category || '?'}), layout=${layout.key}, hook=${hookType?.key || 'none'}`);
 
-    // Phase 1: AI Creative Director
-    const brief = await generateCreativeBrief(adSpec, conceptType, format, variation, layout);
+    // Phase 1: AI Creative Director — with hook injection
+    const brief = await generateCreativeBrief(adSpec, conceptType, format, variation, layout, hookType);
 
     // Phase 2: Prompt Assembly — pass conceptKey for design element presets
     const prompt = buildCreativePrompt({

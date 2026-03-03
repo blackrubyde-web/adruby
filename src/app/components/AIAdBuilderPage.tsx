@@ -77,6 +77,9 @@ export function AIAdBuilderPage() {
     // Ad format state
     const [adFormat, setAdFormat] = useState<'square' | 'portrait' | 'story'>('square');
 
+    // Funnel stage state
+    const [funnelStage, setFunnelStage] = useState<'tof' | 'mof' | 'bof'>('tof');
+
     // Theater mode completed steps
     const [completedSteps, setCompletedSteps] = useState<number[]>([]);
 
@@ -225,6 +228,7 @@ export function AIAdBuilderPage() {
                 useAIDesignSystem,
                 useCompositePipeline,
                 format: adFormat,
+                funnelStage,
                 ...inputData,
             });
 
@@ -446,6 +450,40 @@ export function AIAdBuilderPage() {
                                     >
                                         <fmt.icon className="w-3.5 h-3.5" />
                                         {fmt.label}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* ── Funnel Stage Selector ── */}
+                    <div className="input-section">
+                        <div className="input-section-header">
+                            <div className="flex items-center gap-2">
+                                <div className="w-6 h-6 rounded-lg bg-gradient-to-br from-primary/20 to-amber-500/10 flex items-center justify-center">
+                                    <Target className="w-3.5 h-3.5 text-primary/70" />
+                                </div>
+                                <h3 className="text-sm font-semibold text-foreground">Funnel-Phase</h3>
+                            </div>
+                        </div>
+                        <div className="input-section-body">
+                            <div className="flex gap-2">
+                                {[
+                                    { id: 'tof' as const, label: 'Entdecken', sub: 'Awareness' },
+                                    { id: 'mof' as const, label: 'Vergleichen', sub: 'Consideration' },
+                                    { id: 'bof' as const, label: 'Kaufen', sub: 'Conversion' },
+                                ].map(f => (
+                                    <button
+                                        key={f.id}
+                                        onClick={() => setFunnelStage(f.id)}
+                                        className={`flex-1 flex flex-col items-center gap-0.5 px-3 py-2.5 rounded-xl text-xs font-medium transition-all duration-300
+                                            ${funnelStage === f.id
+                                                ? 'bg-primary/10 text-primary border border-primary/30 shadow-sm'
+                                                : 'bg-muted/20 text-muted-foreground border border-border/20 hover:bg-muted/40 hover:text-foreground'
+                                            }`}
+                                    >
+                                        <span>{f.label}</span>
+                                        <span className="text-[10px] opacity-60">{f.sub}</span>
                                     </button>
                                 ))}
                             </div>

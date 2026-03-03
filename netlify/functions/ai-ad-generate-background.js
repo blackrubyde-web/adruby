@@ -18,6 +18,7 @@ import { categorizeError, getUserMessage } from './_shared/errorCategorizer.js';
 import { generateWithAIDesign, generateWithCompositeAsync, isForeplayAvailable } from './_shared/railwayImageClient.js';
 import { getCorsHeaders } from './_shared/cors.js';
 import { generateSingleAd as nanoBananaGenerateSingleAd, scoreAdImage, checkAvailability as isGeminiAvailable } from './_shared/adPack/nanoBananaCreativeEngine.js';
+import { selectAdaptiveTriple } from './_shared/adPack/adaptiveSelector.js';
 import { GoogleGenAI } from '@google/genai';
 import crypto from 'crypto';
 
@@ -277,19 +278,27 @@ export const handler = async (event) => {
             console.log('[AI Ad Generate] ⚠️ Railway/Foreplay unavailable, using fallback pipeline');
         }
 
-        // ─── ATTEMPT 2: NANOBANANA (AI Creative Director) — 3 VARIANTS ───
+        // ─── ATTEMPT 2: NANOBANANA (AI Creative Director) — 3 ADAPTIVE VARIANTS ───
         if (!finalImageBuffer) {
-            console.log('[AI Ad Generate] 🍌 NANOBANANA: AI Creative Director — 3 Variants');
-            await updateProgress('nanoBanana', 40, { engine: 'nanoBanana_v5' });
+            console.log('[AI Ad Generate] 🍌 NANOBANANA: Adaptive Creative Intelligence — 3 Variants');
+            await updateProgress('nanoBanana', 40, { engine: 'nanoBanana_v6_adaptive' });
 
             const adFormat = body.format || 'square';
+            const funnelStage = body.funnelStage || 'tof';
+            const goal = body.goal || 'conversion';
 
-            // Generate 3 diverse variants in parallel using forced concept+layout indices
-            const variantConfigs = [
-                { _forceConceptIndex: 0, _forceLayoutIndex: 0 },   // Lifestyle + Split Panel
-                { _forceConceptIndex: 5, _forceLayoutIndex: 8 },   // Feature Callout + Photo Illustration
-                { _forceConceptIndex: 10, _forceLayoutIndex: 15 }, // Comparison Grid + Review Showcase
-            ];
+            // Adaptive selector: scores 72 archetypes, picks 3 from 3 different categories
+            const adaptiveTriple = selectAdaptiveTriple({
+                industry: body.industry || 'ecommerce',
+                funnelStage,
+                goal,
+                audience: body.audience,
+                format: adFormat,
+            });
+
+            console.log(`[AI Ad Generate] 🧠 Adaptive selection:`, adaptiveTriple.map(v =>
+                `${v.meta.archetypeKey} (${v.meta.category}) + ${v.meta.layoutKey} + ${v.meta.hookKey}`
+            ));
 
             const baseParams = {
                 productImageUrl: hasProductImage ? body.productImageUrl : null,
@@ -307,11 +316,16 @@ export const handler = async (event) => {
                 text: body.text || '',
                 brandKit: body.brandKit,
                 format: adFormat,
+                funnelStage,
+                goal,
             };
 
             try {
                 const variantResults = await Promise.allSettled(
-                    variantConfigs.map(vc => nanoBananaGenerateSingleAd({ ...baseParams, ...vc }))
+                    adaptiveTriple.map(config => nanoBananaGenerateSingleAd({
+                        ...baseParams,
+                        _adaptiveConfig: config,
+                    }))
                 );
 
                 // Collect successful variants
