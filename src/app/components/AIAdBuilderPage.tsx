@@ -275,42 +275,41 @@ export function AIAdBuilderPage() {
 
     return (
         <DashboardShell hideHero>
-            {/* ═══ Editorial Header ═══════════════════════════════ */}
-            <div className="page-header-editorial">
-                <div className="flex items-center justify-between">
-                    <div>
-                        <h1 className="page-title">Ad Builder</h1>
-                        <p className="page-subtitle">
-                            Erstelle hochkonvertierende Meta Ads mit KI
-                        </p>
-                    </div>
-                    <div className="flex items-center gap-3">
-                        {step === 'result' && (
-                            <span className="stat-pill stat-pill-accent">
-                                <CheckCircle2 className="w-3 h-3" />
-                                Fertig
-                            </span>
-                        )}
-                    </div>
+            {/* ── Header ──────────────────────────────────── */}
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                    <h1 className="text-2xl font-bold tracking-tight text-foreground">Ad Builder</h1>
+                    <p className="text-sm text-muted-foreground">Erstelle hochkonvertierende Meta Ads mit KI</p>
                 </div>
+                <div className="flex items-center gap-3">
+                    {step === 'result' && (
+                        <Badge variant="secondary" className="text-xs">
+                            <CheckCircle2 className="w-3 h-3 mr-1" />
+                            Fertig
+                        </Badge>
+                    )}
+                </div>
+            </div>
 
-                {/* ═══ Filter Chip Tabs ═══════════════════════════ */}
-                <div className="filter-chip-bar mt-5">
-                    {MODE_TABS.map((tab) => {
-                        const Icon = tab.icon;
-                        const isActive = mode === tab.id;
-                        return (
-                            <button
-                                key={tab.id}
-                                onClick={() => setMode(tab.id)}
-                                className={cn("filter-chip", isActive && "filter-chip-active")}
-                            >
-                                <Icon className="w-3.5 h-3.5" />
-                                {tab.label}
-                            </button>
-                        );
-                    })}
-                </div>
+            {/* ── Mode Tabs ────────────────────────────── */}
+            <div className="flex items-center bg-muted/50 rounded-lg p-1 border border-border/50">
+                {MODE_TABS.map((tab) => {
+                    const Icon = tab.icon;
+                    const isActive = mode === tab.id;
+                    return (
+                        <button
+                            key={tab.id}
+                            onClick={() => setMode(tab.id)}
+                            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-all ${isActive
+                                ? 'bg-background text-foreground shadow-sm'
+                                : 'text-muted-foreground hover:text-foreground'
+                                }`}
+                        >
+                            <Icon className="w-3.5 h-3.5" />
+                            {tab.label}
+                        </button>
+                    );
+                })}
             </div>
 
             {/* ═══ Main Grid — Input + Canvas ═══════════════════ */}

@@ -97,23 +97,27 @@ export function SettingsPage() {
   };
 
   return (
-    <DashboardShell
-      title="Einstellungen"
-      subtitle="Verwalte dein Konto und Integrationen"
-    >
+    <DashboardShell hideHero>
+      {/* ── Header ─────────────────────────────────────── */}
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight text-foreground">Einstellungen</h1>
+          <p className="text-sm text-muted-foreground">Verwalte dein Konto und Integrationen</p>
+        </div>
+      </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
         {/* Sidebar Navigation */}
         <div className="lg:col-span-1">
-          <Card variant="glass" className="sticky top-24" padding="sm">
-            <nav className="space-y-1">
+          <div className="sticky top-24 rounded-xl border border-border/50 bg-card p-2">
+            <nav className="space-y-0.5">
               {tabs.map((tab) => (
                 <button
                   key={tab.id}
                   onClick={() => setActiveTab(tab.id)}
-                  className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold transition-all ${activeTab === tab.id
-                    ? 'bg-primary text-primary-foreground shadow-lg shadow-primary/20'
-                    : 'text-foreground/80 sm:text-muted-foreground hover:bg-muted/50 hover:text-foreground'
+                  className={`w-full flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${activeTab === tab.id
+                    ? 'bg-muted text-foreground'
+                    : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
                     }`}
                 >
                   {tab.icon}
@@ -121,23 +125,23 @@ export function SettingsPage() {
                 </button>
               ))}
             </nav>
-          </Card>
+          </div>
         </div>
 
         {/* Content Area */}
         <div className="lg:col-span-3">
-          <Card variant="glass" padding="default">
+          <div className="rounded-xl border border-border/50 bg-card p-6">
             {activeTab === 'account' && <AccountTab {...sharedProps} />}
             {activeTab === 'integrations' && <IntegrationsTab />}
             {activeTab === 'notifications' && <NotificationsTab {...sharedProps} />}
             {activeTab === 'appearance' && <AppearanceTab {...sharedProps} />}
             {activeTab === 'billing' && (
-              <div className="p-2">
+              <div>
                 <BillingPanel />
               </div>
             )}
             {activeTab === 'security' && <SecurityTab isSaving={isSaving} setIsSaving={setIsSaving} />}
-          </Card>
+          </div>
         </div>
       </div>
     </DashboardShell>
