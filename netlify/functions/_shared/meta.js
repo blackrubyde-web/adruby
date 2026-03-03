@@ -1,6 +1,7 @@
 import { supabaseAdmin } from "./clients.js";
 
-const GRAPH_API_BASE = "https://graph.facebook.com/v19.0";
+export const GRAPH_API_VERSION = process.env.META_GRAPH_API_VERSION || "v21.0";
+export const GRAPH_API_BASE = `https://graph.facebook.com/${GRAPH_API_VERSION}`;
 
 function cleanParams(params) {
   const next = {};
@@ -87,6 +88,7 @@ export async function getActiveMetaConnection(userId) {
 async function getTokenForConnection(connection) {
   if (!connection?.id) return null;
 
+  // 1. Try meta_tokens first (primary location)
   try {
     const { data: tokenRow, error } = await supabaseAdmin
       .from("meta_tokens")
@@ -100,28 +102,37 @@ async function getTokenForConnection(connection) {
 
     if (tokenRow?.access_token) return tokenRow.access_token;
   } catch {
-    if (connection.access_token) return connection.access_token;
+    // If meta_tokens lookup fails, fall through to migration below
   }
 
+  // 2. Migrate legacy token atomically: null out the old token and read it in one step.
+  //    This prevents race conditions where two parallel requests both read + migrate.
   if (connection.access_token) {
-    await supabaseAdmin
-      .from("meta_tokens")
-      .upsert(
-        {
-          connection_id: connection.id,
-          user_id: connection.user_id,
-          access_token: connection.access_token,
-          token_expires_at: connection.token_expires_at || null,
-        },
-        { onConflict: "connection_id" }
-      );
-
-    await supabaseAdmin
+    const { data: cleared, error: clearError } = await supabaseAdmin
       .from("facebook_connections")
       .update({ access_token: null, updated_at: new Date().toISOString() })
-      .eq("id", connection.id);
+      .eq("id", connection.id)
+      .not("access_token", "is", null)
+      .select("access_token")
+      .maybeSingle();
 
-    return connection.access_token;
+    // If another request already cleared it, cleared will be null — skip
+    const migratedToken = cleared?.access_token || connection.access_token;
+    if (migratedToken && !clearError) {
+      await supabaseAdmin
+        .from("meta_tokens")
+        .upsert(
+          {
+            connection_id: connection.id,
+            user_id: connection.user_id,
+            access_token: migratedToken,
+            token_expires_at: connection.token_expires_at || null,
+          },
+          { onConflict: "connection_id" }
+        );
+
+      return migratedToken;
+    }
   }
 
   return null;
@@ -142,10 +153,6 @@ export async function resolveMetaAccessToken(userId) {
     } catch {
       token = null;
     }
-  }
-
-  if (!token) {
-    token = process.env.META_ACCESS_TOKEN || null;
   }
 
   return { token, connection };

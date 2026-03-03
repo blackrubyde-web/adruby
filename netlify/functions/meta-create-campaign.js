@@ -8,10 +8,8 @@ import {
 import { initTelemetry, captureException } from "./utils/telemetry.js";
 import { requireUserId } from "./_shared/auth.js";
 import { requireActiveSubscription } from "./_shared/entitlements.js";
-import { postGraph, resolveMetaAccessToken, pickPrimaryAdAccount } from "./_shared/meta.js";
+import { postGraph, resolveMetaAccessToken, pickPrimaryAdAccount, GRAPH_API_BASE } from "./_shared/meta.js";
 import { supabaseAdmin } from "./_shared/clients.js";
-
-const GRAPH_API_BASE = "https://graph.facebook.com/v19.0";
 
 async function uploadImageHash(actId, token, imageUrl, filename) {
     const imgRes = await fetch(imageUrl);

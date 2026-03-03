@@ -21,15 +21,20 @@ export async function handler(event) {
     return badRequest("Invalid JSON body");
   }
 
-  const accessToken = body.accessToken || process.env.META_ACCESS_TOKEN;
+  const accessToken = body.accessToken;
   if (!accessToken) {
-    return badRequest("Missing Meta access token");
+    return badRequest("Missing Meta access token. Please use the OAuth flow to connect.");
   }
 
   try {
+    // Validate the token by fetching the associated Facebook profile
     const me = await fetchGraph("/me", accessToken, {
       fields: "id,name,picture",
     });
+
+    if (!me?.id) {
+      return badRequest("Invalid Meta access token — could not retrieve user profile.");
+    }
 
     const adAccountsResponse = await fetchGraph("/me/adaccounts", accessToken, {
       fields: "id,account_id,name,account_status",

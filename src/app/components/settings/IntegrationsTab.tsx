@@ -224,7 +224,7 @@ export function IntegrationsTab() {
                             )}
 
                             <p className="text-[10px] text-center text-muted-foreground/60 w-full">
-                                Nur Lesezugriff auf Kampagnendaten.
+                                Kampagnendaten werden synchronisiert. Optimierungen nur nach Bestätigung.
                             </p>
                         </div>
                     )}

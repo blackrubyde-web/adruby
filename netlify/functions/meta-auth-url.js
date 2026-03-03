@@ -2,6 +2,7 @@ import crypto from "crypto";
 import { ok, serverError, methodNotAllowed, withCors } from "./utils/response.js";
 import { initTelemetry, captureException } from "./utils/telemetry.js";
 import { requireUserId } from "./_shared/auth.js";
+import { GRAPH_API_VERSION } from "./_shared/meta.js";
 
 function base64Url(input) {
   return Buffer.from(input)
@@ -53,7 +54,7 @@ export async function handler(event) {
     const signature = signState(payload, appSecret);
     const state = `${payload}.${signature}`;
 
-    const url = new URL("https://www.facebook.com/v19.0/dialog/oauth");
+    const url = new URL(`https://www.facebook.com/${GRAPH_API_VERSION}/dialog/oauth`);
     url.searchParams.set("client_id", appId);
     url.searchParams.set("redirect_uri", redirectUrl);
     url.searchParams.set("state", state);
@@ -64,6 +65,7 @@ export async function handler(event) {
         "ads_management",
         "business_management",
         "pages_show_list",
+        "pages_manage_ads",
       ].join(",")
     );
     url.searchParams.set("response_type", "code");

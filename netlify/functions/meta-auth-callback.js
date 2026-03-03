@@ -1,6 +1,6 @@
 import crypto from "crypto";
 import { supabaseAdmin } from "./_shared/clients.js";
-import { fetchGraph, pickPrimaryAdAccount } from "./_shared/meta.js";
+import { fetchGraph, pickPrimaryAdAccount, GRAPH_API_VERSION } from "./_shared/meta.js";
 
 function base64UrlDecode(input) {
   const normalized = input.replace(/-/g, "+").replace(/_/g, "/");
@@ -93,7 +93,7 @@ export async function handler(event) {
     const redirectUrl = getRedirectUrl();
     if (!redirectUrl) throw new Error("Missing redirect URL");
 
-    const tokenUrl = new URL("https://graph.facebook.com/v19.0/oauth/access_token");
+    const tokenUrl = new URL(`https://graph.facebook.com/${GRAPH_API_VERSION}/oauth/access_token`);
     tokenUrl.searchParams.set("client_id", appId);
     tokenUrl.searchParams.set("client_secret", appSecret);
     tokenUrl.searchParams.set("redirect_uri", redirectUrl);
@@ -104,7 +104,7 @@ export async function handler(event) {
     let expiresIn = Number(shortToken.expires_in || 0);
 
     if (accessToken) {
-      const longUrl = new URL("https://graph.facebook.com/v19.0/oauth/access_token");
+      const longUrl = new URL(`https://graph.facebook.com/${GRAPH_API_VERSION}/oauth/access_token`);
       longUrl.searchParams.set("grant_type", "fb_exchange_token");
       longUrl.searchParams.set("client_id", appId);
       longUrl.searchParams.set("client_secret", appSecret);
