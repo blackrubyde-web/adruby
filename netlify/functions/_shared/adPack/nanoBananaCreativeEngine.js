@@ -1,5 +1,5 @@
 /**
- * Nano Banana Creative Engine v5.0
+ * Nano Banana Creative Engine v5.1
  * 
  * 2-PHASE AI CREATIVE DIRECTION:
  *   Phase 1: Gemini Flash generates a bespoke creative brief for THIS specific product
@@ -8,11 +8,10 @@
  * Every product gets its own story, scene, emotion, and camera setup.
  * Industry presets serve as FALLBACK only when AI brief generation fails.
  * 
- * Falls back to OpenAI gpt-image-1 if Gemini Image is unavailable.
+ * 100% Gemini — no OpenAI fallback.
  */
 
 import { GoogleGenAI } from '@google/genai';
-import { generateHeroImage } from '../openai.js';
 import crypto from 'crypto';
 
 // ═══════════════════════════════════════════════════════════════
@@ -25,7 +24,7 @@ const META_FORMATS = {
     story: { ratio: '9:16', width: 1080, height: 1920, openaiSize: '1024x1536', geminiAspect: '9:16' },
 };
 
-const GEMINI_IMAGE_MODEL = process.env.GEMINI_IMAGE_MODEL || 'gemini-2.5-flash-preview-image';
+const GEMINI_IMAGE_MODEL = process.env.GEMINI_IMAGE_MODEL || 'gemini-2.5-flash-image';
 const GEMINI_TEXT_MODEL = process.env.GEMINI_TEXT_MODEL || 'gemini-2.5-flash';
 
 // ═══════════════════════════════════════════════════════════════
@@ -409,19 +408,7 @@ async function generateWithGemini(prompt, format, productImageUrl = null) {
     throw new Error(`Gemini returned no image. Text: ${textResponse.substring(0, 200)}`);
 }
 
-// ═══════════════════════════════════════════════════════════════
-// IMAGE GENERATION — OPENAI FALLBACK
-// ═══════════════════════════════════════════════════════════════
-
-async function generateWithOpenAI(prompt, format) {
-    const formatSpec = META_FORMATS[format];
-    console.log(`[NanoBanana] ⚠️ Falling back to OpenAI gpt-image-1 for ${format}`);
-    return await generateHeroImage({
-        prompt,
-        size: formatSpec.openaiSize,
-        quality: 'high',
-    });
-}
+// OpenAI fallback removed — 100% Gemini
 
 // ═══════════════════════════════════════════════════════════════
 // MAIN ENGINE — 2-Phase Generation
@@ -441,7 +428,9 @@ export async function generateCreativePack(adSpec, options = {}) {
         onProgress = () => { },
     } = options;
 
-    const geminiReady = isGeminiAvailable();
+    if (!isGeminiAvailable()) {
+        throw new Error('GEMINI_API_KEY not configured — cannot generate images');
+    }
     const industryKey = resolveIndustry(adSpec.industry);
     const totalImages = CONCEPT_TYPES.length * formats.length;
     let generatedCount = 0;
@@ -451,11 +440,11 @@ export async function generateCreativePack(adSpec, options = {}) {
 
     console.log(`[NanoBanana] 🚀 Engine v5.0 — AI Creative Director`);
     console.log(`[NanoBanana] Product: "${adSpec.productName}" | Industry: ${adSpec.industry} (${industryKey})`);
-    console.log(`[NanoBanana] Image Gen: ${geminiReady ? GEMINI_IMAGE_MODEL : 'OpenAI Fallback'}`);
+    console.log(`[NanoBanana] Image Gen: ${GEMINI_IMAGE_MODEL}`);
 
     const creativePack = {
         concepts: [],
-        engine: geminiReady ? 'gemini_image' : 'openai_gpt_image_1',
+        engine: 'gemini_image',
         industry: industryKey,
         stats: { total: totalImages, generated: 0, failed: 0, aiBriefs: 0, fallbacks: 0 },
     };
@@ -468,10 +457,8 @@ export async function generateCreativePack(adSpec, options = {}) {
         for (const formatKey of formats) {
             if (!META_FORMATS[formatKey]) continue;
             const variation = getVariationSeeds(conceptIndex);
-            const briefPromise = geminiReady
-                ? generateCreativeBrief(adSpec, conceptType, formatKey, variation)
-                    .catch(err => { console.warn(`[NanoBanana] Brief failed for ${conceptType.key}/${formatKey}: ${err.message}`); return null; })
-                : Promise.resolve(null);
+            const briefPromise = generateCreativeBrief(adSpec, conceptType, formatKey, variation)
+                .catch(err => { console.warn(`[NanoBanana] Brief failed for ${conceptType.key}/${formatKey}: ${err.message}`); return null; });
             briefJobs.push({ conceptIndex, conceptType, formatKey, briefPromise });
         }
     }
@@ -535,50 +522,19 @@ export async function generateCreativePack(adSpec, options = {}) {
 
             for (let attempt = 0; attempt <= maxRetries; attempt++) {
                 try {
-                    if (geminiReady) {
-                        const buffer = await generateWithGemini(prompt, formatKey, adSpec.productImageUrl);
-                        imageResult = {
-                            buffer,
-                            width: formatSpec.width,
-                            height: formatSpec.height,
-                            format: 'png',
-                            engine: 'gemini_image',
-                            usedAiBrief: !!brief,
-                        };
-                    } else {
-                        const result = await generateWithOpenAI(prompt, formatKey);
-                        imageResult = {
-                            buffer: result.imageBuffer || Buffer.from(result.b64 || '', 'base64'),
-                            dataUrl: result.imageDataUrl,
-                            width: formatSpec.width,
-                            height: formatSpec.height,
-                            format: 'png',
-                            engine: 'openai_gpt_image_1',
-                            usedAiBrief: !!brief,
-                        };
-                    }
+                    const buffer = await generateWithGemini(prompt, formatKey, adSpec.productImageUrl);
+                    imageResult = {
+                        buffer,
+                        width: formatSpec.width,
+                        height: formatSpec.height,
+                        format: 'png',
+                        engine: 'gemini_image',
+                        usedAiBrief: !!brief,
+                    };
                     break;
                 } catch (err) {
                     lastError = err;
-                    console.warn(`[NanoBanana] ${conceptType.name}/${formatKey} attempt ${attempt + 1} failed: ${err.message}`);
-
-                    if (attempt === maxRetries - 1 && geminiReady) {
-                        console.log(`[NanoBanana] Last retry: switching to OpenAI fallback`);
-                        try {
-                            const result = await generateWithOpenAI(prompt, formatKey);
-                            imageResult = {
-                                buffer: result.imageBuffer || Buffer.from(result.b64 || '', 'base64'),
-                                width: formatSpec.width,
-                                height: formatSpec.height,
-                                format: 'png',
-                                engine: 'openai_gpt_image_1_fallback',
-                                usedAiBrief: !!brief,
-                            };
-                            break;
-                        } catch (fallbackErr) {
-                            lastError = fallbackErr;
-                        }
-                    }
+                    console.warn(`[NanoBanana] ${conceptType.name}/${formatKey} attempt ${attempt + 1}/${maxRetries + 1} failed: ${err.message}`);
                 }
             }
 
@@ -638,15 +594,15 @@ export async function generateSingleAd(params) {
         brandKit,
     };
 
-    const geminiReady = isGeminiAvailable();
+    if (!isGeminiAvailable()) {
+        throw new Error('GEMINI_API_KEY not configured — cannot generate images');
+    }
+
     const conceptType = CONCEPT_TYPES[0]; // Lifestyle In-Use for single ads
     const variation = getVariationSeeds(0);
 
     // Phase 1: AI Creative Director
-    let brief = null;
-    if (geminiReady) {
-        brief = await generateCreativeBrief(adSpec, conceptType, format, variation);
-    }
+    const brief = await generateCreativeBrief(adSpec, conceptType, format, variation);
 
     // Phase 2: Prompt Assembly
     const prompt = buildCreativePrompt({
@@ -657,18 +613,9 @@ export async function generateSingleAd(params) {
         brandKit: brandKit || {},
     });
 
-    // Image Generation
-    let buffer;
-    let engine;
-
-    if (geminiReady) {
-        buffer = await generateWithGemini(prompt, format, productImageUrl);
-        engine = 'gemini_image';
-    } else {
-        const result = await generateWithOpenAI(prompt, format);
-        buffer = Buffer.from(result.b64 || '', 'base64');
-        engine = 'openai_gpt_image_1';
-    }
+    // Image Generation — 100% Gemini
+    const buffer = await generateWithGemini(prompt, format, productImageUrl);
+    const engine = 'gemini_image';
 
     return {
         buffer,
@@ -678,7 +625,7 @@ export async function generateSingleAd(params) {
             industry: resolveIndustry(industry),
             concept: conceptType.name,
             format,
-            model: geminiReady ? GEMINI_IMAGE_MODEL : 'gpt-image-1',
+            model: GEMINI_IMAGE_MODEL,
             briefScene: brief?.scene?.substring(0, 100) || 'fallback preset',
         },
     };
