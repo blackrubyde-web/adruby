@@ -32,7 +32,7 @@ export function GettingStartedChecklist({ steps }: GettingStartedChecklistProps)
                     <PartyPopper className="w-5 h-5 text-green-500 shrink-0" />
                     <div className="flex-1">
                         <span className="text-sm font-semibold text-foreground">Alle Schritte abgeschlossen!</span>
-                        <span className="text-xs text-muted-foreground ml-2">Du bist startklar 🚀</span>
+                        <span className="text-xs text-muted-foreground ml-2">Du bist startklar</span>
                     </div>
                     <Badge variant="secondary" className="text-xs">{completedSteps}/{totalSteps}</Badge>
                 </CardContent>
@@ -68,9 +68,9 @@ export function GettingStartedChecklist({ steps }: GettingStartedChecklistProps)
                 </div>
 
                 {/* Progress Bar — always visible */}
-                <div className="h-2 bg-muted rounded-full overflow-hidden mb-4">
+                <div className="h-1.5 bg-muted rounded-full overflow-hidden mb-4">
                     <div
-                        className="h-full bg-gradient-to-r from-primary to-rose-500 transition-all duration-500"
+                        className="h-full bg-primary transition-all duration-500"
                         style={{ width: `${progressPercentage}%` }}
                     />
                 </div>
@@ -123,6 +123,6 @@ export function GettingStartedChecklist({ steps }: GettingStartedChecklistProps)
                     </div>
                 )}
             </CardContent>
-        </Card>
+        </Card >
     );
 }

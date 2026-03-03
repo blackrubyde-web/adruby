@@ -310,17 +310,12 @@ export function OverviewPage({ onNavigate }: OverviewPageProps) {
         </Suspense>
 
         {/* Top Kampagne */}
-        <Card variant="glass" className="hover:border-primary/20 hover:-translate-y-0.5 hover:shadow-lg transition-all duration-300">
+        <Card className="border-border/50 hover:border-border transition-colors">
           <CardContent className="p-5">
             <div className="flex items-center justify-between mb-3">
-              <div className="flex items-center gap-2">
-                <div className="h-8 w-8 rounded-lg bg-green-500/10 border border-green-500/20 flex items-center justify-center">
-                  <Trophy className="w-4 h-4 text-green-600" />
-                </div>
-                <div>
-                  <h3 className="text-sm font-semibold text-foreground">Top Kampagne</h3>
-                  <p className="text-[11px] text-muted-foreground">Höchster ROAS (24h)</p>
-                </div>
+              <div>
+                <h3 className="text-sm font-semibold text-foreground">Top Kampagne</h3>
+                <p className="text-[11px] text-muted-foreground">Höchster ROAS</p>
               </div>
             </div>
             <div className="text-base font-bold text-foreground mb-3 truncate">{topCampaign.name}</div>
@@ -350,17 +345,12 @@ export function OverviewPage({ onNavigate }: OverviewPageProps) {
         </Card>
 
         {/* Bestes Creative */}
-        <Card variant="glass" className="hover:border-primary/20 hover:-translate-y-0.5 hover:shadow-lg transition-all duration-300">
+        <Card className="border-border/50 hover:border-border transition-colors">
           <CardContent className="p-5">
             <div className="flex items-center justify-between mb-3">
-              <div className="flex items-center gap-2">
-                <div className="h-8 w-8 rounded-lg bg-primary/10 border border-primary/20 flex items-center justify-center">
-                  <Palette className="w-4 h-4 text-primary" />
-                </div>
-                <div>
-                  <h3 className="text-sm font-semibold text-foreground">Bestes Creative</h3>
-                  <p className="text-[11px] text-muted-foreground">Höchster AI Score</p>
-                </div>
+              <div>
+                <h3 className="text-sm font-semibold text-foreground">Bestes Creative</h3>
+                <p className="text-[11px] text-muted-foreground">Höchster AI Score</p>
               </div>
             </div>
             <div className="text-base font-bold text-foreground mb-3 truncate">{bestCreative.name}</div>
@@ -408,9 +398,6 @@ export function OverviewPage({ onNavigate }: OverviewPageProps) {
                 <CardTitle className="text-base">Nächste Schritte</CardTitle>
                 <CardDescription>Deine wichtigsten Aufgaben</CardDescription>
               </div>
-              <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center">
-                <ListChecks className="w-4 h-4 text-primary" />
-              </div>
             </div>
           </CardHeader>
           <CardContent className="space-y-2">
@@ -420,7 +407,7 @@ export function OverviewPage({ onNavigate }: OverviewPageProps) {
                 className="flex items-center gap-3 rounded-lg border border-border/50 bg-background/50 p-3 hover:bg-background/80 transition-colors group cursor-pointer"
                 onClick={item.onClick}
               >
-                <div className="h-7 w-7 rounded-lg bg-primary/10 border border-primary/10 flex items-center justify-center shrink-0">
+                <div className="shrink-0">
                   {item.icon}
                 </div>
                 <div className="flex-1 min-w-0">

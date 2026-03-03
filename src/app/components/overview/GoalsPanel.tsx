@@ -113,9 +113,6 @@ export function GoalsPanel({ kpis }: GoalsPanelProps) {
                             <CardTitle className="text-base">Ziele</CardTitle>
                             <CardDescription>Budget & ROAS-Ziele</CardDescription>
                         </div>
-                        <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center">
-                            <ShieldCheck className="w-4 h-4 text-primary" />
-                        </div>
                     </div>
                 </CardHeader>
                 <CardContent className="space-y-4">
