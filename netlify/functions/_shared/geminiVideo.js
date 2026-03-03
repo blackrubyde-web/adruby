@@ -208,7 +208,7 @@ export async function generateVideoWithVeo(config) {
             config: {
                 aspectRatio,
                 resolution,
-                durationSeconds: String(durationSeconds),
+                durationSeconds: parseInt(durationSeconds, 10),
                 personGeneration,
             },
         };
