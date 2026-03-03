@@ -60,10 +60,10 @@ export function CampaignsPage() {
       if (!res?.ok) {
         throw new Error('Meta action failed');
       }
-      toast.success(`Campaign ${action} successful`);
+      toast.success(`Kampagne ${action === 'pause' ? 'pausiert' : action === 'resume' ? 'fortgesetzt' : action === 'duplicate' ? 'dupliziert' : 'gelöscht'}`);
       refresh();
     } catch (err) {
-      toast.error(`Failed to ${action} campaign`);
+      toast.error(`Kampagne konnte nicht ${action === 'delete' ? 'gelöscht' : 'aktualisiert'} werden`);
     } finally {
       setActionState(prev => ({ ...prev, [`${id}-${action}`]: false }));
     }
@@ -79,14 +79,14 @@ export function CampaignsPage() {
 
   return (
     <DashboardShell
-      title="Campaigns"
-      subtitle="Manage and optimize your Meta Ads campaigns."
+      title="Kampagnen"
+      subtitle="Verwalte und optimiere deine Meta Ads Kampagnen."
       headerChips={
         <div className="flex flex-wrap gap-2 items-center">
-          <Badge variant="outline" className="text-xs">{stats.total} Campaigns</Badge>
-          <Badge variant="outline" className="text-xs text-green-600 border-green-600/30">{stats.active} Active</Badge>
-          <Badge variant="outline" className="text-xs text-orange-600 border-orange-600/30">{stats.paused} Paused</Badge>
-          <Badge variant="outline" className="text-xs">{formatCurrency(stats.totalSpend)} Spend</Badge>
+          <Badge variant="outline" className="text-xs">{stats.total} Kampagnen</Badge>
+          <Badge variant="outline" className="text-xs text-green-600 border-green-600/30">{stats.active} Aktiv</Badge>
+          <Badge variant="outline" className="text-xs text-orange-600 border-orange-600/30">{stats.paused} Pausiert</Badge>
+          <Badge variant="outline" className="text-xs">{formatCurrency(stats.totalSpend)} Ausgaben</Badge>
         </div>
       }
       headerActions={
@@ -104,7 +104,7 @@ export function CampaignsPage() {
           <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
           <input
             type="text"
-            placeholder="Search campaigns..."
+            placeholder="Kampagnen suchen..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="w-full pl-11 pr-4 py-2.5 bg-muted/30 border border-border/50 rounded-xl text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 transition-all placeholder:text-muted-foreground"
@@ -122,7 +122,7 @@ export function CampaignsPage() {
                 : 'text-muted-foreground hover:text-foreground hover:bg-background/50'
                 }`}
             >
-              {status === 'all' ? 'All' : status.charAt(0).toUpperCase() + status.slice(1)}
+              {status === 'all' ? 'Alle' : status === 'active' ? 'Aktiv' : status === 'paused' ? 'Pausiert' : 'Abgeschlossen'}
             </button>
           ))}
         </div>
@@ -161,15 +161,15 @@ export function CampaignsPage() {
             <table className="w-full">
               <thead>
                 <tr className="border-b border-border/30 bg-muted/5">
-                  <th className="text-left p-4 text-sm font-semibold text-muted-foreground">Campaign</th>
+                  <th className="text-left p-4 text-sm font-semibold text-muted-foreground">Kampagne</th>
                   <th className="text-left p-4 text-sm font-semibold text-muted-foreground">Status</th>
-                  <th className="text-right p-4 text-sm font-semibold text-muted-foreground">Spend</th>
-                  <th className="text-right p-4 text-sm font-semibold text-muted-foreground">Impressions</th>
-                  <th className="text-right p-4 text-sm font-semibold text-muted-foreground">Clicks</th>
+                  <th className="text-right p-4 text-sm font-semibold text-muted-foreground">Ausgaben</th>
+                  <th className="text-right p-4 text-sm font-semibold text-muted-foreground">Impressionen</th>
+                  <th className="text-right p-4 text-sm font-semibold text-muted-foreground">Klicks</th>
                   <th className="text-right p-4 text-sm font-semibold text-muted-foreground">CTR</th>
                   <th className="text-right p-4 text-sm font-semibold text-muted-foreground">ROAS</th>
                   <th className="text-right p-4 text-sm font-semibold text-muted-foreground">Conversions</th>
-                  <th className="text-right p-4 text-sm font-semibold text-muted-foreground">Actions</th>
+                  <th className="text-right p-4 text-sm font-semibold text-muted-foreground">Aktionen</th>
                 </tr>
               </thead>
               <tbody>
@@ -239,7 +239,7 @@ export function CampaignsPage() {
                               className="h-8 w-8 hover:text-orange-500"
                               onClick={() => handleAction(campaign, 'pause')}
                               disabled={isBusy(campaign.id, 'pause')}
-                              title="Pause"
+                              title="Pausieren"
                             >
                               <Pause className="w-4 h-4" />
                             </Button>
@@ -250,7 +250,7 @@ export function CampaignsPage() {
                               className="h-8 w-8 hover:text-green-500"
                               onClick={() => handleAction(campaign, 'resume')}
                               disabled={isBusy(campaign.id, 'resume')}
-                              title="Resume"
+                              title="Fortsetzen"
                             >
                               <Play className="w-4 h-4" />
                             </Button>
@@ -262,7 +262,7 @@ export function CampaignsPage() {
                             className="h-8 w-8"
                             onClick={() => handleAction(campaign, 'duplicate')}
                             disabled={isBusy(campaign.id, 'duplicate')}
-                            title="Duplicate"
+                            title="Duplizieren"
                           >
                             <Copy className="w-4 h-4" />
                           </Button>
@@ -273,7 +273,7 @@ export function CampaignsPage() {
                             className="h-8 w-8 hover:text-destructive"
                             onClick={() => handleAction(campaign, 'delete')}
                             disabled={isBusy(campaign.id, 'delete')}
-                            title="Delete"
+                            title="Löschen"
                           >
                             <Trash2 className="w-4 h-4" />
                           </Button>
@@ -285,7 +285,7 @@ export function CampaignsPage() {
                             size="icon"
                             className="h-8 w-8"
                             onClick={() => openMetaCampaign(campaign.id)}
-                            title="View in Meta"
+                            title="In Meta öffnen"
                           >
                             <MoreVertical className="w-4 h-4" />
                           </Button>
@@ -327,11 +327,11 @@ export function CampaignsPage() {
 
               <div className="mt-4 grid grid-cols-2 gap-3 text-xs">
                 <div className="rounded-lg border border-border/30 bg-muted/30 p-3">
-                  <div className="text-muted-foreground">Spend</div>
+                  <div className="text-muted-foreground">Ausgaben</div>
                   <div className="text-foreground font-semibold">{formatCurrency(campaign.spend)}</div>
                 </div>
                 <div className="rounded-lg border border-border/30 bg-muted/30 p-3">
-                  <div className="text-muted-foreground">Impressions</div>
+                  <div className="text-muted-foreground">Impressionen</div>
                   <div className="text-foreground font-semibold">{formatCompact(campaign.impressions)}</div>
                 </div>
                 <div className="rounded-lg border border-border/30 bg-muted/30 p-3">

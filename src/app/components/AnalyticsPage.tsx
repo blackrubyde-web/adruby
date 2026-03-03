@@ -501,8 +501,8 @@ export function AnalyticsPage() {
 
   return (
     <DashboardShell
-      title="Analytics"
-      subtitle="Performance insights, trends, and campaign reporting."
+      title="Analyse"
+      subtitle="Performance-Einblicke, Trends und Kampagnenberichte."
       headerChips={
         <div className="flex flex-wrap items-center gap-2">
           <Button

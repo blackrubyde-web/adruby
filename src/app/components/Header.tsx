@@ -40,7 +40,8 @@ export const Header = memo(function Header({
   onUpgrade,
 }: HeaderProps) {
   const { theme, toggleTheme } = useTheme();
-  const credits = currentCredits ?? 2450;
+  const creditsLoading = currentCredits === undefined || currentCredits === null;
+  const credits = currentCredits ?? 0;
   const creditsLabel = maxCredits
     ? `${credits.toLocaleString()} / ${maxCredits.toLocaleString()}`
     : credits.toLocaleString();
@@ -61,7 +62,7 @@ export const Header = memo(function Header({
     >
       {/* Left Side */}
       <div className="flex items-center gap-2 sm:gap-3">
-        {/* Mobile Burger Menu - Always visible on mobile */}
+        {/* Mobile Burger Menu */}
         <button
           onClick={onToggleMobileSidebar}
           className="md:hidden w-10 h-10 rounded-xl border border-border/60 bg-muted/50 hover:bg-muted flex items-center justify-center transition-all cursor-pointer shadow-sm shrink-0"
@@ -70,11 +71,15 @@ export const Header = memo(function Header({
           <Menu className="w-5 h-5 text-foreground" style={{ width: 20, height: 20, minWidth: 20, minHeight: 20 }} />
         </button>
 
-        {/* Credits Display - Hidden on Mobile */}
-        <div className="hidden md:flex items-center gap-2 px-3 py-1.5 bg-card border border-border/50 rounded-lg hover:border-border transition-colors">
-          <Coins className="w-4 h-4 text-muted-foreground" />
-          <span className="text-sm text-foreground font-medium">{creditsLabel}</span>
-          <span className="text-xs text-muted-foreground">Credits</span>
+        {/* Credits Display - Visible on all devices */}
+        <div className="flex items-center gap-1.5 sm:gap-2 px-2 sm:px-3 py-1.5 bg-card border border-border/50 rounded-lg hover:border-border transition-colors">
+          <Coins className="w-4 h-4 text-muted-foreground shrink-0" />
+          {creditsLoading ? (
+            <div className="w-12 h-4 bg-muted/60 rounded animate-pulse" />
+          ) : (
+            <span className="text-sm text-foreground font-medium">{creditsLabel}</span>
+          )}
+          <span className="text-xs text-muted-foreground hidden sm:inline">Credits</span>
         </div>
       </div>
 

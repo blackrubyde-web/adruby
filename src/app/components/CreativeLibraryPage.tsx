@@ -5,6 +5,8 @@ import { FixedSizeGrid } from 'react-window';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { EmptyState } from './EmptyState';
+import { DashboardShell } from './layout/DashboardShell';
+import { Badge } from './ui/badge';
 import { supabase } from '../lib/supabaseClient';
 import { creativeSaveToLibrary } from '../lib/api/creative';
 import type { AdDocument, ImageLayer, StudioLayer, TextLayer } from '../types/studio';
@@ -225,7 +227,7 @@ export function CreativeLibraryPage() {
       return next;
     });
     const creative = creatives.find(c => c.id === id);
-    toast.success(creative?.isFavorite ? 'Removed from favorites' : '⭐ Added to favorites');
+    toast.success(creative?.isFavorite ? 'Aus Favoriten entfernt' : '⭐ Zu Favoriten hinzugefügt');
   }, [creatives]);
 
   const handleDelete = useCallback((id: string) => {
@@ -312,7 +314,7 @@ export function CreativeLibraryPage() {
         if (error) throw error;
         const mapped = mapCreativeRow(data, favoriteIds);
         setCreatives(prev => [mapped, ...prev]);
-        toast.success('🎉 Creative duplicated successfully!');
+        toast.success('🎉 Creative erfolgreich dupliziert!');
       } catch (err: unknown) {
         toast.error(err instanceof Error ? err.message : 'Duplicate failed');
       }
@@ -713,7 +715,7 @@ export function CreativeLibraryPage() {
   const gridGap = 24;
   const isNarrowGrid = gridWidth < 640;
   const cardWidth = isNarrowGrid ? Math.min(gridWidth, Math.max(220, gridWidth - gridGap * 2)) : 360;
-  const cardHeight = isNarrowGrid ? 480 : 520;
+  const cardHeight = isNarrowGrid ? 340 : 320;
   const gridColumnCount = Math.max(1, Math.floor((gridWidth + gridGap) / (cardWidth + gridGap)));
   const gridRowCount = Math.ceil(filteredCreatives.length / gridColumnCount);
   const gridHeight = Math.max(360, Math.min(isNarrowGrid ? 720 : 900, viewportHeight - (isNarrowGrid ? 220 : 260)));
@@ -869,7 +871,7 @@ export function CreativeLibraryPage() {
             </div>
 
             <div className="flex items-center justify-between mt-3 pt-3 border-t border-border text-xs text-muted-foreground shrink-0">
-              <span>Used in {creative.usedInCampaigns} campaigns</span>
+              <span>In {creative.usedInCampaigns} Kampagnen</span>
               <span>{creative.uploadedAt}</span>
             </div>
           </div>
@@ -879,7 +881,38 @@ export function CreativeLibraryPage() {
   };
 
   return (
-    <div className="space-y-6 px-4 sm:px-6 lg:px-8 py-6">
+    <DashboardShell
+      title="Creative Bibliothek"
+      subtitle="Verwalte und analysiere alle deine Werbemittel"
+      headerChips={
+        <div className="flex flex-wrap gap-2 items-center">
+          <Badge variant="outline" className="text-xs">{stats.total} Gesamt</Badge>
+          <Badge variant="outline" className="text-xs">{stats.images} Bilder</Badge>
+          <Badge variant="outline" className="text-xs">{stats.videos} Videos</Badge>
+          <Badge variant="outline" className="text-xs">{stats.avgROAS}x Ø ROAS</Badge>
+        </div>
+      }
+      headerActions={
+        <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+          <Button
+            onClick={handleCreateAd}
+            className="bg-gradient-to-r from-rose-500 to-red-600 text-white hover:opacity-90 gap-2"
+          >
+            <Sparkles className="w-4 h-4" />
+            Neue Ad erstellen
+          </Button>
+          <Button
+            onClick={handleUploadClick}
+            disabled={isUploading}
+            variant="outline"
+            className="border-border/60 gap-2"
+          >
+            <Upload className="w-4 h-4" />
+            {isUploading ? 'Hochladen…' : 'Hochladen'}
+          </Button>
+        </div>
+      }
+    >
       <input
         ref={fileInputRef}
         type="file"
@@ -887,61 +920,6 @@ export function CreativeLibraryPage() {
         className="hidden"
         onChange={handleFileChange}
       />
-      {/* Hero Header */}
-      <div className="backdrop-blur-xl bg-card/60 rounded-2xl border border-border/50 shadow-xl p-5 sm:p-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
-          <div>
-            <h1 className="text-2xl sm:text-3xl font-semibold text-foreground mb-2 bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">
-              Creative Library
-            </h1>
-            <p className="text-muted-foreground">
-              Manage and analyze all your ad creatives in one place
-            </p>
-          </div>
-          <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
-            <Button
-              onClick={handleCreateAd}
-              className="bg-gradient-to-r from-rose-500 to-red-600 text-white hover:opacity-90"
-            >
-              <Sparkles className="w-4 h-4 mr-2" />
-              Neue Ad erstellen
-            </Button>
-            <Button
-              onClick={handleUploadClick}
-              disabled={isUploading}
-              variant="outline"
-              className="border-border/60"
-            >
-              <Upload className="w-4 h-4 mr-2" />
-              {isUploading ? 'Uploading…' : 'Upload Creative'}
-            </Button>
-          </div>
-        </div>
-
-        {/* Stats Grid */}
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-4">
-          <div className="p-3 sm:p-4 rounded-xl bg-gradient-to-br from-primary/10 to-transparent border border-border/30">
-            <div className="text-2xl text-foreground font-bold mb-1">{stats.total}</div>
-            <div className="text-sm text-muted-foreground">Total Creatives</div>
-          </div>
-          <div className="p-3 sm:p-4 rounded-xl bg-gradient-to-br from-blue-500/10 to-transparent border border-border/30">
-            <div className="text-2xl text-foreground font-bold mb-1">{stats.images}</div>
-            <div className="text-sm text-muted-foreground">Images</div>
-          </div>
-          <div className="p-3 sm:p-4 rounded-xl bg-gradient-to-br from-purple-500/10 to-transparent border border-border/30">
-            <div className="text-2xl text-foreground font-bold mb-1">{stats.videos}</div>
-            <div className="text-sm text-muted-foreground">Videos</div>
-          </div>
-          <div className="p-3 sm:p-4 rounded-xl bg-gradient-to-br from-green-500/10 to-transparent border border-border/30">
-            <div className="text-2xl text-foreground font-bold mb-1">{stats.carousels}</div>
-            <div className="text-sm text-muted-foreground">Carousels</div>
-          </div>
-          <div className="p-3 sm:p-4 rounded-xl bg-gradient-to-br from-orange-500/10 to-transparent border border-border/30">
-            <div className="text-2xl text-foreground font-bold mb-1">{stats.avgROAS}x</div>
-            <div className="text-sm text-muted-foreground">Avg. ROAS</div>
-          </div>
-        </div>
-      </div>
 
       {loadError && (
         <div className="p-4 rounded-xl border border-red-500/30 bg-red-500/5 text-red-600">
@@ -970,7 +948,7 @@ export function CreativeLibraryPage() {
             <Input
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search creatives by name or tags..."
+              placeholder="Creatives nach Name oder Tags suchen..."
               className="pl-10 bg-input border-border text-foreground"
             />
           </div>
@@ -986,7 +964,7 @@ export function CreativeLibraryPage() {
                   : 'bg-muted text-muted-foreground hover:bg-muted/80'
                   }`}
               >
-                {type === 'all' ? 'All' : type.charAt(0).toUpperCase() + type.slice(1)}
+                {type === 'all' ? 'Alle' : type === 'image' ? 'Bilder' : type === 'video' ? 'Videos' : 'Karussells'}
               </button>
             ))}
 
@@ -1178,6 +1156,6 @@ export function CreativeLibraryPage() {
           </Suspense>
         </div>
       )}
-    </div>
+    </DashboardShell>
   );
 }

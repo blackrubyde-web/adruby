@@ -5,9 +5,9 @@
 
 import { useState, useCallback, useEffect } from 'react';
 import {
-    Wand2, Download, Save, Globe, Upload, FileText, MessageSquare,
-    Sparkles, Image, Loader2, RefreshCw, Zap, ChevronRight,
-    CheckCircle2, AlertCircle, Store, Brain, Monitor
+    Wand2, Download, Save, Upload, FileText, MessageSquare,
+    Sparkles, Image, Loader2, RefreshCw, ChevronRight,
+    CheckCircle2, AlertCircle, Store
 } from 'lucide-react';
 import { generateAd } from '../lib/api/aibuilder';
 import { t } from '../lib/aibuilder/translations';
@@ -30,7 +30,7 @@ export function AIAdBuilderPage() {
     const { refreshProfile: _refreshProfile } = useAuthActions();
     const credits = profile?.credits ?? 0;
 
-    const [language, setLanguage] = useState<Language>('de');
+    const language: Language = 'de';
     const [mode, setMode] = useState<InputMode | 'store'>('form');
     const [step, setStep] = useState<Step>('input');
     const [loading, setLoading] = useState(false);
@@ -47,10 +47,9 @@ export function AIAdBuilderPage() {
     // Multi-variant selection
     const [selectedVariantIndex, setSelectedVariantIndex] = useState(0);
 
-    // AI Design System v3.0 (Railway with 100M+ Foreplay references)
-    const [useAIDesignSystem, setUseAIDesignSystem] = useState(true);
-    // Composite Pipeline v6.0 (100% screenshot preservation for SaaS/dashboards)
-    const [useCompositePipeline, setUseCompositePipeline] = useState(true);  // CRITICAL: TRUE for pixel-perfect screenshot preservation
+    // Pipeline flags — always enabled, no user-facing toggles needed
+    const useAIDesignSystem = true;
+    const useCompositePipeline = true;
 
     // Session key for localStorage
     const STORAGE_KEY = 'adruby_last_generated_ad';
@@ -227,58 +226,8 @@ export function AIAdBuilderPage() {
                             </div>
                         </div>
 
-                        <div className="flex items-center gap-3">
-                            {/* AI Design System Toggle */}
-                            <Button
-                                variant={useAIDesignSystem ? "default" : "outline"}
-                                size="sm"
-                                onClick={() => setUseAIDesignSystem(!useAIDesignSystem)}
-                                className={cn(
-                                    "gap-2 rounded-full transition-all",
-                                    useAIDesignSystem && "bg-gradient-to-r from-violet-600 to-purple-600 text-white border-0"
-                                )}
-                                title={language === 'de' ? 'AI Design System v3.0 mit 100M+ Referenzen' : 'AI Design System v3.0 with 100M+ references'}
-                            >
-                                <Brain className="w-4 h-4" />
-                                <span className="hidden sm:inline">
-                                    {useAIDesignSystem ? 'v3.0' : 'Classic'}
-                                </span>
-                            </Button>
-
-                            {/* v6.0 Composite Pipeline Toggle (for Screenshots/SaaS) */}
-                            <Button
-                                variant={useCompositePipeline ? "default" : "outline"}
-                                size="sm"
-                                onClick={() => setUseCompositePipeline(!useCompositePipeline)}
-                                className={cn(
-                                    "gap-2 rounded-full transition-all",
-                                    useCompositePipeline && "bg-gradient-to-r from-emerald-600 to-teal-600 text-white border-0"
-                                )}
-                                title={language === 'de' ? 'v6.0 Pixel-Perfect Mode für Screenshots/Dashboards' : 'v6.0 Pixel-Perfect Mode for Screenshots/Dashboards'}
-                            >
-                                <Monitor className="w-4 h-4" />
-                                <span className="hidden sm:inline">
-                                    {useCompositePipeline ? 'Pixel-Perfect' : 'Standard'}
-                                </span>
-                            </Button>
-
-                            {/* Credits Badge */}
-                            <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 bg-primary/10 rounded-full text-sm">
-                                <Zap className="w-4 h-4 text-primary" />
-                                <span className="font-medium">{credits} Credits</span>
-                            </div>
-
-                            {/* Language Toggle */}
-                            <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => setLanguage(language === 'de' ? 'en' : 'de')}
-                                className="gap-2 rounded-full"
-                            >
-                                <Globe className="w-4 h-4" />
-                                {language.toUpperCase()}
-                            </Button>
-                        </div>
+                        {/* Clean header — no tech toggles, no duplicated controls */}
+                        <div className="flex items-center gap-3" />
                     </div>
                 </div>
             </div>
@@ -403,7 +352,7 @@ export function AIAdBuilderPage() {
                                             "text-xs hidden sm:block",
                                             mode === 'store' ? "text-white/70" : "text-muted-foreground"
                                         )}>
-                                            {language === 'de' ? 'Shopify scrapen' : 'Scrape Shopify'}
+                                            {language === 'de' ? 'Produkte importieren' : 'Import products'}
                                         </div>
                                     </div>
                                     {mode === 'store' && (

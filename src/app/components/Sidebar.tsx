@@ -1,6 +1,6 @@
 import { memo, useCallback, useState } from 'react';
 import { motion } from 'motion/react';
-import { BarChart3, Layers, Brain, LogOut, X, BarChart2, Gift, BookOpen, Palette, Shield, Wand2, type LucideIcon } from 'lucide-react';
+import { BarChart3, Layers, Brain, LogOut, X, BarChart2, Gift, BookOpen, Palette, Shield, Wand2, User, Settings, type LucideIcon } from 'lucide-react';
 import { PageType } from '../App';
 import { useAdmin } from '../contexts/AdminContext';
 import { cn } from '../lib/utils';
@@ -33,6 +33,8 @@ const CORE_WORKFLOW: NavItem[] = [
 ];
 
 const ACCOUNT_ITEMS: NavItem[] = [
+  { icon: User, label: 'Profil', page: 'profile' },
+  { icon: Settings, label: 'Einstellungen', page: 'settings' },
   { icon: Gift, label: 'Affiliate', page: 'affiliate' },
 ];
 
@@ -177,7 +179,7 @@ export const Sidebar = memo(function Sidebar({
             {showLabels && (
               <div className="px-3 mb-2 animate-in fade-in slide-in-from-left-2 duration-300">
                 <span className="text-[10px] font-bold text-muted-foreground/70 uppercase tracking-widest">
-                  Workflow
+                  Tools
                 </span>
               </div>
             )}
