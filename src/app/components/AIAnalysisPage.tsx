@@ -84,7 +84,7 @@ export function AIAnalysisPage() {
   const toggleAutopilot = useCallback(async () => {
     const next = !autopilotEnabled;
     setAutopilotEnabled(next);
-    toast.success(next ? 'Autopilot active & optimizing' : 'Autopilot paused');
+    toast.success(next ? 'Autopilot aktiv & optimiert' : 'Autopilot pausiert');
     try {
       const { data: session } = await supabase.auth.getSession();
       const uid = session.session?.user?.id;
@@ -539,7 +539,7 @@ export function AIAnalysisPage() {
             <Sliders className="w-4 h-4 text-muted-foreground" /> Strategy Config
           </Button>
           <Button variant="outline" size="sm" onClick={isSyncing ? cancelSync : runSync} className="gap-2 w-full sm:w-auto">
-            <RefreshCw className={`w-4 h-4 ${isSyncing ? 'animate-spin' : ''}`} /> {isSyncing ? 'Cancel Sync' : 'Sync Data'}
+            <RefreshCw className={`w-4 h-4 ${isSyncing ? 'animate-spin' : ''}`} /> {isSyncing ? 'Sync abbrechen' : 'Daten synchronisieren'}
           </Button>
           <Button variant="outline" size="sm" onClick={handleExportReport} className="gap-2 w-full sm:w-auto">
             <Download className="w-4 h-4" /> Export Report
@@ -548,7 +548,7 @@ export function AIAnalysisPage() {
             {isAnalyzingAI ? 'Analyzing…' : 'Run AI Analysis'}
           </Button>
           <Button size="sm" onClick={applyRecommendations} disabled={isApplying || !Object.keys(aiAnalysisCache).length} className="bg-green-600 hover:bg-green-700 text-white gap-2 w-full sm:w-auto">
-            {isApplying ? 'Applying…' : 'Apply Recommendations'}
+            {isApplying ? 'Wird angewendet…' : 'Empfehlungen anwenden'}
           </Button>
         </div>
       }

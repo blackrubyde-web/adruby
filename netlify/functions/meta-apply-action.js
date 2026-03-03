@@ -97,9 +97,23 @@ export async function handler(event) {
 
   initTelemetry();
 
-  const auth = await requireUserId(event);
-  if (!auth.ok) return auth.response;
-  const userId = auth.userId;
+  // Service-auth for internal calls (auto-scale cron)
+  const serviceSecret = event.headers?.["x-service-secret"] || event.headers?.["X-Service-Secret"];
+  const autoScaleSecret = process.env.AUTOSCALE_SECRET;
+  let userId;
+
+  if (autoScaleSecret && serviceSecret === autoScaleSecret) {
+    // Internal service call — trust userId from body
+    let body;
+    try { body = JSON.parse(event.body || "{}"); } catch { body = {}; }
+    userId = body.userId;
+    if (!userId) return badRequest("Missing userId in service-auth call");
+  } else {
+    // Normal user auth via Bearer token
+    const auth = await requireUserId(event);
+    if (!auth.ok) return auth.response;
+    userId = auth.userId;
+  }
 
   const entitlement = await requireActiveSubscription(userId);
   if (!entitlement.ok) return entitlement.response;

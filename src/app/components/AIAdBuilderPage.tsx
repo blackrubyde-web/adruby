@@ -1,7 +1,7 @@
 /**
- * AI Ad Builder - Main Page Component (Premium V3)
- * Mode cards with icons & descriptions, animated upload zone,
- * theater generating mode, credit counter, ambient glow.
+ * AI Ad Builder — Main Page (Visual Overhaul V4)
+ * Premium header, pill mode tabs, dark canvas preview panel,
+ * theater generating mode, depth everywhere.
  */
 
 import { useState, useCallback, useEffect } from 'react';
@@ -29,35 +29,11 @@ import type { Language, InputMode, AdGenerationResult, FormInputData, FreeTextIn
 
 type Step = 'input' | 'generating' | 'result';
 
-/* ── Mode Card Config ──────────────────────────────── */
-const MODE_CARDS = [
-    {
-        id: 'form' as const,
-        icon: FileText,
-        title: 'Formular',
-        description: 'Geführte Eingabe mit Feldern',
-        gradient: 'from-primary/20 to-red-500/10',
-        borderColor: 'border-primary/40',
-        iconColor: 'text-primary',
-    },
-    {
-        id: 'free' as const,
-        icon: MessageSquare,
-        title: 'Freitext',
-        description: 'Beschreibe deine Ad frei',
-        gradient: 'from-violet-500/20 to-fuchsia-500/10',
-        borderColor: 'border-violet-500/40',
-        iconColor: 'text-violet-500',
-    },
-    {
-        id: 'store' as const,
-        icon: Store,
-        title: 'Shop Import',
-        description: 'Produkte aus deinem Store',
-        gradient: 'from-emerald-500/20 to-teal-500/10',
-        borderColor: 'border-emerald-500/40',
-        iconColor: 'text-emerald-500',
-    },
+/* ── Mode Tab Config ──────────────────────────────── */
+const MODE_TABS = [
+    { id: 'form' as const, icon: FileText, label: 'Formular' },
+    { id: 'free' as const, icon: MessageSquare, label: 'Freitext' },
+    { id: 'store' as const, icon: Store, label: 'Shop Import' },
 ] as const;
 
 /* ── Theater Pipeline Steps ────────────────────────── */
@@ -298,121 +274,93 @@ export function AIAdBuilderPage() {
 
     return (
         <DashboardShell hideHero>
-            {/* ── Mode Cards ─────────────────────────────────── */}
-            <div className="flex items-center gap-3 flex-wrap">
-                <div className="flex items-center gap-2">
-                    {MODE_CARDS.map((card) => {
-                        const Icon = card.icon;
-                        const isActive = mode === card.id;
-                        return (
-                            <button
-                                key={card.id}
-                                onClick={() => setMode(card.id)}
-                                className={cn(
-                                    "relative flex items-center gap-3 px-4 py-3 rounded-xl border text-left transition-all duration-300 group cursor-pointer",
-                                    isActive
-                                        ? `bg-gradient-to-br ${card.gradient} ${card.borderColor} shadow-lg shadow-black/5`
-                                        : "bg-card/60 border-border/30 hover:border-border/60 hover:bg-card/80"
-                                )}
-                            >
-                                {/* Active indicator bar */}
-                                {isActive && (
-                                    <div className={cn(
-                                        "absolute left-0 top-2 bottom-2 w-0.5 rounded-full bg-gradient-to-b",
-                                        card.id === 'form' ? "from-primary to-red-500" :
-                                            card.id === 'free' ? "from-violet-500 to-fuchsia-500" :
-                                                "from-emerald-500 to-teal-500"
-                                    )} />
-                                )}
-                                <div className={cn(
-                                    "w-8 h-8 rounded-lg flex items-center justify-center shrink-0 transition-all",
-                                    isActive
-                                        ? `bg-background/80 ${card.iconColor}`
-                                        : "bg-muted/50 text-muted-foreground group-hover:text-foreground"
-                                )}>
-                                    <Icon className="w-4 h-4" />
-                                </div>
-                                <div className="min-w-0">
-                                    <div className={cn(
-                                        "text-xs font-semibold transition-colors",
-                                        isActive ? "text-foreground" : "text-muted-foreground group-hover:text-foreground"
-                                    )}>
-                                        {card.title}
-                                    </div>
-                                    <div className="text-[11px] text-muted-foreground/70 truncate">
-                                        {card.description}
-                                    </div>
-                                </div>
-                            </button>
-                        );
-                    })}
+            {/* ═══ Premium Header ═══════════════════════════════ */}
+            <div className="builder-header">
+                <div>
+                    <h1 className="builder-header-title">AI Ad Builder</h1>
+                    <p className="builder-header-subtitle">
+                        Erstelle hochkonvertierende Ads in Sekunden
+                    </p>
                 </div>
-
-                {/* Status badge — only show "Fertig" when result ready */}
-                <div className="ml-auto flex items-center gap-2">
+                <div className="flex items-center gap-3">
                     {step === 'result' && (
-                        <Badge variant="secondary" className="px-2.5 py-1 text-xs bg-green-500/10 text-green-600 border-green-500/20 gap-1">
-                            <CheckCircle2 className="w-3 h-3" />
+                        <Badge className="px-3 py-1.5 bg-emerald-500/10 text-emerald-600 border-emerald-500/20 gap-1.5 text-xs font-medium">
+                            <CheckCircle2 className="w-3.5 h-3.5" />
                             Fertig
                         </Badge>
                     )}
                 </div>
             </div>
 
-            {/* ── Main Content — 2/5 Input + 3/5 Preview ─────── */}
-            <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
+            {/* ═══ Mode Tabs — Pill Style ═══════════════════════ */}
+            <div className="mode-tab-bar">
+                {MODE_TABS.map((tab) => {
+                    const Icon = tab.icon;
+                    const isActive = mode === tab.id;
+                    return (
+                        <button
+                            key={tab.id}
+                            onClick={() => setMode(tab.id)}
+                            className={cn("mode-tab", isActive && "mode-tab-active")}
+                        >
+                            <Icon className="w-4 h-4" />
+                            {tab.label}
+                        </button>
+                    );
+                })}
+            </div>
 
-                {/* LEFT: Input Column (2/5) */}
-                <div className="lg:col-span-2 space-y-4">
+            {/* ═══ Main Grid — Input + Canvas ═══════════════════ */}
+            <div className="grid grid-cols-1 lg:grid-cols-5 gap-6 items-start">
 
-                    {/* Product Image Upload — Animated Gradient Border */}
+                {/* ── LEFT: Input Column (2/5) ─────────────── */}
+                <div className="lg:col-span-2 input-panel">
+
+                    {/* Product Image Upload */}
                     {mode !== 'store' && (
                         <div className="upload-zone-gradient">
-                            <Card variant="glass" className="relative">
-                                <CardContent className="p-4">
-                                    <div className="flex items-center gap-2 mb-3">
-                                        <Image className="w-4 h-4 text-primary" />
-                                        <h3 className="text-sm font-semibold">Produktbild</h3>
-                                        <span className="text-[10px] px-1.5 py-0.5 bg-primary/10 text-primary rounded-full">
-                                            Empfohlen
-                                        </span>
-                                    </div>
+                            <div className="input-section">
+                                <div className="input-section-header">
+                                    <Image className="w-4 h-4 text-primary" />
+                                    <span className="text-sm font-semibold">Produktbild</span>
+                                    <span className="ml-auto text-[10px] px-2 py-0.5 bg-primary/10 text-primary rounded-full font-medium">
+                                        Empfohlen
+                                    </span>
+                                </div>
+                                <div className="input-section-body">
                                     {productImagePreview ? (
-                                        <div className="relative group rounded-lg overflow-hidden">
+                                        <div className="relative group rounded-xl overflow-hidden">
                                             <img
                                                 src={productImagePreview}
                                                 alt="Produkt"
-                                                className="w-full h-36 object-contain bg-black/20 transition-transform duration-300 group-hover:scale-105"
+                                                className="w-full h-40 object-contain bg-black/5 dark:bg-white/5 transition-transform duration-500 group-hover:scale-105"
                                             />
-                                            {/* Dark overlay on hover */}
-                                            <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-colors duration-300 flex items-center justify-center">
+                                            <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-all duration-300 flex items-center justify-center backdrop-blur-0 group-hover:backdrop-blur-[2px]">
                                                 <button
                                                     onClick={removeImage}
-                                                    className="p-2 bg-destructive text-white rounded-full opacity-0 group-hover:opacity-100 transition-all duration-300 scale-75 group-hover:scale-100 shadow-lg"
+                                                    className="p-2.5 bg-white/90 dark:bg-black/70 text-destructive rounded-xl opacity-0 group-hover:opacity-100 transition-all duration-300 scale-75 group-hover:scale-100 shadow-xl"
                                                 >
                                                     <X className="w-4 h-4" />
                                                 </button>
                                             </div>
-                                            {/* Glow ring */}
-                                            <div className="absolute inset-0 rounded-lg ring-1 ring-primary/20 group-hover:ring-primary/40 transition-all pointer-events-none" />
                                         </div>
                                     ) : (
                                         <label
-                                            className="relative flex flex-col items-center justify-center w-full h-28 rounded-xl cursor-pointer
-                                                       bg-gradient-to-br from-muted/30 to-muted/10
-                                                       border border-dashed border-border/40
-                                                       hover:border-primary/50 hover:shadow-[0_0_20px_rgba(var(--primary-rgb,239,68,68),0.1)]
-                                                       transition-all duration-300 group/upload"
+                                            className="relative flex flex-col items-center justify-center w-full h-32 rounded-xl cursor-pointer
+                                                       bg-gradient-to-br from-muted/40 to-muted/10
+                                                       border-2 border-dashed border-border/30
+                                                       hover:border-primary/40 hover:from-primary/5 hover:to-red-500/5
+                                                       transition-all duration-400 group/upload"
                                             onDrop={handleDrop}
                                             onDragOver={(e) => e.preventDefault()}
                                         >
-                                            <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center mb-2 group-hover/upload:bg-primary/20 group-hover/upload:scale-110 transition-all duration-300">
-                                                <Upload className="w-5 h-5 text-primary/70 group-hover/upload:text-primary transition-colors" />
+                                            <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-primary/10 to-red-500/5 flex items-center justify-center mb-3 group-hover/upload:from-primary/20 group-hover/upload:to-red-500/10 group-hover/upload:scale-110 transition-all duration-300">
+                                                <Upload className="w-5 h-5 text-primary/60 group-hover/upload:text-primary transition-colors" />
                                             </div>
-                                            <span className="text-xs text-muted-foreground group-hover/upload:text-foreground transition-colors">
-                                                Bild hochladen oder ziehen
+                                            <span className="text-xs font-medium text-muted-foreground group-hover/upload:text-foreground transition-colors">
+                                                Bild hochladen oder hierher ziehen
                                             </span>
-                                            <span className="text-[10px] text-muted-foreground/50 mt-0.5">PNG, JPG bis 5MB</span>
+                                            <span className="text-[10px] text-muted-foreground/40 mt-1">PNG, JPG bis 5MB</span>
                                             <input
                                                 type="file"
                                                 className="hidden"
@@ -421,12 +369,12 @@ export function AIAdBuilderPage() {
                                             />
                                         </label>
                                     )}
-                                </CardContent>
-                            </Card>
+                                </div>
+                            </div>
                         </div>
                     )}
 
-                    {/* Form/Free/Store Content */}
+                    {/* Form / Free / Store Content */}
                     {mode === 'form' ? (
                         <FormInputMode
                             language={language}
@@ -440,8 +388,8 @@ export function AIAdBuilderPage() {
                             loading={loading}
                         />
                     ) : mode === 'store' && !showCarouselBuilder ? (
-                        <Card variant="glass">
-                            <CardContent className="p-4">
+                        <div className="input-section">
+                            <div className="input-section-body">
                                 <StoreImporter
                                     onProductsSelected={(products, copies) => {
                                         setImportedProducts(products);
@@ -452,7 +400,6 @@ export function AIAdBuilderPage() {
                                             toast.error('Keine Produkte ausgewählt');
                                             return;
                                         }
-                                        // Feed first product into form mode and trigger generation
                                         const p = products[0];
                                         const formData: FormInputData = {
                                             productName: p.title,
@@ -463,7 +410,6 @@ export function AIAdBuilderPage() {
                                             goal: 'sales',
                                             template: 'default',
                                         };
-                                        // If product has an image, set it as preview
                                         if (p.images?.[0]?.src) {
                                             setProductImagePreview(p.images[0].src);
                                         }
@@ -476,163 +422,156 @@ export function AIAdBuilderPage() {
                                         setShowCarouselBuilder(true);
                                     }}
                                 />
-                            </CardContent>
-                        </Card>
+                            </div>
+                        </div>
                     ) : mode === 'store' && showCarouselBuilder ? (
-                        <Card variant="glass">
-                            <CardContent className="p-4">
-                                <div className="mb-3 flex items-center justify-between">
-                                    <h3 className="text-sm font-semibold text-foreground">Carousel Builder</h3>
-                                    <Button
-                                        variant="outline"
-                                        size="sm"
-                                        className="text-xs h-7"
-                                        onClick={() => setShowCarouselBuilder(false)}
-                                    >
-                                        ← Zurück
-                                    </Button>
-                                </div>
+                        <div className="input-section">
+                            <div className="input-section-header">
+                                <span className="text-sm font-semibold">Carousel Builder</span>
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    className="ml-auto text-xs h-7"
+                                    onClick={() => setShowCarouselBuilder(false)}
+                                >
+                                    ← Zurück
+                                </Button>
+                            </div>
+                            <div className="input-section-body">
                                 <CarouselBuilder
                                     products={importedProducts}
                                     copies={importedCopies}
                                     onSave={() => { toast.success('Carousel gespeichert!'); }}
                                     onExport={() => { toast.success('Carousel exportiert!'); }}
                                 />
-                            </CardContent>
-                        </Card>
+                            </div>
+                        </div>
                     ) : null}
                 </div>
 
-                {/* RIGHT: Preview Column (3/5) */}
-                <div className="lg:col-span-3 space-y-4">
-                    {step === 'generating' ? (
-                        /* ── Theater Mode ─────────────────────────── */
-                        <div className="relative rounded-2xl overflow-hidden border border-border/20">
-                            {/* Frosted glass background */}
-                            <div className="absolute inset-0 bg-background/95 backdrop-blur-xl" />
-
-                            {/* Floating particles */}
-                            <div className="absolute inset-0 overflow-hidden pointer-events-none">
-                                {[...Array(6)].map((_, i) => (
-                                    <div
-                                        key={i}
-                                        className={`particle particle-${i + 1}`}
-                                        style={{
-                                            width: `${4 + Math.random() * 6}px`,
-                                            height: `${4 + Math.random() * 6}px`,
-                                            left: `${15 + Math.random() * 70}%`,
-                                            bottom: `${10 + Math.random() * 30}%`,
-                                            background: `hsl(var(--primary) / ${0.3 + Math.random() * 0.4})`,
-                                        }}
-                                    />
-                                ))}
-                            </div>
-
-                            {/* Shimmer overlay */}
-                            <div className="absolute inset-0 shimmer-bg pointer-events-none" />
-
-                            <div className="relative flex flex-col items-center justify-center min-h-[440px] p-8 text-center space-y-8">
-                                {/* Animated icon */}
-                                <div className="relative">
-                                    <div className="absolute inset-0 bg-primary/20 rounded-2xl blur-2xl animate-pulse" />
-                                    <div className="relative w-20 h-20 bg-gradient-to-br from-primary via-red-500 to-orange-500 rounded-2xl flex items-center justify-center shadow-2xl shadow-primary/20">
-                                        <Sparkles className="w-9 h-9 text-white animate-pulse" />
+                {/* ── RIGHT: Canvas Preview (3/5) ──────────── */}
+                <div className="lg:col-span-3">
+                    <div className="ad-builder-canvas">
+                        <div className="relative z-10 p-6">
+                            {step === 'generating' ? (
+                                /* ── Theater Mode ──────────────────── */
+                                <div className="flex flex-col items-center justify-center min-h-[440px] text-center space-y-8">
+                                    {/* Floating particles */}
+                                    <div className="absolute inset-0 overflow-hidden pointer-events-none">
+                                        {[...Array(6)].map((_, i) => (
+                                            <div
+                                                key={i}
+                                                className={`particle particle-${i + 1}`}
+                                                style={{
+                                                    width: `${4 + Math.random() * 6}px`,
+                                                    height: `${4 + Math.random() * 6}px`,
+                                                    left: `${15 + Math.random() * 70}%`,
+                                                    bottom: `${10 + Math.random() * 30}%`,
+                                                    background: `hsl(var(--primary) / ${0.3 + Math.random() * 0.4})`,
+                                                }}
+                                            />
+                                        ))}
                                     </div>
-                                </div>
 
-                                {/* Title */}
-                                <div>
-                                    <h3 className="font-bold text-xl bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">
-                                        KI generiert deine Ad…
-                                    </h3>
-                                    <p className="text-sm text-muted-foreground mt-2">
-                                        Dauert ca. 10–15 Sekunden
-                                    </p>
-                                </div>
+                                    {/* Shimmer overlay */}
+                                    <div className="absolute inset-0 shimmer-bg pointer-events-none rounded-2xl" />
 
-                                {/* Progress bar */}
-                                <div className="w-full max-w-sm">
-                                    <div className="h-1.5 bg-muted/30 rounded-full overflow-hidden">
-                                        <div className="h-full bg-gradient-to-r from-primary via-red-500 to-orange-500 rounded-full theater-progress-bar" />
+                                    {/* Animated icon */}
+                                    <div className="relative">
+                                        <div className="absolute inset-0 bg-primary/20 rounded-2xl blur-2xl animate-pulse" />
+                                        <div className="relative w-20 h-20 bg-gradient-to-br from-primary via-red-500 to-orange-500 rounded-2xl flex items-center justify-center shadow-2xl shadow-primary/25">
+                                            <Sparkles className="w-9 h-9 text-white animate-pulse" />
+                                        </div>
                                     </div>
-                                </div>
 
-                                {/* Step checklist */}
-                                <div className="space-y-3 w-full max-w-xs">
-                                    {PIPELINE_STEPS.map((pStep, i) => (
-                                        <div
-                                            key={i}
-                                            className="stagger-in flex items-center gap-3 text-sm"
-                                            style={{ animationDelay: `${pStep.delay}ms` }}
-                                        >
-                                            <div className={cn(
-                                                "w-6 h-6 rounded-full flex items-center justify-center text-xs shrink-0 transition-all duration-500",
-                                                completedSteps.includes(i)
-                                                    ? "bg-green-500/20 text-green-500"
-                                                    : "bg-muted/30 text-muted-foreground"
-                                            )}>
-                                                {completedSteps.includes(i) ? (
-                                                    <CheckCircle2 className="w-3.5 h-3.5" />
-                                                ) : (
-                                                    <Loader2 className="w-3 h-3 animate-spin" />
+                                    {/* Title */}
+                                    <div>
+                                        <h3 className="font-bold text-xl bg-gradient-to-r from-foreground to-foreground/60 bg-clip-text text-transparent">
+                                            KI generiert deine Ad…
+                                        </h3>
+                                        <p className="text-sm text-muted-foreground mt-2">
+                                            Dauert ca. 10–15 Sekunden
+                                        </p>
+                                    </div>
+
+                                    {/* Progress bar */}
+                                    <div className="w-full max-w-sm">
+                                        <div className="h-1.5 bg-muted/20 rounded-full overflow-hidden">
+                                            <div className="h-full bg-gradient-to-r from-primary via-red-500 to-orange-500 rounded-full theater-progress-bar" />
+                                        </div>
+                                    </div>
+
+                                    {/* Step checklist */}
+                                    <div className="space-y-3 w-full max-w-xs text-left">
+                                        {PIPELINE_STEPS.map((pStep, i) => (
+                                            <div
+                                                key={i}
+                                                className="stagger-in flex items-center gap-3 text-sm"
+                                                style={{ animationDelay: `${pStep.delay}ms` }}
+                                            >
+                                                <div className={cn(
+                                                    "w-6 h-6 rounded-full flex items-center justify-center text-xs shrink-0 transition-all duration-500",
+                                                    completedSteps.includes(i)
+                                                        ? "bg-green-500/20 text-green-500"
+                                                        : "bg-muted/20 text-muted-foreground"
+                                                )}>
+                                                    {completedSteps.includes(i) ? (
+                                                        <CheckCircle2 className="w-3.5 h-3.5" />
+                                                    ) : (
+                                                        <Loader2 className="w-3 h-3 animate-spin" />
+                                                    )}
+                                                </div>
+                                                <span className={cn(
+                                                    "transition-colors duration-300",
+                                                    completedSteps.includes(i)
+                                                        ? "text-foreground"
+                                                        : "text-muted-foreground"
+                                                )}>
+                                                    {pStep.icon} {pStep.label}
+                                                </span>
+                                                {completedSteps.includes(i) && (
+                                                    <span className="ml-auto text-[10px] text-green-500/70">✓</span>
                                                 )}
                                             </div>
-                                            <span className={cn(
-                                                "transition-colors duration-300",
-                                                completedSteps.includes(i)
-                                                    ? "text-foreground"
-                                                    : "text-muted-foreground"
-                                            )}>
-                                                {pStep.icon} {pStep.label}
-                                            </span>
-                                            {completedSteps.includes(i) && (
-                                                <span className="ml-auto text-[10px] text-green-500/70">✓</span>
-                                            )}
-                                        </div>
-                                    ))}
+                                        ))}
+                                    </div>
                                 </div>
-                            </div>
-                        </div>
-                    ) : (
-                        /* ── Preview with ambient glow ─────────── */
-                        <div className="relative">
-                            {/* Ambient glow behind preview */}
-                            {result && (
-                                <div className="absolute -inset-4 bg-gradient-to-br from-primary/8 via-transparent to-red-500/8 rounded-3xl blur-2xl pointer-events-none animate-pulse" style={{ animationDuration: '4s' }} />
-                            )}
-                            <div className="relative">
-                                <PreviewArea
-                                    language={language}
-                                    result={result}
-                                    loading={loading}
-                                    error={error}
-                                    selectedVariantIndex={selectedVariantIndex}
-                                    onSelectVariant={setSelectedVariantIndex}
-                                />
-                            </div>
-                        </div>
-                    )}
+                            ) : (
+                                /* ── Preview / Empty State ──────────── */
+                                <div className="min-h-[440px]">
+                                    <PreviewArea
+                                        language={language}
+                                        result={result}
+                                        loading={loading}
+                                        error={error}
+                                        selectedVariantIndex={selectedVariantIndex}
+                                        onSelectVariant={setSelectedVariantIndex}
+                                    />
 
-                    {/* Action Buttons */}
-                    {result && !loading && step === 'result' && (
-                        <div className="flex flex-wrap gap-3">
-                            <Button
-                                onClick={handleDownload}
-                                className="flex-1 gap-2 bg-gradient-to-r from-primary to-red-600 hover:from-primary/90 hover:to-red-600/90 shadow-lg shadow-primary/20 gradient-shift-hover"
-                            >
-                                <Download className="w-4 h-4" />
-                                Herunterladen
-                            </Button>
-                            <Button onClick={handleSaveToLibrary} variant="outline" className="flex-1 gap-2">
-                                <Save className="w-4 h-4" />
-                                In Bibliothek speichern
-                            </Button>
-                            <Button onClick={handleReset} variant="ghost" className="gap-2">
-                                <RefreshCw className="w-4 h-4" />
-                                Neu starten
-                            </Button>
+                                    {/* Action Buttons */}
+                                    {result && !loading && step === 'result' && (
+                                        <div className="flex flex-wrap gap-3 mt-6 pt-6 border-t border-border/20">
+                                            <Button
+                                                onClick={handleDownload}
+                                                className="flex-1 gap-2 bg-gradient-to-r from-primary to-red-600 hover:from-primary/90 hover:to-red-600/90 shadow-lg shadow-primary/15 h-11"
+                                            >
+                                                <Download className="w-4 h-4" />
+                                                Herunterladen
+                                            </Button>
+                                            <Button onClick={handleSaveToLibrary} variant="outline" className="flex-1 gap-2 h-11">
+                                                <Save className="w-4 h-4" />
+                                                In Bibliothek
+                                            </Button>
+                                            <Button onClick={handleReset} variant="ghost" className="gap-2 h-11 text-muted-foreground hover:text-foreground">
+                                                <RefreshCw className="w-4 h-4" />
+                                                Neu
+                                            </Button>
+                                        </div>
+                                    )}
+                                </div>
+                            )}
                         </div>
-                    )}
+                    </div>
                 </div>
             </div>
         </DashboardShell>

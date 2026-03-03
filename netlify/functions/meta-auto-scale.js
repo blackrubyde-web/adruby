@@ -55,6 +55,8 @@ function ruleActionToMeta(actionType) {
 
 async function processUserAutoscale(userId, host) {
     const results = { userId, actions: [], errors: [], skipped: 0 };
+    const protocol = host?.includes("localhost") ? "http" : "https";
+    const baseUrl = `${protocol}://${host}`;
 
     try {
         // 1. Check Meta connection
@@ -97,6 +99,7 @@ async function processUserAutoscale(userId, host) {
         );
 
         let actionCount = 0;
+        let aiPendingCampaigns = [];
 
         for (const campaign of campaigns) {
             if (actionCount >= SAFETY.maxActionsPerUser) break;
@@ -132,21 +135,13 @@ async function processUserAutoscale(userId, host) {
                 }
             }
 
-            // 6. Fallback: simple rule-based analysis if no user rules matched
+            // 6. Fallback: AI analysis via GPT-4o (or simple rules if unavailable)
             if (!matchedAction) {
-                const roas = Number(campaign.roas || 0);
-                const ctr = Number(campaign.ctr || 0);
-
-                if (roas >= 4.0 && ctr >= 2.0) {
-                    matchedAction = "increase";
-                    scalePct = 0.20; // +20% for top performers
-                } else if (roas < 0.8) {
-                    matchedAction = "pause";
-                } else if (roas >= 1.0 && roas < 2.0) {
-                    matchedAction = "decrease";
-                    scalePct = 0.15; // -15% for underperformers
-                }
-                // roas 2.0-4.0 → no action (maintain)
+                // Try AI analysis (batched later outside the loop)
+                // Mark this campaign for AI batch analysis
+                if (!aiPendingCampaigns) aiPendingCampaigns = [];
+                aiPendingCampaigns.push(campaign);
+                continue; // Process after AI batch
             }
 
             if (!matchedAction) continue;
@@ -154,11 +149,7 @@ async function processUserAutoscale(userId, host) {
 
             // 7. Apply action
             try {
-                const protocol = host?.includes("localhost") ? "http" : "https";
-                const baseUrl = `${protocol}://${host}`;
-
-                // Get user token for auth
-                const { data: sessionData } = await supabaseAdmin.auth.admin.getUserById(userId);
+                const autoScaleSecret = process.env.AUTOSCALE_SECRET || "";
 
                 const applyRes = await fetch(
                     `${baseUrl}/.netlify/functions/meta-apply-action`,
@@ -166,13 +157,13 @@ async function processUserAutoscale(userId, host) {
                         method: "POST",
                         headers: {
                             "Content-Type": "application/json",
-                            "x-autoscale-user-id": userId, // Internal service auth
+                            "x-service-secret": autoScaleSecret,
                         },
                         body: JSON.stringify({
                             campaignId,
                             action: matchedAction,
                             scalePct,
-                            userId, // Pass userId for the action function
+                            userId,
                         }),
                     }
                 );
@@ -218,6 +209,82 @@ async function processUserAutoscale(userId, host) {
                 actionCount++;
             } catch (err) {
                 results.errors.push(`${campaignId}: ${err?.message || "unknown"}`);
+            }
+        }
+
+        // 8. AI Batch Analysis — process campaigns that had no matching user rules
+        if (aiPendingCampaigns.length > 0 && actionCount < SAFETY.maxActionsPerUser) {
+            try {
+                const analyzePayload = aiPendingCampaigns.map(c => ({
+                    id: c.facebook_campaign_id,
+                    name: c.name,
+                    roas: Number(c.roas || 0),
+                    ctr: Number(c.ctr || 0),
+                    spend: Number(c.spend || 0),
+                    impressions: Number(c.impressions || 0),
+                    clicks: Number(c.clicks || 0),
+                    conversions: Number(c.conversions || 0),
+                }));
+
+                const aiRes = await fetch(`${baseUrl}/.netlify/functions/ai-campaign-analyze`, {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        "x-service-secret": process.env.AUTOSCALE_SECRET || "",
+                    },
+                    body: JSON.stringify({ campaigns: analyzePayload }),
+                });
+
+                const aiJson = await aiRes.json().catch(() => ({}));
+                const analyses = aiJson?.analyses || [];
+
+                const ACTION_MAP = { kill: "pause", duplicate: "increase", increase: "increase", decrease: "decrease" };
+
+                for (const analysis of analyses) {
+                    if (actionCount >= SAFETY.maxActionsPerUser) break;
+                    const cid = analysis.campaignId;
+                    const action = ACTION_MAP[analysis.recommendation];
+                    if (!cid || !action) continue;
+                    if (recentCampaignActions.has(`${cid}:${action}`)) continue;
+
+                    const aScalePct = action === "increase" ? 0.20 : action === "decrease" ? 0.15 : undefined;
+                    const autoScaleSecret = process.env.AUTOSCALE_SECRET || "";
+
+                    try {
+                        const applyRes = await fetch(`${baseUrl}/.netlify/functions/meta-apply-action`, {
+                            method: "POST",
+                            headers: { "Content-Type": "application/json", "x-service-secret": autoScaleSecret },
+                            body: JSON.stringify({ campaignId: cid, action, scalePct: aScalePct, userId }),
+                        });
+                        const applyJson = await applyRes.json().catch(() => ({}));
+                        const success = applyRes.ok && applyJson?.ok;
+
+                        await supabaseAdmin.from("ai_learning").insert({
+                            campaign_id: cid,
+                            recommendation: analysis.recommendation,
+                            confidence: analysis.confidence || 70,
+                            reason: analysis.reason || `AI: ${analysis.recommendation}`,
+                            applied_action: action,
+                            success,
+                            created_at: new Date().toISOString(),
+                        }).catch(() => { });
+
+                        results.actions.push({
+                            campaignId: cid,
+                            campaignName: aiPendingCampaigns.find(c => c.facebook_campaign_id === cid)?.name || cid,
+                            action,
+                            scalePct: aScalePct,
+                            success,
+                            ruleId: null,
+                            ruleName: "ai-gpt4o",
+                        });
+                        actionCount++;
+                    } catch (err) {
+                        results.errors.push(`AI-apply ${cid}: ${err?.message || "unknown"}`);
+                    }
+                }
+            } catch (err) {
+                console.warn("[AutoScale] AI batch analysis failed, skipping:", err?.message);
             }
         }
     } catch (err) {

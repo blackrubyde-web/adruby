@@ -45,7 +45,12 @@ export async function handler(event) {
     }
 
     const auth = await requireUserId(event);
-    if (!auth.ok) return auth.response;
+    // Allow service-auth for internal auto-scale calls
+    const serviceSecret = event.headers?.["x-service-secret"] || event.headers?.["X-Service-Secret"];
+    const autoScaleSecret = process.env.AUTOSCALE_SECRET;
+    if (!auth.ok && !(autoScaleSecret && serviceSecret === autoScaleSecret)) {
+        return auth.response;
+    }
 
     let payload;
     try {

@@ -51,7 +51,7 @@ export const QuickActionsBar = memo(function QuickActionsBar({
     const actions: QuickAction[] = [
         {
             id: 'scale',
-            label: 'Scale Winners',
+            label: 'Top-Performer skalieren',
             icon: Rocket,
             color: 'bg-emerald-600 hover:bg-emerald-700',
             hoverColor: 'hover:shadow-emerald-500/30',
@@ -73,7 +73,7 @@ export const QuickActionsBar = memo(function QuickActionsBar({
         },
         {
             id: 'pause',
-            label: 'Pause Losers',
+            label: 'Verlierer pausieren',
             icon: Pause,
             color: 'bg-red-600 hover:bg-red-700',
             hoverColor: 'hover:shadow-red-500/30',
@@ -95,7 +95,7 @@ export const QuickActionsBar = memo(function QuickActionsBar({
         },
         {
             id: 'refresh',
-            label: 'Refresh Fatigued',
+            label: 'Müde Ads erneuern',
             icon: RefreshCw,
             color: 'bg-amber-600 hover:bg-amber-700',
             hoverColor: 'hover:shadow-amber-500/30',
@@ -124,7 +124,7 @@ export const QuickActionsBar = memo(function QuickActionsBar({
                         <Zap className="w-5 h-5 text-violet-400" />
                     </div>
                     <div>
-                        <h4 className="text-sm font-semibold text-white">Quick Actions</h4>
+                        <h4 className="text-sm font-semibold text-white">Schnellaktionen</h4>
                         <p className="text-xs text-white/50">{totalActions} Aktionen verfügbar</p>
                     </div>
                 </div>

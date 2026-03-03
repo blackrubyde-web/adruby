@@ -3,11 +3,18 @@ import { Card } from '../../ui/card';
 import { Badge } from '../../ui/badge';
 import { Input } from '../../ui/input';
 import { Slider } from '../../ui/slider';
-import { MapPin, Users, Heart, Target, Globe, X, Plus, Sparkles } from 'lucide-react';
+import { MapPin, Users, Heart, Target, Globe, X, Plus, Sparkles, Search, Loader2 } from 'lucide-react';
 import { cn } from '../../../lib/utils';
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect, useRef, useCallback } from 'react';
+import { supabase } from '../../../lib/supabaseClient';
 
-// Common interest categories for Meta Ads
+interface MetaInterest {
+    id: string;
+    name: string;
+    audienceSize: number | null;
+}
+
+// Fallback interest categories when Meta search is unavailable
 const INTEREST_SUGGESTIONS = [
     { category: 'E-Commerce', interests: ['Online Shopping', 'Fashion', 'Luxury Goods', 'Electronics', 'Home Decor'] },
     { category: 'Business', interests: ['Entrepreneurship', 'Marketing', 'Small Business', 'B2B', 'SaaS'] },
@@ -36,6 +43,47 @@ export const Step3_Targeting = () => {
     const { targeting, setTargeting, audiences } = useCampaignBuilder();
     const [interestInput, setInterestInput] = useState('');
     const [showInterestSuggestions, setShowInterestSuggestions] = useState(false);
+    const [searchResults, setSearchResults] = useState<MetaInterest[]>([]);
+    const [isSearching, setIsSearching] = useState(false);
+    const searchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+    // Debounced Meta interest search
+    const searchInterests = useCallback(async (query: string) => {
+        if (query.length < 2) {
+            setSearchResults([]);
+            return;
+        }
+        setIsSearching(true);
+        try {
+            const { data: session } = await supabase.auth.getSession();
+            const token = session.session?.access_token;
+            if (!token) { setIsSearching(false); return; }
+
+            const apiBase = String(import.meta.env.VITE_API_BASE_URL || '').replace(/\/$/, '');
+            const url = `${apiBase || ''}/api/meta-interest-search?q=${encodeURIComponent(query)}`;
+            const res = await fetch(url, {
+                headers: { Authorization: `Bearer ${token}` },
+            });
+            if (res.ok) {
+                const json = await res.json();
+                setSearchResults(json.results || []);
+            }
+        } catch {
+            // Silently fail — fallback suggestions still visible
+        } finally {
+            setIsSearching(false);
+        }
+    }, []);
+
+    useEffect(() => {
+        if (searchTimerRef.current) clearTimeout(searchTimerRef.current);
+        if (interestInput.length >= 2) {
+            searchTimerRef.current = setTimeout(() => searchInterests(interestInput), 300);
+        } else {
+            setSearchResults([]);
+        }
+        return () => { if (searchTimerRef.current) clearTimeout(searchTimerRef.current); };
+    }, [interestInput, searchInterests]);
 
     // Estimated Reach calculation (simulated - in production would use Meta's Reach API)
     const estimatedReach = useMemo(() => {
@@ -315,8 +363,9 @@ export const Step3_Targeting = () => {
                             </div>
                         </div>
 
-                        {/* Interest Input */}
+                        {/* Interest Input + Live Search */}
                         <div className="relative">
+                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                             <Input
                                 value={interestInput}
                                 onChange={e => setInterestInput(e.target.value)}
@@ -326,19 +375,51 @@ export const Step3_Targeting = () => {
                                         addInterest(interestInput.trim());
                                     }
                                 }}
-                                placeholder="Interesse eingeben..."
-                                className="pr-10"
+                                placeholder="Meta-Interessen suchen..."
+                                className="pl-10 pr-10"
                             />
-                            <button
-                                onClick={() => interestInput.trim() && addInterest(interestInput.trim())}
-                                className="absolute right-2 top-1/2 -translate-y-1/2 p-1 hover:bg-muted rounded"
-                            >
-                                <Plus className="w-4 h-4 text-muted-foreground" />
-                            </button>
+                            {isSearching && <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground animate-spin" />}
+                            {!isSearching && interestInput.trim() && (
+                                <button
+                                    onClick={() => addInterest(interestInput.trim())}
+                                    className="absolute right-2 top-1/2 -translate-y-1/2 p-1 hover:bg-muted rounded"
+                                >
+                                    <Plus className="w-4 h-4 text-muted-foreground" />
+                                </button>
+                            )}
                         </div>
 
-                        {/* Interest Suggestions */}
-                        {showInterestSuggestions && (
+                        {/* Live Search Results */}
+                        {searchResults.length > 0 && (
+                            <div className="border border-border rounded-xl overflow-hidden divide-y divide-border max-h-48 overflow-y-auto">
+                                {searchResults.map(result => (
+                                    <button
+                                        key={result.id}
+                                        onClick={() => {
+                                            addInterest(result.name);
+                                            setSearchResults([]);
+                                        }}
+                                        disabled={targeting.interests.includes(result.name)}
+                                        className={cn(
+                                            "w-full px-4 py-2.5 text-left text-sm transition-all flex items-center justify-between",
+                                            targeting.interests.includes(result.name)
+                                                ? "bg-pink-500/5 text-muted-foreground"
+                                                : "hover:bg-muted/50"
+                                        )}
+                                    >
+                                        <span className="font-medium">{result.name}</span>
+                                        {result.audienceSize && (
+                                            <span className="text-xs text-muted-foreground">
+                                                {(result.audienceSize / 1_000_000).toFixed(1)}M
+                                            </span>
+                                        )}
+                                    </button>
+                                ))}
+                            </div>
+                        )}
+
+                        {/* Fallback: Static Suggestions (when no search query) */}
+                        {showInterestSuggestions && searchResults.length === 0 && !isSearching && interestInput.length < 2 && (
                             <div className="space-y-3">
                                 {INTEREST_SUGGESTIONS.map(cat => (
                                     <div key={cat.category}>
