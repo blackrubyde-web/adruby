@@ -303,12 +303,16 @@ export const handler = async (event) => {
 
                 finalImageBuffer = nbResult.buffer;
                 engine = `nanoBanana_v5_${nbResult.engine}`;
+
+                // Use AI-generated copy if available, fallback to user input
+                const aiCopy = nbResult.copy || {};
                 outputData = {
-                    headline: body.headline || body.productName || 'AI Generated',
-                    slogan: body.subheadline || '',
-                    description: body.text || body.usp || '',
-                    cta: body.cta || (body.language === 'en' ? 'Discover Now' : 'Jetzt entdecken'),
-                    imagePrompt: 'NanoBanana v5 AI Creative Director',
+                    headline: aiCopy.headline || body.headline || body.productName || 'AI Generated',
+                    slogan: aiCopy.tagline || body.subheadline || '',
+                    description: aiCopy.hook || body.text || body.usp || '',
+                    cta: aiCopy.cta || body.cta || (body.language === 'en' ? 'Discover Now' : 'Jetzt entdecken'),
+                    hook: aiCopy.hook || '',
+                    imagePrompt: 'NanoBanana v5.1 AI Creative Director',
                     template: 'nanoBanana_v5',
                     metadata: nbResult.metadata,
                 };

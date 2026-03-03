@@ -111,8 +111,8 @@ async function generateCreativeBrief(adSpec, conceptType, format, variation) {
         adSpec.text ? `Details: ${adSpec.text}` : null,
     ].filter(Boolean).join('\n');
 
-    const prompt = `You are a world-class Creative Director at a top Meta Ads agency.
-You are directing a $50,000 photo shoot for ONE specific product.
+    const prompt = `You are a world-class Creative Director AND Copywriter at a top Meta Ads agency.
+You are directing a $50,000 photo shoot for ONE specific product AND writing the ad copy.
 
 PRODUCT DETAILS:
 ${productContext || 'A premium product'}
@@ -121,7 +121,7 @@ INDUSTRY: ${adSpec.industry || 'general'}
 TARGET AUDIENCE: ${adSpec.audience || 'quality-conscious consumers'}
 CREATIVE ANGLE: ${adSpec.angle || 'premium quality'}
 AD FORMAT: ${format} (${formatSpec.ratio}, ${formatSpec.width}×${formatSpec.height})
-LANGUAGE: All text suggestions must be in ${lang}.
+LANGUAGE: All text MUST be in ${lang}.
 
 CREATIVE DIRECTION: ${conceptType.briefDirection}
 
@@ -134,22 +134,33 @@ Generate a UNIQUE creative brief for THIS EXACT product.
 Do NOT use generic descriptions like "product on dark background" or "clean studio setup".
 Think: What scene would make SPECIFICALLY a ${adSpec.productName || 'this product'} look irresistible?
 
+IMPORTANT — AD COPY RULES:
+- The user provided raw info about their product. Your job is to turn that into PROFESSIONAL, PUNCHY ad copy.
+- Do NOT just copy/paste the user's input. REWRITE it into compelling, short, scroll-stopping copy.
+- Headlines should be 3-6 words max, emotionally charged, benefit-driven.
+- The hook is the first line people see in the feed — it must create curiosity or urgency.
+- CTA should feel natural, not generic. Match the product's voice.
+
 Return this exact JSON structure:
 {
-  "scene": "A hyper-specific, narrative scene description (3-4 sentences) that is UNIQUE to this exact product. Include specific props, environment details, human interaction if relevant, and an emotional moment. Describe what the viewer SEES, not abstract concepts.",
-  "camera": "Specific camera setup: lens focal length (mm), aperture (f/X.X), angle (eye-level/low/high/overhead), and composition rule (rule of thirds/centered/diagonal) — chosen specifically for THIS product's shape and key features.",
-  "lighting": "Detailed lighting setup (2 sentences): primary light source, fill light, any accent/rim lights. Chosen to enhance THIS product's materials and textures.",
-  "mood": "The exact emotional response (2 sentences): what the viewer should FEEL and what action it should trigger. Specific to THIS audience.",
-  "colorPalette": "3-4 specific hex colors that complement THIS product and resonate with THIS audience. Format: '#hex1, #hex2, #hex3'",
-  "textPlacement": "Where to place headline and CTA given the scene composition. Example: 'Headline top-left on negative space area, CTA bottom-center below product'",
-  "ctaStyle": "CTA button style including color, shape, and feel that matches the scene. Example: 'Rounded pill, coral #FF6B6B, warm and inviting'"
+  "scene": "A hyper-specific, narrative scene description (3-4 sentences) that is UNIQUE to this exact product. Include specific props, environment details, human interaction if relevant, and an emotional moment.",
+  "camera": "Specific camera setup: lens focal length (mm), aperture (f/X.X), angle (eye-level/low/high/overhead), and composition rule.",
+  "lighting": "Detailed lighting setup (2 sentences): primary light source, fill light, any accent/rim lights.",
+  "mood": "The exact emotional response (2 sentences): what the viewer should FEEL and what action it should trigger.",
+  "colorPalette": "3-4 specific hex colors that complement THIS product. Format: '#hex1, #hex2, #hex3'",
+  "headline": "A short, punchy headline (3-6 words) that captures the product's core benefit. This is NOT the user's raw USP — this is professional ad copy.",
+  "tagline": "A supporting subline (1 short sentence) that adds context or social proof.",
+  "hook": "The first line of the ad post text — 1 sentence that creates curiosity or urgency. Think: what makes someone stop scrolling?",
+  "cta": "A natural call-to-action (2-4 words) that fits the product and tone. Not always 'Jetzt kaufen' — be creative.",
+  "textPlacement": "DYNAMIC placement instructions based on the scene composition. Example: 'Headline overlaid on the dark sky area top-right, CTA floating over the blurred background bottom-left'. NEVER just say 'bottom center' — integrate text INTO the scene.",
+  "ctaStyle": "CTA visual style: shape, color, opacity. Should feel integrated, not pasted on. Example: 'Semi-transparent white pill with 80% opacity, subtle shadow, blends with scene'"
 }
 
 CRITICAL RULES:
-1. The scene MUST be specific to "${adSpec.productName || 'this product'}" — not any random product in the same category
-2. Camera specs must be justified by the product's physical characteristics
-3. Every brief you generate must be DIFFERENT from any template
-4. Think about what makes THIS product unique and lean into it visually`;
+1. The scene MUST be specific to "${adSpec.productName || 'this product'}" — not generic
+2. The headline MUST be professional copywriting, NOT the user's raw input
+3. Text placement MUST be scene-aware — integrated into the composition, not forced
+4. CTA placement should vary — sometimes top, sometimes bottom-left, sometimes overlaid on product area`;
 
     console.log(`[NanoBanana] 🎬 AI Creative Director generating brief for "${adSpec.productName}" (${conceptType.key}, ${format})...`);
 
@@ -286,26 +297,40 @@ function buildCreativePrompt(config) {
 
     // Language-aware defaults
     const isEnglish = adSpec.language === 'en';
-    const headline = adSpec.headline || adSpec.productName || '';
-    const cta = adSpec.cta || (isEnglish ? 'Discover Now' : 'Jetzt entdecken');
-    const subheadline = adSpec.subheadline || '';
-    const textPlacement = source.textPlacement || 'Headline at top, CTA at bottom center';
-    const ctaStyle = source.ctaStyle || 'Rounded pill, brand accent color';
+
+    // PREFER AI-generated copy from brief, fall back to user input
+    const headline = brief?.headline || adSpec.headline || adSpec.productName || '';
+    const cta = brief?.cta || adSpec.cta || (isEnglish ? 'Discover Now' : 'Jetzt entdecken');
+    const subheadline = brief?.tagline || adSpec.subheadline || '';
+
+    // Dynamic placement from brief — never hardcoded
+    const textPlacement = source.textPlacement || 'Headline integrated into scene composition, CTA naturally placed near product';
+    const ctaStyle = source.ctaStyle || 'Semi-transparent pill, integrated into scene lighting';
+
+    // Extract placement parts dynamically
+    const headlinePlacement = textPlacement.includes(',')
+        ? textPlacement.split(',')[0].trim()
+        : 'Integrated into the scene composition with high contrast';
+    const ctaPlacement = textPlacement.includes(',')
+        ? textPlacement.split(',').slice(1).join(',').trim()
+        : 'Naturally positioned near the product area';
 
     const textBlock = headline ? `
-TEXT IN IMAGE (Gemini must render this text sharply):
+TEXT IN IMAGE (Gemini must render this text sharply and INTEGRATE it into the scene):
 - HEADLINE: "${headline}"
-  Position: ${textPlacement.split(',')[0] || 'Upper area of composition'}
+  Position: ${headlinePlacement}
   Typography: Bold modern sans-serif (like Inter or Helvetica), high contrast against background
   Size: Large enough to read instantly at phone screen size
+  IMPORTANT: Text must feel PART of the image, not pasted on top
 
 ${subheadline ? `- SUBHEADLINE: "${subheadline}"
-  Typography: Regular weight, 60% of headline size, below headline\n` : ''}
+  Typography: Regular weight, 60% of headline size, positioned relative to headline\n` : ''}
 - CTA BUTTON: "${cta}"
   Style: ${ctaStyle}
-  Typography: White bold text inside button, tappable-looking
-  Position: Bottom center with breathing room` : `
-SPACE FOR TEXT: Leave generous negative space in the upper-left area for headline overlay.`;
+  Typography: Bold text inside button, tappable-looking
+  Position: ${ctaPlacement}
+  IMPORTANT: CTA must feel naturally integrated — NOT forced to bottom-center unless the scene demands it` : `
+SPACE FOR TEXT: Leave generous negative space for headline overlay. Design the scene so text can be added without covering key visual elements.`;
 
     return `A professional Meta advertisement image.
 
@@ -328,7 +353,8 @@ MOOD: ${source.mood}
 ${brandColors}
 
 QUALITY: This must look like a $50,000 agency photo shoot production.
-Professional, polished, scroll-stopping. Indistinguishable from a real commercial ad.`;
+Professional, polished, scroll-stopping. Indistinguishable from a real commercial ad.
+Text must feel designed INTO the image — like a Photoshop comp, not an overlay.`;
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -621,6 +647,13 @@ export async function generateSingleAd(params) {
         buffer,
         engine,
         usedAiBrief: !!brief,
+        // AI-generated copy for frontend display
+        copy: {
+            headline: brief?.headline || adSpec.headline || adSpec.productName || '',
+            tagline: brief?.tagline || adSpec.subheadline || '',
+            hook: brief?.hook || '',
+            cta: brief?.cta || adSpec.cta || 'Jetzt entdecken',
+        },
         metadata: {
             industry: resolveIndustry(industry),
             concept: conceptType.name,
