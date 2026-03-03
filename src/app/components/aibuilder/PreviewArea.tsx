@@ -1,24 +1,57 @@
 /**
- * AI Ad Builder - Preview Area Component with Multi-Variant Support
+ * AI Ad Builder – Preview Area (Premium V3)
+ * Floating Meta mockup with mount animation, enhanced variant selector,
+ * SVG score rings with stagger, premium hook callout.
  */
 
 import { useState } from 'react';
-import { t } from '../../lib/aibuilder/translations';
 import {
     Loader2, AlertCircle, Globe, MoreHorizontal, ThumbsUp,
     MessageCircle, Share2, Check, ChevronLeft, ChevronRight,
-    Sparkles, Star, TrendingUp
+    Sparkles, Wand2
 } from 'lucide-react';
 import { Badge } from '../ui/badge';
 import { cn } from '../../lib/utils';
 import type { PreviewAreaProps, AdVariant, AdGenerationResult } from '../../types/aibuilder';
 
-// Helper to get display data from result or variant
+/* ── SVG Score Ring ─────────────────────────────────── */
+function ScoreRing({ value, max, label, color, delay = 0 }: { value: number; max: number; label: string; color: string; delay?: number }) {
+    const size = 76;
+    const stroke = 5;
+    const r = (size - stroke) / 2;
+    const circumference = 2 * Math.PI * r;
+    const pct = Math.min(value / max, 1);
+    const offset = circumference * (1 - pct);
+
+    return (
+        <div className="flex flex-col items-center gap-1.5 stagger-in" style={{ animationDelay: `${delay}ms` }}>
+            <div className="relative" style={{ width: size, height: size }}>
+                <svg width={size} height={size} className="-rotate-90">
+                    <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke="currentColor" strokeWidth={stroke} className="text-muted/20" />
+                    <circle
+                        cx={size / 2} cy={size / 2} r={r} fill="none"
+                        stroke={color} strokeWidth={stroke}
+                        strokeDasharray={circumference} strokeDashoffset={offset}
+                        strokeLinecap="round"
+                        className="transition-all duration-1000 ease-out"
+                        style={{
+                            animation: `ring-draw 1.2s ease-out ${delay}ms forwards`,
+                        }}
+                    />
+                </svg>
+                <div className="absolute inset-0 flex items-center justify-center">
+                    <span className="text-base font-bold tabular-nums">{value}<span className="text-[10px] text-muted-foreground/60">/{max}</span></span>
+                </div>
+            </div>
+            <span className="text-[10px] text-muted-foreground font-medium uppercase tracking-wider">{label}</span>
+        </div>
+    );
+}
+
 function getDisplayData(result: AdGenerationResult, variantIndex: number = 0) {
     if (result.variants && result.variants.length > variantIndex) {
         return result.variants[variantIndex];
     }
-    // Fallback to main result data
     return {
         id: result.id || '0',
         headline: result.headline,
@@ -43,47 +76,33 @@ export function PreviewArea({
     onSelectVariant
 }: PreviewAreaProps) {
     const [localVariantIndex, setLocalVariantIndex] = useState(0);
-
-    // Use external or local state
     const currentIndex = onSelectVariant ? selectedVariantIndex : localVariantIndex;
     const setCurrentIndex = onSelectVariant || setLocalVariantIndex;
 
     const variantCount = result?.variants?.length || 1;
     const displayData = result ? getDisplayData(result, currentIndex) : null;
 
-    const nextVariant = () => {
-        setCurrentIndex((currentIndex + 1) % variantCount);
-    };
+    const nextVariant = () => setCurrentIndex((currentIndex + 1) % variantCount);
+    const prevVariant = () => setCurrentIndex((currentIndex - 1 + variantCount) % variantCount);
 
-    const prevVariant = () => {
-        setCurrentIndex((currentIndex - 1 + variantCount) % variantCount);
-    };
-
+    /* ── Loading ────── */
     if (loading) {
         return (
-            <div className="rounded-2xl border border-border/40 bg-card/50 backdrop-blur-sm p-8">
+            <div className="rounded-xl border border-border/40 bg-card/80 backdrop-blur p-8">
                 <div className="flex flex-col items-center justify-center space-y-6 text-center min-h-[400px]">
                     <div className="relative">
                         <div className="absolute inset-0 bg-primary/30 rounded-full blur-xl animate-pulse" />
-                        <div className="relative w-20 h-20 rounded-2xl bg-gradient-to-br from-primary to-red-600 flex items-center justify-center">
-                            <Loader2 className="w-10 h-10 text-white animate-spin" />
+                        <div className="relative w-16 h-16 rounded-2xl bg-gradient-to-br from-primary to-red-600 flex items-center justify-center">
+                            <Loader2 className="w-8 h-8 text-white animate-spin" />
                         </div>
                     </div>
                     <div>
-                        <h3 className="font-bold text-xl">{t('generating', language)}</h3>
-                        <p className="text-sm text-muted-foreground mt-2">
-                            {language === 'de'
-                                ? 'KI erstellt 3 Varianten für dich...'
-                                : 'AI is creating 3 variants for you...'}
-                        </p>
+                        <h3 className="font-bold text-lg">KI erstellt 3 Varianten…</h3>
+                        <p className="text-sm text-muted-foreground mt-1.5">Dauert ca. 10–15 Sekunden</p>
                     </div>
                     <div className="flex gap-2">
                         {[1, 2, 3].map((i) => (
-                            <div
-                                key={i}
-                                className="w-3 h-3 rounded-full bg-primary/30 animate-pulse"
-                                style={{ animationDelay: `${i * 0.2}s` }}
-                            />
+                            <div key={i} className="w-3 h-3 rounded-full bg-primary/30 animate-pulse" style={{ animationDelay: `${i * 0.2}s` }} />
                         ))}
                     </div>
                 </div>
@@ -91,13 +110,14 @@ export function PreviewArea({
         );
     }
 
+    /* ── Error ─────── */
     if (error) {
         return (
-            <div className="rounded-2xl border border-destructive/40 bg-destructive/5 p-8">
-                <div className="flex flex-col items-center justify-center space-y-4 text-center min-h-[400px]">
-                    <AlertCircle className="w-12 h-12 text-destructive" />
+            <div className="rounded-xl border border-destructive/40 bg-destructive/5 p-8">
+                <div className="flex flex-col items-center justify-center space-y-4 text-center min-h-[300px]">
+                    <AlertCircle className="w-10 h-10 text-destructive" />
                     <div>
-                        <h3 className="font-semibold text-lg text-destructive">{t('errorMessage', language)}</h3>
+                        <h3 className="font-semibold text-base text-destructive">Fehler bei der Generierung</h3>
                         <p className="text-sm text-muted-foreground mt-1">{error}</p>
                     </div>
                 </div>
@@ -105,214 +125,210 @@ export function PreviewArea({
         );
     }
 
+    /* ── Empty State ── */
     if (!result || !displayData) {
         return (
-            <div className="rounded-2xl border border-border/40 bg-card/50 backdrop-blur-sm p-8">
-                <div className="flex flex-col items-center justify-center space-y-4 text-center min-h-[400px]">
-                    <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center">
-                        <svg className="w-8 h-8 text-muted-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                        </svg>
+            <div className="rounded-xl border border-border/40 bg-card/80 backdrop-blur p-8">
+                <div className="flex flex-col items-center justify-center space-y-5 text-center min-h-[400px]">
+                    {/* Premium gradient icon */}
+                    <div className="relative">
+                        <div className="absolute inset-0 bg-gradient-to-br from-primary/15 to-violet-500/15 rounded-2xl blur-xl" />
+                        <div className="relative w-20 h-20 rounded-2xl bg-gradient-to-br from-muted/80 to-muted/30 border border-border/30 flex items-center justify-center">
+                            <Sparkles className="w-8 h-8 text-muted-foreground/40 animate-pulse" style={{ animationDuration: '3s' }} />
+                        </div>
                     </div>
                     <div>
-                        <h3 className="font-semibold text-lg">{t('previewTitle', language)}</h3>
-                        <p className="text-sm text-muted-foreground mt-1">{t('noPreview', language)}</p>
+                        <h3 className="font-semibold text-base">Vorschau</h3>
+                        <p className="text-sm text-muted-foreground mt-1.5 max-w-[260px] mx-auto leading-relaxed">
+                            Fülle das Formular aus und generiere deine erste Ad — das Ergebnis erscheint hier.
+                        </p>
+                    </div>
+                    <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground/40">
+                        <div className="w-1.5 h-1.5 rounded-full bg-muted-foreground/20" />
+                        <span>Meta-Vorschau</span>
+                        <div className="w-1.5 h-1.5 rounded-full bg-muted-foreground/20" />
+                        <span>Score-Analyse</span>
+                        <div className="w-1.5 h-1.5 rounded-full bg-muted-foreground/20" />
+                        <span>Hook-Auswertung</span>
                     </div>
                 </div>
             </div>
         );
     }
 
+    /* ── Result ────── */
     return (
-        <div className="space-y-6">
-            {/* Variant Selector Header */}
+        <div className="space-y-5">
+            {/* Variant Selector — Compact Cards */}
             {variantCount > 1 && (
-                <div className="flex items-center justify-between px-2">
-                    <div className="flex items-center gap-2">
-                        <Sparkles className="w-5 h-5 text-primary" />
-                        <h3 className="font-bold text-lg">
-                            {language === 'de' ? 'Wähle deine Variante' : 'Choose your variant'}
-                        </h3>
+                <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                            <Sparkles className="w-4 h-4 text-primary" />
+                            <h3 className="text-sm font-semibold">Variante wählen</h3>
+                        </div>
+                        <div className="flex items-center gap-1">
+                            <button onClick={prevVariant} className="p-1.5 rounded-lg bg-muted/50 hover:bg-muted transition-colors">
+                                <ChevronLeft className="w-3.5 h-3.5" />
+                            </button>
+                            <span className="text-[10px] text-muted-foreground tabular-nums px-1">
+                                {currentIndex + 1}/{variantCount}
+                            </span>
+                            <button onClick={nextVariant} className="p-1.5 rounded-lg bg-muted/50 hover:bg-muted transition-colors">
+                                <ChevronRight className="w-3.5 h-3.5" />
+                            </button>
+                        </div>
                     </div>
-                    <div className="flex items-center gap-2">
-                        <button
-                            onClick={prevVariant}
-                            className="p-2 rounded-full bg-muted hover:bg-muted/80 transition-colors"
-                        >
-                            <ChevronLeft className="w-4 h-4" />
-                        </button>
-                        <span className="text-sm font-medium px-2">
-                            {currentIndex + 1} / {variantCount}
-                        </span>
-                        <button
-                            onClick={nextVariant}
-                            className="p-2 rounded-full bg-muted hover:bg-muted/80 transition-colors"
-                        >
-                            <ChevronRight className="w-4 h-4" />
-                        </button>
-                    </div>
-                </div>
-            )}
 
-            {/* Variant Pills */}
-            {variantCount > 1 && (
-                <div className="flex justify-center gap-3">
-                    {result.variants?.map((variant, index) => (
-                        <button
-                            key={variant.id}
-                            onClick={() => setCurrentIndex(index)}
-                            className={cn(
-                                "group relative px-6 py-3 rounded-xl border-2 transition-all duration-300",
-                                index === currentIndex
-                                    ? "border-primary bg-primary/10 scale-105"
-                                    : "border-border/50 bg-card/50 hover:border-primary/50"
-                            )}
-                        >
-                            <div className="flex items-center gap-2">
-                                {index === currentIndex && (
-                                    <Check className="w-4 h-4 text-primary" />
-                                )}
-                                <span className={cn(
-                                    "font-semibold",
-                                    index === currentIndex ? "text-primary" : "text-muted-foreground"
-                                )}>
-                                    {language === 'de' ? `Variante ${index + 1}` : `Variant ${index + 1}`}
-                                </span>
-                            </div>
-
-                            {/* Score badge */}
-                            {variant.qualityScore && (
-                                <Badge
+                    {/* Variant cards */}
+                    {result.variants && (
+                        <div className="grid grid-cols-3 gap-2">
+                            {result.variants.map((variant, index) => (
+                                <button
+                                    key={variant.id}
+                                    onClick={() => setCurrentIndex(index)}
                                     className={cn(
-                                        "absolute -top-2 -right-2 text-[10px]",
-                                        variant.qualityScore >= 8 ? "bg-emerald-500" :
-                                            variant.qualityScore >= 6 ? "bg-amber-500" : "bg-muted"
+                                        "relative flex flex-col items-center gap-1.5 py-3 px-2 rounded-xl text-xs font-medium transition-all duration-300 border",
+                                        index === currentIndex
+                                            ? "bg-gradient-to-br from-primary/10 to-red-500/5 text-foreground border-primary/30 shadow-lg shadow-primary/5 scale-[1.02]"
+                                            : "bg-card/60 text-muted-foreground border-border/20 hover:border-border/40 hover:bg-card/80"
                                     )}
                                 >
-                                    {variant.qualityScore}/10
-                                </Badge>
-                            )}
-                        </button>
-                    ))}
+                                    {/* Active indicator */}
+                                    {index === currentIndex && (
+                                        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-6 h-0.5 rounded-full bg-gradient-to-r from-primary to-red-500" />
+                                    )}
+                                    <div className={cn(
+                                        "w-7 h-7 rounded-lg flex items-center justify-center text-[10px] font-bold",
+                                        index === currentIndex
+                                            ? "bg-primary/20 text-primary"
+                                            : "bg-muted/50 text-muted-foreground"
+                                    )}>
+                                        V{index + 1}
+                                    </div>
+                                    <span className="text-[10px]">Variante {index + 1}</span>
+                                    {variant.qualityScore && (
+                                        <Badge className={cn(
+                                            "text-[9px] px-1.5 py-0 h-4",
+                                            variant.qualityScore >= 8 ? "bg-emerald-500/20 text-emerald-600 border-emerald-500/30" :
+                                                variant.qualityScore >= 6 ? "bg-amber-500/20 text-amber-600 border-amber-500/30" : "bg-muted"
+                                        )}>
+                                            {variant.qualityScore}/10
+                                        </Badge>
+                                    )}
+                                </button>
+                            ))}
+                        </div>
+                    )}
                 </div>
             )}
 
-            {/* Meta Ad Mockup */}
-            <div className="max-w-md mx-auto bg-[#242526] rounded-xl overflow-hidden shadow-2xl shadow-black/20 border border-white/5">
-                {/* Header */}
-                <div className="p-4 flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary to-orange-500 flex items-center justify-center text-white font-bold">
-                            AR
-                        </div>
-                        <div>
-                            <div className="font-semibold text-sm text-white">AdRuby AI</div>
-                            <div className="text-xs text-gray-400 flex items-center gap-1">
-                                {language === 'de' ? 'Gesponsert' : 'Sponsored'} · <Globe className="w-3 h-3" />
+            {/* ── Meta Ad Mockup (floating + mount animation) ── */}
+            <div className="relative">
+                {/* Ambient glow */}
+                <div className="absolute -inset-3 bg-gradient-to-br from-primary/5 via-transparent to-red-500/5 rounded-2xl blur-xl pointer-events-none" />
+
+                <div className="relative max-w-md mx-auto bg-[#242526] rounded-xl overflow-hidden shadow-2xl shadow-black/40 border border-white/5 ring-1 ring-white/[0.03] meta-mockup-float stagger-in"
+                    style={{ animationDelay: '100ms' }}
+                >
+                    {/* Header */}
+                    <div className="p-3.5 flex items-center justify-between">
+                        <div className="flex items-center gap-2.5">
+                            <div className="w-9 h-9 rounded-full bg-gradient-to-br from-primary to-orange-500 flex items-center justify-center text-white text-xs font-bold shadow-lg shadow-primary/20">
+                                AR
                             </div>
-                        </div>
-                    </div>
-                    <button className="text-gray-400 hover:text-white">
-                        <MoreHorizontal className="w-5 h-5" />
-                    </button>
-                </div>
-
-                {/* Primary Text (Hook/Description) */}
-                <div className="px-4 pb-3">
-                    <p className="text-sm text-white whitespace-pre-wrap leading-relaxed">
-                        {displayData.hook || displayData.description}
-                    </p>
-                </div>
-
-                {/* Image with Text Overlay */}
-                {displayData.imageUrl && (
-                    <div className="relative aspect-square w-full bg-black/50">
-                        <img
-                            src={displayData.imageUrl}
-                            alt="Ad Creative"
-                            className="w-full h-full object-cover"
-                        />
-                        {/* Text Overlay Layer */}
-                        <div className="absolute inset-0 flex flex-col justify-between p-4 pointer-events-none">
-                            {/* Top Badge */}
-                            <div className="flex justify-end">
-                                <div className="bg-red-600 text-white text-xs font-bold px-3 py-1.5 rounded-md shadow-lg uppercase tracking-wide">
-                                    {language === 'de' ? 'Limitiert' : 'Limited'}
+                            <div>
+                                <div className="font-semibold text-[13px] text-white leading-tight">AdRuby AI</div>
+                                <div className="text-[11px] text-gray-400 flex items-center gap-1">
+                                    Gesponsert · <Globe className="w-2.5 h-2.5" />
                                 </div>
                             </div>
-                            {/* Bottom Headline Overlay */}
-                            <div className="bg-gradient-to-t from-black/80 via-black/40 to-transparent -mx-4 -mb-4 p-4 pt-12">
-                                <h3 className="text-white font-bold text-xl leading-tight drop-shadow-lg">
-                                    {displayData.headline}
-                                </h3>
+                        </div>
+                        <button className="text-gray-500 hover:text-gray-300 transition-colors">
+                            <MoreHorizontal className="w-4 h-4" />
+                        </button>
+                    </div>
+
+                    {/* Primary Text */}
+                    <div className="px-3.5 pb-2.5">
+                        <p className="text-[13px] text-white/90 whitespace-pre-wrap leading-relaxed">
+                            {displayData.hook || displayData.description}
+                        </p>
+                    </div>
+
+                    {/* Image */}
+                    {displayData.imageUrl && (
+                        <div className="relative aspect-square w-full bg-black/50">
+                            <img src={displayData.imageUrl} alt="Ad Creative" className="w-full h-full object-cover" />
+                            <div className="absolute inset-0 flex flex-col justify-end pointer-events-none">
+                                <div className="bg-gradient-to-t from-black/80 via-black/30 to-transparent p-4 pt-16">
+                                    <h3 className="text-white font-bold text-lg leading-tight drop-shadow-lg">
+                                        {displayData.headline}
+                                    </h3>
+                                </div>
                             </div>
                         </div>
-                    </div>
-                )}
+                    )}
 
-                {/* Footer (Slogan + CTA) */}
-                <div className="bg-[#323436] p-4 flex items-center justify-between gap-4">
-                    <div className="flex-1 min-w-0">
-                        <p className="text-xs text-gray-400 uppercase tracking-wide truncate">
-                            {displayData.slogan}
-                        </p>
-                        <h4 className="font-bold text-white text-base truncate leading-tight mt-0.5">
-                            {displayData.headline}
-                        </h4>
+                    {/* Footer CTA */}
+                    <div className="bg-[#323436] px-3.5 py-3 flex items-center justify-between gap-3">
+                        <div className="flex-1 min-w-0">
+                            <p className="text-[10px] text-gray-500 uppercase tracking-wide truncate">{displayData.slogan}</p>
+                            <h4 className="font-semibold text-white text-sm truncate leading-tight mt-0.5">{displayData.headline}</h4>
+                        </div>
+                        <button className="shrink-0 bg-white/10 hover:bg-white/20 text-white font-semibold py-1.5 px-3.5 rounded-md text-xs transition-colors border border-white/10 whitespace-nowrap">
+                            {displayData.cta}
+                        </button>
                     </div>
-                    <button className="shrink-0 bg-white/10 hover:bg-white/20 text-white font-semibold py-2 px-4 rounded-md text-sm transition-colors border border-white/10 whitespace-nowrap">
-                        {displayData.cta}
-                    </button>
-                </div>
 
-                {/* Engagement Mockup */}
-                <div className="px-4 py-3 border-t border-white/5 flex items-center justify-between text-gray-400 text-sm">
-                    <div className="flex items-center gap-4">
-                        <button className="flex items-center gap-1.5 hover:text-white transition">
-                            <ThumbsUp className="w-4 h-4" /> <span>Like</span>
-                        </button>
-                        <button className="flex items-center gap-1.5 hover:text-white transition">
-                            <MessageCircle className="w-4 h-4" /> <span>Comment</span>
-                        </button>
-                        <button className="flex items-center gap-1.5 hover:text-white transition">
-                            <Share2 className="w-4 h-4" /> <span>Share</span>
-                        </button>
+                    {/* Engagement Bar — DE */}
+                    <div className="px-3.5 py-2.5 border-t border-white/5 flex items-center justify-between text-gray-500 text-xs">
+                        <div className="flex items-center gap-4">
+                            <button className="flex items-center gap-1 hover:text-white transition-colors">
+                                <ThumbsUp className="w-3.5 h-3.5" /> Gefällt mir
+                            </button>
+                            <button className="flex items-center gap-1 hover:text-white transition-colors">
+                                <MessageCircle className="w-3.5 h-3.5" /> Kommentieren
+                            </button>
+                            <button className="flex items-center gap-1 hover:text-white transition-colors">
+                                <Share2 className="w-3.5 h-3.5" /> Teilen
+                            </button>
+                        </div>
                     </div>
                 </div>
             </div>
 
-            {/* Scores */}
+            {/* ── Score Rings (staggered) ─────────────────── */}
             {(displayData.qualityScore || displayData.engagementScore) && (
-                <div className="grid grid-cols-2 gap-4 max-w-md mx-auto">
+                <div className="flex justify-center gap-10">
                     {displayData.qualityScore && (
-                        <div className="bg-card/30 backdrop-blur-sm p-4 rounded-xl border border-border/40 text-center">
-                            <div className="flex items-center justify-center gap-1 text-xs text-muted-foreground uppercase mb-1">
-                                <Star className="w-3 h-3" />
-                                {language === 'de' ? 'Qualität' : 'Quality'}
-                            </div>
-                            <div className="text-2xl font-bold text-primary">{displayData.qualityScore}/10</div>
-                        </div>
+                        <ScoreRing value={displayData.qualityScore} max={10} label="Qualität" color="hsl(var(--primary))" delay={200} />
                     )}
                     {displayData.engagementScore && (
-                        <div className="bg-card/30 backdrop-blur-sm p-4 rounded-xl border border-border/40 text-center">
-                            <div className="flex items-center justify-center gap-1 text-xs text-muted-foreground uppercase mb-1">
-                                <TrendingUp className="w-3 h-3" />
-                                {language === 'de' ? 'Engagement' : 'Engagement'}
-                            </div>
-                            <div className="text-2xl font-bold text-emerald-500">{displayData.engagementScore}%</div>
-                        </div>
+                        <ScoreRing value={displayData.engagementScore} max={100} label="Engagement" color="#10b981" delay={500} />
                     )}
                 </div>
             )}
 
-            {/* Hook Preview */}
+            {/* ── Hook Callout (premium) ─────────────────── */}
             {displayData.hook && displayData.hook !== displayData.description && (
-                <div className="max-w-md mx-auto p-4 rounded-xl bg-gradient-to-r from-violet-500/10 to-fuchsia-500/10 border border-violet-500/20">
-                    <div className="flex items-center gap-2 text-sm font-medium text-violet-600 dark:text-violet-400 mb-2">
-                        <Sparkles className="w-4 h-4" />
-                        {language === 'de' ? 'Hook dieser Variante' : 'Hook for this variant'}
+                <div className="max-w-md mx-auto stagger-in" style={{ animationDelay: '600ms' }}>
+                    <div className="relative p-4 rounded-xl bg-gradient-to-br from-card/90 to-card/60 backdrop-blur border border-border/30 overflow-hidden">
+                        {/* Gradient left accent */}
+                        <div className="absolute left-0 top-2 bottom-2 w-1 rounded-full bg-gradient-to-b from-violet-500 to-fuchsia-500" />
+
+                        <div className="pl-4">
+                            <div className="flex items-center gap-1.5 text-xs font-semibold text-violet-500 mb-2">
+                                <Wand2 className="w-3.5 h-3.5" />
+                                Hook dieser Variante
+                            </div>
+                            <p className="text-sm text-foreground/80 italic leading-relaxed">
+                                <span className="text-violet-400/60 text-lg leading-none mr-0.5">„</span>
+                                {displayData.hook}
+                                <span className="text-violet-400/60 text-lg leading-none ml-0.5">‟</span>
+                            </p>
+                        </div>
                     </div>
-                    <p className="text-sm text-foreground italic">"{displayData.hook}"</p>
                 </div>
             )}
         </div>
