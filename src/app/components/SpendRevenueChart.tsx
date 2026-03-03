@@ -51,7 +51,7 @@ export function SpendRevenueChart({
               <div className="h-4 w-48 bg-muted animate-pulse rounded" />
             </div>
           </div>
-          <div className="h-72 bg-muted animate-pulse rounded" />
+          <div className="h-[340px] bg-muted animate-pulse rounded" />
         </CardContent>
       </Card>
     );
@@ -70,7 +70,7 @@ export function SpendRevenueChart({
               <p className="text-sm text-muted-foreground">Aktualisiert mit deinem Zeitraum</p>
             </div>
           </div>
-          <div className="h-72 flex items-center justify-center">
+          <div className="h-[340px] flex items-center justify-center">
             <div className="text-sm text-muted-foreground">Fehler: {error}</div>
           </div>
         </CardContent>
@@ -95,7 +95,7 @@ export function SpendRevenueChart({
               <p className="text-sm text-muted-foreground">Aktualisiert mit deinem Zeitraum</p>
             </div>
           </div>
-          <div className="h-72 flex items-center justify-center">
+          <div className="h-[340px] flex items-center justify-center">
             <div className="text-center">
               <p className="text-sm font-medium text-foreground mb-1">{title}</p>
               <p className="text-sm text-muted-foreground">{subtitle}</p>
@@ -118,9 +118,19 @@ export function SpendRevenueChart({
               Aktualisiert mit deinem Zeitraum
             </p>
           </div>
+          <div className="flex items-center gap-4">
+            <div className="flex items-center gap-1.5">
+              <div className="w-2.5 h-2.5 rounded-full bg-[#10b981]" />
+              <span className="text-xs text-muted-foreground">Umsatz</span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <div className="w-2.5 h-2.5 rounded-full bg-[#3b82f6]" />
+              <span className="text-xs text-muted-foreground">Ausgaben</span>
+            </div>
+          </div>
         </div>
 
-        <div className="h-72">
+        <div className="h-[340px]">
           <ResponsiveContainer width="100%" height="100%">
             <AreaChart data={points} margin={{ top: 10, right: 8, left: 0, bottom: 0 }}>
               <CartesianGrid
@@ -167,7 +177,7 @@ export function SpendRevenueChart({
                 dataKey="revenue"
                 stroke="#10b981"
                 fill="#10b981"
-                fillOpacity={0.15}
+                fillOpacity={0.25}
                 strokeWidth={2}
               />
               <Area
@@ -175,24 +185,13 @@ export function SpendRevenueChart({
                 dataKey="spend"
                 stroke="#3b82f6"
                 fill="#3b82f6"
-                fillOpacity={0.10}
+                fillOpacity={0.15}
                 strokeWidth={2}
               />
             </AreaChart>
           </ResponsiveContainer>
         </div>
 
-        {/* Inline Legend */}
-        <div className="flex items-center gap-6 mt-3 pt-3 border-t border-border/30">
-          <div className="flex items-center gap-2">
-            <div className="w-3 h-3 rounded-full bg-[#10b981]" />
-            <span className="text-xs text-muted-foreground">Umsatz</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <div className="w-3 h-3 rounded-full bg-[#3b82f6]" />
-            <span className="text-xs text-muted-foreground">Ausgaben</span>
-          </div>
-        </div>
       </CardContent>
     </Card>
   );

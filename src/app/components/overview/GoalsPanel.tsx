@@ -122,7 +122,7 @@ export function GoalsPanel({ kpis }: GoalsPanelProps) {
                     {/* ROAS */}
                     <div className="space-y-2">
                         <div className="flex justify-between text-xs">
-                            <span className="text-muted-foreground font-medium">ROAS Target</span>
+                            <span className="text-muted-foreground font-medium">ROAS-Ziel</span>
                             <span className="font-bold">{kpis.roas.toFixed(2)}x / {roasTarget.toFixed(1)}x</span>
                         </div>
                         <div className="h-2 rounded-full bg-muted overflow-hidden">
@@ -133,7 +133,7 @@ export function GoalsPanel({ kpis }: GoalsPanelProps) {
                     {/* Spend */}
                     <div className="space-y-2">
                         <div className="flex justify-between text-xs">
-                            <span className="text-muted-foreground font-medium">Spend Cap</span>
+                            <span className="text-muted-foreground font-medium">Budget-Limit</span>
                             <span className="font-bold">{formatCurrency(kpis.spend)} / {formatCurrency(spendCap)}</span>
                         </div>
                         <div className="h-2 rounded-full bg-muted overflow-hidden">
@@ -144,7 +144,7 @@ export function GoalsPanel({ kpis }: GoalsPanelProps) {
                     {/* Revenue */}
                     <div className="space-y-2">
                         <div className="flex justify-between text-xs">
-                            <span className="text-muted-foreground font-medium">Revenue Goal</span>
+                            <span className="text-muted-foreground font-medium">Umsatz-Ziel</span>
                             <span className="font-bold">{formatCurrency(kpis.revenue)} / {formatCurrency(revenueGoal)}</span>
                         </div>
                         <div className="h-2 rounded-full bg-muted overflow-hidden">
@@ -175,7 +175,7 @@ export function GoalsPanel({ kpis }: GoalsPanelProps) {
                         </CardHeader>
                         <CardContent className="space-y-4">
                             <div className="space-y-2">
-                                <label className="text-sm font-medium">ROAS Target</label>
+                                <label className="text-sm font-medium">ROAS-Ziel</label>
                                 <input
                                     type="number"
                                     className={inputClass}
@@ -184,7 +184,7 @@ export function GoalsPanel({ kpis }: GoalsPanelProps) {
                                 />
                             </div>
                             <div className="space-y-2">
-                                <label className="text-sm font-medium">Spend Cap</label>
+                                <label className="text-sm font-medium">Budget-Limit</label>
                                 <input
                                     type="number"
                                     className={inputClass}
@@ -193,7 +193,7 @@ export function GoalsPanel({ kpis }: GoalsPanelProps) {
                                 />
                             </div>
                             <div className="space-y-2">
-                                <label className="text-sm font-medium">Revenue Goal</label>
+                                <label className="text-sm font-medium">Umsatz-Ziel</label>
                                 <input
                                     type="number"
                                     className={inputClass}

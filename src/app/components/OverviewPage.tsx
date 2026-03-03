@@ -4,17 +4,16 @@ import {
   DollarSign,
   Target,
   Zap,
-
   ListChecks,
   Wand2,
   ArrowRight,
-
+  Trophy,
+  Palette,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from './ui/card';
 import { Badge } from './ui/badge';
 import { Button } from './ui/button';
-import { SelectField } from './ui/select-field';
 import { DashboardShell } from './layout/DashboardShell';
 import { useOverview } from '../hooks/useOverview';
 import { useAuthState } from '../contexts/AuthContext';
@@ -47,7 +46,7 @@ function ChartPlaceholder() {
 
 function KpiSkeleton() {
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5">
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
       {Array.from({ length: 4 }).map((_, i) => (
         <MetricCardSkeleton key={i} />
       ))}
@@ -55,12 +54,23 @@ function KpiSkeleton() {
   );
 }
 
+const DATE_OPTIONS: { value: DateFilter; label: string }[] = [
+  { value: 'today', label: 'Heute' },
+  { value: '7d', label: '7 Tage' },
+  { value: '30d', label: '30 Tage' },
+];
+
+const CHANNEL_OPTIONS: { value: ChannelFilter; label: string }[] = [
+  { value: 'meta', label: 'Meta' },
+  { value: 'google', label: 'Google' },
+  { value: 'tiktok', label: 'TikTok' },
+];
+
 export function OverviewPage({ onNavigate }: OverviewPageProps) {
   const [dateFilter, setDateFilter] = useState<DateFilter>('7d');
   const [channelFilter, setChannelFilter] = useState<ChannelFilter>('meta');
   useAuthState();
 
-  // Fetch data with hook
   const { data, loading, error } = useOverview(dateFilter, channelFilter);
 
   // Checklist State
@@ -79,7 +89,7 @@ export function OverviewPage({ onNavigate }: OverviewPageProps) {
       description: 'Starte eine Kampagne um Ergebnisse zu erzielen',
       completed: false,
       actionLabel: 'Erstellen',
-      onAction: () => { onNavigate('studio'); },
+      onAction: () => { onNavigate('campaigns'); },
     },
     {
       id: 'generate-creatives',
@@ -128,6 +138,13 @@ export function OverviewPage({ onNavigate }: OverviewPageProps) {
     warningToastRef.current = warningMessage;
   }, [warningMessage]);
 
+  // Extract sparkline data from timeseries
+  const spendSparkline = useMemo(() => (data?.timeseries ?? []).map(p => p.spend), [data?.timeseries]);
+  const revenueSparkline = useMemo(() => (data?.timeseries ?? []).map(p => p.revenue), [data?.timeseries]);
+  const roasSparkline = useMemo(() => (data?.timeseries ?? []).map(p => p.roas), [data?.timeseries]);
+
+  const comparisonLabel = dateFilter === 'today' ? 'vs. Vortag' : dateFilter === '7d' ? 'vs. Vorwoche' : 'vs. Vormonat';
+
   // KPI Data
   const kpis: KpiItem[] = [
     {
@@ -135,34 +152,37 @@ export function OverviewPage({ onNavigate }: OverviewPageProps) {
       value: formatCurrency(data?.kpis.spend ?? 0),
       change: formatDelta(data?.kpis.spendChangePct),
       isPositive: (data?.kpis.spendChangePct ?? 0) <= 0,
-      comparison: `vs. letzte ${dateFilter === 'today' ? 'Tag' : dateFilter}`,
+      comparison: comparisonLabel,
       icon: <DollarSign className="w-5 h-5" />,
       accentColor: '#3b82f6',
+      sparklineData: spendSparkline.length >= 2 ? spendSparkline : undefined,
     },
     {
       label: 'Umsatz gesamt',
       value: formatCurrency(data?.kpis.revenue ?? 0),
       change: formatDelta(data?.kpis.revenueChangePct),
       isPositive: (data?.kpis.revenueChangePct ?? 0) >= 0,
-      comparison: `vs. letzte ${dateFilter === 'today' ? 'Tag' : dateFilter}`,
+      comparison: comparisonLabel,
       icon: <TrendingUp className="w-5 h-5" />,
       accentColor: '#10b981',
+      sparklineData: revenueSparkline.length >= 2 ? revenueSparkline : undefined,
     },
     {
       label: 'Ø ROAS',
       value: `${(data?.kpis.roas ?? 0).toFixed(2)}x`,
       change: formatDelta(data?.kpis.roasChangePct, '%'),
       isPositive: (data?.kpis.roasChangePct ?? 0) >= 0,
-      comparison: `vs. letzte ${dateFilter === 'today' ? 'Tag' : dateFilter}`,
+      comparison: comparisonLabel,
       icon: <Target className="w-5 h-5" />,
       accentColor: '#8b5cf6',
+      sparklineData: roasSparkline.length >= 2 ? roasSparkline : undefined,
     },
     {
       label: 'Aktive Kampagnen',
       value: formatCompact(data?.kpis.activeCampaigns ?? 0),
       change: data?.kpis.activeCampaigns ? `+${data.kpis.activeCampaigns}` : '—',
       isPositive: true,
-      comparison: `vs. letzte ${dateFilter === 'today' ? 'Tag' : dateFilter}`,
+      comparison: comparisonLabel,
       icon: <Zap className="w-5 h-5" />,
       accentColor: '#f59e0b',
     },
@@ -176,238 +196,226 @@ export function OverviewPage({ onNavigate }: OverviewPageProps) {
       id: 'meta-connect',
       title: metaConnected ? 'Meta verbunden' : 'Meta Ads verbinden',
       description: metaConnected
-        ? 'Dein Konto ist verknüpft. Synchronisiere jetzt aktuelle Performance-Daten.'
-        : 'Schalte Live-Kampagnenmetriken und ROAS-Tracking in Minuten frei.',
-      priority: metaConnected ? 'low' : 'high',
-      cta: metaConnected ? 'Jetzt synchronisieren' : 'Verbinden',
-      icon: <Zap className="w-5 h-5 text-primary" />,
+        ? 'Synchronisiere aktuelle Performance-Daten.'
+        : 'Live-Kampagnenmetriken und ROAS-Tracking freischalten.',
+      cta: metaConnected ? 'Synchronisieren' : 'Verbinden',
+      icon: <Zap className="w-4 h-4 text-primary" />,
       onClick: () => onNavigate('settings', { tab: 'integrations' }),
     },
     {
       id: 'creative-run',
-      title: 'Neue Creatives generieren',
-      description: 'Starte 3 frische Ad-Varianten gegen Creative Fatigue.',
-      priority: 'medium',
+      title: 'Neue Creatives',
+      description: '3 frische Ad-Varianten gegen Creative Fatigue.',
       cta: 'Builder öffnen',
-      icon: <Wand2 className="w-5 h-5 text-primary" />,
+      icon: <Wand2 className="w-4 h-4 text-primary" />,
       onClick: () => onNavigate('studio'),
     },
     {
       id: 'campaign-review',
-      title: 'Top Kampagnen prüfen',
-      description: 'Finde Gewinner und skaliere Budgets mit Vertrauen.',
-      priority: 'medium',
-      cta: 'Kampagnen ansehen',
-      icon: <Target className="w-5 h-5 text-primary" />,
+      title: 'Kampagnen prüfen',
+      description: 'Gewinner finden und Budgets skalieren.',
+      cta: 'Ansehen',
+      icon: <Target className="w-4 h-4 text-primary" />,
       onClick: () => onNavigate('campaigns'),
     },
   ];
 
   return (
-    <DashboardShell
-      title="Übersicht"
-      subtitle="Das passiert gerade mit deinen Kampagnen"
-      headerChips={
-        <div className="flex flex-wrap gap-2">
-          <Badge variant={metaConnected ? "secondary" : "default"} className="px-3 py-1">
-            {metaConnected ? 'Meta verbunden' : 'Meta nicht verbunden'}
-          </Badge>
-          <Badge variant="outline" className="px-3 py-1">Zeitraum: {dateFilter}</Badge>
-          <Badge variant="outline" className="px-3 py-1">Kanal: {channelFilter}</Badge>
+    <DashboardShell hideHero>
+      {/* ── Segmented Filter Bar ──────────────────────────── */}
+      <div className="flex flex-wrap items-center gap-3">
+        {/* Date Filter — Segmented Control */}
+        <div className="flex items-center bg-muted/50 rounded-lg p-1 border border-border/50">
+          {DATE_OPTIONS.map(opt => (
+            <button
+              key={opt.value}
+              onClick={() => setDateFilter(opt.value)}
+              className={`px-3 py-1.5 rounded-md text-xs font-medium transition-all ${dateFilter === opt.value
+                  ? 'bg-background text-foreground shadow-sm'
+                  : 'text-muted-foreground hover:text-foreground'
+                }`}
+            >
+              {opt.label}
+            </button>
+          ))}
         </div>
-      }
-      hideHero
-    >
-      {/* Filters */}
-      <div className="flex items-center gap-3">
-        <SelectField
-          value={dateFilter}
-          onChange={(e) => setDateFilter(e.target.value as DateFilter)}
-          className="text-sm py-2 px-3 rounded-lg"
-          wrapperClassName="min-w-[140px]"
-        >
-          <option value="today">Heute</option>
-          <option value="7d">Letzte 7 Tage</option>
-          <option value="30d">Letzte 30 Tage</option>
-        </SelectField>
-        <SelectField
-          value={channelFilter}
-          onChange={(e) => setChannelFilter(e.target.value as ChannelFilter)}
-          className="text-sm py-2 px-3 rounded-lg"
-          wrapperClassName="min-w-[140px]"
-        >
-          <option value="meta">Meta Ads</option>
-          <option value="google">Google Ads</option>
-          <option value="tiktok">TikTok Ads</option>
-        </SelectField>
+
+        {/* Channel Filter — Segmented Control */}
+        <div className="flex items-center bg-muted/50 rounded-lg p-1 border border-border/50">
+          {CHANNEL_OPTIONS.map(opt => (
+            <button
+              key={opt.value}
+              onClick={() => setChannelFilter(opt.value)}
+              className={`px-3 py-1.5 rounded-md text-xs font-medium transition-all ${channelFilter === opt.value
+                  ? 'bg-background text-foreground shadow-sm'
+                  : 'text-muted-foreground hover:text-foreground'
+                }`}
+            >
+              {opt.label}
+            </button>
+          ))}
+        </div>
+
+        {/* Meta Status Pill */}
+        <Badge variant={metaConnected ? 'secondary' : 'default'} className="px-2.5 py-1 text-xs">
+          {metaConnected ? '● Meta verbunden' : '○ Meta nicht verbunden'}
+        </Badge>
       </div>
 
-      {/* KPI Cards Row */}
+      {/* ── KPI Cards ────────────────────────────────────── */}
       {loading ? <KpiSkeleton /> : <KpiCardGrid kpis={kpis} />}
 
-      {/* Charts Section */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
-        {/* Left: Charts + Checklist */}
-        <div className="lg:col-span-2 space-y-6">
-          <Suspense fallback={<ChartPlaceholder />}>
-            <LazySpendRevenueChart
-              points={data?.timeseries ?? []}
-              range={dateFilter}
-              loading={loading}
-              error={error}
-              metaConnected={metaConnected}
-            />
-          </Suspense>
-          <GettingStartedChecklist steps={checklistSteps} />
-        </div>
+      {/* ── Main Chart — FULL WIDTH ──────────────────────── */}
+      <Suspense fallback={<ChartPlaceholder />}>
+        <LazySpendRevenueChart
+          points={data?.timeseries ?? []}
+          range={dateFilter}
+          loading={loading}
+          error={error}
+          metaConnected={metaConnected}
+        />
+      </Suspense>
 
-        {/* Right Column */}
-        <div className="lg:col-span-1 space-y-6">
-          <Suspense fallback={<ChartPlaceholder />}>
-            <LazyRoasMiniChart
-              points={(data?.timeseries ?? []).map(p => ({ ts: p.ts, roas: p.roas }))}
-              range={dateFilter}
-              loading={loading}
-              error={error}
-              metaConnected={metaConnected}
-            />
-          </Suspense>
+      {/* ── Insights Row — 3 Columns ─────────────────────── */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        {/* ROAS Trend */}
+        <Suspense fallback={<ChartPlaceholder />}>
+          <LazyRoasMiniChart
+            points={(data?.timeseries ?? []).map(p => ({ ts: p.ts, roas: p.roas }))}
+            range={dateFilter}
+            loading={loading}
+            error={error}
+            metaConnected={metaConnected}
+          />
+        </Suspense>
 
-
-
-          {/* Action Center */}
-          <Card variant="glass">
-            <CardHeader className="pb-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <CardTitle className="text-base">Nächste Schritte</CardTitle>
-                  <CardDescription>Deine wichtigsten Aufgaben</CardDescription>
+        {/* Top Kampagne */}
+        <Card variant="glass" className="hover:border-primary/20 hover:-translate-y-0.5 hover:shadow-lg transition-all duration-300">
+          <CardContent className="p-5">
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center gap-2">
+                <div className="h-8 w-8 rounded-lg bg-green-500/10 border border-green-500/20 flex items-center justify-center">
+                  <Trophy className="w-4 h-4 text-green-600" />
                 </div>
-                <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center">
-                  <ListChecks className="w-4 h-4 text-primary" />
+                <div>
+                  <h3 className="text-sm font-semibold text-foreground">Top Kampagne</h3>
+                  <p className="text-[11px] text-muted-foreground">Höchster ROAS (24h)</p>
                 </div>
               </div>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              {actions.map((item) => (
-                <div
-                  key={item.id}
-                  className="flex flex-col gap-3 rounded-xl border border-border/50 bg-background/50 p-4 hover:bg-background/80 transition-colors"
-                >
-                  <div className="flex items-start gap-3">
-                    <div className="h-8 w-8 rounded-lg bg-primary/10 border border-primary/10 flex items-center justify-center shrink-0">
-                      {item.icon}
-                    </div>
-                    <div>
-                      <div className="flex items-center gap-2 mb-1 flex-wrap">
-                        <span className="text-sm font-semibold text-foreground">{item.title}</span>
-
-                      </div>
-                      <p className="text-xs text-muted-foreground leading-relaxed">{item.description}</p>
-                    </div>
-                  </div>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={item.onClick}
-                    className="w-full h-8 text-xs bg-muted/50 hover:bg-primary hover:text-primary-foreground"
-                  >
-                    {item.cta}
-                  </Button>
-                </div>
-              ))}
-            </CardContent>
-          </Card>
-
-          <GoalsPanel kpis={{ roas: data?.kpis.roas ?? 0, spend: data?.kpis.spend ?? 0, revenue: data?.kpis.revenue ?? 0 }} />
-        </div>
-      </div>
-
-      {/* Insights Section */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 mt-6">
-        {/* Top Campaign */}
-        <Card variant="glass" className="hover:border-primary/20 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-primary/5 transition-all duration-300">
-          <CardContent className="p-6">
-            <div className="flex items-start justify-between mb-4">
+            </div>
+            <div className="text-base font-bold text-foreground mb-3 truncate">{topCampaign.name}</div>
+            <div className="grid grid-cols-3 gap-2 mb-3">
               <div>
-                <h3 className="text-h5 text-foreground">Top Kampagne</h3>
-                <p className="text-body-sm text-muted-foreground">Höchster ROAS (24h)</p>
+                <div className="text-[10px] text-muted-foreground uppercase tracking-wider">ROAS</div>
+                <div className="text-base font-bold text-primary">{topCampaign.roas}x</div>
               </div>
-              <Badge variant="default" className="bg-green-500/10 text-green-600 border-green-500/20 hover:bg-green-500/20">
-                Top Performer
-              </Badge>
-            </div>
-            <div className="space-y-4">
-              <div className="text-xl font-bold text-foreground">{topCampaign.name}</div>
-              <div className="grid grid-cols-3 gap-4">
-                <div>
-                  <div className="text-xs text-muted-foreground mb-1">ROAS</div>
-                  <div className="text-lg font-bold text-primary">{topCampaign.roas}x</div>
-                </div>
-                <div>
-                  <div className="text-xs text-muted-foreground mb-1">Ausgaben</div>
-                  <div className="text-lg font-bold">€{(topCampaign.spend / 1000).toFixed(1)}K</div>
-                </div>
-                <div>
-                  <div className="text-xs text-muted-foreground mb-1">Umsatz</div>
-                  <div className="text-lg font-bold">€{(topCampaign.revenue / 1000).toFixed(1)}K</div>
-                </div>
+              <div>
+                <div className="text-[10px] text-muted-foreground uppercase tracking-wider">Ausgaben</div>
+                <div className="text-base font-bold">€{(topCampaign.spend / 1000).toFixed(1)}K</div>
               </div>
-              <Button
-                variant="ghost"
-                className="w-full justify-between text-primary hover:text-primary hover:bg-primary/5 group"
-                onClick={() => onNavigate('campaigns')}
-              >
-                Kampagne ansehen <ArrowRight className="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" />
-              </Button>
+              <div>
+                <div className="text-[10px] text-muted-foreground uppercase tracking-wider">Umsatz</div>
+                <div className="text-base font-bold">€{(topCampaign.revenue / 1000).toFixed(1)}K</div>
+              </div>
             </div>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="w-full justify-between text-primary hover:text-primary hover:bg-primary/5 text-xs group h-8"
+              onClick={() => onNavigate('campaigns')}
+            >
+              Kampagne ansehen <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
+            </Button>
           </CardContent>
         </Card>
 
-        {/* Best Creative */}
-        <Card variant="glass" className="hover:border-primary/20 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-primary/5 transition-all duration-300">
-          <CardContent className="p-6">
-            <div className="flex items-start justify-between mb-4">
+        {/* Bestes Creative */}
+        <Card variant="glass" className="hover:border-primary/20 hover:-translate-y-0.5 hover:shadow-lg transition-all duration-300">
+          <CardContent className="p-5">
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center gap-2">
+                <div className="h-8 w-8 rounded-lg bg-primary/10 border border-primary/20 flex items-center justify-center">
+                  <Palette className="w-4 h-4 text-primary" />
+                </div>
+                <div>
+                  <h3 className="text-sm font-semibold text-foreground">Bestes Creative</h3>
+                  <p className="text-[11px] text-muted-foreground">Höchster AI Score</p>
+                </div>
+              </div>
+            </div>
+            <div className="text-base font-bold text-foreground mb-3 truncate">{bestCreative.name}</div>
+            <div className="space-y-2 mb-3">
+              <div className="flex justify-between text-xs font-medium">
+                <span>Performance-Score</span>
+                <span className="text-primary">{bestCreative.aiScore}/100</span>
+              </div>
+              <div className="h-1.5 rounded-full bg-muted overflow-hidden">
+                <div className="h-full bg-primary transition-all duration-500" style={{ width: `${bestCreative.aiScore}%` }} />
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-2 mb-3">
               <div>
-                <h3 className="text-h5 text-foreground">Bestes Creative</h3>
-                <p className="text-body-sm text-muted-foreground">Höchster AI Score</p>
+                <div className="text-[10px] text-muted-foreground uppercase tracking-wider">CTR</div>
+                <div className="text-base font-bold">{bestCreative.ctr}%</div>
               </div>
-              <Badge variant="default" className="bg-primary/10 text-primary border-primary/20 hover:bg-primary/20">
-                AI Insight
-              </Badge>
+              <div>
+                <div className="text-[10px] text-muted-foreground uppercase tracking-wider">Konversionen</div>
+                <div className="text-base font-bold">{bestCreative.conversions}</div>
+              </div>
             </div>
-            <div className="space-y-4">
-              <div className="text-xl font-bold text-foreground">{bestCreative.name}</div>
-              <div className="space-y-2">
-                <div className="flex justify-between text-xs font-medium">
-                  <span>Performance Score</span>
-                  <span className="text-primary">{bestCreative.aiScore}/100</span>
-                </div>
-                <div className="h-2 rounded-full bg-muted overflow-hidden">
-                  <div className="h-full bg-primary" style={{ width: `${bestCreative.aiScore}%` }} />
-                </div>
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <div className="text-xs text-muted-foreground mb-1">CTR</div>
-                  <div className="text-lg font-bold">{bestCreative.ctr}%</div>
-                </div>
-                <div>
-                  <div className="text-xs text-muted-foreground mb-1">Conversions</div>
-                  <div className="text-lg font-bold">{bestCreative.conversions}</div>
-                </div>
-              </div>
-              <Button
-                variant="ghost"
-                className="w-full justify-between text-primary hover:text-primary hover:bg-primary/5 group"
-                onClick={() => onNavigate('analytics')}
-              >
-                Analytics ansehen <ArrowRight className="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" />
-              </Button>
-            </div>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="w-full justify-between text-primary hover:text-primary hover:bg-primary/5 text-xs group h-8"
+              onClick={() => onNavigate('analytics')}
+            >
+              Analytics ansehen <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
+            </Button>
           </CardContent>
         </Card>
       </div>
+
+      {/* ── Bottom Row — Goals + Quick Actions ────────────── */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        {/* Goals */}
+        <GoalsPanel kpis={{ roas: data?.kpis.roas ?? 0, spend: data?.kpis.spend ?? 0, revenue: data?.kpis.revenue ?? 0 }} />
+
+        {/* Quick Actions */}
+        <Card variant="glass">
+          <CardHeader className="pb-3">
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle className="text-base">Nächste Schritte</CardTitle>
+                <CardDescription>Deine wichtigsten Aufgaben</CardDescription>
+              </div>
+              <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center">
+                <ListChecks className="w-4 h-4 text-primary" />
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent className="space-y-2">
+            {actions.map((item) => (
+              <div
+                key={item.id}
+                className="flex items-center gap-3 rounded-lg border border-border/50 bg-background/50 p-3 hover:bg-background/80 transition-colors group cursor-pointer"
+                onClick={item.onClick}
+              >
+                <div className="h-7 w-7 rounded-lg bg-primary/10 border border-primary/10 flex items-center justify-center shrink-0">
+                  {item.icon}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <span className="text-sm font-semibold text-foreground">{item.title}</span>
+                  <p className="text-xs text-muted-foreground truncate">{item.description}</p>
+                </div>
+                <ArrowRight className="w-3.5 h-3.5 text-muted-foreground group-hover:text-primary group-hover:translate-x-0.5 transition-all shrink-0" />
+              </div>
+            ))}
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* ── Onboarding Checklist — AT THE BOTTOM ─────────── */}
+      <GettingStartedChecklist steps={checklistSteps} />
     </DashboardShell>
   );
 }
