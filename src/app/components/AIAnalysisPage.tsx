@@ -39,6 +39,7 @@ import { CampaignTable } from './ai-analysis/CampaignTable';
 import { CampaignCardList } from './ai-analysis/CampaignCardList';
 import { AIRecommendationsPanel } from './ai-analysis/AIRecommendationsPanel';
 import { PredictiveInsightsSection } from './ai-analysis/PredictiveInsightsSection';
+import { AutomatedRulesPanel, type AutomationRule } from './ai-analysis/AutomatedRulesPanel';
 
 // Shared types
 import type { AIRecommendation, AIAnalysis, Ad, AdSet, Campaign, RecommendationStyle } from './ai-analysis/types';
@@ -80,13 +81,31 @@ export function AIAnalysisPage() {
 
   // ── Handlers ──────────────────────────────────────────────────────
 
-  const toggleAutopilot = () => {
-    setAutopilotEnabled((prev) => {
-      const next = !prev;
-      toast.success(next ? 'Autopilot active & optimizing' : 'Autopilot paused');
-      return next;
-    });
-  };
+  const toggleAutopilot = useCallback(async () => {
+    const next = !autopilotEnabled;
+    setAutopilotEnabled(next);
+    toast.success(next ? 'Autopilot active & optimizing' : 'Autopilot paused');
+    try {
+      const { data: session } = await supabase.auth.getSession();
+      const uid = session.session?.user?.id;
+      if (uid) {
+        await supabase.from('profiles').update({ autopilot_enabled: next }).eq('id', uid);
+      }
+    } catch (err) {
+      console.error('[Autopilot] Failed to persist state:', err);
+    }
+  }, [autopilotEnabled]);
+
+  // Load autopilot state from profile
+  useEffect(() => {
+    (async () => {
+      const { data: session } = await supabase.auth.getSession();
+      const uid = session.session?.user?.id;
+      if (!uid) return;
+      const { data } = await supabase.from('profiles').select('autopilot_enabled').eq('id', uid).single();
+      if (data?.autopilot_enabled != null) setAutopilotEnabled(!!data.autopilot_enabled);
+    })();
+  }, []);
 
   const applyRecommendations = async () => {
     if (!Object.keys(aiAnalysisCache).length) return;
@@ -580,6 +599,34 @@ export function AIAnalysisPage() {
           <CreativeIntelligencePanel
             creatives={campaigns.map(c => ({ id: c.id, name: c.name, status: c.status, roas: c.roas, ctr: c.ctr, spend: c.spend, impressions: c.impressions, conversions: c.conversions, daysRunning: 7 }))}
             onActionClick={(action, ids) => toast.info(`Action: ${action} für ${ids.length} Creatives`)}
+          />
+        </div>
+      )}
+
+      {campaigns.length > 0 && (
+        <div className="mb-6">
+          <AutomatedRulesPanel
+            onSaveRule={async (rule: AutomationRule) => {
+              const { data: session } = await supabase.auth.getSession();
+              const uid = session.session?.user?.id;
+              if (!uid) return;
+              await supabase.from('automation_rules').upsert({
+                id: rule.id,
+                user_id: uid,
+                name: rule.name,
+                enabled: rule.enabled,
+                condition: rule.condition,
+                action: rule.action,
+                trigger_count: rule.triggerCount,
+                created_at: rule.createdAt,
+              }, { onConflict: 'id' });
+            }}
+            onDeleteRule={async (id: string) => {
+              await supabase.from('automation_rules').delete().eq('id', id);
+            }}
+            onToggleRule={async (id: string, enabled: boolean) => {
+              await supabase.from('automation_rules').update({ enabled }).eq('id', id);
+            }}
           />
         </div>
       )}
