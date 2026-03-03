@@ -17,7 +17,7 @@ import { checkRateLimit } from './_shared/rateLimiter.js';
 import { categorizeError, getUserMessage } from './_shared/errorCategorizer.js';
 import { generateWithAIDesign, generateWithCompositeAsync, isForeplayAvailable } from './_shared/railwayImageClient.js';
 import { getCorsHeaders } from './_shared/cors.js';
-import { generateSingleAd as nanoBananaGenerateSingleAd, checkAvailability as isGeminiAvailable } from './_shared/adPack/nanoBananaCreativeEngine.js';
+import { generateSingleAd as nanoBananaGenerateSingleAd, scoreAdImage, checkAvailability as isGeminiAvailable } from './_shared/adPack/nanoBananaCreativeEngine.js';
 import { GoogleGenAI } from '@google/genai';
 import crypto from 'crypto';
 
@@ -277,35 +277,63 @@ export const handler = async (event) => {
             console.log('[AI Ad Generate] ⚠️ Railway/Foreplay unavailable, using fallback pipeline');
         }
 
-        // ─── ATTEMPT 2: NANOBANANA (AI Creative Director) ───
+        // ─── ATTEMPT 2: NANOBANANA (AI Creative Director) — 3 VARIANTS ───
         if (!finalImageBuffer) {
-            console.log('[AI Ad Generate] 🍌 NANOBANANA: AI Creative Director');
+            console.log('[AI Ad Generate] 🍌 NANOBANANA: AI Creative Director — 3 Variants');
             await updateProgress('nanoBanana', 40, { engine: 'nanoBanana_v5' });
 
+            const adFormat = body.format || 'square';
+
+            // Generate 3 diverse variants in parallel using forced concept+layout indices
+            const variantConfigs = [
+                { _forceConceptIndex: 0, _forceLayoutIndex: 0 },   // Lifestyle + Split Panel
+                { _forceConceptIndex: 5, _forceLayoutIndex: 8 },   // Feature Callout + Photo Illustration
+                { _forceConceptIndex: 10, _forceLayoutIndex: 15 }, // Comparison Grid + Review Showcase
+            ];
+
+            const baseParams = {
+                productImageUrl: hasProductImage ? body.productImageUrl : null,
+                headline: body.headline || body.productName || 'Discover',
+                subheadline: body.subheadline || body.usp || '',
+                cta: body.cta || '',
+                productName: body.productName,
+                offer: body.text || body.usp || body.productName || 'Premium Product',
+                audience: body.audience || 'quality-conscious consumers',
+                industry: body.industry || 'ecommerce_general',
+                angle: body.angle || '',
+                language: body.language || 'de',
+                usp: body.usp || '',
+                description: body.description || '',
+                text: body.text || '',
+                brandKit: body.brandKit,
+                format: adFormat,
+            };
+
             try {
-                const nbResult = await nanoBananaGenerateSingleAd({
-                    productImageUrl: hasProductImage ? body.productImageUrl : null,
-                    headline: body.headline || body.productName || 'Discover',
-                    subheadline: body.subheadline || body.usp || '',
-                    cta: body.cta || '',
-                    productName: body.productName,
-                    offer: body.text || body.usp || body.productName || 'Premium Product',
-                    audience: body.audience || 'quality-conscious consumers',
-                    industry: body.industry || 'ecommerce_general',
-                    angle: body.angle || '',
-                    language: body.language || 'de',
-                    usp: body.usp || '',
-                    description: body.description || '',
-                    text: body.text || '',
-                    brandKit: body.brandKit,
-                    format: 'square',
-                });
+                const variantResults = await Promise.allSettled(
+                    variantConfigs.map(vc => nanoBananaGenerateSingleAd({ ...baseParams, ...vc }))
+                );
 
-                finalImageBuffer = nbResult.buffer;
-                engine = `nanoBanana_v5_${nbResult.engine}`;
+                // Collect successful variants
+                const variants = [];
+                for (let i = 0; i < variantResults.length; i++) {
+                    if (variantResults[i].status === 'fulfilled') {
+                        variants.push(variantResults[i].value);
+                    } else {
+                        console.warn(`[AI Ad Generate] Variant ${i + 1} failed: ${variantResults[i].reason?.message}`);
+                    }
+                }
 
-                // Use AI-generated copy if available, fallback to user input
-                const aiCopy = nbResult.copy || {};
+                if (variants.length === 0) {
+                    throw new Error('All 3 variants failed');
+                }
+
+                // Use first successful variant as primary
+                const primary = variants[0];
+                finalImageBuffer = primary.buffer;
+                engine = `nanoBanana_v5_${primary.engine}`;
+
+                const aiCopy = primary.copy || {};
                 outputData = {
                     headline: aiCopy.headline || body.headline || body.productName || 'AI Generated',
                     slogan: aiCopy.tagline || body.subheadline || '',
@@ -315,10 +343,41 @@ export const handler = async (event) => {
                     hook: aiCopy.hook || '',
                     imagePrompt: 'NanoBanana v5.1 AI Creative Director',
                     template: 'nanoBanana_v5',
-                    metadata: nbResult.metadata,
+                    metadata: primary.metadata,
+                    variantCount: variants.length,
                 };
 
-                console.log(`[AI Ad Generate] ✅ NanoBanana success (${nbResult.engine}, AI brief: ${nbResult.usedAiBrief})`);
+                // Upload additional variant images
+                const variantUrls = [];
+                for (let i = 1; i < variants.length; i++) {
+                    try {
+                        const vFilename = `creatives/${user.id}/${jobId}_v${i + 1}.png`;
+                        await supabaseAdmin.storage
+                            .from('creative-images')
+                            .upload(vFilename, variants[i].buffer, { contentType: 'image/png', upsert: true });
+                        const { data: vUrlData } = supabaseAdmin.storage.from('creative-images').getPublicUrl(vFilename);
+                        variantUrls.push({
+                            url: vUrlData.publicUrl,
+                            concept: variants[i].metadata?.concept,
+                            layout: variants[i].metadata?.layout,
+                        });
+                    } catch (vErr) {
+                        console.warn(`[AI Ad Generate] Variant ${i + 1} upload failed: ${vErr.message}`);
+                    }
+                }
+                if (variantUrls.length > 0) {
+                    outputData.variants = variantUrls;
+                }
+
+                // Score primary image with Gemini Vision
+                try {
+                    const qualityScore = await scoreAdImage(finalImageBuffer);
+                    outputData.qualityScore = qualityScore;
+                } catch (scoreErr) {
+                    console.warn(`[AI Ad Generate] Scoring skipped: ${scoreErr.message}`);
+                }
+
+                console.log(`[AI Ad Generate] ✅ NanoBanana: ${variants.length}/3 variants generated`);
             } catch (nbErr) {
                 console.warn(`[AI Ad Generate] ⚠️ NanoBanana failed: ${nbErr.message}`);
                 await updateProgress('nanoBanana_failed', 60, { error: nbErr.message });

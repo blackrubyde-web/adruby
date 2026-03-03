@@ -9,7 +9,8 @@ import {
     Download, Save, Upload, FileText, MessageSquare,
     Sparkles, Image, Loader2, RefreshCw,
     AlertCircle, Store, Zap, CheckCircle2, X,
-    Search, Target, PenTool, Palette, Frame, Wand2, Send
+    Search, Target, PenTool, Palette, Frame, Wand2, Send,
+    RectangleVertical, Square, Smartphone
 } from 'lucide-react';
 import { generateAd, refineAd } from '../lib/api/aibuilder';
 import { t } from '../lib/aibuilder/translations';
@@ -72,6 +73,9 @@ export function AIAdBuilderPage() {
     // Ad refinement state
     const [refinePrompt, setRefinePrompt] = useState('');
     const [isRefining, setIsRefining] = useState(false);
+
+    // Ad format state
+    const [adFormat, setAdFormat] = useState<'square' | 'portrait' | 'story'>('square');
 
     // Theater mode completed steps
     const [completedSteps, setCompletedSteps] = useState<number[]>([]);
@@ -220,6 +224,7 @@ export function AIAdBuilderPage() {
                 productImageUrl,
                 useAIDesignSystem,
                 useCompositePipeline,
+                format: adFormat,
                 ...inputData,
             });
 
@@ -412,6 +417,40 @@ export function AIAdBuilderPage() {
                             </div>
                         </div>
                     )}
+
+                    {/* ── Format Selector ── */}
+                    <div className="input-section">
+                        <div className="input-section-header">
+                            <div className="flex items-center gap-2">
+                                <div className="w-6 h-6 rounded-lg bg-gradient-to-br from-primary/20 to-red-500/10 flex items-center justify-center">
+                                    <RectangleVertical className="w-3.5 h-3.5 text-primary/70" />
+                                </div>
+                                <h3 className="text-sm font-semibold text-foreground">Format</h3>
+                            </div>
+                        </div>
+                        <div className="input-section-body">
+                            <div className="flex gap-2">
+                                {[
+                                    { id: 'square' as const, label: '1:1 Feed', icon: Square },
+                                    { id: 'portrait' as const, label: '4:5 Instagram', icon: RectangleVertical },
+                                    { id: 'story' as const, label: '9:16 Story', icon: Smartphone },
+                                ].map(fmt => (
+                                    <button
+                                        key={fmt.id}
+                                        onClick={() => setAdFormat(fmt.id)}
+                                        className={`flex-1 flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl text-xs font-medium transition-all duration-300
+                                            ${adFormat === fmt.id
+                                                ? 'bg-primary/10 text-primary border border-primary/30 shadow-sm'
+                                                : 'bg-muted/20 text-muted-foreground border border-border/20 hover:bg-muted/40 hover:text-foreground'
+                                            }`}
+                                    >
+                                        <fmt.icon className="w-3.5 h-3.5" />
+                                        {fmt.label}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+                    </div>
 
                     {/* Form / Free / Store Content */}
                     {mode === 'form' ? (

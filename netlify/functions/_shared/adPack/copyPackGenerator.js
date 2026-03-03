@@ -1,5 +1,5 @@
 /**
- * Copy Pack Generator v1.0
+ * Copy Pack Generator v2.0
  * 
  * Generates a complete Meta ad copy pack from an AdSpec:
  *   - 12 primary texts (varied hooks: PAS, AIDA, story, question, stat, comparison)
@@ -9,10 +9,10 @@
  *   - 6 UGC-style variants (casual, first-person, testimonial)
  *   - 6 direct-response variants (authoritative, data-backed, punchy)
  * 
- * Uses GPT-4o with structured JSON output.
+ * 100% Gemini — migrated from GPT-4o.
  */
 
-import { getOpenAiClient } from '../openai.js';
+import { GoogleGenAI } from '@google/genai';
 
 // ═══════════════════════════════════════════════════════════════
 // HOOK FRAMEWORKS
@@ -190,7 +190,7 @@ CRITICAL: Return ONLY valid JSON. No markdown, no explanation, no code fences.`;
 }
 
 // ═══════════════════════════════════════════════════════════════
-// MAIN GENERATOR
+// MAIN GENERATOR — 100% GEMINI
 // ═══════════════════════════════════════════════════════════════
 
 /**
@@ -213,7 +213,10 @@ export async function generateCopyPack(adSpec, options = {}) {
     const { maxRetries = 2, temperature = 0.85 } = options;
     const language = adSpec.constraints?.language || 'de';
 
-    const openai = getOpenAiClient();
+    const apiKey = process.env.GEMINI_API_KEY;
+    if (!apiKey) throw new Error('GEMINI_API_KEY not set — cannot generate copy pack');
+    const client = new GoogleGenAI({ apiKey });
+
     const systemPrompt = buildCopyPackSystemPrompt(language);
     const userPrompt = buildCopyPackUserPrompt(adSpec);
 
@@ -221,20 +224,19 @@ export async function generateCopyPack(adSpec, options = {}) {
 
     for (let attempt = 0; attempt <= maxRetries; attempt++) {
         try {
-            console.log(`[CopyPackGenerator] Attempt ${attempt + 1}/${maxRetries + 1}...`);
+            console.log(`[CopyPackGenerator] Attempt ${attempt + 1}/${maxRetries + 1} (Gemini 2.5 Flash)...`);
 
-            const response = await openai.chat.completions.create({
-                model: 'gpt-4o',
-                messages: [
-                    { role: 'system', content: systemPrompt },
-                    { role: 'user', content: userPrompt },
-                ],
-                response_format: { type: 'json_object' },
-                max_tokens: 8000,
-                temperature: temperature + (attempt * 0.05), // Slightly increase temp on retry
+            const response = await client.models.generateContent({
+                model: 'gemini-2.5-flash',
+                contents: `${systemPrompt}\n\n${userPrompt}`,
+                config: {
+                    responseMimeType: 'application/json',
+                    temperature: temperature + (attempt * 0.05),
+                    maxOutputTokens: 8000,
+                },
             });
 
-            const raw = response.choices[0].message.content;
+            const raw = response.text;
             const parsed = JSON.parse(raw);
 
             // Validate structure
@@ -422,6 +424,7 @@ function enrichCopyPack(pack, adSpec) {
             audience: adSpec.audience,
             angle: adSpec.angle,
             language: adSpec.constraints?.language || 'de',
+            engine: 'gemini-2.5-flash',
             totalVariants:
                 (pack.primaryTexts?.length || 0) +
                 (pack.headlines?.length || 0) +

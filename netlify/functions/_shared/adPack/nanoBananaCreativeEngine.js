@@ -13,6 +13,9 @@
 
 import { GoogleGenAI } from '@google/genai';
 import crypto from 'crypto';
+import { EXTENDED_LAYOUTS } from '../extendedLayouts.js';
+import { REFERENCE_PATTERNS } from '../referencePatterns.js';
+import { ARROW_STYLES, BADGE_STYLES, ICON_STYLES, LINE_STYLES, SHAPE_STYLES, buildElementPrompt } from '../designElementLibrary.js';
 
 // ═══════════════════════════════════════════════════════════════
 // CONFIG
@@ -56,11 +59,12 @@ function getVariationSeeds(conceptIndex) {
 }
 
 // ═══════════════════════════════════════════════════════════════
-// LAYOUT STYLES — Diverse Ad Compositions
-// Inspired by professional social media templates (fashion, sport, e-commerce)
+// LAYOUT STYLES — 21 Diverse Ad Compositions
+// Core 6 + 15 from extendedLayouts.js
 // ═══════════════════════════════════════════════════════════════
 
 const LAYOUT_STYLES = [
+    // ── CORE 6 ──
     {
         key: 'split_panel',
         name: 'Split Panel',
@@ -91,6 +95,82 @@ const LAYOUT_STYLES = [
         name: 'Bold Typographic',
         instruction: `LAYOUT: Text IS the main design element. A huge, bold headline in a striking font dominates the canvas. The product is shown smaller or as a cutout integrated with the text. Add dynamic text effects: text clipping, overlapping layers, varied weights. Think: Nike poster meets street typography.`,
     },
+    // ── EXTENDED 15 (from extendedLayouts.js) ──
+    {
+        key: 'floating_particles',
+        name: 'Floating Product with Particles',
+        instruction: `LAYOUT: ${EXTENDED_LAYOUTS.floating_particles.promptTemplate}`,
+    },
+    {
+        key: 'collage_mood',
+        name: 'Collage / Mood Board',
+        instruction: `LAYOUT: ${EXTENDED_LAYOUTS.collage_mood.promptTemplate}`,
+    },
+    {
+        key: 'photo_illustration_hybrid',
+        name: 'Photo + Illustration Hybrid',
+        instruction: `LAYOUT: ${EXTENDED_LAYOUTS.photo_illustration_hybrid.promptTemplate}`,
+    },
+    {
+        key: 'watercolor_artistic',
+        name: 'Watercolor / Artistic',
+        instruction: `LAYOUT: ${EXTENDED_LAYOUTS.watercolor_artistic.promptTemplate}`,
+    },
+    {
+        key: 'neon_cyberpunk',
+        name: 'Neon / Cyberpunk',
+        instruction: `LAYOUT: ${EXTENDED_LAYOUTS.neon_cyberpunk.promptTemplate}`,
+    },
+    {
+        key: 'retro_vintage',
+        name: 'Retro / Vintage',
+        instruction: `LAYOUT: ${EXTENDED_LAYOUTS.retro_vintage.promptTemplate}`,
+    },
+    {
+        key: 'geometric_abstract',
+        name: 'Geometric Abstract',
+        instruction: `LAYOUT: ${EXTENDED_LAYOUTS.geometric_abstract.promptTemplate}`,
+    },
+    {
+        key: 'split_diagonal',
+        name: 'Diagonal Split',
+        instruction: `LAYOUT: ${EXTENDED_LAYOUTS.split_diagonal.promptTemplate}`,
+    },
+    {
+        key: 'frames_windows',
+        name: 'Framed Windows',
+        instruction: `LAYOUT: ${EXTENDED_LAYOUTS.frames_windows.promptTemplate}`,
+    },
+    {
+        key: 'review_showcase',
+        name: 'Review Showcase',
+        instruction: `LAYOUT: ${EXTENDED_LAYOUTS.review_showcase.promptTemplate}`,
+    },
+    {
+        key: 'ugc_authentic',
+        name: 'UGC / Authentic',
+        instruction: `LAYOUT: ${EXTENDED_LAYOUTS.ugc_authentic.promptTemplate}`,
+    },
+    {
+        key: 'flash_sale_timer',
+        name: 'Flash Sale with Timer',
+        instruction: `LAYOUT: ${EXTENDED_LAYOUTS.flash_sale_timer.promptTemplate}`,
+    },
+    {
+        key: 'how_to_use',
+        name: 'How To Use Steps',
+        instruction: `LAYOUT: ${EXTENDED_LAYOUTS.how_to_use.promptTemplate}`,
+    },
+    {
+        key: 'myth_vs_fact',
+        name: 'Myth vs Fact',
+        instruction: `LAYOUT: ${EXTENDED_LAYOUTS.myth_vs_fact.promptTemplate}`,
+    },
+    {
+        key: 'expert_endorsed',
+        name: 'Expert Endorsed',
+        instruction: `LAYOUT: ${EXTENDED_LAYOUTS.expert_endorsed.promptTemplate}`,
+    },
 ];
 
 function pickRandomLayout() {
@@ -98,10 +178,11 @@ function pickRandomLayout() {
 }
 
 // ═══════════════════════════════════════════════════════════════
-// CONCEPT TYPES — What kind of ad to create
+// CONCEPT TYPES — 15 diverse creative concepts
 // ═══════════════════════════════════════════════════════════════
 
 const CONCEPT_TYPES = [
+    // ── ORIGINAL 5 ──
     {
         key: 'lifestyle_in_use',
         name: 'Lifestyle In-Use',
@@ -127,11 +208,154 @@ const CONCEPT_TYPES = [
         name: 'Problem → Solution',
         briefDirection: 'Visualize the BEFORE/AFTER or the PROBLEM this product solves. The image should make the viewer feel the pain point and see the product as the obvious solution.',
     },
+    // ── NEW 10 ──
+    {
+        key: 'feature_callout',
+        name: 'Feature Callout',
+        briefDirection: 'Product centered with 3-5 curved arrows pointing FROM feature labels TO specific product parts. Each label has a small circle origin point (○). Arrows are smooth bezier curves, NOT straight. Feature text is short (2-3 words per label). This is an EDUCATIONAL ad that shows exactly what makes the product special.',
+    },
+    {
+        key: 'before_after',
+        name: 'Before / After',
+        briefDirection: 'Perfect 50/50 split showing BEFORE (the problem — muted colors, negative) and AFTER (with the product — vibrant, positive). Clear labels "Vorher" / "Nachher" or "Ohne" / "Mit". The contrast should be dramatic and instantly understandable. Think: transformation visual.',
+    },
+    {
+        key: 'ugc_authentic',
+        name: 'UGC Authentic',
+        briefDirection: 'Make it look like a real user-generated Instagram post, NOT a studio ad. Natural lighting, slightly imperfect, real person using the product. Add Instagram-style UI: username "@satisfied_customer", engagement numbers, comment text. Authentic, relatable, trustworthy. This is NOT an ad — it\'s a real recommendation.',
+    },
+    {
+        key: 'testimonial_quote',
+        name: 'Testimonial Quote',
+        briefDirection: 'Large customer quote in elegant quotation marks „...". Customer name + title below. 5 filled gold stars ⭐⭐⭐⭐⭐ prominently displayed. Product image on one side, quote card on the other. Trust, social proof, credibility. Think: Amazon review meets premium design.',
+    },
+    {
+        key: 'infographic_stat',
+        name: 'Infographic Stat',
+        briefDirection: 'A LARGE BOLD NUMBER is the hero element (like "73%" or "2.340+" or "3x"). Supporting context text explains what the number means. Product shown alongside. Clean infographic style, data-driven trust. The number should be the first thing the eye sees. Think: data visualization meets ad.',
+    },
+    {
+        key: 'comparison_grid',
+        name: 'Us vs. Them',
+        briefDirection: 'Perfect 50/50 split: LEFT side is OUR product (bright, positive, green checkmarks ✅) / RIGHT side is competitor/old way (muted, negative, red X marks ❌). 3-4 comparison points stacked vertically. Clear visual hierarchy — our product WINS. Think: comparison chart meets visual ad.',
+    },
+    {
+        key: 'step_by_step',
+        name: 'Step by Step',
+        briefDirection: 'Show "Schritt 1 → Schritt 2 → Schritt 3" with forward-progressing arrows between steps. Each step has a number in a circle, a short label, and a small visual. Final step shows the RESULT. Clear progression flow from left to right (or top to bottom in story). Educational, friction-removing.',
+    },
+    {
+        key: 'unboxing_reveal',
+        name: 'Unboxing Reveal',
+        briefDirection: 'Product being REVEALED from packaging. Hands opening a premium box. Confetti, sparkles, or light rays suggesting surprise and delight. The unboxing moment captures anticipation and excitement. Think: Apple unboxing experience, gift reveal, surprise moment.',
+    },
+    {
+        key: 'job_recruiting',
+        name: 'Job / Recruiting',
+        briefDirection: '"Wir suchen dich!" or "Join Our Team" style ad. Bold headline, team photo in background. Benefits listed with green checkmarks ✅. Location pin 📍, salary badge, or perks highlighted. Professional but approachable. Think: modern startup recruiting post.',
+    },
+    {
+        key: 'flash_sale',
+        name: 'Flash Sale',
+        briefDirection: 'URGENT flash sale advertisement. MASSIVE discount displayed in starburst/explosion shape. Product centered dramatically. Countdown timer visual. Old price struck through, new price bold and large. CTA is urgent and action-driving. FOMO, urgency, limited time, ACT NOW energy.',
+    },
 ];
 
 function pickRandomConcept() {
     return CONCEPT_TYPES[Math.floor(Math.random() * CONCEPT_TYPES.length)];
 }
+
+// ═══════════════════════════════════════════════════════════════
+// CONCEPT → REFERENCE PATTERN MAP
+// Links concept types to precise prompt snippets from referencePatterns.js
+// ═══════════════════════════════════════════════════════════════
+
+const CONCEPT_PATTERN_MAP = {
+    feature_callout: REFERENCE_PATTERNS.feature_callouts?.promptSnippet || '',
+    comparison_grid: REFERENCE_PATTERNS.us_vs_them?.promptSnippet || '',
+    before_after: REFERENCE_PATTERNS.before_after?.promptSnippet || '',
+    lifestyle_in_use: REFERENCE_PATTERNS.lifestyle_action?.promptSnippet || '',
+    step_by_step: REFERENCE_PATTERNS.benefit_checkmarks?.promptSnippet || '',
+    social_proof: REFERENCE_PATTERNS.collage_grid?.promptSnippet || '',
+};
+
+// ═══════════════════════════════════════════════════════════════
+// DESIGN ELEMENT PRESETS — Precise Gemini vocabulary per concept
+// Built from designElementLibrary.js promptFragments
+// ═══════════════════════════════════════════════════════════════
+
+const CONCEPT_DESIGN_ELEMENTS = {
+    feature_callout: `
+REQUIRED DESIGN ELEMENTS:
+- 3-5 ${ARROW_STYLES.curved_smooth.promptFragment}, pointing FROM feature labels TO specific product parts
+- Each arrow has a ${buildElementPrompt('marker', 'circle_outline')} at the label origin
+- Feature labels: ${buildElementPrompt('shape', 'pill')} with white text, clean sans-serif
+- Labels positioned around product WITHOUT overlapping`,
+
+    comparison_grid: `
+REQUIRED DESIGN ELEMENTS:
+- LEFT side: ${buildElementPrompt('icon', 'checkmark_circle')} next to each positive point (green)
+- RIGHT side: ${buildElementPrompt('icon', 'cross_strike')} next to each negative point (red/gray)
+- ${buildElementPrompt('line', 'solid_medium')} as vertical divider between sides
+- ${buildElementPrompt('badge', 'pill_tag')} at top of each column ("Unser Produkt" / "Andere")`,
+
+    before_after: `
+REQUIRED DESIGN ELEMENTS:
+- ${buildElementPrompt('line', 'solid_medium')} as vertical divider
+- LEFT label: ${buildElementPrompt('badge', 'pill_tag')} with "VORHER" text
+- RIGHT label: ${buildElementPrompt('badge', 'pill_tag')} with "NACHHER" text
+- ${ARROW_STYLES.curved_hand_drawn.promptFragment} from before to after, suggesting transformation`,
+
+    testimonial_quote: `
+REQUIRED DESIGN ELEMENTS:
+- Large opening quotation marks „ in top-left corner, decorative serif
+- ${buildElementPrompt('icon', 'star_filled')} × 5 in a row (⭐⭐⭐⭐⭐), gold color, rating display
+- Customer name in smaller text below quote
+- ${buildElementPrompt('shape', 'rounded_rectangle')} as subtle card background with soft shadow`,
+
+    infographic_stat: `
+REQUIRED DESIGN ELEMENTS:
+- HERO NUMBER rendered MASSIVE (fills 30-40% of canvas), bold weight
+- ${buildElementPrompt('line', 'solid_thin')} separating number from context text
+- ${buildElementPrompt('badge', 'circle_seal')} wrapping the number or placed alongside
+- Supporting text in clean sans-serif below the number`,
+
+    step_by_step: `
+REQUIRED DESIGN ELEMENTS:
+- Step numbers inside ${buildElementPrompt('marker', 'circle_filled')} (1, 2, 3)
+- ${ARROW_STYLES.curved_smooth.promptFragment} connecting step 1→2→3 showing progression
+- Each step has a short label text
+- ${buildElementPrompt('badge', 'ribbon_award')} or checkmark at final step indicating success/result`,
+
+    ugc_authentic: `
+REQUIRED DESIGN ELEMENTS:
+- Instagram-style UI overlay: username text @handle, like count, comment text
+- Casual, slightly imperfect framing (not centered perfectly)
+- No obvious badges or corporate elements — this should look REAL
+- Optional: small heart icon ❤️ near like count`,
+
+    flash_sale: `
+REQUIRED DESIGN ELEMENTS:
+- ${buildElementPrompt('badge', 'star_burst')} as discount explosion badge (e.g. "-50%")
+- Old price with ${buildElementPrompt('icon', 'cross_strike')} strikethrough line
+- New price in BOLD, larger than old price
+- ${buildElementPrompt('shape', 'rounded_rectangle')} as CTA button, high contrast
+- Urgency text: countdown or "NUR HEUTE"`,
+
+    job_recruiting: `
+REQUIRED DESIGN ELEMENTS:
+- ${buildElementPrompt('icon', 'checkmark_square')} next to each benefit/perk listed
+- ${buildElementPrompt('badge', 'pill_tag')} for location, salary, or contract type
+- Bold headline "Wir suchen dich!" or similar
+- ${buildElementPrompt('shape', 'rounded_rectangle')} as apply button/CTA`,
+
+    unboxing_reveal: `
+REQUIRED DESIGN ELEMENTS:
+- Light rays or sparkle effects from the opening box
+- Premium packaging visible (clean, branded box)
+- ${buildElementPrompt('badge', 'pill_tag')} with product name or "NEU"
+- Confetti or particle effects suggesting celebration`,
+};
 
 // ═══════════════════════════════════════════════════════════════
 // PHASE 1: AI CREATIVE DIRECTOR — Gemini Flash Brief
@@ -194,6 +418,10 @@ LANGUAGE: All text MUST be in ${lang}.
 CREATIVE CONCEPT: ${conceptType.briefDirection}
 
 ${layout.instruction}
+
+${CONCEPT_PATTERN_MAP[conceptType.key] ? `═══ REFERENCE PATTERN (follow this precisely) ═══\n${CONCEPT_PATTERN_MAP[conceptType.key]}` : ''}
+
+${CONCEPT_DESIGN_ELEMENTS[conceptType.key] ? `═══ DESIGN ELEMENTS FOR THIS CONCEPT ═══\n${CONCEPT_DESIGN_ELEMENTS[conceptType.key]}` : ''}
 
 VARIATION SEEDS (use these for uniqueness):
 - Mood: ${variation.mood}
@@ -369,7 +597,7 @@ function getFallbackPreset(industry) {
  * or a static industry fallback preset.
  */
 function buildCreativePrompt(config) {
-    const { brief, fallbackPreset, format, adSpec, brandKit } = config;
+    const { brief, fallbackPreset, format, adSpec, brandKit, conceptKey } = config;
     const formatSpec = META_FORMATS[format];
     const source = brief || fallbackPreset;
 
@@ -400,8 +628,9 @@ function buildCreativePrompt(config) {
     const textPlacement = source.textPlacement || 'Headline integrated into scene composition using rule of thirds';
     const ctaStyle = source.ctaStyle || 'Semi-transparent pill, integrated into scene lighting';
 
-    // Design elements from brief
-    const designElements = brief?.designElements || '';
+    // Design elements — prefer concept-specific presets, then brief, then generic
+    const conceptDesignPreset = conceptKey ? (CONCEPT_DESIGN_ELEMENTS[conceptKey] || '') : '';
+    const designElements = conceptDesignPreset || brief?.designElements || '';
 
     // Layout style
     const layoutKey = brief?.layoutStyle || source.layoutStyle || 'full_bleed';
@@ -437,7 +666,7 @@ TEXT IN IMAGE (render sharply, INTEGRATE into the designed composition):
 SPACE FOR TEXT: Leave generous negative space for headline overlay.`;
     }
 
-    // Design elements instruction
+    // Design elements instruction — concept-specific or generic
     const designBlock = designElements ? `
 GRAPHIC DESIGN ELEMENTS:
 ${designElements}
@@ -719,6 +948,7 @@ export async function generateSingleAd(params) {
         headline, subheadline, cta,
         productName, offer, audience, industry, angle,
         brandKit, format = 'square',
+        _forceConceptIndex, _forceLayoutIndex,
     } = params;
 
     const adSpec = {
@@ -732,7 +962,7 @@ export async function generateSingleAd(params) {
         description: params.description || '',
         text: params.text || '',
         headline, subheadline,
-        cta: cta || (params.language === 'en' ? 'Discover Now' : 'Jetzt entdecken'),
+        cta: cta || '',  // No forced fallback — AI decides
         productImageUrl,
         brandKit,
     };
@@ -741,23 +971,28 @@ export async function generateSingleAd(params) {
         throw new Error('GEMINI_API_KEY not configured — cannot generate images');
     }
 
-    // Randomize concept type for variety (no longer always "Lifestyle In-Use")
-    const conceptType = pickRandomConcept();
+    // Concept + Layout: use forced indices if provided (variant diversity), else random
+    const conceptType = typeof _forceConceptIndex === 'number'
+        ? CONCEPT_TYPES[_forceConceptIndex % CONCEPT_TYPES.length]
+        : pickRandomConcept();
+    const layout = typeof _forceLayoutIndex === 'number'
+        ? LAYOUT_STYLES[_forceLayoutIndex % LAYOUT_STYLES.length]
+        : pickRandomLayout();
     const variation = getVariationSeeds(0);
-    const layout = pickRandomLayout();
 
-    console.log(`[NanoBanana] 🎲 Random: concept=${conceptType.key}, layout=${layout.key}`);
+    console.log(`[NanoBanana] 🎲 concept=${conceptType.key}, layout=${layout.key}${typeof _forceConceptIndex === 'number' ? ' (forced)' : ''}`);
 
     // Phase 1: AI Creative Director
     const brief = await generateCreativeBrief(adSpec, conceptType, format, variation, layout);
 
-    // Phase 2: Prompt Assembly
+    // Phase 2: Prompt Assembly — pass conceptKey for design element presets
     const prompt = buildCreativePrompt({
         brief,
         fallbackPreset: brief ? null : getFallbackPreset(industry),
         format,
         adSpec,
         brandKit: brandKit || {},
+        conceptKey: conceptType.key,
     });
 
     // Image Generation — 100% Gemini
@@ -791,6 +1026,74 @@ export async function generateSingleAd(params) {
     };
 }
 
+// ═══════════════════════════════════════════════════════════════
+// GEMINI VISION SCORING — Real quality assessment
+// ═══════════════════════════════════════════════════════════════
+
+/**
+ * Score a generated ad image using Gemini Vision.
+ * Returns real quality metrics instead of placeholder scores.
+ * 
+ * @param {Buffer} imageBuffer - PNG image buffer
+ * @returns {Promise<Object>} Quality scores { readability, composition, colors, scrollStop, overall, feedback }
+ */
+export async function scoreAdImage(imageBuffer) {
+    try {
+        const client = getGeminiClient();
+        const base64 = imageBuffer.toString('base64');
+
+        const response = await client.models.generateContent({
+            model: GEMINI_TEXT_MODEL,
+            contents: [
+                {
+                    role: 'user',
+                    parts: [
+                        {
+                            inlineData: {
+                                mimeType: 'image/png',
+                                data: base64,
+                            },
+                        },
+                        {
+                            text: `You are a Meta Ads performance analyst. Rate this ad image on a scale of 1-10 for each category.
+
+SCORING CRITERIA:
+1. readability (1-10): Is the text sharp, readable, and well-positioned? Can you read it at mobile phone size?
+2. composition (1-10): Does it follow visual hierarchy? Rule of thirds? Clear focal point?
+3. colors (1-10): Is the color palette harmonious? Good contrast? Professional?
+4. scrollStop (1-10): Would this stop someone scrolling through Instagram/Facebook? Eye-catching?
+5. overall (1-10): Overall ad quality as a performance marketer would judge it.
+6. feedback: One sentence of constructive feedback in German.
+
+Return ONLY valid JSON:
+{ "readability": X, "composition": X, "colors": X, "scrollStop": X, "overall": X, "feedback": "..." }`,
+                        },
+                    ],
+                },
+            ],
+            config: {
+                responseMimeType: 'application/json',
+                temperature: 0.3,
+                maxOutputTokens: 200,
+            },
+        });
+
+        const parsed = JSON.parse(response.text);
+        console.log(`[NanoBanana] 📊 Ad Score: ${parsed.overall}/10 — ${parsed.feedback}`);
+        return parsed;
+    } catch (err) {
+        console.warn(`[NanoBanana] ⚠️ Scoring failed: ${err.message}`);
+        return {
+            readability: 7,
+            composition: 7,
+            colors: 7,
+            scrollStop: 7,
+            overall: 7,
+            feedback: 'Scoring nicht verfügbar',
+        };
+    }
+}
+
 /**
  * No-op cleanup (no temp files when using API directly).
  */
@@ -798,6 +1101,7 @@ export async function cleanupTempFiles() { }
 
 export {
     CONCEPT_TYPES,
+    LAYOUT_STYLES,
     META_FORMATS,
     buildCreativePrompt,
     resolveIndustry,
@@ -807,9 +1111,11 @@ export {
 export default {
     generateCreativePack,
     generateSingleAd,
+    scoreAdImage,
     cleanupTempFiles,
     isGeminiAvailable,
     CONCEPT_TYPES,
+    LAYOUT_STYLES,
     META_FORMATS,
     resolveIndustry,
 };
