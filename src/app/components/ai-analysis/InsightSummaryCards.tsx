@@ -159,16 +159,17 @@ export const InsightSummaryCards = memo(function InsightSummaryCards({
                             </div>
                             {insight.trend && (
                                 <div className={`flex items-center gap-1 text-xs ${insight.trend === 'up' ? 'text-emerald-400' :
-                                    insight.trend === 'down' ? 'text-red-400' : 'text-white/40'
+                                    insight.trend === 'down' ? 'text-red-400' : 'text-muted-foreground'
                                     }`}>
+
                                     <TrendIcon trend={insight.trend} />
                                     <span>{insight.trendValue}</span>
                                 </div>
                             )}
                         </div>
-                        <p className="text-xs text-white/50 mb-1">{insight.title}</p>
-                        <p className="text-xl font-bold text-white mb-1">{insight.value}</p>
-                        <p className="text-xs text-white/40 truncate">{insight.subtitle}</p>
+                        <p className="text-xs text-muted-foreground mb-1">{insight.title}</p>
+                        <p className="text-xl font-bold text-foreground mb-1">{insight.value}</p>
+                        <p className="text-xs text-muted-foreground/70 truncate">{insight.subtitle}</p>
                     </Card>
                 );
             })}

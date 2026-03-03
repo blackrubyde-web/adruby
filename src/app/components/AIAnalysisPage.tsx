@@ -507,49 +507,39 @@ export function AIAnalysisPage() {
 
   return (
     <DashboardShell
-      title="AI Analysis & Autopilot"
-      subtitle={`AI-powered insights analyzing ${campaigns.length} campaigns, ${totalAdSets} ad sets, and ${totalAds} ads`}
+      title="KI Analyse & Autopilot"
+      subtitle={`${campaigns.length} Kampagnen, ${totalAdSets} Ad Sets, ${totalAds} Ads werden analysiert`}
       headerChips={
         <div className="flex flex-wrap gap-2 items-center">
-          <Badge variant="outline" className="text-xs">€{(totalSpend / 1000).toFixed(1)}K Spend</Badge>
-          <Badge variant="outline" className="text-xs">€{(totalRevenue / 1000).toFixed(1)}K Revenue</Badge>
+          <Badge variant="outline" className="text-xs">€{(totalSpend / 1000).toFixed(1)}K Ausgaben</Badge>
           <Badge variant="outline" className="text-xs">{totalRoas.toFixed(2)}x ROAS</Badge>
-          <Badge variant="outline" className="text-xs">{allRecommendations.length} AI Insights</Badge>
-          {aiPowered && <Badge variant="secondary" className="gap-1"><Brain className="w-3 h-3" /> GPT-4o Powered</Badge>}
+          <Badge variant="outline" className="text-xs">{allRecommendations.length} Empfehlungen</Badge>
+          {aiPowered && <Badge variant="secondary" className="gap-1"><Brain className="w-3 h-3" /> GPT-4o</Badge>}
           <button
             onClick={toggleAutopilot}
             disabled={!hasAutopilotData}
             className={`flex items-center gap-2 px-3 py-1.5 rounded-full border text-xs font-medium transition-all ${autopilotEnabled
-              ? 'bg-violet-500/20 text-violet-400 border-violet-500/30 hover:bg-violet-500/30'
+              ? 'bg-primary/20 text-primary border-primary/30 hover:bg-primary/30'
               : 'bg-muted/30 text-muted-foreground border-border/50 hover:bg-muted/50'
               } ${!hasAutopilotData ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
           >
             <ShieldCheck className="w-3.5 h-3.5" />
-            <span className="hidden sm:inline">{autopilotEnabled ? 'Autopilot ON' : 'Autopilot OFF'}</span>
-            <div className={`w-8 h-4 rounded-full relative ${autopilotEnabled ? 'bg-violet-500/30' : 'bg-muted/50'}`}>
-              <div className={`absolute top-0.5 w-3 h-3 rounded-full transition-all duration-200 ${autopilotEnabled ? 'left-4 bg-violet-400' : 'left-0.5 bg-muted-foreground'}`} />
+            <span className="hidden sm:inline">{autopilotEnabled ? 'Autopilot AN' : 'Autopilot AUS'}</span>
+            <div className={`w-8 h-4 rounded-full relative ${autopilotEnabled ? 'bg-primary/30' : 'bg-muted/50'}`}>
+              <div className={`absolute top-0.5 w-3 h-3 rounded-full transition-all duration-200 ${autopilotEnabled ? 'left-4 bg-primary' : 'left-0.5 bg-muted-foreground'}`} />
             </div>
           </button>
-          <AgencySettingsMenu campaigns={campaigns} />
         </div>
       }
       headerActions={
-        <div className="grid w-full grid-cols-2 gap-2 sm:flex sm:w-auto sm:flex-wrap">
-          <Button variant="outline" size="sm" onClick={() => setShowStrategyParams(true)} className="gap-2 hidden md:flex">
-            <Sliders className="w-4 h-4 text-muted-foreground" /> Strategy Config
+        <div className="flex flex-wrap gap-2 items-center">
+          <Button variant="outline" size="sm" onClick={isSyncing ? cancelSync : runSync} className="gap-2">
+            <RefreshCw className={`w-4 h-4 ${isSyncing ? 'animate-spin' : ''}`} /> {isSyncing ? 'Abbrechen' : 'Synchronisieren'}
           </Button>
-          <Button variant="outline" size="sm" onClick={isSyncing ? cancelSync : runSync} className="gap-2 w-full sm:w-auto">
-            <RefreshCw className={`w-4 h-4 ${isSyncing ? 'animate-spin' : ''}`} /> {isSyncing ? 'Sync abbrechen' : 'Daten synchronisieren'}
+          <Button size="sm" onClick={() => runAIAnalysis(metaCampaigns)} disabled={isAnalyzingAI} className="gap-2">
+            {isAnalyzingAI ? 'Analysiert…' : 'KI Analyse starten'}
           </Button>
-          <Button variant="outline" size="sm" onClick={handleExportReport} className="gap-2 w-full sm:w-auto">
-            <Download className="w-4 h-4" /> Export Report
-          </Button>
-          <Button size="sm" onClick={() => runAIAnalysis(metaCampaigns)} disabled={isAnalyzingAI} className="bg-blue-600 hover:bg-blue-700 text-white gap-2 w-full sm:w-auto">
-            {isAnalyzingAI ? 'Analyzing…' : 'Run AI Analysis'}
-          </Button>
-          <Button size="sm" onClick={applyRecommendations} disabled={isApplying || !Object.keys(aiAnalysisCache).length} className="bg-green-600 hover:bg-green-700 text-white gap-2 w-full sm:w-auto">
-            {isApplying ? 'Wird angewendet…' : 'Empfehlungen anwenden'}
-          </Button>
+          <AgencySettingsMenu campaigns={campaigns} />
         </div>
       }
     >

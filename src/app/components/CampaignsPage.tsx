@@ -1,4 +1,4 @@
-import { Search, MoreVertical, Play, Pause, Copy, Trash2, TrendingUp, TrendingDown, Plus } from 'lucide-react';
+import { Search, ExternalLink, Play, Pause, Copy, Trash2, TrendingUp, TrendingDown, Plus, ArrowUpDown } from 'lucide-react';
 import { useCallback, useMemo, useState } from 'react';
 import { toast } from 'sonner';
 import { DashboardShell } from './layout/DashboardShell';
@@ -12,6 +12,14 @@ import { applyMetaAction } from '../lib/api/meta';
 import { formatCurrency, formatCompact } from '../utils/formatters';
 
 type StatusFilter = 'all' | 'active' | 'paused' | 'completed';
+type SortKey = 'name' | 'spend' | 'impressions' | 'clicks' | 'ctr' | 'roas' | 'conversions';
+
+const STATUS_DE: Record<string, string> = {
+  active: 'Aktiv',
+  paused: 'Pausiert',
+  completed: 'Abgeschlossen',
+  deleted: 'Gelöscht',
+};
 
 // Helper functions
 const formatPct = (num: number) =>
@@ -25,6 +33,8 @@ export function CampaignsPage() {
   const { campaigns, loading, error, refresh } = useMetaCampaigns();
   const { connection } = useMetaConnection();
   const [actionState, setActionState] = useState<Record<string, boolean>>({});
+  const [sortKey, setSortKey] = useState<SortKey>('spend');
+  const [sortAsc, setSortAsc] = useState(false);
   const handleCreateCampaign = () => {
     window.history.pushState({}, document.title, '/campaign-builder');
     window.dispatchEvent(new PopStateEvent('popstate'));
@@ -44,13 +54,20 @@ export function CampaignsPage() {
   }, [campaigns]);
 
   const filteredCampaigns = useMemo(() => {
-    return campaigns.filter(c => {
+    const filtered = campaigns.filter(c => {
       const matchesSearch = c.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
         c.id.includes(searchQuery);
       const matchesStatus = statusFilter === 'all' || normalizeStatus(c.status) === statusFilter;
       return matchesSearch && matchesStatus;
     });
-  }, [campaigns, searchQuery, statusFilter]);
+    return filtered.sort((a, b) => {
+      const aVal = sortKey === 'name' ? a.name.toLowerCase() : Number(a[sortKey] || 0);
+      const bVal = sortKey === 'name' ? b.name.toLowerCase() : Number(b[sortKey] || 0);
+      if (aVal < bVal) return sortAsc ? -1 : 1;
+      if (aVal > bVal) return sortAsc ? 1 : -1;
+      return 0;
+    });
+  }, [campaigns, searchQuery, statusFilter, sortKey, sortAsc]);
 
   const handleAction = useCallback(async (campaign: MetaCampaign, action: MetaApplyAction) => {
     const id = campaign.id;
@@ -161,14 +178,28 @@ export function CampaignsPage() {
             <table className="w-full">
               <thead>
                 <tr className="border-b border-border/30 bg-muted/5">
-                  <th className="text-left p-4 text-sm font-semibold text-muted-foreground">Kampagne</th>
+                  <th className="text-left p-4 text-sm font-semibold text-muted-foreground cursor-pointer hover:text-foreground transition-colors" onClick={() => { setSortKey('name'); setSortAsc(sortKey === 'name' ? !sortAsc : true); }}>
+                    Kampagne {sortKey === 'name' && <ArrowUpDown className="w-3 h-3 inline ml-1" />}
+                  </th>
                   <th className="text-left p-4 text-sm font-semibold text-muted-foreground">Status</th>
-                  <th className="text-right p-4 text-sm font-semibold text-muted-foreground">Ausgaben</th>
-                  <th className="text-right p-4 text-sm font-semibold text-muted-foreground">Impressionen</th>
-                  <th className="text-right p-4 text-sm font-semibold text-muted-foreground">Klicks</th>
-                  <th className="text-right p-4 text-sm font-semibold text-muted-foreground">CTR</th>
-                  <th className="text-right p-4 text-sm font-semibold text-muted-foreground">ROAS</th>
-                  <th className="text-right p-4 text-sm font-semibold text-muted-foreground">Conversions</th>
+                  <th className="text-right p-4 text-sm font-semibold text-muted-foreground cursor-pointer hover:text-foreground transition-colors" onClick={() => { setSortKey('spend'); setSortAsc(sortKey === 'spend' ? !sortAsc : false); }}>
+                    Ausgaben {sortKey === 'spend' && <ArrowUpDown className="w-3 h-3 inline ml-1" />}
+                  </th>
+                  <th className="text-right p-4 text-sm font-semibold text-muted-foreground cursor-pointer hover:text-foreground transition-colors" onClick={() => { setSortKey('impressions'); setSortAsc(sortKey === 'impressions' ? !sortAsc : false); }}>
+                    Impressionen {sortKey === 'impressions' && <ArrowUpDown className="w-3 h-3 inline ml-1" />}
+                  </th>
+                  <th className="text-right p-4 text-sm font-semibold text-muted-foreground cursor-pointer hover:text-foreground transition-colors" onClick={() => { setSortKey('clicks'); setSortAsc(sortKey === 'clicks' ? !sortAsc : false); }}>
+                    Klicks {sortKey === 'clicks' && <ArrowUpDown className="w-3 h-3 inline ml-1" />}
+                  </th>
+                  <th className="text-right p-4 text-sm font-semibold text-muted-foreground cursor-pointer hover:text-foreground transition-colors" onClick={() => { setSortKey('ctr'); setSortAsc(sortKey === 'ctr' ? !sortAsc : false); }}>
+                    CTR {sortKey === 'ctr' && <ArrowUpDown className="w-3 h-3 inline ml-1" />}
+                  </th>
+                  <th className="text-right p-4 text-sm font-semibold text-muted-foreground cursor-pointer hover:text-foreground transition-colors" onClick={() => { setSortKey('roas'); setSortAsc(sortKey === 'roas' ? !sortAsc : false); }}>
+                    ROAS {sortKey === 'roas' && <ArrowUpDown className="w-3 h-3 inline ml-1" />}
+                  </th>
+                  <th className="text-right p-4 text-sm font-semibold text-muted-foreground cursor-pointer hover:text-foreground transition-colors" onClick={() => { setSortKey('conversions'); setSortAsc(sortKey === 'conversions' ? !sortAsc : false); }}>
+                    Conversions {sortKey === 'conversions' && <ArrowUpDown className="w-3 h-3 inline ml-1" />}
+                  </th>
                   <th className="text-right p-4 text-sm font-semibold text-muted-foreground">Aktionen</th>
                 </tr>
               </thead>
@@ -200,7 +231,7 @@ export function CampaignsPage() {
                         `}
                         >
                           {normalizedStatus === 'active' && <div className="w-1.5 h-1.5 rounded-full bg-green-500 mr-2 animate-pulse" />}
-                          {normalizedStatus}
+                          {STATUS_DE[normalizedStatus] || normalizedStatus}
                         </Badge>
                       </td>
                       <td className="p-4 text-right text-foreground font-medium">
@@ -231,7 +262,7 @@ export function CampaignsPage() {
                         {formatCompact(campaign.conversions)}
                       </td>
                       <td className="p-4">
-                        <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <div className="flex items-center justify-end gap-1">
                           {normalizedStatus === 'active' ? (
                             <Button
                               variant="ghost"
@@ -287,7 +318,7 @@ export function CampaignsPage() {
                             onClick={() => openMetaCampaign(campaign.id)}
                             title="In Meta öffnen"
                           >
-                            <MoreVertical className="w-4 h-4" />
+                            <ExternalLink className="w-4 h-4" />
                           </Button>
                         </div>
                       </td>
@@ -321,7 +352,7 @@ export function CampaignsPage() {
                     ${normalizedStatus === 'paused' ? 'bg-orange-500/10 text-orange-600 border-orange-500/20' : ''}
                   `}
                 >
-                  {normalizedStatus}
+                  {STATUS_DE[normalizedStatus] || normalizedStatus}
                 </Badge>
               </div>
 
@@ -363,7 +394,7 @@ export function CampaignsPage() {
                     className="h-9 w-9"
                     onClick={() => handleAction(campaign, 'resume')}
                     disabled={isBusy(campaign.id, 'resume')}
-                    title="Resume"
+                    title="Fortsetzen"
                   >
                     <Play className="w-4 h-4" />
                   </Button>
@@ -375,7 +406,7 @@ export function CampaignsPage() {
                   className="h-9 w-9"
                   onClick={() => handleAction(campaign, 'duplicate')}
                   disabled={isBusy(campaign.id, 'duplicate')}
-                  title="Duplicate"
+                  title="Duplizieren"
                 >
                   <Copy className="w-4 h-4" />
                 </Button>
@@ -386,7 +417,7 @@ export function CampaignsPage() {
                   className="h-9 w-9 text-destructive"
                   onClick={() => handleAction(campaign, 'delete')}
                   disabled={isBusy(campaign.id, 'delete')}
-                  title="Delete"
+                  title="Löschen"
                 >
                   <Trash2 className="w-4 h-4" />
                 </Button>
@@ -396,9 +427,9 @@ export function CampaignsPage() {
                   size="icon"
                   className="h-9 w-9"
                   onClick={() => openMetaCampaign(campaign.id)}
-                  title="View in Meta"
+                  title="In Meta öffnen"
                 >
-                  <MoreVertical className="w-4 h-4" />
+                  <ExternalLink className="w-4 h-4" />
                 </Button>
               </div>
             </Card>

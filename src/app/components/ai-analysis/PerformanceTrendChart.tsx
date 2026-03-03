@@ -36,8 +36,8 @@ const CustomTooltip = ({ active, payload, label }: { active?: boolean; payload?:
     if (!active || !payload?.length) return null;
 
     return (
-        <div className="bg-zinc-900/95 backdrop-blur-xl border border-white/10 rounded-xl p-4 shadow-2xl">
-            <p className="text-xs text-white/50 mb-2">{label}</p>
+        <div className="bg-popover/95 backdrop-blur-xl border border-border rounded-xl p-4 shadow-2xl">
+            <p className="text-xs text-muted-foreground mb-2">{label}</p>
             <div className="space-y-2">
                 {payload.map((entry: TooltipPayloadEntry, index: number) => (
                     <div key={index} className="flex items-center justify-between gap-4">
@@ -46,9 +46,9 @@ const CustomTooltip = ({ active, payload, label }: { active?: boolean; payload?:
                                 className="w-2 h-2 rounded-full"
                                 style={{ backgroundColor: entry.color }}
                             />
-                            <span className="text-xs text-white/70">{entry.name}</span>
+                            <span className="text-xs text-muted-foreground">{entry.name}</span>
                         </div>
-                        <span className="text-sm font-semibold text-white">
+                        <span className="text-sm font-semibold text-foreground">
                             {entry.name === 'ROAS' ? `${entry.value.toFixed(2)}x` :
                                 entry.name === 'CTR' ? `${entry.value.toFixed(2)}%` :
                                     `€${entry.value.toFixed(0)}`}
@@ -98,17 +98,17 @@ export const PerformanceTrendChart = memo(function PerformanceTrendChart({
     }
 
     return (
-        <Card className="relative overflow-hidden bg-gradient-to-br from-zinc-900/90 via-zinc-900/80 to-zinc-950 border-white/5 p-6">
+        <Card className="relative overflow-hidden bg-card border-border/50 p-6">
             {/* Animated Background */}
             <div className="absolute inset-0 pointer-events-none overflow-hidden">
-                <div className="absolute top-0 right-0 w-[300px] h-[300px] bg-[radial-gradient(circle_at_center,rgba(139,92,246,0.08),transparent_60%)] blur-[60px] animate-pulse-slow" />
+                <div className="absolute top-0 right-0 w-[300px] h-[300px] bg-[radial-gradient(circle_at_center,hsl(var(--primary)/0.08),transparent_60%)] blur-[60px]" />
             </div>
 
             <div className="relative">
                 {/* Header */}
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
                     <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-violet-500/20 to-fuchsia-500/20 border border-violet-500/20 flex items-center justify-center">
+                        <div className="w-10 h-10 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center">
                             {trend.direction === 'up' ? (
                                 <TrendingUp className="w-5 h-5 text-emerald-400" />
                             ) : trend.direction === 'down' ? (
@@ -118,9 +118,9 @@ export const PerformanceTrendChart = memo(function PerformanceTrendChart({
                             )}
                         </div>
                         <div>
-                            <h3 className="text-lg font-bold text-white">{title}</h3>
-                            <p className="text-xs text-white/50 flex items-center gap-2">
-                                <span className={trend.direction === 'up' ? 'text-emerald-400' : trend.direction === 'down' ? 'text-red-400' : 'text-white/50'}>
+                            <h3 className="text-lg font-bold text-foreground">{title}</h3>
+                            <p className="text-xs text-muted-foreground flex items-center gap-2">
+                                <span className={trend.direction === 'up' ? 'text-emerald-400' : trend.direction === 'down' ? 'text-red-400' : 'text-muted-foreground'}>
                                     {trend.change > 0 ? '+' : ''}{trend.change.toFixed(1)}%
                                 </span>
                                 <span>vs. Periode</span>
@@ -130,14 +130,14 @@ export const PerformanceTrendChart = memo(function PerformanceTrendChart({
 
                     <div className="flex gap-2">
                         {/* Metric Toggles */}
-                        <div className="flex bg-white/5 rounded-lg p-1">
+                        <div className="flex bg-muted/50 rounded-lg p-1">
                             {(['roas', 'ctr', 'spend'] as const).map((metric) => (
                                 <button
                                     key={metric}
                                     onClick={() => setActiveMetric(metric)}
                                     className={`px-3 py-1.5 text-xs font-medium rounded-md transition-all ${activeMetric === metric
-                                        ? 'bg-violet-600 text-white shadow-lg'
-                                        : 'text-white/50 hover:text-white'
+                                        ? 'bg-primary text-primary-foreground shadow-lg'
+                                        : 'text-muted-foreground hover:text-foreground'
                                         }`}
                                 >
                                     {metric.toUpperCase()}
@@ -146,14 +146,14 @@ export const PerformanceTrendChart = memo(function PerformanceTrendChart({
                         </div>
 
                         {/* Time Range */}
-                        <div className="flex bg-white/5 rounded-lg p-1">
+                        <div className="flex bg-muted/50 rounded-lg p-1">
                             {(['7d', '14d', '30d'] as TimeRange[]).map((range) => (
                                 <button
                                     key={range}
                                     onClick={() => setTimeRange(range)}
                                     className={`px-3 py-1.5 text-xs font-medium rounded-md transition-all ${timeRange === range
-                                        ? 'bg-white/10 text-white'
-                                        : 'text-white/50 hover:text-white'
+                                        ? 'bg-muted text-foreground'
+                                        : 'text-muted-foreground hover:text-foreground'
                                         }`}
                                 >
                                     {range}
