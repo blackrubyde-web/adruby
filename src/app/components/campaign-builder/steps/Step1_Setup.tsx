@@ -2,7 +2,7 @@ import { useCampaignBuilder } from '../CampaignBuilderContext';
 import { Input } from '../../ui/input';
 import { Card } from '../../ui/card';
 import { Badge } from '../../ui/badge';
-import { Users, ShoppingBag, MousePointerClick, Megaphone, Sparkles, DollarSign, Target, Clock } from 'lucide-react';
+import { Users, ShoppingBag, MousePointerClick, Megaphone, Sparkles, DollarSign, Target, Clock, Link2, AlertTriangle } from 'lucide-react';
 import { cn } from '../../../lib/utils';
 
 const OBJECTIVES = [
@@ -51,6 +51,32 @@ export const Step1_Setup = () => {
                     placeholder="z.B. Summer Sale 2026, Black Friday Push..."
                     className="h-14 text-lg font-medium bg-background/50"
                 />
+            </Card>
+
+            {/* Destination URL */}
+            <Card className="p-6 bg-gradient-to-br from-card to-muted/20">
+                <div className="flex items-center gap-3 mb-4">
+                    <div className="p-2 bg-blue-500/10 rounded-lg">
+                        <Link2 className="w-5 h-5 text-blue-500" />
+                    </div>
+                    <div>
+                        <h3 className="font-bold text-lg">Ziel-URL</h3>
+                        <p className="text-xs text-muted-foreground">Wohin sollen die Ads verlinken?</p>
+                    </div>
+                </div>
+                <Input
+                    value={campaignSetup.destinationUrl}
+                    onChange={e => updateField('destinationUrl', e.target.value)}
+                    placeholder="https://dein-shop.de/produkt"
+                    className="h-12 text-sm font-medium bg-background/50"
+                    type="url"
+                />
+                {campaignSetup.destinationUrl && !campaignSetup.destinationUrl.startsWith('http') && (
+                    <p className="text-xs text-destructive mt-1.5 flex items-center gap-1">
+                        <AlertTriangle className="w-3 h-3" />
+                        URL muss mit https:// beginnen
+                    </p>
+                )}
             </Card>
 
             {/* Objective Selection */}
@@ -152,6 +178,12 @@ export const Step1_Setup = () => {
                             ? `≈ €${(campaignSetup.dailyBudget * 30).toFixed(0)} pro Monat`
                             : `Budget für gesamte Laufzeit`}
                     </p>
+                    {campaignSetup.budgetType === 'daily' && campaignSetup.dailyBudget > 0 && campaignSetup.dailyBudget < 1 && (
+                        <p className="text-xs text-destructive flex items-center gap-1">
+                            <AlertTriangle className="w-3 h-3" />
+                            Meta Minimum: €1/Tag
+                        </p>
+                    )}
                 </Card>
 
                 {/* Bid Strategy */}

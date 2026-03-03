@@ -101,7 +101,7 @@ export const Step5_Review = () => {
                         </div>
                         <Button variant="outline" size="sm" asChild>
                             <a
-                                href={`https://business.facebook.com/adsmanager/manage/campaigns?act=${publishResult.campaignId}`}
+                                href={`https://business.facebook.com/adsmanager/manage/campaigns?campaign_ids=${publishResult.campaignId}`}
                                 target="_blank"
                                 rel="noopener noreferrer"
                                 className="gap-2"
@@ -163,6 +163,12 @@ export const Step5_Review = () => {
                             <span className="text-muted-foreground">Bidding</span>
                             <span className="font-mono text-xs">{bidStrategyLabels[campaignSetup.bidStrategy]}</span>
                         </div>
+                        {campaignSetup.destinationUrl && (
+                            <div className="flex justify-between">
+                                <span className="text-muted-foreground">Ziel-URL</span>
+                                <span className="font-semibold text-xs truncate max-w-[180px]">{campaignSetup.destinationUrl}</span>
+                            </div>
+                        )}
                     </div>
                 </Card>
 

@@ -31,6 +31,7 @@ export type CampaignSetup = {
     roasGoal?: number;
     attribution: '7d_click' | '7d_click_1d_view' | '1d_click';
     publishMode: 'publish' | 'draft';
+    destinationUrl: string;
 };
 
 export type StrategyConfig = {
@@ -127,6 +128,7 @@ const defaultSetup: CampaignSetup = {
     bidStrategy: 'LOWEST_COST',
     attribution: '7d_click_1d_view',
     publishMode: 'publish',
+    destinationUrl: '',
 };
 
 const defaultTargeting: TargetingConfig = {
@@ -343,8 +345,10 @@ export function CampaignBuilderProvider({ children }: { children: ReactNode }) {
     // Validation per step
     const canContinue = useMemo(() => {
         switch (currentStep) {
-            case 1: // Setup
-                return campaignSetup.name.trim().length > 0 && campaignSetup.dailyBudget > 0;
+            case 1: // Setup — name required, budget min €1/day, destination URL required
+                return campaignSetup.name.trim().length > 0
+                    && (campaignSetup.budgetType === 'daily' ? campaignSetup.dailyBudget >= 1 : campaignSetup.lifetimeBudget >= 1)
+                    && campaignSetup.destinationUrl.trim().length > 0;
             case 2: // Creatives
                 return selectedCreativeIds.length > 0;
             case 3: // Targeting
@@ -377,8 +381,8 @@ export function CampaignBuilderProvider({ children }: { children: ReactNode }) {
             name: campaignSetup.name,
             objective: campaignSetup.objective,
             budgetType: campaignSetup.budgetType,
-            dailyBudget: campaignSetup.budgetType === 'daily' ? campaignSetup.dailyBudget * 100 : undefined, // Convert to cents
-            lifetimeBudget: campaignSetup.budgetType === 'lifetime' ? campaignSetup.lifetimeBudget * 100 : undefined,
+            dailyBudget: campaignSetup.budgetType === 'daily' ? campaignSetup.dailyBudget : undefined, // Euros — backend converts to cents
+            lifetimeBudget: campaignSetup.budgetType === 'lifetime' ? campaignSetup.lifetimeBudget : undefined,
             bidStrategy: campaignSetup.bidStrategy,
         };
 
@@ -399,7 +403,7 @@ export function CampaignBuilderProvider({ children }: { children: ReactNode }) {
             name: `${campaignSetup.name} - Ad Set 1`,
             targeting: targetingInput,
             optimizationGoal: campaignSetup.objective === 'OUTCOME_SALES' ? 'OFFSITE_CONVERSIONS' : 'LINK_CLICKS',
-            dailyBudget: campaignSetup.dailyBudget * 100,
+            dailyBudget: campaignSetup.dailyBudget, // Euros — backend converts to cents
             ads: selectedCreatives.map(creative => ({
                 name: creative.name,
                 headline: creative.headline,
@@ -407,6 +411,7 @@ export function CampaignBuilderProvider({ children }: { children: ReactNode }) {
                 cta: creative.cta,
                 creativeId: creative.id,
                 imageUrl: creative.thumbnail || undefined,
+                destinationUrl: campaignSetup.destinationUrl || undefined,
             })),
         }];
 

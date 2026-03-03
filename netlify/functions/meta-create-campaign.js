@@ -405,14 +405,18 @@ function buildTargeting(targeting) {
         result.genders = [2];
     }
 
-    // Interests
+    // Interests — only include if they have proper IDs (Meta requires { id, name })
+    // String-only interests (without IDs) are skipped to prevent Meta API rejection
     if (targeting.interests?.length > 0) {
-        result.flexible_spec = [{
-            interests: targeting.interests.map(interest => ({
-                name: interest,
-                // Note: In production, you'd need to lookup the interest IDs
-            })),
-        }];
+        const validInterests = targeting.interests
+            .filter(interest => typeof interest === "object" && interest?.id)
+            .map(interest => ({ id: interest.id, name: interest.name || "" }));
+
+        if (validInterests.length > 0) {
+            result.flexible_spec = [{ interests: validInterests }];
+        } else {
+            console.warn("[Meta] Skipping interests — no valid IDs found. Interests need { id, name } format from Meta Search API.");
+        }
     }
 
     // Custom audiences

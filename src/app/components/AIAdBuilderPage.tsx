@@ -163,9 +163,15 @@ export function AIAdBuilderPage() {
         }
     }, [step, generatingStartTime]);
 
+    const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
+
     const handleImageUpload = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (file) {
+            if (file.size > MAX_FILE_SIZE) {
+                toast.error('Bild zu groß — maximal 5MB erlaubt');
+                return;
+            }
             setProductImage(file);
             const reader = new FileReader();
             reader.onloadend = () => {
@@ -180,6 +186,10 @@ export function AIAdBuilderPage() {
         e.preventDefault();
         const file = e.dataTransfer.files?.[0];
         if (file && file.type.startsWith('image/')) {
+            if (file.size > MAX_FILE_SIZE) {
+                toast.error('Bild zu groß — maximal 5MB erlaubt');
+                return;
+            }
             setProductImage(file);
             const reader = new FileReader();
             reader.onloadend = () => {
@@ -196,6 +206,11 @@ export function AIAdBuilderPage() {
     }, []);
 
     const handleGenerate = async (inputData: FormInputData | FreeTextInputData) => {
+        // Credit check
+        if (credits <= 0) {
+            toast.error('Keine Credits mehr — bitte upgraden');
+            return;
+        }
         setLoading(true);
         setError(null);
         setStep('generating');
