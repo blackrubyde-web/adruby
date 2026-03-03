@@ -3,14 +3,12 @@
  * Netlify automatically handles this as background due to -background suffix
  * The entire handler runs with 15min timeout, returns 202 on completion
  *
- * ARCHITECTURE (v3.0 — NanoBanana v5):
+ * ARCHITECTURE (v3.1 — 100% Gemini):
  *   1. Railway Composite v6 (product image) or Railway v3 (no product image)
- *   2. NanoBanana v5 AI Creative Director (individualized prompts via Gemini)
- *   3. OpenAI Raw last resort
- *   4. Error → refund credits
+ *   2. NanoBanana v5.1 AI Creative Director (Gemini 2.5 Flash Image)
+ *   3. Error → refund credits
  */
 
-import { getOpenAiClient, generateHeroImage } from './_shared/openai.js';
 import { getUserProfile } from './_shared/auth.js';
 import { assertAndConsumeCredits, refundCredits, CREDIT_COSTS } from './_shared/credits.js';
 import { supabaseAdmin } from './_shared/clients.js';
@@ -19,7 +17,8 @@ import { checkRateLimit } from './_shared/rateLimiter.js';
 import { categorizeError, getUserMessage } from './_shared/errorCategorizer.js';
 import { generateWithAIDesign, generateWithCompositeAsync, isForeplayAvailable } from './_shared/railwayImageClient.js';
 import { getCorsHeaders } from './_shared/cors.js';
-import { generateSingleAd as nanoBananaGenerateSingleAd } from './_shared/adPack/nanoBananaCreativeEngine.js';
+import { generateSingleAd as nanoBananaGenerateSingleAd, checkAvailability as isGeminiAvailable } from './_shared/adPack/nanoBananaCreativeEngine.js';
+import { GoogleGenAI } from '@google/genai';
 import crypto from 'crypto';
 
 const ALLOWED_IMAGE_HOSTS = [
@@ -158,7 +157,7 @@ export const handler = async (event) => {
         const hasProductImage = !!body.productImageUrl || !!body.productImageBase64;
 
         // ═══════════════════════════════════════════════════════════════
-        // PIPELINE: Try Railway → Gemini Fallback → OpenAI Fallback
+        // PIPELINE: Try Railway → NanoBanana (Gemini) → Error
         // ═══════════════════════════════════════════════════════════════
 
         let finalImageBuffer = null;
@@ -182,21 +181,15 @@ export const handler = async (event) => {
 
                     if (!compositeHeadline) {
                         try {
-                            const openai = getOpenAiClient();
-                            const copyResponse = await openai.chat.completions.create({
-                                model: 'gpt-4o',
-                                messages: [{
-                                    role: 'system',
-                                    content: `Generate ad copy in ${language === 'de' ? 'German' : 'English'}. Return JSON: { "headline": "short catchy headline", "tagline": "supporting text", "cta": "call to action" }`,
-                                }, {
-                                    role: 'user',
-                                    content: `Product: ${body.productName || 'Product'}\nDescription: ${body.text || body.usp || 'A great product'}\nIndustry: ${body.industry || 'tech'}\nTarget: ${body.targetAudience || 'everyone'}`,
-                                }],
-                                response_format: { type: 'json_object' },
-                                max_tokens: 300,
-                                temperature: 0.7,
+                            const gemini = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+                            const copyPrompt = `Generate ad copy in ${language === 'de' ? 'German' : 'English'} for:\nProduct: ${body.productName || 'Product'}\nDescription: ${body.text || body.usp || 'A great product'}\nIndustry: ${body.industry || 'tech'}\nTarget: ${body.targetAudience || 'everyone'}\n\nReturn JSON: { "headline": "short catchy headline", "tagline": "supporting text", "cta": "call to action" }`;
+                            const copyResponse = await gemini.models.generateContent({
+                                model: 'gemini-2.5-flash',
+                                contents: copyPrompt,
+                                config: { responseMimeType: 'application/json', temperature: 0.7 },
                             });
-                            const generatedCopy = JSON.parse(copyResponse.choices[0].message.content);
+                            const copyText = copyResponse.candidates?.[0]?.content?.parts?.[0]?.text;
+                            const generatedCopy = JSON.parse(copyText);
                             compositeHeadline = generatedCopy.headline || body.productName || 'Discover More';
                             compositeTagline = compositeTagline || generatedCopy.tagline || '';
                             compositeCta = generatedCopy.cta || compositeCta;
@@ -327,30 +320,9 @@ export const handler = async (event) => {
             }
         }
 
-        // ─── ATTEMPT 3: RAW OPENAI LAST RESORT ───
+        // No more OpenAI fallback — NanoBanana (Gemini) is the final attempt
         if (!finalImageBuffer) {
-            console.log('[AI Ad Generate] 📷 OPENAI LAST RESORT');
-            await updateProgress('openai_last_resort', 70, { engine: 'openai_raw' });
-
-            const prompt = `Professional Meta ad for ${body.productName || 'product'}. ${body.industry || 'Premium'} industry style. Headline: "${body.headline || body.productName || 'Discover'}". CTA: "${body.cta || 'Shop Now'}". Professional commercial quality, 2026 design standards.`;
-
-            const imageResult = await withRetry(
-                async () => generateHeroImage({ prompt, size: '1024x1024', quality: 'high' }),
-                { maxRetries: 2, initialDelay: 2000 }
-            );
-
-            finalImageBuffer = Buffer.from(imageResult.b64, 'base64');
-            engine = 'openai_last_resort';
-            outputData = {
-                headline: body.headline || body.productName || 'AI Generated',
-                slogan: body.subheadline || '',
-                description: body.text || body.usp || '',
-                cta: body.cta || 'Jetzt entdecken',
-                imagePrompt: prompt,
-                template: 'openai_raw',
-            };
-
-            console.log('[AI Ad Generate] ✅ OpenAI last resort success');
+            throw new Error('All generation pipelines failed — no image produced');
         }
 
         // ═══════════════════════════════════════════════════════════════
