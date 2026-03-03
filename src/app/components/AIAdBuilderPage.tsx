@@ -481,18 +481,18 @@ export function AIAdBuilderPage() {
 
                                     {/* Animated icon */}
                                     <div className="relative">
-                                        <div className="absolute inset-0 rounded-2xl blur-2xl empty-state-breathe" style={{ background: 'var(--accent-gradient)' }} />
-                                        <div className="relative w-20 h-20 rounded-2xl flex items-center justify-center shadow-2xl" style={{ background: 'var(--accent-gradient)' }}>
+                                        <div className="absolute inset-0 rounded-2xl blur-2xl empty-state-breathe bg-primary/20" />
+                                        <div className="relative w-20 h-20 rounded-2xl flex items-center justify-center shadow-2xl bg-primary">
                                             <Sparkles className="w-9 h-9 text-white animate-pulse" />
                                         </div>
                                     </div>
 
                                     {/* Title */}
                                     <div>
-                                        <h3 className="text-xl" style={{ fontFamily: 'var(--font-display)', fontWeight: 800, letterSpacing: '-0.02em', color: 'hsl(var(--foreground))' }}>
+                                        <h3 className="font-display font-bold text-xl text-foreground">
                                             KI generiert deine Ad…
                                         </h3>
-                                        <p className="text-sm text-muted-foreground mt-2" style={{ fontFamily: 'var(--font-body)' }}>
+                                        <p className="text-sm text-muted-foreground mt-2">
                                             Dauert ca. 10–15 Sekunden
                                         </p>
                                     </div>
@@ -500,7 +500,7 @@ export function AIAdBuilderPage() {
                                     {/* Progress bar */}
                                     <div className="w-full max-w-sm">
                                         <div className="h-1 bg-muted/20 rounded-full overflow-hidden">
-                                            <div className="h-full rounded-full theater-progress-bar" style={{ background: 'var(--accent-gradient)' }} />
+                                            <div className="h-full rounded-full theater-progress-bar bg-primary" />
                                         </div>
                                     </div>
 
@@ -512,14 +512,14 @@ export function AIAdBuilderPage() {
                                                 <div
                                                     key={i}
                                                     className="stagger-in flex items-center gap-3 text-sm"
-                                                    style={{ animationDelay: `${pStep.delay}ms`, fontFamily: 'var(--font-body)' }}
+                                                    style={{ animationDelay: `${pStep.delay}ms` }}
                                                 >
                                                     <div className={cn(
                                                         "w-7 h-7 rounded-lg flex items-center justify-center shrink-0 transition-all duration-500",
                                                         completedSteps.includes(i)
                                                             ? "text-emerald-400"
                                                             : "text-muted-foreground"
-                                                    )} style={completedSteps.includes(i) ? { background: 'rgba(52, 211, 153, 0.1)', border: '1px solid rgba(52, 211, 153, 0.15)' } : { background: 'hsl(var(--muted) / 0.15)', border: '1px solid var(--glass-border)' }}>
+                                                    )} style={completedSteps.includes(i) ? { background: 'rgba(52, 211, 153, 0.1)', border: '1px solid rgba(52, 211, 153, 0.15)' } : {}}>
                                                         {completedSteps.includes(i) ? (
                                                             <CheckCircle2 className="w-3.5 h-3.5" />
                                                         ) : (
@@ -553,7 +553,7 @@ export function AIAdBuilderPage() {
 
                                     {/* Action Buttons */}
                                     {result && !loading && step === 'result' && (
-                                        <div className="flex flex-wrap gap-3 mt-6 pt-6" style={{ borderTop: '1px solid var(--glass-border)' }}>
+                                        <div className="flex flex-wrap gap-3 mt-6 pt-6 border-t border-border">
                                             <Button
                                                 onClick={handleDownload}
                                                 className="generate-btn flex-1 gap-2 h-11 rounded-xl text-white border-0"
@@ -561,11 +561,11 @@ export function AIAdBuilderPage() {
                                                 <Download className="w-4 h-4" />
                                                 Herunterladen
                                             </Button>
-                                            <Button onClick={handleSaveToLibrary} variant="outline" className="flex-1 gap-2 h-11 rounded-xl" style={{ borderColor: 'var(--glass-border-hover)', fontFamily: 'var(--font-body)' }}>
+                                            <Button onClick={handleSaveToLibrary} variant="outline" className="flex-1 gap-2 h-11 rounded-xl">
                                                 <Save className="w-4 h-4" />
                                                 In Bibliothek
                                             </Button>
-                                            <Button onClick={handleReset} variant="ghost" className="gap-2 h-11 rounded-xl text-muted-foreground hover:text-foreground" style={{ fontFamily: 'var(--font-body)' }}>
+                                            <Button onClick={handleReset} variant="ghost" className="gap-2 h-11 rounded-xl text-muted-foreground hover:text-foreground">
                                                 <RefreshCw className="w-4 h-4" />
                                                 Neu
                                             </Button>

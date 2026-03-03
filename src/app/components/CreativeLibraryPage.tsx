@@ -749,7 +749,7 @@ export function CreativeLibraryPage() {
                 className="w-full h-full object-cover"
               />
             ) : (
-              <div className="w-full h-full flex items-center justify-center text-muted-foreground text-sm" style={{ background: 'var(--surface-obsidian)' }}>
+              <div className="w-full h-full flex items-center justify-center text-muted-foreground text-sm bg-muted">
                 AI Creative
               </div>
             )}
@@ -775,13 +775,13 @@ export function CreativeLibraryPage() {
                 title="Löschen"
                 style={{ borderColor: 'rgba(239, 68, 68, 0.2)' }}
               >
-                <Trash2 className="w-4 h-4" style={{ color: 'var(--accent-scarlet)' }} />
+                <Trash2 className="w-4 h-4 text-red-500" />
               </button>
             </div>
 
-            <div className="absolute top-3 left-3 px-2 py-0.5 rounded-full flex items-center gap-1" style={{ background: 'rgba(0,0,0,0.65)', backdropFilter: 'blur(8px)', border: '1px solid rgba(255,255,255,0.06)' }}>
+            <div className="absolute top-3 left-3 px-2 py-0.5 rounded-full flex items-center gap-1 bg-black/65 backdrop-blur-md border border-white/5">
               <TypeIcon className="w-3 h-3 text-white" />
-              <span className="text-[10px] text-white font-medium capitalize" style={{ fontFamily: 'var(--font-body)' }}>{creative.type}</span>
+              <span className="text-[10px] text-white font-medium capitalize">{creative.type}</span>
             </div>
 
             {creative.isFavorite && (
@@ -808,7 +808,7 @@ export function CreativeLibraryPage() {
                 <div className="space-y-1">
                   <span className="creative-card-tag" style={{ fontSize: '0.5625rem' }}>HOOKS</span>
                   {creative.hooks.slice(0, 2).map((hook, i) => (
-                    <div key={i} className="text-[11px] p-1.5 rounded-md text-foreground/80 line-clamp-2" style={{ background: 'hsl(var(--muted) / 0.1)', border: '1px solid var(--glass-border)', fontFamily: 'var(--font-body)' }}>
+                    <div key={i} className="text-[11px] p-1.5 rounded-md text-foreground/80 line-clamp-2 bg-muted/50 border border-border">
                       "{hook}"
                     </div>
                   ))}
@@ -816,7 +816,7 @@ export function CreativeLibraryPage() {
               ) : creative.primaryText ? (
                 <div className="space-y-1">
                   <span className="creative-card-tag" style={{ fontSize: '0.5625rem' }}>TEXT</span>
-                  <div className="text-[11px] p-1.5 rounded-md text-foreground/80 line-clamp-3" style={{ background: 'hsl(var(--muted) / 0.1)', border: '1px solid var(--glass-border)', fontFamily: 'var(--font-body)' }}>
+                  <div className="text-[11px] p-1.5 rounded-md text-foreground/80 line-clamp-3 bg-muted/50 border border-border">
                     {creative.primaryText}
                   </div>
                 </div>
@@ -838,7 +838,7 @@ export function CreativeLibraryPage() {
               </div>
               <div>
                 <div className="creative-card-stat-label">ROAS</div>
-                <div className="creative-card-stat-value" style={{ color: 'var(--accent-scarlet)' }}>
+                <div className="creative-card-stat-value text-primary">
                   {creative.performance.roas}x
                 </div>
               </div>
@@ -873,8 +873,7 @@ export function CreativeLibraryPage() {
             onClick={handleUploadClick}
             disabled={isUploading}
             variant="outline"
-            className="gap-2 rounded-xl"
-            style={{ borderColor: 'var(--glass-border-hover)', fontFamily: 'var(--font-body)' }}
+            className="gap-2 rounded-xl border-border/60"
           >
             <Upload className="w-4 h-4" />
             {isUploading ? 'Hochladen…' : 'Hochladen'}
@@ -926,8 +925,7 @@ export function CreativeLibraryPage() {
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Creatives nach Name oder Tags suchen..."
-              className="pl-10 bg-transparent border-0 text-foreground rounded-full"
-              style={{ background: 'hsl(var(--muted) / 0.1)', fontFamily: 'var(--font-body)' }}
+              className="pl-10 bg-muted/50 border-border text-foreground rounded-full"
             />
           </div>
 
@@ -1070,37 +1068,33 @@ export function CreativeLibraryPage() {
           onClick={() => setEditingCreative(null)}
         >
           <div
-            className="w-full max-w-lg rounded-2xl p-6 shadow-2xl"
-            style={{ background: 'var(--surface-obsidian)', backdropFilter: 'blur(24px) saturate(1.2)', border: '1px solid var(--glass-border-hover)' }}
+            className="w-full max-w-lg rounded-2xl p-6 shadow-2xl bg-card border border-border backdrop-blur-xl"
             onClick={(event) => event.stopPropagation()}
           >
-            <h3 style={{ fontFamily: 'var(--font-display)', fontWeight: 800, fontSize: '1.125rem', letterSpacing: '-0.02em', color: 'hsl(var(--foreground))' }} className="mb-4">Creative bearbeiten</h3>
+            <h3 className="font-display font-bold text-lg text-foreground mb-4">Creative bearbeiten</h3>
             <div className="space-y-4">
               <div>
-                <label className="text-sm font-medium text-muted-foreground" style={{ fontFamily: 'var(--font-body)' }}>Name</label>
+                <label className="text-sm font-medium text-muted-foreground">Name</label>
                 <input
                   value={editName}
                   onChange={(event) => setEditName(event.target.value)}
-                  className="mt-2 w-full rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2"
-                  style={{ background: 'hsl(var(--muted) / 0.15)', border: '1px solid var(--glass-border)', fontFamily: 'var(--font-body)' }}
+                  className="mt-2 w-full rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/40 bg-muted/50 border border-border"
                 />
               </div>
               <div>
-                <label className="text-sm font-medium text-muted-foreground" style={{ fontFamily: 'var(--font-body)' }}>Tags</label>
+                <label className="text-sm font-medium text-muted-foreground">Tags</label>
                 <input
                   value={editTags}
                   onChange={(event) => setEditTags(event.target.value)}
                   placeholder="z.B. performance, fitness"
-                  className="mt-2 w-full rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2"
-                  style={{ background: 'hsl(var(--muted) / 0.15)', border: '1px solid var(--glass-border)', fontFamily: 'var(--font-body)' }}
+                  className="mt-2 w-full rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/40 bg-muted/50 border border-border"
                 />
               </div>
             </div>
             <div className="mt-6 flex justify-end gap-3">
               <button
                 onClick={() => setEditingCreative(null)}
-                className="px-4 py-2 rounded-xl text-sm font-medium text-foreground hover:bg-muted/20 transition-colors"
-                style={{ border: '1px solid var(--glass-border)', fontFamily: 'var(--font-body)' }}
+                className="px-4 py-2 rounded-xl text-sm font-medium text-foreground hover:bg-muted/80 transition-colors border border-border"
               >
                 Abbrechen
               </button>

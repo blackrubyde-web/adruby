@@ -54,11 +54,11 @@ export function FormInputMode({ language, onGenerate, loading }: AIAdBuilderComp
             {/* ── Section 1: Produkt ───────────────────────────── */}
             <div className="input-section">
                 <div className="input-section-header">
-                    <div className="w-6 h-6 rounded-md flex items-center justify-center" style={{ background: 'rgba(230, 57, 70, 0.08)', border: '1px solid rgba(230, 57, 70, 0.1)' }}>
-                        <Package className="w-3 h-3" style={{ color: 'var(--accent-scarlet)' }} />
+                    <div className="w-6 h-6 rounded-md flex items-center justify-center bg-primary/10 border border-primary/15">
+                        <Package className="w-3 h-3 text-primary" />
                     </div>
-                    <span className="text-xs font-medium tracking-wide uppercase" style={{ fontFamily: 'var(--font-body)', letterSpacing: '0.06em', color: 'hsl(var(--muted-foreground))' }}>Produkt</span>
-                    <span className="ml-auto text-[10px] text-muted-foreground/40" style={{ fontFamily: 'var(--font-body)' }}>2 Pflichtfelder</span>
+                    <span className="text-xs font-medium tracking-widest uppercase text-muted-foreground">Produkt</span>
+                    <span className="ml-auto text-[10px] text-muted-foreground/40">2 Pflichtfelder</span>
                 </div>
                 <div className="input-section-body">
                     {/* Product Name */}
@@ -132,11 +132,11 @@ export function FormInputMode({ language, onGenerate, loading }: AIAdBuilderComp
             {/* ── Section 2: Zielgruppe & Stil ─────────────────── */}
             <div className="input-section">
                 <div className="input-section-header">
-                    <div className="w-6 h-6 rounded-md flex items-center justify-center" style={{ background: 'rgba(244, 162, 97, 0.08)', border: '1px solid rgba(244, 162, 97, 0.1)' }}>
-                        <Target className="w-3 h-3" style={{ color: 'var(--accent-amber)' }} />
+                    <div className="w-6 h-6 rounded-md flex items-center justify-center bg-primary/10 border border-primary/15">
+                        <Target className="w-3 h-3 text-primary" />
                     </div>
-                    <span className="text-xs font-medium tracking-wide uppercase" style={{ fontFamily: 'var(--font-body)', letterSpacing: '0.06em', color: 'hsl(var(--muted-foreground))' }}>Zielgruppe & Stil</span>
-                    <span className="ml-auto text-[10px] text-muted-foreground/40" style={{ fontFamily: 'var(--font-body)' }}>optional</span>
+                    <span className="text-xs font-medium tracking-widest uppercase text-muted-foreground">Zielgruppe & Stil</span>
+                    <span className="ml-auto text-[10px] text-muted-foreground/40">optional</span>
                 </div>
                 <div className="input-section-body">
                     {/* Target Audience */}
@@ -203,7 +203,7 @@ export function FormInputMode({ language, onGenerate, loading }: AIAdBuilderComp
                         <>
                             <Zap className="w-4 h-4" />
                             Ad generieren
-                            <span className="ml-1.5 px-2 py-0.5 rounded-full bg-white/15 text-white/80 text-[10px]" style={{ fontFamily: 'var(--font-body)', fontWeight: 500 }}>
+                            <span className="ml-1.5 px-2 py-0.5 rounded-full bg-white/15 text-white/80 text-[10px] font-medium">
                                 1 Credit
                             </span>
                         </>

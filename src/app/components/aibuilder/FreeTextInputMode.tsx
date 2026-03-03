@@ -99,10 +99,10 @@ export function FreeTextInputMode({ language, onGenerate, loading }: AIAdBuilder
                 {/* Header + Voice Button */}
                 <div className="input-section-header justify-between">
                     <div className="flex items-center gap-2">
-                        <div className="w-6 h-6 rounded-md flex items-center justify-center" style={{ background: 'rgba(230, 57, 70, 0.08)', border: '1px solid rgba(230, 57, 70, 0.1)' }}>
-                            <Sparkles className="w-3 h-3" style={{ color: 'var(--accent-scarlet)' }} />
+                        <div className="w-6 h-6 rounded-md flex items-center justify-center bg-primary/10 border border-primary/15">
+                            <Sparkles className="w-3 h-3 text-primary" />
                         </div>
-                        <span className="text-xs font-medium tracking-wide uppercase" style={{ fontFamily: 'var(--font-body)', letterSpacing: '0.06em', color: 'hsl(var(--muted-foreground))' }}>Freitext-Briefing</span>
+                        <span className="text-xs font-medium tracking-widest uppercase text-muted-foreground">Freitext-Briefing</span>
                     </div>
 
                     {/* Voice button */}
@@ -135,13 +135,9 @@ export function FreeTextInputMode({ language, onGenerate, loading }: AIAdBuilder
                                     type="button"
                                     onClick={() => setText(prompt.text)}
                                     className={`px-3 py-1.5 rounded-full text-xs transition-all duration-300 border cursor-pointer ${text.trim()
-                                        ? 'text-muted-foreground/50 hover:text-muted-foreground'
-                                        : 'text-foreground/80 hover:text-foreground'
+                                        ? 'bg-muted/50 text-muted-foreground/50 border-border hover:bg-muted hover:text-muted-foreground'
+                                        : 'bg-primary/5 text-foreground/80 border-primary/15 hover:border-primary/30 hover:bg-primary/10'
                                         }`}
-                                    style={text.trim()
-                                        ? { background: 'hsl(var(--muted) / 0.1)', borderColor: 'var(--glass-border)' }
-                                        : { background: 'rgba(230, 57, 70, 0.04)', borderColor: 'rgba(230, 57, 70, 0.12)' }
-                                    }
                                 >
                                     {prompt.label}
                                 </button>
@@ -204,7 +200,7 @@ export function FreeTextInputMode({ language, onGenerate, loading }: AIAdBuilder
                         <>
                             <Zap className="w-4 h-4" />
                             Ad generieren
-                            <span className="ml-1.5 px-2 py-0.5 rounded-full bg-white/15 text-white/80 text-[10px]" style={{ fontFamily: 'var(--font-body)', fontWeight: 500 }}>
+                            <span className="ml-1.5 px-2 py-0.5 rounded-full bg-white/15 text-white/80 text-[10px] font-medium">
                                 1 Credit
                             </span>
                         </>

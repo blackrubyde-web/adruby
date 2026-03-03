@@ -1,23 +1,18 @@
 /* ═══════════════════════════════════════════════════
-   DARK EDITORIAL STUDIO — Design System v6
-   Typography: Syne (display) + DM Sans (body)
-   Palette: Obsidian + Scarlet → Amber accent
+   AI Ad Builder + Creative Library — Visual System v7
+   Uses website fonts: Clash Display (display) + Satoshi (body)
+   Uses website colors: var(--primary), var(--card), var(--border), etc.
+   Supports light + dark mode via existing theme vars.
    ═══════════════════════════════════════════════════ */
 
-@import url('https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,400&display=swap');
-
-/* ── Design Tokens ────────────────────────────────── */
+/* ── Design Tokens (light/dark aware) ─────────────── */
 :root {
-    --font-display: 'Syne', sans-serif;
-    --font-body: 'DM Sans', sans-serif;
-    --accent-scarlet: #E63946;
-    --accent-amber: #F4A261;
-    --accent-gradient: linear-gradient(135deg, var(--accent-scarlet) 0%, var(--accent-amber) 100%);
-    --surface-obsidian: rgba(12, 12, 14, 0.65);
-    --surface-obsidian-hover: rgba(18, 18, 22, 0.80);
-    --glass-border: rgba(255, 255, 255, 0.06);
-    --glass-border-hover: rgba(255, 255, 255, 0.12);
-    --grain-opacity: 0.03;
+    --font-display: 'Clash Display', 'Satoshi', system-ui, sans-serif;
+    --font-body: 'Satoshi', 'General Sans', system-ui, sans-serif;
+    --surface-glass: var(--card);
+    --glass-border: var(--border);
+    --glass-border-hover: color-mix(in srgb, var(--primary) 20%, var(--border));
+    --grain-opacity: 0.02;
 }
 
 /* ── Editorial Page Header ────────────────────────── */
@@ -25,7 +20,7 @@
     position: relative;
     padding: 2rem 0 1.75rem;
     margin-bottom: 2rem;
-    border-bottom: 1px solid var(--glass-border);
+    border-bottom: 1px solid var(--border);
 }
 
 .page-header-editorial::before {
@@ -33,40 +28,35 @@
     position: absolute;
     inset: 0;
     background:
-        radial-gradient(ellipse at 0% 0%, rgba(230, 57, 70, 0.06) 0%, transparent 60%),
-        radial-gradient(ellipse at 100% 100%, rgba(244, 162, 97, 0.04) 0%, transparent 50%);
+        radial-gradient(ellipse at 0% 0%, color-mix(in srgb, var(--primary) 6%, transparent) 0%, transparent 60%),
+        radial-gradient(ellipse at 100% 100%, color-mix(in srgb, var(--primary) 3%, transparent) 0%, transparent 50%);
     pointer-events: none;
     border-radius: 0 0 1.5rem 1.5rem;
 }
 
 .page-title {
     font-family: var(--font-display);
-    font-weight: 800;
+    font-weight: 700;
     font-size: clamp(1.75rem, 3vw, 2.25rem);
     letter-spacing: -0.03em;
     line-height: 1.1;
-    background: var(--accent-gradient);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
+    color: var(--primary);
 }
 
 .page-subtitle {
     font-family: var(--font-body);
     font-weight: 400;
     font-size: 0.875rem;
-    color: hsl(var(--muted-foreground));
+    color: var(--muted-foreground);
     margin-top: 0.375rem;
     letter-spacing: 0.01em;
 }
 
-/* ── Obsidian Card ────────────────────────────────── */
+/* ── Card Base (light/dark aware) ─────────────────── */
 .card-obsidian {
     position: relative;
-    background: var(--surface-obsidian);
-    backdrop-filter: blur(20px) saturate(1.2);
-    -webkit-backdrop-filter: blur(20px) saturate(1.2);
-    border: 1px solid var(--glass-border);
+    background: var(--card);
+    border: 1px solid var(--border);
     border-radius: 1rem;
     overflow: hidden;
     transition: border-color 0.35s ease, box-shadow 0.35s ease, transform 0.35s ease;
@@ -74,50 +64,7 @@
 
 .card-obsidian:hover {
     border-color: var(--glass-border-hover);
-    box-shadow:
-        0 8px 32px rgba(0, 0, 0, 0.12),
-        0 0 0 1px var(--glass-border-hover);
-}
-
-/* ── 3D Card Tilt ─────────────────────────────────── */
-.card-tilt {
-    perspective: 800px;
-    transform-style: preserve-3d;
-}
-
-.card-tilt:hover {
-    transform: rotateX(-1deg) rotateY(1.5deg) translateY(-4px);
-}
-
-.card-tilt:hover .card-tilt-shine {
-    opacity: 1;
-}
-
-.card-tilt-shine {
-    position: absolute;
-    inset: 0;
-    background: linear-gradient(135deg,
-            rgba(255, 255, 255, 0.04) 0%,
-            transparent 50%,
-            rgba(255, 255, 255, 0.02) 100%);
-    pointer-events: none;
-    opacity: 0;
-    transition: opacity 0.35s ease;
-    z-index: 1;
-}
-
-/* ── Grain Overlay ────────────────────────────────── */
-.grain-overlay::after {
-    content: "";
-    position: absolute;
-    inset: 0;
-    pointer-events: none;
-    z-index: 2;
-    opacity: var(--grain-opacity);
-    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
-    background-size: 128px 128px;
-    mix-blend-mode: overlay;
-    border-radius: inherit;
+    box-shadow: var(--shadow-lg);
 }
 
 /* ── Filter Chip (tabs, type selectors) ───────────── */
@@ -134,7 +81,7 @@
     letter-spacing: 0.01em;
     padding: 0.4375rem 0.875rem;
     border-radius: 2rem;
-    color: hsl(var(--muted-foreground));
+    color: var(--muted-foreground);
     background: transparent;
     border: 1px solid transparent;
     cursor: pointer;
@@ -146,15 +93,15 @@
 }
 
 .filter-chip:hover:not(.filter-chip-active) {
-    color: hsl(var(--foreground));
-    background: hsl(var(--muted) / 0.3);
+    color: var(--foreground);
+    background: var(--muted);
 }
 
 .filter-chip-active {
-    color: hsl(var(--foreground));
-    background: hsl(var(--muted) / 0.4);
-    border-color: var(--glass-border-hover);
-    box-shadow: 0 0 12px rgba(230, 57, 70, 0.08);
+    color: var(--foreground);
+    background: var(--muted);
+    border-color: var(--border);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
 }
 
 /* ── Stat Pill ────────────────────────────────────── */
@@ -169,16 +116,16 @@
     font-size: 0.6875rem;
     letter-spacing: 0.02em;
     text-transform: uppercase;
-    background: hsl(var(--muted) / 0.2);
-    border: 1px solid var(--glass-border);
-    color: hsl(var(--muted-foreground));
+    background: var(--muted);
+    border: 1px solid var(--border);
+    color: var(--muted-foreground);
     transition: all 0.25s ease;
 }
 
 .stat-pill-accent {
-    border-color: rgba(230, 57, 70, 0.15);
-    color: var(--accent-scarlet);
-    background: rgba(230, 57, 70, 0.06);
+    border-color: color-mix(in srgb, var(--primary) 25%, var(--border));
+    color: var(--primary);
+    background: color-mix(in srgb, var(--primary) 6%, var(--card));
 }
 
 /* ── Staggered Reveal Animation ───────────────────── */
@@ -234,13 +181,8 @@
 /* ── Dark Canvas Panel (preview area) ─────────────── */
 .ad-builder-canvas {
     position: relative;
-    background:
-        radial-gradient(ellipse at 20% 0%, rgba(230, 57, 70, 0.05) 0%, transparent 50%),
-        radial-gradient(ellipse at 80% 100%, rgba(244, 162, 97, 0.03) 0%, transparent 50%),
-        linear-gradient(180deg,
-            hsl(var(--muted) / 0.25) 0%,
-            hsl(var(--muted) / 0.1) 100%);
-    border: 1px solid var(--glass-border);
+    background: var(--card);
+    border: 1px solid var(--border);
     border-radius: 1.25rem;
     min-height: 520px;
     overflow: hidden;
@@ -251,7 +193,7 @@
     position: absolute;
     inset: 0;
     background:
-        radial-gradient(600px circle at 50% 0%, rgba(230, 57, 70, 0.06), transparent 60%);
+        radial-gradient(600px circle at 50% 0%, color-mix(in srgb, var(--primary) 4%, transparent), transparent 60%);
     pointer-events: none;
 }
 
@@ -260,9 +202,10 @@
     content: "";
     position: absolute;
     inset: 0;
-    background-image: radial-gradient(hsl(var(--muted-foreground) / 0.06) 1px, transparent 1px);
+    background-image: radial-gradient(var(--muted-foreground) 0.5px, transparent 0.5px);
     background-size: 20px 20px;
     pointer-events: none;
+    opacity: 0.08;
     mask: linear-gradient(180deg, transparent 0%, black 15%, black 85%, transparent 100%);
 }
 
@@ -274,21 +217,20 @@
 }
 
 .input-section {
-    background: hsl(var(--card) / 0.5);
-    backdrop-filter: blur(16px);
-    border: 1px solid var(--glass-border);
+    background: var(--card);
+    border: 1px solid var(--border);
     border-radius: 0.875rem;
     overflow: hidden;
     transition: border-color 0.3s, box-shadow 0.3s;
 }
 
 .input-section:hover {
-    border-color: var(--glass-border-hover);
+    border-color: color-mix(in srgb, var(--primary) 15%, var(--border));
 }
 
 .input-section:focus-within {
-    border-color: rgba(230, 57, 70, 0.2);
-    box-shadow: 0 0 0 3px rgba(230, 57, 70, 0.04);
+    border-color: color-mix(in srgb, var(--primary) 30%, var(--border));
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 5%, transparent);
 }
 
 .input-section-header {
@@ -296,10 +238,11 @@
     align-items: center;
     gap: 0.5rem;
     padding: 0.75rem 1rem;
-    border-bottom: 1px solid var(--glass-border);
+    border-bottom: 1px solid var(--border);
     font-family: var(--font-body);
     font-weight: 500;
     font-size: 0.8125rem;
+    background: var(--muted);
 }
 
 .input-section-body {
@@ -338,7 +281,7 @@
     inset: 0;
     padding: 1.5px;
     border-radius: inherit;
-    background: conic-gradient(from var(--angle), var(--accent-scarlet), var(--accent-amber), var(--accent-scarlet));
+    background: conic-gradient(from var(--angle), var(--primary), color-mix(in srgb, var(--primary) 60%, #f97316), var(--primary));
     animation: gradient-rotate 4s linear infinite;
     mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
     mask-composite: exclude;
@@ -407,7 +350,7 @@
     position: absolute;
     border-radius: 50%;
     pointer-events: none;
-    background: var(--accent-scarlet);
+    background: var(--primary);
 }
 
 .particle-1 {
@@ -455,12 +398,6 @@
     100% {
         background-position: 200% 0;
     }
-}
-
-.shimmer-bg {
-    background: linear-gradient(90deg, transparent 0%, rgba(255, 255, 255, 0.03) 50%, transparent 100%);
-    background-size: 200% 100%;
-    animation: shimmer 2.5s ease-in-out infinite;
 }
 
 /* Stagger fade-in (theater steps) */
@@ -530,17 +467,18 @@
 .generate-btn {
     position: relative;
     font-family: var(--font-display);
-    font-weight: 700;
+    font-weight: 600;
     letter-spacing: -0.01em;
-    background: var(--accent-gradient);
+    background: var(--primary);
     border: none;
-    color: white;
+    color: var(--primary-foreground);
     transition: all 0.3s ease;
 }
 
 .generate-btn:hover:not(:disabled) {
-    box-shadow: 0 4px 24px rgba(230, 57, 70, 0.25);
+    box-shadow: 0 4px 24px color-mix(in srgb, var(--primary) 25%, transparent);
     transform: translateY(-1px);
+    filter: brightness(1.08);
 }
 
 .generate-btn::before {
@@ -548,7 +486,7 @@
     position: absolute;
     inset: -3px;
     border-radius: inherit;
-    background: var(--accent-gradient);
+    background: var(--primary);
     opacity: 0;
     filter: blur(14px);
     transition: opacity 0.4s;
@@ -556,7 +494,7 @@
 }
 
 .generate-btn:not(:disabled):hover::before {
-    opacity: 0.3;
+    opacity: 0.25;
 }
 
 /* ── Floating Meta mockup ─────────────────────────── */
@@ -590,15 +528,15 @@
 /* ── Pulse ring (recording) ───────────────────────── */
 @keyframes pulse-ring {
     0% {
-        box-shadow: 0 0 0 0 rgba(230, 57, 70, 0.5);
+        box-shadow: 0 0 0 0 color-mix(in srgb, var(--primary) 50%, transparent);
     }
 
     70% {
-        box-shadow: 0 0 0 10px rgba(230, 57, 70, 0);
+        box-shadow: 0 0 0 10px transparent;
     }
 
     100% {
-        box-shadow: 0 0 0 0 rgba(230, 57, 70, 0);
+        box-shadow: 0 0 0 0 transparent;
     }
 }
 
@@ -609,9 +547,8 @@
 /* ── Creative Library Cards ───────────────────────── */
 .creative-card {
     position: relative;
-    background: var(--surface-obsidian);
-    backdrop-filter: blur(16px) saturate(1.1);
-    border: 1px solid var(--glass-border);
+    background: var(--card);
+    border: 1px solid var(--border);
     border-radius: 0.875rem;
     overflow: hidden;
     transition: all 0.4s cubic-bezier(0.22, 1, 0.36, 1);
@@ -619,10 +556,8 @@
 
 .creative-card:hover {
     border-color: var(--glass-border-hover);
-    transform: translateY(-6px) scale(1.01);
-    box-shadow:
-        0 20px 48px rgba(0, 0, 0, 0.15),
-        0 0 0 1px var(--glass-border-hover);
+    transform: translateY(-4px);
+    box-shadow: var(--shadow-xl);
 }
 
 .creative-card-image {
@@ -635,7 +570,7 @@
 }
 
 .creative-card:hover .creative-card-image img {
-    transform: scale(1.06);
+    transform: scale(1.04);
 }
 
 .creative-card-overlay {
@@ -658,16 +593,16 @@
 .creative-card-action {
     padding: 0.5rem;
     border-radius: 0.625rem;
-    background: rgba(255, 255, 255, 0.1);
+    background: rgba(255, 255, 255, 0.15);
     backdrop-filter: blur(12px);
-    border: 1px solid rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.1);
     color: white;
     cursor: pointer;
     transition: all 0.2s ease;
 }
 
 .creative-card-action:hover {
-    background: rgba(255, 255, 255, 0.18);
+    background: rgba(255, 255, 255, 0.25);
     transform: scale(1.08);
 }
 
@@ -678,10 +613,10 @@
 
 .creative-card-name {
     font-family: var(--font-display);
-    font-weight: 700;
+    font-weight: 600;
     font-size: 0.875rem;
     letter-spacing: -0.01em;
-    color: hsl(var(--foreground));
+    color: var(--foreground);
     line-height: 1.3;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -694,19 +629,19 @@
     gap: 0.5rem;
     margin-top: 0.5rem;
     font-size: 0.6875rem;
-    color: hsl(var(--muted-foreground));
+    color: var(--muted-foreground);
 }
 
 .creative-card-tag {
     padding: 0.125rem 0.5rem;
     border-radius: 2rem;
-    background: hsl(var(--muted) / 0.2);
-    border: 1px solid var(--glass-border);
+    background: var(--muted);
+    border: 1px solid var(--border);
     font-size: 0.625rem;
     font-weight: 500;
     letter-spacing: 0.03em;
     text-transform: uppercase;
-    color: hsl(var(--muted-foreground));
+    color: var(--muted-foreground);
 }
 
 .creative-card-stats {
@@ -715,37 +650,22 @@
     gap: 0.5rem;
     padding-top: 0.625rem;
     margin-top: 0.625rem;
-    border-top: 1px solid var(--glass-border);
+    border-top: 1px solid var(--border);
 }
 
 .creative-card-stat-value {
     font-family: var(--font-display);
     font-weight: 700;
     font-size: 0.8125rem;
-    color: hsl(var(--foreground));
+    color: var(--foreground);
 }
 
 .creative-card-stat-label {
     font-size: 0.625rem;
     text-transform: uppercase;
     letter-spacing: 0.05em;
-    color: hsl(var(--muted-foreground) / 0.7);
+    color: var(--muted-foreground);
     margin-bottom: 0.125rem;
-}
-
-/* ── Search Input (frosted glass) ─────────────────── */
-.search-glass {
-    background: hsl(var(--muted) / 0.15);
-    backdrop-filter: blur(12px);
-    border: 1px solid var(--glass-border);
-    border-radius: 2rem;
-    transition: all 0.25s ease;
-}
-
-.search-glass:focus-within {
-    border-color: rgba(230, 57, 70, 0.2);
-    box-shadow: 0 0 0 3px rgba(230, 57, 70, 0.04);
-    background: hsl(var(--muted) / 0.25);
 }
 
 /* ── Char counter progress bar ─────────────────── */
@@ -773,7 +693,21 @@
     animation: gradient-shift 2s ease infinite;
 }
 
-/* ── Mode Tabs (legacy compat) ─────────────────── */
+/* ── Grain overlay ─────────────────────────────── */
+.grain-overlay::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    z-index: 2;
+    opacity: var(--grain-opacity);
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+    background-size: 128px 128px;
+    mix-blend-mode: overlay;
+    border-radius: inherit;
+}
+
+/* ── Legacy compat ─────────────────────────────── */
 .mode-tab-bar {
     display: inline-flex;
     gap: 2px;
