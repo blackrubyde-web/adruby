@@ -6,7 +6,7 @@
 
 import { useState } from 'react';
 import {
-    Loader2, AlertCircle, Globe, MoreHorizontal, ThumbsUp,
+    AlertCircle, Globe, MoreHorizontal, ThumbsUp,
     MessageCircle, Share2, Check, ChevronLeft, ChevronRight,
     Sparkles, Wand2
 } from 'lucide-react';
@@ -84,31 +84,6 @@ export function PreviewArea({
 
     const nextVariant = () => setCurrentIndex((currentIndex + 1) % variantCount);
     const prevVariant = () => setCurrentIndex((currentIndex - 1 + variantCount) % variantCount);
-
-    /* ── Loading ────── */
-    if (loading) {
-        return (
-            <div className="rounded-xl border border-border/40 bg-card/80 backdrop-blur p-8">
-                <div className="flex flex-col items-center justify-center space-y-6 text-center min-h-[400px]">
-                    <div className="relative">
-                        <div className="absolute inset-0 bg-primary/30 rounded-full blur-xl animate-pulse" />
-                        <div className="relative w-16 h-16 rounded-2xl bg-gradient-to-br from-primary to-red-600 flex items-center justify-center">
-                            <Loader2 className="w-8 h-8 text-white animate-spin" />
-                        </div>
-                    </div>
-                    <div>
-                        <h3 className="font-bold text-lg">KI erstellt 3 Varianten…</h3>
-                        <p className="text-sm text-muted-foreground mt-1.5">Dauert ca. 10–15 Sekunden</p>
-                    </div>
-                    <div className="flex gap-2">
-                        {[1, 2, 3].map((i) => (
-                            <div key={i} className="w-3 h-3 rounded-full bg-primary/30 animate-pulse" style={{ animationDelay: `${i * 0.2}s` }} />
-                        ))}
-                    </div>
-                </div>
-            </div>
-        );
-    }
 
     /* ── Error ─────── */
     if (error) {
@@ -198,15 +173,14 @@ export function PreviewArea({
                                     {index === currentIndex && (
                                         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-6 h-0.5 rounded-full bg-gradient-to-r from-primary to-red-500" />
                                     )}
-                                    <div className={cn(
-                                        "w-7 h-7 rounded-lg flex items-center justify-center text-[10px] font-bold",
-                                        index === currentIndex
-                                            ? "bg-primary/20 text-primary"
-                                            : "bg-muted/50 text-muted-foreground"
-                                    )}>
-                                        V{index + 1}
+                                    <div className="w-7 h-7 rounded-lg flex items-center justify-center text-[10px] font-bold
+                                        bg-muted/50 text-muted-foreground
+                                    ">
+                                        {index + 1}
                                     </div>
-                                    <span className="text-[10px]">Variante {index + 1}</span>
+                                    <span className="text-[10px] truncate max-w-[100px]">
+                                        {variant.headline ? variant.headline.substring(0, 30) : `Variante ${index + 1}`}
+                                    </span>
                                     {variant.qualityScore && (
                                         <Badge className={cn(
                                             "text-[9px] px-1.5 py-0 h-4",
@@ -235,10 +209,12 @@ export function PreviewArea({
                     <div className="p-3.5 flex items-center justify-between">
                         <div className="flex items-center gap-2.5">
                             <div className="w-9 h-9 rounded-full bg-gradient-to-br from-primary to-orange-500 flex items-center justify-center text-white text-xs font-bold shadow-lg shadow-primary/20">
-                                AR
+                                {(displayData.headline || 'DB').substring(0, 2).toUpperCase()}
                             </div>
                             <div>
-                                <div className="font-semibold text-[13px] text-white leading-tight">AdRuby AI</div>
+                                <div className="font-semibold text-[13px] text-white leading-tight">
+                                    {displayData.headline ? displayData.headline.substring(0, 25) : 'Dein Business'}
+                                </div>
                                 <div className="text-[11px] text-gray-400 flex items-center gap-1">
                                     Gesponsert · <Globe className="w-2.5 h-2.5" />
                                 </div>
@@ -302,10 +278,24 @@ export function PreviewArea({
             {(displayData.qualityScore || displayData.engagementScore) && (
                 <div className="flex justify-center gap-10">
                     {displayData.qualityScore && (
-                        <ScoreRing value={displayData.qualityScore} max={10} label="Qualität" color="hsl(var(--primary))" delay={200} />
+                        <div className="flex flex-col items-center gap-0.5">
+                            <ScoreRing value={displayData.qualityScore} max={10} label="Qualität" color="hsl(var(--primary))" delay={200} />
+                            <span className="text-[10px] text-muted-foreground/60 mt-0.5">
+                                {displayData.qualityScore >= 9 ? 'Exzellent' :
+                                    displayData.qualityScore >= 7 ? 'Überdurchschnittlich' :
+                                        displayData.qualityScore >= 5 ? 'Durchschnitt' : 'Ausbaufähig'}
+                            </span>
+                        </div>
                     )}
                     {displayData.engagementScore && (
-                        <ScoreRing value={displayData.engagementScore} max={100} label="Engagement" color="#10b981" delay={500} />
+                        <div className="flex flex-col items-center gap-0.5">
+                            <ScoreRing value={displayData.engagementScore} max={100} label="Engagement" color="#10b981" delay={500} />
+                            <span className="text-[10px] text-muted-foreground/60 mt-0.5">
+                                {displayData.engagementScore >= 80 ? 'Top 10%' :
+                                    displayData.engagementScore >= 60 ? 'Top 30%' :
+                                        displayData.engagementScore >= 40 ? 'Durchschnitt' : 'Unter Durchschnitt'}
+                            </span>
+                        </div>
                     )}
                 </div>
             )}

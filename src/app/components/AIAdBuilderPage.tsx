@@ -78,6 +78,7 @@ export function AIAdBuilderPage() {
     const [mode, setMode] = useState<InputMode | 'store'>('form');
     const [step, setStep] = useState<Step>('input');
     const [loading, setLoading] = useState(false);
+    const [generatingStartTime, setGeneratingStartTime] = useState<number | null>(null);
     const [result, setResult] = useState<AdGenerationResult | null>(null);
     const [error, setError] = useState<string | null>(null);
     const [productImage, setProductImage] = useState<File | null>(null);
@@ -139,19 +140,28 @@ export function AIAdBuilderPage() {
         }
     }, [result, productImagePreview]);
 
-    // Theater mode: mark steps as completed with delays
+    // Theater mode: mark steps as completed with delays, adapt when result arrives
     useEffect(() => {
         if (step !== 'generating') {
             setCompletedSteps([]);
             return;
         }
+        setGeneratingStartTime(Date.now());
         const timers = PIPELINE_STEPS.map((s, i) =>
             setTimeout(() => {
                 setCompletedSteps(prev => [...prev, i]);
-            }, s.delay + 1500) // complete 1.5s after appearing
+            }, s.delay + 1500)
         );
         return () => timers.forEach(clearTimeout);
     }, [step]);
+
+    // When result arrives, immediately complete all remaining steps
+    useEffect(() => {
+        if (step === 'result' && generatingStartTime) {
+            setCompletedSteps(PIPELINE_STEPS.map((_, i) => i));
+            setGeneratingStartTime(null);
+        }
+    }, [step, generatingStartTime]);
 
     const handleImageUpload = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
@@ -284,7 +294,7 @@ export function AIAdBuilderPage() {
                                 key={card.id}
                                 onClick={() => setMode(card.id)}
                                 className={cn(
-                                    "relative flex items-center gap-3 px-4 py-3 rounded-xl border text-left transition-all duration-300 group",
+                                    "relative flex items-center gap-3 px-4 py-3 rounded-xl border text-left transition-all duration-300 group cursor-pointer",
                                     isActive
                                         ? `bg-gradient-to-br ${card.gradient} ${card.borderColor} shadow-lg shadow-black/5`
                                         : "bg-card/60 border-border/30 hover:border-border/60 hover:bg-card/80"
@@ -314,7 +324,7 @@ export function AIAdBuilderPage() {
                                     )}>
                                         {card.title}
                                     </div>
-                                    <div className="text-[10px] text-muted-foreground/60 truncate">
+                                    <div className="text-[11px] text-muted-foreground/70 truncate">
                                         {card.description}
                                     </div>
                                 </div>
@@ -323,12 +333,8 @@ export function AIAdBuilderPage() {
                     })}
                 </div>
 
-                {/* Credit counter badge */}
+                {/* Status badge — only show "Fertig" when result ready */}
                 <div className="ml-auto flex items-center gap-2">
-                    <Badge variant="secondary" className="px-2.5 py-1 text-xs bg-primary/5 text-primary/80 border-primary/10 gap-1">
-                        <Zap className="w-3 h-3" />
-                        {credits} Credits
-                    </Badge>
                     {step === 'result' && (
                         <Badge variant="secondary" className="px-2.5 py-1 text-xs bg-green-500/10 text-green-600 border-green-500/20 gap-1">
                             <CheckCircle2 className="w-3 h-3" />
@@ -426,8 +432,8 @@ export function AIAdBuilderPage() {
                                         setImportedProducts(products);
                                         setImportedCopies(copies);
                                     }}
-                                    onCreateSingleAds={(products) => {
-                                        toast.success(`${products.length} Ads werden generiert...`);
+                                    onCreateSingleAds={(_products) => {
+                                        toast.info('Einzel-Ads aus Shop-Import — Coming Soon! Nutze den Carousel Builder.');
                                     }}
                                     onCreateCarousel={(products, copies) => {
                                         setImportedProducts(products);

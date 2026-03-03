@@ -11,6 +11,7 @@ import { Label } from '../ui/label';
 import { Textarea } from '../ui/textarea';
 import { Sparkles, Package, Target, Zap, Loader2 } from 'lucide-react';
 import { useAuthState } from '../../contexts/AuthContext';
+import { cn } from '../../lib/utils';
 import type { AIAdBuilderComponentProps, FormInputData } from '../../types/aibuilder';
 
 export function FormInputMode({ language, onGenerate, loading }: AIAdBuilderComponentProps) {
@@ -27,8 +28,15 @@ export function FormInputMode({ language, onGenerate, loading }: AIAdBuilderComp
         template: 'ai_automatic',
     });
 
+    const [showValidation, setShowValidation] = useState(false);
+
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
+        if (!isValid) {
+            setShowValidation(true);
+            return;
+        }
+        setShowValidation(false);
         onGenerate(formData);
     };
 
@@ -55,9 +63,7 @@ export function FormInputMode({ language, onGenerate, loading }: AIAdBuilderComp
                             <Package className="w-3.5 h-3.5 text-primary" />
                         </div>
                         <span className="text-xs font-semibold text-foreground tracking-wide uppercase">Produkt</span>
-                        <span className="ml-auto text-[10px] text-muted-foreground/40 tabular-nums">
-                            {[formData.productName, formData.industry, formData.usp].filter(v => v.trim()).length}/3
-                        </span>
+                        <span className="ml-auto text-[10px] text-muted-foreground/40">2 Pflichtfelder</span>
                     </div>
                     {/* Gradient underline */}
                     <div className="absolute bottom-0 left-4 right-4 h-px bg-gradient-to-r from-primary/40 via-red-500/20 to-transparent" />
@@ -74,11 +80,18 @@ export function FormInputMode({ language, onGenerate, loading }: AIAdBuilderComp
                             value={formData.productName}
                             onChange={(e) => handleChange('productName', e.target.value)}
                             placeholder={t('productNamePlaceholder', language)}
-                            className="h-9 text-sm transition-shadow focus-visible:shadow-[0_0_0_3px_rgba(var(--primary-rgb,239,68,68),0.1)]"
+                            className={cn(
+                                "h-9 text-sm transition-shadow focus-visible:shadow-[0_0_0_3px_rgba(var(--primary-rgb,239,68,68),0.1)]",
+                                showValidation && !formData.productName.trim() && "border-destructive/60 focus-visible:shadow-[0_0_0_3px_rgba(239,68,68,0.15)]"
+                            )}
                         />
-                        <p className="text-[10px] text-muted-foreground/50 leading-relaxed">
-                            Der Name deines Produkts oder deiner Marke
-                        </p>
+                        {showValidation && !formData.productName.trim() ? (
+                            <p className="text-[11px] text-destructive/80 leading-relaxed">Bitte gib einen Produktnamen ein</p>
+                        ) : (
+                            <p className="text-[11px] text-muted-foreground/70 leading-relaxed">
+                                Der Name deines Produkts oder deiner Marke
+                            </p>
+                        )}
                     </div>
 
                     {/* Industry */}
@@ -91,7 +104,7 @@ export function FormInputMode({ language, onGenerate, loading }: AIAdBuilderComp
                             placeholder={t('industryPlaceholder', language)}
                             className="h-9 text-sm transition-shadow focus-visible:shadow-[0_0_0_3px_rgba(var(--primary-rgb,239,68,68),0.1)]"
                         />
-                        <p className="text-[10px] text-muted-foreground/50 leading-relaxed">
+                        <p className="text-[11px] text-muted-foreground/70 leading-relaxed">
                             z.B. E-Commerce, SaaS, Fashion, Food, Fitness
                         </p>
                     </div>
@@ -108,11 +121,18 @@ export function FormInputMode({ language, onGenerate, loading }: AIAdBuilderComp
                             onChange={(e) => handleChange('usp', e.target.value)}
                             placeholder={t('uspPlaceholder', language)}
                             rows={2}
-                            className="text-sm resize-none transition-shadow focus-visible:shadow-[0_0_0_3px_rgba(var(--primary-rgb,239,68,68),0.1)]"
+                            className={cn(
+                                "text-sm resize-none transition-shadow focus-visible:shadow-[0_0_0_3px_rgba(var(--primary-rgb,239,68,68),0.1)]",
+                                showValidation && !formData.usp.trim() && "border-destructive/60 focus-visible:shadow-[0_0_0_3px_rgba(239,68,68,0.15)]"
+                            )}
                         />
-                        <p className="text-[10px] text-muted-foreground/50 leading-relaxed">
-                            Was macht dein Produkt einzigartig? 1-2 Sätze reichen.
-                        </p>
+                        {showValidation && !formData.usp.trim() ? (
+                            <p className="text-[11px] text-destructive/80 leading-relaxed">Bitte beschreibe deinen USP</p>
+                        ) : (
+                            <p className="text-[11px] text-muted-foreground/70 leading-relaxed">
+                                Was macht dein Produkt einzigartig? 1-2 Sätze reichen.
+                            </p>
+                        )}
                     </div>
                 </div>
             </div>
@@ -125,9 +145,7 @@ export function FormInputMode({ language, onGenerate, loading }: AIAdBuilderComp
                             <Target className="w-3.5 h-3.5 text-violet-500" />
                         </div>
                         <span className="text-xs font-semibold text-foreground tracking-wide uppercase">Zielgruppe & Stil</span>
-                        <span className="ml-auto text-[10px] text-muted-foreground/40 tabular-nums">
-                            {[formData.targetAudience, formData.tone, formData.goal].filter(v => v.trim()).length}/3
-                        </span>
+                        <span className="ml-auto text-[10px] text-muted-foreground/40">optional</span>
                     </div>
                     {/* Gradient underline */}
                     <div className="absolute bottom-0 left-4 right-4 h-px bg-gradient-to-r from-violet-500/40 via-fuchsia-500/20 to-transparent" />
@@ -143,7 +161,7 @@ export function FormInputMode({ language, onGenerate, loading }: AIAdBuilderComp
                             placeholder={t('targetAudiencePlaceholder', language)}
                             className="h-9 text-sm transition-shadow focus-visible:shadow-[0_0_0_3px_rgba(139,92,246,0.1)]"
                         />
-                        <p className="text-[10px] text-muted-foreground/50 leading-relaxed">
+                        <p className="text-[11px] text-muted-foreground/70 leading-relaxed">
                             z.B. Frauen 25-34, Fitness-Enthusiasten, Startup-Gründer
                         </p>
                     </div>
@@ -158,7 +176,7 @@ export function FormInputMode({ language, onGenerate, loading }: AIAdBuilderComp
                             placeholder={t('tonePlaceholder', language)}
                             className="h-9 text-sm transition-shadow focus-visible:shadow-[0_0_0_3px_rgba(139,92,246,0.1)]"
                         />
-                        <p className="text-[10px] text-muted-foreground/50 leading-relaxed">
+                        <p className="text-[11px] text-muted-foreground/70 leading-relaxed">
                             z.B. professionell, verspielt, luxuriös, dringend
                         </p>
                     </div>
@@ -173,7 +191,7 @@ export function FormInputMode({ language, onGenerate, loading }: AIAdBuilderComp
                             placeholder={t('goalPlaceholder', language)}
                             className="h-9 text-sm transition-shadow focus-visible:shadow-[0_0_0_3px_rgba(139,92,246,0.1)]"
                         />
-                        <p className="text-[10px] text-muted-foreground/50 leading-relaxed">
+                        <p className="text-[11px] text-muted-foreground/70 leading-relaxed">
                             z.B. Conversions steigern, Markenbekanntheit, App-Downloads
                         </p>
                     </div>
@@ -184,7 +202,7 @@ export function FormInputMode({ language, onGenerate, loading }: AIAdBuilderComp
             <div className="relative group">
                 {/* Ambient glow when valid */}
                 {isValid && !loading && (
-                    <div className="absolute -inset-1 bg-gradient-to-r from-primary via-red-500 to-orange-500 rounded-xl blur-lg opacity-30 group-hover:opacity-50 transition-opacity duration-500" />
+                    <div className="absolute -inset-1 bg-gradient-to-r from-primary via-red-500 to-orange-500 rounded-xl blur-lg opacity-20 group-hover:opacity-35 transition-opacity duration-500" />
                 )}
                 <Button
                     type="submit"

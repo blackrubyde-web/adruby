@@ -127,19 +127,19 @@ export function FreeTextInputMode({ language, onGenerate, loading }: AIAdBuilder
                 <div className="p-4 space-y-4">
                     {/* Example Prompt Chips */}
                     <div>
-                        <p className="text-[10px] text-muted-foreground/50 mb-2 uppercase tracking-wider font-medium">Beispiel-Prompts</p>
+                        <p className="text-[10px] text-muted-foreground/50 mb-2 uppercase tracking-wider font-medium">
+                            {text.trim() ? 'Beispiel-Prompts' : 'Wähle ein Beispiel oder schreibe selbst'}
+                        </p>
                         <div className="flex flex-wrap gap-2">
                             {EXAMPLE_PROMPTS.map((prompt, i) => (
                                 <button
                                     key={i}
                                     type="button"
                                     onClick={() => setText(prompt.text)}
-                                    className="px-3 py-1.5 rounded-lg bg-gradient-to-br from-muted/60 to-muted/30
-                                               hover:from-primary/10 hover:to-red-500/5
-                                               text-xs text-muted-foreground hover:text-foreground
-                                               transition-all duration-300
-                                               border border-border/30 hover:border-primary/30
-                                               hover:shadow-sm"
+                                    className={`px-3 py-1.5 rounded-lg text-xs transition-all duration-300 border hover:shadow-sm ${text.trim()
+                                            ? 'bg-muted/30 text-muted-foreground/60 border-border/20 hover:bg-muted/50 hover:text-muted-foreground'
+                                            : 'bg-gradient-to-br from-primary/10 to-red-500/5 text-foreground border-primary/20 hover:border-primary/40 hover:from-primary/15 hover:to-red-500/10'
+                                        }`}
                                 >
                                     {prompt.label}
                                 </button>
