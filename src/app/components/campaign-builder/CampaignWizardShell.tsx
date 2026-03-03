@@ -1,27 +1,18 @@
 import { ReactNode, useEffect } from 'react';
-import { Target, PenTool, Users, Zap, Rocket, ChevronLeft, ChevronRight, Sparkles, Brain } from 'lucide-react';
-import { PageShell, HeroHeader } from '../layout';
+import { Target, PenTool, Users, Zap, Rocket, ChevronLeft, ChevronRight, Sparkles, Check } from 'lucide-react';
+import { PageShell } from '../layout';
 import { useCampaignBuilder } from './CampaignBuilderContext';
 import { Button } from '../ui/button';
 import { Badge } from '../ui/badge';
 import { cn } from '../../lib/utils';
 
 const STEPS = [
-    { id: 1, label: 'Setup', description: 'Name & Budget', icon: Target, color: 'from-rose-500 to-pink-600' },
-    { id: 2, label: 'Creatives', description: 'Ads auswählen', icon: PenTool, color: 'from-violet-500 to-purple-600' },
-    { id: 3, label: 'Targeting', description: 'Zielgruppe', icon: Users, color: 'from-blue-500 to-cyan-600' },
-    { id: 4, label: 'Strategy', description: 'Optimierung', icon: Zap, color: 'from-amber-500 to-orange-600' },
-    { id: 5, label: 'Launch', description: 'Review & Push', icon: Rocket, color: 'from-green-500 to-emerald-600' },
+    { id: 1, label: 'Setup', description: 'Name & Budget', icon: Target },
+    { id: 2, label: 'Creatives', description: 'Ads auswählen', icon: PenTool },
+    { id: 3, label: 'Targeting', description: 'Zielgruppe', icon: Users },
+    { id: 4, label: 'Strategie', description: 'Optimierung', icon: Zap },
+    { id: 5, label: 'Launch', description: 'Review & Push', icon: Rocket },
 ];
-
-// AI Tips per step
-const AI_TIPS: Record<number, string> = {
-    1: '💡 Tipp: Kampagnen mit klaren Namen performen 23% besser im Reporting.',
-    2: '💡 Tipp: 3-5 verschiedene Creatives pro Ad Set erhöhen die Chance auf einen Winner.',
-    3: '💡 Tipp: Advantage+ kann deine Reichweite um bis zu 40% erhöhen.',
-    4: '💡 Tipp: Ein 50/50 Split zwischen Testing und Scaling ist für neue Kampagnen optimal.',
-    5: '💡 Alles bereit! Überprüfe deine Einstellungen und push zu Meta.',
-};
 
 export const CampaignWizardShell = ({ children }: { children: ReactNode }) => {
     const {
@@ -51,71 +42,44 @@ export const CampaignWizardShell = ({ children }: { children: ReactNode }) => {
         return () => window.removeEventListener('keydown', handleKeyDown);
     }, [canContinue, currentStep, totalSteps, handleNext, handleBack]);
 
-    // Progress indicator
-    const progressPercent = ((currentStep - 1) / (totalSteps - 1)) * 100;
+    const progressPercent = (currentStep / totalSteps) * 100;
 
     return (
         <PageShell>
             <div className="relative min-h-screen pb-24">
-                {/* Premium Background */}
-                <div className="fixed inset-0 pointer-events-none overflow-hidden -z-10">
-                    <div className="absolute top-0 right-0 w-[1000px] h-[1000px] bg-primary/5 rounded-full blur-[150px] animate-pulse" style={{ animationDuration: '8s' }} />
-                    <div className="absolute bottom-0 left-0 w-[800px] h-[800px] bg-violet-500/5 rounded-full blur-[120px] animate-pulse" style={{ animationDuration: '12s' }} />
-                    <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-cyan-500/3 rounded-full blur-[100px]" />
-                </div>
-
-                {/* Header */}
-                <HeroHeader
-                    title="Campaign Builder"
-                    subtitle="Build high-performance Meta campaigns with AI assistance."
-                    chips={
-                        <div className="flex items-center gap-2">
+                {/* ── Top Bar ──────────────────────────────────────── */}
+                <div className="max-w-6xl mx-auto px-4 pt-6 sm:pt-8">
+                    <div className="flex items-center justify-between mb-6">
+                        <div className="flex items-center gap-3 min-w-0">
+                            <h1 className="text-xl font-bold tracking-tight text-foreground">Kampagne erstellen</h1>
                             {campaignSetup.name && (
-                                <Badge variant="outline" className="text-xs animate-fade-in">
+                                <Badge variant="outline" className="text-xs truncate max-w-[200px]">
                                     {campaignSetup.name}
                                 </Badge>
                             )}
                             {selectedCreativeIds.length > 0 && (
-                                <Badge variant="secondary" className="text-xs animate-fade-in">
+                                <Badge variant="secondary" className="text-xs shrink-0">
                                     {selectedCreativeIds.length} Creatives
                                 </Badge>
                             )}
                         </div>
-                    }
-                    actions={
-                        <div className="flex items-center gap-2">
-                            {currentStep > 1 && (
-                                <Button variant="ghost" onClick={handleBack} className="gap-2">
-                                    <ChevronLeft className="w-4 h-4" /> Zurück
-                                </Button>
-                            )}
-                            {currentStep < totalSteps && (
-                                <Button
-                                    onClick={handleNext}
-                                    disabled={!canContinue}
-                                    className="gap-2 bg-gradient-to-r from-primary to-rose-600 hover:opacity-90"
-                                >
-                                    Weiter <ChevronRight className="w-4 h-4" />
-                                </Button>
-                            )}
+                        <div className="text-sm text-muted-foreground">
+                            <span className="font-bold text-foreground">{currentStep}</span>
+                            <span> / {totalSteps}</span>
                         </div>
-                    }
-                />
+                    </div>
 
-                {/* Premium Stepper */}
-                <div className="max-w-6xl mx-auto px-4 mt-8 mb-8">
-                    {/* Progress Bar Container */}
-                    <div className="relative bg-card/50 backdrop-blur-xl rounded-2xl border border-border/50 p-6 shadow-lg">
+                    {/* ── Stepper ────────────────────────────────────── */}
+                    <div className="relative mb-8">
                         {/* Progress Track */}
-                        <div className="absolute top-1/2 left-[10%] right-[10%] h-1 bg-muted/50 rounded-full -translate-y-1/2 -z-10" />
+                        <div className="absolute top-5 left-0 right-0 h-0.5 bg-border/50" />
                         <div
-                            className="absolute top-1/2 left-[10%] h-1 bg-gradient-to-r from-primary via-violet-500 to-fuchsia-500 rounded-full -translate-y-1/2 -z-10 transition-all duration-700 ease-out"
-                            style={{ width: `${progressPercent * 0.8}%` }}
+                            className="absolute top-5 left-0 h-0.5 bg-primary transition-all duration-700 ease-out"
+                            style={{ width: `${((currentStep - 1) / (totalSteps - 1)) * 100}%` }}
                         />
 
-                        {/* Steps */}
-                        <div className="flex justify-between items-start">
-                            {STEPS.map((step, _index) => {
+                        <div className="relative flex justify-between">
+                            {STEPS.map((step) => {
                                 const isCompleted = currentStep > step.id;
                                 const isActive = currentStep === step.id;
                                 const isPending = currentStep < step.id;
@@ -125,46 +89,32 @@ export const CampaignWizardShell = ({ children }: { children: ReactNode }) => {
                                     <div
                                         key={step.id}
                                         className={cn(
-                                            "flex flex-col items-center gap-3 transition-all duration-500",
-                                            isActive && "scale-110",
-                                            isPending && "opacity-50"
+                                            "flex flex-col items-center gap-2 transition-all duration-300",
+                                            isPending && "opacity-40"
                                         )}
                                     >
-                                        {/* Step Circle */}
                                         <div
                                             className={cn(
-                                                "relative w-14 h-14 rounded-2xl flex items-center justify-center transition-all duration-500 shadow-lg",
-                                                isCompleted && "bg-gradient-to-br from-green-500 to-emerald-600 text-white",
-                                                isActive && `bg-gradient-to-br ${step.color} text-white shadow-xl`,
-                                                isPending && "bg-card border-2 border-border text-muted-foreground"
+                                                "w-10 h-10 rounded-xl flex items-center justify-center transition-all duration-300 border",
+                                                isCompleted && "bg-primary border-primary text-primary-foreground",
+                                                isActive && "bg-primary/10 border-primary text-primary shadow-sm shadow-primary/20",
+                                                isPending && "bg-card border-border text-muted-foreground"
                                             )}
                                         >
                                             {isCompleted ? (
-                                                <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
-                                                </svg>
+                                                <Check className="w-4 h-4" />
                                             ) : (
-                                                <Icon className="w-6 h-6" />
-                                            )}
-
-                                            {/* Active Pulse */}
-                                            {isActive && (
-                                                <div className="absolute inset-0 rounded-2xl bg-white/20 animate-ping" style={{ animationDuration: '2s' }} />
+                                                <Icon className="w-4 h-4" />
                                             )}
                                         </div>
-
-                                        {/* Label */}
                                         <div className="text-center">
                                             <div className={cn(
-                                                "text-sm font-bold transition-colors",
-                                                isActive ? "text-foreground" : isCompleted ? "text-green-500" : "text-muted-foreground"
+                                                "text-xs font-semibold transition-colors",
+                                                isActive ? "text-foreground" : isCompleted ? "text-primary" : "text-muted-foreground"
                                             )}>
                                                 {step.label}
                                             </div>
-                                            <div className={cn(
-                                                "text-[10px] mt-0.5 hidden sm:block transition-colors",
-                                                isActive ? "text-muted-foreground" : "text-muted-foreground/50"
-                                            )}>
+                                            <div className="text-[10px] text-muted-foreground/60 hidden sm:block">
                                                 {step.description}
                                             </div>
                                         </div>
@@ -173,36 +123,26 @@ export const CampaignWizardShell = ({ children }: { children: ReactNode }) => {
                             })}
                         </div>
                     </div>
-
-                    {/* AI Tip */}
-                    <div className="mt-4 flex items-center gap-3 px-4 py-3 bg-primary/5 border border-primary/20 rounded-xl animate-fade-in">
-                        <div className="p-2 bg-primary/10 rounded-lg shrink-0">
-                            <Brain className="w-4 h-4 text-primary" />
-                        </div>
-                        <p className="text-sm text-muted-foreground">
-                            {AI_TIPS[currentStep]}
-                        </p>
-                    </div>
                 </div>
 
-                {/* Error Display */}
+                {/* ── Error ──────────────────────────────────────── */}
                 {error && (
                     <div className="max-w-6xl mx-auto px-4 mb-4">
-                        <div className="p-4 bg-red-500/10 border border-red-500/20 text-red-400 rounded-xl text-center animate-shake">
+                        <div className="p-3 bg-destructive/10 border border-destructive/20 text-destructive rounded-xl text-sm text-center">
                             {error}
                         </div>
                     </div>
                 )}
 
-                {/* Content */}
+                {/* ── Content ────────────────────────────────────── */}
                 {isLoading ? (
                     <div className="max-w-6xl mx-auto px-4 text-center py-20">
-                        <div className="relative w-20 h-20 mx-auto mb-6">
-                            <div className="absolute inset-0 border-4 border-primary/20 rounded-full" />
-                            <div className="absolute inset-0 border-4 border-transparent border-t-primary rounded-full animate-spin" />
-                            <Sparkles className="absolute inset-0 m-auto w-8 h-8 text-primary animate-pulse" />
+                        <div className="relative w-16 h-16 mx-auto mb-4">
+                            <div className="absolute inset-0 border-2 border-primary/20 rounded-full" />
+                            <div className="absolute inset-0 border-2 border-transparent border-t-primary rounded-full animate-spin" />
+                            <Sparkles className="absolute inset-0 m-auto w-6 h-6 text-primary animate-pulse" />
                         </div>
-                        <p className="text-muted-foreground font-medium">Lade Campaign Engine...</p>
+                        <p className="text-sm text-muted-foreground">Kampagne wird geladen…</p>
                     </div>
                 ) : (
                     <div className="max-w-6xl mx-auto px-4">
@@ -212,42 +152,37 @@ export const CampaignWizardShell = ({ children }: { children: ReactNode }) => {
                     </div>
                 )}
 
-                {/* Fixed Bottom Navigation */}
+                {/* ── Fixed Bottom Navigation ────────────────────── */}
                 <div className="fixed bottom-0 left-0 right-0 bg-background/80 backdrop-blur-xl border-t border-border/50 z-40">
-                    <div className="max-w-6xl mx-auto px-4 py-4">
+                    <div className="max-w-6xl mx-auto px-4 py-3">
                         <div className="flex items-center justify-between">
-                            {/* Left: Progress Info */}
-                            <div className="flex items-center gap-4">
-                                <div className="text-sm">
-                                    <span className="text-muted-foreground">Schritt </span>
-                                    <span className="font-bold text-foreground">{currentStep}</span>
-                                    <span className="text-muted-foreground"> von </span>
-                                    <span className="font-bold text-foreground">{totalSteps}</span>
-                                </div>
-
-                                {/* Mini Progress Bar */}
-                                <div className="hidden sm:block w-32 h-1.5 bg-muted rounded-full overflow-hidden">
+                            {/* Progress */}
+                            <div className="flex items-center gap-3">
+                                <div className="w-24 h-1.5 bg-muted rounded-full overflow-hidden">
                                     <div
-                                        className="h-full bg-gradient-to-r from-primary to-violet-500 transition-all duration-500"
-                                        style={{ width: `${(currentStep / totalSteps) * 100}%` }}
+                                        className="h-full bg-primary rounded-full transition-all duration-500"
+                                        style={{ width: `${progressPercent}%` }}
                                     />
                                 </div>
+                                <span className="text-xs text-muted-foreground">
+                                    Schritt {currentStep} von {totalSteps}
+                                </span>
                             </div>
 
-                            {/* Center: Keyboard Hint */}
+                            {/* Keyboard hint */}
                             <div className="hidden md:flex items-center gap-2 text-xs text-muted-foreground">
-                                <kbd className="px-2 py-1 bg-muted rounded border border-border font-mono">Enter</kbd>
+                                <kbd className="px-1.5 py-0.5 bg-muted rounded border border-border text-[10px] font-mono">Enter</kbd>
                                 <span>Weiter</span>
-                                <span className="mx-2">•</span>
-                                <kbd className="px-2 py-1 bg-muted rounded border border-border font-mono">Esc</kbd>
+                                <span className="mx-1 opacity-30">·</span>
+                                <kbd className="px-1.5 py-0.5 bg-muted rounded border border-border text-[10px] font-mono">Esc</kbd>
                                 <span>Zurück</span>
                             </div>
 
-                            {/* Right: Navigation Buttons */}
-                            <div className="flex items-center gap-3">
+                            {/* Buttons */}
+                            <div className="flex items-center gap-2">
                                 {currentStep > 1 && (
-                                    <Button variant="outline" onClick={handleBack} size="sm" className="gap-1">
-                                        <ChevronLeft className="w-4 h-4" />
+                                    <Button variant="outline" onClick={handleBack} size="sm" className="gap-1.5">
+                                        <ChevronLeft className="w-3.5 h-3.5" />
                                         <span className="hidden sm:inline">Zurück</span>
                                     </Button>
                                 )}
@@ -256,19 +191,19 @@ export const CampaignWizardShell = ({ children }: { children: ReactNode }) => {
                                         onClick={handleNext}
                                         disabled={!canContinue}
                                         size="sm"
-                                        className="gap-1 bg-gradient-to-r from-primary to-rose-600 hover:opacity-90 shadow-lg shadow-primary/30"
+                                        className="gap-1.5"
                                     >
                                         <span className="hidden sm:inline">Weiter</span>
-                                        <ChevronRight className="w-4 h-4" />
+                                        <ChevronRight className="w-3.5 h-3.5" />
                                     </Button>
                                 ) : (
                                     <Button
                                         size="sm"
-                                        className="gap-2 bg-gradient-to-r from-green-500 to-emerald-600 hover:opacity-90 shadow-lg shadow-green-500/30"
-                                        onClick={() => { }} // Scroll to launch section
+                                        className="gap-1.5"
+                                        onClick={() => { }}
                                     >
-                                        <Rocket className="w-4 h-4" />
-                                        <span className="hidden sm:inline">Launch</span>
+                                        <Rocket className="w-3.5 h-3.5" />
+                                        <span>Veröffentlichen</span>
                                     </Button>
                                 )}
                             </div>

@@ -142,8 +142,8 @@ export const AgencySettingsMenu = memo(function AgencySettingsMenu({
 
             {/* Modal for each settings view */}
             <Dialog open={activeView !== null} onOpenChange={handleOpenChange}>
-                <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto bg-card/95 backdrop-blur-xl border-border p-0">
-                    <DialogHeader className="sticky top-0 z-10 bg-card/95 backdrop-blur-xl border-b border-border px-4 py-3">
+                <DialogContent className="max-w-4xl h-[85vh] flex flex-col bg-card/95 backdrop-blur-xl border-border p-0">
+                    <DialogHeader className="shrink-0 bg-card/95 backdrop-blur-xl border-b border-border px-4 py-3">
                         <div className="flex items-center justify-between">
                             <DialogTitle className="text-base font-semibold text-foreground flex items-center gap-2">
                                 {activeView && (
@@ -167,7 +167,7 @@ export const AgencySettingsMenu = memo(function AgencySettingsMenu({
                         </div>
                     </DialogHeader>
 
-                    <div className="p-4">
+                    <div className="flex-1 overflow-y-auto p-4">
                         {activeView === 'alerts' && <AlertsConfigPanel />}
                         {activeView === 'rules' && <AutomatedRulesPanel />}
                         {activeView === 'summary' && <WeeklySummaryCard campaigns={campaigns} />}

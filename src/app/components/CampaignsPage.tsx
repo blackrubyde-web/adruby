@@ -95,24 +95,26 @@ export function CampaignsPage() {
   };
 
   return (
-    <DashboardShell
-      title="Kampagnen"
-      subtitle="Verwalte und optimiere deine Meta Ads Kampagnen."
-      headerChips={
-        <div className="flex flex-wrap gap-2 items-center">
-          <Badge variant="outline" className="text-xs">{stats.total} Kampagnen</Badge>
-          <Badge variant="outline" className="text-xs text-green-600 border-green-600/30">{stats.active} Aktiv</Badge>
-          <Badge variant="outline" className="text-xs text-orange-600 border-orange-600/30">{stats.paused} Pausiert</Badge>
-          <Badge variant="outline" className="text-xs">{formatCurrency(stats.totalSpend)} Ausgaben</Badge>
+    <DashboardShell hideHero>
+      {/* ── Inline Toolbar ──────────────────────────────────── */}
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex items-center gap-4 min-w-0">
+          <div>
+            <h1 className="text-2xl font-bold tracking-tight text-foreground">Kampagnen</h1>
+            <p className="text-sm text-muted-foreground">Verwalte und optimiere deine Meta Ads Kampagnen</p>
+          </div>
+          <div className="hidden md:flex flex-wrap gap-1.5">
+            <Badge variant="outline" className="text-xs">{stats.total} gesamt</Badge>
+            <Badge variant="outline" className="text-xs text-green-600 border-green-600/30">{stats.active} Aktiv</Badge>
+            {stats.paused > 0 && <Badge variant="outline" className="text-xs text-orange-600 border-orange-600/30">{stats.paused} Pausiert</Badge>}
+            <Badge variant="outline" className="text-xs">{formatCurrency(stats.totalSpend)}</Badge>
+          </div>
         </div>
-      }
-      headerActions={
-        <Button onClick={handleCreateCampaign} className="gap-2">
+        <Button onClick={handleCreateCampaign} className="gap-2 shrink-0">
           <Plus className="w-4 h-4" />
           Neue Kampagne
         </Button>
-      }
-    >
+      </div>
 
       {/* Filters and Search - Open Layout */}
       <div className="flex flex-col md:flex-row items-center justify-between gap-3 mb-6">

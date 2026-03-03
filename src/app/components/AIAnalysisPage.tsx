@@ -506,43 +506,45 @@ export function AIAnalysisPage() {
   // ── Render ────────────────────────────────────────────────────────
 
   return (
-    <DashboardShell
-      title="KI Analyse & Autopilot"
-      subtitle={`${campaigns.length} Kampagnen, ${totalAdSets} Ad Sets, ${totalAds} Ads werden analysiert`}
-      headerChips={
-        <div className="flex flex-wrap gap-2 items-center">
-          <Badge variant="outline" className="text-xs">€{(totalSpend / 1000).toFixed(1)}K Ausgaben</Badge>
-          <Badge variant="outline" className="text-xs">{totalRoas.toFixed(2)}x ROAS</Badge>
-          <Badge variant="outline" className="text-xs">{allRecommendations.length} Empfehlungen</Badge>
-          {aiPowered && <Badge variant="secondary" className="gap-1"><Brain className="w-3 h-3" /> GPT-4o</Badge>}
+    <DashboardShell hideHero>
+      {/* ── Inline Toolbar ──────────────────────────────────── */}
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex items-center gap-4 min-w-0">
+          <div>
+            <h1 className="text-2xl font-bold tracking-tight text-foreground">KI Analyse</h1>
+            <p className="text-sm text-muted-foreground">{campaigns.length} Kampagnen · {totalAdSets} Ad Sets · {totalAds} Ads</p>
+          </div>
+          <div className="hidden md:flex flex-wrap gap-1.5">
+            <Badge variant="outline" className="text-xs">€{(totalSpend / 1000).toFixed(1)}K</Badge>
+            <Badge variant="outline" className="text-xs">{totalRoas.toFixed(2)}x ROAS</Badge>
+            <Badge variant="outline" className="text-xs">{allRecommendations.length} Empfehlungen</Badge>
+            {aiPowered && <Badge variant="secondary" className="text-xs gap-1"><Brain className="w-3 h-3" /> GPT-4o</Badge>}
+          </div>
+        </div>
+        <div className="flex items-center gap-2 shrink-0">
           <button
             onClick={toggleAutopilot}
             disabled={!hasAutopilotData}
             className={`flex items-center gap-2 px-3 py-1.5 rounded-full border text-xs font-medium transition-all ${autopilotEnabled
-              ? 'bg-primary/20 text-primary border-primary/30 hover:bg-primary/30'
+              ? 'bg-primary/15 text-primary border-primary/30 hover:bg-primary/25'
               : 'bg-muted/30 text-muted-foreground border-border/50 hover:bg-muted/50'
               } ${!hasAutopilotData ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
           >
             <ShieldCheck className="w-3.5 h-3.5" />
-            <span className="hidden sm:inline">{autopilotEnabled ? 'Autopilot AN' : 'Autopilot AUS'}</span>
-            <div className={`w-8 h-4 rounded-full relative ${autopilotEnabled ? 'bg-primary/30' : 'bg-muted/50'}`}>
-              <div className={`absolute top-0.5 w-3 h-3 rounded-full transition-all duration-200 ${autopilotEnabled ? 'left-4 bg-primary' : 'left-0.5 bg-muted-foreground'}`} />
+            {autopilotEnabled ? 'Autopilot AN' : 'Autopilot AUS'}
+            <div className={`w-7 h-3.5 rounded-full relative ${autopilotEnabled ? 'bg-primary/30' : 'bg-muted/50'}`}>
+              <div className={`absolute top-0.5 w-2.5 h-2.5 rounded-full transition-all duration-200 ${autopilotEnabled ? 'left-3.5 bg-primary' : 'left-0.5 bg-muted-foreground'}`} />
             </div>
           </button>
-        </div>
-      }
-      headerActions={
-        <div className="flex flex-wrap gap-2 items-center">
-          <Button variant="outline" size="sm" onClick={isSyncing ? cancelSync : runSync} className="gap-2">
-            <RefreshCw className={`w-4 h-4 ${isSyncing ? 'animate-spin' : ''}`} /> {isSyncing ? 'Abbrechen' : 'Synchronisieren'}
+          <Button variant="outline" size="sm" onClick={isSyncing ? cancelSync : runSync} className="gap-1.5">
+            <RefreshCw className={`w-3.5 h-3.5 ${isSyncing ? 'animate-spin' : ''}`} /> {isSyncing ? 'Stop' : 'Sync'}
           </Button>
-          <Button size="sm" onClick={() => runAIAnalysis(metaCampaigns)} disabled={isAnalyzingAI} className="gap-2">
-            {isAnalyzingAI ? 'Analysiert…' : 'KI Analyse starten'}
+          <Button size="sm" onClick={() => runAIAnalysis(metaCampaigns)} disabled={isAnalyzingAI} className="gap-1.5">
+            {isAnalyzingAI ? 'Analysiert…' : 'KI Analyse'}
           </Button>
           <AgencySettingsMenu campaigns={campaigns} />
         </div>
-      }
-    >
+      </div>
       <InsightSummaryCards
         campaigns={campaigns.map(c => ({ id: c.id, name: c.name, roas: c.roas, spend: c.spend, ctr: c.ctr, conversions: c.conversions, performanceScore: c.performanceScore }))}
         totalSpend={totalSpend} totalRevenue={totalRevenue} totalRoas={totalRoas}
