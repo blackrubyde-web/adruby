@@ -177,7 +177,7 @@ export const handler = async (event) => {
                     // Generate copy if not provided
                     let compositeHeadline = body.headline;
                     let compositeTagline = body.subheadline || body.usp;
-                    let compositeCta = body.cta || 'Jetzt entdecken';
+                    let compositeCta = body.cta || '';
 
                     if (!compositeHeadline) {
                         try {
@@ -240,7 +240,7 @@ export const handler = async (event) => {
                         productImageUrl: body.productImageUrl,
                         headline: body.headline,
                         tagline: body.subheadline || body.usp,
-                        cta: body.cta || 'Jetzt entdecken',
+                        cta: body.cta || '',
                         userPrompt: body.text || `${body.productName || 'Product'} advertisement`,
                         industry: body.industry || 'tech',
                         accentColor: body.accentColor || '#FF4757',
@@ -257,7 +257,7 @@ export const handler = async (event) => {
                         headline: body.headline || 'AI Generated',
                         slogan: body.subheadline || '',
                         description: body.text || body.usp || '',
-                        cta: body.cta || 'Jetzt entdecken',
+                        cta: body.cta || '',
                         imagePrompt: railwayResult.imagePrompt,
                         template: 'ai_design_system_v3',
                         metadata: {
@@ -287,7 +287,7 @@ export const handler = async (event) => {
                     productImageUrl: hasProductImage ? body.productImageUrl : null,
                     headline: body.headline || body.productName || 'Discover',
                     subheadline: body.subheadline || body.usp || '',
-                    cta: body.cta,
+                    cta: body.cta || '',
                     productName: body.productName,
                     offer: body.text || body.usp || body.productName || 'Premium Product',
                     audience: body.audience || 'quality-conscious consumers',
@@ -310,7 +310,8 @@ export const handler = async (event) => {
                     headline: aiCopy.headline || body.headline || body.productName || 'AI Generated',
                     slogan: aiCopy.tagline || body.subheadline || '',
                     description: aiCopy.hook || body.text || body.usp || '',
-                    cta: aiCopy.cta || body.cta || (body.language === 'en' ? 'Discover Now' : 'Jetzt entdecken'),
+                    cta: aiCopy.cta || body.cta || '',
+                    includeCta: aiCopy.includeCta !== undefined ? aiCopy.includeCta : !!aiCopy.cta,
                     hook: aiCopy.hook || '',
                     imagePrompt: 'NanoBanana v5.1 AI Creative Director',
                     template: 'nanoBanana_v5',

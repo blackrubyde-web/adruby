@@ -245,26 +245,30 @@ export function PreviewArea({
                     {displayData.imageUrl && (
                         <div className="relative aspect-square w-full bg-black/50">
                             <img src={displayData.imageUrl} alt="Ad Creative" className="w-full h-full object-cover" />
-                            <div className="absolute inset-0 flex flex-col justify-end pointer-events-none">
-                                <div className="bg-gradient-to-t from-black/80 via-black/30 to-transparent p-4 pt-16">
-                                    <h3 className="text-white font-bold text-lg leading-tight drop-shadow-lg">
-                                        {displayData.headline}
-                                    </h3>
-                                </div>
-                            </div>
                         </div>
                     )}
 
-                    {/* Footer CTA */}
-                    <div className="bg-[#2a2a2b] px-3.5 py-3 flex items-center justify-between gap-3">
-                        <div className="flex-1 min-w-0">
-                            <p className="text-[10px] text-gray-500 uppercase tracking-wide truncate">{displayData.slogan}</p>
-                            <h4 className="font-semibold text-white text-sm truncate leading-tight mt-0.5">{displayData.headline}</h4>
+                    {/* Footer CTA — only shown if CTA exists */}
+                    {displayData.cta && (
+                        <div className="bg-[#2a2a2b] px-3.5 py-3 flex items-center justify-between gap-3">
+                            <div className="flex-1 min-w-0">
+                                <p className="text-[10px] text-gray-500 uppercase tracking-wide truncate">{displayData.slogan}</p>
+                                <h4 className="font-semibold text-white text-sm truncate leading-tight mt-0.5">{displayData.headline}</h4>
+                            </div>
+                            <button className="shrink-0 bg-white/10 hover:bg-white/15 text-white font-semibold py-1.5 px-3.5 rounded-md text-xs transition-colors border border-white/10 whitespace-nowrap">
+                                {displayData.cta}
+                            </button>
                         </div>
-                        <button className="shrink-0 bg-white/10 hover:bg-white/15 text-white font-semibold py-1.5 px-3.5 rounded-md text-xs transition-colors border border-white/10 whitespace-nowrap">
-                            {displayData.cta}
-                        </button>
-                    </div>
+                    )}
+                    {/* No-CTA footer — still show headline/slogan */}
+                    {!displayData.cta && (
+                        <div className="bg-[#2a2a2b] px-3.5 py-3">
+                            <div className="min-w-0">
+                                {displayData.slogan && <p className="text-[10px] text-gray-500 uppercase tracking-wide truncate">{displayData.slogan}</p>}
+                                <h4 className="font-semibold text-white text-sm truncate leading-tight mt-0.5">{displayData.headline}</h4>
+                            </div>
+                        </div>
+                    )}
 
                     {/* Engagement Bar */}
                     <div className="px-3.5 py-2.5 border-t border-white/5 flex items-center text-gray-500 text-xs">

@@ -132,6 +132,40 @@ export async function generateAd(params: AdGenerationParams): Promise<AdGenerati
 }
 
 /**
+ * Verfeinert eine existierende Ad mit einem Änderungs-Prompt
+ * Verwendet Gemini Image-to-Image Editing
+ */
+export async function refineAd(params: {
+    jobId: string;
+    refinementPrompt: string;
+    language?: string;
+}): Promise<AdGenerationResponse> {
+    const token = await getAuthToken();
+
+    const response = await fetch(`${API_BASE}/ai-ad-refine`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            ...(token && { Authorization: `Bearer ${token}` }),
+        },
+        body: JSON.stringify(params),
+    });
+
+    if (!response.ok) {
+        const error = await response.json().catch(() => ({ error: 'Unknown error' }));
+        throw new Error(error.error || error.message || 'Refinement failed');
+    }
+
+    const result = await response.json();
+    return {
+        success: true,
+        status: 'complete',
+        data: result.data,
+        metadata: { engine: 'refined', parentJobId: params.jobId },
+    };
+}
+
+/**
  * Type for transcription response
  */
 export interface TranscriptionResponse {

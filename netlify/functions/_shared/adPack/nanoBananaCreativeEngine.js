@@ -31,16 +31,70 @@ const GEMINI_TEXT_MODEL = process.env.GEMINI_TEXT_MODEL || 'gemini-2.5-flash';
 // VARIATION SEEDS — Creative Diversity
 // ═══════════════════════════════════════════════════════════════
 
-const SCENE_MOODS = ['aspirational', 'intimate', 'dramatic', 'playful', 'serene', 'bold', 'nostalgic', 'futuristic'];
-const PERSPECTIVES = ['first-person-experience', 'third-person-lifestyle', 'product-hero-closeup', 'action-moment', 'result-aftermath'];
-const TIME_OF_DAY = ['golden-hour-sunrise', 'blue-hour-dusk', 'bright-midday', 'cozy-evening-warmth', 'energetic-morning'];
+const SCENE_MOODS = [
+    'aspirational', 'intimate', 'dramatic', 'playful', 'serene', 'bold',
+    'nostalgic', 'futuristic', 'rebellious', 'warm-community', 'luxe-minimal',
+    'high-energy', 'cinematic-noir', 'tropical-fresh',
+];
+const PERSPECTIVES = [
+    'first-person-experience', 'third-person-lifestyle', 'product-hero-closeup',
+    'action-moment', 'result-aftermath', 'birds-eye-flatlay', 'worms-eye-dramatic',
+    'over-the-shoulder', 'macro-detail', 'environmental-wide',
+];
+const TIME_OF_DAY = [
+    'golden-hour-sunrise', 'blue-hour-dusk', 'bright-midday',
+    'cozy-evening-warmth', 'energetic-morning', 'midnight-studio',
+    'overcast-soft', 'neon-night',
+];
 
 function getVariationSeeds(conceptIndex) {
     return {
-        mood: SCENE_MOODS[(conceptIndex + Math.floor(Math.random() * 3)) % SCENE_MOODS.length],
-        perspective: PERSPECTIVES[conceptIndex % PERSPECTIVES.length],
+        mood: SCENE_MOODS[Math.floor(Math.random() * SCENE_MOODS.length)],
+        perspective: PERSPECTIVES[Math.floor(Math.random() * PERSPECTIVES.length)],
         timeOfDay: TIME_OF_DAY[Math.floor(Math.random() * TIME_OF_DAY.length)],
     };
+}
+
+// ═══════════════════════════════════════════════════════════════
+// LAYOUT STYLES — Diverse Ad Compositions
+// Inspired by professional social media templates (fashion, sport, e-commerce)
+// ═══════════════════════════════════════════════════════════════
+
+const LAYOUT_STYLES = [
+    {
+        key: 'split_panel',
+        name: 'Split Panel',
+        instruction: `LAYOUT: Split the canvas into two distinct panels. One panel has the product image/scene, the other is a colored panel with text. The split can be vertical (left/right), horizontal (top/bottom), or diagonal. Add a thin accent stripe or geometric separator between panels. Text panel should have an interesting background color from the palette. Think: magazine ad layout with clear visual hierarchy.`,
+    },
+    {
+        key: 'full_bleed',
+        name: 'Full Bleed',
+        instruction: `LAYOUT: The product scene fills the ENTIRE canvas. Text is overlaid with smart contrast: use gradient overlays, frosted glass panels, or shadow zones. Text placement should follow the rule of thirds — NEVER dead center. Consider text in the top-left or bottom-right with generous margins. A subtle vignette helps focus.`,
+    },
+    {
+        key: 'geometric_frame',
+        name: 'Geometric Frame',
+        instruction: `LAYOUT: Place the product inside a geometric shape (circle, rounded rectangle, hexagon, or arch) on a solid or gradient background. Text is positioned alongside or below. Add decorative elements: thin lines, dots, small geometric accents, or a grid pattern in the background. Think: modern Instagram post template.`,
+    },
+    {
+        key: 'magazine_editorial',
+        name: 'Magazine Editorial',
+        instruction: `LAYOUT: Asymmetric editorial composition with multiple text blocks at different sizes. Large hero text, smaller supporting text, a small tag/badge element. Product image is cropped or bled off one edge. Include at least one decorative element: a thin line, arrow, or bracket. Think: Vogue ad meets Instagram.`,
+    },
+    {
+        key: 'minimal_product_hero',
+        name: 'Minimal Product Hero',
+        instruction: `LAYOUT: The product takes 60-70% of the canvas. Generous whitespace or solid color background. Text is small, elegant, positioned in one corner or along one edge. Maximum 2 text elements. Clean, luxurious feel. Think: Apple-style product photography with minimal type.`,
+    },
+    {
+        key: 'bold_typographic',
+        name: 'Bold Typographic',
+        instruction: `LAYOUT: Text IS the main design element. A huge, bold headline in a striking font dominates the canvas. The product is shown smaller or as a cutout integrated with the text. Add dynamic text effects: text clipping, overlapping layers, varied weights. Think: Nike poster meets street typography.`,
+    },
+];
+
+function pickRandomLayout() {
+    return LAYOUT_STYLES[Math.floor(Math.random() * LAYOUT_STYLES.length)];
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -63,7 +117,21 @@ const CONCEPT_TYPES = [
         name: 'Emotional Context',
         briefDirection: 'Create a scene that captures the EMOTIONAL BENEFIT of owning this product. Focus on the feeling, the result, the transformation — not just the object.',
     },
+    {
+        key: 'social_proof',
+        name: 'Social Proof',
+        briefDirection: 'Show the product being enjoyed by multiple people, or in a setting that implies popularity and trust. Think: testimonial style, community, or "everyone has it" vibe.',
+    },
+    {
+        key: 'problem_solution',
+        name: 'Problem → Solution',
+        briefDirection: 'Visualize the BEFORE/AFTER or the PROBLEM this product solves. The image should make the viewer feel the pain point and see the product as the obvious solution.',
+    },
 ];
+
+function pickRandomConcept() {
+    return CONCEPT_TYPES[Math.floor(Math.random() * CONCEPT_TYPES.length)];
+}
 
 // ═══════════════════════════════════════════════════════════════
 // PHASE 1: AI CREATIVE DIRECTOR — Gemini Flash Brief
@@ -87,32 +155,32 @@ function getGeminiClient() {
  * AI Creative Director: Generates a bespoke creative brief for THIS specific product.
  * Uses Gemini Flash (text-only, ~250ms, ~500 tokens) — fast and cheap.
  * 
- * Every product gets a UNIQUE scene, camera, lighting, mood.
- * A Smartwatch gets a wrist-on-jog scene, a Drone gets a coastal-cliff scene,
- * Headphones get a café-immersion scene.
+ * Every product gets a UNIQUE scene, camera, lighting, mood, AND layout style.
  * 
  * @param {Object} adSpec - Product info (productName, offer, audience, industry, angle)
- * @param {Object} conceptType - What kind of ad (lifestyle, hero, emotional)
+ * @param {Object} conceptType - What kind of ad (lifestyle, hero, emotional, etc.)
  * @param {string} format - Ad format (square, portrait, story)
  * @param {Object} variation - Variation seeds for diversity
+ * @param {Object} [layoutStyle] - Optional layout style override; random if not provided
  * @returns {Promise<Object>} Creative brief JSON
  */
-async function generateCreativeBrief(adSpec, conceptType, format, variation) {
+async function generateCreativeBrief(adSpec, conceptType, format, variation, layoutStyle) {
     const client = getGeminiClient();
     const formatSpec = META_FORMATS[format];
     const lang = adSpec.language === 'en' ? 'English' : 'German';
+    const layout = layoutStyle || pickRandomLayout();
 
     // Build rich product context from all available fields
     const productContext = [
         adSpec.productName ? `Name: ${adSpec.productName}` : null,
         adSpec.offer ? `Offer: ${adSpec.offer}` : null,
-        adSpec.usp ? `USP: ${adSpec.usp}` : null,
+        adSpec.usp ? `USP (raw user input — REWRITE this): ${adSpec.usp}` : null,
         adSpec.description ? `Description: ${adSpec.description}` : null,
         adSpec.text ? `Details: ${adSpec.text}` : null,
     ].filter(Boolean).join('\n');
 
-    const prompt = `You are a world-class Creative Director AND Copywriter at a top Meta Ads agency.
-You are directing a $50,000 photo shoot for ONE specific product AND writing the ad copy.
+    const prompt = `You are a world-class Creative Director, Graphic Designer, AND Copywriter at a top Meta Ads agency.
+You are directing a $50,000 ad production for ONE specific product — combining photography, typography, and graphic design.
 
 PRODUCT DETAILS:
 ${productContext || 'A premium product'}
@@ -123,44 +191,66 @@ CREATIVE ANGLE: ${adSpec.angle || 'premium quality'}
 AD FORMAT: ${format} (${formatSpec.ratio}, ${formatSpec.width}×${formatSpec.height})
 LANGUAGE: All text MUST be in ${lang}.
 
-CREATIVE DIRECTION: ${conceptType.briefDirection}
+CREATIVE CONCEPT: ${conceptType.briefDirection}
 
-VARIATION SEEDS (use these to make this brief UNIQUE):
+${layout.instruction}
+
+VARIATION SEEDS (use these for uniqueness):
 - Mood: ${variation.mood}
 - Perspective: ${variation.perspective}
 - Time of day: ${variation.timeOfDay}
 
-Generate a UNIQUE creative brief for THIS EXACT product.
+Generate a UNIQUE creative brief for THIS EXACT product: "${adSpec.productName || 'this product'}".
 Do NOT use generic descriptions like "product on dark background" or "clean studio setup".
-Think: What scene would make SPECIFICALLY a ${adSpec.productName || 'this product'} look irresistible?
+Think: What scene would make THIS product look irresistible?
 
-IMPORTANT — AD COPY RULES:
-- The user provided raw info about their product. Your job is to turn that into PROFESSIONAL, PUNCHY ad copy.
-- Do NOT just copy/paste the user's input. REWRITE it into compelling, short, scroll-stopping copy.
-- Headlines should be 3-6 words max, emotionally charged, benefit-driven.
-- The hook is the first line people see in the feed — it must create curiosity or urgency.
-- CTA should feel natural, not generic. Match the product's voice.
+═══ AD COPY RULES ═══
+- The user's USP/description is RAW INPUT — COMPLETELY REWRITE it into professional, punchy ad copy.
+- NEVER paste the user's text verbatim. Transform "Guter schläger, mehr power, bessere schläge" into something like "Dein unfairer Vorteil auf dem Court."
+- Headlines: 2-5 words, emotionally charged, benefit-driven. Think Nike, Apple, or Gymshark.
+- Hook: Creates curiosity or urgency. The "stop the scroll" line.
+- Examples of great German ad copy:
+  • "Spür den Unterschied." (feel it)
+  • "Dein Move. Dein Moment." (personal)
+  • "Nie wieder zweiter." (competitive edge)
+  • "Bereit für mehr?" (curiosity)
+
+═══ CTA RULES ═══
+- CTA is OPTIONAL. Not every ad needs a CTA button.
+- Many top-performing ads use NO CTA button — the image and text do the selling.
+- If the layout style benefits from a CTA, include one that feels designed into the composition.
+- If the layout style is minimal or typographic, SKIP the CTA entirely.
+- Set "includeCta" to true or false in your response.
+
+═══ DESIGN ELEMENT RULES ═══
+- The ad is a DESIGNED piece, not just a photo with text overlay.
+- Include graphic design elements where appropriate: decorative lines, geometric shapes, accent stripes, arrows (→), small badge/tag elements, dot patterns, or frame borders.
+- These elements make the difference between "photo with text" and "professional designed ad".
 
 Return this exact JSON structure:
 {
-  "scene": "A hyper-specific, narrative scene description (3-4 sentences) that is UNIQUE to this exact product. Include specific props, environment details, human interaction if relevant, and an emotional moment.",
-  "camera": "Specific camera setup: lens focal length (mm), aperture (f/X.X), angle (eye-level/low/high/overhead), and composition rule.",
-  "lighting": "Detailed lighting setup (2 sentences): primary light source, fill light, any accent/rim lights.",
-  "mood": "The exact emotional response (2 sentences): what the viewer should FEEL and what action it should trigger.",
-  "colorPalette": "3-4 specific hex colors that complement THIS product. Format: '#hex1, #hex2, #hex3'",
-  "headline": "A short, punchy headline (3-6 words) that captures the product's core benefit. This is NOT the user's raw USP — this is professional ad copy.",
-  "tagline": "A supporting subline (1 short sentence) that adds context or social proof.",
-  "hook": "The first line of the ad post text — 1 sentence that creates curiosity or urgency. Think: what makes someone stop scrolling?",
-  "cta": "A natural call-to-action (2-4 words) that fits the product and tone. Not always 'Jetzt kaufen' — be creative.",
-  "textPlacement": "DYNAMIC placement instructions based on the scene composition. Example: 'Headline overlaid on the dark sky area top-right, CTA floating over the blurred background bottom-left'. NEVER just say 'bottom center' — integrate text INTO the scene.",
-  "ctaStyle": "CTA visual style: shape, color, opacity. Should feel integrated, not pasted on. Example: 'Semi-transparent white pill with 80% opacity, subtle shadow, blends with scene'"
+  "scene": "A hyper-specific scene (3-4 sentences) UNIQUE to this product. Include environment, props, human interaction, emotional moment.",
+  "camera": "Camera setup: lens mm, aperture f/X.X, angle, composition rule.",
+  "lighting": "Lighting (2 sentences): primary source, fill, accents.",
+  "mood": "Emotional response (2 sentences): what to feel, what action to trigger.",
+  "colorPalette": "3-4 hex colors: '#hex1, #hex2, #hex3'",
+  "layoutStyle": "${layout.key}",
+  "headline": "SHORT punchy headline (2-5 words). Professional copywriting, NOT user's raw text.",
+  "tagline": "Supporting subline (1 short sentence). Adds context or proof.",
+  "hook": "First feed line — 1 sentence, curiosity or urgency.",
+  "includeCta": true/false,
+  "cta": "CTA text (2-4 words) if includeCta is true, or null if false.",
+  "ctaStyle": "CTA visual style if included, or null. Example: 'Semi-transparent pill #1A1A1A 80% opacity'",
+  "textPlacement": "DYNAMIC placement integrated into scene. Example: 'Large headline top-left with thin accent line above, product fills right 60%'. NEVER 'bottom center forced'.",
+  "designElements": "Specific graphic elements to include: 'Thin white horizontal line above tagline, small corner badge with price, subtle dot grid in background panel'. Be specific."
 }
 
-CRITICAL RULES:
-1. The scene MUST be specific to "${adSpec.productName || 'this product'}" — not generic
-2. The headline MUST be professional copywriting, NOT the user's raw input
-3. Text placement MUST be scene-aware — integrated into the composition, not forced
-4. CTA placement should vary — sometimes top, sometimes bottom-left, sometimes overlaid on product area`;
+CRITICAL:
+1. Scene MUST be specific to "${adSpec.productName || 'this product'}"
+2. Headline MUST be rewritten professional copy, NEVER raw user input
+3. Layout MUST follow the ${layout.name} style described above
+4. Include graphic design elements — this is NOT just a photo
+5. CTA is OPTIONAL — decide based on the layout and concept`;
 
     console.log(`[NanoBanana] 🎬 AI Creative Director generating brief for "${adSpec.productName}" (${conceptType.key}, ${format})...`);
 
@@ -300,43 +390,68 @@ function buildCreativePrompt(config) {
 
     // PREFER AI-generated copy from brief, fall back to user input
     const headline = brief?.headline || adSpec.headline || adSpec.productName || '';
-    const cta = brief?.cta || adSpec.cta || (isEnglish ? 'Discover Now' : 'Jetzt entdecken');
     const subheadline = brief?.tagline || adSpec.subheadline || '';
 
+    // CTA is now OPTIONAL — only include if the brief says so
+    const includeCta = brief?.includeCta !== false; // default true for fallback presets
+    const cta = includeCta ? (brief?.cta || adSpec.cta || '') : '';
+
     // Dynamic placement from brief — never hardcoded
-    const textPlacement = source.textPlacement || 'Headline integrated into scene composition, CTA naturally placed near product';
+    const textPlacement = source.textPlacement || 'Headline integrated into scene composition using rule of thirds';
     const ctaStyle = source.ctaStyle || 'Semi-transparent pill, integrated into scene lighting';
 
-    // Extract placement parts dynamically
-    const headlinePlacement = textPlacement.includes(',')
-        ? textPlacement.split(',')[0].trim()
-        : 'Integrated into the scene composition with high contrast';
-    const ctaPlacement = textPlacement.includes(',')
-        ? textPlacement.split(',').slice(1).join(',').trim()
-        : 'Naturally positioned near the product area';
+    // Design elements from brief
+    const designElements = brief?.designElements || '';
 
-    const textBlock = headline ? `
-TEXT IN IMAGE (Gemini must render this text sharply and INTEGRATE it into the scene):
+    // Layout style
+    const layoutKey = brief?.layoutStyle || source.layoutStyle || 'full_bleed';
+    const layoutDef = LAYOUT_STYLES.find(l => l.key === layoutKey);
+
+    // Build text block — conditionally include CTA
+    let textBlock = '';
+    if (headline) {
+        textBlock = `
+TEXT IN IMAGE (render sharply, INTEGRATE into the designed composition):
 - HEADLINE: "${headline}"
-  Position: ${headlinePlacement}
-  Typography: Bold modern sans-serif (like Inter or Helvetica), high contrast against background
-  Size: Large enough to read instantly at phone screen size
-  IMPORTANT: Text must feel PART of the image, not pasted on top
+  Position: ${textPlacement}
+  Typography: Bold modern sans-serif (like Inter, Helvetica, or Montserrat), high contrast
+  Size: Large enough to read at phone screen size
+  IMPORTANT: Text must feel DESIGNED into the image — like a professional Photoshop comp
+`;
+        if (subheadline) {
+            textBlock += `
+- SUBHEADLINE: "${subheadline}"
+  Typography: Regular weight, 50-60% of headline size, positioned near headline
+`;
+        }
 
-${subheadline ? `- SUBHEADLINE: "${subheadline}"
-  Typography: Regular weight, 60% of headline size, positioned relative to headline\n` : ''}
+        if (includeCta && cta) {
+            textBlock += `
 - CTA BUTTON: "${cta}"
   Style: ${ctaStyle}
-  Typography: Bold text inside button, tappable-looking
-  Position: ${ctaPlacement}
-  IMPORTANT: CTA must feel naturally integrated — NOT forced to bottom-center unless the scene demands it` : `
-SPACE FOR TEXT: Leave generous negative space for headline overlay. Design the scene so text can be added without covering key visual elements.`;
+  IMPORTANT: CTA must feel integrated into the layout — NOT forced to bottom-center
+`;
+        }
+    } else {
+        textBlock = `
+SPACE FOR TEXT: Leave generous negative space for headline overlay.`;
+    }
 
-    return `A professional Meta advertisement image.
+    // Design elements instruction
+    const designBlock = designElements ? `
+GRAPHIC DESIGN ELEMENTS:
+${designElements}
+These elements are CRUCIAL — they differentiate a professional designed ad from a simple photo with text.` : `
+GRAPHIC DESIGN ELEMENTS:
+Add at least one design element: a thin accent line, geometric shape, subtle pattern, or decorative element.
+This is NOT just a photo — it's a DESIGNED advertisement.`;
 
+    return `A professional Meta advertisement image — a DESIGNED piece, not just a photo with text.
+
+${layoutDef ? `LAYOUT STYLE: ${layoutDef.name}\n${layoutDef.instruction}\n` : ''}
 SCENE:
 ${source.scene}
-Product: "${adSpec.productName || adSpec.offer || 'Product'}" — integrated naturally into the scene above.
+Product: "${adSpec.productName || adSpec.offer || 'Product'}" — integrated naturally into the composition.
 
 CAMERA:
 - ${source.camera}
@@ -348,13 +463,15 @@ LIGHTING:
 - Professional commercial quality, natural-looking
 ${safeZone}
 ${textBlock}
+${designBlock}
 
 MOOD: ${source.mood}
 ${brandColors}
 
-QUALITY: This must look like a $50,000 agency photo shoot production.
+QUALITY: This must look like a $50,000 agency production.
 Professional, polished, scroll-stopping. Indistinguishable from a real commercial ad.
-Text must feel designed INTO the image — like a Photoshop comp, not an overlay.`;
+Text and design elements must feel DESIGNED into the image — like an Adobe Illustrator/Photoshop comp.
+Every element (text, shapes, lines, product) should feel intentionally placed.`;
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -624,11 +741,15 @@ export async function generateSingleAd(params) {
         throw new Error('GEMINI_API_KEY not configured — cannot generate images');
     }
 
-    const conceptType = CONCEPT_TYPES[0]; // Lifestyle In-Use for single ads
+    // Randomize concept type for variety (no longer always "Lifestyle In-Use")
+    const conceptType = pickRandomConcept();
     const variation = getVariationSeeds(0);
+    const layout = pickRandomLayout();
+
+    console.log(`[NanoBanana] 🎲 Random: concept=${conceptType.key}, layout=${layout.key}`);
 
     // Phase 1: AI Creative Director
-    const brief = await generateCreativeBrief(adSpec, conceptType, format, variation);
+    const brief = await generateCreativeBrief(adSpec, conceptType, format, variation, layout);
 
     // Phase 2: Prompt Assembly
     const prompt = buildCreativePrompt({
@@ -643,6 +764,9 @@ export async function generateSingleAd(params) {
     const buffer = await generateWithGemini(prompt, format, productImageUrl);
     const engine = 'gemini_image';
 
+    // CTA only if the brief decided to include one
+    const includeCta = brief?.includeCta !== false;
+
     return {
         buffer,
         engine,
@@ -652,14 +776,17 @@ export async function generateSingleAd(params) {
             headline: brief?.headline || adSpec.headline || adSpec.productName || '',
             tagline: brief?.tagline || adSpec.subheadline || '',
             hook: brief?.hook || '',
-            cta: brief?.cta || adSpec.cta || 'Jetzt entdecken',
+            cta: includeCta ? (brief?.cta || adSpec.cta || '') : '',
+            includeCta,
         },
         metadata: {
             industry: resolveIndustry(industry),
             concept: conceptType.name,
+            layout: layout.name,
             format,
             model: GEMINI_IMAGE_MODEL,
             briefScene: brief?.scene?.substring(0, 100) || 'fallback preset',
+            designElements: brief?.designElements || '',
         },
     };
 }

@@ -400,22 +400,86 @@
     }
 }
 
+/* Theater Progress Bar — fills during generation */
+@keyframes theater-fill {
+    0% {
+        width: 0%;
+    }
+
+    10% {
+        width: 8%;
+    }
+
+    30% {
+        width: 25%;
+    }
+
+    50% {
+        width: 45%;
+    }
+
+    70% {
+        width: 65%;
+    }
+
+    85% {
+        width: 78%;
+    }
+
+    95% {
+        width: 88%;
+    }
+
+    100% {
+        width: 95%;
+    }
+}
+
+.theater-progress-bar {
+    animation: theater-fill 20s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+/* Morphing gradient backdrop for theater mode */
+@keyframes morph-gradient {
+
+    0%,
+    100% {
+        background: radial-gradient(ellipse at 25% 50%, color-mix(in srgb, var(--primary) 6%, transparent) 0%, transparent 70%);
+    }
+
+    25% {
+        background: radial-gradient(ellipse at 75% 30%, color-mix(in srgb, var(--primary) 8%, transparent) 0%, transparent 70%);
+    }
+
+    50% {
+        background: radial-gradient(ellipse at 50% 70%, color-mix(in srgb, var(--primary) 5%, transparent) 0%, transparent 70%);
+    }
+
+    75% {
+        background: radial-gradient(ellipse at 30% 40%, color-mix(in srgb, var(--primary) 7%, transparent) 0%, transparent 70%);
+    }
+}
+
+.morph-gradient-bg {
+    animation: morph-gradient 8s ease-in-out infinite;
+}
+
 /* Stagger fade-in (theater steps) */
 @keyframes stagger-in {
     0% {
         opacity: 0;
-        transform: translateX(-8px);
+        transform: translateX(-12px) scale(0.96);
     }
 
     100% {
         opacity: 1;
-        transform: translateX(0);
+        transform: translateX(0) scale(1);
     }
 }
 
 .stagger-in {
     opacity: 0;
-    animation: stagger-in 0.4s ease-out forwards;
+    animation: stagger-in 0.5s cubic-bezier(0.4, 0, 0.2, 1) forwards;
 }
 
 /* ── Empty State ──────────────────────────────────── */

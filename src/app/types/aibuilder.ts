@@ -83,10 +83,13 @@ export interface AdGenerationResponse {
     status?: 'processing' | 'complete' | 'error';
     data: AdGenerationResult;
     metadata: {
-        model: string;
-        timestamp: number;
+        model?: string;
+        timestamp?: number;
         generationTime?: number;
         savedToLibrary?: boolean;
+        engine?: string;
+        parentJobId?: string;
+        [key: string]: any;
     };
 }
 

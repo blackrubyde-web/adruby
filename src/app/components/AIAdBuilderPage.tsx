@@ -9,9 +9,9 @@ import {
     Download, Save, Upload, FileText, MessageSquare,
     Sparkles, Image, Loader2, RefreshCw,
     AlertCircle, Store, Zap, CheckCircle2, X,
-    Search, Target, PenTool, Palette, Frame
+    Search, Target, PenTool, Palette, Frame, Wand2, Send
 } from 'lucide-react';
-import { generateAd } from '../lib/api/aibuilder';
+import { generateAd, refineAd } from '../lib/api/aibuilder';
 import { t } from '../lib/aibuilder/translations';
 import { toast } from 'sonner';
 import { FormInputMode } from './aibuilder/FormInputMode';
@@ -68,6 +68,10 @@ export function AIAdBuilderPage() {
 
     // Multi-variant selection
     const [selectedVariantIndex, setSelectedVariantIndex] = useState(0);
+
+    // Ad refinement state
+    const [refinePrompt, setRefinePrompt] = useState('');
+    const [isRefining, setIsRefining] = useState(false);
 
     // Theater mode completed steps
     const [completedSteps, setCompletedSteps] = useState<number[]>([]);
@@ -273,6 +277,39 @@ export function AIAdBuilderPage() {
         document.body.removeChild(link);
     };
 
+    const handleRefine = async () => {
+        if (!result?.id || !refinePrompt.trim()) return;
+        if (credits <= 0) {
+            toast.error('Keine Credits mehr — bitte upgraden');
+            return;
+        }
+
+        setIsRefining(true);
+        try {
+            const response = await refineAd({
+                jobId: result.id,
+                refinementPrompt: refinePrompt.trim(),
+                language,
+            });
+
+            if (response.success && response.data) {
+                setResult(response.data);
+                setRefinePrompt('');
+                toast.success('Ad wurde bearbeitet!');
+                // Refresh profile to update credit count
+                try { _refreshProfile(); } catch { /* ignore */ }
+            } else {
+                throw new Error('Refinement failed');
+            }
+        } catch (err) {
+            console.error('Refine error:', err);
+            const errorMessage = err instanceof Error ? err.message : 'Bearbeitung fehlgeschlagen';
+            toast.error(errorMessage);
+        } finally {
+            setIsRefining(false);
+        }
+    };
+
     return (
         <DashboardShell hideHero>
             {/* ── Header ──────────────────────────────────── */}
@@ -457,7 +494,7 @@ export function AIAdBuilderPage() {
                         <div className="relative z-10 p-6">
                             {step === 'generating' ? (
                                 /* ── Theater Mode ──────────────────── */
-                                <div className="flex flex-col items-center justify-center min-h-[440px] text-center space-y-8">
+                                <div className="flex flex-col items-center justify-center min-h-[440px] text-center space-y-8 morph-gradient-bg rounded-2xl">
                                     {/* Floating particles */}
                                     <div className="absolute inset-0 overflow-hidden pointer-events-none">
                                         {[...Array(6)].map((_, i) => (
@@ -568,6 +605,46 @@ export function AIAdBuilderPage() {
                                                 <RefreshCw className="w-4 h-4" />
                                                 Neu
                                             </Button>
+                                        </div>
+                                    )}
+
+                                    {/* Refine / Edit Section */}
+                                    {result && !loading && !isRefining && step === 'result' && (
+                                        <div className="mt-4 pt-4 border-t border-border/50">
+                                            <div className="flex items-center gap-2 mb-2">
+                                                <Wand2 className="w-3.5 h-3.5 text-primary" />
+                                                <span className="text-xs font-semibold text-foreground">Ad bearbeiten</span>
+                                                <Badge className="text-[9px] px-1.5 py-0 h-4 bg-primary/10 text-primary border-primary/20">1 Credit</Badge>
+                                            </div>
+                                            <div className="flex gap-2">
+                                                <input
+                                                    type="text"
+                                                    value={refinePrompt}
+                                                    onChange={(e) => setRefinePrompt(e.target.value)}
+                                                    placeholder="z.B. 'Entferne den CTA Button', 'Mach den Text größer'..."
+                                                    className="flex-1 h-9 px-3 rounded-lg bg-muted/30 border border-border/30 text-sm placeholder:text-muted-foreground/50 focus:outline-none focus:ring-1 focus:ring-primary/30"
+                                                    onKeyDown={(e) => {
+                                                        if (e.key === 'Enter' && refinePrompt.trim()) handleRefine();
+                                                    }}
+                                                />
+                                                <Button
+                                                    onClick={handleRefine}
+                                                    disabled={!refinePrompt.trim()}
+                                                    size="sm"
+                                                    className="h-9 px-3 gap-1.5 generate-btn text-white border-0"
+                                                >
+                                                    <Send className="w-3.5 h-3.5" />
+                                                    Anpassen
+                                                </Button>
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    {/* Refine loading state */}
+                                    {isRefining && (
+                                        <div className="mt-4 pt-4 border-t border-border/50 flex items-center gap-3">
+                                            <Loader2 className="w-4 h-4 animate-spin text-primary" />
+                                            <span className="text-sm text-muted-foreground">Ad wird bearbeitet...</span>
                                         </div>
                                     )}
                                 </div>
