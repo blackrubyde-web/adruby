@@ -76,11 +76,8 @@ export const Step2_Creative = () => {
             {/* Header */}
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                 <div>
-                    <h2 className="text-2xl font-bold flex items-center gap-2">
-                        <Sparkles className="w-6 h-6 text-primary" />
-                        Creative Library
-                    </h2>
-                    <p className="text-muted-foreground">Wähle Ads aus deiner Library für diese Kampagne.</p>
+                    <h2 className="text-lg font-semibold">Creative Library</h2>
+                    <p className="text-sm text-muted-foreground">Wähle Ads aus deiner Library für diese Kampagne.</p>
                 </div>
 
                 <div className="flex items-center gap-2">
@@ -160,10 +157,10 @@ export const Step2_Creative = () => {
                                 key={creative.id}
                                 onClick={() => handleToggle(creative.id)}
                                 className={cn(
-                                    "relative group cursor-pointer rounded-2xl border-2 transition-all duration-300 overflow-hidden bg-card",
+                                    "relative group cursor-pointer rounded-xl border transition-all duration-200 overflow-hidden bg-card",
                                     isSelected
-                                        ? "border-primary shadow-lg shadow-primary/20 scale-[1.02]"
-                                        : "border-transparent hover:border-primary/50 hover:shadow-md"
+                                        ? "border-primary shadow-sm"
+                                        : "border-border/50 hover:border-primary/30 hover:shadow-sm"
                                 )}
                             >
                                 {/* Thumbnail */}

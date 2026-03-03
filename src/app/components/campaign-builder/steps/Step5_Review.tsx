@@ -46,10 +46,10 @@ export const Step5_Review = () => {
     };
 
     const objectiveLabels: Record<string, string> = {
-        'OUTCOME_SALES': '🛒 Sales',
-        'OUTCOME_LEADS': '📋 Leads',
-        'OUTCOME_TRAFFIC': '🔗 Traffic',
-        'OUTCOME_AWARENESS': '📢 Awareness',
+        'OUTCOME_SALES': 'Sales',
+        'OUTCOME_LEADS': 'Leads',
+        'OUTCOME_TRAFFIC': 'Traffic',
+        'OUTCOME_AWARENESS': 'Awareness',
     };
 
     const bidStrategyLabels: Record<string, string> = {
@@ -63,32 +63,13 @@ export const Step5_Review = () => {
     if (publishResult?.success) {
         return (
             <div className="max-w-2xl mx-auto text-center py-12 space-y-8">
-                <div className="relative">
-                    <div className="w-24 h-24 mx-auto bg-gradient-to-br from-green-500 to-emerald-600 rounded-full flex items-center justify-center animate-bounce">
-                        <CheckCircle2 className="w-12 h-12 text-white" />
-                    </div>
-                    {showConfetti && (
-                        <div className="absolute inset-0 pointer-events-none">
-                            {[...Array(20)].map((_, i) => (
-                                <div
-                                    key={i}
-                                    className="absolute animate-ping"
-                                    style={{
-                                        left: `${Math.random() * 100}%`,
-                                        top: `${Math.random() * 100}%`,
-                                        animationDelay: `${Math.random() * 0.5}s`,
-                                    }}
-                                >
-                                    <Sparkles className="w-4 h-4 text-primary" />
-                                </div>
-                            ))}
-                        </div>
-                    )}
+                <div className="w-16 h-16 mx-auto bg-primary/10 rounded-full flex items-center justify-center">
+                    <CheckCircle2 className="w-8 h-8 text-primary" />
                 </div>
 
                 <div className="space-y-2">
-                    <h2 className="text-3xl font-black tracking-tight">🚀 Kampagne Live!</h2>
-                    <p className="text-lg text-muted-foreground">
+                    <h2 className="text-2xl font-bold tracking-tight">Kampagne veröffentlicht</h2>
+                    <p className="text-sm text-muted-foreground">
                         Deine Kampagne wurde erfolgreich zu Meta gepusht.
                     </p>
                 </div>
@@ -128,12 +109,9 @@ export const Step5_Review = () => {
     return (
         <div className="space-y-8 max-w-5xl mx-auto">
             {/* Header */}
-            <div className="text-center space-y-2">
-                <h2 className="text-3xl font-black tracking-tight flex items-center justify-center gap-3">
-                    <Rocket className="w-8 h-8 text-primary" />
-                    Ready for Takeoff?
-                </h2>
-                <p className="text-muted-foreground">Überprüfe deine Kampagne und pushe sie zu Meta.</p>
+            <div className="text-center space-y-1 mb-2">
+                <h2 className="text-lg font-semibold">Kampagne überprüfen</h2>
+                <p className="text-sm text-muted-foreground">Überprüfe deine Einstellungen und pushe zu Meta.</p>
             </div>
 
             {/* Campaign Overview Cards */}

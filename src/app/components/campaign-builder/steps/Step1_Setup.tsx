@@ -2,14 +2,14 @@ import { useCampaignBuilder } from '../CampaignBuilderContext';
 import { Input } from '../../ui/input';
 import { Card } from '../../ui/card';
 import { Badge } from '../../ui/badge';
-import { Users, ShoppingBag, MousePointerClick, Megaphone, Sparkles, DollarSign, Target, Clock, Link2, AlertTriangle } from 'lucide-react';
+import { Users, ShoppingBag, MousePointerClick, Megaphone, DollarSign, Target, Clock, Link2, AlertTriangle, Check, FlaskConical } from 'lucide-react';
 import { cn } from '../../../lib/utils';
 
 const OBJECTIVES = [
-    { id: 'OUTCOME_SALES', label: 'Sales', description: 'Conversions & Käufe steigern', icon: ShoppingBag, color: 'from-rose-500 to-pink-600' },
-    { id: 'OUTCOME_LEADS', label: 'Leads', description: 'Kontakte & Anfragen sammeln', icon: Users, color: 'from-violet-500 to-purple-600' },
-    { id: 'OUTCOME_TRAFFIC', label: 'Traffic', description: 'Website-Besucher erhöhen', icon: MousePointerClick, color: 'from-blue-500 to-cyan-600' },
-    { id: 'OUTCOME_AWARENESS', label: 'Awareness', description: 'Markenbekanntheit aufbauen', icon: Megaphone, color: 'from-amber-500 to-orange-600' },
+    { id: 'OUTCOME_SALES', label: 'Sales', description: 'Conversions & Käufe', icon: ShoppingBag },
+    { id: 'OUTCOME_LEADS', label: 'Leads', description: 'Kontakte sammeln', icon: Users },
+    { id: 'OUTCOME_TRAFFIC', label: 'Traffic', description: 'Website-Besucher', icon: MousePointerClick },
+    { id: 'OUTCOME_AWARENESS', label: 'Awareness', description: 'Markenbekanntheit', icon: Megaphone },
 ] as const;
 
 const BID_STRATEGIES = [
@@ -33,121 +33,91 @@ export const Step1_Setup = () => {
     };
 
     return (
-        <div className="space-y-8">
-            {/* Campaign Name - Premium Input */}
-            <Card className="p-6 bg-gradient-to-br from-card to-muted/20">
-                <div className="flex items-center gap-3 mb-4">
-                    <div className="p-2 bg-primary/10 rounded-lg">
-                        <Sparkles className="w-5 h-5 text-primary" />
-                    </div>
-                    <div>
-                        <h3 className="font-bold text-lg">Kampagnen-Name</h3>
-                        <p className="text-xs text-muted-foreground">Gib deiner Kampagne einen eindeutigen Namen</p>
-                    </div>
+        <div className="space-y-10">
+            {/* ── Name & URL ─────────────────────────────────── */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                    <label className="text-sm font-medium text-foreground">Kampagnen-Name</label>
+                    <Input
+                        value={campaignSetup.name}
+                        onChange={e => updateField('name', e.target.value)}
+                        placeholder="z.B. Summer Sale 2026"
+                        className="h-11 bg-card border-border"
+                    />
                 </div>
-                <Input
-                    value={campaignSetup.name}
-                    onChange={e => updateField('name', e.target.value)}
-                    placeholder="z.B. Summer Sale 2026, Black Friday Push..."
-                    className="h-14 text-lg font-medium bg-background/50"
-                />
-            </Card>
+                <div className="space-y-2">
+                    <label className="text-sm font-medium text-foreground">Ziel-URL</label>
+                    <Input
+                        value={campaignSetup.destinationUrl}
+                        onChange={e => updateField('destinationUrl', e.target.value)}
+                        placeholder="https://dein-shop.de/produkt"
+                        className="h-11 bg-card border-border"
+                        type="url"
+                    />
+                    {campaignSetup.destinationUrl && !campaignSetup.destinationUrl.startsWith('http') && (
+                        <p className="text-xs text-destructive flex items-center gap-1">
+                            <AlertTriangle className="w-3 h-3" /> URL muss mit https:// beginnen
+                        </p>
+                    )}
+                </div>
+            </div>
 
-            {/* Destination URL */}
-            <Card className="p-6 bg-gradient-to-br from-card to-muted/20">
-                <div className="flex items-center gap-3 mb-4">
-                    <div className="p-2 bg-blue-500/10 rounded-lg">
-                        <Link2 className="w-5 h-5 text-blue-500" />
-                    </div>
-                    <div>
-                        <h3 className="font-bold text-lg">Ziel-URL</h3>
-                        <p className="text-xs text-muted-foreground">Wohin sollen die Ads verlinken?</p>
-                    </div>
-                </div>
-                <Input
-                    value={campaignSetup.destinationUrl}
-                    onChange={e => updateField('destinationUrl', e.target.value)}
-                    placeholder="https://dein-shop.de/produkt"
-                    className="h-12 text-sm font-medium bg-background/50"
-                    type="url"
-                />
-                {campaignSetup.destinationUrl && !campaignSetup.destinationUrl.startsWith('http') && (
-                    <p className="text-xs text-destructive mt-1.5 flex items-center gap-1">
-                        <AlertTriangle className="w-3 h-3" />
-                        URL muss mit https:// beginnen
-                    </p>
-                )}
-            </Card>
-
-            {/* Objective Selection */}
-            <div className="space-y-4">
-                <div className="flex items-center gap-2">
-                    <Target className="w-5 h-5 text-primary" />
-                    <h3 className="text-xl font-bold">Kampagnenziel</h3>
-                </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            {/* ── Objective ──────────────────────────────────── */}
+            <div className="space-y-3">
+                <h3 className="text-sm font-medium text-foreground">Kampagnenziel</h3>
+                <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
                     {OBJECTIVES.map((obj) => {
                         const isSelected = campaignSetup.objective === obj.id;
                         const Icon = obj.icon;
                         return (
-                            <div
+                            <button
                                 key={obj.id}
                                 onClick={() => updateField('objective', obj.id)}
                                 className={cn(
-                                    "relative group cursor-pointer overflow-hidden rounded-2xl border-2 transition-all duration-300 p-6 flex flex-col items-center text-center gap-4 hover:scale-[1.02]",
+                                    "relative text-left p-4 rounded-xl border transition-all duration-200 group",
                                     isSelected
-                                        ? "border-primary bg-primary/5 shadow-lg shadow-primary/20"
-                                        : "border-border bg-card hover:border-primary/50"
+                                        ? "border-primary bg-primary/5 ring-1 ring-primary/20"
+                                        : "border-border bg-card hover:border-primary/30 hover:bg-muted/30"
                                 )}
                             >
-                                <div className={cn(
-                                    "w-16 h-16 rounded-2xl flex items-center justify-center bg-gradient-to-br shadow-inner text-white transition-transform",
-                                    obj.color,
-                                    isSelected && "scale-110"
-                                )}>
-                                    <Icon className="w-8 h-8" />
+                                <div className="flex items-center gap-3 mb-2">
+                                    <Icon className={cn(
+                                        "w-4 h-4 transition-colors",
+                                        isSelected ? "text-primary" : "text-muted-foreground group-hover:text-foreground"
+                                    )} />
+                                    <span className={cn(
+                                        "text-sm font-semibold",
+                                        isSelected ? "text-foreground" : "text-foreground"
+                                    )}>{obj.label}</span>
                                 </div>
-                                <div>
-                                    <h4 className="font-bold text-lg">{obj.label}</h4>
-                                    <p className="text-xs text-muted-foreground leading-relaxed mt-1">{obj.description}</p>
-                                </div>
+                                <p className="text-xs text-muted-foreground leading-relaxed">{obj.description}</p>
                                 {isSelected && (
                                     <div className="absolute top-3 right-3">
-                                        <div className="w-6 h-6 rounded-full bg-primary flex items-center justify-center">
-                                            <svg className="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
-                                            </svg>
-                                        </div>
+                                        <Check className="w-3.5 h-3.5 text-primary" />
                                     </div>
                                 )}
-                            </div>
+                            </button>
                         );
                     })}
                 </div>
             </div>
 
-            {/* Budget Configuration */}
+            {/* ── Budget & Bid Strategy ──────────────────────── */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                {/* Budget Type & Amount */}
-                <Card className="p-6 space-y-4">
-                    <div className="flex items-center gap-3">
-                        <div className="p-2 bg-green-500/10 rounded-lg">
-                            <DollarSign className="w-5 h-5 text-green-500" />
-                        </div>
-                        <div>
-                            <h3 className="font-bold">Budget</h3>
-                            <p className="text-xs text-muted-foreground">Budget-Typ und Betrag festlegen</p>
-                        </div>
+                {/* Budget */}
+                <div className="space-y-4">
+                    <div className="flex items-center gap-2">
+                        <DollarSign className="w-4 h-4 text-muted-foreground" />
+                        <h3 className="text-sm font-medium text-foreground">Budget</h3>
                     </div>
 
-                    {/* Budget Type Toggle */}
-                    <div className="flex bg-muted/50 p-1 rounded-xl">
+                    <div className="flex bg-muted/40 p-0.5 rounded-lg">
                         {(['daily', 'lifetime'] as const).map((type) => (
                             <button
                                 key={type}
                                 onClick={() => updateField('budgetType', type)}
                                 className={cn(
-                                    "flex-1 py-2.5 px-4 rounded-lg text-sm font-semibold transition-all",
+                                    "flex-1 py-2 px-3 rounded-md text-xs font-medium transition-all",
                                     campaignSetup.budgetType === type
                                         ? "bg-background text-foreground shadow-sm"
                                         : "text-muted-foreground hover:text-foreground"
@@ -158,9 +128,8 @@ export const Step1_Setup = () => {
                         ))}
                     </div>
 
-                    {/* Budget Amount */}
                     <div className="relative">
-                        <span className="absolute left-4 top-1/2 -translate-y-1/2 text-xl font-bold text-muted-foreground">€</span>
+                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm font-semibold text-muted-foreground">€</span>
                         <Input
                             type="number"
                             value={campaignSetup.budgetType === 'daily' ? campaignSetup.dailyBudget : campaignSetup.lifetimeBudget}
@@ -169,7 +138,7 @@ export const Step1_Setup = () => {
                                 parseFloat(e.target.value) || 0
                             )}
                             placeholder={campaignSetup.budgetType === 'daily' ? '50' : '500'}
-                            className="h-14 text-2xl font-bold pl-10"
+                            className="h-11 text-lg font-semibold pl-8 bg-card"
                         />
                     </div>
 
@@ -180,150 +149,148 @@ export const Step1_Setup = () => {
                     </p>
                     {campaignSetup.budgetType === 'daily' && campaignSetup.dailyBudget > 0 && campaignSetup.dailyBudget < 1 && (
                         <p className="text-xs text-destructive flex items-center gap-1">
-                            <AlertTriangle className="w-3 h-3" />
-                            Meta Minimum: €1/Tag
+                            <AlertTriangle className="w-3 h-3" /> Meta Minimum: €1/Tag
                         </p>
                     )}
-                </Card>
+                </div>
 
                 {/* Bid Strategy */}
-                <Card className="p-6 space-y-4">
-                    <div className="flex items-center gap-3">
-                        <div className="p-2 bg-blue-500/10 rounded-lg">
-                            <Target className="w-5 h-5 text-blue-500" />
-                        </div>
-                        <div>
-                            <h3 className="font-bold">Gebotsstrategie</h3>
-                            <p className="text-xs text-muted-foreground">Wie soll Meta dein Budget ausgeben?</p>
-                        </div>
+                <div className="space-y-4">
+                    <div className="flex items-center gap-2">
+                        <Target className="w-4 h-4 text-muted-foreground" />
+                        <h3 className="text-sm font-medium text-foreground">Gebotsstrategie</h3>
                     </div>
 
-                    <div className="space-y-2">
+                    <div className="space-y-1.5">
                         {BID_STRATEGIES.map((strategy) => (
                             <button
                                 key={strategy.id}
                                 onClick={() => updateField('bidStrategy', strategy.id)}
                                 className={cn(
-                                    "w-full p-3 rounded-xl border text-left transition-all flex items-center justify-between",
+                                    "w-full p-3 rounded-lg border text-left transition-all flex items-center justify-between group",
                                     campaignSetup.bidStrategy === strategy.id
-                                        ? "border-primary bg-primary/5 shadow-sm"
-                                        : "border-border hover:border-primary/50"
+                                        ? "border-primary/40 bg-primary/5"
+                                        : "border-border/50 bg-card hover:border-border hover:bg-muted/20"
                                 )}
                             >
-                                <div>
-                                    <div className="font-semibold text-sm flex items-center gap-2">
+                                <div className="min-w-0">
+                                    <div className="text-sm font-medium flex items-center gap-2">
                                         {strategy.label}
                                         {'recommended' in strategy && strategy.recommended && (
-                                            <Badge variant="secondary" className="text-[10px]">Empfohlen</Badge>
+                                            <Badge variant="secondary" className="text-[10px] py-0">Empfohlen</Badge>
                                         )}
                                     </div>
-                                    <div className="text-xs text-muted-foreground">{strategy.description}</div>
+                                    <p className="text-xs text-muted-foreground mt-0.5">{strategy.description}</p>
                                 </div>
                                 <div className={cn(
-                                    "w-4 h-4 rounded-full border-2 transition-all",
+                                    "w-4 h-4 rounded-full border-2 shrink-0 ml-3 transition-all flex items-center justify-center",
                                     campaignSetup.bidStrategy === strategy.id
                                         ? "border-primary bg-primary"
-                                        : "border-muted-foreground"
-                                )} />
+                                        : "border-border"
+                                )}>
+                                    {campaignSetup.bidStrategy === strategy.id && (
+                                        <div className="w-1.5 h-1.5 rounded-full bg-primary-foreground" />
+                                    )}
+                                </div>
                             </button>
                         ))}
                     </div>
 
-                    {/* ROAS Goal Input (conditional) */}
+                    {/* Conditional inputs */}
                     {campaignSetup.bidStrategy === 'ROAS_GOAL' && (
-                        <div className="pt-2">
-                            <label className="text-xs font-semibold text-muted-foreground mb-2 block">ROAS Ziel</label>
+                        <div className="space-y-1.5 pt-1">
+                            <label className="text-xs font-medium text-muted-foreground">ROAS Ziel</label>
                             <div className="relative">
                                 <Input
                                     type="number"
                                     step="0.1"
                                     value={campaignSetup.roasGoal || 3.0}
                                     onChange={e => updateField('roasGoal', parseFloat(e.target.value) || 3.0)}
-                                    className="pr-8"
+                                    className="pr-8 h-9 bg-card"
                                 />
-                                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground">x</span>
+                                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">x</span>
                             </div>
                         </div>
                     )}
-
-                    {/* Cost Cap Input (conditional) */}
                     {campaignSetup.bidStrategy === 'COST_CAP' && (
-                        <div className="pt-2">
-                            <label className="text-xs font-semibold text-muted-foreground mb-2 block">Max. Kosten pro Ergebnis</label>
+                        <div className="space-y-1.5 pt-1">
+                            <label className="text-xs font-medium text-muted-foreground">Max. Kosten pro Ergebnis</label>
                             <div className="relative">
-                                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">€</span>
+                                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">€</span>
                                 <Input
                                     type="number"
                                     value={campaignSetup.costCap || 10}
                                     onChange={e => updateField('costCap', parseFloat(e.target.value) || 10)}
-                                    className="pl-8"
+                                    className="pl-7 h-9 bg-card"
                                 />
                             </div>
                         </div>
                     )}
-                </Card>
+                </div>
             </div>
 
-            {/* Attribution Window */}
-            <Card className="p-6">
-                <div className="flex items-center gap-3 mb-4">
-                    <div className="p-2 bg-violet-500/10 rounded-lg">
-                        <Clock className="w-5 h-5 text-violet-500" />
+            {/* ── Attribution & A/B Test ──────────────────────── */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                {/* Attribution */}
+                <div className="space-y-3">
+                    <div className="flex items-center gap-2">
+                        <Clock className="w-4 h-4 text-muted-foreground" />
+                        <h3 className="text-sm font-medium text-foreground">Attribution Window</h3>
                     </div>
-                    <div>
-                        <h3 className="font-bold">Attribution Window</h3>
-                        <p className="text-xs text-muted-foreground">Zeitraum für Conversion-Zuordnung</p>
+                    <div className="flex flex-wrap gap-1.5">
+                        {ATTRIBUTION_WINDOWS.map((window) => (
+                            <button
+                                key={window.id}
+                                onClick={() => updateField('attribution', window.id)}
+                                className={cn(
+                                    "px-3 py-1.5 rounded-lg text-xs font-medium transition-all border",
+                                    campaignSetup.attribution === window.id
+                                        ? "border-primary/40 bg-primary/5 text-foreground"
+                                        : "border-border/50 bg-card text-muted-foreground hover:text-foreground hover:border-border"
+                                )}
+                            >
+                                {window.label}
+                            </button>
+                        ))}
                     </div>
                 </div>
-                <div className="flex flex-wrap gap-2">
-                    {ATTRIBUTION_WINDOWS.map((window) => (
-                        <button
-                            key={window.id}
-                            onClick={() => updateField('attribution', window.id)}
-                            className={cn(
-                                "px-4 py-2 rounded-xl border text-sm font-medium transition-all",
-                                campaignSetup.attribution === window.id
-                                    ? "border-violet-500 bg-violet-500/10 text-violet-600"
-                                    : "border-border hover:border-violet-500/50"
-                            )}
-                        >
-                            {window.label}
-                        </button>
-                    ))}
-                </div>
-            </Card>
 
-            {/* A/B Test Toggle */}
-            <Card className={cn(
-                "p-6 cursor-pointer transition-all border-2",
-                campaignSetup.publishMode === 'draft'
-                    ? "border-amber-500 bg-amber-500/5"
-                    : "border-border hover:border-amber-500/50"
-            )} onClick={() => updateField('publishMode', campaignSetup.publishMode === 'publish' ? 'draft' : 'publish')}>
-                <div className="flex items-center gap-4">
-                    <div className="p-3 bg-gradient-to-br from-amber-500 to-orange-600 rounded-xl">
-                        <Target className="w-6 h-6 text-white" />
-                    </div>
-                    <div className="flex-1">
-                        <div className="flex items-center gap-2">
-                            <h3 className="font-bold">A/B Test Modus</h3>
-                            <Badge className="bg-amber-500/10 text-amber-600 border-0 text-[10px]">DRAFT</Badge>
+                {/* A/B Test */}
+                <div
+                    className={cn(
+                        "flex items-center justify-between p-4 rounded-xl border cursor-pointer transition-all",
+                        campaignSetup.publishMode === 'draft'
+                            ? "border-primary/30 bg-primary/5"
+                            : "border-border/50 bg-card hover:border-border"
+                    )}
+                    onClick={() => updateField('publishMode', campaignSetup.publishMode === 'publish' ? 'draft' : 'publish')}
+                >
+                    <div className="flex items-center gap-3">
+                        <FlaskConical className={cn(
+                            "w-4 h-4",
+                            campaignSetup.publishMode === 'draft' ? "text-primary" : "text-muted-foreground"
+                        )} />
+                        <div>
+                            <div className="text-sm font-medium text-foreground flex items-center gap-2">
+                                A/B Test Modus
+                                {campaignSetup.publishMode === 'draft' && (
+                                    <Badge variant="secondary" className="text-[10px] py-0">Draft</Badge>
+                                )}
+                            </div>
+                            <p className="text-xs text-muted-foreground mt-0.5">Als Draft für Testing speichern</p>
                         </div>
-                        <p className="text-xs text-muted-foreground mt-1">
-                            Kampagne als Draft speichern für Creative-Testing vor dem Launch
-                        </p>
                     </div>
                     <div className={cn(
-                        "w-12 h-6 rounded-full transition-all relative",
-                        campaignSetup.publishMode === 'draft' ? "bg-amber-500" : "bg-muted"
+                        "w-9 h-5 rounded-full transition-all relative shrink-0",
+                        campaignSetup.publishMode === 'draft' ? "bg-primary" : "bg-muted"
                     )}>
                         <div className={cn(
-                            "absolute top-1 w-4 h-4 rounded-full bg-white shadow-sm transition-all",
-                            campaignSetup.publishMode === 'draft' ? "left-7" : "left-1"
+                            "absolute top-0.5 w-4 h-4 rounded-full bg-white shadow-sm transition-all",
+                            campaignSetup.publishMode === 'draft' ? "left-4.5" : "left-0.5"
                         )} />
                     </div>
                 </div>
-            </Card>
+            </div>
         </div>
     );
 };
