@@ -126,24 +126,26 @@ describe('buildCreativePrompt', () => {
         expect(prompt).not.toContain('Central Park');
     });
 
-    it('uses language-aware CTA default for German', () => {
+    it('does NOT force CTA default for German when cta is undefined (AI decides)', () => {
         const prompt = buildCreativePrompt({
             brief: baseBrief,
             format: 'square',
             adSpec: { ...baseAdSpec, cta: undefined, language: 'de' },
             brandKit: {},
         });
-        expect(prompt).toContain('Jetzt entdecken');
+        // CTA is now optional — AI Creative Brief decides, no forced default
+        expect(prompt).not.toContain('Jetzt entdecken');
     });
 
-    it('uses language-aware CTA default for English', () => {
+    it('does NOT force CTA default for English when cta is undefined (AI decides)', () => {
         const prompt = buildCreativePrompt({
             brief: baseBrief,
             format: 'square',
             adSpec: { ...baseAdSpec, cta: undefined, language: 'en' },
             brandKit: {},
         });
-        expect(prompt).toContain('Discover Now');
+        // CTA is now optional — AI Creative Brief decides, no forced default
+        expect(prompt).not.toContain('Discover Now');
     });
 
     it('includes safe zone note for story format', () => {
@@ -205,8 +207,8 @@ describe('buildCreativePrompt', () => {
 // ═══════════════════════════════════════════════════════════════
 
 describe('Constants', () => {
-    it('has exactly 3 concept types', () => {
-        expect(CONCEPT_TYPES).toHaveLength(3);
+    it('has 72 archetypes (9 categories)', () => {
+        expect(CONCEPT_TYPES.length).toBe(72);
     });
 
     it('each concept type has required fields', () => {

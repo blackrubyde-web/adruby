@@ -8,7 +8,7 @@ import { useState, useCallback, useEffect } from 'react';
 import {
     Download, Save, Upload, FileText, MessageSquare,
     Sparkles, Image, Loader2, RefreshCw,
-    AlertCircle, Store, Zap, CheckCircle2, X,
+    Store, CheckCircle2, X,
     Search, Target, PenTool, Palette, Frame, Wand2, Send,
     RectangleVertical, Square, Smartphone
 } from 'lucide-react';
@@ -22,7 +22,6 @@ import { StoreImporter, CarouselBuilder } from './store-importer';
 import type { ScrapedProduct, ProductCopy } from './store-importer/types';
 import { Button } from './ui/button';
 import { Badge } from './ui/badge';
-import { Card, CardContent } from './ui/card';
 import { DashboardShell } from './layout/DashboardShell';
 import { cn } from '../lib/utils';
 import { useAuthState, useAuthActions } from '../contexts/AuthContext';

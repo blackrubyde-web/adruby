@@ -2,14 +2,12 @@ import { useEffect, useMemo, useRef, useState, useCallback } from 'react';
 import {
   Brain,
   Search,
-  Download,
   RefreshCw,
   Trash2,
   Copy,
   TrendingUp,
   TrendingDown,
   ShieldCheck,
-  Sliders,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { DashboardShell } from './layout/DashboardShell';
@@ -54,7 +52,7 @@ export function AIAnalysisPage() {
   const syncControllerRef = useRef<AbortController | null>(null);
   const [assignmentMap, setAssignmentMap] = useState<Record<string, string | null>>({});
   const [applyingActions, setApplyingActions] = useState<Record<string, boolean>>({});
-  const [isApplying, setIsApplying] = useState(false);
+  const [_isApplying, setIsApplying] = useState(false);
   const [aiAnalysisCache, setAiAnalysisCache] = useState<Record<string, AIAnalysis>>({});
   const [aiPowered, setAiPowered] = useState(false);
 
@@ -107,7 +105,7 @@ export function AIAnalysisPage() {
     })();
   }, []);
 
-  const applyRecommendations = async () => {
+  const _applyRecommendations = async () => {
     if (!Object.keys(aiAnalysisCache).length) return;
     setIsApplying(true);
     try {
