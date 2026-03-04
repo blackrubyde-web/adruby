@@ -126,7 +126,7 @@ export async function generateVideoScript({
         const ai = getGenAI();
         const langLabel = language === 'de' ? 'German' : 'English';
 
-        const prompt = `You are an elite Meta video ad scriptwriter. Create a ${durationSeconds}-second video ad script.
+        const prompt = `You are an elite video ad director creating a ${durationSeconds}-second commercial for Meta (Instagram Reels / Facebook).
 
 PRODUCT: ${productName}
 INDUSTRY: ${industry}
@@ -138,7 +138,7 @@ HOOK PATTERN: ${hook.name.en} — "${hook.example[language] || hook.example.de}"
 INDUSTRY CONTEXT: Scene: ${industryContext.scene}, Problem: ${industryContext.problem}, Colors: ${industryContext.color}
 CTA: ${cta}
 
-Write a script following this 5-Act structure. Total duration MUST equal ${durationSeconds} seconds.
+Write a ${durationSeconds}-second video ad script following the 5-Act structure below. Total duration MUST equal ${durationSeconds} seconds.
 
 Return ONLY valid JSON with this exact structure:
 {
@@ -147,12 +147,12 @@ Return ONLY valid JSON with this exact structure:
       "act": 1,
       "label": "HOOK",
       "durationMs": <milliseconds>,
-      "visual": "<detailed scene description for AI video generation>",
+      "visual": "<HYPER-DETAILED visual description — see rules below>",
       "textOverlay": "<text shown on screen, in ${langLabel}>",
       "textPosition": "center|top|bottom",
       "textStyle": "bold_impact|elegant|minimal|handwritten",
-      "audioSfx": "<sound effect description>",
-      "camera": "<camera movement description>"
+      "audioSfx": "<SPECIFIC sound effect — see rules below>",
+      "camera": "<SPECIFIC camera movement — see rules below>"
     }
   ],
   "metadata": {
@@ -164,15 +164,42 @@ Return ONLY valid JSON with this exact structure:
   }
 }
 
-RULES:
-- Act 1 (HOOK): 0-2s — Scroll stopper, use the hook pattern
-- Act 2 (PROBLEM): 2-4s — Show the pain point  
-- Act 3 (SOLUTION): 4-6s — Product as hero, demonstrate key benefit
-- Act 4 (PROOF): 6-7s — Social proof, numbers, trust
-- Act 5 (CTA): 7-${durationSeconds}s — Clear call-to-action, loop-friendly ending
+═══ 5-ACT TIMING ═══
+- Act 1 (HOOK): 0s–2s — Scroll stopper. MUST grab attention in first 0.5s.
+- Act 2 (PROBLEM): 2s–4s — Show the pain point the audience relates to.
+- Act 3 (SOLUTION): 4s–6s — Product as hero. Demonstrate THE key benefit.
+- Act 4 (PROOF): 6s–${Math.max(7, durationSeconds - 1)}s — Social proof, numbers, trust.
+- Act 5 (CTA): ${Math.max(7, durationSeconds - 1)}s–${durationSeconds}s — Clear CTA, loop-friendly ending.
+
+═══ VISUAL DESCRIPTION RULES (CRITICAL FOR QUALITY) ═══
+The "visual" field is the MOST IMPORTANT field. Veo 3.1 generates video directly from this text.
+Each visual description MUST contain ALL of these elements:
+1. ENVIRONMENT: Where are we? (studio, kitchen, marble table, dark void, etc.)
+2. PRODUCT ACTION: What is happening to the product? (rotating, being placed, emerging, etc.)
+3. LIGHTING DIRECTION: Light source and mood (golden rim light from right, cool blue fill, spotlight from above)
+4. MOTION: What is moving and how? (slow-motion pour, particles floating, smoke dissolving)
+5. DEPTH: Foreground/background elements (blurred bokeh, depth layers)
+
+EXAMPLE of a GREAT visual description:
+"Extreme close-up: the product sits on polished black marble. A single warm spotlight from above creates a circular pool of light. Golden particles drift through the beam. The product slowly rotates, catching light on each surface. Shallow depth of field blurs the dark background into smooth bokeh circles."
+
+EXAMPLE of a BAD visual description (DO NOT write like this):
+"The product is shown in a nice setting with good lighting."
+
+═══ CAMERA FIELD RULES ═══
+Camera descriptions must be SPECIFIC cinematic movements:
+- GOOD: "Slow dolly-in from 3m to 30cm, 85mm lens, f/2.8, low angle"
+- GOOD: "Orbital tracking shot 90° around product, steady speed, eye level"
+- BAD: "nice camera movement" (too vague)
+
+═══ AUDIO FIELD RULES ═══
+Sound effects must be SPECIFIC and timed:
+- GOOD: "Deep bass drop on beat, followed by shimmering high-frequency sweep"
+- GOOD: "Crisp unwrapping foil sound, satisfying click, ambient reverb tail"
+- BAD: "uplifting music" (too vague)
+
+═══ TEXT OVERLAY RULES ═══
 - All text overlays in ${langLabel}
-- Visual descriptions should be cinematically detailed for AI video generation
-- Audio descriptions should be specific sound effects, not music genres
 ${language === 'de' ? `
 GERMAN LANGUAGE (MANDATORY):
 - All textOverlay values MUST be in flawless, native-level German. No spelling errors, no grammar mistakes.
@@ -180,8 +207,8 @@ GERMAN LANGUAGE (MANDATORY):
 - Use informal du-form (lowercase) for audience.
 - No anglicisms when a German word exists.
 - Umlauts (ä,ö,ü) and ß must be used correctly.
-- The text overlays will be displayed on screen — any error is immediately visible to the user.
-- Proofread every textOverlay for Rechtschreibung and Grammatik before outputting.
+- Use € (Euro) for any prices, NEVER $ or Dollar.
+- Proofread every textOverlay for Rechtschreibung and Grammatik.
 ` : ''}`;
 
         const response = await ai.models.generateContent({
@@ -290,53 +317,111 @@ function buildFallbackScript({ archetype, hook, productName, usp, industry, cta,
 }
 
 // ============================================================
-// VEO PROMPT BUILDER
+// VEO PROMPT BUILDER — Second-by-Second Cinematic Direction
 // ============================================================
 
 /**
- * Convert a script JSON into a single Veo prompt string.
- * Veo works best with a narrative-style prompt that describes the full video.
+ * Convert a script JSON into a professional Veo 3.1 prompt with second-by-second timing.
+ * 
+ * Veo works best with detailed, structured prompts that describe:
+ * - Exact timing per beat (0:00-0:02, etc.)
+ * - Camera movements per shot (dolly, pan, zoom, orbit)
+ * - Lighting and color transitions
+ * - Sound design cues
+ * - Emotional arc
+ * 
+ * This is NOT a paragraph — it's a cinematic shot list compressed into a prompt.
  */
 export function buildVeoPrompt({ script, archetype, productName, usp, aspectRatio = '9:16', includeAudio = true }) {
     if (!script || !script.scenes) throw new Error('Invalid script: no scenes');
 
     const archetypeData = typeof archetype === 'string' ? getArchetype(archetype) : archetype;
+    const totalDuration = script.metadata?.totalDurationMs || 8000;
+    const totalSeconds = totalDuration / 1000;
 
-    // Build scene-by-scene narrative
-    const sceneDescriptions = script.scenes.map((scene, i) => {
-        let desc = scene.visual;
-        if (scene.textOverlay) {
-            desc += ` Text overlay reads: "${scene.textOverlay}".`;
-        }
-        if (scene.camera) {
-            desc += ` Camera: ${scene.camera}.`;
-        }
-        return desc;
+    // ── Calculate exact timing per scene ──
+    let runningTimeMs = 0;
+    const timedScenes = script.scenes.map((scene) => {
+        const startMs = runningTimeMs;
+        const durationMs = scene.durationMs || Math.round(totalDuration / script.scenes.length);
+        runningTimeMs += durationMs;
+        return {
+            ...scene,
+            startSec: (startMs / 1000).toFixed(1),
+            endSec: (Math.min(runningTimeMs, totalDuration) / 1000).toFixed(1),
+            durationSec: (durationMs / 1000).toFixed(1),
+        };
     });
 
-    // Combine into narrative prompt
-    let prompt = `Professional Meta advertising video, ${aspectRatio} aspect ratio, cinematic quality. `;
-    prompt += `Product: ${productName}. `;
+    // ── Build second-by-second shot direction ──
+    const shotList = timedScenes.map((scene, i) => {
+        const timing = `[${scene.startSec}s–${scene.endSec}s]`;
+        const label = scene.label || `ACT ${scene.act || i + 1}`;
 
-    // Add scene narrative
-    prompt += sceneDescriptions.join(' Then: ');
+        let shot = `${timing} ${label}:`;
 
-    // Add archetype-specific styling
+        // Visual direction
+        shot += ` ${scene.visual}`;
+
+        // Camera movement — specific, not generic
+        if (scene.camera) {
+            shot += ` CAMERA: ${scene.camera}.`;
+        }
+
+        // Text overlay — with exact rendering instructions
+        if (scene.textOverlay) {
+            const style = scene.textStyle || 'bold_impact';
+            const position = scene.textPosition || 'center';
+            shot += ` TEXT ON SCREEN "${scene.textOverlay}" — ${style} typography, ${position} positioned, sharp and readable.`;
+        }
+
+        // Sound design — specific effects, not genres
+        if (includeAudio && scene.audioSfx) {
+            shot += ` AUDIO: ${scene.audioSfx}.`;
+        }
+
+        return shot;
+    });
+
+    // ── Assemble the complete Veo prompt ──
+    const orientation = aspectRatio === '9:16' ? 'vertical (portrait, 9:16 for Instagram Reels/Stories)'
+        : aspectRatio === '16:9' ? 'horizontal (landscape, 16:9 for YouTube/Feed)'
+            : `${aspectRatio}`;
+
+    let prompt = `A ${totalSeconds}-second professional advertising video, ${orientation}.\n\n`;
+    prompt += `PRODUCT: "${productName}"${usp ? ` — ${usp}` : ''}.\n\n`;
+
+    // Shot-by-shot direction
+    prompt += `SHOT-BY-SHOT DIRECTION:\n`;
+    prompt += shotList.join('\n');
+    prompt += '\n\n';
+
+    // Archetype-specific cinematic style
     if (archetypeData) {
-        prompt += ` Lighting: ${archetypeData.lightingPreset}.`;
+        prompt += `CINEMATIC STYLE:\n`;
+        prompt += `- Camera work: ${archetypeData.cameraPreset}\n`;
+        prompt += `- Lighting: ${archetypeData.lightingPreset}\n`;
+        if (includeAudio) {
+            prompt += `- Sound design: ${archetypeData.audioPreset}\n`;
+        }
+        prompt += '\n';
     }
 
-    // Add audio instructions if enabled
-    if (includeAudio && archetypeData) {
-        prompt += ` Audio: ${archetypeData.audioPreset}.`;
-    }
+    // Professional quality directives
+    prompt += `PRODUCTION QUALITY:\n`;
+    prompt += `- Shot on RED Komodo 6K or equivalent cinema camera\n`;
+    prompt += `- Professional color grading, cinematic LUT applied\n`;
+    prompt += `- Smooth 24fps motion, no jitter or jerky movements\n`;
+    prompt += `- Sharp focus on product at all times, shallow depth of field\n`;
+    prompt += `- Professional lighting — no flat or amateur lighting\n`;
+    prompt += `- Commercial broadcast quality — indistinguishable from a real TV ad\n`;
+    prompt += `- Text overlays must be SHARP, perfectly rendered, and readable at mobile phone size\n`;
+    prompt += `- Seamless transitions between shots — no abrupt cuts unless intentional\n`;
+    prompt += `- The last frame should loop back cleanly to the first frame\n`;
 
-    // Quality directives
-    prompt += ' High production value, sharp details, smooth motion, professional color grading.';
-
-    // Ensure prompt isn't too long (Veo has limits)
-    if (prompt.length > 2000) {
-        prompt = prompt.substring(0, 1997) + '...';
+    // Hard limit for Veo
+    if (prompt.length > 2500) {
+        prompt = prompt.substring(0, 2497) + '...';
     }
 
     return prompt;
