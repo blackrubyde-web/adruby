@@ -344,7 +344,17 @@ TARGET AUDIENCE: ${adSpec.audience || 'quality-conscious consumers'}
 CREATIVE ANGLE: ${adSpec.angle || 'premium quality'}
 AD FORMAT: ${format} (${formatSpec.ratio}, ${formatSpec.width}×${formatSpec.height})
 LANGUAGE: All text MUST be in ${lang}.
-
+${adSpec.language !== 'en' ? `
+CRITICAL GERMAN LANGUAGE & CURRENCY RULES:
+- ALL prices and monetary references MUST use € (Euro), NEVER $ or Dollar.
+- Write flawless, native-level German — like a professional German ad copywriter.
+- Correct grammar: cases, articles (der/die/das), verb conjugations.
+- Use "du" form (lowercase) for audience.
+- Avoid anglicisms: "Angebot" not "Deal", "Erlebnis" not "Experience", "Vorteil" not "Benefit".
+- Compound nouns: "Hautpflege-Routine" not "Hautpflege Routine".
+- Umlauts (ä, ö, ü) and ß MUST be correct.
+- Proofread every word for Rechtschreibung and Grammatik.
+` : ''}
 CREATIVE CONCEPT: ${conceptType.briefDirection}
 
 ${layout.instruction}

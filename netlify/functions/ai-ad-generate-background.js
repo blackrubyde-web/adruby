@@ -183,7 +183,10 @@ export const handler = async (event) => {
                     if (!compositeHeadline) {
                         try {
                             const gemini = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
-                            const copyPrompt = `Generate ad copy in ${language === 'de' ? 'German' : 'English'} for:\nProduct: ${body.productName || 'Product'}\nDescription: ${body.text || body.usp || 'A great product'}\nIndustry: ${body.industry || 'tech'}\nTarget: ${body.targetAudience || 'everyone'}\n\nReturn JSON: { "headline": "short catchy headline", "tagline": "supporting text", "cta": "call to action" }`;
+                            const langRules = language === 'de'
+                                ? 'Write in flawless native German. Use € (Euro) for any prices, NEVER $. Avoid anglicisms (use Angebot not Deal, Vorteil not Benefit). Use correct grammar, umlauts (ä,ö,ü,ß). Sound like a native German copywriter.'
+                                : '';
+                            const copyPrompt = `Generate professional ad copy in ${language === 'de' ? 'German' : 'English'} for:\nProduct: ${body.productName || 'Product'}\nDescription: ${body.text || body.usp || 'A great product'}\nIndustry: ${body.industry || 'tech'}\nTarget: ${body.targetAudience || 'everyone'}\n${langRules ? '\n' + langRules + '\n' : ''}\nReturn JSON: { "headline": "short catchy headline (2-5 words, professional)", "tagline": "supporting text (1 sentence)", "cta": "call to action (2-4 words)" }`;
                             const copyResponse = await gemini.models.generateContent({
                                 model: 'gemini-2.5-flash',
                                 contents: copyPrompt,

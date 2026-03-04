@@ -64,6 +64,7 @@ LANGUAGE: Write ALL copy in ${lang}. This is NON-NEGOTIABLE.
 ${language === 'de' ? `
 GERMAN LANGUAGE RULES (MANDATORY — violations are unacceptable):
 - Write in flawless, native-level German. You MUST sound like a native German copywriter, NOT a translation.
+- ALL prices, currency symbols, and monetary references MUST use € (Euro), NEVER $ (Dollar) or USD.
 - Use correct German grammar: proper cases (Nominativ, Genitiv, Dativ, Akkusativ), correct articles (der/die/das), correct verb conjugations.
 - Use proper German punctuation: correct comma placement (especially before dass, weil, wenn, ob, etc.).
 - Use the informal du form (lowercase) for addressing the audience, unless the tone requires Sie.
@@ -72,6 +73,7 @@ GERMAN LANGUAGE RULES (MANDATORY — violations are unacceptable):
 - Do NOT mix English and German mid-sentence unless it is a widely adopted brand term.
 - Compound nouns follow German rules: Hautpflege-Routine not Hautpflege Routine.
 - Umlauts and eszett MUST be used correctly — NEVER replace with ae, oe, ue, ss.
+- Number formatting: use German format (1.000 for thousands, 1,99 for decimals), NOT English format.
 - After generating, mentally proofread every sentence for Rechtschreibung (spelling) and Grammatik (grammar).
 - The copy must read as if written by a professional German advertising copywriter, not machine-translated.
 ` : ''}

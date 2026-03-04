@@ -114,11 +114,17 @@ export function CreativeLibraryPage() {
     const hooks = inputs?.hooks || inputs?.copy?.hooks || [];
     const primaryText = inputs?.primaryText || inputs?.copy?.primaryText;
 
+    // For video creatives, resolve the video URL from multiple sources
+    const metadata = (row?.metadata || {}) as Record<string, unknown>;
+    const videoUrl = type === 'video'
+      ? (row?.image_url || row?.thumbnail || (metadata?.videoUrl as string) || '')
+      : '';
+
     return {
       id: row.id,
       name,
       type,
-      url: '',
+      url: videoUrl,
       thumbnail: row.thumbnail || row?.image_url || '',
       tags,
       hooks,
@@ -744,12 +750,13 @@ export function CreativeLibraryPage() {
           {/* Image — fixed height, no aspect-ratio to prevent overflow */}
           <div className="creative-card-image" style={{ height: '200px' }}>
             {creative.thumbnail ? (
-              creative.type === 'video' && (creative.thumbnail.endsWith('.mp4') || creative.thumbnail.includes('video')) ? (
+              creative.type === 'video' ? (
                 <video
-                  src={creative.thumbnail}
+                  src={creative.url || creative.thumbnail}
                   muted
                   loop
                   playsInline
+                  preload="metadata"
                   onMouseEnter={(e) => (e.target as HTMLVideoElement).play()}
                   onMouseLeave={(e) => { (e.target as HTMLVideoElement).pause(); (e.target as HTMLVideoElement).currentTime = 0; }}
                   className="w-full h-full object-cover"
@@ -767,7 +774,7 @@ export function CreativeLibraryPage() {
               )
             ) : (
               <div className="w-full h-full flex items-center justify-center text-muted-foreground text-sm bg-muted">
-                AI Creative
+                {creative.type === 'video' ? '🎬 Video' : 'AI Creative'}
               </div>
             )}
 

@@ -8,7 +8,7 @@ import { useState, useCallback, useEffect } from 'react';
 import {
     Download, Save, Upload, FileText, MessageSquare,
     Sparkles, Image, Loader2, RefreshCw, Film,
-    Store, CheckCircle2, X,
+    Store, CheckCircle2, X, Globe,
     Search, Target, PenTool, Palette, Frame, Wand2, Send,
     RectangleVertical, Square, Smartphone
 } from 'lucide-react';
@@ -38,7 +38,7 @@ type Step = 'input' | 'generating' | 'result';
 const MODE_TABS = [
     { id: 'form' as const, icon: FileText, label: 'Formular' },
     { id: 'free' as const, icon: MessageSquare, label: 'Freitext' },
-    { id: 'store' as const, icon: Store, label: 'Shop Import' },
+    // { id: 'store' as const, icon: Store, label: 'Shop Import' },  // Coming post-launch
 ] as const;
 
 /* ── Theater Pipeline Steps ────────────────────────── */
@@ -55,8 +55,8 @@ export function AIAdBuilderPage() {
     const { refreshProfile: _refreshProfile } = useAuthActions();
     const credits = profile?.credits ?? 0;
 
-    const language: Language = 'de';
-    const [mode, setMode] = useState<InputMode | 'store'>('form');
+    const [language, setLanguage] = useState<Language>('de');
+    const [mode, setMode] = useState<InputMode>('form');
     const [step, setStep] = useState<Step>('input');
     const [loading, setLoading] = useState(false);
     const [generatingStartTime, setGeneratingStartTime] = useState<number | null>(null);
@@ -299,7 +299,7 @@ export function AIAdBuilderPage() {
             const formData = 'text' in inputData ? inputData : inputData as FormInputData;
             const response = await generateVideoAd({
                 outputType: 'video',
-                mode: (mode === 'store' ? 'form' : mode) as 'form' | 'free',
+                mode: mode as 'form' | 'free',
                 language,
                 archetypeId: videoSettings.archetype,
                 durationSeconds: videoSettings.durationSeconds,
@@ -503,6 +503,19 @@ export function AIAdBuilderPage() {
                 })}
             </div>
 
+            {/* ── Language Selector ──────────────────────── */}
+            <div className="flex items-center gap-2">
+                <Globe className="w-4 h-4 text-muted-foreground" />
+                <select
+                    value={language}
+                    onChange={(e) => setLanguage(e.target.value as Language)}
+                    className="bg-muted/50 text-foreground text-xs font-medium px-3 py-1.5 rounded-lg border border-border/50 outline-none cursor-pointer hover:bg-muted/80 transition-colors"
+                >
+                    <option value="de">🇩🇪 Deutsch</option>
+                    <option value="en">🇬🇧 English</option>
+                </select>
+            </div>
+
             {/* ═══ Main Grid — Input + Canvas ═══════════════════ */}
             <div className="grid grid-cols-1 lg:grid-cols-5 gap-8 items-start">
 
@@ -510,7 +523,7 @@ export function AIAdBuilderPage() {
                 <div className="lg:col-span-2 input-panel">
 
                     {/* Product Image Upload */}
-                    {mode !== 'store' && (
+                    {(
                         <div className="upload-zone-gradient">
                             <div className="input-section">
                                 <div className="input-section-header">
@@ -658,65 +671,6 @@ export function AIAdBuilderPage() {
                             onGenerate={outputType === 'video' ? handleVideoGenerate : handleGenerate}
                             loading={loading}
                         />
-                    ) : mode === 'store' && !showCarouselBuilder ? (
-                        <div className="input-section">
-                            <div className="input-section-body">
-                                <StoreImporter
-                                    onProductsSelected={(products, copies) => {
-                                        setImportedProducts(products);
-                                        setImportedCopies(copies);
-                                    }}
-                                    onCreateSingleAds={(products) => {
-                                        if (!products.length) {
-                                            toast.error('Keine Produkte ausgewählt');
-                                            return;
-                                        }
-                                        const p = products[0];
-                                        const formData: FormInputData = {
-                                            productName: p.title,
-                                            usp: p.description?.slice(0, 200) || p.title,
-                                            targetAudience: p.tags?.join(', ') || '',
-                                            industry: p.productType || '',
-                                            tone: 'professional',
-                                            goal: 'sales',
-                                            template: 'default',
-                                        };
-                                        if (p.images?.[0]?.src) {
-                                            setProductImagePreview(p.images[0].src);
-                                        }
-                                        toast.info(`Ad wird generiert für: ${p.title}`);
-                                        handleGenerate(formData);
-                                    }}
-                                    onCreateCarousel={(products, copies) => {
-                                        setImportedProducts(products);
-                                        setImportedCopies(copies);
-                                        setShowCarouselBuilder(true);
-                                    }}
-                                />
-                            </div>
-                        </div>
-                    ) : mode === 'store' && showCarouselBuilder ? (
-                        <div className="input-section">
-                            <div className="input-section-header">
-                                <span className="text-sm font-semibold">Carousel Builder</span>
-                                <Button
-                                    variant="outline"
-                                    size="sm"
-                                    className="ml-auto text-xs h-7"
-                                    onClick={() => setShowCarouselBuilder(false)}
-                                >
-                                    ← Zurück
-                                </Button>
-                            </div>
-                            <div className="input-section-body">
-                                <CarouselBuilder
-                                    products={importedProducts}
-                                    copies={importedCopies}
-                                    onSave={() => { toast.success('Carousel gespeichert!'); }}
-                                    onExport={() => { toast.success('Carousel exportiert!'); }}
-                                />
-                            </div>
-                        </div>
                     ) : null}
                 </div>
 
