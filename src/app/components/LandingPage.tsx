@@ -182,7 +182,7 @@ export function LandingPage({ onGetStarted, onLogin, onNavigate }: LandingPagePr
 
           {/* Trust Badges */}
           <motion.div variants={fadeUp} className="flex flex-wrap items-center justify-center gap-6 mb-16">
-            {['7 Tage kostenlos', 'Keine Kreditkarte', 'DSGVO-konform 🇩🇪'].map((badge) => (
+            {['7 Tage kostenlos', 'Jederzeit kündbar', 'DSGVO-konform 🇩🇪'].map((badge) => (
               <div key={badge} className="flex items-center gap-2 text-white/40 text-sm">
                 <CheckCircle className="w-4 h-4 text-emerald-500" />
                 <span>{badge}</span>
@@ -582,7 +582,10 @@ export function LandingPage({ onGetStarted, onLogin, onNavigate }: LandingPagePr
                   }`}
               >
                 {plan.highlight && (
-                  <div className="absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-[#E63946] to-transparent" />
+                  <>
+                    <div className="absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-[#E63946] to-transparent" />
+                    <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 px-4 py-1 bg-gradient-to-r from-[#E63946] to-rose-500 rounded-full text-xs font-bold text-white shadow-lg shadow-[#E63946]/30">Beliebt</div>
+                  </>
                 )}
                 <h3 className="font-display text-xl font-bold text-white mb-2">{plan.name}</h3>
                 <div className="flex items-baseline gap-1 mb-6">
@@ -708,7 +711,7 @@ export function LandingPage({ onGetStarted, onLogin, onNavigate }: LandingPagePr
               nächste Level zu bringen?
             </motion.h2>
             <motion.p variants={fadeUp} className="text-lg text-white/40 mb-10">
-              Keine Kreditkarte erforderlich. 7 Tage kostenlos testen.
+              7 Tage kostenlos testen — Kreditkarte erforderlich, jederzeit kündbar.
             </motion.p>
             <motion.div variants={fadeUp}>
               <motion.button

@@ -212,9 +212,9 @@ export function GlobalNav({ currentPage = 'home', onNavigate, onSignIn, onGetSta
                           transition={{ duration: 0.2, ease: [0.23, 1, 0.32, 1] }}
                           className="absolute top-full left-1/2 -translate-x-1/2 pt-4"
                         >
-                          <div className="w-80 bg-card/95 backdrop-blur-xl border border-border/50 rounded-2xl shadow-2xl overflow-hidden">
+                          <div className="w-80 bg-[#0c0c10] border border-white/[0.08] rounded-2xl shadow-[0_25px_60px_-12px_rgba(0,0,0,0.7)] overflow-hidden">
                             {/* Dropdown header */}
-                            <div className="px-4 py-3 border-b border-border/50 bg-muted/30">
+                            <div className="px-4 py-3 border-b border-white/[0.06] bg-white/[0.03]">
                               <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Features</p>
                             </div>
 
@@ -229,7 +229,7 @@ export function GlobalNav({ currentPage = 'home', onNavigate, onSignIn, onGetSta
                                     animate={{ opacity: 1, x: 0 }}
                                     transition={{ delay: idx * 0.04, duration: 0.25 }}
                                     onClick={() => handleFeatureItemClick(feature.id)}
-                                    className="w-full flex items-start gap-3 p-3 rounded-xl hover:bg-muted/50 transition-all group text-left"
+                                    className="w-full flex items-start gap-3 p-3 rounded-xl hover:bg-white/[0.06] transition-all group text-left"
                                   >
                                     <div className={`w-10 h-10 rounded-lg ${feature.bgColor} flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform`}>
                                       <Icon className={`w-5 h-5 ${feature.color}`} />
@@ -244,7 +244,7 @@ export function GlobalNav({ currentPage = 'home', onNavigate, onSignIn, onGetSta
                             </div>
 
                             {/* View all link */}
-                            <div className="px-4 py-3 border-t border-border/50 bg-muted/30">
+                            <div className="px-4 py-3 border-t border-white/[0.06] bg-white/[0.03]">
                               <button
                                 onClick={() => handleFeatureItemClick('features')}
                                 className="text-sm font-semibold text-primary hover:text-primary/80 transition-colors"
