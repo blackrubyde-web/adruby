@@ -26,7 +26,9 @@ const SAFETY = {
     maxBudgetIncreasePct: 0.50,   // Max 50% increase per run
     maxBudgetDecreasePct: 0.30,   // Max 30% decrease per run
     maxActionsPerUser: 10,         // Max 10 actions per run per user
-    minSpendBeforeAction: 1,       // Min €1 spend before auto-actions
+    minSpendBeforeAction: 5,       // Min €5 spend before auto-actions
+    minConversionsBeforeAction: 10, // Learning phase guard
+    maxBudgetMultiplier: 2.0,      // Never exceed 2x original budget
 };
 
 function evaluateRule(rule, campaign) {
@@ -104,6 +106,11 @@ async function processUserAutoscale(userId, host) {
         for (const campaign of campaigns) {
             if (actionCount >= SAFETY.maxActionsPerUser) break;
             if (Number(campaign.spend || 0) < SAFETY.minSpendBeforeAction) {
+                results.skipped++;
+                continue;
+            }
+            // Learning phase guard — don't touch campaigns still learning
+            if (Number(campaign.conversions || 0) < SAFETY.minConversionsBeforeAction && Number(campaign.spend || 0) < 20) {
                 results.skipped++;
                 continue;
             }
@@ -276,7 +283,7 @@ async function processUserAutoscale(userId, host) {
                             scalePct: aScalePct,
                             success,
                             ruleId: null,
-                            ruleName: "ai-gpt4o",
+                            ruleName: "ai-gemini",
                         });
                         actionCount++;
                     } catch (err) {
