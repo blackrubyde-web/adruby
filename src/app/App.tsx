@@ -69,7 +69,7 @@ function AppContent() {
     signOut,
     refreshProfile,
   } = useAuthActions();
-  const { isAdmin } = useAdmin();
+  const { isAdmin, isCheckingRole } = useAdmin();
 
   const [currentPage, setCurrentPage] = useState<PageType>(() =>
     pageFromPathname(window.location.pathname)
@@ -392,7 +392,7 @@ function AppContent() {
               avatarUrl={profile?.avatar_url ?? null}
               displayName={profile?.full_name ?? null}
               email={profile?.email ?? user?.email ?? null}
-              isTrialUser={!isAdmin && (billing.statusLabel === 'Trial' || billing.statusLabel === 'Trial expired')}
+              isTrialUser={!isCheckingRole && !isAdmin && (billing.statusLabel === 'Trial' || billing.statusLabel === 'Trial expired')}
               onUpgrade={() => user?.id && user?.email ? startCheckout(user.id, user.email) : toast.error('Bitte melde dich an, um fortzufahren')}
             />
             <DashboardPageContent currentPage={currentPage} onNavigate={handleNavigate} />
