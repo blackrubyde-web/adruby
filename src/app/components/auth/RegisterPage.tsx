@@ -93,19 +93,19 @@ export function RegisterPage({
 
     // Validation
     if (!name || !email || !password) {
-      setError('Please fill in all fields');
+      setError('Bitte fülle alle Felder aus');
       setIsLoading(false);
       return;
     }
 
     if (password.length < 8) {
-      setError('Password must be at least 8 characters');
+      setError('Passwort muss mindestens 8 Zeichen haben');
       setIsLoading(false);
       return;
     }
 
     if (!acceptTerms) {
-      setError('Please accept the terms and conditions');
+      setError('Bitte akzeptiere die Nutzungsbedingungen');
       setIsLoading(false);
       return;
     }
@@ -126,7 +126,7 @@ export function RegisterPage({
         setSubmissionState('needs_confirmation');
       }
     } catch (err) {
-      setError('Registration failed. Please try again.');
+      setError('Registrierung fehlgeschlagen. Bitte versuche es erneut.');
     } finally {
       setIsLoading(false);
     }
@@ -503,11 +503,11 @@ export function RegisterPage({
                     />
                     <label htmlFor="terms" className="text-sm text-muted-foreground">
                       Ich stimme den{' '}
-                      <a href="#" className="text-primary hover:underline">
+                      <a href="/agb" className="text-primary hover:underline">
                         Nutzungsbedingungen
                       </a>{' '}
                       und der{' '}
-                      <a href="#" className="text-primary hover:underline">
+                      <a href="/datenschutz" className="text-primary hover:underline">
                         Datenschutzerklärung
                       </a>{' '}
                       zu

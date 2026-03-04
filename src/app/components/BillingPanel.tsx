@@ -25,14 +25,14 @@ export function BillingPanel() {
   const customerId = profile?.stripe_customer_id ?? null;
 
   const callToAction = useMemo(() => {
-    if (!user) return { title: 'Login required', subtitle: 'Please sign in to manage billing.' };
-    if (billing.isSubscribed) return { title: 'Billing active', subtitle: 'Your account is ready.' };
-    return { title: 'Setup required', subtitle: 'Start checkout to unlock the app.' };
+    if (!user) return { title: 'Anmeldung erforderlich', subtitle: 'Bitte melde dich an, um die Abrechnung zu verwalten.' };
+    if (billing.isSubscribed) return { title: 'Abrechnung aktiv', subtitle: 'Dein Account ist einsatzbereit.' };
+    return { title: 'Einrichtung erforderlich', subtitle: 'Starte den Checkout, um die App freizuschalten.' };
   }, [billing.isSubscribed, user]);
 
   const startCheckout = async () => {
     if (!user?.id || !user.email) {
-      toast.error('Please sign in first');
+      toast.error('Bitte melde dich zuerst an');
       return;
     }
 
@@ -41,7 +41,7 @@ export function BillingPanel() {
       const { url } = await startStripeCheckout(user.id, user.email);
       window.location.href = url;
     } catch (err: unknown) {
-      toast.error(err instanceof Error ? err.message : 'Failed to start checkout');
+      toast.error(err instanceof Error ? err.message : 'Checkout konnte nicht gestartet werden');
     } finally {
       setIsStartingCheckout(false);
     }
@@ -49,7 +49,7 @@ export function BillingPanel() {
 
   const openCustomerPortal = async () => {
     if (!user?.id) {
-      toast.error('Please sign in first');
+      toast.error('Bitte melde dich zuerst an');
       return;
     }
 
@@ -63,7 +63,7 @@ export function BillingPanel() {
       if (!data?.url) throw new Error('Portal URL missing');
       window.open(data.url, '_blank', 'noopener,noreferrer');
     } catch (err: unknown) {
-      toast.error(err instanceof Error ? err.message : 'Failed to open customer portal');
+      toast.error(err instanceof Error ? err.message : 'Kundenportal konnte nicht geöffnet werden');
     } finally {
       setIsOpeningPortal(false);
     }
@@ -72,7 +72,7 @@ export function BillingPanel() {
   return (
     <div className="space-y-6">
       <div className="mb-2">
-        <h2 className="text-2xl font-bold text-foreground mb-2">Billing & Subscription</h2>
+        <h2 className="text-2xl font-bold text-foreground mb-2">Abrechnung & Abonnement</h2>
         <p className="text-sm text-muted-foreground">
           {callToAction.subtitle}
         </p>
@@ -85,26 +85,25 @@ export function BillingPanel() {
             <div className="flex items-center gap-3">
               <h3 className="text-xl font-bold text-foreground">Pro Plan</h3>
               <span
-                className={`px-3 py-1 rounded-full text-xs font-semibold ${
-                  billing.isSubscribed ? 'bg-green-500/20 text-green-500' : 'bg-yellow-500/20 text-yellow-500'
-                }`}
+                className={`px-3 py-1 rounded-full text-xs font-semibold ${billing.isSubscribed ? 'bg-green-500/20 text-green-500' : 'bg-yellow-500/20 text-yellow-500'
+                  }`}
               >
                 {billing.statusLabel}
               </span>
             </div>
             <div className="mt-2 space-y-1 text-sm text-muted-foreground">
               {credits != null && (
-                <div>Credits: <span className="text-foreground font-semibold">{credits}</span></div>
+                <div>Guthaben: <span className="text-foreground font-semibold">{credits}</span></div>
               )}
               {billing.trialEndsAt && (
                 <div>
-                  Trial ends: <span className="text-foreground font-semibold">{formatDate(billing.trialEndsAt)}</span>
+                  Trial endet: <span className="text-foreground font-semibold">{formatDate(billing.trialEndsAt)}</span>
                 </div>
               )}
               {customerId && (
                 <div className="flex items-center gap-2">
                   <CreditCard className="w-4 h-4" />
-                  <span>Stripe customer linked</span>
+                  <span>Stripe-Kunde verknüpft</span>
                 </div>
               )}
             </div>
@@ -117,7 +116,7 @@ export function BillingPanel() {
               className="px-4 py-2.5 bg-muted hover:bg-muted/80 rounded-xl text-sm font-semibold transition-all flex items-center justify-center gap-2 disabled:opacity-50"
             >
               <RefreshCw className="w-4 h-4" />
-              Refresh
+              Aktualisieren
             </button>
 
             {!billing.isSubscribed && (
@@ -126,7 +125,7 @@ export function BillingPanel() {
                 disabled={isStartingCheckout}
                 className="px-4 py-2.5 bg-primary text-primary-foreground rounded-xl text-sm font-semibold hover:scale-105 transition-all disabled:opacity-50"
               >
-                {isStartingCheckout ? 'Starting...' : 'Start checkout'}
+                {isStartingCheckout ? 'Wird gestartet…' : 'Checkout starten'}
               </button>
             )}
 
@@ -137,7 +136,7 @@ export function BillingPanel() {
                 className="px-4 py-2.5 bg-muted hover:bg-muted/80 rounded-xl text-sm font-semibold transition-all flex items-center justify-center gap-2 disabled:opacity-50"
               >
                 <ExternalLink className="w-4 h-4" />
-                Portal
+                Kundenportal
               </button>
             )}
           </div>
@@ -148,9 +147,9 @@ export function BillingPanel() {
         <div className="p-5 bg-yellow-500/10 border border-yellow-500/20 rounded-2xl flex items-start gap-3">
           <ShieldAlert className="w-5 h-5 text-yellow-500 flex-shrink-0 mt-0.5" />
           <div>
-            <div className="font-semibold text-foreground">Setup required</div>
+            <div className="font-semibold text-foreground">Einrichtung erforderlich</div>
             <div className="text-sm text-muted-foreground mt-1">
-              Your subscription is not active yet. Start checkout or wait for payment verification to complete.
+              Dein Abonnement ist noch nicht aktiv. Starte den Checkout oder warte, bis die Zahlungsbestätigung abgeschlossen ist.
             </div>
           </div>
         </div>
