@@ -192,6 +192,62 @@ export async function syncForUser({ userId, preferredAdAccountId, rangeDays, job
             }
         }
 
+        // === Fetch ad set level insights ===
+        let adSetsCount = 0;
+        try {
+            const adSetResponse = await fetchGraph(`/${adAccountId}/insights`, token, {
+                level: "adset",
+                time_range: JSON.stringify(timeRange),
+                fields:
+                    "adset_id,adset_name,campaign_id,campaign_name,impressions,clicks,spend,ctr,cpm,frequency,actions,action_values",
+                limit: "500",
+            });
+
+            const adSets = (adSetResponse?.data || []).map((row) => {
+                const impressions = parseNumber(row.impressions);
+                const clicks = parseNumber(row.clicks);
+                const spend = parseNumber(row.spend);
+                const ctr = impressions > 0 ? (clicks / impressions) * 100 : 0;
+                const cpm = impressions > 0 ? (spend / impressions) * 1000 : 0;
+                const frequency = parseNumber(row.frequency || 0);
+                const conversions = extractActionValue(row.actions, "purchase");
+                const purchaseValue = extractActionValue(row.action_values, "purchase");
+                const roas = spend > 0 ? purchaseValue / spend : 0;
+
+                return {
+                    user_id: userId,
+                    facebook_adset_id: row.adset_id,
+                    facebook_campaign_id: row.campaign_id,
+                    name: row.adset_name,
+                    campaign_name: row.campaign_name,
+                    status: "active",
+                    spend,
+                    impressions,
+                    clicks,
+                    conversions,
+                    ctr: Number(ctr.toFixed(2)),
+                    cpm: Number(cpm.toFixed(2)),
+                    roas: Number(roas.toFixed(2)),
+                    frequency: Number(frequency.toFixed(2)),
+                    revenue: purchaseValue,
+                };
+            });
+
+            if (adSets.length) {
+                const { error: adSetError } = await supabaseAdmin
+                    .from("meta_adsets")
+                    .upsert(adSets, { onConflict: "user_id,facebook_adset_id" });
+
+                if (adSetError) {
+                    console.warn(`[SyncEngine] Ad set sync warning: ${adSetError.message}`);
+                } else {
+                    adSetsCount = adSets.length;
+                }
+            }
+        } catch (adSetErr) {
+            console.warn("[SyncEngine] Ad set level fetch failed (non-blocking):", adSetErr?.message);
+        }
+
         // Update last sync timestamp
         await supabaseAdmin
             .from("facebook_connections")
@@ -206,7 +262,7 @@ export async function syncForUser({ userId, preferredAdAccountId, rangeDays, job
                 .eq("id", jobId);
         }
 
-        return { ok: true, campaigns: campaigns.length, daily: dailyRows.length, ad_account_id: adAccountId, time_range: timeRange, job_id: jobId };
+        return { ok: true, campaigns: campaigns.length, daily: dailyRows.length, adSets: adSetsCount, ad_account_id: adAccountId, time_range: timeRange, job_id: jobId };
     } catch (err) {
         if (jobId) {
             await supabaseAdmin

@@ -4,6 +4,7 @@
 
 import { GoogleGenAI } from '@google/genai';
 import { requireUserId } from './_shared/auth.js';
+import { supabaseAdmin } from './_shared/clients.js';
 import { badRequest, methodNotAllowed, ok, withCors } from './utils/response.js';
 
 /* ══════════════════════════════════════════════════════
@@ -267,7 +268,9 @@ Antworte mit einem JSON-Objekt mit "analyses" Array:
 4. Bei "duplicate" → Empfehle neues Targeting oder Audience
 5. Berücksichtige das Zusammenspiel der Kampagnen (Kannibalisierung?)
 6. Markiere Kampagnen in der Lernphase als "maintain" mit confidence < 50
-7. Sprache: Deutsch`;
+7. Sprache: Deutsch
+8. Wenn "pastActions" vorhanden: Berücksichtige vergangene Aktionen. Wiederhole NICHT fehlgeschlagene Aktionen. Wenn eine Aktion erfolgreich war, bevorzuge ähnliche Strategien.
+9. Berücksichtige "historicalTrend" für Trend-Analyse (steigendes/sinkendes ROAS = andere Empfehlung als statisch)`;
 }
 
 /* ══════════════════════════════════════════════════════
@@ -309,6 +312,30 @@ export async function handler(event) {
     let analyses = [];
     let aiPowered = false;
 
+    // === AI Learning: Fetch past actions for these campaigns ===
+    let pastActions = [];
+    try {
+        const campaignIds = campaigns.map(c => c.id).filter(Boolean);
+        if (campaignIds.length) {
+            const { data: learningData } = await supabaseAdmin
+                .from('ai_learning')
+                .select('campaign_id,recommendation,applied_action,success,reason,created_at')
+                .in('campaign_id', campaignIds)
+                .order('created_at', { ascending: false })
+                .limit(20);
+            pastActions = (learningData || []).map(row => ({
+                campaignId: row.campaign_id,
+                action: row.applied_action,
+                recommendation: row.recommendation,
+                success: row.success,
+                reason: row.reason,
+                date: row.created_at,
+            }));
+        }
+    } catch (err) {
+        console.warn('[AI Analyze] Failed to load ai_learning:', err?.message);
+    }
+
     if (geminiKey) {
         try {
             const gemini = new GoogleGenAI({ apiKey: geminiKey });
@@ -340,6 +367,12 @@ export async function handler(event) {
                     ctrDelta: historicalContext.deltas?.ctr != null ? `${(historicalContext.deltas.ctr * 100).toFixed(1)}%` : 'N/A',
                     revenueDelta: historicalContext.deltas?.revenue != null ? `${(historicalContext.deltas.revenue * 100).toFixed(1)}%` : 'N/A',
                 } : null,
+                pastActions: pastActions.length > 0 ? pastActions.slice(0, 10).map(a => ({
+                    campaignId: a.campaignId,
+                    action: a.action,
+                    success: a.success,
+                    date: a.date,
+                })) : null,
             }, null, 2);
 
             const response = await gemini.models.generateContent({
