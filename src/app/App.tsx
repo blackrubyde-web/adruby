@@ -190,7 +190,7 @@ function AppContent() {
         safeRedirectPath(new URLSearchParams(window.location.search).get('redirect')) ||
         PAGE_PATHS.dashboard;
       try { await signInWithGoogle(redirectPath); } catch (err: unknown) {
-        toast.error(err instanceof Error ? err.message : 'Google login failed');
+        toast.error(err instanceof Error ? err.message : 'Google-Anmeldung fehlgeschlagen');
       }
     },
     [signInWithGoogle]
@@ -213,15 +213,15 @@ function AppContent() {
 
   // ── Full-screen guards ──────────────────────────────────────────
   if (!isAuthReady && isProtectedPage) {
-    return <FullScreenLoader title="Loading session..." subtitle="Checking your login state" />;
+    return <FullScreenLoader title="Sitzung wird geladen…" subtitle="Dein Login-Status wird geprüft" />;
   }
   if (user && isLoading && isProtectedPage) {
-    return <FullScreenLoader title="Loading your account..." subtitle="Fetching your billing status" />;
+    return <FullScreenLoader title="Account wird geladen…" subtitle="Dein Abonnement wird geprüft" />;
   }
   if (profileError && user) {
     return (
       <FullScreenError
-        title="Profile unavailable"
+        title="Profil nicht verfügbar"
         message={profileError}
         onRetry={() => refreshProfile().catch(() => undefined)}
         onSignOut={() => signOut().catch(() => undefined)}
@@ -270,7 +270,7 @@ function AppContent() {
                   await signInWithEmail(email, password);
                   go(pageFromPathname(new URL(redirectPath, window.location.origin).pathname), { replace: true });
                 } catch (err: unknown) {
-                  toast.error(err instanceof Error ? err.message : 'Login failed');
+                  toast.error(err instanceof Error ? err.message : 'Anmeldung fehlgeschlagen');
                 }
               }}
               onNavigateToRegister={() => {
@@ -278,9 +278,9 @@ function AppContent() {
                 go('register', { query: { redirect: redirectPath || undefined } });
               }}
               onForgotPassword={async (email) => {
-                if (!email) { toast.info('Enter your email address first'); return; }
-                try { await resetPassword(email); toast.success('Password reset email sent'); } catch (err: unknown) {
-                  toast.error(err instanceof Error ? err.message : 'Failed to send reset email');
+                if (!email) { toast.info('Bitte gib zuerst deine E-Mail-Adresse ein'); return; }
+                try { await resetPassword(email); toast.success('E-Mail zum Zurücksetzen des Passworts wurde gesendet'); } catch (err: unknown) {
+                  toast.error(err instanceof Error ? err.message : 'Fehler beim Senden der E-Mail');
                 }
               }}
             />
@@ -293,16 +293,16 @@ function AppContent() {
                   safeRedirectPath(new URLSearchParams(window.location.search).get('redirect')) ||
                   PAGE_PATHS.dashboard;
                 try { await signInWithGoogle(redirectPath); } catch (err: unknown) {
-                  toast.error(err instanceof Error ? err.message : 'Google login failed');
+                  toast.error(err instanceof Error ? err.message : 'Google-Anmeldung fehlgeschlagen');
                 }
               }}
               onEmailRegister={async (name, email, password) => {
                 try {
                   const result = await signUpWithEmail(name, email, password);
-                  if (result === 'needs_confirmation') toast.success('Account created. Please confirm your email, then sign in.');
+                  if (result === 'needs_confirmation') toast.success('Account erstellt. Bitte bestätige deine E-Mail, dann melde dich an.');
                   return result;
                 } catch (err: unknown) {
-                  toast.error(err instanceof Error ? err.message : 'Registration failed');
+                  toast.error(err instanceof Error ? err.message : 'Registrierung fehlgeschlagen');
                   throw err;
                 }
               }}
@@ -319,7 +319,7 @@ function AppContent() {
           )}
 
           {currentPage === 'auth-processing' && (
-            <AuthProcessingPage message="Logging you in..." onComplete={handleAuthComplete} />
+            <AuthProcessingPage message="Du wirst angemeldet…" onComplete={handleAuthComplete} />
           )}
 
           {currentPage === 'payment-verification' && (

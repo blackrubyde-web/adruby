@@ -1,60 +1,36 @@
 import { useEffect, useState } from 'react';
-import { Loader2, Sparkles, CheckCircle } from 'lucide-react';
-import { supabase } from '../../lib/supabaseClient';
+import { Loader2, Sparkles, CheckCircle, AlertTriangle } from 'lucide-react';
+import { useAuthState } from '../../contexts/AuthContext';
 
 interface AuthProcessingPageProps {
   message?: string;
   onComplete?: () => void;
 }
 
-export function AuthProcessingPage({ 
-  message = 'Logging you in...',
-  onComplete 
+export function AuthProcessingPage({
+  message = 'Du wirst angemeldet…',
+  onComplete,
 }: AuthProcessingPageProps) {
-  const [progress, setProgress] = useState(0);
+  const { isAuthReady, user } = useAuthState();
   const [isComplete, setIsComplete] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // Instead of polling supabase.auth.getSession() 30x, we simply listen to AuthContext
   useEffect(() => {
-  let mounted = true;
-  let tries = 0;
-  // Poll less frequently to reduce client load (1000ms * 30 ~= 30s)
-  // This reduces rapid getSession() calls which can cause perceived jank and server load.
-  const maxTries = 30; // ~30s
+    if (!isAuthReady) return; // Still loading — wait
 
-  const interval = setInterval(async () => {
-      tries += 1;
-
-      setProgress((prev) => Math.min(90, prev + 2));
-
-      try {
-        const { data } = await supabase.auth.getSession();
-        if (!mounted) return;
-
-        if (data.session) {
-          clearInterval(interval);
-          setProgress(100);
-          setIsComplete(true);
-          if (onComplete) setTimeout(onComplete, 500);
-          return;
-        }
-
-        if (tries >= maxTries) {
-          clearInterval(interval);
-          setError('Could not verify your session. Please try again.');
-        }
-      } catch {
-        if (!mounted) return;
-        clearInterval(interval);
-        setError('Auth check failed. Please try again.');
-      }
-  }, 1000);
-
-    return () => {
-      mounted = false;
-      clearInterval(interval);
-    };
-  }, [onComplete]);
+    if (user) {
+      // Session confirmed by AuthContext — complete!
+      setIsComplete(true);
+      if (onComplete) setTimeout(onComplete, 600);
+    } else {
+      // Auth is ready but no user — something went wrong
+      const timer = setTimeout(() => {
+        setError('Anmeldung fehlgeschlagen. Bitte versuche es erneut.');
+      }, 5000); // Give 5s grace period for PKCE exchange
+      return () => clearTimeout(timer);
+    }
+  }, [isAuthReady, user, onComplete]);
 
   return (
     <div className="min-h-screen w-full flex items-center justify-center bg-background px-4">
@@ -69,7 +45,9 @@ export function AuthProcessingPage({
 
         {/* Loading Icon */}
         <div className="mb-8 flex items-center justify-center">
-          {isComplete ? (
+          {error ? (
+            <AlertTriangle className="w-16 h-16 text-yellow-500" />
+          ) : isComplete ? (
             <CheckCircle className="w-16 h-16 text-green-600 animate-pulse" />
           ) : (
             <Loader2 className="w-16 h-16 text-primary animate-spin" />
@@ -78,26 +56,34 @@ export function AuthProcessingPage({
 
         {/* Message */}
         <h2 className="text-2xl font-bold mb-4">
-          {error ? 'Error' : isComplete ? 'Success!' : message}
+          {error ? 'Fehler' : isComplete ? 'Erfolgreich!' : 'Anmelden…'}
         </h2>
         <p className="text-muted-foreground mb-8">
           {error
             ? error
             : isComplete
-              ? 'Redirecting you to your dashboard...'
-              : 'Please wait while we set up your session'}
+              ? 'Du wirst zum Dashboard weitergeleitet…'
+              : message}
         </p>
 
-        {/* Progress Bar */}
-        <div className="w-full max-w-xs mx-auto">
-          <div className="h-2 bg-muted rounded-full overflow-hidden">
-            <div
-              className="h-full bg-gradient-to-r from-primary to-red-600 transition-all duration-300 ease-out"
-              style={{ width: `${progress}%` }}
-            />
+        {/* Progress indicator */}
+        {!error && !isComplete && (
+          <div className="w-full max-w-xs mx-auto">
+            <div className="h-2 bg-muted rounded-full overflow-hidden">
+              <div className="h-full w-2/3 bg-gradient-to-r from-primary to-red-600 rounded-full animate-pulse" />
+            </div>
           </div>
-          <p className="text-sm text-muted-foreground mt-3">{progress}%</p>
-        </div>
+        )}
+
+        {/* Retry link on error */}
+        {error && (
+          <button
+            onClick={() => window.location.href = '/login'}
+            className="mt-4 px-6 py-3 bg-primary text-white rounded-xl font-medium hover:bg-primary/90 transition-colors"
+          >
+            Zurück zum Login
+          </button>
+        )}
       </div>
     </div>
   );

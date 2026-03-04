@@ -6,7 +6,7 @@ import Stripe from 'stripe';
 let stripeInstance = null;
 if (process.env.STRIPE_SECRET_KEY) {
   try {
-    stripeInstance = new Stripe(process.env.STRIPE_SECRET_KEY, { apiVersion: '2023-10-16' });
+    stripeInstance = new Stripe(process.env.STRIPE_SECRET_KEY, { apiVersion: '2024-12-18.acacia' });
   } catch (e) {
     console.error('[Init] Stripe init failed:', e?.message || e);
   }

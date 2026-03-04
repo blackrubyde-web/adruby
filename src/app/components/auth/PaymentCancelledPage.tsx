@@ -32,50 +32,50 @@ export function PaymentCancelledPage({
 
         {/* Message */}
         <h1 className="text-4xl sm:text-5xl font-bold mb-4">
-          Checkout Cancelled
+          Checkout abgebrochen
         </h1>
         <p className="text-xl text-muted-foreground mb-8">
-          No worries! Your payment was not processed. You can try again or explore our pricing options.
+          Kein Problem! Deine Zahlung wurde nicht verarbeitet. Du kannst es erneut versuchen oder unsere Preise ansehen.
         </p>
 
         {/* Info Card */}
         <div className="bg-muted/30 border border-border rounded-2xl p-8 mb-8">
-          <h3 className="text-lg font-semibold mb-4">Why subscribe to AdRuby?</h3>
+          <h3 className="text-lg font-semibold mb-4">Warum AdRuby?</h3>
           <div className="grid sm:grid-cols-2 gap-6 text-left">
             <div>
               <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center mb-3">
                 <Sparkles className="w-5 h-5 text-primary" />
               </div>
-              <h4 className="font-semibold mb-2">AI-Powered Creatives</h4>
+              <h4 className="font-semibold mb-2">KI-gestützte Creatives</h4>
               <p className="text-sm text-muted-foreground">
-                Generate high-converting ad creatives in seconds with advanced AI.
+                Erstelle hochkonvertierende Ad Creatives in Sekunden mit fortschrittlicher KI.
               </p>
             </div>
             <div>
               <div className="w-10 h-10 rounded-xl bg-blue-500/10 flex items-center justify-center mb-3">
                 <DollarSign className="w-5 h-5 text-blue-600" />
               </div>
-              <h4 className="font-semibold mb-2">Maximize ROI</h4>
+              <h4 className="font-semibold mb-2">ROI maximieren</h4>
               <p className="text-sm text-muted-foreground">
-                Real-time optimization to increase ROAS and reduce ad spend waste.
+                Echtzeit-Optimierung für besseren ROAS und weniger Budgetverschwendung.
               </p>
             </div>
             <div>
               <div className="w-10 h-10 rounded-xl bg-green-500/10 flex items-center justify-center mb-3">
                 <RefreshCw className="w-5 h-5 text-green-600" />
               </div>
-              <h4 className="font-semibold mb-2">7-Day Free Trial</h4>
+              <h4 className="font-semibold mb-2">7 Tage kostenlos testen</h4>
               <p className="text-sm text-muted-foreground">
-                Try all features risk-free. Cancel anytime during the trial period.
+                Teste alle Features risikofrei. Jederzeit während der Testphase kündbar.
               </p>
             </div>
             <div>
               <div className="w-10 h-10 rounded-xl bg-purple-500/10 flex items-center justify-center mb-3">
                 <Home className="w-5 h-5 text-purple-600" />
               </div>
-              <h4 className="font-semibold mb-2">Enterprise Support</h4>
+              <h4 className="font-semibold mb-2">Premium-Support</h4>
               <p className="text-sm text-muted-foreground">
-                Get priority support from our team of ad experts.
+                Erhalte Prioritäts-Support von unserem Team.
               </p>
             </div>
           </div>
@@ -88,14 +88,14 @@ export function PaymentCancelledPage({
             className="w-full sm:w-auto px-8 py-4 bg-primary text-white rounded-xl font-semibold hover:bg-primary/90 transition-all hover:scale-105 flex items-center justify-center gap-2 shadow-lg shadow-primary/25"
           >
             <RefreshCw className="w-5 h-5" />
-            Retry Checkout
+            Erneut versuchen
           </button>
           <button
             onClick={onViewPricing}
             className="w-full sm:w-auto px-8 py-4 border-2 border-border rounded-xl font-semibold hover:bg-accent transition-colors flex items-center justify-center gap-2"
           >
             <DollarSign className="w-5 h-5" />
-            View Pricing
+            Preise ansehen
           </button>
         </div>
 
@@ -105,15 +105,15 @@ export function PaymentCancelledPage({
             onClick={onGoHome}
             className="text-sm text-muted-foreground hover:text-foreground transition-colors"
           >
-            ← Back to home
+            ← Zurück zur Startseite
           </button>
         </div>
 
         {/* Support */}
         <p className="mt-12 text-sm text-muted-foreground">
-          Need help?{' '}
-          <a href="mailto:support@adruby.ai" className="text-primary hover:underline">
-            Contact our support team
+          Brauchst du Hilfe?{' '}
+          <a href="mailto:support@adruby.de" className="text-primary hover:underline">
+            Kontaktiere unser Support-Team
           </a>
         </p>
       </div>

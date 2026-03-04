@@ -20,7 +20,7 @@ export function PaymentVerificationPage({
   onLogout,
 }: PaymentVerificationPageProps) {
   const [status, setStatus] = useState<'loading' | 'success' | 'error'>('loading');
-  const [message, setMessage] = useState('Verifying your payment...');
+  const [message, setMessage] = useState('Zahlung wird überprüft…');
   const { user } = useAuthState();
   const { refreshProfile } = useAuthActions();
 
@@ -76,16 +76,16 @@ export function PaymentVerificationPage({
       try {
         // If there's no session_id, we can only rely on DB flags (requires login)
         if (!effectiveSessionId) {
-          setMessage('Checking your account status...');
+          setMessage('Kontostatus wird geprüft…');
           const ok = await checkDbFlag();
           if (!ok) {
-            setErrorState(user ? 'Payment required. Start checkout in Billing.' : 'Login required to verify billing.');
+            setErrorState(user ? 'Zahlung erforderlich. Starte den Checkout in den Einstellungen.' : 'Anmeldung erforderlich.');
             return;
           }
 
           if (!cancelled) {
             setStatus('success');
-            setMessage('Account verified!');
+            setMessage('Account verifiziert!');
           }
           await refreshProfile().catch(() => undefined);
           setTimeout(() => !cancelled && onVerificationSuccess(), 800);
@@ -94,11 +94,11 @@ export function PaymentVerificationPage({
 
         // With session_id we verify via Stripe, but requires an authenticated user.
         if (!user) {
-          setErrorState('Login required to verify billing.');
+          setErrorState('Anmeldung erforderlich.');
           return;
         }
 
-        setMessage('Verifying your payment with Stripe...');
+        setMessage('Zahlung wird bei Stripe überprüft…');
 
         let lastOk = false;
         for (let attempt = 0; attempt < 8; attempt += 1) {
@@ -110,7 +110,7 @@ export function PaymentVerificationPage({
           lastOk = Boolean(data?.ok);
           if (lastOk) break;
           if (cancelled) return;
-          setMessage('Payment pending... waiting for confirmation');
+          setMessage('Zahlung ausstehend… warte auf Bestätigung');
           await sleep(2000);
         }
 
@@ -118,19 +118,19 @@ export function PaymentVerificationPage({
           // Fallback: if user is logged in, check DB flags (webhook might have updated it).
           const ok = await checkDbFlag();
           if (!ok) {
-            setErrorState('Payment verification failed or is still pending. Please refresh in a moment.');
+            setErrorState('Zahlungsüberprüfung fehlgeschlagen oder noch ausstehend. Bitte lade die Seite in einem Moment neu.');
             return;
           }
         }
 
         if (!cancelled) {
           setStatus('success');
-          setMessage('Payment verified successfully!');
+          setMessage('Zahlung erfolgreich verifiziert!');
         }
         await refreshProfile().catch(() => undefined);
         setTimeout(() => !cancelled && onVerificationSuccess(), 1200);
       } catch (error: unknown) {
-        setErrorState(error instanceof Error ? error.message : 'Payment verification failed');
+        setErrorState(error instanceof Error ? error.message : 'Zahlungsüberprüfung fehlgeschlagen');
       }
     };
 
@@ -170,9 +170,9 @@ export function PaymentVerificationPage({
 
         {/* Message */}
         <h2 className="text-2xl font-bold mb-4">
-          {status === 'loading' && 'Verifying Payment'}
-          {status === 'success' && 'Verification Complete!'}
-          {status === 'error' && 'Verification Failed'}
+          {status === 'loading' && 'Zahlung wird überprüft'}
+          {status === 'success' && 'Überprüfung abgeschlossen!'}
+          {status === 'error' && 'Überprüfung fehlgeschlagen'}
         </h2>
         <p className="text-muted-foreground mb-8">
           {message}
@@ -196,7 +196,7 @@ export function PaymentVerificationPage({
                 className="w-full sm:w-auto px-6 py-3 border-2 border-border rounded-xl font-medium hover:bg-accent transition-colors flex items-center justify-center gap-2"
               >
                 <Home className="w-5 h-5" />
-                Go Home
+                Zur Startseite
               </button>
             )}
             {onLogout && (
@@ -205,7 +205,7 @@ export function PaymentVerificationPage({
                 className="w-full sm:w-auto px-6 py-3 bg-primary text-white rounded-xl font-medium hover:bg-primary/90 transition-colors flex items-center justify-center gap-2"
               >
                 <LogOut className="w-5 h-5" />
-                Logout
+                Abmelden
               </button>
             )}
           </div>
@@ -215,7 +215,7 @@ export function PaymentVerificationPage({
         {status === 'success' && (
           <div className="mt-8 p-4 bg-green-500/10 border border-green-500/20 rounded-xl">
             <p className="text-sm text-green-600">
-              Redirecting you to your dashboard...
+              Du wirst zum Dashboard weitergeleitet…
             </p>
           </div>
         )}

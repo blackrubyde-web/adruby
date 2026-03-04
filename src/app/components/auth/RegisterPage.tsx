@@ -219,7 +219,7 @@ export function RegisterPage({
               {/* Trust Badge */}
               <motion.div className="mt-8 p-4 bg-muted/50 border border-border rounded-xl" variants={fadeUp}>
                 <p className="text-sm text-muted-foreground">
-                  💳 Keine Kreditkarte für die Testphase nötig
+                  💳 7 Tage kostenlos testen — Kreditkarte erforderlich, jederzeit kündbar
                   <br />
                   🔒 Enterprise-Grade Sicherheit
                   <br />
@@ -257,8 +257,8 @@ export function RegisterPage({
                     <div key={step.id} className="flex items-center gap-3">
                       <div
                         className={`w-9 h-9 rounded-full border-2 flex items-center justify-center text-sm font-semibold transition-all duration-300 ${step.id === 1
-                            ? 'bg-primary text-primary-foreground border-primary shadow-sm shadow-primary/20'
-                            : 'border-border text-muted-foreground'
+                          ? 'bg-primary text-primary-foreground border-primary shadow-sm shadow-primary/20'
+                          : 'border-border text-muted-foreground'
                           }`}
                       >
                         {step.id}
