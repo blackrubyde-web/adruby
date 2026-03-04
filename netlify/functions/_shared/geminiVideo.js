@@ -198,6 +198,15 @@ export async function generateVideoWithVeo(config) {
     const model = VEO_MODELS[quality] || VEO_MODELS.fast;
 
     console.log(`[GeminiVideo] Generating with ${model}, ${aspectRatio}, ${resolution}, ${durationSeconds}s`);
+
+    // Veo constraint: 1080p and 4k require 8s duration
+    let effectiveResolution = resolution;
+    const dur = parseInt(durationSeconds, 10);
+    if ((resolution === '1080p' || resolution === '4k') && dur < 8) {
+        effectiveResolution = '720p';
+        console.log(`[GeminiVideo] Auto-downgraded resolution ${resolution} → 720p (duration ${dur}s < 8s)`);
+    }
+
     if (onProgress) onProgress('veo_starting', 30);
 
     try {
@@ -207,7 +216,7 @@ export async function generateVideoWithVeo(config) {
             prompt,
             config: {
                 aspectRatio,
-                resolution,
+                resolution: effectiveResolution,
                 durationSeconds: parseInt(durationSeconds, 10),
                 // Only include personGeneration if explicitly allowed (dont_allow is not supported by Veo)
                 ...(personGeneration && personGeneration !== 'dont_allow' && { personGeneration }),
