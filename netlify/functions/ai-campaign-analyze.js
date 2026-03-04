@@ -299,6 +299,7 @@ export async function handler(event) {
 
     const campaigns = payload.campaigns || [];
     const strategy = payload.strategy || null;
+    const historicalContext = payload.historicalContext || null;
 
     if (!campaigns.length) {
         return ok({ meta: { aiPowered: false }, analyses: [] });
@@ -331,6 +332,13 @@ export async function handler(event) {
                     riskTolerance: strategy.autopilot_config?.risk_tolerance || 'medium',
                     scaleSpeed: strategy.autopilot_config?.scale_speed || 'medium',
                     targetRoas: strategy.autopilot_config?.target_roas || 3.0,
+                } : null,
+                historicalTrend: historicalContext ? {
+                    period: historicalContext.period,
+                    roasDelta: historicalContext.deltas?.roas != null ? `${(historicalContext.deltas.roas * 100).toFixed(1)}%` : 'N/A',
+                    spendDelta: historicalContext.deltas?.spend != null ? `${(historicalContext.deltas.spend * 100).toFixed(1)}%` : 'N/A',
+                    ctrDelta: historicalContext.deltas?.ctr != null ? `${(historicalContext.deltas.ctr * 100).toFixed(1)}%` : 'N/A',
+                    revenueDelta: historicalContext.deltas?.revenue != null ? `${(historicalContext.deltas.revenue * 100).toFixed(1)}%` : 'N/A',
                 } : null,
             }, null, 2);
 

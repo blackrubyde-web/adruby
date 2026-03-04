@@ -179,6 +179,10 @@ export function AIAnalysisPage() {
             cpc: c.clicks > 0 ? c.spend / c.clicks : 0,
           })),
           strategy: { name: 'Custom AdRuby Pro Analysis', description: 'AdRuby Pro Strategy Engine', autopilot_config: strategyConfig, industry_type: 'general' },
+          historicalContext: analyticsData?.summary?.deltas ? {
+            period: timeRange,
+            deltas: analyticsData.summary.deltas,
+          } : undefined,
         }),
       });
 

@@ -4,7 +4,7 @@ import { supabaseAdmin } from "./_shared/clients.js";
 import { requireActiveSubscription } from "./_shared/entitlements.js";
 import { syncForUser } from "./_shared/syncEngine.js";
 
-export const schedule = "@daily";
+export const schedule = "0 */6 * * *";
 
 export async function handler() {
   initTelemetry();
