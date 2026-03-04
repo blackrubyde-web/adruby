@@ -150,7 +150,7 @@ export const handler = async (event) => {
         // ═══════════════════════════════════════════════════════════
         await updateProgress('script_generating', 10, { message: 'Video-Script wird generiert...' });
 
-        const productName = body.productName || body.text || 'Product';
+        const productName = body.productName || body.text || 'Produkt';
         const industry = body.industry || 'ecommerce';
         const targetAudience = body.targetAudience || body.audience || 'quality-conscious consumers';
         const usp = body.usp || body.text || '';
@@ -171,6 +171,8 @@ export const handler = async (event) => {
         // ═══════════════════════════════════════════════════════════
         // STEP 2: BUILD VEO PROMPT
         // ═══════════════════════════════════════════════════════════
+        const hasProductImage = !!body.productImageUrl || !!body.productImageBase64;
+
         const veoPrompt = buildVeoPrompt({
             script: scriptResult.script,
             archetype: scriptResult.archetype,
@@ -178,6 +180,8 @@ export const handler = async (event) => {
             usp,
             aspectRatio,
             includeAudio,
+            language,
+            hasProductImage,
         });
 
         const negativePrompt = buildVeoNegativePrompt(archetypeId);
@@ -231,7 +235,7 @@ export const handler = async (event) => {
         const generationTime = Date.now() - startTime;
 
         const outputData = {
-            headline: body.headline || body.productName || 'Video Ad',
+            headline: body.headline || body.productName || '',
             slogan: body.subheadline || body.usp || '',
             description: body.text || body.usp || '',
             cta: scriptResult.cta,

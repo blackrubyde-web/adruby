@@ -343,12 +343,36 @@ function buildFallbackScript({ archetype, hook, productName, usp, industry, cta,
  * 
  * This is NOT a paragraph — it's a cinematic shot list compressed into a prompt.
  */
-export function buildVeoPrompt({ script, archetype, productName, usp, aspectRatio = '9:16', includeAudio = true }) {
+export function buildVeoPrompt({ script, archetype, productName, usp, aspectRatio = '9:16', includeAudio = true, language = 'de', hasProductImage = false }) {
     if (!script || !script.scenes) throw new Error('Invalid script: no scenes');
 
     const archetypeData = typeof archetype === 'string' ? getArchetype(archetype) : archetype;
     const totalDuration = script.metadata?.totalDurationMs || 8000;
     const totalSeconds = totalDuration / 1000;
+    const isEnglish = language === 'en';
+
+    // ── LANGUAGE BLOCK — matches image generator's languageBlock ──
+    const languageBlock = isEnglish ? `
+LANGUAGE: ALL text rendered in this video MUST be in English.
+` : `
+LANGUAGE: ALL text rendered in this video MUST be in German (Deutsch).
+- Use € (Euro) for any prices, NEVER $ or Dollar.
+- Correct German spelling with umlauts (ä, ö, ü) and ß.
+- "du" form (lowercase), not "Sie".
+- Avoid anglicisms: "Angebot" not "Deal", "Vorteil" not "Benefit".
+- Every word must be correctly spelled in German.
+`;
+
+    // ── PRODUCT IMAGE PRESERVATION — matches image generator's 3-layer approach ──
+    const productImageBlock = hasProductImage ? `
+PRODUCT IMAGE REFERENCE (CRITICAL):
+- A reference product image is provided as the starting frame.
+- The product in the video MUST look IDENTICAL to the provided reference image.
+- DO NOT redesign, reimagine, alter, or modify the product's appearance in ANY way.
+- The product's shape, colors, branding, labels, textures, and proportions must be PRESERVED exactly.
+- Animate the product (rotation, movement, reveal) but NEVER change what it looks like.
+- Think of it as shooting a real product on a turntable — the product is real and sacred.
+` : '';
 
     // ── Calculate exact timing per scene ──
     let runningTimeMs = 0;
@@ -399,8 +423,10 @@ export function buildVeoPrompt({ script, archetype, productName, usp, aspectRati
         : aspectRatio === '16:9' ? 'horizontal (landscape, 16:9 for YouTube/Feed)'
             : `${aspectRatio}`;
 
-    let prompt = `A ${totalSeconds}-second professional advertising video, ${orientation}.\n\n`;
-    prompt += `PRODUCT: "${productName}"${usp ? ` — ${usp}` : ''}.\n\n`;
+    let prompt = `A ${totalSeconds}-second professional advertising video, ${orientation}.\n`;
+    prompt += languageBlock;
+    prompt += productImageBlock;
+    prompt += `\nPRODUCT: "${productName}"${usp ? ` — ${usp}` : ''}${hasProductImage ? ' — use the EXACT product from the provided reference image.' : ''}.\n\n`;
 
     // Shot-by-shot direction
     prompt += `SHOT-BY-SHOT DIRECTION:\n`;
