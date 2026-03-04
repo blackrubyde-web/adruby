@@ -184,7 +184,7 @@
     background: var(--card);
     border: 1px solid var(--border);
     border-radius: 1.25rem;
-    min-height: 520px;
+    min-height: 620px;
     overflow: hidden;
 }
 
@@ -492,7 +492,7 @@
     align-items: center;
     justify-content: center;
     text-align: center;
-    min-height: 440px;
+    min-height: 460px;
     padding: 3rem 1.5rem;
     overflow: hidden;
 }

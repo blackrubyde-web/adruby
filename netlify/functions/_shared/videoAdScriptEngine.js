@@ -172,7 +172,17 @@ RULES:
 - Act 5 (CTA): 7-${durationSeconds}s — Clear call-to-action, loop-friendly ending
 - All text overlays in ${langLabel}
 - Visual descriptions should be cinematically detailed for AI video generation
-- Audio descriptions should be specific sound effects, not music genres`;
+- Audio descriptions should be specific sound effects, not music genres
+${language === 'de' ? `
+GERMAN LANGUAGE (MANDATORY):
+- All textOverlay values MUST be in flawless, native-level German. No spelling errors, no grammar mistakes.
+- Use correct German grammar: proper cases, articles (der/die/das), verb conjugations.
+- Use informal du-form (lowercase) for audience.
+- No anglicisms when a German word exists.
+- Umlauts (ä,ö,ü) and ß must be used correctly.
+- The text overlays will be displayed on screen — any error is immediately visible to the user.
+- Proofread every textOverlay for Rechtschreibung and Grammatik before outputting.
+` : ''}`;
 
         const response = await ai.models.generateContent({
             model: 'gemini-2.5-flash',
