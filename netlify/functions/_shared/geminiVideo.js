@@ -209,7 +209,8 @@ export async function generateVideoWithVeo(config) {
                 aspectRatio,
                 resolution,
                 durationSeconds: parseInt(durationSeconds, 10),
-                personGeneration,
+                // Only include personGeneration if explicitly allowed (dont_allow is not supported by Veo)
+                ...(personGeneration && personGeneration !== 'dont_allow' && { personGeneration }),
             },
         };
 
