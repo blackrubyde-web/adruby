@@ -103,17 +103,9 @@ export function CampaignsPage() {
       {/* ── Editorial Page Header ──────────────────────── */}
       <div className="page-header-editorial">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex items-center gap-4 min-w-0">
-            <div>
-              <h1 className="page-title">Kampagnen</h1>
-              <p className="page-subtitle">Verwalte und optimiere deine Meta Ads Kampagnen</p>
-            </div>
-            <div className="hidden md:flex flex-wrap gap-1.5">
-              <span className="stat-pill">{stats.total} gesamt</span>
-              <span className="stat-pill stat-pill-accent">{stats.active} Aktiv</span>
-              {stats.paused > 0 && <span className="stat-pill">{stats.paused} Pausiert</span>}
-              <span className="stat-pill">{formatCurrency(stats.totalSpend)}</span>
-            </div>
+          <div>
+            <h1 className="page-title">Kampagnen</h1>
+            <p className="page-subtitle">Verwalte und optimiere deine Meta Ads Kampagnen</p>
           </div>
           <button onClick={handleCreateCampaign} className="ai-analysis-btn">
             <Plus className="w-4 h-4" />
@@ -233,7 +225,7 @@ export function CampaignsPage() {
                     </td>
                     <td>
                       <span className={`rec-badge ${normalizedStatus === 'active' ? 'rec-badge-duplicate' :
-                          normalizedStatus === 'paused' ? 'rec-badge-decrease' : ''
+                        normalizedStatus === 'paused' ? 'rec-badge-decrease' : ''
                         }`}>
                         {normalizedStatus === 'active' && <div className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />}
                         {STATUS_DE[normalizedStatus] || normalizedStatus}
@@ -349,7 +341,7 @@ export function CampaignsPage() {
                   <div className="text-xs text-muted-foreground font-mono truncate">{campaign.id}</div>
                 </div>
                 <span className={`rec-badge ${normalizedStatus === 'active' ? 'rec-badge-duplicate' :
-                    normalizedStatus === 'paused' ? 'rec-badge-decrease' : ''
+                  normalizedStatus === 'paused' ? 'rec-badge-decrease' : ''
                   }`}>
                   {STATUS_DE[normalizedStatus] || normalizedStatus}
                 </span>

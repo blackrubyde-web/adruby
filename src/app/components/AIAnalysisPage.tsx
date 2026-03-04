@@ -546,17 +546,9 @@ export function AIAnalysisPage() {
       {/* ── Editorial Page Header ──────────────────────── */}
       <div className="page-header-editorial">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex items-center gap-4 min-w-0">
-            <div>
-              <h1 className="page-title">KI Analyse</h1>
-              <p className="page-subtitle">{campaigns.length} Kampagnen · {totalAdSets} Ad Sets · {totalAds} Ads</p>
-            </div>
-            <div className="hidden md:flex flex-wrap gap-1.5">
-              <span className="stat-pill">€{(totalSpend / 1000).toFixed(1)}K</span>
-              <span className="stat-pill stat-pill-accent">{totalRoas.toFixed(2)}x ROAS</span>
-              <span className="stat-pill">{allRecommendations.length} Empfehlungen</span>
-              {aiPowered && <span className="stat-pill stat-pill-accent"><Sparkles className="w-3 h-3" /> Gemini</span>}
-            </div>
+          <div>
+            <h1 className="page-title">KI Analyse</h1>
+            <p className="page-subtitle">Analysiere und optimiere deine Meta Ads Kampagnen mit KI</p>
           </div>
           <div className="flex items-center gap-2 shrink-0">
             <button
