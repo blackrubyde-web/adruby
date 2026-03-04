@@ -194,12 +194,12 @@ export const handler = async (event) => {
                             });
                             const copyText = copyResponse.candidates?.[0]?.content?.parts?.[0]?.text;
                             const generatedCopy = JSON.parse(copyText);
-                            compositeHeadline = generatedCopy.headline || body.productName || 'Discover More';
+                            compositeHeadline = generatedCopy.headline || body.productName || 'Jetzt entdecken';
                             compositeTagline = compositeTagline || generatedCopy.tagline || '';
                             compositeCta = generatedCopy.cta || compositeCta;
                         } catch (copyErr) {
                             console.warn('[AI Ad Generate] Copy generation failed:', copyErr.message);
-                            compositeHeadline = body.productName || 'Your Product';
+                            compositeHeadline = body.productName || 'Dein Produkt';
                         }
                     }
 
@@ -258,7 +258,7 @@ export const handler = async (event) => {
                     finalImageBuffer = railwayResult.imageBuffer;
                     engine = 'railway_v3_ai_design';
                     outputData = {
-                        headline: body.headline || 'AI Generated',
+                        headline: body.headline || body.productName || '',
                         slogan: body.subheadline || '',
                         description: body.text || body.usp || '',
                         cta: body.cta || '',
@@ -305,7 +305,7 @@ export const handler = async (event) => {
 
             const baseParams = {
                 productImageUrl: hasProductImage ? body.productImageUrl : null,
-                headline: body.headline || body.productName || 'Discover',
+                headline: body.headline || body.productName || '',
                 subheadline: body.subheadline || body.usp || '',
                 cta: body.cta || '',
                 productName: body.productName,
@@ -352,7 +352,7 @@ export const handler = async (event) => {
 
                 const aiCopy = primary.copy || {};
                 outputData = {
-                    headline: aiCopy.headline || body.headline || body.productName || 'AI Generated',
+                    headline: aiCopy.headline || body.headline || body.productName || '',
                     slogan: aiCopy.tagline || body.subheadline || '',
                     description: aiCopy.hook || body.text || body.usp || '',
                     cta: aiCopy.cta || body.cta || '',

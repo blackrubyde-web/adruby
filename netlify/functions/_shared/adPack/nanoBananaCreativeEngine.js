@@ -558,6 +558,18 @@ function buildCreativePrompt(config) {
     // Language-aware defaults
     const isEnglish = adSpec.language === 'en';
 
+    // ── LANGUAGE BLOCK — Critical: tells Gemini Image what language to render text in ──
+    const languageBlock = isEnglish ? `
+LANGUAGE: ALL text rendered in this image MUST be in English.
+` : `
+LANGUAGE: ALL text rendered in this image MUST be in German (Deutsch).
+- Use € (Euro) for any prices, NEVER $ or Dollar.
+- Correct German spelling with umlauts (ä, ö, ü) and ß.
+- "du" form (lowercase), not "Sie".
+- Avoid anglicisms: "Angebot" not "Deal", "Vorteil" not "Benefit".
+- Every word must be correctly spelled in German.
+`;
+
     // PREFER AI-generated copy from brief, fall back to user input
     const headline = brief?.headline || adSpec.headline || adSpec.productName || '';
     const subheadline = brief?.tagline || adSpec.subheadline || '';
@@ -617,12 +629,25 @@ GRAPHIC DESIGN ELEMENTS:
 Add at least one design element: a thin accent line, geometric shape, subtle pattern, or decorative element.
 This is NOT just a photo — it's a DESIGNED advertisement.`;
 
-    return `A professional Meta advertisement image — a DESIGNED piece, not just a photo with text.
+    // ── PRODUCT IMAGE PRESERVATION — when user provides a product photo ──
+    const hasProductImage = !!adSpec.productImageUrl;
+    const productPreservationBlock = hasProductImage ? `
+PRODUCT IMAGE PRESERVATION (CRITICAL):
+- A reference product image is provided. You MUST use this EXACT product in the ad.
+- DO NOT redesign, reimagine, alter, or modify the product's appearance in ANY way.
+- The product's shape, colors, branding, labels, textures, and proportions must be IDENTICAL to the reference image.
+- Place the product from the reference photo into the ad composition exactly as it looks.
+- You may adjust size, position, and angle to fit the layout, but the product itself must be pixel-faithful.
+- Think of it as a PHOTOSHOP CUTOUT placed into a new scene — the product is sacred.
+` : '';
 
+    return `A professional Meta advertisement image — a DESIGNED piece, not just a photo with text.
+${languageBlock}
+${productPreservationBlock}
 ${layoutDef ? `LAYOUT STYLE: ${layoutDef.name}\n${layoutDef.instruction}\n` : ''}
 SCENE:
 ${source.scene}
-Product: "${adSpec.productName || adSpec.offer || 'Product'}" — integrated naturally into the composition.
+Product: "${adSpec.productName || adSpec.offer || 'Product'}"${hasProductImage ? ' — use the EXACT product from the provided reference image, DO NOT change its appearance.' : ' — integrated naturally into the composition.'}
 
 CAMERA:
 - ${source.camera}
@@ -662,20 +687,29 @@ async function generateWithGemini(prompt, format, productImageUrl = null) {
     // Product image for image-to-image generation
     if (productImageUrl) {
         try {
-            console.log(`[NanoBanana] 📷 Fetching product image for Gemini...`);
+            console.log(`[NanoBanana] 📷 Fetching product image for Gemini (strict preservation mode)...`);
             const imageResponse = await fetch(productImageUrl, {
                 signal: AbortSignal.timeout(15000),
             });
             if (imageResponse.ok) {
                 const imageArrayBuffer = await imageResponse.arrayBuffer();
                 const imageBuffer = Buffer.from(imageArrayBuffer);
+                // IMPORTANT: Image first, then instruction text, then prompt.
+                // The instruction before the prompt tells Gemini this is a REFERENCE to preserve.
                 contents.push({
                     inlineData: {
                         mimeType: imageResponse.headers.get('content-type') || 'image/png',
                         data: imageBuffer.toString('base64'),
                     },
                 });
-                console.log(`[NanoBanana] ✅ Product image loaded: ${(imageBuffer.length / 1024).toFixed(0)}KB`);
+                // Explicit preservation instruction right after the image
+                contents.push(
+                    'This is the PRODUCT REFERENCE IMAGE. You MUST use this exact product in the generated ad. '
+                    + 'DO NOT modify, redesign, or reimagine the product. Keep its exact shape, colors, branding, '
+                    + 'labels, and proportions. Place it into the ad composition as a faithful reproduction. '
+                    + 'The product is SACRED — treat it like a Photoshop cutout placed into a new scene.\n\n'
+                );
+                console.log(`[NanoBanana] ✅ Product image loaded: ${(imageBuffer.length / 1024).toFixed(0)}KB (strict preservation)`);
             }
         } catch (imgErr) {
             console.warn(`[NanoBanana] ⚠️ Could not fetch product image: ${imgErr.message}`);
