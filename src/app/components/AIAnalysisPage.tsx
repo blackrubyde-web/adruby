@@ -87,38 +87,14 @@ export function AIAnalysisPage() {
   const toggleAutopilot = useCallback(async () => {
     const next = !autopilotEnabled;
     setAutopilotEnabled(next);
+    localStorage.setItem('adruby_autopilot', next ? '1' : '0');
     toast.success(next ? 'Autopilot aktiv & optimiert' : 'Autopilot pausiert');
-    try {
-      const { data: session } = await supabase.auth.getSession();
-      const uid = session.session?.user?.id;
-      if (uid) {
-        await supabase.from('profiles').update({ autopilot_enabled: next }).eq('id', uid);
-      }
-    } catch (err) {
-      console.error('[Autopilot] Failed to persist state:', err);
-    }
   }, [autopilotEnabled]);
 
-  // Load autopilot state + status from profile + sync data
+  // Load autopilot state from localStorage
   useEffect(() => {
-    (async () => {
-      const { data: session } = await supabase.auth.getSession();
-      const uid = session.session?.user?.id;
-      if (!uid) return;
-      const { data } = await supabase.from('profiles').select('autopilot_enabled').eq('id', uid).single();
-      if (data?.autopilot_enabled != null) setAutopilotEnabled(!!data.autopilot_enabled);
-      // Fetch last sync time (non-critical, may fail if table lacks RLS)
-      try {
-        const { data: conn } = await supabase.from('facebook_connections').select('last_sync_at').eq('user_id', uid).eq('provider', 'facebook').single();
-        if (conn?.last_sync_at) setLastSyncAt(conn.last_sync_at);
-      } catch { /* table may not have frontend RLS policy */ }
-      // Fetch recent action count (non-critical)
-      try {
-        const since = new Date(); since.setDate(since.getDate() - 7);
-        const { count } = await supabase.from('meta_action_logs').select('id', { count: 'exact', head: true }).eq('user_id', uid).gte('created_at', since.toISOString());
-        setRecentActionCount(count || 0);
-      } catch { /* table may not have frontend RLS policy */ }
-    })();
+    const saved = localStorage.getItem('adruby_autopilot');
+    if (saved === '1') setAutopilotEnabled(true);
   }, []);
 
   // Load ad sets data

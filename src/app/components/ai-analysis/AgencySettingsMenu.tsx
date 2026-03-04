@@ -18,6 +18,7 @@ import {
 import {
     Dialog,
     DialogContent,
+    DialogDescription,
     DialogHeader,
     DialogTitle,
 } from '../ui/dialog';
@@ -75,7 +76,7 @@ export const AgencySettingsMenu = memo(function AgencySettingsMenu({
     const [activeView, setActiveView] = useState<SettingsView>(null);
     const [dbRules, setDbRules] = useState<AutomationRule[] | undefined>(undefined);
 
-    // Load automation rules from Supabase
+    // Load automation rules from Supabase (table may not exist yet)
     useEffect(() => {
         if (activeView !== 'rules') return;
         (async () => {
@@ -87,7 +88,12 @@ export const AgencySettingsMenu = memo(function AgencySettingsMenu({
                 .select('id,name,enabled,condition,action,trigger_count,last_triggered,created_at')
                 .eq('user_id', uid)
                 .order('created_at', { ascending: true });
-            if (!error && data) {
+            if (error) {
+                // Table may not exist yet — use defaults
+                console.debug('[AgencyTools] automation_rules not available, using defaults');
+                return;
+            }
+            if (data) {
                 setDbRules(data.map(r => ({
                     id: r.id,
                     name: r.name,
@@ -204,6 +210,7 @@ export const AgencySettingsMenu = memo(function AgencySettingsMenu({
                                 </>
                             )}
                         </DialogTitle>
+                        <DialogDescription className="sr-only">Agency Pro Feature Konfiguration</DialogDescription>
                     </DialogHeader>
 
                     <div className="flex-1 overflow-y-auto p-4">
