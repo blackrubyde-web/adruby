@@ -6,7 +6,8 @@
 import { useState, useRef, useEffect } from 'react';
 import {
     Play, Pause, Volume2, VolumeX, RotateCcw, Download,
-    BookmarkPlus, RefreshCw, Film, Clock, MonitorSmartphone, Sparkles
+    BookmarkPlus, RefreshCw, Film, Clock, MonitorSmartphone, Sparkles,
+    Wand2, Layers
 } from 'lucide-react';
 import { Badge } from '../ui/badge';
 import { cn } from '../../lib/utils';
@@ -134,20 +135,47 @@ export default function VideoPreviewArea({
     // ── Loading / Theater State ──
     if (loading) {
         return (
-            <div className="ad-builder-canvas morph-gradient-bg" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '520px', padding: '2rem' }}>
-                <div style={{ fontSize: '2.5rem', marginBottom: '1.5rem' }}>🎬</div>
-                <h3 style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: '1.25rem', marginBottom: '0.5rem' }}>
-                    {t ? 'KI generiert dein Video...' : 'AI is generating your video...'}
+            <div className="ai-empty-state" style={{ minHeight: '520px' }}>
+                {/* Aurora gradient background */}
+                <div className="ai-empty-aurora" />
+
+                {/* Particles */}
+                <div className="ai-empty-particles">
+                    {[...Array(12)].map((_, i) => (
+                        <div key={i} className={`ai-particle ai-particle-${(i % 4) + 1}`} style={{
+                            left: `${10 + Math.random() * 80}%`,
+                            animationDelay: `${i * 0.4}s`,
+                            width: `${2 + Math.random() * 4}px`,
+                            height: `${2 + Math.random() * 4}px`,
+                        }} />
+                    ))}
+                </div>
+
+                {/* Neural Core */}
+                <div className="ai-core-container">
+                    <div className="ai-orbit-ring ai-orbit-ring-3"><div className="ai-orbit-dot" /></div>
+                    <div className="ai-orbit-ring ai-orbit-ring-2"><div className="ai-orbit-dot" /><div className="ai-orbit-dot ai-orbit-dot-2" /></div>
+                    <div className="ai-orbit-ring ai-orbit-ring-1"><div className="ai-orbit-dot ai-orbit-dot-lg" /></div>
+                    <div className="ai-core-glow ai-core-glow-outer" />
+                    <div className="ai-core-glow ai-core-glow-mid" />
+                    <div className="ai-core-icon">
+                        <Film className="w-8 h-8 text-white" />
+                    </div>
+                </div>
+
+                {/* Title */}
+                <h3 className="font-display font-bold text-xl text-foreground ai-text-glow">
+                    {t ? 'KI generiert dein Video…' : 'AI is generating your video…'}
                 </h3>
 
                 {/* Progress Bar */}
-                <div style={{ width: '100%', maxWidth: '360px', margin: '1.25rem 0' }}>
+                <div style={{ width: '100%', maxWidth: '340px', margin: '1rem 0' }}>
                     <div style={{
-                        height: '6px', borderRadius: '3px', background: 'var(--muted)',
+                        height: '4px', borderRadius: '2px', background: 'var(--muted)',
                         overflow: 'hidden', position: 'relative',
                     }}>
                         <div style={{
-                            height: '100%', borderRadius: '3px',
+                            height: '100%', borderRadius: '2px',
                             background: 'linear-gradient(90deg, var(--primary), color-mix(in srgb, var(--primary) 70%, #fff))',
                             width: `${Math.max(progress, 5)}%`,
                             transition: 'width 0.8s ease',
@@ -160,22 +188,23 @@ export default function VideoPreviewArea({
                 </div>
 
                 {/* Pipeline Steps */}
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.625rem', width: '100%', maxWidth: '320px' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', width: '100%', maxWidth: '280px' }}>
                     {steps.map((s, i) => {
                         const sIdx = STEP_ORDER.indexOf(s.step);
                         const isDone = stepIdx > sIdx;
                         const isActive = stepIdx === sIdx || currentStep === s.step;
                         return (
                             <div key={s.step}
-                                className={cn(isDone && 'stagger-in')}
+                                className="stagger-in"
                                 style={{
-                                    display: 'flex', alignItems: 'center', gap: '0.75rem',
+                                    display: 'flex', alignItems: 'center', gap: '0.625rem',
                                     opacity: isDone ? 1 : isActive ? 1 : 0.35,
                                     fontSize: '0.8125rem',
                                     color: isDone ? 'var(--primary)' : isActive ? 'var(--foreground)' : 'var(--muted-foreground)',
                                     transition: 'all 0.4s ease',
+                                    animationDelay: `${i * 200}ms`,
                                 }}>
-                                <span style={{ fontSize: '1rem', width: '1.25rem', textAlign: 'center' }}>
+                                <span style={{ fontSize: '0.875rem', width: '1.25rem', textAlign: 'center' }}>
                                     {isDone ? '✅' : isActive ? '🔄' : s.icon}
                                 </span>
                                 <span style={{ fontWeight: isDone || isActive ? 600 : 400 }}>{s.label}</span>
@@ -184,26 +213,73 @@ export default function VideoPreviewArea({
                     })}
                 </div>
 
-                {/* Estimated Time */}
-                <div style={{ marginTop: '1.5rem', fontSize: '0.75rem', color: 'var(--muted-foreground)', display: 'flex', alignItems: 'center', gap: '0.375rem' }}>
-                    <Clock size={12} />
+                <div style={{ marginTop: '1rem', fontSize: '0.6875rem', color: 'var(--muted-foreground)', display: 'flex', alignItems: 'center', gap: '0.375rem', opacity: 0.6 }}>
+                    <Clock size={11} />
                     {t ? 'Geschätzt: ~45-120 Sekunden' : 'Estimated: ~45-120 seconds'}
                 </div>
             </div>
         );
     }
 
-    // ── Empty State ──
+    // ── Empty State — Premium AI Visual (matching image PreviewArea) ──
     if (!result) {
         return (
-            <div className="ad-builder-canvas" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '520px' }}>
-                <div style={{ fontSize: '4rem', marginBottom: '1rem', opacity: 0.3 }}>🎬</div>
-                <h3 style={{ fontFamily: 'var(--font-display)', fontWeight: 600, fontSize: '1.125rem', color: 'var(--muted-foreground)', marginBottom: '0.5rem' }}>
-                    {t ? 'Dein Video-Ad erscheint hier' : 'Your video ad will appear here'}
+            <div className="ai-empty-state">
+                {/* Aurora gradient background */}
+                <div className="ai-empty-aurora" />
+
+                {/* Floating particles */}
+                <div className="ai-empty-particles">
+                    {[...Array(12)].map((_, i) => (
+                        <div key={i} className={`ai-particle ai-particle-${(i % 4) + 1}`} style={{
+                            left: `${10 + Math.random() * 80}%`,
+                            animationDelay: `${i * 0.4}s`,
+                            width: `${2 + Math.random() * 4}px`,
+                            height: `${2 + Math.random() * 4}px`,
+                        }} />
+                    ))}
+                </div>
+
+                {/* Neural Core */}
+                <div className="ai-core-container">
+                    <div className="ai-orbit-ring ai-orbit-ring-3"><div className="ai-orbit-dot" /></div>
+                    <div className="ai-orbit-ring ai-orbit-ring-2"><div className="ai-orbit-dot" /><div className="ai-orbit-dot ai-orbit-dot-2" /></div>
+                    <div className="ai-orbit-ring ai-orbit-ring-1"><div className="ai-orbit-dot ai-orbit-dot-lg" /></div>
+                    <div className="ai-core-glow ai-core-glow-outer" />
+                    <div className="ai-core-glow ai-core-glow-mid" />
+                    <div className="ai-core-icon">
+                        <Film className="w-8 h-8 text-white" />
+                    </div>
+                </div>
+
+                {/* Text */}
+                <h3 className="font-display font-bold text-lg text-foreground ai-text-glow">
+                    {t ? 'Bereit für dein Video-Ad' : 'Ready for your video ad'}
                 </h3>
-                <p style={{ color: 'var(--muted-foreground)', fontSize: '0.8125rem', opacity: 0.6 }}>
-                    {t ? 'Wähle einen Stil und klicke „Video generieren"' : 'Choose a style and click "Generate Video"'}
+                <p className="text-sm text-muted-foreground/60 mt-1 max-w-[260px] leading-relaxed text-center">
+                    {t ? 'Wähle einen Stil und die KI erstellt dein Video in Sekunden' : 'Choose a style and AI creates your video in seconds'}
                 </p>
+
+                {/* Animated feature chips */}
+                <div className="flex items-center gap-2.5 mt-6">
+                    {[
+                        { icon: Film, label: t ? 'Veo 3.1' : 'Veo 3.1' },
+                        { icon: Layers, label: t ? '5 Archetypen' : '5 Archetypes' },
+                        { icon: Wand2, label: t ? 'AI Scoring' : 'AI Scoring' },
+                    ].map((feat, i) => {
+                        const FeatIcon = feat.icon;
+                        return (
+                            <div
+                                key={i}
+                                className="ai-feature-chip stagger-in"
+                                style={{ animationDelay: `${400 + i * 150}ms` }}
+                            >
+                                <FeatIcon className="w-3 h-3" />
+                                {feat.label}
+                            </div>
+                        );
+                    })}
+                </div>
             </div>
         );
     }
