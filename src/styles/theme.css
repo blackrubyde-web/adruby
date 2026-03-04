@@ -146,7 +146,7 @@ body,
 
   --border: #27272a;
   --input: #27272a;
-  --ring: #E63946;
+  --ring: rgba(230, 57, 70, 0.4);
 
   --chart-1: #E63946;
   --chart-2: #c01830;
@@ -163,6 +163,51 @@ body,
   --sidebar-accent-foreground: #fafafa;
   --sidebar-border: #27272a;
   --sidebar-ring: #E63946;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   CUSTOM SCROLLBAR — Premium Dark Design
+   ═══════════════════════════════════════════════════════════ */
+
+/* Webkit (Chrome, Safari, Edge) */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(161, 161, 170, 0.2);
+  border-radius: 6px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(161, 161, 170, 0.4);
+}
+
+.dark ::-webkit-scrollbar-thumb {
+  background: rgba(161, 161, 170, 0.15);
+}
+
+.dark ::-webkit-scrollbar-thumb:hover {
+  background: rgba(161, 161, 170, 0.3);
+}
+
+::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
+/* Firefox */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(161, 161, 170, 0.2) transparent;
+}
+
+.dark * {
+  scrollbar-color: rgba(161, 161, 170, 0.15) transparent;
 }
 
 /* ═══════════════════════════════════════════════════════════

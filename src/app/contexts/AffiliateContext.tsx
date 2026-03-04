@@ -213,7 +213,7 @@ export function AffiliateProvider({ children }: { children: ReactNode }) {
     }, [loadAffiliateData]);
 
     const affiliateCode = stats?.affiliate_code || null;
-    const affiliateLink = affiliateCode ? `https://adruby.ai/invite/${affiliateCode.toLowerCase()}` : '';
+    const affiliateLink = affiliateCode ? `https://adruby.de/invite/${affiliateCode.toLowerCase()}` : '';
 
     const value = useMemo<AffiliateContextValue>(() => ({
         isAffiliate,

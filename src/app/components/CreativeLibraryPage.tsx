@@ -76,6 +76,7 @@ export function CreativeLibraryPage() {
     inputs: unknown;
     media_type?: string | null;
     image_url?: string | null;
+    video_url?: string | null;
     tags?: string[] | null;
     metadata?: Record<string, unknown> | null;
   };
@@ -117,7 +118,7 @@ export function CreativeLibraryPage() {
     // For video creatives, resolve the video URL from multiple sources
     const metadata = (row?.metadata || {}) as Record<string, unknown>;
     const videoUrl = type === 'video'
-      ? (row?.image_url || row?.thumbnail || (metadata?.videoUrl as string) || '')
+      ? (row?.video_url || row?.image_url || row?.thumbnail || (metadata?.videoUrl as string) || '')
       : '';
 
     return {
@@ -125,7 +126,7 @@ export function CreativeLibraryPage() {
       name,
       type,
       url: videoUrl,
-      thumbnail: row.thumbnail || row?.image_url || '',
+      thumbnail: type === 'video' ? videoUrl : (row.thumbnail || row?.image_url || ''),
       tags,
       hooks,
       primaryText,
@@ -165,7 +166,7 @@ export function CreativeLibraryPage() {
         // Only fetch minimal fields for the listing to avoid storing large JSON blobs in memory.
         const { data, error } = await supabase
           .from('generated_creatives')
-          .select('id,thumbnail,created_at,metrics,saved,inputs,media_type,image_url,tags,metadata')
+          .select('id,thumbnail,created_at,metrics,saved,inputs,media_type,image_url,video_url,tags,metadata')
           .eq('saved', true)
           .order('created_at', { ascending: false })
           .limit(50);

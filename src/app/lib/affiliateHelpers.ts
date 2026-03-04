@@ -28,12 +28,12 @@ export async function fetchAffiliateEarnings(
     if (error) {
         console.error('Failed to fetch earnings:', error);
         // Return mock data as fallback
-        return generateMockEarnings(days);
+        return generateEmptyEarnings(days);
     }
 
     // If no data, generate mock for now
     if (!data || data.length === 0) {
-        return generateMockEarnings(days);
+        return generateEmptyEarnings(days);
     }
 
     return data.map((d: EarningsData) => ({
@@ -45,15 +45,15 @@ export async function fetchAffiliateEarnings(
 }
 
 /**
- * Generate mock earnings data (fallback)
+ * Generate empty earnings data (placeholder when no real data exists)
  */
-function generateMockEarnings(days: number): EarningsData[] {
+function generateEmptyEarnings(days: number): EarningsData[] {
     return Array.from({ length: days }, (_, i) => ({
         date: new Date(Date.now() - (days - i - 1) * 24 * 60 * 60 * 1000)
             .toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit' }),
-        earnings: Math.floor(Math.random() * 30) + 10,
-        referrals_count: Math.floor(Math.random() * 3),
-        conversions_count: Math.floor(Math.random() * 2)
+        earnings: 0,
+        referrals_count: 0,
+        conversions_count: 0
     }));
 }
 
