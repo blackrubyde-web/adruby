@@ -36,24 +36,24 @@ export interface Testimonial {
 
 export const TESTIMONIALS: Testimonial[] = [
   {
-    quote: 'Wir haben Ad-Erstellung von 2 Stunden auf 8 Minuten reduziert.',
-    author: 'Markus Klein',
-    role: 'Growth Lead, SaaS Startup',
-    avatar: 'MK',
+    quote: 'Von Produktfoto zu 12 fertigen Varianten in unter 90 Sekunden. Das hat unseren Launch komplett verändert.',
+    author: 'Tobias Wendt',
+    role: 'Founder, D2C Skincare Brand',
+    avatar: 'TW',
     gradient: 'from-blue-500 to-cyan-500',
   },
   {
-    quote: 'KI-Varianten schlagen unsere Best-Performer um 22% CTR.',
-    author: 'Julia Schmidt',
-    role: 'Performance Marketerin',
-    avatar: 'JS',
+    quote: 'Die Auto-Scaling-Regeln haben uns geholfen, unsere Top-Creatives 3x schneller zu identifizieren und zu skalieren.',
+    author: 'Laura Berger',
+    role: 'Head of Paid Social, E-Commerce Agentur',
+    avatar: 'LB',
     gradient: 'from-purple-500 to-pink-500',
   },
   {
-    quote: 'Endlich skalierbare Workflows für unsere Agentur.',
-    author: 'Alexander Lang',
-    role: 'Agentur-Inhaber',
-    avatar: 'AL',
+    quote: 'Erste Plattform, die KI-Generierung und Meta-Kampagnen in einem Workflow verbindet. Kein Copy-Paste mehr.',
+    author: 'Nico Hartmann',
+    role: 'Performance Marketer, SaaS',
+    avatar: 'NH',
     gradient: 'from-green-500 to-emerald-500',
   },
 ];
@@ -79,7 +79,7 @@ export interface FAQ {
 export const FAQS: FAQ[] = [
   {
     question: 'Wie generiert die KI Ads?',
-    answer: 'AdRuby nutzt fortschrittliche KI-Modelle, die auf Millionen von erfolgreichen Ads trainiert wurden. Beschreiben Sie einfach Ihr Angebot, und unsere KI analysiert Ihre Zielgruppe, Wettbewerber und Markttrends, um mehrere kreative Varianten zu generieren, die für Performance optimiert sind.',
+    answer: 'AdRuby nutzt Google Gemini 2.5 — Googles neuestes multimodales AI-Modell. Es versteht Bilder, Text und Kontext gleichzeitig. Beschreibe dein Produkt oder lade ein Foto hoch, und Gemini generiert Headlines, Ad Copy und Creatives in Sekunden. Jede Variante wird auf Conversion-Potenzial gescored, bevor du sie launchst.',
   },
   {
     question: 'Welche Plattformen werden unterstützt?',

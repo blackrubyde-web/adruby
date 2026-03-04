@@ -1,4 +1,7 @@
-const nodemailer = require('nodemailer');
+import nodemailer from 'nodemailer';
+import { requireUserId } from './_shared/auth.js';
+import { withCors, ok, badRequest, serverError, unauthorized, methodNotAllowed } from './utils/response.js';
+import { checkRateLimit } from './_shared/rateLimiter.js';
 
 // Strato SMTP Configuration
 const createTransporter = () => {
@@ -15,6 +18,7 @@ const createTransporter = () => {
 
 // Premium Welcome Email Template (German)
 const getWelcomeEmailTemplate = (userName) => {
+  const dashboardUrl = `${process.env.FRONTEND_URL || 'https://adruby.de'}/dashboard`;
   return `
 <!DOCTYPE html>
 <html lang="de">
@@ -99,7 +103,7 @@ const getWelcomeEmailTemplate = (userName) => {
           <!-- CTA Button -->
           <tr>
             <td style="padding: 16px 48px 32px; text-align: center;">
-              <a href="https://adruby.ai/dashboard" style="display: inline-block; background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); color: white; text-decoration: none; padding: 18px 48px; border-radius: 12px; font-size: 18px; font-weight: 700; box-shadow: 0 10px 30px rgba(239, 68, 68, 0.3);">
+              <a href="${dashboardUrl}" style="display: inline-block; background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); color: white; text-decoration: none; padding: 18px 48px; border-radius: 12px; font-size: 18px; font-weight: 700; box-shadow: 0 10px 30px rgba(239, 68, 68, 0.3);">
                 Jetzt Dashboard öffnen →
               </a>
             </td>
@@ -144,21 +148,23 @@ const getWelcomeEmailTemplate = (userName) => {
   `;
 };
 
-exports.handler = async (event) => {
-  // CORS headers
-  const headers = {
-    'Access-Control-Allow-Origin': process.env.FRONTEND_URL || 'https://adruby.de',
-    'Access-Control-Allow-Headers': 'Content-Type, Authorization',
-    'Access-Control-Allow-Methods': 'POST, OPTIONS',
-    'Content-Type': 'application/json',
-  };
-
+export async function handler(event) {
   if (event.httpMethod === 'OPTIONS') {
-    return { statusCode: 200, headers, body: '' };
+    return withCors({ statusCode: 200 });
   }
 
   if (event.httpMethod !== 'POST') {
-    return { statusCode: 405, headers, body: JSON.stringify({ error: 'Method not allowed' }) };
+    return methodNotAllowed('POST,OPTIONS');
+  }
+
+  // Auth guard — require authenticated user
+  const auth = await requireUserId(event);
+  if (!auth.ok) return auth.response;
+
+  // Rate limit — prevent email spam
+  const rateCheck = await checkRateLimit(auth.userId, 'send_email');
+  if (!rateCheck.allowed) {
+    return badRequest(`Rate limit exceeded. Try again after ${rateCheck.resetAt?.toISOString() || 'later'}.`, 429);
   }
 
   try {
@@ -168,11 +174,7 @@ exports.handler = async (event) => {
     // Validate required env vars
     if (!process.env.STRATO_EMAIL || !process.env.STRATO_PASSWORD) {
       console.error('[Email] Missing STRATO_EMAIL or STRATO_PASSWORD env vars');
-      return {
-        statusCode: 500,
-        headers,
-        body: JSON.stringify({ error: 'Email configuration missing' }),
-      };
+      return serverError('Email configuration missing');
     }
 
     const transporter = createTransporter();
@@ -194,11 +196,7 @@ exports.handler = async (event) => {
       case 'custom':
         // Custom email from admin panel
         if (!subject || !html) {
-          return {
-            statusCode: 400,
-            headers,
-            body: JSON.stringify({ error: 'Subject and HTML required for custom emails' }),
-          };
+          return badRequest('Subject and HTML required for custom emails');
         }
 
         // If recipients is an array, send to multiple
@@ -217,11 +215,7 @@ exports.handler = async (event) => {
               results.push({ email: recipient, success: false, error: err.message });
             }
           }
-          return {
-            statusCode: 200,
-            headers,
-            body: JSON.stringify({ success: true, results, sent: results.filter(r => r.success).length }),
-          };
+          return ok({ success: true, results, sent: results.filter(r => r.success).length });
         }
 
         emailConfig = {
@@ -233,29 +227,17 @@ exports.handler = async (event) => {
         break;
 
       default:
-        return {
-          statusCode: 400,
-          headers,
-          body: JSON.stringify({ error: 'Invalid email type. Use: welcome, custom' }),
-        };
+        return badRequest('Invalid email type. Use: welcome, custom');
     }
 
     // Send single email
     const result = await transporter.sendMail(emailConfig);
     console.log('[Email] Sent successfully:', result.messageId);
 
-    return {
-      statusCode: 200,
-      headers,
-      body: JSON.stringify({ success: true, messageId: result.messageId }),
-    };
+    return ok({ success: true, messageId: result.messageId });
 
   } catch (error) {
     console.error('[Email] Send failed:', error);
-    return {
-      statusCode: 500,
-      headers,
-      body: JSON.stringify({ error: 'Failed to send email', details: error.message }),
-    };
+    return serverError('Failed to send email');
   }
-};
+}

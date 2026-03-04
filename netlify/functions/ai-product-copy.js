@@ -3,15 +3,12 @@
 // Uses GPT-4 to generate hooks, headlines, CTAs
 
 import OpenAI from 'openai';
+import { requireUserId } from './_shared/auth.js';
+import { withCors, ok, badRequest, serverError, methodNotAllowed } from './utils/response.js';
+import { checkRateLimit } from './_shared/rateLimiter.js';
 
 const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
 const openai = OPENAI_API_KEY ? new OpenAI({ apiKey: OPENAI_API_KEY }) : null;
-
-const headers = {
-    'Access-Control-Allow-Origin': process.env.FRONTEND_URL || 'https://adruby.de',
-    'Access-Control-Allow-Headers': 'Content-Type, Authorization',
-    'Content-Type': 'application/json'
-};
 
 /**
  * Generate ad copy for a single product
@@ -133,19 +130,11 @@ async function handleRequest(event) {
     const { products, mode = 'single' } = body;
 
     if (!products || !Array.isArray(products) || products.length === 0) {
-        return {
-            statusCode: 400,
-            headers,
-            body: JSON.stringify({ error: 'products array is required' })
-        };
+        return badRequest('products array is required');
     }
 
     if (!openai) {
-        return {
-            statusCode: 500,
-            headers,
-            body: JSON.stringify({ error: 'OPENAI_API_KEY not configured' })
-        };
+        return serverError('OPENAI_API_KEY not configured');
     }
 
     try {
@@ -153,53 +142,44 @@ async function handleRequest(event) {
 
         if (mode === 'batch' || products.length > 1) {
             const copies = await generateBatchCopy(products);
-            return {
-                statusCode: 200,
-                headers,
-                body: JSON.stringify({
-                    success: true,
-                    copies,
-                    generatedAt: new Date().toISOString()
-                })
-            };
+            return ok({
+                success: true,
+                copies,
+                generatedAt: new Date().toISOString()
+            });
         } else {
             const copy = await generateProductCopy(products[0]);
-            return {
-                statusCode: 200,
-                headers,
-                body: JSON.stringify({
-                    success: true,
-                    productId: products[0].id,
-                    productTitle: products[0].title,
-                    ...copy,
-                    generatedAt: new Date().toISOString()
-                })
-            };
+            return ok({
+                success: true,
+                productId: products[0].id,
+                productTitle: products[0].title,
+                ...copy,
+                generatedAt: new Date().toISOString()
+            });
         }
     } catch (error) {
         console.error('[AI Copy] Handler error:', error);
-        return {
-            statusCode: 500,
-            headers,
-            body: JSON.stringify({
-                error: 'Failed to generate copy',
-                message: error.message
-            })
-        };
+        return serverError('Failed to generate copy');
     }
 }
 
 export async function handler(event) {
     if (event.httpMethod === 'OPTIONS') {
-        return { statusCode: 204, headers };
+        return withCors({ statusCode: 204 });
     }
 
     if (event.httpMethod !== 'POST') {
-        return {
-            statusCode: 405,
-            headers,
-            body: JSON.stringify({ error: 'Method not allowed' })
-        };
+        return methodNotAllowed('POST,OPTIONS');
+    }
+
+    // Auth guard — require authenticated user
+    const auth = await requireUserId(event);
+    if (!auth.ok) return auth.response;
+
+    // Rate limit — prevent OpenAI cost abuse
+    const rateCheck = await checkRateLimit(auth.userId, 'ai_product_copy');
+    if (!rateCheck.allowed) {
+        return badRequest('Rate limit exceeded. Try again later.', 429);
     }
 
     return handleRequest(event);

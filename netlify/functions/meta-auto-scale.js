@@ -308,18 +308,21 @@ export async function handler(event) {
     const host = event?.headers?.host || event?.headers?.Host || "localhost:8888";
 
     try {
-        // Find all users with autopilot enabled
+        // Find all users with autopilot mode set to 'automatic'
         const { data: autopilotUsers, error } = await supabaseAdmin
-            .from("profiles")
-            .select("id")
-            .eq("autopilot_enabled", true);
+            .from("autopilot_settings")
+            .select("user_id")
+            .eq("mode", "automatic");
 
         if (error) {
             console.error("[AutoScale] Failed to load autopilot users:", error.message);
             return serverError(`Failed to load users: ${error.message}`);
         }
 
-        if (!autopilotUsers?.length) {
+        // Remap to match expected shape ({ id })
+        const userList = (autopilotUsers || []).map(u => ({ id: u.user_id }));
+
+        if (!userList.length) {
             return withCors({
                 statusCode: 200,
                 body: JSON.stringify({ message: "No users with autopilot enabled", processed: 0 }),
@@ -328,7 +331,7 @@ export async function handler(event) {
 
         const summary = { processed: 0, failed: 0, skipped: 0, totalActions: 0, results: [] };
 
-        for (const user of autopilotUsers) {
+        for (const user of userList) {
             const entitlement = await requireActiveSubscription(user.id);
             if (!entitlement.ok) {
                 summary.skipped++;

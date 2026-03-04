@@ -22,6 +22,7 @@ export const Step5_Review = () => {
     const [showConfetti, setShowConfetti] = useState(false);
     const [publishResult, setPublishResult] = useState<{ success: boolean; campaignId?: string } | null>(null);
     const [isPreviewLoading, setIsPreviewLoading] = useState(false);
+    const [showConfirmDialog, setShowConfirmDialog] = useState(false);
 
     const handlePreview = async () => {
         setIsPreviewLoading(true);
@@ -39,7 +40,12 @@ export const Step5_Review = () => {
         }
     };
 
-    const handleLaunch = async () => {
+    const handleLaunchClick = () => {
+        setShowConfirmDialog(true);
+    };
+
+    const handleConfirmedLaunch = async () => {
+        setShowConfirmDialog(false);
         const result = await publishToMeta();
         if (result.success) {
             setShowConfetti(true);
@@ -317,7 +323,7 @@ export const Step5_Review = () => {
 
                     <Button
                         size="lg"
-                        onClick={handleLaunch}
+                        onClick={handleLaunchClick}
                         disabled={isPublishing}
                         className="px-12 h-14 text-lg gap-3 bg-gradient-to-r from-primary to-rose-600 hover:from-primary/90 hover:to-rose-600/90 shadow-[0_0_40px_rgba(225,29,72,0.4)] hover:shadow-[0_0_60px_rgba(225,29,72,0.6)] transition-all duration-300 transform hover:scale-105"
                     >
@@ -341,6 +347,36 @@ export const Step5_Review = () => {
                     Aktiviere sie im Ads Manager, wenn du bereit bist.
                 </p>
             </div>
+
+            {/* Confirmation Dialog */}
+            {showConfirmDialog && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
+                    <div className="bg-card border border-border rounded-2xl p-6 max-w-md w-full mx-4 space-y-4 shadow-2xl">
+                        <div className="flex items-center gap-3">
+                            <div className="p-2 bg-primary/10 rounded-lg">
+                                <Rocket className="w-5 h-5 text-primary" />
+                            </div>
+                            <h3 className="font-bold text-lg">Kampagne pushen?</h3>
+                        </div>
+                        <div className="text-sm text-muted-foreground space-y-2">
+                            <p>Du erstellst folgende Kampagne als <strong>Entwurf</strong> in deinem Meta Ads Konto:</p>
+                            <div className="p-3 bg-muted/50 rounded-lg space-y-1">
+                                <div className="flex justify-between"><span>Name:</span><span className="font-semibold text-foreground">{campaignSetup.name}</span></div>
+                                <div className="flex justify-between"><span>Budget:</span><span className="font-semibold text-foreground">€{campaignSetup.budgetType === 'daily' ? campaignSetup.dailyBudget : campaignSetup.lifetimeBudget}/{campaignSetup.budgetType === 'daily' ? 'Tag' : 'Laufzeit'}</span></div>
+                                <div className="flex justify-between"><span>Creatives:</span><span className="font-semibold text-foreground">{selectedCreatives.length}</span></div>
+                            </div>
+                            <p className="text-xs">Die Kampagne startet <strong>nicht automatisch</strong>. Aktiviere sie im Ads Manager.</p>
+                        </div>
+                        <div className="flex gap-3 pt-2">
+                            <Button variant="outline" className="flex-1" onClick={() => setShowConfirmDialog(false)}>Abbrechen</Button>
+                            <Button className="flex-1 gap-2" onClick={handleConfirmedLaunch} disabled={isPublishing}>
+                                {isPublishing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Rocket className="w-4 h-4" />}
+                                Bestätigen
+                            </Button>
+                        </div>
+                    </div>
+                </div>
+            )}
 
             {/* Confetti Effect */}
             {showConfetti && (

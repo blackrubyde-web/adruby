@@ -133,7 +133,6 @@ export function GlobalNav({ currentPage = 'home', onNavigate, onSignIn, onGetSta
     { id: 'landing', label: 'Home', hasDropdown: false },
     { id: 'features', label: 'Features', hasDropdown: true },
     { id: 'pricing', label: 'Pricing', hasDropdown: false },
-    { id: 'affiliate', label: 'Affiliate', hasDropdown: false },
   ];
 
   const isFeaturePage = currentPage?.startsWith('feature-') || currentPage === 'features';

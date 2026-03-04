@@ -16,6 +16,9 @@ const RATE_LIMITS = {
     openai_proxy: { maxRequests: 20, windowMinutes: 60 },
     send_email: { maxRequests: 10, windowMinutes: 60 },
     creative_generate: { maxRequests: 15, windowMinutes: 60 },
+    shopify_scrape: { maxRequests: 10, windowMinutes: 60 },     // 10 scrapes per hour
+    ai_product_copy: { maxRequests: 15, windowMinutes: 60 },    // 15 copy generations per hour
+    generate_ad_pack: { maxRequests: 5, windowMinutes: 60 },    // 5 ad packs per hour
     default: { maxRequests: 100, windowMinutes: 60 }
 };
 

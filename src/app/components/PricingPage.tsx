@@ -71,7 +71,7 @@ export function PricingPage({ onNavigate, onSignIn, onGetStarted }: PricingPageP
       highlight: true,
       gradient: 'from-[#E63946] to-rose-500',
       features: [
-        'Advanced AI Models (GPT-4o)',
+        'Gemini 2.5 Flash AI',
         'Unlimitierte Brand-Personas',
         'Premium Templates & Videos',
         'Auto-Resize (alle Formate)',
@@ -198,8 +198,8 @@ export function PricingPage({ onNavigate, onSignIn, onGetStarted }: PricingPageP
                   key={plan.id}
                   variants={fadeUp}
                   className={`group relative flex flex-col rounded-3xl border transition-all duration-300 overflow-hidden ${isPro
-                      ? 'bg-white/[0.06] border-[#E63946]/30 shadow-[0_0_50px_rgba(230,57,70,0.1)] md:-mt-4 md:mb-4'
-                      : 'bg-white/[0.02] border-white/[0.06] hover:border-white/[0.12]'
+                    ? 'bg-white/[0.06] border-[#E63946]/30 shadow-[0_0_50px_rgba(230,57,70,0.1)] md:-mt-4 md:mb-4'
+                    : 'bg-white/[0.02] border-white/[0.06] hover:border-white/[0.12]'
                     }`}
                 >
                   {/* Top accent */}
@@ -247,8 +247,8 @@ export function PricingPage({ onNavigate, onSignIn, onGetStarted }: PricingPageP
                     <button
                       onClick={onGetStarted}
                       className={`w-full py-4 rounded-xl font-bold text-base transition-all ${isPro
-                          ? 'bg-gradient-to-r from-[#E63946] to-rose-500 hover:from-[#d42e3b] hover:to-rose-400 text-white shadow-lg shadow-[#E63946]/20 hover:shadow-[#E63946]/30 hover:scale-[1.02]'
-                          : 'bg-white/[0.04] hover:bg-white/[0.08] text-white border border-white/[0.08] hover:border-white/[0.15]'
+                        ? 'bg-gradient-to-r from-[#E63946] to-rose-500 hover:from-[#d42e3b] hover:to-rose-400 text-white shadow-lg shadow-[#E63946]/20 hover:shadow-[#E63946]/30 hover:scale-[1.02]'
+                        : 'bg-white/[0.04] hover:bg-white/[0.08] text-white border border-white/[0.08] hover:border-white/[0.15]'
                         }`}
                     >
                       {plan.cta}

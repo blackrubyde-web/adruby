@@ -1,5 +1,6 @@
 import { memo, useEffect, useState, lazy, Suspense } from 'react';
 import { Loader2 } from 'lucide-react';
+import { toast } from 'sonner';
 import { creativeSaveToLibrary } from '../lib/api/creative';
 import { AdDocument, StudioLayer, TextLayer, ImageLayer } from '../types/studio';
 import { supabase } from '../lib/supabaseClient';
@@ -55,13 +56,11 @@ export const StudioPage = memo(function StudioPage() {
                 score: doc.meta?.score
             });
 
-            // eslint-disable-next-line no-alert
-            alert('Ad saved to library successfully!');
+            toast.success('Ad erfolgreich in der Library gespeichert!');
             handleClose();
         } catch (err) {
             console.error('Failed to save ad:', err);
-            // eslint-disable-next-line no-alert
-            alert('Failed to save ad. See console for details.');
+            toast.error('Speichern fehlgeschlagen. Versuche es erneut.');
         }
     };
 

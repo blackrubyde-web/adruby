@@ -14,7 +14,6 @@ import {
   MessageCircle,
   Quote,
   TrendingUp,
-  Users,
   Shield,
   Lock,
   Heart,
@@ -27,7 +26,7 @@ import {
 import { GlobalNav } from './landing/GlobalNav';
 import { MobileStickyCTA } from './landing/MobileStickyCTA';
 import { useParticles } from '../hooks/useParticles';
-import { PIPELINE_STEPS, TESTIMONIALS, FAQS } from './landing/landing-constants';
+import { PIPELINE_STEPS, TESTIMONIALS, FAQS, PERSONAS } from './landing/landing-constants';
 
 // ─── Motion variants ────────────────────────────────────
 const stagger = {
@@ -124,36 +123,29 @@ export function LandingPage({ onGetStarted, onLogin, onNavigate }: LandingPagePr
           {/* Social Proof Badge */}
           <motion.div variants={fadeUp} className="flex justify-center mb-8">
             <div className="inline-flex items-center gap-3 px-5 py-2.5 rounded-full bg-white/[0.04] border border-white/[0.08] backdrop-blur-xl">
-              <div className="flex -space-x-2">
-                {['from-rose-500 to-red-600', 'from-violet-500 to-purple-600', 'from-blue-500 to-cyan-500'].map((g, i) => (
-                  <div key={i} className={`w-7 h-7 rounded-full bg-gradient-to-br ${g} border-2 border-[#050507] flex items-center justify-center text-[9px] font-bold`}>
-                    {['MK', 'LS', 'JR'][i]}
-                  </div>
-                ))}
+              <div className="w-6 h-6 rounded-lg bg-gradient-to-br from-blue-500 to-cyan-400 flex items-center justify-center">
+                <Sparkles className="w-3.5 h-3.5 text-white" />
               </div>
-              <div className="flex items-center gap-1">
-                {[...Array(5)].map((_, i) => (
-                  <svg key={i} className="w-3.5 h-3.5 text-amber-400 fill-amber-400" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" /></svg>
-                ))}
-              </div>
-              <span className="text-xs font-medium text-white/70">500+ Marketer vertrauen AdRuby</span>
+              <span className="text-xs font-semibold text-white/70">Powered by Google Gemini 2.5 · DSGVO-konform 🇩🇪</span>
             </div>
           </motion.div>
 
           {/* Main Headline */}
           <motion.div variants={fadeUp} className="text-center max-w-5xl mx-auto mb-8">
             <h1 className="font-display text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-bold tracking-[-0.04em] leading-[0.95]">
-              <span className="text-white">Werbung die</span>
+              <span className="text-white">Ads die</span>
               <br />
               <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#E63946] via-rose-400 to-[#ff6b6b] animate-text-gradient">
-                knallt.
+                performen.
               </span>
+              <br />
+              <span className="text-white/40 text-4xl sm:text-5xl md:text-6xl lg:text-7xl">Nicht raten — wissen.</span>
             </h1>
           </motion.div>
 
           {/* Subtitle */}
           <motion.p variants={fadeUp} className="text-center text-lg sm:text-xl text-white/50 font-medium max-w-2xl mx-auto mb-10 leading-relaxed">
-            Erstelle High-Converting Meta Ads in <span className="text-white/80 font-semibold">unter 2 Minuten</span> — KI analysiert, optimiert und liefert Ergebnisse.
+            KI-gestützte Meta Ads: generieren, launchen, <span className="text-white/80 font-semibold">automatisch skalieren</span>. Gemini analysiert deine Performance und optimiert Creatives in Echtzeit.
           </motion.p>
 
           {/* CTA Buttons */}
@@ -182,7 +174,7 @@ export function LandingPage({ onGetStarted, onLogin, onNavigate }: LandingPagePr
 
           {/* Trust Badges */}
           <motion.div variants={fadeUp} className="flex flex-wrap items-center justify-center gap-6 mb-16">
-            {['7 Tage kostenlos', 'Jederzeit kündbar', 'DSGVO-konform 🇩🇪'].map((badge) => (
+            {['7 Tage kostenlos testen', 'Jederzeit kündbar', 'Keine Kreditkarte nötig'].map((badge) => (
               <div key={badge} className="flex items-center gap-2 text-white/40 text-sm">
                 <CheckCircle className="w-4 h-4 text-emerald-500" />
                 <span>{badge}</span>
@@ -277,10 +269,10 @@ export function LandingPage({ onGetStarted, onLogin, onNavigate }: LandingPagePr
             className="grid grid-cols-2 md:grid-cols-4 gap-6"
           >
             {[
-              { value: '50K+', label: 'Ads erstellt', icon: Sparkles },
-              { value: '8.2x', label: 'Ø ROAS', icon: TrendingUp },
-              { value: '86%', label: 'Zeit gespart', icon: Zap },
-              { value: '2.500+', label: 'Aktive Nutzer', icon: Users },
+              { value: '72+', label: 'Ad-Archetypen', icon: Sparkles },
+              { value: '< 2 Min', label: 'pro Ad Creative', icon: Zap },
+              { value: '100%', label: 'Gemini AI', icon: Brain },
+              { value: '8 Schritte', label: 'zum Launch', icon: Rocket },
             ].map((stat, i) => (
               <motion.div key={i} variants={fadeUp} className="text-center py-8 px-4 rounded-2xl bg-white/[0.02] border border-white/[0.06] hover:border-white/[0.12] transition-all duration-300">
                 <stat.icon className="w-5 h-5 text-[#E63946] mx-auto mb-3" />
@@ -359,7 +351,7 @@ export function LandingPage({ onGetStarted, onLogin, onNavigate }: LandingPagePr
       </section>
 
       {/* ══════════════════════════════════════════════
-          HOW IT WORKS — 3 Steps
+          FÜR WEN? — Persona Cards
           ══════════════════════════════════════════════ */}
       <section className="py-20 sm:py-28 relative">
         <div className="max-w-6xl mx-auto px-5 sm:px-8">
@@ -370,12 +362,13 @@ export function LandingPage({ onGetStarted, onLogin, onNavigate }: LandingPagePr
             variants={stagger}
             className="text-center mb-16"
           >
+            <motion.div variants={fadeUp} className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-violet-500/[0.08] border border-violet-500/[0.15] mb-6">
+              <Target className="w-4 h-4 text-violet-400" />
+              <span className="text-sm font-semibold text-violet-400">Für wen?</span>
+            </motion.div>
             <motion.h2 variants={fadeUp} className="font-display text-4xl sm:text-5xl font-bold text-white mb-4">
-              So einfach <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#E63946] to-rose-400">geht's</span>
+              Gebaut für <span className="text-transparent bg-clip-text bg-gradient-to-r from-violet-400 to-blue-400">Performance-Teams</span>
             </motion.h2>
-            <motion.p variants={fadeUp} className="text-lg text-white/40 max-w-xl mx-auto">
-              In 3 Schritten zu profitablen Ads
-            </motion.p>
           </motion.div>
 
           <motion.div
@@ -383,28 +376,116 @@ export function LandingPage({ onGetStarted, onLogin, onNavigate }: LandingPagePr
             whileInView="visible"
             viewport={{ once: true, margin: '-40px' }}
             variants={stagger}
-            className="grid md:grid-cols-3 gap-8"
+            className="grid md:grid-cols-3 gap-6"
           >
-            {[
-              { step: '01', title: 'Produkt beschreiben', desc: 'Lade dein Produkt hoch oder beschreibe es. Unsere KI versteht den Kontext.', icon: Palette },
-              { step: '02', title: 'KI generiert Ads', desc: 'Headlines, Copy, Creatives — alles wird automatisch erstellt und optimiert.', icon: Sparkles },
-              { step: '03', title: 'Launchen & Skalieren', desc: 'Publiziere direkt zu Meta. Tracke Performance und skaliere Winners.', icon: Rocket },
-            ].map((item) => {
-              const Icon = item.icon;
+            {PERSONAS.map((p) => {
+              const Icon = p.icon;
               return (
-                <motion.div key={item.step} variants={fadeUp} className="relative">
-                  <div className="bg-white/[0.02] border border-white/[0.06] rounded-3xl p-8 hover:border-white/[0.12] transition-all duration-300 h-full">
-                    <div className="text-[80px] font-display font-bold text-white/[0.03] absolute top-4 right-6 leading-none select-none">{item.step}</div>
-                    <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-[#E63946]/20 to-rose-500/10 border border-[#E63946]/20 flex items-center justify-center mb-6">
-                      <Icon className="w-6 h-6 text-[#E63946]" />
+                <motion.div
+                  key={p.title}
+                  variants={fadeUp}
+                  className="group relative bg-white/[0.02] border border-white/[0.06] rounded-3xl p-8 hover:bg-white/[0.04] hover:border-white/[0.12] transition-all duration-500"
+                >
+                  <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-violet-500/20 to-blue-500/10 border border-violet-500/20 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
+                    <Icon className="w-6 h-6 text-violet-400" />
+                  </div>
+                  <h3 className="font-display text-xl font-bold text-white mb-4">{p.title}</h3>
+                  <div className="space-y-3">
+                    <div className="flex items-start gap-3">
+                      <div className="w-5 h-5 rounded-full bg-red-500/10 flex items-center justify-center shrink-0 mt-0.5">
+                        <AlertCircle className="w-3 h-3 text-red-400" />
+                      </div>
+                      <p className="text-sm text-white/40">{p.pain}</p>
                     </div>
-                    <div className="text-xs text-[#E63946] font-bold uppercase tracking-widest mb-3">Step {item.step}</div>
-                    <h3 className="font-display text-xl font-bold text-white mb-3">{item.title}</h3>
-                    <p className="text-sm text-white/40 leading-relaxed">{item.desc}</p>
+                    <div className="flex items-start gap-3">
+                      <div className="w-5 h-5 rounded-full bg-blue-500/10 flex items-center justify-center shrink-0 mt-0.5">
+                        <Sparkles className="w-3 h-3 text-blue-400" />
+                      </div>
+                      <p className="text-sm text-white/60">{p.solution}</p>
+                    </div>
+                    <div className="flex items-start gap-3">
+                      <div className="w-5 h-5 rounded-full bg-emerald-500/10 flex items-center justify-center shrink-0 mt-0.5">
+                        <CheckCircle className="w-3 h-3 text-emerald-400" />
+                      </div>
+                      <p className="text-sm text-emerald-400 font-semibold">{p.outcome}</p>
+                    </div>
                   </div>
                 </motion.div>
               );
             })}
+          </motion.div>
+        </div>
+      </section>
+
+      {/* ══════════════════════════════════════════════
+          AI PIPELINE — 8 Steps (Real Architecture)
+          ══════════════════════════════════════════════ */}
+      <section className="py-20 sm:py-28 relative overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-b from-transparent via-[#E63946]/[0.02] to-transparent pointer-events-none" />
+
+        <div className="max-w-7xl mx-auto px-5 sm:px-8 relative z-10">
+          <motion.div
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true, margin: '-60px' }}
+            variants={stagger}
+            className="text-center mb-16"
+          >
+            <motion.div variants={fadeUp} className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[#E63946]/[0.08] border border-[#E63946]/[0.15] mb-6">
+              <Brain className="w-4 h-4 text-[#E63946]" />
+              <span className="text-sm font-semibold text-[#E63946]">AI Pipeline</span>
+            </motion.div>
+            <motion.h2 variants={fadeUp} className="font-display text-4xl sm:text-5xl font-bold text-white mb-4">
+              8 Schritte. <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#E63946] to-rose-400">Eine KI.</span>
+            </motion.h2>
+            <motion.p variants={fadeUp} className="text-lg text-white/40 max-w-2xl mx-auto">
+              Jede Ad durchläuft unsere vollautomatische Pipeline — von der Strategie-Analyse bis zum Meta API Push.
+            </motion.p>
+          </motion.div>
+
+          {/* Pipeline Flow — Horizontal Scroll on Mobile */}
+          <motion.div
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true, margin: '-40px' }}
+            variants={stagger}
+            className="relative"
+          >
+            {/* Connecting line */}
+            <div className="hidden lg:block absolute top-[44px] left-[8%] right-[8%] h-px bg-gradient-to-r from-transparent via-white/[0.08] to-transparent" />
+
+            <div className="flex gap-3 overflow-x-auto pb-4 lg:pb-0 lg:grid lg:grid-cols-4 lg:gap-4 snap-x snap-mandatory scrollbar-hide">
+              {PIPELINE_STEPS.map((step, idx) => {
+                const Icon = step.icon;
+                return (
+                  <motion.div
+                    key={step.id}
+                    variants={fadeUp}
+                    className="min-w-[200px] sm:min-w-[220px] lg:min-w-0 snap-center"
+                  >
+                    <div className="group bg-white/[0.02] border border-white/[0.06] rounded-2xl p-5 hover:bg-white/[0.05] hover:border-white/[0.12] transition-all duration-300 h-full relative">
+                      {/* Step number badge */}
+                      <div className="flex items-center gap-3 mb-4">
+                        <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${step.color} flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform`}>
+                          <Icon className="w-5 h-5 text-white" />
+                        </div>
+                        <span className="text-[10px] font-bold text-white/20 uppercase tracking-widest">{String(idx + 1).padStart(2, '0')}</span>
+                      </div>
+                      <h3 className="font-display text-sm font-bold text-white mb-1">{step.title}</h3>
+                      <p className="text-xs text-white/30">{step.desc}</p>
+                    </div>
+                  </motion.div>
+                );
+              })}
+            </div>
+
+            {/* Scroll hint for mobile */}
+            <div className="flex justify-center mt-4 lg:hidden">
+              <div className="flex items-center gap-1.5 text-xs text-white/20">
+                <ArrowRight className="w-3 h-3" />
+                <span>Scrollen für mehr</span>
+              </div>
+            </div>
           </motion.div>
         </div>
       </section>
@@ -540,6 +621,98 @@ export function LandingPage({ onGetStarted, onLogin, onNavigate }: LandingPagePr
       </section>
 
       {/* ══════════════════════════════════════════════
+          COMPARISON TABLE — Warum AdRuby?
+          ══════════════════════════════════════════════ */}
+      <section className="py-20 sm:py-28 relative">
+        <div className="max-w-5xl mx-auto px-5 sm:px-8">
+          <motion.div
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true, margin: '-60px' }}
+            variants={stagger}
+            className="text-center mb-16"
+          >
+            <motion.div variants={fadeUp} className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-emerald-500/[0.08] border border-emerald-500/[0.15] mb-6">
+              <Shield className="w-4 h-4 text-emerald-400" />
+              <span className="text-sm font-semibold text-emerald-400">Vergleich</span>
+            </motion.div>
+            <motion.h2 variants={fadeUp} className="font-display text-4xl sm:text-5xl font-bold text-white mb-4">
+              Warum <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#E63946] to-rose-400">AdRuby</span>?
+            </motion.h2>
+            <motion.p variants={fadeUp} className="text-lg text-white/40 max-w-2xl mx-auto">
+              Kein weiteres Template-Tool. Eine vollständige Ad-Operations-Plattform.
+            </motion.p>
+          </motion.div>
+
+          <motion.div
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true, margin: '-40px' }}
+            variants={fadeUp}
+            className="bg-white/[0.02] border border-white/[0.06] rounded-3xl overflow-hidden"
+          >
+            {/* Table Header */}
+            <div className="grid grid-cols-4 gap-0 border-b border-white/[0.06] bg-white/[0.03]">
+              <div className="p-5">
+                <span className="text-xs font-bold text-white/30 uppercase tracking-wider">Feature</span>
+              </div>
+              <div className="p-5 text-center border-l border-white/[0.06]">
+                <div className="text-sm font-bold text-white/50">Native Tools</div>
+                <div className="text-[10px] text-white/20">Meta / Google</div>
+              </div>
+              <div className="p-5 text-center border-l border-white/[0.06]">
+                <div className="text-sm font-bold text-white/50">Andere KI-Tools</div>
+                <div className="text-[10px] text-white/20">AdCreative.ai etc.</div>
+              </div>
+              <div className="p-5 text-center border-l border-[#E63946]/20 bg-[#E63946]/[0.04]">
+                <div className="text-sm font-bold text-[#E63946]">AdRuby</div>
+                <div className="text-[10px] text-[#E63946]/60">Powered by Gemini</div>
+              </div>
+            </div>
+
+            {/* Table Rows */}
+            {[
+              { feature: 'KI-Creative-Generierung', native: false, others: true, adruby: true },
+              { feature: 'Multimodal (Text + Bild + Video)', native: false, others: false, adruby: true },
+              { feature: 'Direkt zu Meta publizieren', native: true, others: false, adruby: true },
+              { feature: 'Auto-Scaling mit Safety Limits', native: false, others: false, adruby: true },
+              { feature: 'KI-Kampagnen-Analyse', native: false, others: false, adruby: true },
+              { feature: '72+ psychologische Archetypen', native: false, others: false, adruby: true },
+              { feature: 'DSGVO-konform (EU-Hosting)', native: true, others: false, adruby: true },
+              { feature: 'Alles in einem Workflow', native: false, others: false, adruby: true },
+            ].map((row, i) => (
+              <div key={i} className={`grid grid-cols-4 gap-0 ${i % 2 === 0 ? '' : 'bg-white/[0.01]'} ${i < 7 ? 'border-b border-white/[0.04]' : ''}`}>
+                <div className="p-4 flex items-center">
+                  <span className="text-sm text-white/60">{row.feature}</span>
+                </div>
+                <div className="p-4 flex items-center justify-center border-l border-white/[0.04]">
+                  {row.native ? (
+                    <CheckCircle className="w-4.5 h-4.5 text-white/20" />
+                  ) : (
+                    <div className="w-4.5 h-4.5 rounded-full border border-white/[0.08]" />
+                  )}
+                </div>
+                <div className="p-4 flex items-center justify-center border-l border-white/[0.04]">
+                  {row.others ? (
+                    <CheckCircle className="w-4.5 h-4.5 text-white/20" />
+                  ) : (
+                    <div className="w-4.5 h-4.5 rounded-full border border-white/[0.08]" />
+                  )}
+                </div>
+                <div className="p-4 flex items-center justify-center border-l border-[#E63946]/10 bg-[#E63946]/[0.02]">
+                  {row.adruby ? (
+                    <CheckCircle className="w-4.5 h-4.5 text-[#E63946]" />
+                  ) : (
+                    <div className="w-4.5 h-4.5 rounded-full border border-white/[0.08]" />
+                  )}
+                </div>
+              </div>
+            ))}
+          </motion.div>
+        </div>
+      </section>
+
+      {/* ══════════════════════════════════════════════
           PRICING — Inline Preview
           ══════════════════════════════════════════════ */}
       <section className="py-20 sm:py-28 relative">
@@ -570,7 +743,7 @@ export function LandingPage({ onGetStarted, onLogin, onNavigate }: LandingPagePr
           >
             {[
               { name: 'Free', price: '€0', period: 'dauerhaft', features: ['100 Credits/Monat', 'Basis AI', '3 Personas'], highlight: false },
-              { name: 'Pro', price: '€49', period: '/Monat', features: ['2.500 Credits/Monat', 'GPT-4o Models', 'Premium Templates', 'Priority Support'], highlight: true },
+              { name: 'Pro', price: '€49', period: '/Monat', features: ['2.500 Credits/Monat', 'Gemini 2.5 Flash AI', 'Premium Templates', 'Priority Support'], highlight: true },
               { name: 'Agency', price: '€199', period: '/Monat', features: ['10.000 Credits/Monat', 'White-Labeling', 'Team (5 User)', 'API Zugriff'], highlight: false },
             ].map((plan) => (
               <motion.div
@@ -706,12 +879,12 @@ export function LandingPage({ onGetStarted, onLogin, onNavigate }: LandingPagePr
             variants={stagger}
           >
             <motion.h2 variants={fadeUp} className="font-display text-4xl sm:text-5xl md:text-6xl font-bold text-white mb-6 leading-tight">
-              Bereit, deine Ads auf das
+              Bereit, deinen CPA zu
               <br />
-              nächste Level zu bringen?
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#E63946] to-rose-400">halbieren</span>?
             </motion.h2>
             <motion.p variants={fadeUp} className="text-lg text-white/40 mb-10">
-              7 Tage kostenlos testen — Kreditkarte erforderlich, jederzeit kündbar.
+              Starte kostenlos — KI generiert, testet und skaliert deine besten Ads automatisch.
             </motion.p>
             <motion.div variants={fadeUp}>
               <motion.button

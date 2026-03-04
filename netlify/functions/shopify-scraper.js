@@ -2,20 +2,12 @@
 // Shopify Store Scraper using ScraperAPI Pro
 // Extracts products, images, descriptions, prices, and reviews
 
-import { createClient } from '@supabase/supabase-js';
+import { supabaseAdmin as supabase } from './_shared/clients.js';
+import { requireUserId } from './_shared/auth.js';
+import { withCors, ok, badRequest, serverError, methodNotAllowed } from './utils/response.js';
+import { checkRateLimit } from './_shared/rateLimiter.js';
 
 const SCRAPER_API_KEY = process.env.SCRAPER_API_KEY;
-const SUPABASE_URL = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL;
-const SUPABASE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_ANON_KEY;
-
-const supabase = SUPABASE_URL && SUPABASE_KEY ? createClient(SUPABASE_URL, SUPABASE_KEY) : null;
-
-// CORS headers
-const headers = {
-    'Access-Control-Allow-Origin': process.env.FRONTEND_URL || 'https://adruby.de',
-    'Access-Control-Allow-Headers': 'Content-Type, Authorization',
-    'Content-Type': 'application/json'
-};
 
 /**
  * Extract base store URL from any Shopify URL
@@ -188,20 +180,12 @@ async function handleScrape(event) {
     const { storeUrl: inputUrl, maxProducts = 50 } = body;
 
     if (!inputUrl) {
-        return {
-            statusCode: 400,
-            headers,
-            body: JSON.stringify({ error: 'storeUrl is required' })
-        };
+        return badRequest('storeUrl is required');
     }
 
     const storeUrl = extractStoreUrl(inputUrl);
     if (!storeUrl) {
-        return {
-            statusCode: 400,
-            headers,
-            body: JSON.stringify({ error: 'Invalid URL format' })
-        };
+        return badRequest('Invalid URL format');
     }
 
     console.log(`[Shopify Scraper] Scraping ${storeUrl}, max ${maxProducts} products`);
@@ -236,14 +220,7 @@ async function handleScrape(event) {
         }
 
         if (!rawProducts || rawProducts.length === 0) {
-            return {
-                statusCode: 404,
-                headers,
-                body: JSON.stringify({
-                    error: 'No products found. Make sure this is a valid Shopify store URL.',
-                    storeUrl
-                })
-            };
+            return badRequest('No products found. Make sure this is a valid Shopify store URL.', 404);
         }
 
         // Parse products
@@ -263,28 +240,17 @@ async function handleScrape(event) {
             }).catch(() => { }); // Silent fail
         }
 
-        return {
-            statusCode: 200,
-            headers,
-            body: JSON.stringify({
-                success: true,
-                store: storeInfo,
-                products,
-                source,
-                scrapedAt: new Date().toISOString()
-            })
-        };
+        return ok({
+            success: true,
+            store: storeInfo,
+            products,
+            source,
+            scrapedAt: new Date().toISOString()
+        });
 
     } catch (error) {
         console.error('[Shopify Scraper] Error:', error);
-        return {
-            statusCode: 500,
-            headers,
-            body: JSON.stringify({
-                error: 'Failed to scrape store',
-                message: error.message
-            })
-        };
+        return serverError('Failed to scrape store');
     }
 }
 
@@ -302,15 +268,21 @@ function extractProductLinksFromHtml(html) {
 export async function handler(event) {
     // Handle CORS preflight
     if (event.httpMethod === 'OPTIONS') {
-        return { statusCode: 204, headers };
+        return withCors({ statusCode: 204 });
     }
 
     if (event.httpMethod !== 'POST') {
-        return {
-            statusCode: 405,
-            headers,
-            body: JSON.stringify({ error: 'Method not allowed' })
-        };
+        return methodNotAllowed('POST,OPTIONS');
+    }
+
+    // Auth guard — require authenticated user
+    const auth = await requireUserId(event);
+    if (!auth.ok) return auth.response;
+
+    // Rate limit — prevent scraper abuse
+    const rateCheck = await checkRateLimit(auth.userId, 'shopify_scrape');
+    if (!rateCheck.allowed) {
+        return badRequest('Rate limit exceeded. Try again later.', 429);
     }
 
     return handleScrape(event);
