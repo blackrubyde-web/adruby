@@ -57,7 +57,7 @@ export function PredictiveInsightsSection({
                                 recommendedAction: 'pause',
                                 metrics: {
                                     current: ad.roas,
-                                    predicted: ad.roas * 0.6,
+                                    predicted: null,
                                     unit: 'x ROAS'
                                 }
                             }}
@@ -78,13 +78,13 @@ export function PredictiveInsightsSection({
                                 adName: ad.name,
                                 type: 'fatigue',
                                 severity: 'medium',
-                                message: 'ROAS unter Ziel - mögliche Ad Fatigue',
-                                daysUntilCritical: Math.round(5 + Math.random() * 5),
+                                message: ad.aiAnalysis.reason || 'ROAS unter Ziel — Budget-Anpassung empfohlen',
+                                daysUntilCritical: null,
                                 confidence: ad.aiAnalysis.confidence,
                                 recommendedAction: 'refresh',
                                 metrics: {
                                     current: ad.roas,
-                                    predicted: ad.roas * 0.8,
+                                    predicted: null,
                                     unit: 'x ROAS'
                                 }
                             }}
@@ -104,13 +104,13 @@ export function PredictiveInsightsSection({
                                 adName: ad.name,
                                 type: 'opportunity',
                                 severity: 'low',
-                                message: 'Top Performer - Skalierungspotenzial erkannt',
+                                message: ad.aiAnalysis.reason || 'Top Performer — Skalierungspotenzial erkannt',
                                 daysUntilCritical: null,
                                 confidence: ad.aiAnalysis.confidence,
                                 recommendedAction: 'scale',
                                 metrics: {
                                     current: ad.roas,
-                                    predicted: ad.roas * 1.2,
+                                    predicted: null,
                                     unit: 'x ROAS'
                                 }
                             }}

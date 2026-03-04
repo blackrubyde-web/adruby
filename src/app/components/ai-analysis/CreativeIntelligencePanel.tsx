@@ -208,7 +208,7 @@ export const CreativeIntelligencePanel = memo(function CreativeIntelligencePanel
                         </div>
                         <h4 className="text-lg font-semibold text-white mb-2">Bereit für Deep Analysis</h4>
                         <p className="text-sm text-white/50 max-w-md mx-auto mb-6">
-                            Klicke auf "Jetzt Analysieren" um GPT-4o basierte Creative Intelligence zu erhalten.
+                            Klicke auf "Jetzt Analysieren" um Gemini-basierte Creative Intelligence zu erhalten.
                         </p>
                         <div className="flex flex-wrap justify-center gap-2 text-xs text-white/40">
                             <span className="px-3 py-1 bg-white/5 rounded-full">Winner Detection</span>

@@ -91,8 +91,13 @@ export const PerformanceTrendChart = memo(function PerformanceTrendChart({
 
     if (!data.length) {
         return (
-            <Card className="p-6 text-center">
-                <p className="text-muted-foreground text-sm">Keine Trend-Daten verfügbar</p>
+            <Card className="p-8 text-center card-obsidian">
+                <Calendar className="w-10 h-10 text-muted-foreground mx-auto mb-3 opacity-50" />
+                <h4 className="text-sm font-semibold text-foreground mb-1">Noch keine Trend-Daten</h4>
+                <p className="text-xs text-muted-foreground max-w-xs mx-auto">
+                    Führe einen Meta Sync durch um tägliche Performance-Daten zu laden.
+                    Trend-Analyse wird verfügbar sobald mindestens 2 Tage Daten vorliegen.
+                </p>
             </Card>
         );
     }

@@ -191,7 +191,7 @@ export function AIAnalysisPage() {
       setAiPowered(json.meta?.aiPowered ?? false);
 
       if (json.meta?.aiPowered) toast.success(`AI Analyse abgeschlossen (${json.analyses?.length || 0} Kampagnen)`);
-      else toast.info('Fallback-Analyse verwendet (OpenAI nicht konfiguriert)');
+      else toast.info('Regel-basierte Analyse verwendet (Gemini nicht konfiguriert)');
     } catch (err) {
       console.error('[AIAnalysisPage] AI analysis failed:', err);
       toast.error(err instanceof Error ? err.message : 'AI Analyse fehlgeschlagen');
@@ -209,11 +209,41 @@ export function AIAnalysisPage() {
     return 'active';
   };
 
-  const buildPerformanceScore = (metrics: { roas: number; ctr: number; conversions: number }) => {
-    const roasScore = Math.min(60, metrics.roas * 12);
-    const ctrScore = Math.min(25, metrics.ctr * 8);
-    const convScore = metrics.conversions > 0 ? Math.min(15, Math.log10(metrics.conversions + 1) * 10) : 0;
-    return Math.max(20, Math.min(100, Math.round(roasScore + ctrScore + convScore)));
+  const buildPerformanceScore = (metrics: { roas: number; ctr: number; conversions: number; clicks?: number; spend?: number }) => {
+    // Unified with backend ai-campaign-analyze.js — same weighted buckets
+    let score = 0;
+    // ROAS (40%)
+    if (metrics.roas >= 5) score += 40;
+    else if (metrics.roas >= 3) score += 32;
+    else if (metrics.roas >= 2) score += 24;
+    else if (metrics.roas >= 1.5) score += 16;
+    else if (metrics.roas >= 1) score += 8;
+    // CTR (20%)
+    if (metrics.ctr >= 3) score += 20;
+    else if (metrics.ctr >= 2) score += 16;
+    else if (metrics.ctr >= 1.5) score += 12;
+    else if (metrics.ctr >= 1) score += 8;
+    else if (metrics.ctr >= 0.5) score += 4;
+    // Conv Rate (20%)
+    const convRate = (metrics.clicks && metrics.clicks > 0) ? (metrics.conversions / metrics.clicks) * 100 : 0;
+    if (convRate >= 5) score += 20;
+    else if (convRate >= 3) score += 16;
+    else if (convRate >= 2) score += 12;
+    else if (convRate >= 1) score += 8;
+    else if (convRate > 0) score += 4;
+    // CPC (10%)
+    const cpc = (metrics.clicks && metrics.clicks > 0 && metrics.spend) ? metrics.spend / metrics.clicks : 999;
+    if (cpc < 0.5) score += 10;
+    else if (cpc < 1) score += 8;
+    else if (cpc < 2) score += 6;
+    else if (cpc < 5) score += 4;
+    // Volume (10%)
+    if (metrics.conversions >= 100) score += 10;
+    else if (metrics.conversions >= 50) score += 8;
+    else if (metrics.conversions >= 20) score += 6;
+    else if (metrics.conversions >= 5) score += 4;
+    else if (metrics.conversions > 0) score += 2;
+    return Math.max(0, Math.min(100, score));
   };
 
   const buildAiAnalysis = useCallback((id: string, campaignId: string, metrics: { roas: number; ctr: number; conversions: number; spend: number }, strategyId?: string | null): AIAnalysis => {
@@ -265,7 +295,7 @@ export function AIAnalysisPage() {
       const roas = Number(campaign.roas || 0);
       const conversions = Number(campaign.conversions || 0);
       const cpc = clicks > 0 ? spend / clicks : 0;
-      const performanceScore = buildPerformanceScore({ roas, ctr, conversions });
+      const performanceScore = buildPerformanceScore({ roas, ctr, conversions, clicks, spend });
 
       const campaignStrategyId = campaign.strategyId || null;
       const aiAnalysis = buildAiAnalysis(`analysis-${campaign.id}`, campaign.id, { roas, ctr, conversions, spend }, campaignStrategyId);
@@ -519,7 +549,7 @@ export function AIAnalysisPage() {
               <span className="stat-pill">€{(totalSpend / 1000).toFixed(1)}K</span>
               <span className="stat-pill stat-pill-accent">{totalRoas.toFixed(2)}x ROAS</span>
               <span className="stat-pill">{allRecommendations.length} Empfehlungen</span>
-              {aiPowered && <span className="stat-pill stat-pill-accent"><Sparkles className="w-3 h-3" /> GPT-4o</span>}
+              {aiPowered && <span className="stat-pill stat-pill-accent"><Sparkles className="w-3 h-3" /> Gemini</span>}
             </div>
           </div>
           <div className="flex items-center gap-2 shrink-0">
@@ -565,21 +595,8 @@ export function AIAnalysisPage() {
                   revenue: day.revenue ?? 0,
                 }));
               }
-              // Fallback: derive from campaign-level aggregates if no daily data
-              const days = 30;
-              const baseRoas = totalRoas || 2;
-              const baseCtr = campaigns.reduce((sum, c) => sum + c.ctr, 0) / (campaigns.length || 1);
-              const baseSpend = totalSpend / days;
-              return Array.from({ length: days }, (_, i) => {
-                const date = new Date(); date.setDate(date.getDate() - (days - 1 - i));
-                return {
-                  date: date.toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit' }),
-                  roas: baseRoas,
-                  ctr: baseCtr,
-                  spend: baseSpend,
-                  revenue: baseSpend * baseRoas,
-                };
-              });
+              // No daily data available — return empty to show honest placeholder
+              return [];
             })()}
             title="Performance Trend"
           />

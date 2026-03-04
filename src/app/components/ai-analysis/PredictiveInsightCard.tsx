@@ -16,7 +16,7 @@ export interface PredictiveInsight {
     recommendedAction: 'refresh' | 'pause' | 'scale' | 'monitor';
     metrics?: {
         current: number;
-        predicted: number;
+        predicted: number | null;
         unit: string;
     };
 }
@@ -153,14 +153,18 @@ export const PredictiveInsightCard = memo(function PredictiveInsightCard({
                                     {insight.metrics.current.toFixed(2)}{insight.metrics.unit}
                                 </p>
                             </div>
-                            <ArrowRight className="w-4 h-4 text-white/30" />
-                            <div className="text-center">
-                                <p className="text-xs text-white/40">Prognose</p>
-                                <p className={`text-lg font-bold ${insight.metrics.predicted < insight.metrics.current ? 'text-red-400' : 'text-emerald-400'
-                                    }`}>
-                                    {insight.metrics.predicted.toFixed(2)}{insight.metrics.unit}
-                                </p>
-                            </div>
+                            {insight.metrics.predicted != null && (
+                                <>
+                                    <ArrowRight className="w-4 h-4 text-white/30" />
+                                    <div className="text-center">
+                                        <p className="text-xs text-white/40">Prognose</p>
+                                        <p className={`text-lg font-bold ${insight.metrics.predicted < insight.metrics.current ? 'text-red-400' : 'text-emerald-400'
+                                            }`}>
+                                            {insight.metrics.predicted.toFixed(2)}{insight.metrics.unit}
+                                        </p>
+                                    </div>
+                                </>
+                            )}
                         </div>
                     )}
 
