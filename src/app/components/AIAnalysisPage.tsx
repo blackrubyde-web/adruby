@@ -78,6 +78,8 @@ export function AIAnalysisPage() {
   const { campaigns: metaCampaigns, loading: campaignsLoading, error: campaignsError, refresh: refreshCampaigns } = useMetaCampaigns();
   const { data: analyticsData, loading: analyticsLoading, error: analyticsError } = useAnalyticsData(timeRange, false, 'meta', refreshTick);
   const [autopilotEnabled, setAutopilotEnabled] = useState(false);
+  const [lastSyncAt, setLastSyncAt] = useState<string | null>(null);
+  const [recentActionCount, setRecentActionCount] = useState(0);
 
   // ── Handlers ──────────────────────────────────────────────────────
 
@@ -96,7 +98,7 @@ export function AIAnalysisPage() {
     }
   }, [autopilotEnabled]);
 
-  // Load autopilot state from profile
+  // Load autopilot state + status from profile + sync data
   useEffect(() => {
     (async () => {
       const { data: session } = await supabase.auth.getSession();
@@ -104,6 +106,13 @@ export function AIAnalysisPage() {
       if (!uid) return;
       const { data } = await supabase.from('profiles').select('autopilot_enabled').eq('id', uid).single();
       if (data?.autopilot_enabled != null) setAutopilotEnabled(!!data.autopilot_enabled);
+      // Fetch last sync time
+      const { data: conn } = await supabase.from('facebook_connections').select('last_sync_at').eq('user_id', uid).eq('provider', 'facebook').single();
+      if (conn?.last_sync_at) setLastSyncAt(conn.last_sync_at);
+      // Fetch recent action count (last 7 days)
+      const since = new Date(); since.setDate(since.getDate() - 7);
+      const { count } = await supabase.from('meta_action_logs').select('id', { count: 'exact', head: true }).eq('user_id', uid).gte('created_at', since.toISOString());
+      setRecentActionCount(count || 0);
     })();
   }, []);
 
@@ -562,6 +571,12 @@ export function AIAnalysisPage() {
                 <div className={`absolute top-0.5 w-2.5 h-2.5 rounded-full transition-all duration-200 ${autopilotEnabled ? 'left-3.5 bg-primary' : 'left-0.5 bg-muted-foreground'}`} />
               </div>
             </button>
+            {autopilotEnabled && lastSyncAt && (
+              <span className="text-[10px] text-muted-foreground hidden md:inline">
+                Sync: {new Date(lastSyncAt).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}
+                {recentActionCount > 0 && ` · ${recentActionCount} Aktionen (7d)`}
+              </span>
+            )}
             <Button variant="outline" size="sm" onClick={isSyncing ? cancelSync : runSync} className="gap-1.5">
               <RefreshCw className={`w-3.5 h-3.5 ${isSyncing ? 'animate-spin' : ''}`} /> {isSyncing ? 'Stop' : 'Sync'}
             </Button>
