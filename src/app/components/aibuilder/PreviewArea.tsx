@@ -280,9 +280,17 @@ export function PreviewArea({
                     </div>
 
                     {/* Image */}
-                    {displayData.imageUrl && (
+                    {displayData.imageUrl ? (
                         <div className="relative aspect-square w-full bg-black/50">
                             <img src={displayData.imageUrl} alt="Ad Creative" className="w-full h-full object-cover" />
+                        </div>
+                    ) : (
+                        <div className="relative aspect-square w-full bg-gradient-to-br from-gray-900 to-gray-800 flex items-center justify-center">
+                            <div className="text-center p-6">
+                                <AlertCircle className="w-8 h-8 text-amber-500/60 mx-auto mb-2" />
+                                <p className="text-xs text-gray-400">Bild wird geladen oder ist nicht verfügbar</p>
+                                <p className="text-[10px] text-gray-500 mt-1">Versuche es erneut zu generieren</p>
+                            </div>
                         </div>
                     )}
 

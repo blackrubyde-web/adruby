@@ -37,10 +37,10 @@ export const handler = async (event) => {
             return { statusCode: 401, headers, body: JSON.stringify({ error: 'Unauthorized' }) };
         }
 
-        // Fetch job
+        // Fetch job — include image_url column for fallback
         const { data: job, error } = await supabaseAdmin
             .from('generated_creatives')
-            .select('id, outputs, metrics, thumbnail, saved')
+            .select('id, outputs, metrics, thumbnail, saved, image_url')
             .eq('id', jobId)
             .eq('user_id', user.id)
             .single();
@@ -51,7 +51,48 @@ export const handler = async (event) => {
 
         const status = job.metrics?.status || 'unknown';
 
+        // ── ERROR ──
+        if (status === 'error') {
+            return {
+                statusCode: 200,
+                headers,
+                body: JSON.stringify({
+                    success: false,
+                    status: 'error',
+                    error: job.metrics?.error || job.metrics?.errorMessage || 'Generation failed',
+                }),
+            };
+        }
+
+        // ── COMPLETE ──
         if (status === 'complete') {
+            const outputs = job.outputs || {};
+
+            // Chain multiple fallbacks for image URL
+            const resolvedImageUrl = job.thumbnail
+                || job.image_url
+                || outputs.imageUrl
+                || outputs.imageDataUrl
+                || outputs.thumbnailUrl
+                || null;
+
+            // Build variants array for frontend (backend stores as { url, concept, layout })
+            const variants = Array.isArray(outputs.variants)
+                ? outputs.variants.map((v, idx) => ({
+                    id: `${job.id}_v${idx + 1}`,
+                    headline: v.headline || outputs.headline,
+                    slogan: v.slogan || outputs.slogan || '',
+                    description: v.description || outputs.description || '',
+                    cta: v.cta || outputs.cta || '',
+                    hook: v.hook || outputs.hook || outputs.description || '',
+                    imageUrl: v.url || v.imageUrl || resolvedImageUrl,
+                    imagePrompt: v.imagePrompt || outputs.imagePrompt || '',
+                    template: v.template || outputs.template || '',
+                    qualityScore: v.qualityScore || outputs.qualityScore,
+                    engagementScore: v.engagementScore || outputs.engagementScore,
+                }))
+                : undefined;
+
             return {
                 statusCode: 200,
                 headers,
@@ -60,35 +101,29 @@ export const handler = async (event) => {
                     status: 'complete',
                     data: {
                         id: job.id,
-                        headline: job.outputs?.headline,
-                        slogan: job.outputs?.slogan,
-                        description: job.outputs?.description,
-                        cta: job.outputs?.cta,
-                        imageUrl: job.thumbnail || job.outputs?.imageUrl,
-                        qualityScore: job.outputs?.qualityScore,
-                        engagementScore: job.outputs?.engagementScore,
+                        headline: outputs.headline,
+                        slogan: outputs.slogan,
+                        description: outputs.description || outputs.hook || '',
+                        cta: outputs.cta,
+                        hook: outputs.hook || outputs.description || '',
+                        imageUrl: resolvedImageUrl,
+                        imagePrompt: outputs.imagePrompt || '',
+                        template: outputs.template || '',
+                        qualityScore: outputs.qualityScore,
+                        engagementScore: outputs.engagementScore,
+                        creditsUsed: job.metrics?.credits_deducted ? 1 : 0,
+                        ...(variants && variants.length > 0 ? { variants } : {}),
                     },
                     metadata: {
                         generationTime: job.metrics?.generationTime,
                         savedToLibrary: job.saved,
+                        engine: outputs.engine || job.metrics?.engine,
                     }
                 }),
             };
         }
 
-        if (status === 'error') {
-            return {
-                statusCode: 200,
-                headers,
-                body: JSON.stringify({
-                    success: false,
-                    status: 'error',
-                    error: job.metrics?.error || 'Generation failed',
-                }),
-            };
-        }
-
-        // Still processing
+        // ── STILL PROCESSING ──
         return {
             statusCode: 200,
             headers,
@@ -96,6 +131,8 @@ export const handler = async (event) => {
                 success: true,
                 status: 'processing',
                 message: 'Generation in progress...',
+                progress: job.metrics?.progress || 0,
+                step: job.metrics?.step || 'pending',
             }),
         };
 
