@@ -148,16 +148,16 @@ export const Step3_Targeting = () => {
         }
     };
 
-    const addInterest = (interest: string) => {
-        if (!targeting.interests.includes(interest)) {
-            updateField('interests', [...targeting.interests, interest]);
+    const addInterest = (entry: { id: string; name: string }) => {
+        if (!targeting.interests.some(i => i.id === entry.id)) {
+            updateField('interests', [...targeting.interests, entry]);
         }
         setInterestInput('');
         setShowInterestSuggestions(false);
     };
 
-    const removeInterest = (interest: string) => {
-        updateField('interests', targeting.interests.filter(i => i !== interest));
+    const removeInterest = (id: string) => {
+        updateField('interests', targeting.interests.filter(i => i.id !== id));
     };
 
     const togglePlacement = (id: typeof PLACEMENTS[number]['id']) => {
@@ -372,7 +372,15 @@ export const Step3_Targeting = () => {
                                 onFocus={() => setShowInterestSuggestions(true)}
                                 onKeyDown={e => {
                                     if (e.key === 'Enter' && interestInput.trim()) {
-                                        addInterest(interestInput.trim());
+                                        e.stopPropagation();
+                                        // If there's a top search result, use its ID; otherwise create a manual entry
+                                        const topResult = searchResults[0];
+                                        if (topResult) {
+                                            addInterest({ id: topResult.id, name: topResult.name });
+                                        } else {
+                                            addInterest({ id: `manual_${interestInput.trim()}`, name: interestInput.trim() });
+                                        }
+                                        setSearchResults([]);
                                     }
                                 }}
                                 placeholder="Meta-Interessen suchen..."
@@ -381,7 +389,15 @@ export const Step3_Targeting = () => {
                             {isSearching && <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground animate-spin" />}
                             {!isSearching && interestInput.trim() && (
                                 <button
-                                    onClick={() => addInterest(interestInput.trim())}
+                                    onClick={() => {
+                                        const topResult = searchResults[0];
+                                        if (topResult) {
+                                            addInterest({ id: topResult.id, name: topResult.name });
+                                        } else {
+                                            addInterest({ id: `manual_${interestInput.trim()}`, name: interestInput.trim() });
+                                        }
+                                        setSearchResults([]);
+                                    }}
                                     className="absolute right-2 top-1/2 -translate-y-1/2 p-1 hover:bg-muted rounded"
                                 >
                                     <Plus className="w-4 h-4 text-muted-foreground" />
@@ -396,13 +412,13 @@ export const Step3_Targeting = () => {
                                     <button
                                         key={result.id}
                                         onClick={() => {
-                                            addInterest(result.name);
+                                            addInterest({ id: result.id, name: result.name });
                                             setSearchResults([]);
                                         }}
-                                        disabled={targeting.interests.includes(result.name)}
+                                        disabled={targeting.interests.some(i => i.id === result.id)}
                                         className={cn(
                                             "w-full px-4 py-2.5 text-left text-sm transition-all flex items-center justify-between",
-                                            targeting.interests.includes(result.name)
+                                            targeting.interests.some(i => i.id === result.id)
                                                 ? "bg-pink-500/5 text-muted-foreground"
                                                 : "hover:bg-muted/50"
                                         )}
@@ -428,11 +444,11 @@ export const Step3_Targeting = () => {
                                             {cat.interests.map(interest => (
                                                 <button
                                                     key={interest}
-                                                    onClick={() => addInterest(interest)}
-                                                    disabled={targeting.interests.includes(interest)}
+                                                    onClick={() => addInterest({ id: `suggestion_${interest}`, name: interest })}
+                                                    disabled={targeting.interests.some(i => i.name === interest)}
                                                     className={cn(
                                                         "px-2 py-1 text-xs rounded-md border transition-all",
-                                                        targeting.interests.includes(interest)
+                                                        targeting.interests.some(i => i.name === interest)
                                                             ? "bg-pink-500/10 border-pink-500/30 text-pink-600"
                                                             : "border-border hover:border-pink-500/50"
                                                     )}
@@ -450,9 +466,12 @@ export const Step3_Targeting = () => {
                         {targeting.interests.length > 0 && (
                             <div className="flex flex-wrap gap-2 pt-2 border-t border-border">
                                 {targeting.interests.map(interest => (
-                                    <Badge key={interest} className="bg-pink-500/10 text-pink-600 border-pink-500/20">
-                                        {interest}
-                                        <button onClick={() => removeInterest(interest)} className="ml-1.5">
+                                    <Badge key={interest.id} className="bg-pink-500/10 text-pink-600 border-pink-500/20">
+                                        {interest.name}
+                                        {interest.id.startsWith('manual_') && (
+                                            <span className="ml-1 text-[9px] opacity-50" title="Ohne Meta-ID — wird ggf. ignoriert">⚠</span>
+                                        )}
+                                        <button onClick={() => removeInterest(interest.id)} className="ml-1.5">
                                             <X className="w-3 h-3" />
                                         </button>
                                     </Badge>

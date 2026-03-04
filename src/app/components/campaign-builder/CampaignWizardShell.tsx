@@ -22,9 +22,11 @@ export const CampaignWizardShell = ({ children }: { children: ReactNode }) => {
         handleNext,
         canContinue,
         isLoading,
+        isPublishing,
         error,
         campaignSetup,
-        selectedCreativeIds
+        selectedCreativeIds,
+        publishToMeta
     } = useCampaignBuilder();
 
     // Keyboard navigation
@@ -200,10 +202,11 @@ export const CampaignWizardShell = ({ children }: { children: ReactNode }) => {
                                     <Button
                                         size="sm"
                                         className="gap-1.5"
-                                        onClick={() => { }}
+                                        disabled={isPublishing}
+                                        onClick={() => { publishToMeta(); }}
                                     >
                                         <Rocket className="w-3.5 h-3.5" />
-                                        <span>Veröffentlichen</span>
+                                        <span>{isPublishing ? 'Wird veröffentlicht…' : 'Veröffentlichen'}</span>
                                     </Button>
                                 )}
                             </div>

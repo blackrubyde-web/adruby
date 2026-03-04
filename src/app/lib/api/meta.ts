@@ -132,7 +132,7 @@ export type MetaTargetingInput = {
   ageMin?: number;
   ageMax?: number;
   gender?: "all" | "male" | "female";
-  interests?: string[];
+  interests?: Array<{ id: string; name: string }>;
   customAudiences?: Array<{ id: string; name?: string }>;
   lookalikeAudiences?: Array<{ id: string; name?: string }>;
   exclusions?: string[];

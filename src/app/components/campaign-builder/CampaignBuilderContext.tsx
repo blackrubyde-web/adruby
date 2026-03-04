@@ -12,7 +12,7 @@ export type TargetingConfig = {
     ageMin: number;
     ageMax: number;
     gender: 'all' | 'male' | 'female';
-    interests: string[];
+    interests: Array<{ id: string; name: string }>;
     customAudiences: Array<{ id: string; name?: string }>;
     lookalikeAudiences: Array<{ id: string; name?: string }>;
     exclusions: string[];
@@ -403,7 +403,8 @@ export function CampaignBuilderProvider({ children }: { children: ReactNode }) {
             name: `${campaignSetup.name} - Ad Set 1`,
             targeting: targetingInput,
             optimizationGoal: campaignSetup.objective === 'OUTCOME_SALES' ? 'OFFSITE_CONVERSIONS' : 'LINK_CLICKS',
-            dailyBudget: campaignSetup.dailyBudget, // Euros — backend converts to cents
+            // Only set adSet-level budget when NOT using CBO (lifetime budget)
+            dailyBudget: campaignSetup.budgetType === 'daily' ? campaignSetup.dailyBudget : undefined,
             ads: selectedCreatives.map(creative => ({
                 name: creative.name,
                 headline: creative.headline,
@@ -455,7 +456,7 @@ export function CampaignBuilderProvider({ children }: { children: ReactNode }) {
                 } catch (e) {
                     console.error('Failed to clear progress:', e);
                 }
-                toast.success('🚀 Kampagne erfolgreich zu Meta gepusht!');
+                toast.success('🚀 Kampagne als Entwurf erstellt — aktiviere sie im Meta Ads Manager.');
                 return { success: true, campaignId: result.campaignId };
             } else {
                 const msg = result?.message || 'Kampagne konnte nicht erstellt werden.';

@@ -330,6 +330,7 @@ function mapBidStrategy(strategy) {
         COST_CAP: "COST_CAP",
         BID_CAP: "LOWEST_COST_WITH_BID_CAP",
         MINIMUM_ROAS: "LOWEST_COST_WITH_MIN_ROAS",
+        ROAS_GOAL: "LOWEST_COST_WITH_MIN_ROAS",
     };
     return map[strategy] || "LOWEST_COST_WITHOUT_CAP";
 }

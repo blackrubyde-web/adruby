@@ -39,83 +39,8 @@ interface Campaign {
   tags: string[];
 }
 
-const campaigns: Campaign[] = [
-  {
-    id: '7305',
-    name: 'Summer Sale Campaign',
-    date: '15 Dec 2024',
-    time: '10:32 PM',
-    progress: 88,
-    status: 'live',
-    adSpend: '$2,500.00',
-    impressions: '1.2M',
-    clicks: '45K',
-    conversions: '3.2K',
-    roas: '4.8x',
-    sparklineData: [580, 620, 590, 650, 680, 700, 720],
-    tags: ['High ROI', 'Q4']
-  },
-  {
-    id: '7304',
-    name: 'Holiday Special',
-    date: '14 Dec 2024',
-    time: '03:24 PM',
-    progress: 93,
-    status: 'live',
-    adSpend: '$3,200.00',
-    impressions: '980K',
-    clicks: '38K',
-    conversions: '2.9K',
-    roas: '3.9x',
-    sparklineData: [520, 580, 600, 620, 590, 610, 630],
-    tags: ['Testing']
-  },
-  {
-    id: '7303',
-    name: 'Black Friday Blast',
-    date: '12 Dec 2024',
-    time: '08:45 AM',
-    progress: 100,
-    status: 'completed',
-    adSpend: '$1,800.00',
-    impressions: '1.5M',
-    clicks: '52K',
-    conversions: '4.1K',
-    roas: '5.2x',
-    sparklineData: [600, 700, 800, 900, 950, 1000, 1100],
-    tags: ['High ROI']
-  },
-  {
-    id: '7302',
-    name: 'Product Launch',
-    date: '10 Dec 2024',
-    time: '02:15 PM',
-    progress: 75,
-    status: 'paused',
-    adSpend: '$2,100.00',
-    impressions: '890K',
-    clicks: '31K',
-    conversions: '2.5K',
-    roas: '3.5x',
-    sparklineData: [450, 480, 460, 470, 490, 480, 475],
-    tags: []
-  },
-  {
-    id: '7301',
-    name: 'New Year Preview',
-    date: '20 Dec 2024',
-    time: '12:00 AM',
-    progress: 0,
-    status: 'scheduled',
-    adSpend: '$0.00',
-    impressions: '0',
-    clicks: '0',
-    conversions: '0',
-    roas: '0x',
-    sparklineData: [],
-    tags: ['Scheduled']
-  },
-];
+
+
 
 export function CampaignsTable({
   campaigns: externalCampaigns,
@@ -166,8 +91,7 @@ export function CampaignsTable({
     };
   });
 
-  const hasExternal = Array.isArray(externalCampaigns);
-  const activeCampaigns = hasExternal ? mappedExternal : campaigns;
+  const activeCampaigns = mappedExternal;
 
   const handleAction = (campaignId: string, action: CampaignAction) => {
     if (onAction) {

@@ -68,9 +68,9 @@ export const Step5_Review = () => {
                 </div>
 
                 <div className="space-y-2">
-                    <h2 className="text-2xl font-bold tracking-tight">Kampagne veröffentlicht</h2>
+                    <h2 className="text-2xl font-bold tracking-tight">Kampagne erstellt</h2>
                     <p className="text-sm text-muted-foreground">
-                        Deine Kampagne wurde erfolgreich zu Meta gepusht.
+                        Deine Kampagne wurde als Entwurf zu Meta gepusht. Aktiviere sie im Ads Manager.
                     </p>
                 </div>
 
