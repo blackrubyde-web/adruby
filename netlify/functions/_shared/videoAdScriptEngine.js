@@ -126,7 +126,8 @@ export async function generateVideoScript({
         const ai = getGenAI();
         const langLabel = language === 'de' ? 'German' : 'English';
 
-        const prompt = `You are an elite video ad director creating a ${durationSeconds}-second commercial for Meta (Instagram Reels / Facebook).
+        const prompt = `You are an elite commercial director shooting a ${durationSeconds}-second high-end product commercial.
+You direct $50,000+ productions. Your work looks like Apple, Nike, or Aesop campaigns — NOT CapCut templates or social media edits.
 
 PRODUCT: ${productName}
 INDUSTRY: ${industry}
@@ -135,24 +136,27 @@ TARGET AUDIENCE: ${targetAudience}
 LANGUAGE: ${langLabel}
 VIDEO STYLE: ${archetype.name.en} — ${archetype.description.en}
 HOOK PATTERN: ${hook.name.en} — "${hook.example[language] || hook.example.de}"
-INDUSTRY CONTEXT: Scene: ${industryContext.scene}, Problem: ${industryContext.problem}, Colors: ${industryContext.color}
+INDUSTRY CONTEXT:
+  - Scene: ${industryContext.scene}
+  - Problem: ${industryContext.problem}
+  - Color palette: ${industryContext.color}
 CTA: ${cta}
 
-Write a ${durationSeconds}-second video ad script following the 5-Act structure below. Total duration MUST equal ${durationSeconds} seconds.
+Create a ${durationSeconds}-second video ad script with the 5-Act structure below.
 
-Return ONLY valid JSON with this exact structure:
+Return ONLY valid JSON:
 {
   "scenes": [
     {
       "act": 1,
       "label": "HOOK",
       "durationMs": <milliseconds>,
-      "visual": "<HYPER-DETAILED visual description — see rules below>",
-      "textOverlay": "<text shown on screen, in ${langLabel}>",
+      "visual": "<PRODUCTION-QUALITY visual direction — see rules below>",
+      "textOverlay": "<text rendered on screen, in ${langLabel}>",
       "textPosition": "center|top|bottom",
       "textStyle": "bold_impact|elegant|minimal|handwritten",
-      "audioSfx": "<SPECIFIC sound effect — see rules below>",
-      "camera": "<SPECIFIC camera movement — see rules below>"
+      "audioSfx": "<SPECIFIC sound design — see rules below>",
+      "camera": "<SPECIFIC camera rig + lens + movement — see rules below>"
     }
   ],
   "metadata": {
@@ -165,50 +169,57 @@ Return ONLY valid JSON with this exact structure:
 }
 
 ═══ 5-ACT TIMING ═══
-- Act 1 (HOOK): 0s–2s — Scroll stopper. MUST grab attention in first 0.5s.
-- Act 2 (PROBLEM): 2s–4s — Show the pain point the audience relates to.
-- Act 3 (SOLUTION): 4s–6s — Product as hero. Demonstrate THE key benefit.
-- Act 4 (PROOF): 6s–${Math.max(7, durationSeconds - 1)}s — Social proof, numbers, trust.
-- Act 5 (CTA): ${Math.max(7, durationSeconds - 1)}s–${durationSeconds}s — Clear CTA, loop-friendly ending.
+- Act 1 (HOOK): 0s–2s — Scroll stopper. MUST grab in first 0.5s. Visual shock or curiosity.
+- Act 2 (PROBLEM): 2s–4s — Show the pain point. The viewer must FEEL it.
+- Act 3 (SOLUTION): 4s–6s — Product as hero. THE key benefit demonstrated.
+- Act 4 (PROOF): 6s–${Math.max(7, durationSeconds - 1)}s — Trust moment. Social proof, numbers.
+- Act 5 (CTA): ${Math.max(7, durationSeconds - 1)}s–${durationSeconds}s — CTA + seamless loop.
 
-═══ VISUAL DESCRIPTION RULES (CRITICAL FOR QUALITY) ═══
-The "visual" field is the MOST IMPORTANT field. Veo 3.1 generates video directly from this text.
-Each visual description MUST contain ALL of these elements:
-1. ENVIRONMENT: Where are we? (studio, kitchen, marble table, dark void, etc.)
-2. PRODUCT ACTION: What is happening to the product? (rotating, being placed, emerging, etc.)
-3. LIGHTING DIRECTION: Light source and mood (golden rim light from right, cool blue fill, spotlight from above)
-4. MOTION: What is moving and how? (slow-motion pour, particles floating, smoke dissolving)
-5. DEPTH: Foreground/background elements (blurred bokeh, depth layers)
+═══ WHAT THIS IS — AND IS NOT ═══
+THIS IS: A commercial-grade production. Think Aesop fragrance film, Apple product reveal, Nike "Just Do It" campaign.
+THIS IS NOT: A CapCut template, Canva animation, TikTok edit, or influencer video. NO bouncy text, NO random filters, NO generic stock footage aesthetic, NO template feel.
 
-EXAMPLE of a GREAT visual description:
-"Extreme close-up: the product sits on polished black marble. A single warm spotlight from above creates a circular pool of light. Golden particles drift through the beam. The product slowly rotates, catching light on each surface. Shallow depth of field blurs the dark background into smooth bokeh circles."
+═══ VISUAL DESCRIPTION RULES (THIS IS THE MOST IMPORTANT FIELD) ═══
+Veo 3.1 generates video DIRECTLY from this text. Every word matters. Each visual MUST specify:
+1. ENVIRONMENT + MATERIALS: Exact surfaces and setting (polished obsidian, brushed aluminum, linen, marble, concrete)
+2. PRODUCT ACTION: What physically happens (rotates on motorized turntable, emerges from shadow, is placed by a hand)
+3. LIGHTING RIG: Three-point direction (key light position + color temp, fill, rim/backlight)
+4. MOTION + PHYSICS: Speed, easing, direction (slow dolly-in at constant 2cm/s, particles drift upward lazily)
+5. DEPTH + LAYERS: Foreground framing, background treatment (f/1.4 bokeh, volumetric haze, practical foreground element)
 
-EXAMPLE of a BAD visual description (DO NOT write like this):
-"The product is shown in a nice setting with good lighting."
+✅ EXCELLENT visual:
+"The product sits on polished black marble. A single tungsten spotlight from above creates a tight pool of warm light. Volumetric haze drifts through the beam — each particle catches the light like gold dust. The product begins a slow 180° rotation on a motorized turntable, each surface catching specular highlights differently. Background blurs into creamy f/1.4 bokeh circles. A secondary cool-blue fill from camera-left creates dimensional shadows."
+
+❌ TERRIBLE visual (NEVER write this):
+"The product is shown in a nice studio with good lighting."
+"A cool shot of the product on a table."
 
 ═══ CAMERA FIELD RULES ═══
-Camera descriptions must be SPECIFIC cinematic movements:
-- GOOD: "Slow dolly-in from 3m to 30cm, 85mm lens, f/2.8, low angle"
-- GOOD: "Orbital tracking shot 90° around product, steady speed, eye level"
-- BAD: "nice camera movement" (too vague)
+Specify the EXACT cinematic rig, lens, and movement:
+✅ GOOD: "Motorized slider dolly-in, 85mm f/1.4, low angle (15° below eye level), constant 3cm/s"
+✅ GOOD: "Gimbal float tracking shot, 35mm f/2.0, eye level, gentle breathing motion"
+✅ GOOD: "Orbital tracking, counter-rotating to turntable, 50mm f/2.0, 45° elevated angle"
+❌ BAD: "nice camera movement" / "cinematic shot" (meaningless)
 
-═══ AUDIO FIELD RULES ═══
-Sound effects must be SPECIFIC and timed:
-- GOOD: "Deep bass drop on beat, followed by shimmering high-frequency sweep"
-- GOOD: "Crisp unwrapping foil sound, satisfying click, ambient reverb tail"
-- BAD: "uplifting music" (too vague)
+═══ AUDIO/SOUND DESIGN RULES ═══
+Specify individual sound elements, not genres:
+✅ GOOD: "30Hz sub-bass rumble building over 2s, single metallic 'ting' hit on reveal, crystalline high-frequency shimmer tail"
+✅ GOOD: "Crisp foil unwrapping (close-mic), soft thud of product placement on marble, ambient room reverb"
+❌ BAD: "uplifting music" / "dramatic sound" (meaningless)
 
 ═══ TEXT OVERLAY RULES ═══
-- All text overlays in ${langLabel}
+- All text in ${langLabel}
+- Typography must be DESIGNED: specify weight (600, 700, 800), tracking (tight or wide), font category (geometric sans-serif)
+- Text placement must follow composition rules (golden ratio, rule of thirds, lower third)
 ${language === 'de' ? `
 GERMAN LANGUAGE (MANDATORY):
-- All textOverlay values MUST be in flawless, native-level German. No spelling errors, no grammar mistakes.
-- Use correct German grammar: proper cases, articles (der/die/das), verb conjugations.
-- Use informal du-form (lowercase) for audience.
-- No anglicisms when a German word exists.
-- Umlauts (ä,ö,ü) and ß must be used correctly.
-- Use € (Euro) for any prices, NEVER $ or Dollar.
-- Proofread every textOverlay for Rechtschreibung and Grammatik.
+- All textOverlay values in flawless native German.
+- Correct grammar: cases, articles (der/die/das), verb conjugations.
+- "du" form (lowercase).
+- No anglicisms when German alternatives exist.
+- Umlauts (ä,ö,ü) and ß correct.
+- Prices in € (Euro), NEVER $ or Dollar.
+- Proofread every textOverlay.
 ` : ''}`;
 
         const response = await ai.models.generateContent({
@@ -407,21 +418,28 @@ export function buildVeoPrompt({ script, archetype, productName, usp, aspectRati
         prompt += '\n';
     }
 
-    // Professional quality directives
-    prompt += `PRODUCTION QUALITY:\n`;
-    prompt += `- Shot on RED Komodo 6K or equivalent cinema camera\n`;
-    prompt += `- Professional color grading, cinematic LUT applied\n`;
-    prompt += `- Smooth 24fps motion, no jitter or jerky movements\n`;
-    prompt += `- Sharp focus on product at all times, shallow depth of field\n`;
-    prompt += `- Professional lighting — no flat or amateur lighting\n`;
-    prompt += `- Commercial broadcast quality — indistinguishable from a real TV ad\n`;
-    prompt += `- Text overlays must be SHARP, perfectly rendered, and readable at mobile phone size\n`;
-    prompt += `- Seamless transitions between shots — no abrupt cuts unless intentional\n`;
-    prompt += `- The last frame should loop back cleanly to the first frame\n`;
+    // Professional quality directives — PRODUCTION LEVEL
+    prompt += `PRODUCTION QUALITY — THIS IS A COMMERCIAL, NOT A SOCIAL MEDIA EDIT:\n`;
+    prompt += `- Shot on cinema camera (RED Komodo 6K / ARRI Alexa Mini), not a phone\n`;
+    prompt += `- Professional color grading with cinematic LUT — rich blacks, controlled highlights, intentional color palette\n`;
+    prompt += `- Smooth 24fps cinematic motion with controlled speed ramps — no jitter, no jerky movement\n`;
+    prompt += `- Sharp selective focus with shallow depth of field (f/1.4 – f/2.8) — product always in focus, backgrounds creamy\n`;
+    prompt += `- Three-point professional lighting — no flat overhead, no ring light, no flash\n`;
+    prompt += `- Broadcast commercial quality — indistinguishable from a real TV/streaming ad\n`;
+    prompt += `- Typography: clean geometric sans-serif (Helvetica Neue / Inter / Futura weight 600-700), sharp rendering\n`;
+    prompt += `- Text placement follows golden ratio / rule of thirds — never random or centered without purpose\n`;
+    prompt += `- Intentional transitions between beats — cuts motivated by narrative, not random\n`;
+    prompt += `- Final frame designed to seamlessly loop back to first frame\n`;
+    prompt += `\n`;
+    prompt += `THIS IS NOT:\n`;
+    prompt += `- A CapCut template, TikTok edit, or Canva animation\n`;
+    prompt += `- Bouncy text with random effects, generic stock footage, or phone-quality footage\n`;
+    prompt += `- An influencer selfie video, vlog, or screen recording\n`;
+    prompt += `- Generic "product on white background" with no cinematic intent\n`;
 
     // Hard limit for Veo
-    if (prompt.length > 2500) {
-        prompt = prompt.substring(0, 2497) + '...';
+    if (prompt.length > 3000) {
+        prompt = prompt.substring(0, 2997) + '...';
     }
 
     return prompt;
