@@ -97,9 +97,15 @@ export async function checkVeoQuota() {
             return { available: false, reason: 'Daily rate limit', resetAt: new Date(lastDayReset.getTime() + 86_400_000).toISOString() };
         }
 
-        // Check consecutive errors
-        if (data.consecutive_errors >= 3) {
-            return { available: false, reason: 'Too many consecutive errors' };
+        // Check consecutive errors (auto-reset after 5 min)
+        if (data.consecutive_errors >= 10) {
+            const lastUpdate = new Date(data.updated_at);
+            const minutesSinceLastError = (now - lastUpdate) / 60_000;
+            if (minutesSinceLastError < 5) {
+                return { available: false, reason: 'Too many consecutive errors', resetAt: new Date(lastUpdate.getTime() + 300_000).toISOString() };
+            }
+            // Auto-reset after 5 minutes
+            console.log('[VeoQuota] Auto-resetting consecutive errors after cooldown');
         }
 
         return { available: true, remainingMinute: VEO_QUOTA_LIMITS.requestsPerMinute - currentMinuteRequests };
