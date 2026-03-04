@@ -21,9 +21,10 @@ export const Footer = memo(function Footer() {
                 </span>
               </span>
               <span className="text-muted-foreground/30">·</span>
-              <a href="#" className="hover:text-foreground transition-colors duration-200">Datenschutz</a>
-              <a href="#" className="hover:text-foreground transition-colors duration-200">AGB</a>
-              <a href="#" className="hover:text-foreground transition-colors duration-200">Impressum</a>
+              <a href="/datenschutz" className="hover:text-foreground transition-colors duration-200">Datenschutz</a>
+              <a href="/agb" className="hover:text-foreground transition-colors duration-200">AGB</a>
+              <a href="/impressum" className="hover:text-foreground transition-colors duration-200">Impressum</a>
+              <a href="/widerruf" className="hover:text-foreground transition-colors duration-200">Widerruf</a>
             </div>
 
             {/* Right: Status + AI badge */}

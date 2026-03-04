@@ -28,7 +28,11 @@ export type PageType =
     | 'studio'
     | 'aibuilder'
     | 'admin'
-    | 'campaign-canvas';
+    | 'campaign-canvas'
+    | 'impressum'
+    | 'agb'
+    | 'datenschutz'
+    | 'widerruf';
 
 export const PAGE_PATHS: Record<PageType, string> = {
     landing: '/',
@@ -59,6 +63,10 @@ export const PAGE_PATHS: Record<PageType, string> = {
     aibuilder: '/aibuilder',
     admin: '/admin',
     'campaign-canvas': '/campaign-canvas',
+    impressum: '/impressum',
+    agb: '/agb',
+    datenschutz: '/datenschutz',
+    widerruf: '/widerruf',
 };
 
 export const PUBLIC_PAGES = new Set<PageType>([
@@ -77,6 +85,10 @@ export const PUBLIC_PAGES = new Set<PageType>([
     'payment-success',
     'payment-cancelled',
     'affiliate',
+    'impressum',
+    'agb',
+    'datenschutz',
+    'widerruf',
 ]);
 
 const REDIRECT_GUARD_KEY = 'adruby_last_redirect';

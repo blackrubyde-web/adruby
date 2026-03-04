@@ -141,6 +141,16 @@ export function AnalyticsPage() {
 
   return (
     <DashboardShell hideHero>
+      {/* ── Editorial Page Header ──────────────────────── */}
+      <div className="page-header-editorial">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <h1 className="page-title">Analytics</h1>
+            <p className="page-subtitle">Detaillierte Einblicke in deine Ad Performance</p>
+          </div>
+        </div>
+      </div>
+
       {/* ── Filter Bar ────────────────────────────────── */}
       <div className="flex flex-wrap items-center gap-3">
         <div className="flex items-center bg-muted/50 rounded-lg p-1 border border-border/50">
@@ -149,8 +159,8 @@ export function AnalyticsPage() {
               key={opt.value}
               onClick={() => setTimeRange(opt.value)}
               className={`px-3 py-1.5 rounded-md text-xs font-medium transition-all ${timeRange === opt.value
-                  ? 'bg-background text-foreground shadow-sm'
-                  : 'text-muted-foreground hover:text-foreground'
+                ? 'bg-background text-foreground shadow-sm'
+                : 'text-muted-foreground hover:text-foreground'
                 }`}
             >
               {opt.label}
@@ -160,8 +170,8 @@ export function AnalyticsPage() {
         <button
           onClick={() => setIsComparing(!isComparing)}
           className={`px-3 py-1.5 rounded-lg text-xs font-medium border transition-all ${isComparing
-              ? 'bg-primary text-primary-foreground border-primary'
-              : 'bg-muted/50 text-muted-foreground border-border/50 hover:text-foreground'
+            ? 'bg-primary text-primary-foreground border-primary'
+            : 'bg-muted/50 text-muted-foreground border-border/50 hover:text-foreground'
             }`}
         >
           Vergleichen

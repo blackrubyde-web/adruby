@@ -98,11 +98,13 @@ export function SettingsPage() {
 
   return (
     <DashboardShell hideHero>
-      {/* ── Header ─────────────────────────────────────── */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight text-foreground">Einstellungen</h1>
-          <p className="text-sm text-muted-foreground">Verwalte dein Konto und Integrationen</p>
+      {/* ── Editorial Page Header ──────────────────────── */}
+      <div className="page-header-editorial">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <h1 className="page-title">Einstellungen</h1>
+            <p className="page-subtitle">Verwalte dein Konto und Integrationen</p>
+          </div>
         </div>
       </div>
 

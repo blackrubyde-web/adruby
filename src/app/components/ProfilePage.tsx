@@ -109,21 +109,23 @@ export function ProfilePage({ onNavigate }: ProfilePageProps) {
 
   return (
     <DashboardShell hideHero>
-      {/* ── Header ─────────────────────────────────────── */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight text-foreground">Profil</h1>
-          <p className="text-sm text-muted-foreground">Deine Kontoinformationen und Kampagnen-Übersicht</p>
-        </div>
-        <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm" onClick={handleShare} className="gap-1.5 text-xs">
-            <Share2 className="w-3.5 h-3.5" />
-            Teilen
-          </Button>
-          <Button size="sm" onClick={handleEditProfile} className="gap-1.5 text-xs">
-            <Pencil className="w-3.5 h-3.5" />
-            Bearbeiten
-          </Button>
+      {/* ── Editorial Page Header ──────────────────────── */}
+      <div className="page-header-editorial">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <h1 className="page-title">Profil</h1>
+            <p className="page-subtitle">Deine Kontoinformationen und Kampagnen-Übersicht</p>
+          </div>
+          <div className="flex items-center gap-2">
+            <Button variant="outline" size="sm" onClick={handleShare} className="gap-1.5 text-xs">
+              <Share2 className="w-3.5 h-3.5" />
+              Teilen
+            </Button>
+            <Button size="sm" onClick={handleEditProfile} className="gap-1.5 text-xs">
+              <Pencil className="w-3.5 h-3.5" />
+              Bearbeiten
+            </Button>
+          </div>
         </div>
       </div>
 

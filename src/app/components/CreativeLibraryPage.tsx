@@ -753,10 +753,11 @@ export function CreativeLibraryPage() {
               creative.type === 'video' ? (
                 <video
                   src={creative.url || creative.thumbnail}
+                  poster={creative.thumbnail || undefined}
                   muted
                   loop
                   playsInline
-                  preload="metadata"
+                  preload="none"
                   onMouseEnter={(e) => (e.target as HTMLVideoElement).play()}
                   onMouseLeave={(e) => { (e.target as HTMLVideoElement).pause(); (e.target as HTMLVideoElement).currentTime = 0; }}
                   className="w-full h-full object-cover"
@@ -885,6 +886,16 @@ export function CreativeLibraryPage() {
         </div>
       }
     >
+      {/* ── Editorial Page Header ──────────────────────── */}
+      <div className="page-header-editorial">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <h1 className="page-title">Creative Library</h1>
+            <p className="page-subtitle">Verwalte und organisiere deine Ad Creatives</p>
+          </div>
+        </div>
+      </div>
+
       <input
         ref={fileInputRef}
         type="file"

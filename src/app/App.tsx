@@ -37,6 +37,10 @@ const PaymentVerificationPage = lazy(() => import('./components/auth').then((mod
 const PaymentSuccessPage = lazy(() => import('./components/auth').then((mod) => ({ default: mod.PaymentSuccessPage })));
 const PaymentCancelledPage = lazy(() => import('./components/auth').then((mod) => ({ default: mod.PaymentCancelledPage })));
 const AffiliatePage = lazy(() => import('./components/AffiliatePage').then((mod) => ({ default: mod.AffiliatePage })));
+const ImpressumPage = lazy(() => import('./components/legal/ImpressumPage').then((mod) => ({ default: mod.ImpressumPage })));
+const AGBPage = lazy(() => import('./components/legal/AGBPage').then((mod) => ({ default: mod.AGBPage })));
+const DatenschutzPage = lazy(() => import('./components/legal/DatenschutzPage').then((mod) => ({ default: mod.DatenschutzPage })));
+const WiderrufPage = lazy(() => import('./components/legal/WiderrufPage').then((mod) => ({ default: mod.WiderrufPage })));
 
 import { ThemeProvider } from './components/ThemeProvider';
 import { toast } from 'sonner';
@@ -346,6 +350,19 @@ function AppContent() {
               onSignIn={() => go('login')}
               onGetStarted={() => go('register')}
             />
+          )}
+
+          {currentPage === 'impressum' && (
+            <ImpressumPage onNavigate={(p) => go(p as PageType)} />
+          )}
+          {currentPage === 'agb' && (
+            <AGBPage onNavigate={(p) => go(p as PageType)} />
+          )}
+          {currentPage === 'datenschutz' && (
+            <DatenschutzPage onNavigate={(p) => go(p as PageType)} />
+          )}
+          {currentPage === 'widerruf' && (
+            <WiderrufPage onNavigate={(p) => go(p as PageType)} />
           )}
         </Suspense>
       )}

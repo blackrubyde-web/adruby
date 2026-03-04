@@ -222,6 +222,16 @@ export function OverviewPage({ onNavigate }: OverviewPageProps) {
 
   return (
     <DashboardShell hideHero>
+      {/* ── Editorial Page Header ──────────────────────── */}
+      <div className="page-header-editorial">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <h1 className="page-title">Dashboard</h1>
+            <p className="page-subtitle">Deine Ad Performance auf einen Blick</p>
+          </div>
+        </div>
+      </div>
+
       {/* ── Segmented Filter Bar ──────────────────────────── */}
       <div className="flex flex-wrap items-center gap-3">
         {/* Date Filter — Segmented Control */}

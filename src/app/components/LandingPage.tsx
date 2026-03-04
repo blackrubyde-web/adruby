@@ -762,9 +762,10 @@ export function LandingPage({ onGetStarted, onLogin, onNavigate }: LandingPagePr
               },
               {
                 title: 'Rechtliches', links: [
-                  { label: 'Datenschutz', onClick: () => { } },
-                  { label: 'AGB', onClick: () => { } },
-                  { label: 'Impressum', onClick: () => { } },
+                  { label: 'Datenschutz', onClick: () => onNavigate?.('datenschutz') },
+                  { label: 'AGB', onClick: () => onNavigate?.('agb') },
+                  { label: 'Impressum', onClick: () => onNavigate?.('impressum') },
+                  { label: 'Widerruf', onClick: () => onNavigate?.('widerruf') },
                 ]
               },
             ].map((section) => (
