@@ -354,6 +354,18 @@ CRITICAL GERMAN LANGUAGE & CURRENCY RULES:
 - Compound nouns: "Hautpflege-Routine" not "Hautpflege Routine".
 - Umlauts (ä, ö, ü) and ß MUST be correct.
 - Proofread every word for Rechtschreibung and Grammatik.
+
+TEXT WILL BE RENDERED ON IMAGE — SPELLING IS CRITICAL:
+The headline, tagline, hook, and CTA you generate will be rendered as TEXT ON THE IMAGE.
+Any spelling mistake will be permanently visible. Triple-check every German word.
+Common mistakes to AVOID:
+- "definiert" NOT "definned"
+- "erfahren" NOT "erfarren"
+- "virtuell" NOT "vircllaly"
+- "Kampagnen" NOT "Kampagen"
+- "kostenlos" NOT "kostenloss"
+- "Lösung" NOT "Losung"
+If you're unsure about a word, use a simpler German word you're confident about.
 ` : ''}
 CREATIVE CONCEPT: ${conceptType.briefDirection}
 
@@ -562,12 +574,28 @@ function buildCreativePrompt(config) {
     const languageBlock = isEnglish ? `
 LANGUAGE: ALL text rendered in this image MUST be in English.
 ` : `
-LANGUAGE: ALL text rendered in this image MUST be in German (Deutsch).
+LANGUAGE & TEXT RENDERING — CRITICAL INSTRUCTIONS:
+ALL text rendered in this image MUST be in PERFECT German (Deutsch).
+- Copy each word CHARACTER BY CHARACTER from the text strings provided below.
+- DO NOT attempt to generate, guess, or improvise German words. Only render the EXACT text strings given.
 - Use € (Euro) for any prices, NEVER $ or Dollar.
-- Correct German spelling with umlauts (ä, ö, ü) and ß.
+- German spelling with umlauts (ä, ö, ü) and ß MUST be exact.
 - "du" form (lowercase), not "Sie".
-- Avoid anglicisms: "Angebot" not "Deal", "Vorteil" not "Benefit".
-- Every word must be correctly spelled in German.
+
+COMMON AI SPELLING ERRORS TO AVOID:
+- "definiert" NOT "definned" or "definied"
+- "erfahren" NOT "erfarren" or "errfahren"
+- "virtuell" NOT "vircllaly" or "virtualy"
+- "Kampagnen" NOT "Kampagen" or "Campagnen"
+- "kostenlos" NOT "costenfrei" or "kostenloss"
+- "Ergebnis" NOT "Ergebniss" or "Ergebins"
+- "Qualität" NOT "Qualitat" or "Qualitaet"
+- "Lösung" NOT "Losung" or "Loesung"
+- "Mehr erfahren" NOT "Mehr erfarren"
+- "Jetzt starten" NOT "Jetzt starden"
+
+VERIFICATION: Before rendering ANY text, mentally spell-check each word letter by letter.
+If you are not 100% sure about a German word's spelling, use a simpler word instead.
 `;
 
     // PREFER AI-generated copy from brief, fall back to user input
@@ -596,6 +624,7 @@ LANGUAGE: ALL text rendered in this image MUST be in German (Deutsch).
         textBlock = `
 TEXT IN IMAGE (render sharply, INTEGRATE into the designed composition):
 - HEADLINE: "${headline}"
+  COPY THIS TEXT EXACTLY, CHARACTER BY CHARACTER. Do not modify, rephrase, or respell it.
   Position: ${textPlacement}
   Typography: Bold modern sans-serif (like Inter, Helvetica, or Montserrat), high contrast
   Size: Large enough to read at phone screen size
@@ -604,6 +633,7 @@ TEXT IN IMAGE (render sharply, INTEGRATE into the designed composition):
         if (subheadline) {
             textBlock += `
 - SUBHEADLINE: "${subheadline}"
+  COPY THIS TEXT EXACTLY, CHARACTER BY CHARACTER. Do not modify, rephrase, or respell it.
   Typography: Regular weight, 50-60% of headline size, positioned near headline
 `;
         }
@@ -611,6 +641,7 @@ TEXT IN IMAGE (render sharply, INTEGRATE into the designed composition):
         if (includeCta && cta) {
             textBlock += `
 - CTA BUTTON: "${cta}"
+  COPY THIS TEXT EXACTLY, CHARACTER BY CHARACTER. Do not modify, rephrase, or respell it.
   Style: ${ctaStyle}
   IMPORTANT: CTA must feel integrated into the layout — NOT forced to bottom-center
 `;
@@ -678,42 +709,79 @@ Every element (text, shapes, lines, product) should feel intentionally placed.`;
  * Generate an image using Gemini Image Generation model.
  * 2K resolution, aspect ratio from format spec.
  */
-async function generateWithGemini(prompt, format, productImageUrl = null) {
+async function generateWithGemini(prompt, format, productImageUrl = null, productImageBase64 = null) {
     const client = getGeminiClient();
     const formatSpec = META_FORMATS[format];
 
     const contents = [];
+    let imageLoaded = false;
 
-    // Product image for image-to-image generation
-    if (productImageUrl) {
+    // ── PRIORITY 1: Use base64 image directly (most reliable — no URL fetch needed) ──
+    if (productImageBase64) {
         try {
-            console.log(`[NanoBanana] 📷 Fetching product image for Gemini (strict preservation mode)...`);
+            let base64Data = productImageBase64;
+            let mimeType = 'image/png';
+
+            // Handle data URL format: "data:image/png;base64,xxxxx"
+            const dataUrlMatch = productImageBase64.match(/^data:(image\/[a-z+]+);base64,(.+)$/i);
+            if (dataUrlMatch) {
+                mimeType = dataUrlMatch[1];
+                base64Data = dataUrlMatch[2];
+            }
+
+            contents.push({
+                inlineData: {
+                    mimeType,
+                    data: base64Data,
+                },
+            });
+            contents.push(
+                'This is the PRODUCT REFERENCE IMAGE. You MUST use this exact product in the generated ad. '
+                + 'DO NOT modify, redesign, or reimagine the product. Keep its exact shape, colors, branding, '
+                + 'labels, and proportions. Place it into the ad composition as a faithful reproduction. '
+                + 'The product is SACRED — treat it like a Photoshop cutout placed into a new scene.\n\n'
+            );
+            imageLoaded = true;
+            console.log(`[NanoBanana] ✅ Product image loaded from base64 (${(base64Data.length / 1024).toFixed(0)}KB, strict preservation)`);
+        } catch (b64Err) {
+            console.warn(`[NanoBanana] ⚠️ Base64 image parsing failed: ${b64Err.message}`);
+        }
+    }
+
+    // ── PRIORITY 2: Fetch from URL (fallback if base64 not available) ──
+    if (!imageLoaded && productImageUrl) {
+        try {
+            console.log(`[NanoBanana] 📷 Fetching product image from URL for Gemini...`);
             const imageResponse = await fetch(productImageUrl, {
                 signal: AbortSignal.timeout(15000),
             });
             if (imageResponse.ok) {
                 const imageArrayBuffer = await imageResponse.arrayBuffer();
                 const imageBuffer = Buffer.from(imageArrayBuffer);
-                // IMPORTANT: Image first, then instruction text, then prompt.
-                // The instruction before the prompt tells Gemini this is a REFERENCE to preserve.
                 contents.push({
                     inlineData: {
                         mimeType: imageResponse.headers.get('content-type') || 'image/png',
                         data: imageBuffer.toString('base64'),
                     },
                 });
-                // Explicit preservation instruction right after the image
                 contents.push(
                     'This is the PRODUCT REFERENCE IMAGE. You MUST use this exact product in the generated ad. '
                     + 'DO NOT modify, redesign, or reimagine the product. Keep its exact shape, colors, branding, '
                     + 'labels, and proportions. Place it into the ad composition as a faithful reproduction. '
                     + 'The product is SACRED — treat it like a Photoshop cutout placed into a new scene.\n\n'
                 );
-                console.log(`[NanoBanana] ✅ Product image loaded: ${(imageBuffer.length / 1024).toFixed(0)}KB (strict preservation)`);
+                imageLoaded = true;
+                console.log(`[NanoBanana] ✅ Product image fetched from URL: ${(imageBuffer.length / 1024).toFixed(0)}KB (strict preservation)`);
+            } else {
+                console.warn(`[NanoBanana] ⚠️ Product image URL returned ${imageResponse.status}`);
             }
         } catch (imgErr) {
-            console.warn(`[NanoBanana] ⚠️ Could not fetch product image: ${imgErr.message}`);
+            console.warn(`[NanoBanana] ⚠️ Could not fetch product image from URL: ${imgErr.message}`);
         }
+    }
+
+    if ((productImageUrl || productImageBase64) && !imageLoaded) {
+        console.error('[NanoBanana] ❌ Product image was provided but could NOT be loaded! Ad will be generated without it.');
     }
 
     contents.push(prompt);
@@ -986,8 +1054,8 @@ export async function generateSingleAd(params) {
         conceptKey: conceptType.key,
     });
 
-    // Image Generation — 100% Gemini
-    const buffer = await generateWithGemini(prompt, format, productImageUrl);
+    // Image Generation — 100% Gemini (prefer base64 image, fallback to URL)
+    const buffer = await generateWithGemini(prompt, format, productImageUrl, params.productImageBase64 || null);
     const engine = 'gemini_image';
 
     // CTA only if the brief decided to include one

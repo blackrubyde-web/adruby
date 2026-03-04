@@ -305,6 +305,7 @@ export const handler = async (event) => {
 
             const baseParams = {
                 productImageUrl: hasProductImage ? body.productImageUrl : null,
+                productImageBase64: body.productImageBase64 || null,
                 headline: body.headline || body.productName || '',
                 subheadline: body.subheadline || body.usp || '',
                 cta: body.cta || '',

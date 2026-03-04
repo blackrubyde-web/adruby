@@ -244,6 +244,8 @@ export function AIAdBuilderPage() {
                 mode: mode as InputMode,
                 language,
                 productImageUrl,
+                // Also send base64 directly — Gemini API may not be able to fetch Supabase URLs
+                productImageBase64: productImagePreview || undefined,
                 useAIDesignSystem,
                 useCompositePipeline,
                 format: adFormat,
