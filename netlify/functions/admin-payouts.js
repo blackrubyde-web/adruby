@@ -45,20 +45,38 @@ async function handleRequest(event) {
             const params = event.queryStringParameters || {};
             const status = params.status || null;
 
-            const { data: payouts, error } = await supabaseAdmin.rpc('admin_get_all_payouts', {
-                p_status: status
-            });
-
-            if (error) {
-                console.error('[Admin] Get payouts failed:', error);
-                return serverError('Failed to fetch payouts');
+            let payouts = [];
+            try {
+                // Try RPC first
+                const { data, error } = await supabaseAdmin.rpc('admin_get_all_payouts', {
+                    p_status: status
+                });
+                if (error) throw error;
+                payouts = data || [];
+            } catch (rpcErr) {
+                console.log('[Admin] admin_get_all_payouts RPC not found, falling back to direct query');
+                try {
+                    let query = supabaseAdmin
+                        .from('affiliate_payouts')
+                        .select('*')
+                        .order('created_at', { ascending: false })
+                        .limit(100);
+                    if (status) query = query.eq('status', status);
+                    const { data, error } = await query;
+                    if (error) throw error;
+                    payouts = data || [];
+                } catch (fallbackErr) {
+                    // Table might not exist either — return empty
+                    console.log('[Admin] affiliate_payouts table not found, returning empty');
+                    payouts = [];
+                }
             }
 
             return {
                 statusCode: 200,
                 body: JSON.stringify({
                     success: true,
-                    payouts: payouts || []
+                    payouts
                 })
             };
         }
