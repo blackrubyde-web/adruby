@@ -689,69 +689,66 @@ export function AIAdBuilderPage() {
                     <div className="ad-builder-canvas grain-overlay">
                         <div className="relative z-10 p-6">
                             {step === 'generating' ? (
-                                /* ── Theater Mode ──────────────────── */
-                                <div className="flex flex-col items-center justify-center min-h-[440px] text-center space-y-8 morph-gradient-bg rounded-2xl">
-                                    {/* Floating particles */}
-                                    <div className="absolute inset-0 overflow-hidden pointer-events-none">
-                                        {[...Array(6)].map((_, i) => (
-                                            <div
-                                                key={i}
-                                                className={`particle particle-${i + 1}`}
-                                                style={{
-                                                    width: `${4 + Math.random() * 6}px`,
-                                                    height: `${4 + Math.random() * 6}px`,
-                                                    left: `${15 + Math.random() * 70}%`,
-                                                    bottom: `${10 + Math.random() * 30}%`,
-                                                    background: `hsl(var(--primary) / ${0.3 + Math.random() * 0.4})`,
-                                                }}
-                                            />
+                                /* ── Theater Mode — Premium AI ──── */
+                                <div className="ai-empty-state" style={{ minHeight: '560px' }}>
+                                    {/* Aurora gradient */}
+                                    <div className="ai-empty-aurora" />
+
+                                    {/* Rising particles */}
+                                    <div className="ai-empty-particles">
+                                        {[...Array(12)].map((_, i) => (
+                                            <div key={i} className={`ai-particle ai-particle-${(i % 4) + 1}`} style={{
+                                                left: `${10 + Math.random() * 80}%`,
+                                                animationDelay: `${i * 0.4}s`,
+                                                width: `${2 + Math.random() * 4}px`,
+                                                height: `${2 + Math.random() * 4}px`,
+                                            }} />
                                         ))}
                                     </div>
 
-                                    {/* Shimmer overlay */}
-                                    <div className="absolute inset-0 shimmer-bg pointer-events-none rounded-2xl" />
-
-                                    {/* Animated icon */}
-                                    <div className="relative">
-                                        <div className="absolute inset-0 rounded-2xl blur-2xl empty-state-breathe bg-primary/20" />
-                                        <div className="relative w-20 h-20 rounded-2xl flex items-center justify-center shadow-2xl bg-primary">
-                                            <Sparkles className="w-9 h-9 text-white animate-pulse" />
+                                    {/* Neural Core */}
+                                    <div className="ai-core-container" style={{ width: '130px', height: '130px', marginBottom: '1rem' }}>
+                                        <div className="ai-orbit-ring ai-orbit-ring-3"><div className="ai-orbit-dot" /></div>
+                                        <div className="ai-orbit-ring ai-orbit-ring-2"><div className="ai-orbit-dot" /><div className="ai-orbit-dot ai-orbit-dot-2" /></div>
+                                        <div className="ai-orbit-ring ai-orbit-ring-1"><div className="ai-orbit-dot ai-orbit-dot-lg" /></div>
+                                        <div className="ai-core-glow ai-core-glow-outer" />
+                                        <div className="ai-core-glow ai-core-glow-mid" />
+                                        <div className="ai-core-icon">
+                                            <Sparkles className="w-7 h-7 text-white" />
                                         </div>
                                     </div>
 
                                     {/* Title */}
-                                    <div>
-                                        <h3 className="font-display font-bold text-xl text-foreground">
-                                            KI generiert deine Ad…
-                                        </h3>
-                                        <p className="text-sm text-muted-foreground mt-2">
-                                            Dauert ca. 10–15 Sekunden
-                                        </p>
-                                    </div>
+                                    <h3 className="font-display font-bold text-lg text-foreground ai-text-glow">
+                                        KI generiert deine Ad…
+                                    </h3>
 
                                     {/* Progress bar */}
-                                    <div className="w-full max-w-sm">
+                                    <div className="w-full max-w-xs mt-3">
                                         <div className="h-1 bg-muted/20 rounded-full overflow-hidden">
                                             <div className="h-full rounded-full theater-progress-bar bg-primary" />
                                         </div>
+                                        <p className="text-xs text-muted-foreground/50 mt-1.5 text-center">
+                                            ca. 10–15 Sekunden
+                                        </p>
                                     </div>
 
-                                    {/* Step checklist */}
-                                    <div className="space-y-3 w-full max-w-xs text-left">
+                                    {/* Pipeline Steps */}
+                                    <div className="space-y-2 w-full max-w-xs mt-4">
                                         {PIPELINE_STEPS.map((pStep, i) => {
                                             const StepIcon = pStep.Icon;
                                             return (
                                                 <div
                                                     key={i}
-                                                    className="stagger-in flex items-center gap-3 text-sm"
+                                                    className="stagger-in flex items-center gap-2.5 text-sm"
                                                     style={{ animationDelay: `${pStep.delay}ms` }}
                                                 >
                                                     <div className={cn(
-                                                        "w-7 h-7 rounded-lg flex items-center justify-center shrink-0 transition-all duration-500",
+                                                        "w-6 h-6 rounded-lg flex items-center justify-center shrink-0 transition-all duration-500",
                                                         completedSteps.includes(i)
-                                                            ? "text-emerald-400"
-                                                            : "text-muted-foreground"
-                                                    )} style={completedSteps.includes(i) ? { background: 'rgba(52, 211, 153, 0.1)', border: '1px solid rgba(52, 211, 153, 0.15)' } : {}}>
+                                                            ? "text-emerald-400 bg-emerald-400/10 border border-emerald-400/15"
+                                                            : "text-muted-foreground/60"
+                                                    )}>
                                                         {completedSteps.includes(i) ? (
                                                             <CheckCircle2 className="w-3.5 h-3.5" />
                                                         ) : (
@@ -759,10 +756,10 @@ export function AIAdBuilderPage() {
                                                         )}
                                                     </div>
                                                     <span className={cn(
-                                                        "transition-colors duration-300 font-medium",
+                                                        "transition-colors duration-300 font-medium text-[13px]",
                                                         completedSteps.includes(i)
                                                             ? "text-foreground"
-                                                            : "text-muted-foreground"
+                                                            : "text-muted-foreground/60"
                                                     )}>
                                                         {pStep.label}
                                                     </span>
