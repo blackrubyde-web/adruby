@@ -358,9 +358,9 @@ export function buildVeoNegativePrompt(archetypeId) {
  */
 export function calculateCreditCost(quality = 'fast', durationSeconds = 6) {
     if (quality === 'premium') {
-        return durationSeconds <= 6 ? 12 : 15;
+        return durationSeconds <= 6 ? 25 : 30;
     }
-    return durationSeconds <= 6 ? 8 : 10;
+    return durationSeconds <= 6 ? 15 : 20;
 }
 
 /**

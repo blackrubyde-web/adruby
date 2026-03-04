@@ -349,6 +349,42 @@ export function AIAdBuilderPage() {
     };
 
     const handleSaveToLibrary = async () => {
+        // Video save
+        if (outputType === 'video' && videoResult) {
+            try {
+                const user = (await supabase.auth.getUser())?.data?.user;
+                if (!user) throw new Error('Nicht eingeloggt');
+
+                const { error } = await supabase
+                    .from('generated_creatives')
+                    .insert({
+                        user_id: user.id,
+                        image_url: videoResult.videoUrl,
+                        media_type: 'video',
+                        prompt: videoResult.archetype?.replace(/_/g, ' ') || 'Video Ad',
+                        archetype: videoResult.archetype || 'video_ad',
+                        ad_score: videoResult.qualityScore || null,
+                        format: videoResult.aspectRatio || '9:16',
+                        tags: ['video', 'ai-generated', videoResult.archetype || 'video'].filter(Boolean),
+                        metadata: {
+                            duration_ms: videoResult.durationMs,
+                            resolution: videoResult.resolution,
+                            has_audio: videoResult.hasAudio,
+                            engagement_score: videoResult.engagementScore,
+                            archetype: videoResult.archetype,
+                        },
+                        saved: true,
+                    });
+                if (error) throw error;
+                toast.success('Video in Bibliothek gespeichert!');
+            } catch (err) {
+                console.error('Video save error:', err);
+                toast.error('Speichern fehlgeschlagen');
+            }
+            return;
+        }
+
+        // Image save (existing)
         if (!result?.id) {
             toast.error('Keine Ad zum Speichern');
             return;
@@ -729,7 +765,7 @@ export function AIAdBuilderPage() {
                                             <div className="h-full rounded-full theater-progress-bar bg-primary" />
                                         </div>
                                         <p className="text-xs text-muted-foreground/50 mt-1.5 text-center">
-                                            ca. 10–15 Sekunden
+                                            ca. 30–60 Sekunden
                                         </p>
                                     </div>
 

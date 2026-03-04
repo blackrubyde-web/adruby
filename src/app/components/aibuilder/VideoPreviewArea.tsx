@@ -215,7 +215,7 @@ export default function VideoPreviewArea({
 
                 <div style={{ marginTop: '1rem', fontSize: '0.6875rem', color: 'var(--muted-foreground)', display: 'flex', alignItems: 'center', gap: '0.375rem', opacity: 0.6 }}>
                     <Clock size={11} />
-                    {t ? 'Geschätzt: ~45-120 Sekunden' : 'Estimated: ~45-120 seconds'}
+                    {t ? 'Geschätzt: ~30-90 Sekunden' : 'Estimated: ~30-90 seconds'}
                 </div>
             </div>
         );

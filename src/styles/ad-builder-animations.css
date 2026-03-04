@@ -326,7 +326,7 @@
 }
 
 .theater-progress-bar {
-    animation: progress-fill 14s ease-out forwards;
+    animation: theater-fill 60s cubic-bezier(0.4, 0, 0.2, 1) forwards;
 }
 
 /* Floating particles */
@@ -400,22 +400,26 @@
     }
 }
 
-/* Theater Progress Bar — fills during generation */
+/* Theater Progress Bar — fills during generation (60s for Veo) */
 @keyframes theater-fill {
     0% {
         width: 0%;
     }
 
-    10% {
-        width: 8%;
+    5% {
+        width: 5%;
+    }
+
+    15% {
+        width: 15%;
     }
 
     30% {
-        width: 25%;
+        width: 30%;
     }
 
     50% {
-        width: 45%;
+        width: 50%;
     }
 
     70% {
@@ -433,10 +437,6 @@
     100% {
         width: 95%;
     }
-}
-
-.theater-progress-bar {
-    animation: theater-fill 20s cubic-bezier(0.4, 0, 0.2, 1) forwards;
 }
 
 /* Morphing gradient backdrop for theater mode */

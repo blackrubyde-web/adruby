@@ -67,14 +67,18 @@ export function CreativeLibraryPage() {
   const [isDeleting, setIsDeleting] = useState(false);
   const [reloadTick, setReloadTick] = useState(0);
 
-  interface CreativeRow {
+  type CreativeRow = {
     id: string;
     thumbnail: string | null;
     created_at: string;
     metrics: Record<string, number> | null;
     saved: boolean;
     inputs: unknown;
-  }
+    media_type?: string | null;
+    image_url?: string | null;
+    tags?: string[] | null;
+    metadata?: Record<string, unknown> | null;
+  };
   const mapCreativeRow = useCallback((row: CreativeRow, favorites: Set<string>): Creative => {
     const inputs = (row?.inputs || {}) as {
       creativeName?: string;
@@ -93,12 +97,12 @@ export function CreativeLibraryPage() {
       inputs?.productName ||
       'AI Creative';
 
-    const typeCandidate = inputs?.creativeType;
+    const typeCandidate = row?.media_type || inputs?.creativeType;
     const type: Creative['type'] =
       typeCandidate === 'video' || typeCandidate === 'carousel' ? typeCandidate : 'image';
 
-    const hasCustomTags = Array.isArray(inputs?.tags);
-    const customTags = hasCustomTags ? inputs.tags || [] : [];
+    const hasCustomTags = Array.isArray(row?.tags) || Array.isArray(inputs?.tags);
+    const customTags = hasCustomTags ? (Array.isArray(row?.tags) ? (row.tags || []) : (inputs.tags || [])) : [];
     const fallbackTags = [
       brief?.product?.category || 'ai',
       brief?.goal || 'performance',
@@ -115,7 +119,7 @@ export function CreativeLibraryPage() {
       name,
       type,
       url: '',
-      thumbnail: row.thumbnail || '',
+      thumbnail: row.thumbnail || row?.image_url || '',
       tags,
       hooks,
       primaryText,
@@ -155,7 +159,7 @@ export function CreativeLibraryPage() {
         // Only fetch minimal fields for the listing to avoid storing large JSON blobs in memory.
         const { data, error } = await supabase
           .from('generated_creatives')
-          .select('id,thumbnail,created_at,metrics,saved,inputs')
+          .select('id,thumbnail,created_at,metrics,saved,inputs,media_type,image_url,tags,metadata')
           .eq('saved', true)
           .order('created_at', { ascending: false })
           .limit(50);
@@ -740,15 +744,27 @@ export function CreativeLibraryPage() {
           {/* Image — fixed height, no aspect-ratio to prevent overflow */}
           <div className="creative-card-image" style={{ height: '200px' }}>
             {creative.thumbnail ? (
-              <img
-                src={creative.thumbnail}
-                alt={creative.name}
-                loading="lazy"
-                decoding="async"
-                width={320}
-                height={200}
-                className="w-full h-full object-cover"
-              />
+              creative.type === 'video' && (creative.thumbnail.endsWith('.mp4') || creative.thumbnail.includes('video')) ? (
+                <video
+                  src={creative.thumbnail}
+                  muted
+                  loop
+                  playsInline
+                  onMouseEnter={(e) => (e.target as HTMLVideoElement).play()}
+                  onMouseLeave={(e) => { (e.target as HTMLVideoElement).pause(); (e.target as HTMLVideoElement).currentTime = 0; }}
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                <img
+                  src={creative.thumbnail}
+                  alt={creative.name}
+                  loading="lazy"
+                  decoding="async"
+                  width={320}
+                  height={200}
+                  className="w-full h-full object-cover"
+                />
+              )
             ) : (
               <div className="w-full h-full flex items-center justify-center text-muted-foreground text-sm bg-muted">
                 AI Creative
