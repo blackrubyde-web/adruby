@@ -17,7 +17,7 @@ export async function handler(event) {
     const { data, error } = await supabaseAdmin
       .from("meta_campaigns")
       .select(
-        "id,facebook_campaign_id,name,status,spend,impressions,clicks,conversions,ctr,roas,revenue,strategy_id"
+        "id,facebook_campaign_id,name,status,spend,impressions,clicks,conversions,ctr,roas,revenue,frequency,cpm,strategy_id"
       )
       .eq("user_id", userId)
       .order("spend", { ascending: false })
@@ -39,6 +39,8 @@ export async function handler(event) {
       conversions: Number(row.conversions || 0),
       impressions: Number(row.impressions || 0),
       clicks: Number(row.clicks || 0),
+      frequency: Number(row.frequency || 0),
+      cpm: Number(row.cpm || 0),
     }));
 
     return ok({ campaigns: rows });

@@ -14,6 +14,8 @@ export type MetaCampaign = {
   conversions: number;
   impressions: number;
   clicks: number;
+  frequency?: number;
+  cpm?: number;
 };
 
 export function useMetaCampaigns() {
@@ -27,9 +29,9 @@ export function useMetaCampaigns() {
     try {
       if (env.demoMode) {
         const mockCampaigns: MetaCampaign[] = [
-          { id: 'mc-1', name: 'Performance Max - Winter', status: 'active', spend: 2500, revenue: 4500, roas: 1.8, ctr: 1.4, conversions: 32, impressions: 45000, clicks: 630 },
-          { id: 'mc-2', name: 'Prospecting - Lookalikes', status: 'active', spend: 1500, revenue: 1800, roas: 1.2, ctr: 0.9, conversions: 12, impressions: 35000, clicks: 315 },
-          { id: 'mc-3', name: 'Retargeting - Cart Abandoners', status: 'paused', spend: 800, revenue: 2000, roas: 2.5, ctr: 2.8, conversions: 18, impressions: 8000, clicks: 224 }
+          { id: 'mc-1', name: 'Performance Max - Winter', status: 'active', spend: 2500, revenue: 4500, roas: 1.8, ctr: 1.4, conversions: 32, impressions: 45000, clicks: 630, frequency: 1.8, cpm: 55.5 },
+          { id: 'mc-2', name: 'Prospecting - Lookalikes', status: 'active', spend: 1500, revenue: 1800, roas: 1.2, ctr: 0.9, conversions: 12, impressions: 35000, clicks: 315, frequency: 3.2, cpm: 42.8 },
+          { id: 'mc-3', name: 'Retargeting - Cart Abandoners', status: 'paused', spend: 800, revenue: 2000, roas: 2.5, ctr: 2.8, conversions: 18, impressions: 8000, clicks: 224, frequency: 4.5, cpm: 100.0 }
         ];
         setCampaigns(mockCampaigns);
         setLoading(false);

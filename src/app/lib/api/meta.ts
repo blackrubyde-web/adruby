@@ -75,6 +75,8 @@ export async function fetchMetaCampaigns() {
       conversions: number;
       impressions: number;
       clicks: number;
+      frequency?: number;
+      cpm?: number;
     }>;
   }>("/api/meta-campaigns");
 }

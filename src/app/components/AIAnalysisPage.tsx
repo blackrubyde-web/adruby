@@ -149,7 +149,7 @@ export function AIAnalysisPage() {
             id: `mock-ana-${c.id}`,
             recommendation: c.roas > 3 ? 'duplicate' : c.roas < 1.5 ? 'kill' : 'increase',
             confidence: 90,
-            reason: "Mock AI Insight based on ROAS benchark.",
+            reason: "Mock AI Insight basierend auf ROAS Benchmark.",
             expectedImpact: "+20% Efficiency",
             details: ["ROAS: " + c.roas, "CTR: " + c.ctr]
           };
@@ -174,6 +174,8 @@ export function AIAnalysisPage() {
             id: c.id, name: c.name, status: c.status, spend: c.spend,
             revenue: c.revenue, roas: c.roas, ctr: c.ctr,
             conversions: c.conversions, impressions: c.impressions,
+            clicks: c.clicks,
+            frequency: c.frequency || 0,
             cpc: c.clicks > 0 ? c.spend / c.clicks : 0,
           })),
           strategy: { name: 'Custom AdRuby Pro Analysis', description: 'AdRuby Pro Strategy Engine', autopilot_config: strategyConfig, industry_type: 'general' },

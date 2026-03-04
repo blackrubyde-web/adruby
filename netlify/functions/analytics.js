@@ -146,7 +146,7 @@ export async function handler(event) {
   try {
     const currentPromise = supabaseAdmin
       .from("meta_insights_daily")
-      .select("date,impressions,clicks,spend,revenue,conversions,ctr,roas,cpa")
+      .select("date,impressions,clicks,spend,revenue,conversions,ctr,roas,cpa,frequency")
       .eq("user_id", userId)
       .gte("date", formatDate(currentStart))
       .lte("date", formatDate(today))
@@ -154,17 +154,17 @@ export async function handler(event) {
 
     const prevPromise = compare
       ? supabaseAdmin
-          .from("meta_insights_daily")
-          .select("date,impressions,clicks,spend,revenue,conversions,ctr,roas,cpa")
-          .eq("user_id", userId)
-          .gte("date", formatDate(prevStart))
-          .lte("date", formatDate(prevEnd))
-          .order("date", { ascending: true })
+        .from("meta_insights_daily")
+        .select("date,impressions,clicks,spend,revenue,conversions,ctr,roas,cpa,frequency")
+        .eq("user_id", userId)
+        .gte("date", formatDate(prevStart))
+        .lte("date", formatDate(prevEnd))
+        .order("date", { ascending: true })
       : Promise.resolve({ data: [], error: null });
 
     const campaignsPromise = supabaseAdmin
       .from("meta_campaigns")
-      .select("facebook_campaign_id,name,status,spend,revenue,roas,ctr,conversions,impressions,clicks")
+      .select("facebook_campaign_id,name,status,spend,revenue,roas,ctr,conversions,impressions,clicks,frequency,cpm")
       .eq("user_id", userId)
       .order("spend", { ascending: false })
       .limit(50);
@@ -209,15 +209,15 @@ export async function handler(event) {
     const summaryPrev = compare ? computeSummary(previousRows || []) : null;
     const deltas = summaryPrev
       ? {
-          impressions: calcDelta(summary.impressions, summaryPrev.impressions),
-          clicks: calcDelta(summary.clicks, summaryPrev.clicks),
-          spend: calcDelta(summary.spend, summaryPrev.spend),
-          revenue: calcDelta(summary.revenue, summaryPrev.revenue),
-          conversions: calcDelta(summary.conversions, summaryPrev.conversions),
-          ctr: calcDelta(summary.ctr, summaryPrev.ctr),
-          roas: calcDelta(summary.roas, summaryPrev.roas),
-          cpa: calcDelta(summary.cpa, summaryPrev.cpa),
-        }
+        impressions: calcDelta(summary.impressions, summaryPrev.impressions),
+        clicks: calcDelta(summary.clicks, summaryPrev.clicks),
+        spend: calcDelta(summary.spend, summaryPrev.spend),
+        revenue: calcDelta(summary.revenue, summaryPrev.revenue),
+        conversions: calcDelta(summary.conversions, summaryPrev.conversions),
+        ctr: calcDelta(summary.ctr, summaryPrev.ctr),
+        roas: calcDelta(summary.roas, summaryPrev.roas),
+        cpa: calcDelta(summary.cpa, summaryPrev.cpa),
+      }
       : undefined;
 
     const timeseries = {
@@ -239,21 +239,21 @@ export async function handler(event) {
       }),
       previous: compare
         ? (previousRows || []).map((row) => {
-            const spend = safeNumber(row.spend);
-            const revenue = safeNumber(row.revenue);
-            const conversions = safeNumber(row.conversions);
-            return {
-              ts: row.date,
-              impressions: safeNumber(row.impressions),
-              clicks: safeNumber(row.clicks),
-              spend,
-              revenue,
-              conversions,
-              ctr: safeNumber(row.ctr),
-              roas: safeNumber(row.roas) || (spend > 0 ? revenue / spend : 0),
-              cpa: safeNumber(row.cpa) || (conversions > 0 ? spend / conversions : 0),
-            };
-          })
+          const spend = safeNumber(row.spend);
+          const revenue = safeNumber(row.revenue);
+          const conversions = safeNumber(row.conversions);
+          return {
+            ts: row.date,
+            impressions: safeNumber(row.impressions),
+            clicks: safeNumber(row.clicks),
+            spend,
+            revenue,
+            conversions,
+            ctr: safeNumber(row.ctr),
+            roas: safeNumber(row.roas) || (spend > 0 ? revenue / spend : 0),
+            cpa: safeNumber(row.cpa) || (conversions > 0 ? spend / conversions : 0),
+          };
+        })
         : undefined,
     };
 
@@ -272,6 +272,8 @@ export async function handler(event) {
       conversions: safeNumber(row.conversions),
       impressions: safeNumber(row.impressions),
       clicks: safeNumber(row.clicks),
+      frequency: safeNumber(row.frequency),
+      cpm: safeNumber(row.cpm),
     }));
 
     const payload = {
