@@ -60,7 +60,7 @@ function DashboardPageInner({
         case 'aibuilder':
             return (<div className={fullPage}><Suspense fallback={skeletonFallback}><LazyAIAdBuilderPage /></Suspense><Footer /></div>);
         case 'admin':
-            if (!isAdmin) return (<div className={fullPage}><div className="flex items-center justify-center min-h-[60vh] text-muted-foreground">Access denied.</div></div>);
+            if (!isAdmin) return (<div className={fullPage}><div className="flex flex-col items-center justify-center min-h-[60vh] gap-4"><div className="w-16 h-16 rounded-full bg-red-500/10 flex items-center justify-center"><svg className="w-8 h-8 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" /></svg></div><h2 className="text-xl font-bold text-foreground">Zugriff verweigert</h2><p className="text-muted-foreground text-sm">Du hast keine Berechtigung für diese Seite.</p></div></div>);
             return (<div className={fullPage}><Suspense fallback={skeletonFallback}><LazyAdminDashboardPage /></Suspense><Footer /></div>);
         case 'campaign-canvas':
             return (<div className={canvasPage}><Suspense fallback={skeletonFallback}><LazyCampaignCanvasPage /></Suspense></div>);

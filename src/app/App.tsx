@@ -48,6 +48,7 @@ import { Toaster } from './components/ui/sonner';
 import { AuthProvider, useAuthActions, useAuthState } from './contexts/AuthContext';
 import { AffiliateProvider } from './contexts/AffiliateContext';
 import { AdminProvider, useAdmin } from './contexts/AdminContext';
+import { ErrorBoundary } from './components/ui/ErrorBoundary';
 
 /* ------------------------------------------------------------------ */
 /*  Feature page definitions to reduce JSX repetition                  */
@@ -237,7 +238,7 @@ function AppContent() {
     <div className="min-h-screen w-full max-w-[100vw] overflow-x-hidden">
       {/* Public / Auth Pages */}
       {isPublicView && (
-        <Suspense fallback={<FullScreenLoader title="Loading page..." subtitle="Preparing your workspace" />}>
+        <Suspense fallback={<FullScreenLoader title="Seite wird geladen…" subtitle="Einen Moment bitte" />}>
           {currentPage === 'landing' && (
             <LandingPage
               onGetStarted={() => go('register')}
@@ -423,14 +424,16 @@ function AppContent() {
 export default function App() {
   return (
     <ThemeProvider>
-      <AuthProvider>
-        <AffiliateProvider>
-          <AdminProvider>
-            <Toaster />
-            <AppContent />
-          </AdminProvider>
-        </AffiliateProvider>
-      </AuthProvider>
+      <ErrorBoundary>
+        <AuthProvider>
+          <AffiliateProvider>
+            <AdminProvider>
+              <Toaster />
+              <AppContent />
+            </AdminProvider>
+          </AffiliateProvider>
+        </AuthProvider>
+      </ErrorBoundary>
     </ThemeProvider>
   );
 }
