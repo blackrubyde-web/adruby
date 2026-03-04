@@ -107,13 +107,17 @@ export function AIAnalysisPage() {
       if (!uid) return;
       const { data } = await supabase.from('profiles').select('autopilot_enabled').eq('id', uid).single();
       if (data?.autopilot_enabled != null) setAutopilotEnabled(!!data.autopilot_enabled);
-      // Fetch last sync time
-      const { data: conn } = await supabase.from('facebook_connections').select('last_sync_at').eq('user_id', uid).eq('provider', 'facebook').single();
-      if (conn?.last_sync_at) setLastSyncAt(conn.last_sync_at);
-      // Fetch recent action count (last 7 days)
-      const since = new Date(); since.setDate(since.getDate() - 7);
-      const { count } = await supabase.from('meta_action_logs').select('id', { count: 'exact', head: true }).eq('user_id', uid).gte('created_at', since.toISOString());
-      setRecentActionCount(count || 0);
+      // Fetch last sync time (non-critical, may fail if table lacks RLS)
+      try {
+        const { data: conn } = await supabase.from('facebook_connections').select('last_sync_at').eq('user_id', uid).eq('provider', 'facebook').single();
+        if (conn?.last_sync_at) setLastSyncAt(conn.last_sync_at);
+      } catch { /* table may not have frontend RLS policy */ }
+      // Fetch recent action count (non-critical)
+      try {
+        const since = new Date(); since.setDate(since.getDate() - 7);
+        const { count } = await supabase.from('meta_action_logs').select('id', { count: 'exact', head: true }).eq('user_id', uid).gte('created_at', since.toISOString());
+        setRecentActionCount(count || 0);
+      } catch { /* table may not have frontend RLS policy */ }
     })();
   }, []);
 
