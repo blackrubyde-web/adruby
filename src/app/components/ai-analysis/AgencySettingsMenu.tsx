@@ -144,27 +144,17 @@ export const AgencySettingsMenu = memo(function AgencySettingsMenu({
             <Dialog open={activeView !== null} onOpenChange={handleOpenChange}>
                 <DialogContent className="max-w-4xl h-[85vh] flex flex-col bg-card/95 backdrop-blur-xl border-border p-0">
                     <DialogHeader className="shrink-0 bg-card/95 backdrop-blur-xl border-b border-border px-4 py-3">
-                        <div className="flex items-center justify-between">
-                            <DialogTitle className="text-base font-semibold text-foreground flex items-center gap-2">
-                                {activeView && (
-                                    <>
-                                        {activeView === 'alerts' && <Bell className="w-4 h-4 text-orange-400" />}
-                                        {activeView === 'rules' && <Zap className="w-4 h-4 text-violet-400" />}
-                                        {activeView === 'summary' && <BarChart3 className="w-4 h-4 text-emerald-400" />}
-                                        {activeView === 'decisions' && <Brain className="w-4 h-4 text-fuchsia-400" />}
-                                        {MENU_ITEMS.find(m => m.id === activeView)?.label}
-                                    </>
-                                )}
-                            </DialogTitle>
-                            <Button
-                                variant="ghost"
-                                size="icon"
-                                onClick={() => setActiveView(null)}
-                                className="w-7 h-7 text-muted-foreground hover:text-foreground hover:bg-muted"
-                            >
-                                <X className="w-4 h-4" />
-                            </Button>
-                        </div>
+                        <DialogTitle className="text-base font-semibold text-foreground flex items-center gap-2">
+                            {activeView && (
+                                <>
+                                    {activeView === 'alerts' && <Bell className="w-4 h-4 text-orange-400" />}
+                                    {activeView === 'rules' && <Zap className="w-4 h-4 text-violet-400" />}
+                                    {activeView === 'summary' && <BarChart3 className="w-4 h-4 text-emerald-400" />}
+                                    {activeView === 'decisions' && <Brain className="w-4 h-4 text-fuchsia-400" />}
+                                    {MENU_ITEMS.find(m => m.id === activeView)?.label}
+                                </>
+                            )}
+                        </DialogTitle>
                     </DialogHeader>
 
                     <div className="flex-1 overflow-y-auto p-4">
