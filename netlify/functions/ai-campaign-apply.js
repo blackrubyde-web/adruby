@@ -52,6 +52,9 @@ export async function handler(event) {
         const { campaignId, recommendation, confidence, reason } = analysis || {};
         const action = RECOMMENDATION_TO_ACTION[String(recommendation || '').toLowerCase()] || null;
         if (!campaignId || !action) continue;
+        const scalePct = analysis.budgetAction?.pct
+            || analysis.scalePct
+            || (action === 'increase' ? 0.20 : 0.20);
 
         let applyJson = null;
         let success = false;
@@ -62,7 +65,7 @@ export async function handler(event) {
                     'Content-Type': 'application/json',
                     ...(authHeader ? { Authorization: authHeader } : {})
                 },
-                body: JSON.stringify({ campaignId, action, scalePct: undefined })
+                body: JSON.stringify({ campaignId, action, scalePct })
             });
             applyJson = await applyRes.json();
             success = applyRes.ok && applyJson?.ok;

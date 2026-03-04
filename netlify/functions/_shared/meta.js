@@ -150,6 +150,26 @@ export async function resolveMetaAccessToken(userId) {
   if (connection) {
     try {
       token = await getTokenForConnection(connection);
+
+      // Check token expiry — prevent 3 wasted retries on expired tokens
+      if (token && connection.id) {
+        try {
+          const { data: tokenRow } = await supabaseAdmin
+            .from("meta_tokens")
+            .select("token_expires_at")
+            .eq("connection_id", connection.id)
+            .maybeSingle();
+          if (tokenRow?.token_expires_at) {
+            const expiresAt = new Date(tokenRow.token_expires_at);
+            if (expiresAt < new Date()) {
+              console.warn(`[meta] Token for user ${userId} expired at ${expiresAt.toISOString()}`);
+              token = null; // Force re-authentication
+            }
+          }
+        } catch {
+          // Non-critical — proceed with token as-is
+        }
+      }
     } catch {
       token = null;
     }

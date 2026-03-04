@@ -186,7 +186,7 @@ export async function handler(event) {
         ok: true,
         action,
         campaignId,
-        resultId: response?.id || null,
+        resultId: response?.copied_campaign_id || response?.id || null,
         success: response?.success ?? true,
       });
     }
@@ -226,6 +226,8 @@ export async function handler(event) {
         budgetField: budget.field,
         previous: budget.value,
         next,
+        previousEur: (budget.value / 100).toFixed(2),
+        nextEur: (next / 100).toFixed(2),
         resultId: response?.id || null,
         success: response?.success ?? true,
       });

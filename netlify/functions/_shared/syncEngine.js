@@ -84,7 +84,7 @@ export async function syncForUser({ userId, preferredAdAccountId, rangeDays, job
             level: "campaign",
             time_range: JSON.stringify(timeRange),
             fields:
-                "campaign_id,campaign_name,impressions,clicks,spend,ctr,cpm,frequency,actions,action_values",
+                "campaign_id,campaign_name,campaign_effective_status,impressions,clicks,spend,ctr,cpm,frequency,actions,action_values",
             limit: "200",
         });
 
@@ -103,7 +103,7 @@ export async function syncForUser({ userId, preferredAdAccountId, rangeDays, job
             return {
                 facebook_campaign_id: row.campaign_id,
                 name: row.campaign_name,
-                status: "active",
+                status: (row.campaign_effective_status || row.effective_status || "active").toLowerCase(),
                 spend,
                 impressions,
                 clicks,
@@ -199,7 +199,7 @@ export async function syncForUser({ userId, preferredAdAccountId, rangeDays, job
                 level: "adset",
                 time_range: JSON.stringify(timeRange),
                 fields:
-                    "adset_id,adset_name,campaign_id,campaign_name,impressions,clicks,spend,ctr,cpm,frequency,actions,action_values",
+                    "adset_id,adset_name,adset_effective_status,campaign_id,campaign_name,impressions,clicks,spend,ctr,cpm,frequency,actions,action_values",
                 limit: "500",
             });
 
@@ -220,7 +220,7 @@ export async function syncForUser({ userId, preferredAdAccountId, rangeDays, job
                     facebook_campaign_id: row.campaign_id,
                     name: row.adset_name,
                     campaign_name: row.campaign_name,
-                    status: "active",
+                    status: (row.adset_effective_status || row.effective_status || "active").toLowerCase(),
                     spend,
                     impressions,
                     clicks,
