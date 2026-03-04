@@ -110,47 +110,72 @@ export function PreviewArea({
         );
     }
 
-    /* ── Empty State — Editorial visual inside canvas ── */
+    /* ── Empty State — Premium AI Visual ── */
     if (!result || !displayData) {
         return (
-            <div className="flex flex-col items-center justify-center text-center min-h-[400px] py-12">
-                {/* Animated orbit icon */}
-                <div className="relative w-28 h-28 mb-8">
-                    {/* Glow */}
-                    <div className="absolute inset-2 rounded-full blur-xl empty-state-breathe bg-gradient-to-br from-primary/10 to-primary/5" />
+            <div className="ai-empty-state">
+                {/* Aurora gradient background */}
+                <div className="ai-empty-aurora" />
 
-                    {/* Center icon */}
-                    <div className="absolute inset-0 flex items-center justify-center">
-                        <div className="w-16 h-16 rounded-2xl flex items-center justify-center shadow-inner bg-muted border border-border">
-                            <Layers className="w-7 h-7 text-muted-foreground/25" />
-                        </div>
+                {/* Floating particles */}
+                <div className="ai-empty-particles">
+                    {[...Array(12)].map((_, i) => (
+                        <div key={i} className={`ai-particle ai-particle-${(i % 4) + 1}`} style={{
+                            left: `${10 + Math.random() * 80}%`,
+                            animationDelay: `${i * 0.4}s`,
+                            width: `${2 + Math.random() * 4}px`,
+                            height: `${2 + Math.random() * 4}px`,
+                        }} />
+                    ))}
+                </div>
+
+                {/* Neural Core */}
+                <div className="ai-core-container">
+                    {/* Outer ring 3 */}
+                    <div className="ai-orbit-ring ai-orbit-ring-3">
+                        <div className="ai-orbit-dot" />
+                    </div>
+                    {/* Outer ring 2 */}
+                    <div className="ai-orbit-ring ai-orbit-ring-2">
+                        <div className="ai-orbit-dot" />
+                        <div className="ai-orbit-dot ai-orbit-dot-2" />
+                    </div>
+                    {/* Inner ring */}
+                    <div className="ai-orbit-ring ai-orbit-ring-1">
+                        <div className="ai-orbit-dot ai-orbit-dot-lg" />
                     </div>
 
-                    {/* Orbiting dots */}
-                    <div className="absolute inset-0 flex items-center justify-center">
-                        <div className="orbit-dot bg-primary/50" />
-                        <div className="orbit-dot bg-primary/35" />
-                        <div className="orbit-dot bg-muted-foreground/30" />
+                    {/* Glow layers */}
+                    <div className="ai-core-glow ai-core-glow-outer" />
+                    <div className="ai-core-glow ai-core-glow-mid" />
+
+                    {/* Core icon */}
+                    <div className="ai-core-icon">
+                        <Sparkles className="w-8 h-8 text-white" />
                     </div>
                 </div>
 
-                <h3 className="font-display font-bold text-lg text-foreground/80">Dein Creative wartet</h3>
-                <p className="text-sm text-muted-foreground/50 mt-2 max-w-[280px] leading-relaxed">
-                    Fülle das Formular aus und generiere deine erste Ad — das Ergebnis erscheint hier.
+                {/* Text */}
+                <h3 className="font-display font-bold text-lg text-foreground ai-text-glow">
+                    Bereit zum Generieren
+                </h3>
+                <p className="text-sm text-muted-foreground/60 mt-1 max-w-[260px] leading-relaxed text-center">
+                    Beschreibe dein Produkt und die KI erstellt deine Ad in Sekunden
                 </p>
 
-                {/* Feature chips */}
-                <div className="flex items-center gap-2.5 mt-8">
+                {/* Animated feature chips */}
+                <div className="flex items-center gap-2.5 mt-6">
                     {[
                         { icon: Sparkles, label: 'KI-Generiert' },
-                        { icon: Layers, label: 'Meta-Vorschau' },
-                        { icon: Wand2, label: 'Score-Analyse' },
+                        { icon: Layers, label: 'Multi-Varianten' },
+                        { icon: Wand2, label: 'Auto-Scoring' },
                     ].map((feat, i) => {
                         const FeatIcon = feat.icon;
                         return (
                             <div
                                 key={i}
-                                className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] bg-muted/50 border border-border text-muted-foreground/50"
+                                className="ai-feature-chip stagger-in"
+                                style={{ animationDelay: `${400 + i * 150}ms` }}
                             >
                                 <FeatIcon className="w-3 h-3" />
                                 {feat.label}
