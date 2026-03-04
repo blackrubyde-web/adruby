@@ -159,7 +159,7 @@ export const WeeklySummaryCard = memo(function WeeklySummaryCard({
                 <div className="relative p-4">
                     <div className="flex items-center gap-3 mb-6">
                         <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-500 flex items-center justify-center shadow-lg shadow-emerald-500/25">
-                            <Calendar className="w-5 h-5 text-white" />
+                            <Calendar className="w-5 h-5 text-foreground" />
                         </div>
                         <div>
                             <h3 className="text-base font-bold text-foreground flex items-center gap-2">
@@ -191,7 +191,7 @@ export const WeeklySummaryCard = memo(function WeeklySummaryCard({
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
                     <div className="flex items-center gap-3">
                         <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-500 flex items-center justify-center shadow-lg shadow-emerald-500/25">
-                            <Calendar className="w-5 h-5 text-white" />
+                            <Calendar className="w-5 h-5 text-foreground" />
                         </div>
                         <div>
                             <h3 className="text-base font-bold text-foreground flex items-center gap-2">
@@ -221,7 +221,7 @@ export const WeeklySummaryCard = memo(function WeeklySummaryCard({
                             )}
                         </div>
                         <p className="text-xs text-muted-foreground">Gesamt Spend</p>
-                        <p className="text-xl font-bold text-white">€{summary.totalSpend.toFixed(0)}</p>
+                        <p className="text-xl font-bold text-foreground">€{summary.totalSpend.toFixed(0)}</p>
                     </div>
 
                     <div className="p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/20">
@@ -242,7 +242,7 @@ export const WeeklySummaryCard = memo(function WeeklySummaryCard({
                             <Target className="w-4 h-4 text-muted-foreground" />
                         </div>
                         <p className="text-xs text-muted-foreground">Conversions</p>
-                        <p className="text-xl font-bold text-white">{summary.totalConversions}</p>
+                        <p className="text-xl font-bold text-foreground">{summary.totalConversions}</p>
                     </div>
 
                     <div className="p-4 rounded-xl bg-violet-500/10 border border-violet-500/20">
@@ -294,7 +294,7 @@ export const WeeklySummaryCard = memo(function WeeklySummaryCard({
                         {summary.topPerformers.map((campaign, i) => (
                             <div key={campaign.id} className="flex items-center gap-3 p-3 rounded-lg bg-muted/50">
                                 <span className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${i === 0 ? 'bg-amber-500/20 text-amber-400' :
-                                    i === 1 ? 'bg-zinc-400/20 text-zinc-400' :
+                                    i === 1 ? 'bg-muted text-muted-foreground' :
                                         'bg-orange-700/20 text-orange-400'
                                     }`}>
                                     {i + 1}
@@ -315,7 +315,7 @@ export const WeeklySummaryCard = memo(function WeeklySummaryCard({
                 <div className="mt-6 p-4 rounded-xl bg-gradient-to-r from-violet-500/10 to-fuchsia-500/10 border border-violet-500/20">
                     <div className="flex items-center gap-2 mb-2">
                         <ArrowRight className="w-4 h-4 text-violet-400" />
-                        <h4 className="text-sm font-semibold text-white">Empfehlung für nächste Woche</h4>
+                        <h4 className="text-sm font-semibold text-foreground">Empfehlung für nächste Woche</h4>
                     </div>
                     <p className="text-sm text-muted-foreground">
                         {summary.winners.length > 0
