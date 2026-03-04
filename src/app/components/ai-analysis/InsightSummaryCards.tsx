@@ -145,32 +145,32 @@ export const InsightSummaryCards = memo(function InsightSummaryCards({
     };
 
     return (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+        <div className="insight-grid">
             {insights.map((insight, index) => {
                 const Icon = insight.icon;
                 return (
-                    <Card
+                    <div
                         key={index}
-                        className={`p-4 ${insight.bgColor} border ${insight.borderColor} hover:scale-[1.02] transition-transform cursor-default`}
+                        className="insight-card stagger-reveal"
+                        style={{ animationDelay: `${index * 80}ms` }}
                     >
                         <div className="flex items-start justify-between mb-3">
                             <div className={`w-10 h-10 rounded-xl ${insight.bgColor} border ${insight.borderColor} flex items-center justify-center`}>
                                 <Icon className={`w-5 h-5 ${insight.iconColor}`} />
                             </div>
                             {insight.trend && (
-                                <div className={`flex items-center gap-1 text-xs ${insight.trend === 'up' ? 'text-emerald-400' :
-                                    insight.trend === 'down' ? 'text-red-400' : 'text-muted-foreground'
+                                <div className={`insight-card-delta ${insight.trend === 'up' ? 'insight-card-delta-positive' :
+                                        insight.trend === 'down' ? 'insight-card-delta-negative' : ''
                                     }`}>
-
                                     <TrendIcon trend={insight.trend} />
                                     <span>{insight.trendValue}</span>
                                 </div>
                             )}
                         </div>
-                        <p className="text-xs text-muted-foreground mb-1">{insight.title}</p>
-                        <p className="text-xl font-bold text-foreground mb-1">{insight.value}</p>
-                        <p className="text-xs text-muted-foreground/70 truncate">{insight.subtitle}</p>
-                    </Card>
+                        <p className="insight-card-label">{insight.title}</p>
+                        <p className="insight-card-value">{insight.value}</p>
+                        <p className="text-xs text-muted-foreground/70 truncate mt-1">{insight.subtitle}</p>
+                    </div>
                 );
             })}
         </div>

@@ -8,8 +8,10 @@ import {
   TrendingUp,
   TrendingDown,
   ShieldCheck,
+  Sparkles,
 } from 'lucide-react';
 import { toast } from 'sonner';
+import '../../styles/analysis-campaign.css';
 import { DashboardShell } from './layout/DashboardShell';
 import { Card } from './ui/card';
 import { Button } from './ui/button';
@@ -505,42 +507,42 @@ export function AIAnalysisPage() {
 
   return (
     <DashboardShell hideHero>
-      {/* ── Inline Toolbar ──────────────────────────────────── */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex items-center gap-4 min-w-0">
-          <div>
-            <h1 className="text-2xl font-bold tracking-tight text-foreground">KI Analyse</h1>
-            <p className="text-sm text-muted-foreground">{campaigns.length} Kampagnen · {totalAdSets} Ad Sets · {totalAds} Ads</p>
-          </div>
-          <div className="hidden md:flex flex-wrap gap-1.5">
-            <Badge variant="outline" className="text-xs">€{(totalSpend / 1000).toFixed(1)}K</Badge>
-            <Badge variant="outline" className="text-xs">{totalRoas.toFixed(2)}x ROAS</Badge>
-            <Badge variant="outline" className="text-xs">{allRecommendations.length} Empfehlungen</Badge>
-            {aiPowered && <Badge variant="secondary" className="text-xs gap-1"><Brain className="w-3 h-3" /> GPT-4o</Badge>}
-          </div>
-        </div>
-        <div className="flex items-center gap-2 shrink-0">
-          <button
-            onClick={toggleAutopilot}
-            disabled={!hasAutopilotData}
-            className={`flex items-center gap-2 px-3 py-1.5 rounded-full border text-xs font-medium transition-all ${autopilotEnabled
-              ? 'bg-primary/15 text-primary border-primary/30 hover:bg-primary/25'
-              : 'bg-muted/30 text-muted-foreground border-border/50 hover:bg-muted/50'
-              } ${!hasAutopilotData ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
-          >
-            <ShieldCheck className="w-3.5 h-3.5" />
-            {autopilotEnabled ? 'Autopilot AN' : 'Autopilot AUS'}
-            <div className={`w-7 h-3.5 rounded-full relative ${autopilotEnabled ? 'bg-primary/30' : 'bg-muted/50'}`}>
-              <div className={`absolute top-0.5 w-2.5 h-2.5 rounded-full transition-all duration-200 ${autopilotEnabled ? 'left-3.5 bg-primary' : 'left-0.5 bg-muted-foreground'}`} />
+      {/* ── Editorial Page Header ──────────────────────── */}
+      <div className="page-header-editorial">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-center gap-4 min-w-0">
+            <div>
+              <h1 className="page-title">KI Analyse</h1>
+              <p className="page-subtitle">{campaigns.length} Kampagnen · {totalAdSets} Ad Sets · {totalAds} Ads</p>
             </div>
-          </button>
-          <Button variant="outline" size="sm" onClick={isSyncing ? cancelSync : runSync} className="gap-1.5">
-            <RefreshCw className={`w-3.5 h-3.5 ${isSyncing ? 'animate-spin' : ''}`} /> {isSyncing ? 'Stop' : 'Sync'}
-          </Button>
-          <Button size="sm" onClick={() => runAIAnalysis(metaCampaigns)} disabled={isAnalyzingAI} className="gap-1.5">
-            {isAnalyzingAI ? 'Analysiert…' : 'KI Analyse'}
-          </Button>
-          <AgencySettingsMenu campaigns={campaigns} />
+            <div className="hidden md:flex flex-wrap gap-1.5">
+              <span className="stat-pill">€{(totalSpend / 1000).toFixed(1)}K</span>
+              <span className="stat-pill stat-pill-accent">{totalRoas.toFixed(2)}x ROAS</span>
+              <span className="stat-pill">{allRecommendations.length} Empfehlungen</span>
+              {aiPowered && <span className="stat-pill stat-pill-accent"><Sparkles className="w-3 h-3" /> GPT-4o</span>}
+            </div>
+          </div>
+          <div className="flex items-center gap-2 shrink-0">
+            <button
+              onClick={toggleAutopilot}
+              disabled={!hasAutopilotData}
+              className={`autopilot-toggle ${autopilotEnabled ? 'autopilot-toggle-active' : ''} ${!hasAutopilotData ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
+            >
+              <ShieldCheck className="w-3.5 h-3.5" />
+              {autopilotEnabled ? 'Autopilot AN' : 'Autopilot AUS'}
+              <div className={`w-7 h-3.5 rounded-full relative ${autopilotEnabled ? 'bg-primary/30' : 'bg-muted/50'}`}>
+                <div className={`absolute top-0.5 w-2.5 h-2.5 rounded-full transition-all duration-200 ${autopilotEnabled ? 'left-3.5 bg-primary' : 'left-0.5 bg-muted-foreground'}`} />
+              </div>
+            </button>
+            <Button variant="outline" size="sm" onClick={isSyncing ? cancelSync : runSync} className="gap-1.5">
+              <RefreshCw className={`w-3.5 h-3.5 ${isSyncing ? 'animate-spin' : ''}`} /> {isSyncing ? 'Stop' : 'Sync'}
+            </Button>
+            <button onClick={() => runAIAnalysis(metaCampaigns)} disabled={isAnalyzingAI} className="ai-analysis-btn">
+              <Brain className="w-3.5 h-3.5" />
+              {isAnalyzingAI ? 'Analysiert…' : 'KI Analyse'}
+            </button>
+            <AgencySettingsMenu campaigns={campaigns} />
+          </div>
         </div>
       </div>
       <InsightSummaryCards
@@ -666,13 +668,15 @@ export function AIAnalysisPage() {
       )}
 
       {isSyncing && (
-        <Card className="p-4 mb-6">
+        <div className="sync-progress-bar">
           <div className="flex items-center justify-between text-sm">
-            <span className="text-muted-foreground">Syncing data...</span>
-            <span className="font-semibold text-foreground">{syncProgress}%</span>
+            <span className="text-muted-foreground font-medium">Daten werden synchronisiert...</span>
+            <span className="font-bold text-foreground">{syncProgress}%</span>
           </div>
-          <Progress value={syncProgress} className="h-2 mt-3" />
-        </Card>
+          <div className="sync-progress-track">
+            <div className="sync-progress-fill" style={{ width: `${syncProgress}%` }} />
+          </div>
+        </div>
       )}
 
       {(campaignsLoading || analyticsLoading) && <Card className="p-4 mb-4 text-sm text-muted-foreground">Lade Kampagnen und Analytics…</Card>}
@@ -685,18 +689,28 @@ export function AIAnalysisPage() {
             <div className="flex-1 relative min-w-0">
               <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
               <input
-                type="text" placeholder="Search campaigns, ad sets, or ads..." value={searchQuery}
+                type="text" placeholder="Kampagnen, Ad Sets, Ads suchen..." value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-11 pr-4 py-2.5 bg-muted/30 border border-border/50 rounded-xl text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-violet-500/50 focus:border-violet-500/50 text-sm transition-all"
+                className="w-full pl-11 pr-4 py-2.5 bg-card border border-border rounded-xl text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary/30 text-sm transition-all"
               />
             </div>
-            <SelectField value={filterStatus} onChange={(e) => setFilterStatus(e.target.value as typeof filterStatus)} wrapperClassName="w-full sm:w-auto" className="bg-muted/30 border-border/50 text-sm py-2.5 px-4 rounded-xl">
-              <option value="all">All Status</option>
-              <option value="active">Active</option>
-              <option value="paused">Paused</option>
-              <option value="learning">Learning</option>
-            </SelectField>
-            <button onClick={() => setShowAIPanel(!showAIPanel)} className={`w-full sm:w-auto px-4 py-2.5 rounded-xl font-semibold text-sm transition-all flex items-center justify-center gap-2 ${showAIPanel ? 'bg-gradient-to-r from-violet-600 to-fuchsia-600 text-white shadow-lg shadow-violet-500/30' : 'bg-muted/30 border border-border/50 hover:bg-muted/50 text-foreground'}`}>
+            <div className="filter-chip-bar">
+              {[
+                { value: 'all', label: 'Alle' },
+                { value: 'active', label: 'Aktiv' },
+                { value: 'paused', label: 'Pausiert' },
+                { value: 'learning', label: 'Learning' },
+              ].map(f => (
+                <button
+                  key={f.value}
+                  onClick={() => setFilterStatus(f.value as typeof filterStatus)}
+                  className={`filter-chip ${filterStatus === f.value ? 'filter-chip-active' : ''}`}
+                >
+                  {f.label}
+                </button>
+              ))}
+            </div>
+            <button onClick={() => setShowAIPanel(!showAIPanel)} className={`filter-chip ${showAIPanel ? 'filter-chip-active' : ''}`}>
               <Brain className="w-4 h-4" /> AI Panel
             </button>
           </div>

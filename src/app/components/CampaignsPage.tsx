@@ -1,15 +1,14 @@
-import { Search, ExternalLink, Play, Pause, Copy, Trash2, TrendingUp, TrendingDown, Plus, ArrowUpDown } from 'lucide-react';
+import { Search, ExternalLink, Play, Pause, Copy, Trash2, TrendingUp, TrendingDown, Plus, ArrowUpDown, Sparkles } from 'lucide-react';
 import { useCallback, useMemo, useState } from 'react';
 import { toast } from 'sonner';
 import { DashboardShell } from './layout/DashboardShell';
-import { Card, CardContent } from './ui/card';
 import { Button } from './ui/button';
-import { Badge } from './ui/badge';
 import { useMetaCampaigns, type MetaCampaign } from '../hooks/useMetaCampaigns';
 import { useMetaConnection } from '../hooks/useMetaConnection';
 import type { MetaApplyAction } from '../lib/api/meta';
 import { applyMetaAction } from '../lib/api/meta';
 import { formatCurrency, formatCompact } from '../utils/formatters';
+import '../../styles/analysis-campaign.css';
 
 type StatusFilter = 'all' | 'active' | 'paused' | 'completed';
 type SortKey = 'name' | 'spend' | 'impressions' | 'clicks' | 'ctr' | 'roas' | 'conversions';
@@ -94,29 +93,36 @@ export function CampaignsPage() {
     window.open(`https://business.facebook.com/adsmanager/manage/campaigns?act=${connection?.ad_account_id}&selection_ids=${id}`, '_blank');
   };
 
+  const handleSort = (key: SortKey) => {
+    setSortAsc(sortKey === key ? !sortAsc : key === 'name');
+    setSortKey(key);
+  };
+
   return (
     <DashboardShell hideHero>
-      {/* ── Inline Toolbar ──────────────────────────────────── */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex items-center gap-4 min-w-0">
-          <div>
-            <h1 className="text-2xl font-bold tracking-tight text-foreground">Kampagnen</h1>
-            <p className="text-sm text-muted-foreground">Verwalte und optimiere deine Meta Ads Kampagnen</p>
+      {/* ── Editorial Page Header ──────────────────────── */}
+      <div className="page-header-editorial">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-center gap-4 min-w-0">
+            <div>
+              <h1 className="page-title">Kampagnen</h1>
+              <p className="page-subtitle">Verwalte und optimiere deine Meta Ads Kampagnen</p>
+            </div>
+            <div className="hidden md:flex flex-wrap gap-1.5">
+              <span className="stat-pill">{stats.total} gesamt</span>
+              <span className="stat-pill stat-pill-accent">{stats.active} Aktiv</span>
+              {stats.paused > 0 && <span className="stat-pill">{stats.paused} Pausiert</span>}
+              <span className="stat-pill">{formatCurrency(stats.totalSpend)}</span>
+            </div>
           </div>
-          <div className="hidden md:flex flex-wrap gap-1.5">
-            <Badge variant="outline" className="text-xs">{stats.total} gesamt</Badge>
-            <Badge variant="outline" className="text-xs text-green-600 border-green-600/30">{stats.active} Aktiv</Badge>
-            {stats.paused > 0 && <Badge variant="outline" className="text-xs text-orange-600 border-orange-600/30">{stats.paused} Pausiert</Badge>}
-            <Badge variant="outline" className="text-xs">{formatCurrency(stats.totalSpend)}</Badge>
-          </div>
+          <button onClick={handleCreateCampaign} className="ai-analysis-btn">
+            <Plus className="w-4 h-4" />
+            Neue Kampagne
+          </button>
         </div>
-        <Button onClick={handleCreateCampaign} className="gap-2 shrink-0">
-          <Plus className="w-4 h-4" />
-          Neue Kampagne
-        </Button>
       </div>
 
-      {/* Filters and Search - Open Layout */}
+      {/* Filters and Search */}
       <div className="flex flex-col md:flex-row items-center justify-between gap-3 mb-6">
         {/* Search */}
         <div className="flex-1 relative w-full">
@@ -126,253 +132,244 @@ export function CampaignsPage() {
             placeholder="Kampagnen suchen..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-11 pr-4 py-2.5 bg-muted/30 border border-border/50 rounded-xl text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 transition-all placeholder:text-muted-foreground"
+            className="w-full pl-11 pr-4 py-2.5 bg-card border border-border rounded-xl text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 transition-all placeholder:text-muted-foreground"
           />
         </div>
 
-        {/* Status Filter Tabs */}
-        <div className="flex flex-wrap items-center gap-1 bg-muted/50 p-1 rounded-lg w-full md:w-auto">
-          {(['all', 'active', 'paused', 'completed'] as const).map((status) => (
+        {/* Status Filter Chips */}
+        <div className="filter-chip-bar">
+          {([
+            { value: 'all', label: 'Alle' },
+            { value: 'active', label: 'Aktiv' },
+            { value: 'paused', label: 'Pausiert' },
+            { value: 'completed', label: 'Abgeschlossen' },
+          ] as const).map((f) => (
             <button
-              key={status}
-              onClick={() => setStatusFilter(status)}
-              className={`flex-1 md:flex-none px-3 py-1.5 rounded-md text-xs font-medium transition-all ${statusFilter === status
-                ? 'bg-background text-foreground shadow-sm'
-                : 'text-muted-foreground hover:text-foreground hover:bg-background/50'
-                }`}
+              key={f.value}
+              onClick={() => setStatusFilter(f.value)}
+              className={`filter-chip ${statusFilter === f.value ? 'filter-chip-active' : ''}`}
             >
-              {status === 'all' ? 'Alle' : status === 'active' ? 'Aktiv' : status === 'paused' ? 'Pausiert' : 'Abgeschlossen'}
+              {f.label}
             </button>
           ))}
         </div>
       </div>
 
       {error && (
-        <Card className="p-4 border border-red-500/30 bg-red-500/5 text-red-500 mb-8" variant="flat">
-          {error}
-        </Card>
+        <div className="sync-progress-bar" style={{ borderColor: 'rgba(239, 68, 68, 0.3)' }}>
+          <p className="text-red-500 text-sm">{error}</p>
+        </div>
       )}
 
       {loading && (
-        <Card className="p-4 border border-border bg-card text-sm text-muted-foreground mb-8" variant="flat">
-          Lade Kampagnen…
-        </Card>
+        <div className="sync-progress-bar">
+          <p className="text-sm text-muted-foreground">Lade Kampagnen…</p>
+          <div className="sync-progress-track">
+            <div className="sync-progress-fill" style={{ width: '60%', animation: 'pulse 1.5s ease-in-out infinite' }} />
+          </div>
+        </div>
       )}
 
       {!loading && campaigns.length === 0 && (
-        <Card variant="glass" className="mb-8">
-          <CardContent className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 p-8">
-            <div>
-              <div className="text-lg font-semibold text-foreground mb-1">Noch keine Kampagnen</div>
-              <div className="text-sm text-muted-foreground">Erstelle eine Kampagne und pushe sie direkt zu Meta.</div>
-            </div>
-            <Button onClick={handleCreateCampaign}>
-              Neuen Kampagne erstellen
-            </Button>
-          </CardContent>
-        </Card>
+        <div className="empty-state-card">
+          <div className="empty-state-card-icon">
+            <Sparkles className="w-6 h-6" />
+          </div>
+          <p className="empty-state-card-title">Noch keine Kampagnen</p>
+          <p className="empty-state-card-text">Erstelle eine Kampagne und pushe sie direkt zu Meta.</p>
+          <button onClick={handleCreateCampaign} className="ai-analysis-btn">
+            Neue Kampagne erstellen
+          </button>
+        </div>
       )}
 
       {/* Campaigns Table (Desktop) */}
-      <div className="hidden md:block">
-        <Card variant="glass" className="overflow-hidden" padding="none">
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead>
-                <tr className="border-b border-border/30 bg-muted/5">
-                  <th className="text-left p-4 text-sm font-semibold text-muted-foreground cursor-pointer hover:text-foreground transition-colors" onClick={() => { setSortKey('name'); setSortAsc(sortKey === 'name' ? !sortAsc : true); }}>
-                    Kampagne {sortKey === 'name' && <ArrowUpDown className="w-3 h-3 inline ml-1" />}
-                  </th>
-                  <th className="text-left p-4 text-sm font-semibold text-muted-foreground">Status</th>
-                  <th className="text-right p-4 text-sm font-semibold text-muted-foreground cursor-pointer hover:text-foreground transition-colors" onClick={() => { setSortKey('spend'); setSortAsc(sortKey === 'spend' ? !sortAsc : false); }}>
-                    Ausgaben {sortKey === 'spend' && <ArrowUpDown className="w-3 h-3 inline ml-1" />}
-                  </th>
-                  <th className="text-right p-4 text-sm font-semibold text-muted-foreground cursor-pointer hover:text-foreground transition-colors" onClick={() => { setSortKey('impressions'); setSortAsc(sortKey === 'impressions' ? !sortAsc : false); }}>
-                    Impressionen {sortKey === 'impressions' && <ArrowUpDown className="w-3 h-3 inline ml-1" />}
-                  </th>
-                  <th className="text-right p-4 text-sm font-semibold text-muted-foreground cursor-pointer hover:text-foreground transition-colors" onClick={() => { setSortKey('clicks'); setSortAsc(sortKey === 'clicks' ? !sortAsc : false); }}>
-                    Klicks {sortKey === 'clicks' && <ArrowUpDown className="w-3 h-3 inline ml-1" />}
-                  </th>
-                  <th className="text-right p-4 text-sm font-semibold text-muted-foreground cursor-pointer hover:text-foreground transition-colors" onClick={() => { setSortKey('ctr'); setSortAsc(sortKey === 'ctr' ? !sortAsc : false); }}>
-                    CTR {sortKey === 'ctr' && <ArrowUpDown className="w-3 h-3 inline ml-1" />}
-                  </th>
-                  <th className="text-right p-4 text-sm font-semibold text-muted-foreground cursor-pointer hover:text-foreground transition-colors" onClick={() => { setSortKey('roas'); setSortAsc(sortKey === 'roas' ? !sortAsc : false); }}>
-                    ROAS {sortKey === 'roas' && <ArrowUpDown className="w-3 h-3 inline ml-1" />}
-                  </th>
-                  <th className="text-right p-4 text-sm font-semibold text-muted-foreground cursor-pointer hover:text-foreground transition-colors" onClick={() => { setSortKey('conversions'); setSortAsc(sortKey === 'conversions' ? !sortAsc : false); }}>
-                    Conversions {sortKey === 'conversions' && <ArrowUpDown className="w-3 h-3 inline ml-1" />}
-                  </th>
-                  <th className="text-right p-4 text-sm font-semibold text-muted-foreground">Aktionen</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filteredCampaigns.map((campaign) => {
-                  const normalizedStatus = normalizeStatus(campaign.status);
-                  return (
-                    <tr
-                      key={campaign.id}
-                      className="border-b border-border/20 hover:bg-muted/5 transition-colors group"
-                    >
-                      <td className="p-4">
-                        <div>
-                          <div className="text-foreground font-medium mb-1">{campaign.name}</div>
-                          <div className="text-xs text-muted-foreground font-mono opacity-70">
-                            {campaign.id}
-                          </div>
+      <div className="hidden md:block card-obsidian overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="analysis-table">
+            <thead>
+              <tr>
+                <th className="text-left" onClick={() => handleSort('name')}>
+                  Kampagne {sortKey === 'name' && <ArrowUpDown className="w-3 h-3 inline ml-1" />}
+                </th>
+                <th className="text-left">Status</th>
+                <th className="text-right" onClick={() => handleSort('spend')}>
+                  Ausgaben {sortKey === 'spend' && <ArrowUpDown className="w-3 h-3 inline ml-1" />}
+                </th>
+                <th className="text-right" onClick={() => handleSort('impressions')}>
+                  Impressionen {sortKey === 'impressions' && <ArrowUpDown className="w-3 h-3 inline ml-1" />}
+                </th>
+                <th className="text-right" onClick={() => handleSort('clicks')}>
+                  Klicks {sortKey === 'clicks' && <ArrowUpDown className="w-3 h-3 inline ml-1" />}
+                </th>
+                <th className="text-right" onClick={() => handleSort('ctr')}>
+                  CTR {sortKey === 'ctr' && <ArrowUpDown className="w-3 h-3 inline ml-1" />}
+                </th>
+                <th className="text-right" onClick={() => handleSort('roas')}>
+                  ROAS {sortKey === 'roas' && <ArrowUpDown className="w-3 h-3 inline ml-1" />}
+                </th>
+                <th className="text-right" onClick={() => handleSort('conversions')}>
+                  Conversions {sortKey === 'conversions' && <ArrowUpDown className="w-3 h-3 inline ml-1" />}
+                </th>
+                <th className="text-right">Aktionen</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filteredCampaigns.map((campaign, i) => {
+                const normalizedStatus = normalizeStatus(campaign.status);
+                return (
+                  <tr
+                    key={campaign.id}
+                    className="stagger-reveal"
+                    style={{ animationDelay: `${i * 40}ms` }}
+                  >
+                    <td>
+                      <div>
+                        <div className="text-foreground font-medium mb-0.5">{campaign.name}</div>
+                        <div className="text-[10px] text-muted-foreground font-mono opacity-60">
+                          {campaign.id}
                         </div>
-                      </td>
-                      <td className="p-4">
-                        <Badge
-                          variant={
-                            normalizedStatus === 'active' ? 'default' :
-                              normalizedStatus === 'paused' ? 'secondary' : 'outline'
-                          }
-                          className={`
-                          ${normalizedStatus === 'active' ? 'bg-green-500/10 text-green-600 border-green-500/20 hover:bg-green-500/20' : ''}
-                          ${normalizedStatus === 'paused' ? 'bg-orange-500/10 text-orange-600 border-orange-500/20 hover:bg-orange-500/20' : ''}
-                        `}
+                      </div>
+                    </td>
+                    <td>
+                      <span className={`rec-badge ${normalizedStatus === 'active' ? 'rec-badge-duplicate' :
+                          normalizedStatus === 'paused' ? 'rec-badge-decrease' : ''
+                        }`}>
+                        {normalizedStatus === 'active' && <div className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />}
+                        {STATUS_DE[normalizedStatus] || normalizedStatus}
+                      </span>
+                    </td>
+                    <td className="metric-cell metric-cell-accent">
+                      {formatCurrency(campaign.spend)}
+                    </td>
+                    <td className="metric-cell metric-cell-muted">
+                      {formatCompact(campaign.impressions)}
+                    </td>
+                    <td className="metric-cell metric-cell-muted">
+                      {formatCompact(campaign.clicks)}
+                    </td>
+                    <td className="metric-cell">
+                      {formatPct(campaign.ctr)}
+                    </td>
+                    <td className="metric-cell">
+                      <div className="flex items-center justify-end gap-1.5">
+                        <span className={`font-bold ${campaign.roas >= 2.5 ? 'metric-cell-positive' : ''}`}>{campaign.roas}x</span>
+                        {campaign.roas >= 1 ? (
+                          <TrendingUp className="w-3 h-3 text-green-500" />
+                        ) : (
+                          <TrendingDown className="w-3 h-3 text-red-500" />
+                        )}
+                      </div>
+                    </td>
+                    <td className="metric-cell">
+                      {formatCompact(campaign.conversions)}
+                    </td>
+                    <td>
+                      <div className="flex items-center justify-end gap-1">
+                        {normalizedStatus === 'active' ? (
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 hover:text-orange-500"
+                            onClick={() => handleAction(campaign, 'pause')}
+                            disabled={isBusy(campaign.id, 'pause')}
+                            title="Pausieren"
+                          >
+                            <Pause className="w-4 h-4" />
+                          </Button>
+                        ) : normalizedStatus === 'paused' ? (
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 hover:text-green-500"
+                            onClick={() => handleAction(campaign, 'resume')}
+                            disabled={isBusy(campaign.id, 'resume')}
+                            title="Fortsetzen"
+                          >
+                            <Play className="w-4 h-4" />
+                          </Button>
+                        ) : null}
+
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8"
+                          onClick={() => handleAction(campaign, 'duplicate')}
+                          disabled={isBusy(campaign.id, 'duplicate')}
+                          title="Duplizieren"
                         >
-                          {normalizedStatus === 'active' && <div className="w-1.5 h-1.5 rounded-full bg-green-500 mr-2 animate-pulse" />}
-                          {STATUS_DE[normalizedStatus] || normalizedStatus}
-                        </Badge>
-                      </td>
-                      <td className="p-4 text-right text-foreground font-medium">
-                        {formatCurrency(campaign.spend)}
-                      </td>
-                      <td className="p-4 text-right text-muted-foreground">
-                        {formatCompact(campaign.impressions)}
-                      </td>
-                      <td className="p-4 text-right text-muted-foreground">
-                        {formatCompact(campaign.clicks)}
-                      </td>
-                      <td className="p-4 text-right">
-                        <div className="flex items-center justify-end gap-1">
-                          <span className="text-foreground font-medium">{formatPct(campaign.ctr)}</span>
-                        </div>
-                      </td>
-                      <td className="p-4 text-right">
-                        <div className="flex items-center justify-end gap-1">
-                          <span className={`font-bold ${campaign.roas >= 2.5 ? 'text-green-600' : 'text-foreground'}`}>{campaign.roas}x</span>
-                          {campaign.roas >= 1 ? (
-                            <TrendingUp className="w-3 h-3 text-green-500" />
-                          ) : (
-                            <TrendingDown className="w-3 h-3 text-red-500" />
-                          )}
-                        </div>
-                      </td>
-                      <td className="p-4 text-right text-foreground">
-                        {formatCompact(campaign.conversions)}
-                      </td>
-                      <td className="p-4">
-                        <div className="flex items-center justify-end gap-1">
-                          {normalizedStatus === 'active' ? (
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-8 w-8 hover:text-orange-500"
-                              onClick={() => handleAction(campaign, 'pause')}
-                              disabled={isBusy(campaign.id, 'pause')}
-                              title="Pausieren"
-                            >
-                              <Pause className="w-4 h-4" />
-                            </Button>
-                          ) : normalizedStatus === 'paused' ? (
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-8 w-8 hover:text-green-500"
-                              onClick={() => handleAction(campaign, 'resume')}
-                              disabled={isBusy(campaign.id, 'resume')}
-                              title="Fortsetzen"
-                            >
-                              <Play className="w-4 h-4" />
-                            </Button>
-                          ) : null}
+                          <Copy className="w-4 h-4" />
+                        </Button>
 
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8"
-                            onClick={() => handleAction(campaign, 'duplicate')}
-                            disabled={isBusy(campaign.id, 'duplicate')}
-                            title="Duplizieren"
-                          >
-                            <Copy className="w-4 h-4" />
-                          </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 hover:text-destructive"
+                          onClick={() => handleAction(campaign, 'delete')}
+                          disabled={isBusy(campaign.id, 'delete')}
+                          title="Löschen"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
 
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8 hover:text-destructive"
-                            onClick={() => handleAction(campaign, 'delete')}
-                            disabled={isBusy(campaign.id, 'delete')}
-                            title="Löschen"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </Button>
+                        <div className="w-px h-4 bg-border mx-1" />
 
-                          <div className="w-px h-4 bg-border mx-1" />
-
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8"
-                            onClick={() => openMetaCampaign(campaign.id)}
-                            title="In Meta öffnen"
-                          >
-                            <ExternalLink className="w-4 h-4" />
-                          </Button>
-                        </div>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-        </Card>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8"
+                          onClick={() => openMetaCampaign(campaign.id)}
+                          title="In Meta öffnen"
+                        >
+                          <ExternalLink className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
       </div>
 
       {/* Campaigns Cards (Mobile) */}
       <div className="md:hidden space-y-3">
-        {filteredCampaigns.map((campaign) => {
+        {filteredCampaigns.map((campaign, i) => {
           const normalizedStatus = normalizeStatus(campaign.status);
           return (
-            <Card key={campaign.id} variant="glass" className="p-4">
+            <div
+              key={campaign.id}
+              className="campaign-row stagger-reveal"
+              style={{ animationDelay: `${i * 60}ms` }}
+            >
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0">
                   <div className="text-foreground font-semibold truncate">{campaign.name}</div>
                   <div className="text-xs text-muted-foreground font-mono truncate">{campaign.id}</div>
                 </div>
-                <Badge
-                  variant={
-                    normalizedStatus === 'active' ? 'default' :
-                      normalizedStatus === 'paused' ? 'secondary' : 'outline'
-                  }
-                  className={`
-                    ${normalizedStatus === 'active' ? 'bg-green-500/10 text-green-600 border-green-500/20' : ''}
-                    ${normalizedStatus === 'paused' ? 'bg-orange-500/10 text-orange-600 border-orange-500/20' : ''}
-                  `}
-                >
+                <span className={`rec-badge ${normalizedStatus === 'active' ? 'rec-badge-duplicate' :
+                    normalizedStatus === 'paused' ? 'rec-badge-decrease' : ''
+                  }`}>
                   {STATUS_DE[normalizedStatus] || normalizedStatus}
-                </Badge>
+                </span>
               </div>
 
               <div className="mt-4 grid grid-cols-2 gap-3 text-xs">
-                <div className="rounded-lg border border-border/30 bg-muted/30 p-3">
-                  <div className="text-muted-foreground">Ausgaben</div>
+                <div className="insight-card" style={{ padding: '0.75rem' }}>
+                  <div className="insight-card-label" style={{ marginBottom: '0.25rem' }}>Ausgaben</div>
                   <div className="text-foreground font-semibold">{formatCurrency(campaign.spend)}</div>
                 </div>
-                <div className="rounded-lg border border-border/30 bg-muted/30 p-3">
-                  <div className="text-muted-foreground">Impressionen</div>
+                <div className="insight-card" style={{ padding: '0.75rem' }}>
+                  <div className="insight-card-label" style={{ marginBottom: '0.25rem' }}>Impressionen</div>
                   <div className="text-foreground font-semibold">{formatCompact(campaign.impressions)}</div>
                 </div>
-                <div className="rounded-lg border border-border/30 bg-muted/30 p-3">
-                  <div className="text-muted-foreground">CTR</div>
+                <div className="insight-card" style={{ padding: '0.75rem' }}>
+                  <div className="insight-card-label" style={{ marginBottom: '0.25rem' }}>CTR</div>
                   <div className="text-foreground font-semibold">{formatPct(campaign.ctr)}</div>
                 </div>
-                <div className="rounded-lg border border-border/30 bg-muted/30 p-3">
-                  <div className="text-muted-foreground">ROAS</div>
+                <div className="insight-card" style={{ padding: '0.75rem' }}>
+                  <div className="insight-card-label" style={{ marginBottom: '0.25rem' }}>ROAS</div>
                   <div className="text-foreground font-semibold">{campaign.roas}x</div>
                 </div>
               </div>
@@ -434,7 +431,7 @@ export function CampaignsPage() {
                   <ExternalLink className="w-4 h-4" />
                 </Button>
               </div>
-            </Card>
+            </div>
           );
         })}
       </div>

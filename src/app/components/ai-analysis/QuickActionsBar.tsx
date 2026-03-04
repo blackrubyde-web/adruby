@@ -117,14 +117,14 @@ export const QuickActionsBar = memo(function QuickActionsBar({
     }
 
     return (
-        <div className="mb-6 p-4 rounded-2xl bg-card border border-border/50">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div className="quick-actions-bar">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 w-full">
                 <div className="flex items-center gap-3">
                     <div className="w-10 h-10 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center">
                         <Zap className="w-5 h-5 text-primary" />
                     </div>
                     <div>
-                        <h4 className="text-sm font-semibold text-foreground">Schnellaktionen</h4>
+                        <h4 className="text-sm font-semibold text-foreground" style={{ fontFamily: 'var(--font-display)' }}>Schnellaktionen</h4>
                         <p className="text-xs text-muted-foreground">{totalActions} Aktionen verfügbar</p>
                     </div>
                 </div>
