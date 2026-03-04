@@ -23,7 +23,7 @@ import { env } from '../lib/env';
 import { useMetaCampaigns } from '../hooks/useMetaCampaigns';
 import { useStrategies } from '../hooks/useStrategies';
 import { useAnalyticsData } from '../hooks/useAnalyticsData';
-import { applyMetaAction } from '../lib/api/meta';
+import { applyMetaAction, fetchMetaAdSets } from '../lib/api/meta';
 
 // Sub-components (already extracted)
 import { AICopilotChat } from './ai-analysis/AICopilotChat';
@@ -80,6 +80,7 @@ export function AIAnalysisPage() {
   const [autopilotEnabled, setAutopilotEnabled] = useState(false);
   const [lastSyncAt, setLastSyncAt] = useState<string | null>(null);
   const [recentActionCount, setRecentActionCount] = useState(0);
+  const [adSetsData, setAdSetsData] = useState<Array<{ id: string; campaignId: string; name: string; status: string; spend: number; revenue: number; roas: number; ctr: number; conversions: number; impressions: number; clicks: number; frequency: number; cpm: number }>>([]);
 
   // ── Handlers ──────────────────────────────────────────────────────
 
@@ -115,6 +116,18 @@ export function AIAnalysisPage() {
       setRecentActionCount(count || 0);
     })();
   }, []);
+
+  // Load ad sets data
+  useEffect(() => {
+    (async () => {
+      try {
+        const res = await fetchMetaAdSets();
+        if (res?.adSets) setAdSetsData(res.adSets);
+      } catch {
+        // Ad sets fetch is non-blocking — will fall back to campaign-level aggregate
+      }
+    })();
+  }, [refreshTick]);
 
   const _applyRecommendations = async () => {
     if (!Object.keys(aiAnalysisCache).length) return;
@@ -317,26 +330,64 @@ export function AIAnalysisPage() {
       const adSetStrategyId = assignmentMap[`adset:${campaign.id}-adset`] ?? campaignStrategyId;
       const adStrategyId = assignmentMap[`ad:${campaign.id}-ad`] ?? adSetStrategyId;
 
-      const aggregateAd: Ad = {
-        id: `${campaign.id}-ad`, name: `${campaign.name} · Gesamt`, campaignId: campaign.id,
-        status: normalizeStatus(campaign.status), impressions, clicks, ctr, cpc, conversions,
-        spend, revenue, roas, performanceScore, aiAnalysis, strategyId: adStrategyId,
-      };
+      // Build real ad sets from meta_adsets data (grouped by campaign_id)
+      const campaignAdSets = adSetsData.filter(as => as.campaignId === campaign.id);
 
-      const aggregateAdSet: AdSet = {
-        id: `${campaign.id}-adset`, name: 'Gesamt', status: normalizeStatus(campaign.status),
-        impressions, clicks, ctr, cpc, conversions, spend, revenue, roas, performanceScore,
-        ads: [aggregateAd], expanded: false, strategyId: adSetStrategyId,
-      };
+      let adSets: AdSet[];
+      if (campaignAdSets.length > 0) {
+        // REAL ad set data from Meta API
+        adSets = campaignAdSets.map(as => {
+          const asCtr = Number(as.ctr || 0);
+          const asClicks = Number(as.clicks || 0);
+          const asCpc = asClicks > 0 ? Number(as.spend || 0) / asClicks : 0;
+          const asConversions = Number(as.conversions || 0);
+          const asSpend = Number(as.spend || 0);
+          const asRevenue = Number(as.revenue || 0);
+          const asRoas = Number(as.roas || 0);
+          const asImpressions = Number(as.impressions || 0);
+          const asPerformance = buildPerformanceScore({ roas: asRoas, ctr: asCtr, conversions: asConversions, clicks: asClicks, spend: asSpend });
+          const adStrategyId = assignmentMap[`ad:${as.id}-ad`] ?? assignmentMap[`adset:${as.id}`] ?? campaignStrategyId;
+          const adSetStrategyId = assignmentMap[`adset:${as.id}`] ?? campaignStrategyId;
+
+          const ad: Ad = {
+            id: `${as.id}-ad`, name: as.name, campaignId: campaign.id,
+            status: normalizeStatus(as.status), impressions: asImpressions, clicks: asClicks, ctr: asCtr, cpc: asCpc,
+            conversions: asConversions, spend: asSpend, revenue: asRevenue, roas: asRoas, performanceScore: asPerformance,
+            aiAnalysis: buildAiAnalysis(`analysis-${as.id}`, campaign.id, { roas: asRoas, ctr: asCtr, conversions: asConversions, spend: asSpend }, adStrategyId),
+            strategyId: adStrategyId,
+          };
+
+          return {
+            id: as.id, name: as.name, status: normalizeStatus(as.status),
+            impressions: asImpressions, clicks: asClicks, ctr: asCtr, cpc: asCpc, conversions: asConversions,
+            spend: asSpend, revenue: asRevenue, roas: asRoas, performanceScore: asPerformance,
+            ads: [ad], expanded: false, strategyId: adSetStrategyId,
+          } satisfies AdSet;
+        });
+      } else {
+        // Fallback: No ad set data yet — show campaign-level as single aggregate
+        const adSetStrategyId = assignmentMap[`adset:${campaign.id}-adset`] ?? campaignStrategyId;
+        const adStrategyId = assignmentMap[`ad:${campaign.id}-ad`] ?? adSetStrategyId;
+        const aggregateAd: Ad = {
+          id: `${campaign.id}-ad`, name: `${campaign.name}`, campaignId: campaign.id,
+          status: normalizeStatus(campaign.status), impressions, clicks, ctr, cpc, conversions,
+          spend, revenue, roas, performanceScore, aiAnalysis, strategyId: adStrategyId,
+        };
+        adSets = [{
+          id: `${campaign.id}-adset`, name: 'Campaign Level', status: normalizeStatus(campaign.status),
+          impressions, clicks, ctr, cpc, conversions, spend, revenue, roas, performanceScore,
+          ads: [aggregateAd], expanded: false, strategyId: adSetStrategyId,
+        }];
+      }
 
       return {
         id: campaign.id, name: campaign.name, status: normalizeStatus(campaign.status),
         impressions, clicks, ctr, cpc, conversions, spend, revenue, roas, performanceScore,
-        adSets: [aggregateAdSet], expanded: false, strategyId: campaignStrategyId,
+        adSets, expanded: false, strategyId: campaignStrategyId,
       } satisfies Campaign;
     });
     setCampaigns(next);
-  }, [metaCampaigns, assignmentMap, buildAiAnalysis]);
+  }, [metaCampaigns, assignmentMap, buildAiAnalysis, adSetsData]);
 
   useEffect(() => {
     let cancelled = false;

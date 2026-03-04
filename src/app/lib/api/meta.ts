@@ -81,6 +81,27 @@ export async function fetchMetaCampaigns() {
   }>("/api/meta-campaigns");
 }
 
+export async function fetchMetaAdSets() {
+  return apiClient.get<{
+    adSets: Array<{
+      id: string;
+      campaignId: string;
+      name: string;
+      campaignName: string;
+      status: string;
+      spend: number;
+      revenue: number;
+      roas: number;
+      ctr: number;
+      conversions: number;
+      impressions: number;
+      clicks: number;
+      frequency: number;
+      cpm: number;
+    }>;
+  }>("/api/meta-adsets");
+}
+
 export type MetaApplyAction =
   | "pause"
   | "resume"

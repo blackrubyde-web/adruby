@@ -1,4 +1,4 @@
-import { memo, useState } from 'react';
+import { memo, useCallback, useEffect, useState } from 'react';
 import {
     Settings2,
     Bell,
@@ -6,9 +6,7 @@ import {
     BarChart3,
     Brain,
     ChevronRight,
-    X,
 } from 'lucide-react';
-import { Button } from '../ui/button';
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -25,9 +23,10 @@ import {
 } from '../ui/dialog';
 import { Badge } from '../ui/badge';
 import { AlertsConfigPanel } from './AlertsConfigPanel';
-import { AutomatedRulesPanel } from './AutomatedRulesPanel';
+import { AutomatedRulesPanel, type AutomationRule } from './AutomatedRulesPanel';
 import { WeeklySummaryCard } from './WeeklySummaryCard';
 import { AdaptiveDecisionPanel } from './AdaptiveDecisionPanel';
+import { supabase } from '../../lib/supabaseClient';
 
 interface AgencySettingsMenuProps {
     campaigns?: Array<{ id: string; name: string; roas: number; ctr: number; spend: number; revenue: number; conversions: number }>;
@@ -74,6 +73,56 @@ export const AgencySettingsMenu = memo(function AgencySettingsMenu({
     campaigns = [],
 }: AgencySettingsMenuProps) {
     const [activeView, setActiveView] = useState<SettingsView>(null);
+    const [dbRules, setDbRules] = useState<AutomationRule[] | undefined>(undefined);
+
+    // Load automation rules from Supabase
+    useEffect(() => {
+        if (activeView !== 'rules') return;
+        (async () => {
+            const { data: session } = await supabase.auth.getSession();
+            const uid = session.session?.user?.id;
+            if (!uid) return;
+            const { data, error } = await supabase
+                .from('automation_rules')
+                .select('id,name,enabled,condition,action,trigger_count,last_triggered,created_at')
+                .eq('user_id', uid)
+                .order('created_at', { ascending: true });
+            if (!error && data) {
+                setDbRules(data.map(r => ({
+                    id: r.id,
+                    name: r.name,
+                    enabled: r.enabled ?? true,
+                    condition: r.condition as AutomationRule['condition'],
+                    action: r.action as AutomationRule['action'],
+                    triggerCount: r.trigger_count ?? 0,
+                    lastTriggered: r.last_triggered || undefined,
+                    createdAt: r.created_at?.split('T')[0] || '',
+                })));
+            }
+        })();
+    }, [activeView]);
+
+    const handleSaveRule = useCallback(async (rule: AutomationRule) => {
+        const { data: session } = await supabase.auth.getSession();
+        const uid = session.session?.user?.id;
+        if (!uid) return;
+        await supabase.from('automation_rules').upsert({
+            id: rule.id.startsWith('rule-') ? undefined : rule.id,
+            user_id: uid,
+            name: rule.name,
+            enabled: rule.enabled,
+            condition: rule.condition,
+            action: rule.action,
+        });
+    }, []);
+
+    const handleDeleteRule = useCallback(async (id: string) => {
+        await supabase.from('automation_rules').delete().eq('id', id);
+    }, []);
+
+    const handleToggleRule = useCallback(async (id: string, enabled: boolean) => {
+        await supabase.from('automation_rules').update({ enabled }).eq('id', id);
+    }, []);
 
     const handleOpenChange = (open: boolean) => {
         if (!open) {
@@ -159,7 +208,14 @@ export const AgencySettingsMenu = memo(function AgencySettingsMenu({
 
                     <div className="flex-1 overflow-y-auto p-4">
                         {activeView === 'alerts' && <AlertsConfigPanel />}
-                        {activeView === 'rules' && <AutomatedRulesPanel />}
+                        {activeView === 'rules' && (
+                            <AutomatedRulesPanel
+                                rules={dbRules}
+                                onSaveRule={handleSaveRule}
+                                onDeleteRule={handleDeleteRule}
+                                onToggleRule={handleToggleRule}
+                            />
+                        )}
                         {activeView === 'summary' && <WeeklySummaryCard campaigns={campaigns} />}
                         {activeView === 'decisions' && (
                             <AdaptiveDecisionPanel campaigns={campaigns} />
