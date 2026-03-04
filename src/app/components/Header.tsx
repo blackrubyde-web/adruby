@@ -96,15 +96,18 @@ export const Header = memo(function Header({
         </button>
 
         {/* Page Title + Greeting */}
-        <div className="min-w-0">
-          <h1 className="text-base sm:text-lg font-bold text-foreground leading-tight truncate">
-            {pageTitle}
-          </h1>
-          {isDashboard && firstName && (
-            <p className="text-xs text-muted-foreground leading-tight truncate hidden sm:block">
-              {getGreeting()}, {firstName} 👋
-            </p>
-          )}
+        <div className="min-w-0 flex items-center gap-2.5">
+          <img src="/images/adruby-logo.png" alt="AdRuby" className="w-7 h-7 object-contain hidden sm:block" />
+          <div className="min-w-0">
+            <h1 className="text-base sm:text-lg font-bold text-foreground leading-tight truncate">
+              {pageTitle}
+            </h1>
+            {isDashboard && firstName && (
+              <p className="text-xs text-muted-foreground leading-tight truncate hidden sm:block">
+                {getGreeting()}, {firstName} 👋
+              </p>
+            )}
+          </div>
         </div>
       </div>
 

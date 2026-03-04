@@ -31,12 +31,12 @@ function DashboardPageInner({
     onNavigate: (page: PageType, query?: Record<string, string | undefined | null>) => void;
 }) {
     const { isAdmin } = useAdmin();
-    const fullPage = 'min-h-screen pt-0 md:pt-[var(--header-height)]';
+    const fullPage = 'flex flex-col min-h-[calc(100vh-64px)] pt-0 md:pt-[var(--header-height)]';
     const canvasPage = 'min-h-screen bg-background flex flex-col';
 
     switch (currentPage) {
         case 'dashboard':
-            return (<div className={fullPage}><Suspense fallback={skeletonFallback}><OverviewPage onNavigate={(page, query) => onNavigate(page as PageType, query)} /></Suspense></div>);
+            return (<div className={fullPage}><Suspense fallback={skeletonFallback}><OverviewPage onNavigate={(page, query) => onNavigate(page as PageType, query)} /></Suspense><Footer /></div>);
         case 'analytics':
             return (<div className={fullPage}><Suspense fallback={skeletonFallback}><LazyAnalyticsPage /></Suspense><Footer /></div>);
         case 'campaigns':

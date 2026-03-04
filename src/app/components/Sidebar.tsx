@@ -1,8 +1,9 @@
 import { memo, useCallback, useState } from 'react';
 import { motion } from 'motion/react';
-import { BarChart3, Layers, Brain, LogOut, X, BarChart2, Gift, BookOpen, Palette, Shield, Wand2, User, Settings, type LucideIcon } from 'lucide-react';
+import { BarChart3, Layers, Brain, LogOut, X, BarChart2, Gift, BookOpen, Palette, Shield, Wand2, User, Settings, TrendingUp, type LucideIcon } from 'lucide-react';
 import { PageType } from '../App';
 import { useAdmin } from '../contexts/AdminContext';
+import { useAffiliate } from '../contexts/AffiliateContext';
 import { cn } from '../lib/utils';
 
 interface SidebarProps {
@@ -34,7 +35,6 @@ const NAV_GROUPS: NavGroup[] = [
     items: [
       { icon: BarChart3, label: 'Dashboard', page: 'dashboard' },
       { icon: BarChart2, label: 'Analytics', page: 'analytics' },
-      { icon: Brain, label: 'AI Analyse', page: 'aianalysis' },
     ],
   },
   {
@@ -45,14 +45,19 @@ const NAV_GROUPS: NavGroup[] = [
     ],
   },
   {
-    label: 'Verwalten',
+    label: 'Skalieren',
     items: [
+      { icon: Brain, label: 'AI Analyse', page: 'aianalysis' },
       { icon: Layers, label: 'Kampagnen', page: 'campaigns' },
-      { icon: User, label: 'Profil', page: 'profile' },
-      { icon: Settings, label: 'Einstellungen', page: 'settings' },
-      { icon: Gift, label: 'Affiliate', page: 'affiliate' },
     ],
   },
+];
+
+/** Items only visible to admin / affiliate users */
+const MANAGE_ITEMS: NavItem[] = [
+  { icon: User, label: 'Profil', page: 'profile' },
+  { icon: Settings, label: 'Einstellungen', page: 'settings' },
+  { icon: Gift, label: 'Affiliate', page: 'affiliate' },
 ];
 
 const ADMIN_ITEMS: NavItem[] = [
@@ -71,6 +76,7 @@ export const Sidebar = memo(function Sidebar({
   planLabel,
 }: SidebarProps) {
   const { isAdmin, isCheckingRole } = useAdmin();
+  const { isAffiliate } = useAffiliate();
   const [isHovering, setIsHovering] = useState(false);
 
   const isExpanded = isMobileOpen || !isCollapsed || isHovering;
@@ -150,9 +156,7 @@ export const Sidebar = memo(function Sidebar({
           onClick={() => !isMobileOpen && onToggle?.(!isCollapsed)}
         >
           <div className="flex items-center gap-3 overflow-hidden">
-            <div className="w-10 h-10 bg-gradient-to-br from-primary to-rose-600 rounded-xl flex items-center justify-center flex-shrink-0 shadow-lg shadow-primary/20">
-              <span className="text-white font-bold text-sm tracking-tighter">AR</span>
-            </div>
+            <img src="/images/adruby-logo.png" alt="AdRuby" className="w-10 h-10 object-contain flex-shrink-0" />
             <span
               className={cn(
                 "font-bold text-lg tracking-tight text-sidebar-foreground transition-all duration-300 whitespace-nowrap",
@@ -188,19 +192,20 @@ export const Sidebar = memo(function Sidebar({
             </div>
           ))}
 
-          {/* Divider before Admin */}
-          {isAdmin && !isCheckingRole && (
+          {/* Verwalten — only for Admin / Affiliate */}
+          {!isCheckingRole && (isAdmin || isAffiliate) && (
             <>
               <div className="h-px bg-sidebar-border/50 mx-2" />
               <div className="space-y-1">
                 {showLabels && (
                   <div className="px-3 mb-2 animate-in fade-in slide-in-from-left-2 duration-300">
                     <span className="text-[11px] font-semibold text-muted-foreground/60 uppercase tracking-wider">
-                      Admin
+                      Verwalten
                     </span>
                   </div>
                 )}
-                {ADMIN_ITEMS.map(renderNavButton)}
+                {MANAGE_ITEMS.map(renderNavButton)}
+                {isAdmin && ADMIN_ITEMS.map(renderNavButton)}
               </div>
             </>
           )}

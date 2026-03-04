@@ -736,9 +736,7 @@ export function LandingPage({ onGetStarted, onLogin, onNavigate }: LandingPagePr
             {/* Brand */}
             <div className="col-span-2 md:col-span-2 pr-8">
               <div className="flex items-center gap-2.5 mb-5">
-                <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-[#E63946] to-red-600 flex items-center justify-center shadow-lg shadow-[#E63946]/20">
-                  <Sparkles className="w-5 h-5 text-white" />
-                </div>
+                <img src="/images/adruby-logo.png" alt="AdRuby" className="w-9 h-9 object-contain" />
                 <span className="font-display font-bold text-xl tracking-tight text-white">AdRuby</span>
               </div>
               <p className="text-sm text-white/40 leading-relaxed mb-6 max-w-xs">

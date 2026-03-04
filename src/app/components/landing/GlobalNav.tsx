@@ -158,9 +158,7 @@ export function GlobalNav({ currentPage = 'home', onNavigate, onSignIn, onGetSta
               whileTap={{ scale: 0.97 }}
             >
               <div className="relative">
-                <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-[#E63946] to-rose-600 flex items-center justify-center group-hover:shadow-[0_0_20px_rgba(230,57,70,0.5)] transition-shadow duration-300">
-                  <span className="text-white font-black text-sm">AR</span>
-                </div>
+                <img src="/images/adruby-logo.png" alt="AdRuby" className="w-8 h-8 object-contain group-hover:drop-shadow-[0_0_10px_rgba(230,57,70,0.5)] transition-all duration-300" />
               </div>
               <span className="font-black text-xl font-display tracking-tight">AdRuby</span>
             </motion.button>
