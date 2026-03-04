@@ -14,6 +14,19 @@ import { Badge } from '../ui/badge';
 import { cn } from '../../lib/utils';
 import type { PreviewAreaProps, AdVariant, AdGenerationResult } from '../../types/aibuilder';
 
+/* ── Safe Score Extractor ─────────────────────────── */
+// qualityScore can be a number OR an object with { overall, colors, ... }
+function safeScore(score: unknown): number | null {
+    if (typeof score === 'number') return score;
+    if (score && typeof score === 'object' && 'overall' in score) return Number((score as Record<string, unknown>).overall) || null;
+    if (score && typeof score === 'object') {
+        // Try to compute average of numeric values
+        const vals = Object.values(score as Record<string, unknown>).filter(v => typeof v === 'number') as number[];
+        return vals.length > 0 ? Math.round(vals.reduce((a, b) => a + b, 0) / vals.length) : null;
+    }
+    return null;
+}
+
 /* ── SVG Score Ring ─────────────────────────────────── */
 function ScoreRing({ value, max, label, color, delay = 0 }: { value: number; max: number; label: string; color: string; delay?: number }) {
     const size = 72;
@@ -59,8 +72,8 @@ function getDisplayData(result: AdGenerationResult, variantIndex: number = 0) {
         imageUrl: result.imageUrl,
         imagePrompt: result.imagePrompt,
         template: result.template,
-        qualityScore: result.qualityScore,
-        engagementScore: result.engagementScore,
+        qualityScore: safeScore(result.qualityScore),
+        engagementScore: safeScore(result.engagementScore),
     } as AdVariant;
 }
 
@@ -193,13 +206,13 @@ export function PreviewArea({
                                     <span className="text-[10px] truncate max-w-[100px]">
                                         {variant.headline ? variant.headline.substring(0, 30) : `Variante ${index + 1}`}
                                     </span>
-                                    {variant.qualityScore && (
+                                    {safeScore(variant.qualityScore) != null && (
                                         <Badge className={cn(
                                             "text-[9px] px-1.5 py-0 h-4",
-                                            variant.qualityScore >= 8 ? "bg-emerald-500/15 text-emerald-600 border-emerald-500/20" :
-                                                variant.qualityScore >= 6 ? "bg-amber-500/15 text-amber-600 border-amber-500/20" : "bg-muted/30"
+                                            (safeScore(variant.qualityScore) ?? 0) >= 8 ? "bg-emerald-500/15 text-emerald-600 border-emerald-500/20" :
+                                                (safeScore(variant.qualityScore) ?? 0) >= 6 ? "bg-amber-500/15 text-amber-600 border-amber-500/20" : "bg-muted/30"
                                         )}>
-                                            {variant.qualityScore}/10
+                                            {safeScore(variant.qualityScore)}/10
                                         </Badge>
                                     )}
                                 </button>
@@ -288,25 +301,25 @@ export function PreviewArea({
             </div>
 
             {/* ── Score Rings ─────────────────────────────── */}
-            {(displayData.qualityScore || displayData.engagementScore) && (
+            {(safeScore(displayData.qualityScore) != null || safeScore(displayData.engagementScore) != null) && (
                 <div className="flex justify-center gap-10 pt-2">
-                    {displayData.qualityScore && (
+                    {safeScore(displayData.qualityScore) != null && (
                         <div className="flex flex-col items-center gap-0.5">
-                            <ScoreRing value={displayData.qualityScore} max={10} label="Qualität" color="hsl(var(--primary))" delay={200} />
+                            <ScoreRing value={safeScore(displayData.qualityScore)!} max={10} label="Qualität" color="hsl(var(--primary))" delay={200} />
                             <span className="text-[10px] text-muted-foreground/50 mt-0.5">
-                                {displayData.qualityScore >= 9 ? 'Exzellent' :
-                                    displayData.qualityScore >= 7 ? 'Überdurchschnittlich' :
-                                        displayData.qualityScore >= 5 ? 'Durchschnitt' : 'Ausbaufähig'}
+                                {(safeScore(displayData.qualityScore) ?? 0) >= 9 ? 'Exzellent' :
+                                    (safeScore(displayData.qualityScore) ?? 0) >= 7 ? 'Überdurchschnittlich' :
+                                        (safeScore(displayData.qualityScore) ?? 0) >= 5 ? 'Durchschnitt' : 'Ausbaufähig'}
                             </span>
                         </div>
                     )}
-                    {displayData.engagementScore && (
+                    {safeScore(displayData.engagementScore) != null && (
                         <div className="flex flex-col items-center gap-0.5">
-                            <ScoreRing value={displayData.engagementScore} max={100} label="Engagement" color="#10b981" delay={500} />
+                            <ScoreRing value={safeScore(displayData.engagementScore)!} max={100} label="Engagement" color="#10b981" delay={500} />
                             <span className="text-[10px] text-muted-foreground/50 mt-0.5">
-                                {displayData.engagementScore >= 80 ? 'Top 10%' :
-                                    displayData.engagementScore >= 60 ? 'Top 30%' :
-                                        displayData.engagementScore >= 40 ? 'Durchschnitt' : 'Unter Durchschnitt'}
+                                {(safeScore(displayData.engagementScore) ?? 0) >= 80 ? 'Top 10%' :
+                                    (safeScore(displayData.engagementScore) ?? 0) >= 60 ? 'Top 30%' :
+                                        (safeScore(displayData.engagementScore) ?? 0) >= 40 ? 'Durchschnitt' : 'Unter Durchschnitt'}
                             </span>
                         </div>
                     )}
