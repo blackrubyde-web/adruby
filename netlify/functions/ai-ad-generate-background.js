@@ -421,6 +421,14 @@ export const handler = async (event) => {
             imageUrl = urlData.publicUrl;
         } else {
             console.error('[AI Ad Generate] Upload error:', uploadError.message);
+            // Fallback: convert buffer to base64 data URL so the image still displays
+            try {
+                const base64 = Buffer.from(finalImageBuffer).toString('base64');
+                imageUrl = `data:image/png;base64,${base64}`;
+                console.log('[AI Ad Generate] Using base64 fallback for image display');
+            } catch (b64Err) {
+                console.error('[AI Ad Generate] Base64 fallback also failed:', b64Err.message);
+            }
         }
 
         const generationTime = Date.now() - startTime;
@@ -428,6 +436,7 @@ export const handler = async (event) => {
         // Save to DB
         await supabaseAdmin.from('generated_creatives').update({
             thumbnail: imageUrl || null,
+            image_url: imageUrl || null,
             outputs: {
                 ...outputData,
                 imageUrl: imageUrl,
