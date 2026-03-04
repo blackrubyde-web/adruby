@@ -15,6 +15,8 @@ interface KpiItem {
 
 interface KpiCardGridProps {
     kpis: KpiItem[];
+    /** Override grid column classes, default: 'grid-cols-2 lg:grid-cols-4' */
+    columns?: string;
 }
 
 /** Lightweight inline SVG sparkline */
@@ -50,10 +52,10 @@ function MiniSparkline({ data, width = 72, height = 28 }: { data: number[]; widt
     );
 }
 
-export function KpiCardGrid({ kpis }: KpiCardGridProps) {
+export function KpiCardGrid({ kpis, columns = 'grid-cols-2 lg:grid-cols-4' }: KpiCardGridProps) {
     return (
         <motion.div
-            className="grid grid-cols-2 lg:grid-cols-4 gap-3"
+            className={`grid ${columns} gap-3`}
             variants={stagger}
             initial="hidden"
             whileInView="visible"
