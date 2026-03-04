@@ -154,7 +154,28 @@ export const WeeklySummaryCard = memo(function WeeklySummaryCard({
     };
 
     if (campaigns.length === 0) {
-        return null;
+        return (
+            <Card className="relative overflow-hidden bg-gradient-to-br from-zinc-900/95 via-zinc-900/90 to-zinc-950 border-white/5">
+                <div className="relative p-4">
+                    <div className="flex items-center gap-3 mb-6">
+                        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-500 flex items-center justify-center shadow-lg shadow-emerald-500/25">
+                            <Calendar className="w-5 h-5 text-white" />
+                        </div>
+                        <div>
+                            <h3 className="text-base font-bold text-white flex items-center gap-2">
+                                Weekly AI Summary
+                                <Badge className="bg-emerald-500/20 text-emerald-400 border-emerald-500/30 text-[10px]">AUTO</Badge>
+                            </h3>
+                        </div>
+                    </div>
+                    <div className="text-center py-8">
+                        <Calendar className="w-12 h-12 text-white/20 mx-auto mb-3" />
+                        <p className="text-sm text-white/50">Noch keine Kampagnen-Daten vorhanden</p>
+                        <p className="text-xs text-white/30 mt-1">Synchronisiere deine Meta-Kampagnen um den Wochenbericht zu sehen</p>
+                    </div>
+                </div>
+            </Card>
+        );
     }
 
     return (

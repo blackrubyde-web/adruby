@@ -114,7 +114,10 @@ export function useAnalyticsData(
         })
         .catch((e) => {
           if (!cancelled) {
-            setError(e?.message ?? "Failed");
+            // Don't log 500 errors — analytics endpoint may not have data yet
+            if (e?.status !== 500) {
+              setError(e?.message ?? "Failed");
+            }
             if (!hasCached) setData(null);
           }
         })
