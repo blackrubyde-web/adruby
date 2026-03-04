@@ -190,7 +190,7 @@ export const Step3_Targeting = () => {
                             <Users className="w-6 h-6 text-blue-500" />
                         </div>
                         <div>
-                            <p className="text-xs text-muted-foreground font-medium">Geschätzte Reichweite</p>
+                            <p className="text-xs text-muted-foreground font-medium">Geschätzte Reichweite <span className="opacity-60">(Simulation)</span></p>
                             <p className="text-xl font-bold text-blue-500">
                                 {formatReach(estimatedReach.min)} - {formatReach(estimatedReach.max)}
                             </p>

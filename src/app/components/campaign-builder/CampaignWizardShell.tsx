@@ -33,6 +33,9 @@ export const CampaignWizardShell = ({ children }: { children: ReactNode }) => {
     useEffect(() => {
         const handleKeyDown = (e: KeyboardEvent) => {
             if (e.key === 'Enter' && canContinue && currentStep < totalSteps) {
+                // Don't trigger navigation when typing in inputs
+                const tag = (e.target as HTMLElement)?.tagName;
+                if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
                 e.preventDefault();
                 handleNext();
             }

@@ -2,8 +2,9 @@ import { useCampaignBuilder } from '../CampaignBuilderContext';
 import { Button } from '../../ui/button';
 import { Card } from '../../ui/card';
 import { Badge } from '../../ui/badge';
-import { Rocket, Target, Megaphone, MapPin, Users, Zap, DollarSign, Eye, CheckCircle2, Loader2, AlertTriangle, Sparkles, ExternalLink } from 'lucide-react';
+import { Rocket, Target, Megaphone, MapPin, Users, Zap, DollarSign, Eye, CheckCircle2, Loader2, AlertTriangle, Sparkles, ExternalLink, Info } from 'lucide-react';
 import { useState } from 'react';
+import { toast } from 'sonner';
 
 export const Step5_Review = () => {
     const {
@@ -25,11 +26,14 @@ export const Step5_Review = () => {
     const handlePreview = async () => {
         setIsPreviewLoading(true);
         try {
-            const result = await previewCampaign();
-            console.log('Preview result:', result);
-            // Could show preview modal here
+            const result = await previewCampaign() as { valid?: boolean; message?: string } | null;
+            if (result?.valid === false) {
+                toast.error(`Validierung fehlgeschlagen: ${result?.message || 'Unbekannter Fehler'}`);
+            } else {
+                toast.success('✅ Kampagne validiert — bereit zum Pushen');
+            }
         } catch (err) {
-            console.error('Preview error:', err);
+            toast.error(`Preview fehlgeschlagen: ${err instanceof Error ? err.message : 'Unbekannter Fehler'}`);
         } finally {
             setIsPreviewLoading(false);
         }
@@ -332,15 +336,30 @@ export const Step5_Review = () => {
                 </div>
 
                 <p className="text-xs text-muted-foreground text-center max-w-md">
-                    Die Kampagne wird in deinem verbundenen Meta Ads Account erstellt.
-                    Du kannst sie jederzeit im Ads Manager bearbeiten.
+                    <Info className="w-3 h-3 inline mr-1" />
+                    Die Kampagne wird als <strong>Entwurf (pausiert)</strong> in deinem Meta Ads Account erstellt.
+                    Aktiviere sie im Ads Manager, wenn du bereit bist.
                 </p>
             </div>
 
             {/* Confetti Effect */}
             {showConfetti && (
-                <div className="fixed inset-0 pointer-events-none z-50 flex items-center justify-center">
-                    <div className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-10" />
+                <div className="fixed inset-0 pointer-events-none z-50 overflow-hidden">
+                    {Array.from({ length: 30 }).map((_, i) => (
+                        <div
+                            key={i}
+                            className="absolute w-2 h-2 rounded-full animate-bounce"
+                            style={{
+                                left: `${Math.random() * 100}%`,
+                                top: `-${Math.random() * 20}%`,
+                                backgroundColor: ['#e11d48', '#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899'][i % 6],
+                                animationDelay: `${Math.random() * 2}s`,
+                                animationDuration: `${1.5 + Math.random() * 2}s`,
+                                opacity: 0.8,
+                                transform: `translateY(${100 + Math.random() * 100}vh) rotate(${Math.random() * 360}deg)`,
+                            }}
+                        />
+                    ))}
                 </div>
             )}
         </div>

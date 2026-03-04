@@ -70,6 +70,11 @@ export function CampaignsPage() {
 
   const handleAction = useCallback(async (campaign: MetaCampaign, action: MetaApplyAction) => {
     const id = campaign.id;
+    // Confirmation for destructive actions
+    if (action === 'delete') {
+      const confirmed = window.confirm(`Kampagne "${campaign.name}" wirklich löschen? Diese Aktion kann nicht rückgängig gemacht werden.`);
+      if (!confirmed) return;
+    }
     setActionState(prev => ({ ...prev, [`${id}-${action}`]: true }));
     try {
       const res = await applyMetaAction({ campaignId: id, action });
