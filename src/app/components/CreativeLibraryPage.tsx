@@ -757,9 +757,11 @@ export function CreativeLibraryPage() {
 
   const gridGap = 24;
   const isNarrowGrid = gridWidth < 640;
-  const cardWidth = isNarrowGrid ? Math.min(gridWidth, Math.max(220, gridWidth - gridGap * 2)) : 360;
+  const minCardWidth = isNarrowGrid ? 220 : 280;
+  const gridColumnCount = Math.max(1, Math.floor((gridWidth + gridGap) / (minCardWidth + gridGap)));
+  // Calculate cardWidth to exactly fill the container — no leftover pixels
+  const cardWidth = Math.floor((gridWidth - gridGap * (gridColumnCount - 1)) / gridColumnCount);
   const cardHeight = isNarrowGrid ? 360 : 380;
-  const gridColumnCount = Math.max(1, Math.floor((gridWidth + gridGap) / (cardWidth + gridGap)));
   const gridRowCount = Math.ceil(filteredCreatives.length / gridColumnCount);
   const gridHeight = Math.max(360, Math.min(isNarrowGrid ? 720 : 900, viewportHeight - (isNarrowGrid ? 220 : 260)));
 
@@ -1064,10 +1066,11 @@ export function CreativeLibraryPage() {
 
 
       {viewMode === 'grid' || isNarrowGrid ? (
-        <div ref={gridRef} className="w-full">
+        <div ref={gridRef} className="w-full" style={{ overflowX: 'hidden' }}>
           {gridWidth > 0 && (
             <FixedSizeGrid
               className="creative-grid-scrollbar"
+              style={{ overflowX: 'hidden' }}
               columnCount={gridColumnCount}
               columnWidth={cardWidth + gridGap}
               height={gridHeight}
