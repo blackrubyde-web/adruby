@@ -122,6 +122,16 @@ export function RegisterPage({
         } catch {
           // ignore
         }
+        // Fire-and-forget welcome email
+        try {
+          fetch('/.netlify/functions/send-email', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ type: 'welcome', to: email, userName: name }),
+          }).catch(() => {/* silent — best effort */ });
+        } catch {
+          // ignore — email is non-critical
+        }
       } else {
         setSubmissionState('needs_confirmation');
       }
@@ -176,7 +186,7 @@ export function RegisterPage({
   ];
 
   return (
-    <div className="min-h-screen w-full flex items-center justify-center bg-background px-4 py-12">
+    <div className="min-h-screen w-full flex items-center justify-center bg-background px-4 py-6 sm:py-12">
       <div className="w-full max-w-6xl">
         <div className="grid lg:grid-cols-2 gap-8 items-center">
           {/* Left: Benefits Panel */}
@@ -235,7 +245,7 @@ export function RegisterPage({
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.15, ease: [0.25, 0.46, 0.45, 0.94] as [number, number, number, number] }}
           >
-            <div className="bg-card border border-border rounded-2xl p-8 shadow-xl">
+            <div className="bg-card border border-border rounded-2xl p-5 sm:p-8 shadow-xl">
               {/* Mobile Logo */}
               <div className="lg:hidden flex items-center justify-center gap-2 mb-6">
                 <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary to-red-600 flex items-center justify-center">
@@ -246,7 +256,7 @@ export function RegisterPage({
 
               {/* Header */}
               <div className="text-center mb-8">
-                <h2 className="text-3xl font-bold mb-2">Konto erstellen</h2>
+                <h2 className="text-2xl sm:text-3xl font-bold mb-2">Konto erstellen</h2>
                 <p className="text-muted-foreground">Starte deine kostenlose Testphase</p>
               </div>
 

@@ -4,7 +4,6 @@ import {
   Check,
   Rocket,
   Crown,
-  Building2,
   ChevronDown,
   Sparkles,
   ArrowRight,
@@ -63,7 +62,7 @@ export function PricingPage({ onNavigate, onSignIn, onGetStarted }: PricingPageP
     {
       id: 'pro',
       name: 'Pro',
-      price: billingCycle === 'monthly' ? '49' : '39',
+      price: billingCycle === 'monthly' ? '29,99' : '23,99',
       period: 'pro Monat',
       description: 'Für Brands, die profitabel skalieren wollen.',
       credits: '2.500 Credits / Monat',
@@ -79,26 +78,6 @@ export function PricingPage({ onNavigate, onSignIn, onGetStarted }: PricingPageP
         'Kommerzielle Lizenzen'
       ],
       cta: '7 Tage kostenlos testen'
-    },
-    {
-      id: 'agency',
-      name: 'Agency',
-      price: billingCycle === 'monthly' ? '199' : '159',
-      period: 'pro Monat',
-      description: 'Für Agenturen mit hohen Volumen.',
-      credits: '10.000 Credits / Monat',
-      icon: Building2,
-      highlight: false,
-      gradient: 'from-violet-500 to-purple-500',
-      features: [
-        'Alles aus Pro',
-        'White-Labeling',
-        'Team-Management (5 User)',
-        'API Zugriff',
-        'Dedicated Success Manager',
-        'Custom Integrationen'
-      ],
-      cta: 'Sales kontaktieren'
     }
   ];
 
@@ -188,7 +167,7 @@ export function PricingPage({ onNavigate, onSignIn, onGetStarted }: PricingPageP
             initial="hidden"
             animate="visible"
             variants={stagger}
-            className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-6xl mx-auto"
+            className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-4xl mx-auto"
           >
             {plans.map((plan) => {
               const isPro = plan.id === 'pro';

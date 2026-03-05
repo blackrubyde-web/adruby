@@ -665,63 +665,68 @@ export function LandingPage({ onGetStarted, onLogin, onNavigate }: LandingPagePr
             variants={fadeUp}
             className="bg-white/[0.02] border border-white/[0.06] rounded-3xl overflow-hidden"
           >
-            {/* Table Header */}
-            <div className="grid grid-cols-4 gap-0 border-b border-white/[0.06] bg-white/[0.03]">
-              <div className="p-5">
-                <span className="text-xs font-bold text-white/30 uppercase tracking-wider">Feature</span>
-              </div>
-              <div className="p-5 text-center border-l border-white/[0.06]">
-                <div className="text-sm font-bold text-white/50">Native Tools</div>
-                <div className="text-[10px] text-white/20">Meta / Google</div>
-              </div>
-              <div className="p-5 text-center border-l border-white/[0.06]">
-                <div className="text-sm font-bold text-white/50">Andere KI-Tools</div>
-                <div className="text-[10px] text-white/20">AdCreative.ai etc.</div>
-              </div>
-              <div className="p-5 text-center border-l border-[#E63946]/20 bg-[#E63946]/[0.04]">
-                <div className="text-sm font-bold text-[#E63946]">AdRuby</div>
-                <div className="text-[10px] text-[#E63946]/60">Powered by Gemini</div>
+            {/* Responsive scroll wrapper */}
+            <div className="overflow-x-auto -mx-1 px-1">
+              <div className="min-w-[520px]">
+                {/* Table Header */}
+                <div className="grid grid-cols-4 gap-0 border-b border-white/[0.06] bg-white/[0.03]">
+                  <div className="p-3 sm:p-5">
+                    <span className="text-[10px] sm:text-xs font-bold text-white/30 uppercase tracking-wider">Feature</span>
+                  </div>
+                  <div className="p-3 sm:p-5 text-center border-l border-white/[0.06]">
+                    <div className="text-xs sm:text-sm font-bold text-white/50">Native Tools</div>
+                    <div className="text-[9px] sm:text-[10px] text-white/20">Meta / Google</div>
+                  </div>
+                  <div className="p-3 sm:p-5 text-center border-l border-white/[0.06]">
+                    <div className="text-xs sm:text-sm font-bold text-white/50">Andere KI</div>
+                    <div className="text-[9px] sm:text-[10px] text-white/20">AdCreative.ai</div>
+                  </div>
+                  <div className="p-3 sm:p-5 text-center border-l border-[#E63946]/20 bg-[#E63946]/[0.04]">
+                    <div className="text-xs sm:text-sm font-bold text-[#E63946]">AdRuby</div>
+                    <div className="text-[9px] sm:text-[10px] text-[#E63946]/60">Gemini AI</div>
+                  </div>
+                </div>
+
+                {/* Table Rows */}
+                {[
+                  { feature: 'KI-Creative-Generierung', native: false, others: true, adruby: true },
+                  { feature: 'Multimodal (Text + Bild)', native: false, others: false, adruby: true },
+                  { feature: 'Direkt zu Meta publizieren', native: true, others: false, adruby: true },
+                  { feature: 'Auto-Scaling', native: false, others: false, adruby: true },
+                  { feature: 'KI-Kampagnen-Analyse', native: false, others: false, adruby: true },
+                  { feature: '72+ Archetypen', native: false, others: false, adruby: true },
+                  { feature: 'DSGVO-konform', native: true, others: false, adruby: true },
+                  { feature: 'Alles in einem Workflow', native: false, others: false, adruby: true },
+                ].map((row, i) => (
+                  <div key={i} className={`grid grid-cols-4 gap-0 ${i % 2 === 0 ? '' : 'bg-white/[0.01]'} ${i < 7 ? 'border-b border-white/[0.04]' : ''}`}>
+                    <div className="p-3 sm:p-4 flex items-center">
+                      <span className="text-xs sm:text-sm text-white/60">{row.feature}</span>
+                    </div>
+                    <div className="p-4 flex items-center justify-center border-l border-white/[0.04]">
+                      {row.native ? (
+                        <CheckCircle className="w-4.5 h-4.5 text-white/20" />
+                      ) : (
+                        <div className="w-4.5 h-4.5 rounded-full border border-white/[0.08]" />
+                      )}
+                    </div>
+                    <div className="p-4 flex items-center justify-center border-l border-white/[0.04]">
+                      {row.others ? (
+                        <CheckCircle className="w-4.5 h-4.5 text-white/20" />
+                      ) : (
+                        <div className="w-4.5 h-4.5 rounded-full border border-white/[0.08]" />
+                      )}
+                    </div>
+                    <div className="p-4 flex items-center justify-center border-l border-[#E63946]/10 bg-[#E63946]/[0.02]">
+                      {row.adruby ? (
+                        <CheckCircle className="w-4.5 h-4.5 text-[#E63946]" />
+                      ) : (
+                        <div className="w-4.5 h-4.5 rounded-full border border-white/[0.08]" />
+                      )}
+                    </div>
+                  </div>
+                ))}
               </div>
             </div>
-
-            {/* Table Rows */}
-            {[
-              { feature: 'KI-Creative-Generierung', native: false, others: true, adruby: true },
-              { feature: 'Multimodal (Text + Bild + Video)', native: false, others: false, adruby: true },
-              { feature: 'Direkt zu Meta publizieren', native: true, others: false, adruby: true },
-              { feature: 'Auto-Scaling mit Safety Limits', native: false, others: false, adruby: true },
-              { feature: 'KI-Kampagnen-Analyse', native: false, others: false, adruby: true },
-              { feature: '72+ psychologische Archetypen', native: false, others: false, adruby: true },
-              { feature: 'DSGVO-konform (EU-Hosting)', native: true, others: false, adruby: true },
-              { feature: 'Alles in einem Workflow', native: false, others: false, adruby: true },
-            ].map((row, i) => (
-              <div key={i} className={`grid grid-cols-4 gap-0 ${i % 2 === 0 ? '' : 'bg-white/[0.01]'} ${i < 7 ? 'border-b border-white/[0.04]' : ''}`}>
-                <div className="p-4 flex items-center">
-                  <span className="text-sm text-white/60">{row.feature}</span>
-                </div>
-                <div className="p-4 flex items-center justify-center border-l border-white/[0.04]">
-                  {row.native ? (
-                    <CheckCircle className="w-4.5 h-4.5 text-white/20" />
-                  ) : (
-                    <div className="w-4.5 h-4.5 rounded-full border border-white/[0.08]" />
-                  )}
-                </div>
-                <div className="p-4 flex items-center justify-center border-l border-white/[0.04]">
-                  {row.others ? (
-                    <CheckCircle className="w-4.5 h-4.5 text-white/20" />
-                  ) : (
-                    <div className="w-4.5 h-4.5 rounded-full border border-white/[0.08]" />
-                  )}
-                </div>
-                <div className="p-4 flex items-center justify-center border-l border-[#E63946]/10 bg-[#E63946]/[0.02]">
-                  {row.adruby ? (
-                    <CheckCircle className="w-4.5 h-4.5 text-[#E63946]" />
-                  ) : (
-                    <div className="w-4.5 h-4.5 rounded-full border border-white/[0.08]" />
-                  )}
-                </div>
-              </div>
-            ))}
           </motion.div>
         </div>
       </section>
@@ -753,12 +758,11 @@ export function LandingPage({ onGetStarted, onLogin, onNavigate }: LandingPagePr
             whileInView="visible"
             viewport={{ once: true, margin: '-40px' }}
             variants={stagger}
-            className="grid md:grid-cols-3 gap-6"
+            className="grid md:grid-cols-2 gap-6 max-w-3xl mx-auto"
           >
             {[
               { name: 'Free', price: '€0', period: 'dauerhaft', features: ['100 Credits/Monat', 'Basis AI', '3 Personas'], highlight: false },
-              { name: 'Pro', price: '€49', period: '/Monat', features: ['2.500 Credits/Monat', 'Gemini 2.5 Flash AI', 'Premium Templates', 'Priority Support'], highlight: true },
-              { name: 'Agency', price: '€199', period: '/Monat', features: ['10.000 Credits/Monat', 'White-Labeling', 'Team (5 User)', 'API Zugriff'], highlight: false },
+              { name: 'Pro', price: '€29,99', period: '/Monat', features: ['2.500 Credits/Monat', 'Gemini 2.5 Flash AI', 'Premium Templates', 'Priority Support'], highlight: true },
             ].map((plan) => (
               <motion.div
                 key={plan.name}
@@ -788,13 +792,13 @@ export function LandingPage({ onGetStarted, onLogin, onNavigate }: LandingPagePr
                   ))}
                 </ul>
                 <button
-                  onClick={plan.name === 'Agency' ? undefined : onGetStarted}
+                  onClick={onGetStarted}
                   className={`w-full py-3.5 rounded-xl font-bold transition-all ${plan.highlight
                     ? 'bg-[#E63946] hover:bg-[#d42e3b] text-white shadow-lg shadow-[#E63946]/20'
                     : 'bg-white/[0.04] hover:bg-white/[0.08] text-white border border-white/[0.08]'
                     }`}
                 >
-                  {plan.highlight ? '7 Tage kostenlos testen' : plan.name === 'Agency' ? 'Sales kontaktieren' : 'Kostenlos starten'}
+                  {plan.highlight ? '7 Tage kostenlos testen' : 'Kostenlos starten'}
                 </button>
               </motion.div>
             ))}
