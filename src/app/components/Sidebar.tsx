@@ -6,6 +6,21 @@ import { useAdmin } from '../contexts/AdminContext';
 import { useAffiliate } from '../contexts/AffiliateContext';
 import { cn } from '../lib/utils';
 
+// Preload map: trigger dynamic import on hover so chunk is cached before click
+const PRELOAD_MAP: Partial<Record<PageType, () => void>> = {
+  dashboard: () => import('./OverviewPage'),
+  analytics: () => import('./AnalyticsPage'),
+  campaigns: () => import('./CampaignsPage'),
+  aianalysis: () => import('./AIAnalysisPage'),
+  library: () => import('./CreativeLibraryPage'),
+  aibuilder: () => import('./AIAdBuilderPage'),
+  settings: () => import('./SettingsPage'),
+  profile: () => import('./ProfilePage'),
+  help: () => import('./HelpSupportPage'),
+  affiliate: () => import('./AffiliatePage'),
+  studio: () => import('./StudioPage'),
+};
+
 interface SidebarProps {
   isCollapsed?: boolean;
   onToggle?: (collapsed: boolean) => void;
@@ -97,6 +112,7 @@ export const Sidebar = memo(function Sidebar({
       <button
         key={item.page}
         onClick={() => handleNavigate(item.page)}
+        onMouseEnter={() => PRELOAD_MAP[item.page]?.()}
         className={cn(
           "relative w-full flex items-center px-3 py-2.5 rounded-lg transition-all duration-200 group overflow-hidden",
           isActive

@@ -77,13 +77,13 @@ export const DashboardPageContent = memo(function DashboardPageContent({
     onNavigate: (page: PageType, query?: Record<string, string | undefined | null>) => void;
 }) {
     return (
-        <AnimatePresence mode="wait">
+        <AnimatePresence mode="popLayout">
             <motion.div
                 key={currentPage}
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -6 }}
-                transition={{ duration: 0.25, ease: [0.25, 0.46, 0.45, 0.94] }}
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.12, ease: 'easeOut' }}
             >
                 <DashboardPageInner currentPage={currentPage} onNavigate={onNavigate} />
             </motion.div>
