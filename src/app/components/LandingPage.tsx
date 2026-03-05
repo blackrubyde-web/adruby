@@ -115,7 +115,7 @@ export function LandingPage({ onGetStarted, onLogin, onNavigate }: LandingPagePr
 
         {/* Hero Content */}
         <motion.div
-          className="relative z-10 w-full max-w-7xl mx-auto px-5 sm:px-8 lg:px-12 pt-28 sm:pt-32 pb-12"
+          className="relative z-10 w-full max-w-7xl mx-auto px-5 sm:px-8 lg:px-12 pt-20 sm:pt-24 pb-12"
           initial="hidden"
           animate="visible"
           variants={stagger}

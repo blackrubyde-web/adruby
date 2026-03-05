@@ -286,16 +286,16 @@ export function GlobalNav({ currentPage = 'home', onNavigate, onSignIn, onGetSta
             {/* ── MOBILE BURGER — 44×44px touch target ── */}
             <motion.button
               onClick={() => handleMobileMenuToggle()}
-              className="md:hidden w-11 h-11 flex items-center justify-center rounded-xl bg-white/5 border border-white/10 active:bg-white/15 transition-colors"
+              className="md:hidden w-11 h-11 flex items-center justify-center rounded-xl bg-white/10 border border-white/20 active:bg-white/20 transition-colors"
               aria-label="Toggle navigation menu"
               aria-expanded={isMobileMenuOpen}
               aria-controls="mobile-menu"
               whileTap={{ scale: 0.9 }}
             >
               {isMobileMenuOpen ? (
-                <X className="w-5 h-5 text-foreground" />
+                <X className="w-5 h-5 text-white" />
               ) : (
-                <Menu className="w-5 h-5 text-foreground" />
+                <Menu className="w-5 h-5 text-white" />
               )}
             </motion.button>
           </div>
