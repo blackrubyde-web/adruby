@@ -4,14 +4,36 @@ import { apiClient } from "../utils/apiClient";
 import { supabase } from "../lib/supabaseClient";
 import { env } from "../lib/env";
 
+const CACHE_TTL = 1000 * 60 * 5; // 5 minutes
+
+function readAnalyticsCacheSync(range: string, compare: boolean, channel: string): AnalyticsData | null {
+  try {
+    for (let i = 0; i < sessionStorage.length; i++) {
+      const key = sessionStorage.key(i);
+      if (key && key.startsWith('analytics:') && key.endsWith(`:${range}:${compare ? 1 : 0}:${channel}`)) {
+        const raw = sessionStorage.getItem(key);
+        if (raw) {
+          const parsed = JSON.parse(raw) as { ts: number; data: AnalyticsData };
+          if (parsed?.ts && Date.now() - parsed.ts < CACHE_TTL && parsed.data) {
+            return parsed.data;
+          }
+        }
+      }
+    }
+  } catch { /* ignore */ }
+  return null;
+}
+
 export function useAnalyticsData(
   range: "7d" | "30d" | "90d" | "custom",
   compare: boolean,
   channel: string,
   refreshKey = 0
 ) {
-  const [data, setData] = useState<AnalyticsData | null>(null);
-  const [loading, setLoading] = useState(true);
+  // Read cache synchronously on mount — no loading flash if data is fresh
+  const [cachedInit] = useState(() => readAnalyticsCacheSync(range, compare, channel));
+  const [data, setData] = useState<AnalyticsData | null>(cachedInit);
+  const [loading, setLoading] = useState(!cachedInit);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -77,7 +99,7 @@ export function useAnalyticsData(
       }
 
       const cacheKey = `analytics:${userId}:${range}:${compare ? 1 : 0}:${channel}`;
-      const cacheTtlMs = 1000 * 60 * 5;
+      const cacheTtlMs = CACHE_TTL;
       let hasCached = false;
 
       try {
