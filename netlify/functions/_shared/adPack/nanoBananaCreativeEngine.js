@@ -983,16 +983,20 @@ export async function generateSingleAd(params) {
         funnelStage, goal,
     } = params;
 
+    // For free text mode: extract context from user text when form fields are absent
+    const userText = params.text || '';
+    const firstSentence = userText.split(/[.!?]/)[0]?.trim() || '';
+
     const adSpec = {
-        productName: productName || offer || 'Product',
-        offer: offer || productName || 'Premium Product',
+        productName: productName || offer || firstSentence || 'Product',
+        offer: offer || productName || userText || 'Premium Product',
         audience: audience || 'quality-conscious consumers',
         industry: industry || 'general',
         angle: angle || 'premium quality',
         language: params.language || 'de',
-        usp: params.usp || '',
-        description: params.description || '',
-        text: params.text || '',
+        usp: params.usp || userText || '',
+        description: params.description || userText || '',
+        text: userText,
         headline, subheadline,
         cta: cta || '',  // No forced fallback — AI decides
         productImageUrl,
