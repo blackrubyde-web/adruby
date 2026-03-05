@@ -151,6 +151,11 @@ function AppContent() {
           return;
         }
       }
+      // Logged-in user on the homepage → redirect to dashboard instantly
+      if (currentPage === 'landing') {
+        go('dashboard', { replace: true });
+        return;
+      }
     }
 
     if (user && (currentPage === 'login' || currentPage === 'register' || currentPage === 'auth-processing')) {
