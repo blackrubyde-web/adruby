@@ -119,10 +119,17 @@ export async function generateAd(params: AdGenerationParams): Promise<AdGenerati
         }),
     });
 
-    // Handle immediate errors (auth, validation, credits) - these have JSON body
+    // Handle immediate errors (auth, validation, credits) - body may be JSON or plain text
     if (!response.ok && response.status !== 202) {
-        const error = await response.json().catch(() => ({ error: 'Unknown error' }));
-        throw new Error(error.error || error.message || 'Ad generation failed');
+        const text = await response.text().catch(() => '');
+        let errorMsg = 'Ad generation failed';
+        try {
+            const json = JSON.parse(text);
+            errorMsg = json.message || json.error || errorMsg;
+        } catch {
+            if (text) errorMsg = text.substring(0, 200);
+        }
+        throw new Error(errorMsg);
     }
 
     // For 202 or 200 - start polling with our jobId
