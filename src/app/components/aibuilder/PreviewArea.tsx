@@ -77,6 +77,15 @@ function getDisplayData(result: AdGenerationResult, variantIndex: number = 0) {
     } as AdVariant;
 }
 
+const FORMAT_LABELS: Record<string, string> = { square: '1:1', portrait: '4:5', story: '9:16' };
+
+function getVariantFormat(result: AdGenerationResult, index: number): string | undefined {
+    if (result.variants && result.variants.length > index && result.variants[index].format) {
+        return result.variants[index].format;
+    }
+    return result.format;
+}
+
 export function PreviewArea({
     language,
     result,
@@ -229,7 +238,9 @@ export function PreviewArea({
                                         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-6 h-0.5 rounded-full bg-gradient-to-r from-primary to-red-500" />
                                     )}
                                     <span className="text-[10px] truncate max-w-[100px]">
-                                        {variant.headline ? variant.headline.substring(0, 30) : `Variante ${index + 1}`}
+                                        {variant.format && FORMAT_LABELS[variant.format]
+                                            ? `${FORMAT_LABELS[variant.format]} — ${variant.headline ? variant.headline.substring(0, 20) : `Variante ${index + 1}`}`
+                                            : (variant.headline ? variant.headline.substring(0, 30) : `Variante ${index + 1}`)}
                                     </span>
                                     {safeScore(variant.qualityScore) != null && (
                                         <Badge className={cn(
@@ -283,9 +294,12 @@ export function PreviewArea({
                     {displayData.imageUrl ? (
                         <div className={cn(
                             "relative w-full bg-black/50",
-                            result?.format === 'portrait' ? 'aspect-[4/5]' :
-                                result?.format === 'story' ? 'aspect-[9/16]' :
-                                    'aspect-square'
+                            (() => {
+                                const fmt = getVariantFormat(result, currentIndex);
+                                return fmt === 'portrait' ? 'aspect-[4/5]' :
+                                    fmt === 'story' ? 'aspect-[9/16]' :
+                                        'aspect-square';
+                            })()
                         )}>
                             <img src={displayData.imageUrl} alt="Ad Creative" className="w-full h-full object-cover" />
                         </div>

@@ -283,29 +283,18 @@ export const handler = async (event) => {
             console.log('[AI Ad Generate] ⚠️ Railway/Foreplay unavailable, using fallback pipeline');
         }
 
-        // ─── ATTEMPT 2: NANOBANANA (AI Creative Director) — 3 ADAPTIVE VARIANTS ───
+        // ─── ATTEMPT 2: NANOBANANA (AI Creative Director) — MULTI-FORMAT SUPPORT ───
         if (!finalImageBuffer) {
-            console.log('[AI Ad Generate] 🍌 NANOBANANA: Adaptive Creative Intelligence — 3 Variants');
-            await updateProgress('nanoBanana', 40, { engine: 'nanoBanana_v6_adaptive' });
+            const requestedFormats = body.formats || [body.format || 'square'];
+            const isMultiFormat = requestedFormats.length > 1;
 
-            const adFormat = body.format || 'square';
+            console.log(`[AI Ad Generate] 🍌 NANOBANANA: ${isMultiFormat ? `Multi-Format (${requestedFormats.join(', ')})` : 'Adaptive Creative Intelligence — 3 Variants'}`);
+            await updateProgress('nanoBanana', 40, { engine: 'nanoBanana_v6_adaptive', formats: requestedFormats });
+
             const funnelStage = body.funnelStage || 'tof';
             const goal = body.goal || 'conversion';
 
-            // Adaptive selector: scores 72 archetypes, picks 3 from 3 different categories
-            const adaptiveTriple = selectAdaptiveTriple({
-                industry: body.industry || 'ecommerce',
-                funnelStage,
-                goal,
-                audience: body.audience,
-                format: adFormat,
-            });
-
-            console.log(`[AI Ad Generate] 🧠 Adaptive selection:`, adaptiveTriple.map(v =>
-                `${v.meta.archetypeKey} (${v.meta.category}) + ${v.meta.layoutKey} + ${v.meta.hookKey}`
-            ));
-
-            const baseParams = {
+            const makeBaseParams = (fmt) => ({
                 productImageUrl: hasProductImage ? body.productImageUrl : null,
                 productImageBase64: body.productImageBase64 || null,
                 headline: body.headline || body.productName || '',
@@ -321,31 +310,44 @@ export const handler = async (event) => {
                 description: body.description || '',
                 text: body.text || '',
                 brandKit: body.brandKit,
-                format: adFormat,
+                format: fmt,
                 funnelStage,
                 goal,
-            };
+            });
 
             try {
-                const variantResults = await Promise.allSettled(
-                    adaptiveTriple.map(config => nanoBananaGenerateSingleAd({
-                        ...baseParams,
-                        _adaptiveConfig: config,
-                    }))
-                );
+                let variants = [];
 
-                // Collect successful variants
-                const variants = [];
-                for (let i = 0; i < variantResults.length; i++) {
-                    if (variantResults[i].status === 'fulfilled') {
-                        variants.push(variantResults[i].value);
-                    } else {
-                        console.warn(`[AI Ad Generate] Variant ${i + 1} failed: ${variantResults[i].reason?.message}`);
+                if (isMultiFormat) {
+                    // ── MULTI-FORMAT: 1 variant per format ──
+                    console.log(`[AI Ad Generate] 🎨 Multi-format: generating ${requestedFormats.length} format variants`);
+                    const formatResults = await Promise.allSettled(
+                        requestedFormats.map(fmt => {
+                            const triple = selectAdaptiveTriple({ industry: body.industry || 'ecommerce', funnelStage, goal, audience: body.audience, format: fmt });
+                            return nanoBananaGenerateSingleAd({ ...makeBaseParams(fmt), _adaptiveConfig: triple[0] })
+                                .then(result => ({ ...result, _format: fmt }));
+                        })
+                    );
+                    for (let i = 0; i < formatResults.length; i++) {
+                        if (formatResults[i].status === 'fulfilled') variants.push(formatResults[i].value);
+                        else console.warn(`[AI Ad Generate] Format ${requestedFormats[i]} failed: ${formatResults[i].reason?.message}`);
+                    }
+                } else {
+                    // ── SINGLE FORMAT: 3 adaptive style variants ──
+                    const adFormat = requestedFormats[0];
+                    const adaptiveTriple = selectAdaptiveTriple({ industry: body.industry || 'ecommerce', funnelStage, goal, audience: body.audience, format: adFormat });
+                    console.log(`[AI Ad Generate] 🧠 Adaptive selection:`, adaptiveTriple.map(v => `${v.meta.archetypeKey} (${v.meta.category}) + ${v.meta.layoutKey} + ${v.meta.hookKey}`));
+                    const variantResults = await Promise.allSettled(
+                        adaptiveTriple.map(config => nanoBananaGenerateSingleAd({ ...makeBaseParams(adFormat), _adaptiveConfig: config }))
+                    );
+                    for (let i = 0; i < variantResults.length; i++) {
+                        if (variantResults[i].status === 'fulfilled') variants.push({ ...variantResults[i].value, _format: adFormat });
+                        else console.warn(`[AI Ad Generate] Variant ${i + 1} failed: ${variantResults[i].reason?.message}`);
                     }
                 }
 
                 if (variants.length === 0) {
-                    throw new Error('All 3 variants failed');
+                    throw new Error(isMultiFormat ? 'All format variants failed' : 'All 3 variants failed');
                 }
 
                 // Use first successful variant as primary
@@ -365,6 +367,8 @@ export const handler = async (event) => {
                     template: 'nanoBanana_v5',
                     metadata: primary.metadata,
                     variantCount: variants.length,
+                    format: primary._format || requestedFormats[0],
+                    formats: requestedFormats,
                 };
 
                 // Upload additional variant images
@@ -380,6 +384,7 @@ export const handler = async (event) => {
                             url: vUrlData.publicUrl,
                             concept: variants[i].metadata?.concept,
                             layout: variants[i].metadata?.layout,
+                            format: variants[i]._format,
                         });
                     } catch (vErr) {
                         console.warn(`[AI Ad Generate] Variant ${i + 1} upload failed: ${vErr.message}`);
@@ -397,7 +402,7 @@ export const handler = async (event) => {
                     console.warn(`[AI Ad Generate] Scoring skipped: ${scoreErr.message}`);
                 }
 
-                console.log(`[AI Ad Generate] ✅ NanoBanana: ${variants.length}/3 variants generated`);
+                console.log(`[AI Ad Generate] ✅ NanoBanana: ${variants.length}/${isMultiFormat ? requestedFormats.length + ' formats' : '3 variants'} generated`);
             } catch (nbErr) {
                 console.warn(`[AI Ad Generate] ⚠️ NanoBanana failed: ${nbErr.message}`);
                 await updateProgress('nanoBanana_failed', 60, { error: nbErr.message });

@@ -43,6 +43,7 @@ export interface AdGenerationParams {
     // Railway v6.0 Composite Pipeline (100% screenshot preservation)
     useCompositePipeline?: boolean;
     format?: string;
+    formats?: string[];  // Multi-format generation (square, portrait, story)
     funnelStage?: 'tof' | 'mof' | 'bof';
     stats?: Array<{ label: string; value: string }>;
 }
@@ -60,6 +61,7 @@ export interface AdVariant {
     template: string;
     qualityScore?: number;
     engagementScore?: number;
+    format?: string;  // Which format this variant was generated for
 }
 
 export interface AdGenerationResult {

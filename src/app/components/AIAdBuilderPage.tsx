@@ -77,8 +77,19 @@ export function AIAdBuilderPage() {
     const [refinePrompt, setRefinePrompt] = useState('');
     const [isRefining, setIsRefining] = useState(false);
 
-    // Ad format state
-    const [adFormat, setAdFormat] = useState<'square' | 'portrait' | 'story'>('square');
+    // Ad format state (multi-select)
+    const [selectedFormats, setSelectedFormats] = useState<Set<string>>(new Set(['square']));
+    const toggleFormat = useCallback((fmt: string) => {
+        setSelectedFormats(prev => {
+            const next = new Set(prev);
+            if (next.has(fmt)) {
+                if (next.size > 1) next.delete(fmt); // keep at least 1
+            } else {
+                next.add(fmt);
+            }
+            return next;
+        });
+    }, []);
 
     // Funnel stage state
     const [funnelStage, setFunnelStage] = useState<'tof' | 'mof' | 'bof'>('tof');
@@ -248,7 +259,8 @@ export function AIAdBuilderPage() {
                 productImageBase64: productImagePreview || undefined,
                 useAIDesignSystem,
                 useCompositePipeline,
-                format: adFormat,
+                format: [...selectedFormats][0],  // primary format for backward compat
+                formats: [...selectedFormats],
                 funnelStage,
                 ...inputData,
             });
@@ -616,6 +628,11 @@ export function AIAdBuilderPage() {
                                     <RectangleVertical className="w-3.5 h-3.5 text-primary/70" />
                                 </div>
                                 <h3 className="text-sm font-semibold text-foreground">Format</h3>
+                                {selectedFormats.size > 1 && (
+                                    <span className="text-[10px] font-medium text-primary bg-primary/10 px-1.5 py-0.5 rounded-full">
+                                        {selectedFormats.size} Formate
+                                    </span>
+                                )}
                             </div>
                         </div>
                         <div className="input-section-body">
@@ -627,9 +644,9 @@ export function AIAdBuilderPage() {
                                 ].map(fmt => (
                                     <button
                                         key={fmt.id}
-                                        onClick={() => setAdFormat(fmt.id)}
+                                        onClick={() => toggleFormat(fmt.id)}
                                         className={`flex-1 flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl text-xs font-medium transition-all duration-300
-                                            ${adFormat === fmt.id
+                                            ${selectedFormats.has(fmt.id)
                                                 ? 'bg-primary/10 text-primary border border-primary/30 shadow-sm'
                                                 : 'bg-muted/20 text-muted-foreground border border-border/20 hover:bg-muted/40 hover:text-foreground'
                                             }`}
@@ -639,6 +656,7 @@ export function AIAdBuilderPage() {
                                     </button>
                                 ))}
                             </div>
+                            <p className="text-[10px] text-muted-foreground mt-1.5">Mehrere Formate auswählen für gleichzeitige Generierung</p>
                         </div>
                     </div>
 
