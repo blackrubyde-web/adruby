@@ -742,8 +742,8 @@
     padding-bottom: 3rem !important;
   }
 
-  /* Thumb-friendly buttons */
-  button {
+  /* Thumb-friendly buttons — only inside page sections, not nav */
+  .landing-page section button {
     min-height: 44px;
     padding-left: 1.5rem;
     padding-right: 1.5rem;

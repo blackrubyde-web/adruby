@@ -293,9 +293,9 @@ export function GlobalNav({ currentPage = 'home', onNavigate, onSignIn, onGetSta
               whileTap={{ scale: 0.9 }}
             >
               {isMobileMenuOpen ? (
-                <X className="w-5 h-5 text-white" />
+                <X className="w-6 h-6" style={{ color: '#ffffff' }} />
               ) : (
-                <Menu className="w-5 h-5 text-white" />
+                <Menu className="w-6 h-6" style={{ color: '#ffffff' }} />
               )}
             </motion.button>
           </div>
