@@ -4,9 +4,32 @@ import { apiClient } from '../utils/apiClient';
 import { supabase } from '../lib/supabaseClient';
 import { env } from '../lib/env';
 
+const CACHE_TTL = 1000 * 60 * 5; // 5 minutes
+
+function readCacheSync(range: string, channel: string): OverviewResponse | null {
+  try {
+    // Scan sessionStorage for any matching overview cache (userId unknown at init)
+    for (let i = 0; i < sessionStorage.length; i++) {
+      const key = sessionStorage.key(i);
+      if (key && key.startsWith('overview:') && key.endsWith(`:${range}:${channel}`)) {
+        const raw = sessionStorage.getItem(key);
+        if (raw) {
+          const parsed = JSON.parse(raw) as { ts: number; data: OverviewResponse };
+          if (parsed?.ts && Date.now() - parsed.ts < CACHE_TTL && parsed.data) {
+            return parsed.data;
+          }
+        }
+      }
+    }
+  } catch { /* ignore */ }
+  return null;
+}
+
 export function useOverview(range: 'today' | '7d' | '30d', channel: string) {
-  const [data, setData] = useState<OverviewResponse | null>(null);
-  const [loading, setLoading] = useState(true);
+  // Read cache synchronously on mount — no loading flash if data is fresh
+  const [cachedInit] = useState(() => readCacheSync(range, channel));
+  const [data, setData] = useState<OverviewResponse | null>(cachedInit);
+  const [loading, setLoading] = useState(!cachedInit);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -59,7 +82,7 @@ export function useOverview(range: 'today' | '7d' | '30d', channel: string) {
       }
 
       const cacheKey = `overview:${userId}:${range}:${channel}`;
-      const cacheTtlMs = 1000 * 60 * 5;
+      const cacheTtlMs = CACHE_TTL;
       let hasCached = false;
 
       try {
