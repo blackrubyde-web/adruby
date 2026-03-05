@@ -1030,6 +1030,7 @@
 .creative-grid-scrollbar {
     scrollbar-width: thin;
     scrollbar-color: color-mix(in srgb, var(--foreground) 15%, transparent) transparent;
+    overflow-x: hidden !important;
 }
 
 .creative-grid-scrollbar::-webkit-scrollbar {
