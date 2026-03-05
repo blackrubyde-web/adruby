@@ -329,6 +329,8 @@ async function generateCreativeBrief(adSpec, conceptType, format, variation, lay
     const isGenericName = !adSpec.productName || adSpec.productName === 'Product';
     const isGenericOffer = !adSpec.offer || adSpec.offer === 'Premium Product';
     const hasFreeText = !!adSpec.text?.trim();
+    // Bug 3+4 Fix: check both URL and base64 for product image
+    const hasProductImage = !!adSpec.productImageUrl || !!adSpec.productImageBase64;
 
     const productContext = [
         !isGenericName ? `Name: ${adSpec.productName}` : null,
@@ -339,12 +341,34 @@ async function generateCreativeBrief(adSpec, conceptType, format, variation, lay
         hasFreeText ? `USER CREATIVE BRIEF (this is the main input — extract product, audience, tone, and style from this):\n${adSpec.text}` : null,
     ].filter(Boolean).join('\n');
 
-    const prompt = `You are a world-class Creative Director, Graphic Designer, AND Copywriter at a top Meta Ads agency.
-You are directing a $50,000 ad production for ONE specific product — combining photography, typography, and graphic design.
+    // Bug 4 Fix: Tell Phase 1 about the product image so it generates BACKGROUND scenes, not product descriptions
+    const productImageContext = hasProductImage ? `
+═══ PRODUCT IMAGE PROVIDED (CRITICAL) ═══
+The user has uploaded a REAL PRODUCT PHOTO. This exact photo will be placed into the ad.
+Your "scene" description must describe the BACKGROUND ENVIRONMENT and STAGING ONLY.
+DO NOT describe the product's appearance, shape, color, or design — the real photo handles that.
+Describe: surface/table/background material, lighting setup, surrounding props, atmosphere, camera angle.
+Think: "What backdrop and staging would make this real product photo look incredible?"
+The product will be composited INTO your scene exactly as it appears in the user's photo.
+` : '';
+
+    // Bug 7 Fix: Layout-aware scene instructions
+    const layoutSceneGuide = `
+═══ LAYOUT-AWARE SCENE RULES ═══
+Your scene description MUST work with the ${layout.name} layout:
+${layout.key === 'split_panel' ? '- Describe TWO distinct visual zones: one for the product/scene, one for a colored text panel. Example: "LEFT: product on dark marble surface. RIGHT: deep navy panel for headline text."' : ''}
+${layout.key === 'geometric_frame' ? '- Describe what is INSIDE the geometric frame (the product scene) and what is OUTSIDE (solid/gradient background). Example: "INSIDE FRAME: product floating on soft gradient. OUTSIDE: clean white background with subtle grid."' : ''}
+${layout.key === 'bold_typographic' ? '- The headline text IS the main visual. Describe how the product integrates with or is secondary to massive typography.' : ''}
+${layout.key === 'minimal_product_hero' ? '- 60-70% product, generous empty space. Describe a MINIMAL scene with maximum breathing room.' : ''}
+${['full_bleed', 'magazine_editorial'].includes(layout.key) ? '- Full scene: product integrated into an immersive environment that fills the entire canvas.' : ''}
+${!['split_panel', 'geometric_frame', 'bold_typographic', 'minimal_product_hero', 'full_bleed', 'magazine_editorial'].includes(layout.key) ? `- Describe the visual content that fits the ${layout.name} composition structure.` : ''}
+`;
+
+    const prompt = `You are a world-class Creative Director at a top Meta Ads agency creating scroll-stopping ads for 2026.
 
 PRODUCT DETAILS:
 ${productContext || 'A premium product'}
-
+${productImageContext}
 INDUSTRY: ${adSpec.industry || 'general'}
 TARGET AUDIENCE: ${adSpec.audience || 'quality-conscious consumers'}
 CREATIVE ANGLE: ${adSpec.angle || 'premium quality'}
@@ -371,9 +395,13 @@ MANDATORY RULES:
 GOOD examples: "Jetzt erleben." / "Dein Style." / "Mehr Power." / "Neu entdecken."
 BAD examples: "Unvergessliche Qualitätserlebnisse" / "Professionelle Hautpflege-Routine"
 ` : ''}
-CREATIVE CONCEPT: ${conceptType.briefDirection}
 
+═══ CREATIVE CONCEPT ═══
+${conceptType.briefDirection}
+
+═══ LAYOUT (your scene MUST follow this) ═══
 ${layout.instruction}
+${layoutSceneGuide}
 
 ${hookType?.promptInjection ? `═══ HOOK DIRECTION ═══\n${hookType.promptInjection}` : ''}
 
@@ -406,34 +434,34 @@ Think: What scene would make THIS product look irresistible?
 - If the layout style is minimal or typographic, SKIP the CTA entirely.
 - Set "includeCta" to true or false in your response.
 
-═══ DESIGN ELEMENT RULES ═══
-- The ad is a DESIGNED piece, not just a photo with text overlay.
-- Include graphic design elements where appropriate: decorative lines, geometric shapes, accent stripes, arrows (→), small badge/tag elements, dot patterns, or frame borders.
-- These elements make the difference between "photo with text" and "professional designed ad".
+═══ DESIGN ELEMENTS — LESS IS MORE ═══
+- Maximum 1-2 design elements. NOT cluttered, NOT overdesigned.
+- Choose ONE: a single accent line, a frosted glass text panel, a clean geometric frame, or a subtle gradient overlay.
+- Instagram-native ads are CLEAN. Whitespace is a design element.
 
 Return this exact JSON structure:
 {
-  "scene": "A hyper-specific scene (3-4 sentences) UNIQUE to this product. Include environment, props, human interaction, emotional moment.",
-  "camera": "Camera setup: lens mm, aperture f/X.X, angle, composition rule.",
-  "lighting": "Lighting (2 sentences): primary source, fill, accents.",
+  "scene": "${hasProductImage ? 'BACKGROUND/STAGING ONLY (the real product photo will be placed in): describe surface, backdrop, lighting, props, atmosphere. DO NOT describe the product itself.' : 'A hyper-specific scene (3-4 sentences) UNIQUE to this product. Include environment, props, emotional moment.'} Must work with the ${layout.name} layout structure.",
+  "camera": "Camera setup: lens mm, aperture f/1.4-f/2.8 (shallow depth of field), angle, composition rule.",
+  "lighting": "Lighting (2 sentences): HIGH CONTRAST — deep shadows, bright highlights. NOT flat or evenly lit. Dramatic, directional.",
   "mood": "Emotional response (2 sentences): what to feel, what action to trigger.",
-  "colorPalette": "3-4 hex colors: '#hex1, #hex2, #hex3'",
+  "colorPalette": "2 colors MAXIMUM: 1 dominant + 1 accent. Example: '#1A1A1A, #FF4D00'. Monochromatic or high-contrast duotone. NOT rainbow.",
   "layoutStyle": "${layout.key}",
   "headline": "1-3 words MAXIMUM. Use only simple German words you can spell perfectly. Example: 'Jetzt erleben' or 'Dein Style'.",
   "tagline": "Supporting subline (1 short sentence). Adds context or proof.",
   "hook": "1 short sentence, 4-8 simple words max. Curiosity or urgency.",
   "includeCta": true/false,
   "cta": "CTA text (2 words MAX, e.g. 'Jetzt starten') if includeCta is true, or null if false.",
-  "ctaStyle": "CTA visual style if included, or null. Example: 'Semi-transparent pill #1A1A1A 80% opacity'",
-  "textPlacement": "DYNAMIC placement integrated into scene. Example: 'Large headline top-left with thin accent line above, product fills right 60%'. NEVER 'bottom center forced'.",
-  "designElements": "Specific graphic elements to include: 'Thin white horizontal line above tagline, small corner badge with price, subtle dot grid in background panel'. Be specific."
+  "ctaStyle": "CTA visual style if included, or null. Example: 'Solid high-contrast pill with rounded corners'",
+  "textPlacement": "DYNAMIC placement integrated into scene. Example: 'Massive headline top-left taking 30% of canvas, product fills right 60%'. NEVER 'bottom center forced'.",
+  "designElements": "Maximum 1-2 elements. Be specific: 'Single thin white horizontal line above tagline' or 'Frosted glass panel behind text'. Less is more."
 }
 
 CRITICAL:
-1. Scene MUST be specific to "${adSpec.productName || 'this product'}"
+1. Scene MUST be specific to "${adSpec.productName || 'this product'}"${hasProductImage ? ' — describe BACKGROUND ONLY, not the product' : ''}
 2. Headline MUST be rewritten professional copy, NEVER raw user input
 3. Layout MUST follow the ${layout.name} style described above
-4. Include graphic design elements — this is NOT just a photo
+4. Color palette: 2 colors maximum. Monochromatic > rainbow
 5. CTA is OPTIONAL — decide based on the layout and concept`;
 
     console.log(`[NanoBanana] 🎬 AI Creative Director generating brief for "${adSpec.productName}" (${conceptType.key}, ${format})...`);
@@ -562,7 +590,7 @@ function buildCreativePrompt(config) {
         ? `Apply these brand colors as accent elements: ${brandKit.palette.join(', ')}.`
         : source.colorPalette
             ? `Color palette: ${source.colorPalette}`
-            : 'Use colors that naturally complement the scene.';
+            : 'Use a monochromatic or 2-color palette that complements the scene.';
 
     // Safe zone instructions for story format
     const safeZone = format === 'story'
@@ -578,7 +606,6 @@ LANGUAGE: ALL text rendered in this image MUST be in English.
 ` : `
 LANGUAGE & TEXT RENDERING — ABSOLUTE RULES:
 ALL text in this image MUST be in German (Deutsch).
-The AI image model is TERRIBLE at spelling. Follow these rules strictly:
 
 1. RENDER ONLY THE EXACT TEXT STRINGS GIVEN BELOW — do NOT change, rephrase, or add ANY text.
 2. Copy each word LETTER BY LETTER from the strings provided.
@@ -599,8 +626,8 @@ The AI image model is TERRIBLE at spelling. Follow these rules strictly:
     const cta = includeCta ? (brief?.cta || adSpec.cta || '') : '';
 
     // Dynamic placement from brief — never hardcoded
-    const textPlacement = source.textPlacement || 'Headline integrated into scene composition using rule of thirds';
-    const ctaStyle = source.ctaStyle || 'Semi-transparent pill, integrated into scene lighting';
+    const textPlacement = source.textPlacement || 'Massive headline using rule of thirds, taking 20-40% of canvas area';
+    const ctaStyle = source.ctaStyle || 'Solid high-contrast pill with rounded corners';
 
     // Design elements — prefer concept-specific presets, then brief, then generic
     const conceptDesignPreset = conceptKey ? (CONCEPT_DESIGN_ELEMENTS[conceptKey] || '') : '';
@@ -618,15 +645,15 @@ TEXT IN IMAGE (render sharply, INTEGRATE into the designed composition):
 - HEADLINE: "${headline}"
   COPY THIS TEXT EXACTLY, CHARACTER BY CHARACTER. Do not modify, rephrase, or respell it.
   Position: ${textPlacement}
-  Typography: Bold modern sans-serif (like Inter, Helvetica, or Montserrat), high contrast
-  Size: Large enough to read at phone screen size
+  Typography: Bold modern sans-serif (Inter, Helvetica Neue, or Montserrat), weight 700-900
+  Size: MASSIVE — headline should take up 20-40% of the canvas area. Impossible to miss on a phone screen.
   IMPORTANT: Text must feel DESIGNED into the image — like a professional Photoshop comp
 `;
         if (subheadline) {
             textBlock += `
 - SUBHEADLINE: "${subheadline}"
   COPY THIS TEXT EXACTLY, CHARACTER BY CHARACTER. Do not modify, rephrase, or respell it.
-  Typography: Regular weight, 50-60% of headline size, positioned near headline
+  Typography: Regular weight, 40-50% of headline size, positioned near headline
 `;
         }
 
@@ -643,32 +670,48 @@ TEXT IN IMAGE (render sharply, INTEGRATE into the designed composition):
 SPACE FOR TEXT: Leave generous negative space for headline overlay.`;
     }
 
-    // Design elements instruction — concept-specific or generic
+    // Design elements instruction — concept-specific or minimalist
     const designBlock = designElements ? `
-GRAPHIC DESIGN ELEMENTS:
+GRAPHIC DESIGN — LESS IS MORE:
 ${designElements}
-These elements are CRUCIAL — they differentiate a professional designed ad from a simple photo with text.` : `
-GRAPHIC DESIGN ELEMENTS:
-Add at least one design element: a thin accent line, geometric shape, subtle pattern, or decorative element.
-This is NOT just a photo — it's a DESIGNED advertisement.`;
+Keep it clean. Maximum 1-2 design elements. Whitespace is a design element.` : `
+GRAPHIC DESIGN — LESS IS MORE:
+Maximum 1-2 design elements. Choose ONE:
+- A single bold accent line or stripe
+- A frosted glass text panel for readability
+- A clean geometric frame around the product
+- A subtle gradient overlay for text contrast
+Do NOT clutter. Instagram-native ads are CLEAN.`;
 
-    // ── PRODUCT IMAGE PRESERVATION — when user provides a product photo ──
-    const hasProductImage = !!adSpec.productImageUrl;
+    // ── PRODUCT IMAGE PRESERVATION — Bug 3 Fix: check both URL and base64 ──
+    const hasProductImage = !!adSpec.productImageUrl || !!adSpec.productImageBase64;
+    // Bug 2 Fix: Stronger preservation instructions
     const productPreservationBlock = hasProductImage ? `
-PRODUCT IMAGE PRESERVATION (CRITICAL):
-- A reference product image is provided. You MUST use this EXACT product in the ad.
-- DO NOT redesign, reimagine, alter, or modify the product's appearance in ANY way.
-- The product's shape, colors, branding, labels, textures, and proportions must be IDENTICAL to the reference image.
-- Place the product from the reference photo into the ad composition exactly as it looks.
-- You may adjust size, position, and angle to fit the layout, but the product itself must be pixel-faithful.
-- Think of it as a PHOTOSHOP CUTOUT placed into a new scene — the product is sacred.
+═══ PRODUCT IMAGE — THIS IS THE #1 RULE ═══
+A REAL PRODUCT PHOTO is provided as reference. This overrides everything else.
+
+MANDATORY:
+1. The product in your generated image MUST be a FAITHFUL COPY of the reference photo.
+2. SAME shape, SAME colors, SAME branding, SAME labels, SAME textures, SAME proportions.
+3. DO NOT redesign, reimagine, stylize, or artistically interpret the product.
+4. DO NOT change the product's color scheme, material appearance, or form factor.
+5. Think: PHOTOSHOP CUTOUT of the real product placed into a new scene.
+6. If you cannot faithfully reproduce the product, show it smaller rather than wrong.
+7. The scene/background can be creative. The PRODUCT is sacred and untouchable.
 ` : '';
 
-    return `A professional Meta advertisement image — a DESIGNED piece, not just a photo with text.
-${languageBlock}
+    // Bug 5+6 Fix: Layout as #1 priority, BEFORE scene description
+    return `═══ LAYOUT STRUCTURE (THIS IS THE #1 COMPOSITION PRIORITY) ═══
+This ad MUST follow this exact layout composition. DO NOT default to a generic full-bleed photo.
+${layoutDef ? `Layout: ${layoutDef.name}\n${layoutDef.instruction}` : 'LAYOUT: Full bleed — scene fills entire canvas.'}
+The layout structure above is MORE IMPORTANT than the scene description below.
+If the layout says "split panel" — the image MUST have two distinct visual panels.
+If the layout says "geometric frame" — the product MUST be inside a geometric shape.
+If the layout says "bold typographic" — text MUST be the dominant visual element.
+
 ${productPreservationBlock}
-${layoutDef ? `LAYOUT STYLE: ${layoutDef.name}\n${layoutDef.instruction}\n` : ''}
-SCENE:
+${languageBlock}
+═══ SCENE (fit this INTO the layout above) ═══
 ${source.scene}
 Product: "${adSpec.productName || adSpec.offer || 'Product'}"${hasProductImage ? ' — use the EXACT product from the provided reference image, DO NOT change its appearance.' : ' — integrated naturally into the composition.'}
 
@@ -679,7 +722,7 @@ ${source.colorTemp ? `- Color temperature: ${source.colorTemp}` : ''}
 
 LIGHTING:
 - ${source.lighting}
-- Professional commercial quality, natural-looking
+- HIGH CONTRAST — deep shadows, bright highlights. Directional, dramatic. NOT flat or evenly lit.
 ${safeZone}
 ${textBlock}
 ${designBlock}
@@ -687,10 +730,17 @@ ${designBlock}
 MOOD: ${source.mood}
 ${brandColors}
 
-QUALITY: This must look like a $50,000 agency production.
-Professional, polished, scroll-stopping. Indistinguishable from a real commercial ad.
-Text and design elements must feel DESIGNED into the image — like an Adobe Illustrator/Photoshop comp.
-Every element (text, shapes, lines, product) should feel intentionally placed.`;
+═══ 2026 META AD STYLE (CRITICAL) ═══
+This must stop the scroll on Instagram/Facebook. Modern, bold, native-feeling.
+
+1. CONTRAST: High contrast lighting. Deep shadows, bright highlights. NOT flat or studio-sterile.
+2. COLOR: Maximum 2 dominant colors + 1 accent. Monochromatic or duotone reads STRONGER than rainbow.
+3. TEXTURE: Subtle film grain or texture. NOT clinical smoothness. Slightly imperfect = authentic.
+4. BREATHING ROOM: 30-40% of the canvas should be breathing space. NOT every pixel filled.
+5. TYPOGRAPHY WEIGHT: Headlines take up 20-40% of the canvas area. MASSIVE, bold, impossible to miss.
+6. DEPTH: Strong foreground/background separation. Shallow depth of field (f/1.4-f/2.8).
+7. FEEL: Scroll-stopping and bold. Think: Apple product shot meets Instagram-native content.
+8. NOT: stock-photo-sterile, corporate, overdesigned, cluttered, or generic.`;
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -705,8 +755,14 @@ async function generateWithGemini(prompt, format, productImageUrl = null, produc
     const client = getGeminiClient();
     const formatSpec = META_FORMATS[format];
 
+    // Bug 1 Fix: Product image goes AFTER the text prompt so Gemini treats it
+    // as the strongest signal (last content = highest priority for image gen).
+    // Old order: [image, text-about-image, mega-prompt] → image got buried
+    // New order: [mega-prompt, anchoring-text, image] → image is the final instruction
+
     const contents = [];
     let imageLoaded = false;
+    let imageInlineData = null;
 
     // ── PRIORITY 1: Use base64 image directly (most reliable — no URL fetch needed) ──
     if (productImageBase64) {
@@ -721,20 +777,9 @@ async function generateWithGemini(prompt, format, productImageUrl = null, produc
                 base64Data = dataUrlMatch[2];
             }
 
-            contents.push({
-                inlineData: {
-                    mimeType,
-                    data: base64Data,
-                },
-            });
-            contents.push(
-                'This is the PRODUCT REFERENCE IMAGE. You MUST use this exact product in the generated ad. '
-                + 'DO NOT modify, redesign, or reimagine the product. Keep its exact shape, colors, branding, '
-                + 'labels, and proportions. Place it into the ad composition as a faithful reproduction. '
-                + 'The product is SACRED — treat it like a Photoshop cutout placed into a new scene.\n\n'
-            );
+            imageInlineData = { mimeType, data: base64Data };
             imageLoaded = true;
-            console.log(`[NanoBanana] ✅ Product image loaded from base64 (${(base64Data.length / 1024).toFixed(0)}KB, strict preservation)`);
+            console.log(`[NanoBanana] ✅ Product image loaded from base64 (${(base64Data.length / 1024).toFixed(0)}KB)`);
         } catch (b64Err) {
             console.warn(`[NanoBanana] ⚠️ Base64 image parsing failed: ${b64Err.message}`);
         }
@@ -750,20 +795,12 @@ async function generateWithGemini(prompt, format, productImageUrl = null, produc
             if (imageResponse.ok) {
                 const imageArrayBuffer = await imageResponse.arrayBuffer();
                 const imageBuffer = Buffer.from(imageArrayBuffer);
-                contents.push({
-                    inlineData: {
-                        mimeType: imageResponse.headers.get('content-type') || 'image/png',
-                        data: imageBuffer.toString('base64'),
-                    },
-                });
-                contents.push(
-                    'This is the PRODUCT REFERENCE IMAGE. You MUST use this exact product in the generated ad. '
-                    + 'DO NOT modify, redesign, or reimagine the product. Keep its exact shape, colors, branding, '
-                    + 'labels, and proportions. Place it into the ad composition as a faithful reproduction. '
-                    + 'The product is SACRED — treat it like a Photoshop cutout placed into a new scene.\n\n'
-                );
+                imageInlineData = {
+                    mimeType: imageResponse.headers.get('content-type') || 'image/png',
+                    data: imageBuffer.toString('base64'),
+                };
                 imageLoaded = true;
-                console.log(`[NanoBanana] ✅ Product image fetched from URL: ${(imageBuffer.length / 1024).toFixed(0)}KB (strict preservation)`);
+                console.log(`[NanoBanana] ✅ Product image fetched from URL: ${(imageBuffer.length / 1024).toFixed(0)}KB`);
             } else {
                 console.warn(`[NanoBanana] ⚠️ Product image URL returned ${imageResponse.status}`);
             }
@@ -776,7 +813,21 @@ async function generateWithGemini(prompt, format, productImageUrl = null, produc
         console.error('[NanoBanana] ❌ Product image was provided but could NOT be loaded! Ad will be generated without it.');
     }
 
+    // ── CONTENT ORDER: text prompt FIRST, then anchoring text + image LAST ──
+    // This ensures Gemini treats the product image as the strongest signal
     contents.push(prompt);
+
+    if (imageLoaded && imageInlineData) {
+        contents.push(
+            '\n\nIMPORTANT — PRODUCT REFERENCE IMAGE FOLLOWS:\n'
+            + 'The image below is the EXACT product you MUST faithfully reproduce in the ad.\n'
+            + 'Generate the ad scene described above, but the product MUST look IDENTICAL to this reference photo.\n'
+            + 'Same shape, same colors, same labels, same textures, same proportions.\n'
+            + 'This is image-to-image editing: place THIS EXACT product into the ad composition.\n'
+        );
+        contents.push({ inlineData: imageInlineData });
+        console.log(`[NanoBanana] 📌 Product image placed AFTER prompt for maximum preservation strength`);
+    }
 
     console.log(`[NanoBanana] 🎨 Generating ${format} image with ${GEMINI_IMAGE_MODEL} (2K)...`);
 
@@ -1002,6 +1053,7 @@ export async function generateSingleAd(params) {
         headline, subheadline,
         cta: cta || '',  // No forced fallback — AI decides
         productImageUrl,
+        productImageBase64: params.productImageBase64 || null, // Bug 3 Fix: pass base64 to adSpec
         brandKit,
     };
 
