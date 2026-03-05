@@ -6,10 +6,30 @@ const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL || '').replace(/\/+$/, '
 
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
+/** Track whether a session refresh is already in-flight (dedup) */
+let refreshInFlight: Promise<string | null> | null = null;
+
 async function getBearerToken() {
   const { data } = await supabase.auth.getSession();
   const token = data.session?.access_token;
   return token ? `Bearer ${token}` : null;
+}
+
+/** Refresh the Supabase session and return the new token (or null). */
+async function refreshSession(): Promise<string | null> {
+  if (refreshInFlight) return refreshInFlight;
+  refreshInFlight = (async () => {
+    try {
+      const { data, error } = await supabase.auth.refreshSession();
+      if (error || !data.session?.access_token) return null;
+      return `Bearer ${data.session.access_token}`;
+    } catch {
+      return null;
+    } finally {
+      refreshInFlight = null;
+    }
+  })();
+  return refreshInFlight;
 }
 
 export async function apiRequest<T>(
@@ -22,6 +42,8 @@ export async function apiRequest<T>(
     retries?: number;
     retryDelayMs?: number;
     auth?: boolean;
+    /** Internal flag — prevents infinite 401 refresh loops */
+    _isRetryAfterRefresh?: boolean;
   } = {}
 ): Promise<T> {
   const {
@@ -31,7 +53,8 @@ export async function apiRequest<T>(
     timeoutMs = DEFAULT_TIMEOUT,
     retries = 2,
     retryDelayMs = 300,
-    auth = true
+    auth = true,
+    _isRetryAfterRefresh = false
   } = options;
 
   if (!path.startsWith('/')) {
@@ -74,6 +97,20 @@ export async function apiRequest<T>(
           payload?.error || payload?.message || text || 'Request failed';
         const error = new Error(errorMessage) as Error & { status?: number };
         error.status = response.status;
+
+        // ── 401: try refreshing the session once ──────────
+        if (response.status === 401 && auth && !_isRetryAfterRefresh) {
+          const newToken = await refreshSession();
+          if (newToken) {
+            // Retry with fresh token
+            return apiRequest<T>(path, {
+              ...options,
+              _isRetryAfterRefresh: true,
+            });
+          }
+          // Refresh failed — throw without extra retries
+          throw error;
+        }
 
         if (RETRY_STATUSES.includes(response.status) && attempt < retries) {
           await sleep(retryDelayMs * (attempt + 1));
