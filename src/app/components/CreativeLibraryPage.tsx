@@ -121,12 +121,38 @@ export function CreativeLibraryPage() {
       ? (row?.video_url || row?.image_url || row?.thumbnail || (metadata?.videoUrl as string) || '')
       : '';
 
+    // For video thumbnails: find an actual IMAGE url (not a video url)
+    // Check if a URL is an image (not a video)
+    const isImageUrl = (url: string | null | undefined): boolean => {
+      if (!url) return false;
+      const lower = url.toLowerCase();
+      // If it contains video extensions or video-related paths, it's not an image
+      if (lower.includes('.mp4') || lower.includes('.webm') || lower.includes('.mov')) return false;
+      // If it contains image extensions, it IS an image
+      if (lower.includes('.png') || lower.includes('.jpg') || lower.includes('.jpeg') || lower.includes('.webp') || lower.includes('.gif')) return true;
+      // If it's a data URL, check the mime type
+      if (lower.startsWith('data:image/')) return true;
+      if (lower.startsWith('data:video/')) return false;
+      // Default: assume Supabase storage URLs without extension are images if they came from thumbnail/image_url columns
+      return true;
+    };
+
+    // Video thumbnail: prefer actual image thumbnail over video URL
+    const videoThumbnailImage = type === 'video'
+      ? (
+        (isImageUrl(row?.thumbnail) && row?.thumbnail !== videoUrl ? row.thumbnail : null) ||
+        (metadata?.thumbnailUrl && isImageUrl(metadata.thumbnailUrl as string) ? (metadata.thumbnailUrl as string) : null) ||
+        (metadata?.posterUrl && isImageUrl(metadata.posterUrl as string) ? (metadata.posterUrl as string) : null) ||
+        null
+      )
+      : null;
+
     return {
       id: row.id,
       name,
       type,
       url: videoUrl,
-      thumbnail: type === 'video' ? videoUrl : (row.thumbnail || row?.image_url || ''),
+      thumbnail: type === 'video' ? (videoThumbnailImage || videoUrl) : (row.thumbnail || row?.image_url || ''),
       tags,
       hooks,
       primaryText,
@@ -632,19 +658,30 @@ export function CreativeLibraryPage() {
         <tr key={creative.id} className="border-b border-border hover:bg-muted/50 transition-colors">
           <td className="p-4">
             <div className="flex items-center gap-3">
-              {creative.thumbnail ? (
-                <img
-                  src={creative.thumbnail}
-                  alt={creative.name}
-                  loading="lazy"
-                  decoding="async"
-                  width={64}
-                  height={40}
-                  className="w-16 h-10 object-cover rounded"
-                />
+              {creative.thumbnail || creative.url ? (
+                creative.type === 'video' ? (
+                  <video
+                    src={creative.url || creative.thumbnail}
+                    poster={creative.thumbnail !== creative.url ? creative.thumbnail : undefined}
+                    muted
+                    playsInline
+                    preload="metadata"
+                    className="w-16 h-10 object-cover rounded"
+                  />
+                ) : (
+                  <img
+                    src={creative.thumbnail}
+                    alt={creative.name}
+                    loading="lazy"
+                    decoding="async"
+                    width={64}
+                    height={40}
+                    className="w-16 h-10 object-cover rounded"
+                  />
+                )
               ) : (
                 <div className="w-16 h-10 rounded bg-muted flex items-center justify-center text-[10px] text-muted-foreground">
-                  AI
+                  {creative.type === 'video' ? '🎬' : 'AI'}
                 </div>
               )}
               <div>
@@ -750,15 +787,15 @@ export function CreativeLibraryPage() {
         <div className="creative-card stagger-reveal" style={{ width: cardWidth, height: cardHeight, animationDelay: `${index * 50}ms` }}>
           {/* Image — fixed height, no aspect-ratio to prevent overflow */}
           <div className="creative-card-image" style={{ height: '200px' }}>
-            {creative.thumbnail ? (
+            {creative.thumbnail || creative.url ? (
               creative.type === 'video' ? (
                 <video
                   src={creative.url || creative.thumbnail}
-                  poster={creative.thumbnail || undefined}
+                  poster={creative.thumbnail !== creative.url ? creative.thumbnail : undefined}
                   muted
                   loop
                   playsInline
-                  preload="none"
+                  preload="metadata"
                   onMouseEnter={(e) => (e.target as HTMLVideoElement).play()}
                   onMouseLeave={(e) => { (e.target as HTMLVideoElement).pause(); (e.target as HTMLVideoElement).currentTime = 0; }}
                   className="w-full h-full object-cover"
