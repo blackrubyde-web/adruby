@@ -991,19 +991,6 @@ export function LandingPage({ onGetStarted, onLogin, onNavigate }: LandingPagePr
         <div className="h-px bg-gradient-to-r from-[#E63946] via-rose-500 to-red-600" />
       </footer>
 
-      {/* ── Sticky Mobile CTA ─────────────────────── */}
-      {!isMobileMenuOpen && (
-        <div className="fixed bottom-0 left-0 right-0 p-3 sm:p-4 bg-[#050507]/95 backdrop-blur-xl border-t border-white/[0.06] z-50 md:hidden">
-          <motion.button
-            onClick={onGetStarted}
-            whileTap={{ scale: 0.95 }}
-            className="w-full min-h-[52px] py-3 bg-gradient-to-r from-[#E63946] via-rose-500 to-red-600 text-white rounded-xl font-bold text-base shadow-lg flex items-center justify-center gap-2"
-          >
-            Jetzt kostenlos starten
-            <ArrowRight className="w-5 h-5" />
-          </motion.button>
-        </div>
-      )}
 
       {/* ── Inline Keyframes ──────────────────────── */}
       <style>{`
