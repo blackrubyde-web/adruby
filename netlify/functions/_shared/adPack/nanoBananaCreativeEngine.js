@@ -325,12 +325,18 @@ async function generateCreativeBrief(adSpec, conceptType, format, variation, lay
     const layout = layoutStyle || pickRandomLayout();
 
     // Build rich product context from all available fields
+    // Skip generic defaults so they don't pollute the AI context in free text mode
+    const isGenericName = !adSpec.productName || adSpec.productName === 'Product';
+    const isGenericOffer = !adSpec.offer || adSpec.offer === 'Premium Product';
+    const hasFreeText = !!adSpec.text?.trim();
+
     const productContext = [
-        adSpec.productName ? `Name: ${adSpec.productName}` : null,
-        adSpec.offer ? `Offer: ${adSpec.offer}` : null,
-        adSpec.usp ? `USP (raw user input — REWRITE this): ${adSpec.usp}` : null,
+        !isGenericName ? `Name: ${adSpec.productName}` : null,
+        !isGenericOffer ? `Offer: ${adSpec.offer}` : null,
+        adSpec.usp ? `USP (raw user input — REWRITE this into professional copy): ${adSpec.usp}` : null,
         adSpec.description ? `Description: ${adSpec.description}` : null,
-        adSpec.text ? `Details: ${adSpec.text}` : null,
+        // In free text mode, this is the PRIMARY input — elevate it
+        hasFreeText ? `USER CREATIVE BRIEF (this is the main input — extract product, audience, tone, and style from this):\n${adSpec.text}` : null,
     ].filter(Boolean).join('\n');
 
     const prompt = `You are a world-class Creative Director, Graphic Designer, AND Copywriter at a top Meta Ads agency.
@@ -983,20 +989,16 @@ export async function generateSingleAd(params) {
         funnelStage, goal,
     } = params;
 
-    // For free text mode: extract context from user text when form fields are absent
-    const userText = params.text || '';
-    const firstSentence = userText.split(/[.!?]/)[0]?.trim() || '';
-
     const adSpec = {
-        productName: productName || offer || firstSentence || 'Product',
-        offer: offer || productName || userText || 'Premium Product',
+        productName: productName || offer || 'Product',
+        offer: offer || productName || 'Premium Product',
         audience: audience || 'quality-conscious consumers',
         industry: industry || 'general',
         angle: angle || 'premium quality',
         language: params.language || 'de',
-        usp: params.usp || userText || '',
-        description: params.description || userText || '',
-        text: userText,
+        usp: params.usp || '',
+        description: params.description || '',
+        text: params.text || '',
         headline, subheadline,
         cta: cta || '',  // No forced fallback — AI decides
         productImageUrl,
