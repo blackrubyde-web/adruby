@@ -79,7 +79,7 @@ export function FeaturePageTemplate({
     onGetStarted,
 }: FeaturePageTemplateProps) {
     return (
-        <div className="landing-theme-root min-h-screen bg-[#050507] font-body text-white overflow-x-hidden selection:bg-rose-500/30">
+        <div className="landing-theme-root landing-page min-h-screen bg-[#050507] font-body text-white overflow-x-hidden selection:bg-rose-500/30">
             <GlobalNav
                 currentPage={currentPage}
                 onNavigate={onNavigate}
