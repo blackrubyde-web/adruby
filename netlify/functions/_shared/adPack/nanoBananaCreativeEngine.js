@@ -345,27 +345,25 @@ CREATIVE ANGLE: ${adSpec.angle || 'premium quality'}
 AD FORMAT: ${format} (${formatSpec.ratio}, ${formatSpec.width}×${formatSpec.height})
 LANGUAGE: All text MUST be in ${lang}.
 ${adSpec.language !== 'en' ? `
-CRITICAL GERMAN LANGUAGE & CURRENCY RULES:
-- ALL prices and monetary references MUST use € (Euro), NEVER $ or Dollar.
-- Write flawless, native-level German — like a professional German ad copywriter.
-- Correct grammar: cases, articles (der/die/das), verb conjugations.
-- Use "du" form (lowercase) for audience.
-- Avoid anglicisms: "Angebot" not "Deal", "Erlebnis" not "Experience", "Vorteil" not "Benefit".
-- Compound nouns: "Hautpflege-Routine" not "Hautpflege Routine".
-- Umlauts (ä, ö, ü) and ß MUST be correct.
-- Proofread every word for Rechtschreibung and Grammatik.
+CRITICAL GERMAN TEXT RULES — THE TEXT WILL BE RENDERED ON AN IMAGE:
+Every word you write for headline, tagline, hook, and CTA will be BURNED INTO AN IMAGE.
+AI image models CANNOT spell complex German words. You MUST use ONLY short, simple words.
 
-TEXT WILL BE RENDERED ON IMAGE — SPELLING IS CRITICAL:
-The headline, tagline, hook, and CTA you generate will be rendered as TEXT ON THE IMAGE.
-Any spelling mistake will be permanently visible. Triple-check every German word.
-Common mistakes to AVOID:
-- "definiert" NOT "definned"
-- "erfahren" NOT "erfarren"
-- "virtuell" NOT "vircllaly"
-- "Kampagnen" NOT "Kampagen"
-- "kostenlos" NOT "kostenloss"
-- "Lösung" NOT "Losung"
-If you're unsure about a word, use a simpler German word you're confident about.
+MANDATORY RULES:
+1. Headline: MAXIMUM 1-3 words. Use ONLY words from this safe list or equally simple words:
+   Jetzt, Neu, Mehr, Dein, Spür, Erlebe, Power, Style, Stark, Bereit, Premium, Exklusiv,
+   Entdecke, Starte, Perfekt, Frei, Schnell, Einfach, Besser, Ohne, Mit, Für, Top, Extra
+2. Tagline: MAXIMUM 3-6 words. Keep it dead simple.
+3. CTA: MAXIMUM 2 words. Examples: "Jetzt starten", "Mehr erfahren", "Jetzt sichern", "Entdecken"
+4. Use € (Euro) for prices, NEVER $ or Dollar.
+5. Use "du" form (lowercase), not "Sie".
+6. NO compound nouns, NO long words (nothing over 10 characters).
+7. NO umlauts in headlines — use "ue", "ae", "oe" OR pick a word without umlauts.
+   Exception: ü in simple words like "für" is OK.
+8. If you cannot think of a simple German word, use English instead (common in German ads).
+
+GOOD examples: "Jetzt erleben." / "Dein Style." / "Mehr Power." / "Neu entdecken."
+BAD examples: "Unvergessliche Qualitätserlebnisse" / "Professionelle Hautpflege-Routine"
 ` : ''}
 CREATIVE CONCEPT: ${conceptType.briefDirection}
 
@@ -387,15 +385,13 @@ Do NOT use generic descriptions like "product on dark background" or "clean stud
 Think: What scene would make THIS product look irresistible?
 
 ═══ AD COPY RULES ═══
-- The user's USP/description is RAW INPUT — COMPLETELY REWRITE it into professional, punchy ad copy.
-- NEVER paste the user's text verbatim. Transform "Guter schläger, mehr power, bessere schläge" into something like "Dein unfairer Vorteil auf dem Court."
-- Headlines: 2-5 words, emotionally charged, benefit-driven. Think Nike, Apple, or Gymshark.
-- Hook: Creates curiosity or urgency. The "stop the scroll" line.
-- Examples of great German ad copy:
-  • "Spür den Unterschied." (feel it)
-  • "Dein Move. Dein Moment." (personal)
-  • "Nie wieder zweiter." (competitive edge)
-  • "Bereit für mehr?" (curiosity)
+- The user's USP/description is RAW INPUT — COMPLETELY REWRITE it into short, punchy ad copy.
+- NEVER paste the user's text verbatim.
+- Headlines: 1-3 WORDS ONLY. Emotionally charged. Think Nike: "Just Do It" = "Jetzt starten."
+- Tagline: 3-6 words max. Simple German.
+- Hook: 1 short sentence, curiosity or urgency.
+- CTA: 2 words max or null.
+- ONLY use German words you are 100% confident you can spell correctly.
 
 ═══ CTA RULES ═══
 - CTA is OPTIONAL. Not every ad needs a CTA button.
@@ -417,11 +413,11 @@ Return this exact JSON structure:
   "mood": "Emotional response (2 sentences): what to feel, what action to trigger.",
   "colorPalette": "3-4 hex colors: '#hex1, #hex2, #hex3'",
   "layoutStyle": "${layout.key}",
-  "headline": "SHORT punchy headline (2-5 words). Professional copywriting, NOT user's raw text.",
+  "headline": "1-3 words MAXIMUM. Use only simple German words you can spell perfectly. Example: 'Jetzt erleben' or 'Dein Style'.",
   "tagline": "Supporting subline (1 short sentence). Adds context or proof.",
-  "hook": "First feed line — 1 sentence, curiosity or urgency.",
+  "hook": "1 short sentence, 4-8 simple words max. Curiosity or urgency.",
   "includeCta": true/false,
-  "cta": "CTA text (2-4 words) if includeCta is true, or null if false.",
+  "cta": "CTA text (2 words MAX, e.g. 'Jetzt starten') if includeCta is true, or null if false.",
   "ctaStyle": "CTA visual style if included, or null. Example: 'Semi-transparent pill #1A1A1A 80% opacity'",
   "textPlacement": "DYNAMIC placement integrated into scene. Example: 'Large headline top-left with thin accent line above, product fills right 60%'. NEVER 'bottom center forced'.",
   "designElements": "Specific graphic elements to include: 'Thin white horizontal line above tagline, small corner badge with price, subtle dot grid in background panel'. Be specific."
@@ -442,7 +438,7 @@ CRITICAL:
             contents: prompt,
             config: {
                 responseMimeType: 'application/json',
-                temperature: 0.9, // High creativity for diverse outputs
+                temperature: 0.7, // Balanced: creative but precise for text quality
             },
         });
 
@@ -574,28 +570,18 @@ function buildCreativePrompt(config) {
     const languageBlock = isEnglish ? `
 LANGUAGE: ALL text rendered in this image MUST be in English.
 ` : `
-LANGUAGE & TEXT RENDERING — CRITICAL INSTRUCTIONS:
-ALL text rendered in this image MUST be in PERFECT German (Deutsch).
-- Copy each word CHARACTER BY CHARACTER from the text strings provided below.
-- DO NOT attempt to generate, guess, or improvise German words. Only render the EXACT text strings given.
-- Use € (Euro) for any prices, NEVER $ or Dollar.
-- German spelling with umlauts (ä, ö, ü) and ß MUST be exact.
-- "du" form (lowercase), not "Sie".
+LANGUAGE & TEXT RENDERING — ABSOLUTE RULES:
+ALL text in this image MUST be in German (Deutsch).
+The AI image model is TERRIBLE at spelling. Follow these rules strictly:
 
-COMMON AI SPELLING ERRORS TO AVOID:
-- "definiert" NOT "definned" or "definied"
-- "erfahren" NOT "erfarren" or "errfahren"
-- "virtuell" NOT "vircllaly" or "virtualy"
-- "Kampagnen" NOT "Kampagen" or "Campagnen"
-- "kostenlos" NOT "costenfrei" or "kostenloss"
-- "Ergebnis" NOT "Ergebniss" or "Ergebins"
-- "Qualität" NOT "Qualitat" or "Qualitaet"
-- "Lösung" NOT "Losung" or "Loesung"
-- "Mehr erfahren" NOT "Mehr erfarren"
-- "Jetzt starten" NOT "Jetzt starden"
-
-VERIFICATION: Before rendering ANY text, mentally spell-check each word letter by letter.
-If you are not 100% sure about a German word's spelling, use a simpler word instead.
+1. RENDER ONLY THE EXACT TEXT STRINGS GIVEN BELOW — do NOT change, rephrase, or add ANY text.
+2. Copy each word LETTER BY LETTER from the strings provided.
+3. Headline should be MAXIMUM 1-3 words. If the headline is longer, only render the first 2 words.
+4. If you are not 100% sure you can render a word correctly, SKIP IT ENTIRELY.
+5. PREFER rendering NO TEXT over rendering MISSPELLED text.
+6. Use € for prices, NEVER $.
+7. Simple words only. No compound nouns. No words longer than 8 letters.
+8. Better to have a beautiful image with NO text than an image with garbled text.
 `;
 
     // PREFER AI-generated copy from brief, fall back to user input
