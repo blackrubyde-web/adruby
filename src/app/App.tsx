@@ -217,12 +217,18 @@ function AppContent() {
     else root.classList.remove('perf-lite');
   }, [isProtectedPage]);
 
+  // ── Detect OAuth callback hash — show dark screen instead of homepage flash
+  const hasOAuthHash = window.location.hash.includes('access_token=');
+  if (hasOAuthHash && !isAuthReady) {
+    return <div className="min-h-screen bg-[#050507]" />;
+  }
+
   // ── Full-screen guards ──────────────────────────────────────────
   if (!isAuthReady && isProtectedPage) {
-    return <FullScreenLoader title="Sitzung wird geladen…" subtitle="Dein Login-Status wird geprüft" />;
+    return <div className="min-h-screen bg-[#050507]" />;
   }
   if (user && isLoading && isProtectedPage) {
-    return <FullScreenLoader title="Account wird geladen…" subtitle="Dein Abonnement wird geprüft" />;
+    return <div className="min-h-screen bg-[#050507]" />;
   }
   if (profileError && user) {
     return (
@@ -243,7 +249,7 @@ function AppContent() {
     <div className="min-h-screen w-full max-w-[100vw] overflow-x-hidden">
       {/* Public / Auth Pages */}
       {isPublicView && (
-        <Suspense fallback={<FullScreenLoader title="Seite wird geladen…" subtitle="Einen Moment bitte" />}>
+        <Suspense fallback={<div className="min-h-screen bg-[#050507]" />}>
           {currentPage === 'landing' && (
             <LandingPage
               onGetStarted={() => go('register')}
