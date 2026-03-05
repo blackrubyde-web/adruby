@@ -133,9 +133,12 @@ export function OverviewPage({ onNavigate }: OverviewPageProps) {
 
   useEffect(() => {
     if (!warningMessage) { warningToastRef.current = null; return; }
-    if (warningToastRef.current === warningMessage) return;
+    // Only show each warning toast once per session
+    const toastKey = `overview_toast_shown:${warningMessage}`;
+    try { if (sessionStorage.getItem(toastKey)) return; } catch { /* ignore */ }
     toast.info(warningMessage);
     warningToastRef.current = warningMessage;
+    try { sessionStorage.setItem(toastKey, '1'); } catch { /* ignore */ }
   }, [warningMessage]);
 
   // Extract sparkline data from timeseries
