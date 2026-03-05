@@ -113,6 +113,20 @@ export function LandingPage({ onGetStarted, onLogin, onNavigate }: LandingPagePr
           ))}
         </div>
 
+        {/* Floating Ad Creatives — Orbital Animation */}
+        <div className="absolute inset-0 overflow-hidden pointer-events-none" aria-hidden="true">
+          {[1, 2, 3, 4, 5, 6].map((n) => (
+            <div key={n} className="floating-ad-creative">
+              <img
+                src={`/images/ad-creatives/ad${n}.png`}
+                alt=""
+                loading="lazy"
+                draggable={false}
+              />
+            </div>
+          ))}
+        </div>
+
         {/* Hero Content */}
         <motion.div
           className="relative z-10 w-full max-w-7xl mx-auto px-5 sm:px-8 lg:px-12 pt-20 sm:pt-24 pb-12"
