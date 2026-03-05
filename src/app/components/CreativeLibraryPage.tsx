@@ -11,6 +11,17 @@ import { supabase } from '../lib/supabaseClient';
 import { creativeSaveToLibrary } from '../lib/api/creative';
 import type { AdDocument, ImageLayer, StudioLayer, TextLayer } from '../types/studio';
 
+// Helper: check if a URL is an image (not a video)
+const isImageUrl = (url: string | null | undefined): boolean => {
+  if (!url) return false;
+  const lower = url.toLowerCase();
+  if (lower.includes('.mp4') || lower.includes('.webm') || lower.includes('.mov')) return false;
+  if (lower.includes('.png') || lower.includes('.jpg') || lower.includes('.jpeg') || lower.includes('.webp') || lower.includes('.gif')) return true;
+  if (lower.startsWith('data:image/')) return true;
+  if (lower.startsWith('data:video/')) return false;
+  return true;
+};
+
 interface Creative {
   id: string;
   name: string;
@@ -18,8 +29,8 @@ interface Creative {
   url: string;
   thumbnail: string;
   tags: string[];
-  hooks?: string[]; // Added hooks
-  primaryText?: string; // Added primary text
+  hooks?: string[];
+  primaryText?: string;
   performance: {
     impressions: number;
     clicks: number;
@@ -120,22 +131,6 @@ export function CreativeLibraryPage() {
     const videoUrl = type === 'video'
       ? (row?.video_url || row?.image_url || row?.thumbnail || (metadata?.videoUrl as string) || '')
       : '';
-
-    // For video thumbnails: find an actual IMAGE url (not a video url)
-    // Check if a URL is an image (not a video)
-    const isImageUrl = (url: string | null | undefined): boolean => {
-      if (!url) return false;
-      const lower = url.toLowerCase();
-      // If it contains video extensions or video-related paths, it's not an image
-      if (lower.includes('.mp4') || lower.includes('.webm') || lower.includes('.mov')) return false;
-      // If it contains image extensions, it IS an image
-      if (lower.includes('.png') || lower.includes('.jpg') || lower.includes('.jpeg') || lower.includes('.webp') || lower.includes('.gif')) return true;
-      // If it's a data URL, check the mime type
-      if (lower.startsWith('data:image/')) return true;
-      if (lower.startsWith('data:video/')) return false;
-      // Default: assume Supabase storage URLs without extension are images if they came from thumbnail/image_url columns
-      return true;
-    };
 
     // Video thumbnail: prefer actual image thumbnail over video URL
     const videoThumbnailImage = type === 'video'
@@ -1072,6 +1067,7 @@ export function CreativeLibraryPage() {
         <div ref={gridRef} className="w-full">
           {gridWidth > 0 && (
             <FixedSizeGrid
+              className="creative-grid-scrollbar"
               columnCount={gridColumnCount}
               columnWidth={cardWidth + gridGap}
               height={gridHeight}
