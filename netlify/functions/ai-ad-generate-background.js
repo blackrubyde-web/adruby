@@ -107,11 +107,13 @@ export const handler = async (event) => {
         // ─── CREATE JOB RECORD ───
         jobId = body.jobId || crypto.randomUUID();
         try {
+            // Strip large base64 data from stored inputs to avoid DB bloat
+            const { productImageBase64: _strip, ...inputsToStore } = body;
             await supabaseAdmin.from('generated_creatives').insert({
                 id: jobId,
                 user_id: user.id,
                 saved: false,
-                inputs: { mode, language, ...body },
+                inputs: { mode, language, ...inputsToStore },
                 outputs: null,
                 metrics: { status: 'pending', started_at: new Date().toISOString() },
             });

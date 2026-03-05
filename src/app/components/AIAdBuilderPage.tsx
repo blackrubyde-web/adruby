@@ -257,6 +257,7 @@ export function AIAdBuilderPage() {
                 setResult(response.data);
                 setStep('result');
                 toast.success(t('successMessage', language));
+                try { _refreshProfile(); } catch { /* ignore */ }
             } else {
                 throw new Error('Generation failed');
             }
@@ -409,6 +410,31 @@ export function AIAdBuilderPage() {
         const url = outputType === 'video' ? videoResult?.videoUrl : result?.imageUrl;
         if (!url) return;
         const ext = outputType === 'video' ? 'mp4' : 'png';
+
+        // Handle base64 data URLs (can't use <a download> directly)
+        if (url.startsWith('data:')) {
+            try {
+                const byteString = atob(url.split(',')[1]);
+                const mimeType = url.split(':')[1].split(';')[0];
+                const ab = new ArrayBuffer(byteString.length);
+                const ia = new Uint8Array(ab);
+                for (let i = 0; i < byteString.length; i++) ia[i] = byteString.charCodeAt(i);
+                const blob = new Blob([ab], { type: mimeType });
+                const blobUrl = URL.createObjectURL(blob);
+                const link = document.createElement('a');
+                link.href = blobUrl;
+                link.download = `ai-ad-${Date.now()}.${ext}`;
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                URL.revokeObjectURL(blobUrl);
+            } catch (e) {
+                console.error('Download from data URL failed:', e);
+                toast.error('Download fehlgeschlagen');
+            }
+            return;
+        }
+
         const link = document.createElement('a');
         link.href = url;
         link.download = `ai-ad-${Date.now()}.${ext}`;

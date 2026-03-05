@@ -74,6 +74,7 @@ export interface AdGenerationResult {
     creditsUsed: number;
     qualityScore?: number;
     engagementScore?: number;
+    format?: 'square' | 'portrait' | 'story';
     // Multi-variant support
     variants?: AdVariant[];
 }

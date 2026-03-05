@@ -281,7 +281,12 @@ export function PreviewArea({
 
                     {/* Image */}
                     {displayData.imageUrl ? (
-                        <div className="relative aspect-square w-full bg-black/50">
+                        <div className={cn(
+                            "relative w-full bg-black/50",
+                            result?.format === 'portrait' ? 'aspect-[4/5]' :
+                                result?.format === 'story' ? 'aspect-[9/16]' :
+                                    'aspect-square'
+                        )}>
                             <img src={displayData.imageUrl} alt="Ad Creative" className="w-full h-full object-cover" />
                         </div>
                     ) : (

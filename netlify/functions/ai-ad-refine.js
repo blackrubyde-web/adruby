@@ -107,6 +107,18 @@ export const handler = async (event) => {
         const gemini = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
 
         const isGerman = language === 'de';
+        const originalFormat = original.inputs?.format || original.outputs?.format || 'square';
+        const formatAspectMap = { square: '1:1', portrait: '4:5', story: '9:16' };
+        const aspectRatio = formatAspectMap[originalFormat] || '1:1';
+
+        const germanBlock = isGerman ? `
+GERMAN TEXT QUALITY — CRITICAL:
+- Copy each word CHARACTER BY CHARACTER. Do NOT improvise German words.
+- Common AI errors to AVOID: "definiert" NOT "definned", "erfahren" NOT "erfarren", "virtuell" NOT "vircllaly", "Mehr erfahren" NOT "Mehr erfarren", "Jetzt starten" NOT "Jetzt starden"
+- Use € (Euro), NEVER $. Correct umlauts (ä, ö, ü) and ß.
+- If unsure about a German word, use a simpler word you're confident about.
+` : '';
+
         const editPrompt = `You are a professional ad designer editing an existing Meta advertisement image.
 
 CURRENT IMAGE: This is the existing ad that needs to be modified.
@@ -120,8 +132,8 @@ RULES:
 4. If the user asks to remove the CTA button, remove it cleanly
 5. If the user asks to add elements (arrows, text, badges), integrate them naturally
 6. The result must still look like a $50,000 agency production
-7. All text must be in ${isGerman ? 'German' : 'English'}
-
+7. All text must be in ${isGerman ? 'PERFECT German' : 'English'}
+${germanBlock}
 Apply the modifications and return the edited image.`;
 
         console.log(`[AI Ad Refine] 🎨 Generating refinement with ${GEMINI_IMAGE_MODEL}...`);
@@ -140,7 +152,7 @@ Apply the modifications and return the edited image.`;
             config: {
                 responseModalities: ['TEXT', 'IMAGE'],
                 imageConfig: {
-                    aspectRatio: '1:1',
+                    aspectRatio,
                     imageSize: '2K',
                 },
             },
@@ -184,11 +196,13 @@ Apply the modifications and return the edited image.`;
             user_id: user.id,
             saved: true,
             thumbnail: imageUrl,
+            image_url: imageUrl,
             inputs: {
                 mode: 'refine',
                 parentJobId: jobId,
                 refinementPrompt,
                 language,
+                format: originalFormat,
             },
             outputs: {
                 ...original.outputs,
@@ -222,8 +236,13 @@ Apply the modifications and return the edited image.`;
                     imageUrl,
                     headline: original.outputs?.headline || '',
                     slogan: original.outputs?.slogan || '',
+                    description: original.outputs?.description || '',
                     cta: original.outputs?.cta || '',
                     hook: original.outputs?.hook || original.outputs?.description || '',
+                    imagePrompt: original.outputs?.imagePrompt || '',
+                    template: original.outputs?.template || 'refined',
+                    qualityScore: original.outputs?.qualityScore || null,
+                    engagementScore: original.outputs?.engagementScore || null,
                     refinementPrompt,
                     creditsUsed: CREDIT_COSTS.ai_ad_generate,
                 },

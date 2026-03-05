@@ -1143,12 +1143,12 @@ Return ONLY valid JSON:
     } catch (err) {
         console.warn(`[NanoBanana] ⚠️ Scoring failed: ${err.message}`);
         return {
-            readability: 7,
-            composition: 7,
-            colors: 7,
-            scrollStop: 7,
-            overall: 7,
-            feedback: 'Scoring nicht verfügbar',
+            readability: null,
+            composition: null,
+            colors: null,
+            scrollStop: null,
+            overall: null,
+            feedback: 'Bewertung nicht verfügbar',
         };
     }
 }
